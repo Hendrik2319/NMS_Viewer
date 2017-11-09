@@ -7,13 +7,17 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-import net.schwarzbaer.java.lib.jsonparser.JSON_Object;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Object.FloatValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Object.IntegerValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Object.ObjectValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Object.StringValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Object.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.ArrayValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.BoolValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.FloatValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.IntegerValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.JSON_Array;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.JSON_Object;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.NamedValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.ObjectValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.StringValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.Value;
 
 public class SaveViewer {
 
@@ -34,6 +38,27 @@ public class SaveViewer {
 		
 		File htmlfile = new File("./"+sourcefile.getName()+".html"); 
 		writeToHTML(sourcefile.getName(),json_Object,htmlfile);
+		
+		File copyfile = new File("./"+sourcefile.getName()+".copy.txt"); 
+		writeToJSON(json_Object,copyfile);
+	}
+
+	private static void writeToJSON(JSON_Object json_Object, File copyfile) {
+		PrintWriter out;
+		try {
+			out = new PrintWriter(copyfile,StandardCharsets.UTF_8.name());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+		writeToJSON_obj(out,json_Object);
+		
+		out.close();
+		
 	}
 
 	private static void writeToHTML(String title, JSON_Object json_Object, File htmlfile) {
@@ -80,7 +105,7 @@ public class SaveViewer {
 		out.println("	</head>");
 		out.println("<body>");
 		
-		writeToHTML_obj("obj",json_Object,out);
+		writeToHTML_obj(out,json_Object,"obj");
 		
 		out.println("</body>");
 		out.println("</html>");
@@ -88,26 +113,93 @@ public class SaveViewer {
 		out.close();
 	}
 
-	private static void writeToHTML_obj(String ID, JSON_Object json_Object, PrintWriter out) {
-		// TODO Auto-generated method stub
-		if (json_Object==null)
+	private static void writeToJSON_obj(PrintWriter out, JSON_Object json_Object) {
+		if (json_Object==null) {
 			out.print("null");
+			return;
+		}
+		
+		out.print("{");
+		for (int i=0; i<json_Object.size(); ++i) {
+			NamedValue namedvalue = json_Object.get(i);
+			out.printf("\"%s\":",namedvalue.name);
+			writeToJSON_value(out, namedvalue.value);
+			if (i+1<json_Object.size()) out.print(",");
+		}
+		out.print("}");
+	}
+
+	private static void writeToHTML_obj(PrintWriter out, JSON_Object json_Object, String ID) {
+		if (json_Object==null) {
+			out.print("null");
+			return;
+		}
 		
 		out.println("{ <span class=\"button\" onclick=\"toggle_collapse(this,'"+ID+"');\">[-]</span>");
 		out.println("<div id="+ID+" class=\"valuelist\">");
 		
-		for (int i=0; i<json_Object.values.size(); ++i) {
-			Value value = json_Object.values.get(i);
-			out.printf("<span class=\"name\">\"%s\"</span> : ",value.name);
-			if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"<span class=\"string\">"+"\"%s\""+"</span>", ((StringValue )value).value);
-			if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", ((FloatValue  )value).value);
-			if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%d"    +"</span>", ((IntegerValue)value).value);
-			if ( value instanceof ObjectValue  ) writeToHTML_obj(ID+"_"+i, ((ObjectValue)value).value, out);
+		for (int i=0; i<json_Object.size(); ++i) {
+			NamedValue namedvalue = json_Object.get(i);
+			out.printf("<span class=\"name\">\"%s\"</span> : ",namedvalue.name);
+			writeToHTML_value(out, namedvalue.value, ID, i);
 			out.println(",<br/>");
-			
 		}
 		
 		out.println("</div>");
 		out.println("}");
+	}
+
+	private static void writeToJSON_arr(PrintWriter out, JSON_Array json_Array) {
+		if (json_Array==null) {
+			out.print("null");
+			return;
+		}
+		
+		out.print("[");
+		
+		for (int i=0; i<json_Array.size(); ++i) {
+			//if (json_Array.hasMixedContent()) out.print(" ");
+			writeToJSON_value(out, json_Array.get(i));
+			if (i+1<json_Array.size()) out.print(",");
+		}
+		//if (json_Array.hasMixedContent()) out.print(" ");
+		
+		out.print("]");
+	}
+
+	private static void writeToHTML_arr(PrintWriter out, JSON_Array json_Array, String ID) {
+		if (json_Array==null) {
+			out.print("null");
+			return;
+		}
+		
+		out.println("[ <span class=\"button\" onclick=\"toggle_collapse(this,'"+ID+"');\">[-]</span>");
+		out.println("<div id="+ID+" class=\"valuelist\">");
+		
+		for (int i=0; i<json_Array.size(); ++i) {
+			writeToHTML_value(out, json_Array.get(i), ID, i);
+			out.println(",<br/>");
+		}
+		
+		out.println("</div>");
+		out.println("]");
+	}
+
+	private static void writeToJSON_value(PrintWriter out, Value value) {
+		if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"\"%s\"", ((StringValue )value).value);
+		if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"%s"    , ((FloatValue  )value).value);
+		if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"%d"    , ((IntegerValue)value).value);
+		if ( value instanceof BoolValue    ) out.printf(Locale.ENGLISH,"%s"    , ((BoolValue   )value).value);
+		if ( value instanceof ObjectValue  ) writeToJSON_obj(out, ((ObjectValue)value).value);
+		if ( value instanceof ArrayValue   ) writeToJSON_arr(out, ((ArrayValue )value).value);
+	}
+
+	private static void writeToHTML_value(PrintWriter out, Value value, String ID, int i) {
+		if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"<span class=\"string\">"+"\"%s\""+"</span>", ((StringValue )value).value);
+		if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", ((FloatValue  )value).value);
+		if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%d"    +"</span>", ((IntegerValue)value).value);
+		if ( value instanceof BoolValue    ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", ((BoolValue   )value).value);
+		if ( value instanceof ObjectValue  ) writeToHTML_obj(out, ((ObjectValue)value).value, ID+"_"+i);
+		if ( value instanceof ArrayValue   ) writeToHTML_arr(out, ((ArrayValue )value).value, ID+"_"+i);
 	}
 }
