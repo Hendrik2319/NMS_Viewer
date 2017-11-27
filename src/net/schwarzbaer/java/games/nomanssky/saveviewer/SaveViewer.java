@@ -30,7 +30,7 @@ import javax.swing.tree.TreeModel;
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.JSON_Object;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 
 public class SaveViewer implements ActionListener {
 

@@ -2,7 +2,6 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Vector;
@@ -11,16 +10,16 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.ArrayValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.BoolValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.FloatValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.IntegerValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.JSON_Object;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.NamedValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.ObjectValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.StringValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.Value;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser.Value.Type;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 class TreeView {
 
@@ -325,7 +324,10 @@ class TreeView {
 		@Override
 		public int getIndex(TreeNode node) {
 			if (children == null) createChildren();
-			return Arrays.binarySearch(children, node);
+			//return Arrays.binarySearch(children, node);
+			for (int i=0; i<children.length; ++i)
+				if (children[i]==node) return i;
+			return -1;
 		}
 
 		@Override
