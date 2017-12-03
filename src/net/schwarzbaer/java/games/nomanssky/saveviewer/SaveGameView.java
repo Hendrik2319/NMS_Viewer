@@ -207,20 +207,23 @@ class SaveGameView extends JPanel {
 			JComboBox<String> selector = new JComboBox<>(statConfigs);
 			selector.addActionListener(e -> changeSelection( selector.getSelectedIndex() ));
 			
-			JPanel northPanel = new JPanel();
-			northPanel.setLayout(new BoxLayout(northPanel, BoxLayout.X_AXIS));
-			northPanel.add(selector);
+			if (SaveViewer.DEBUG) {
+				JPanel northPanel = new JPanel();
+				northPanel.setLayout(new BoxLayout(northPanel, BoxLayout.X_AXIS));
+				northPanel.add(selector);
+				
+				JButton button;
+				button = new JButton("show widths");
+				button.addActionListener(e -> showColWidths());
+				northPanel.add(button);
+				button = new JButton("copy table content");
+				button.addActionListener(e -> copyTableContent());
+				northPanel.add(button);
+				
+				add(northPanel,BorderLayout.NORTH);
+			} else
+				add(selector,BorderLayout.NORTH);
 			
-			JButton button;
-			button = new JButton("show widths");
-			button.addActionListener(e -> showColWidths());
-			northPanel.add(button);
-			button = new JButton("copy table content");
-			button.addActionListener(e -> copyTableContent());
-			northPanel.add(button);
-			
-//			add(selector,BorderLayout.NORTH);
-			add(northPanel,BorderLayout.NORTH);
 			add(tableScrollPane,BorderLayout.CENTER);
 			
 			changeSelection( selector.getSelectedIndex() );
@@ -303,13 +306,15 @@ class SaveGameView extends JPanel {
 			appendValue("Total PlayTime", data.getTotalPlayTime() );
 			appendValue("Hazard Time Alive", data.getHazardTimeAlive() );
 			
-			appendEmptyLine();
-			appendValue("Test value 1 (Bool)"   , data.getTestBool   ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-			appendValue("Test value 2 (Integer)", data.getTestInteger("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-			appendValue("Test value 3 (Float)"  , data.getTestFloat  ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-			appendValue("Test value 4 (String)" , data.getTestString ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-			appendValue("Test value 5 (Float)"  , Type.Float  , "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
-			appendValue("Test value 6 (Integer)", Type.Integer, "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
+			if (SaveViewer.DEBUG) {
+				appendEmptyLine();
+				appendValue("Test value 1 (Bool)"   , data.getTestBool   ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
+				appendValue("Test value 2 (Integer)", data.getTestInteger("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
+				appendValue("Test value 3 (Float)"  , data.getTestFloat  ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
+				appendValue("Test value 4 (String)" , data.getTestString ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
+				appendValue("Test value 5 (Float)"  , Type.Float  , "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
+				appendValue("Test value 6 (Integer)", Type.Integer, "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
+			}
 		}
 		
 		private void appendEmptyLine() {

@@ -34,7 +34,9 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 
 public class SaveViewer implements ActionListener {
-
+	
+	static final boolean DEBUG = false;
+	
 	private static StandardMainWindow mainWindow;
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
@@ -177,7 +179,7 @@ public class SaveViewer implements ActionListener {
 			mainWindow.setTitle("No Man's Sky - Viewer");
 		else
 			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.currentSelected.file.getPath());
-		System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
+		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
 	}
 
 	private class ContentPane extends JPanel {
