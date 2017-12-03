@@ -14,6 +14,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
@@ -233,8 +234,12 @@ class TreeView {
 
 	static class JsonTreeNode extends AbstractTreeNode<JsonTreeNode> {
 
-		public JsonTreeNode(JSON_Object json_Object) {
-			this(null,null,new ObjectValue(json_Object));
+		public JsonTreeNode(JSON_Object data) {
+			this(null,null,new ObjectValue(data));
+		}
+
+		public JsonTreeNode(JSON_Array data) {
+			this(null,null,new ArrayValue(data));
 		}
 
 		private JsonTreeNode(JsonTreeNode parent, String name, Value value) {

@@ -14,6 +14,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -97,6 +98,8 @@ public class SaveViewer implements ActionListener {
 			String fs = prop.get("file.separator").toString();
 			String path = home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
 			inputFileChooser.setCurrentDirectory(new File(path));
+			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
+			JOptionPane.showMessageDialog(mainWindow, message, "Current folder", JOptionPane.INFORMATION_MESSAGE);
 			break;
 		}
 		case Open:
@@ -106,7 +109,7 @@ public class SaveViewer implements ActionListener {
 				JSON_Object new_json_data = new JSON_Parser(selectedFile).parse();
 				log_ln(" done");
 				if (new_json_data!=null) {
-					SaveGameView saveGameView = new SaveGameView(selectedFile,new_json_data);
+					SaveGameView saveGameView = new SaveGameView(selectedFile,new SaveGameData(new_json_data));
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
 					updateWindowTitle();
@@ -133,7 +136,7 @@ public class SaveViewer implements ActionListener {
 				);
 				if (htmlFileChooser.showSaveDialog(mainWindow)==JFileChooser.APPROVE_OPTION) {
 					File selectedFile = htmlFileChooser.getSelectedFile();
-					FileExport.writeToHTML(contentPane.currentSelected.file.getName(),contentPane.currentSelected.json_data,selectedFile);
+					FileExport.writeToHTML(contentPane.currentSelected.file.getName(),contentPane.currentSelected.data.json_data,selectedFile);
 				}
 			}
 			break;
@@ -147,7 +150,7 @@ public class SaveViewer implements ActionListener {
 				);
 				if (jsonFileChooser.showSaveDialog(mainWindow)==JFileChooser.APPROVE_OPTION) {
 					File selectedFile = jsonFileChooser.getSelectedFile();
-					FileExport.writeToJSON(contentPane.currentSelected.json_data,selectedFile);
+					FileExport.writeToJSON(contentPane.currentSelected.data.json_data,selectedFile);
 				}
 			}
 			break;
@@ -298,7 +301,7 @@ public class SaveViewer implements ActionListener {
 			SaveGameView sg1 = loadedSaveGames.get(index1);
 			SaveGameView sg2 = loadedSaveGames.get(index2);
 			log("Set tree to files \"%s\" and \"%s\" ...",sg1.file.getPath(),sg2.file.getPath());
-			tree.setModel(new DefaultTreeModel(new TreeView.CompareTreeNode(sg1.json_data,sg2.json_data)));
+			tree.setModel(new DefaultTreeModel(new TreeView.CompareTreeNode(sg1.data.json_data,sg2.data.json_data)));
 			tree.setCellRenderer(new TreeView.CompareTreeNode.CellRenderer());
 			log_ln(" done");
 		}
