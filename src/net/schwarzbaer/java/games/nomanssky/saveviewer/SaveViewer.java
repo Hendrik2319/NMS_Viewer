@@ -30,12 +30,12 @@ import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
 	
-	static final boolean DEBUG = false;
+	static final boolean DEBUG = true;
 	
 	private static StandardMainWindow mainWindow;
 	private JFileChooser inputFileChooser;
@@ -46,17 +46,30 @@ public class SaveViewer implements ActionListener {
 	private Vector<SaveGameView> loadedSaveGames;
 
 	public static void main(String[] args) {
+		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
+		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
+		
+//		writeUIDefaults("UIManagerDefaults",UIManager.getDefaults());
+//		writeUIDefaults("LookAndFeelDefaults",UIManager.getLookAndFeelDefaults());
+		
 		new SaveViewer().createGUI();
 	}
+
+//	private static void writeUIDefaults(String title, UIDefaults defaults) {
+//		System.out.println(title+".keys: [");
+//		Set<Object> keySet = defaults.keySet();
+//		TreeSet<Object> sortedSet = new TreeSet<Object>(Comparator.nullsLast((o1, o2) -> o1.toString().compareTo(o2.toString())));
+//		sortedSet.addAll(keySet);
+//		for (Object key:sortedSet)
+//			System.out.println("\t"+key);
+//		System.out.println("]");
+//	}
 	
 	public SaveViewer() {
 		loadedSaveGames = new Vector<SaveGameView>();
 	}
 
 	private void createGUI() {
-		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
-		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
-		
 		inputFileChooser = new JFileChooser("./");
 		inputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		inputFileChooser.setMultiSelectionEnabled(false);
@@ -111,7 +124,8 @@ public class SaveViewer implements ActionListener {
 				JSON_Object new_json_data = new JSON_Parser(selectedFile).parse();
 				log_ln(" done");
 				if (new_json_data!=null) {
-					SaveGameView saveGameView = new SaveGameView(selectedFile,new SaveGameData(new_json_data));
+					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+					SaveGameView saveGameView = new SaveGameView(selectedFile,saveGameData);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
 					updateWindowTitle();

@@ -19,24 +19,112 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 public class SaveGameData {
 
-	final JSON_Object json_data;
 	Error error;
 	String errorMessage;
+	
+	final JSON_Object json_data;
 	Stats stats;
+	KnownWords knownWords;
 
 	public SaveGameData(JSON_Object json_data) {
 		this.json_data = json_data;
-		parseStats();
 	}
 	
+	public SaveGameData parse() {
+		parseStats();
+		parseKnownWords();
+		return this;
+	}
+
+	private void parseKnownWords() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","KnownWords");
+		if (arrayValue==null)
+			knownWords = null;
+		else {
+			knownWords = new KnownWords(this).parse(arrayValue);
+			if (!knownWords.notParsedKnownWords.isEmpty())
+				System.out.println("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
+		}
+	}
+
 	private void parseStats() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
 		if (arrayValue==null)
 			stats = null;
-		else
-			stats = new Stats(this,arrayValue);
+		else {
+			stats = new Stats(this).parse(arrayValue);
+			if (!stats.notParsedStats.isEmpty())
+				System.out.println("Found "+stats.notParsedStats.size()+" not parseable Stats.");
+		}
 	}
 
+	static final class KnownWords {
+
+		private final SaveGameData data;
+		Vector<KnownWord> wordList;
+		JSON_Array notParsedKnownWords;
+		int[] wordCounts;
+
+		public KnownWords(SaveGameData data) {
+			this.data = data;
+			this.wordList = new Vector<>();
+			this.wordCounts = null;
+			notParsedKnownWords = new JSON_Array();
+		}
+	
+		public KnownWords parse(JSON_Array knownWordsArray) {
+			for (Value knownWordValue : knownWordsArray) {
+				if (!isOK(knownWordValue, Type.Object)) { notParsedKnownWords.add(knownWordValue); continue; }
+				JSON_Object knownWordObj = ((ObjectValue)knownWordValue).value;
+				
+				KnownWord knownWord = new KnownWord();
+				
+				knownWord.word = data.getStringValue(knownWordObj,"Word");
+				if (knownWord.word==null) { notParsedKnownWords.add(knownWordValue); continue; }
+				
+				JSON_Array races = data.getArrayValue(knownWordObj,"Races");
+				if (races==null) { notParsedKnownWords.add(knownWordValue); continue; }
+				knownWord.races = new boolean[races.size()];
+				
+				boolean errorOccured = false;
+				for (int i=0; i<knownWord.races.length; ++i) {
+					Value raceBoolValue = races.get(i);
+					if (!isOK(raceBoolValue, Type.Bool)) { errorOccured=true; break; }
+					knownWord.races[i] = ((BoolValue)raceBoolValue).value;
+				}
+				if (errorOccured) { notParsedKnownWords.add(knownWordValue); continue; }
+				
+				wordList.add(knownWord);
+			}
+			wordList.sort(null);
+			
+			int numberOfRaces = 0;
+			for (KnownWord word:wordList)
+				numberOfRaces = Math.max(numberOfRaces, word.races.length);
+			
+			wordCounts = new int[numberOfRaces];
+			for (int i=0; i<numberOfRaces; ++i) wordCounts[i] = 0;
+			
+			for (KnownWord word:wordList)
+				for (int i=0; i<word.races.length; ++i)
+					if (word.races[i]) ++wordCounts[i];
+			
+			return this;
+		}
+		
+		
+		static class KnownWord implements Comparable<KnownWord>{
+			
+			String word;
+			boolean[] races;
+			
+			@Override
+			public int compareTo(KnownWord o) {
+				return this.word.compareTo(o.word);
+			}
+		}
+	}
+	
 	final static class Stats {
 		
 		Vector<StatValue> globalStats;
@@ -44,12 +132,15 @@ public class SaveGameData {
 		JSON_Array notParsedStats;
 		private final SaveGameData data;
 
-		public Stats(SaveGameData data, JSON_Array statList) {
+		public Stats(SaveGameData data) {
 			this.data = data;
 			globalStats = null;
 			planetStats = new Vector<>();
+			notParsedStats = new JSON_Array();
 			KnownID.setOrderNumbers();
-			
+		}
+
+		public Stats parse(JSON_Array statList) {
 			for (Value groupValue : statList) {
 				if (!isOK(groupValue,Type.Object)) { notParsedStats.add(groupValue); continue; }
 				JSON_Object group = ((ObjectValue)groupValue).value;
@@ -96,6 +187,7 @@ public class SaveGameData {
 					{ notParsedStats.add(groupValue); continue; }
 				}
 			}
+			return this;
 		}
 
 		private void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {

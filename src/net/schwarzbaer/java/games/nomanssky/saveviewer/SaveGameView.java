@@ -15,8 +15,6 @@ import java.util.function.Function;
 
 import javax.activation.DataHandler;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -34,6 +32,8 @@ import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords.KnownWord;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TreeView.JsonTreeNode;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
@@ -64,8 +64,8 @@ class SaveGameView extends JPanel {
 		tabbedPane.setPreferredSize(new Dimension(600, 500));
 		
 		tabbedPane.addTab("General",new GeneralDataPanel());
-		if (data.stats!=null)
-			tabbedPane.addTab("Stats",new StatsPanel());
+		if (data.stats     !=null) tabbedPane.addTab("Stats",new StatsPanel());
+		if (data.knownWords!=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel());
 		
 		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel());
 		
@@ -87,6 +87,198 @@ class SaveGameView extends JPanel {
 	}
 
 
+	private class KnownWordsPanel extends JPanel {
+		private static final long serialVersionUID = 7096092479075372171L;
+		
+		private JTable table;
+		
+		public KnownWordsPanel() {
+			super(new BorderLayout(3, 3));
+			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+			
+			KnownWordsTableModel tableModel = new KnownWordsTableModel(data.knownWords);
+			table = new JTable(tableModel);
+			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			tableScrollPane.setPreferredSize(new Dimension(600, 500));
+			tableModel.setColumnWidths(table);
+			
+			if (SaveViewer.DEBUG)
+				new DebugTableContextMenu(table);
+			
+			add(tableScrollPane,BorderLayout.CENTER);
+		}
+	
+	}
+
+	private class StatsPanel extends JPanel {
+		private static final long serialVersionUID = -1541256209397699528L;
+		
+		private JTable table;
+		
+		public StatsPanel() {
+			super(new BorderLayout(3, 3));
+			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+			
+			table = new JTable();
+			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			tableScrollPane.setPreferredSize(new Dimension(600, 500));
+			
+			Vector<String> statConfigs = new Vector<>();
+			statConfigs.add("Global");
+			statConfigs.add("All Planets");
+			statConfigs.addAll(convertVector(data.stats.planetStats, t -> "Planet "+t.address ));
+			
+			JComboBox<String> selector = new JComboBox<>(statConfigs);
+			selector.addActionListener(e -> changeSelection( selector.getSelectedIndex() ));
+			
+			if (SaveViewer.DEBUG)
+				new DebugTableContextMenu(table);
+				
+			add(selector,BorderLayout.NORTH);
+			add(tableScrollPane,BorderLayout.CENTER);
+			
+			changeSelection( selector.getSelectedIndex() );
+		}
+
+		private void changeSelection(int index) {
+			switch (index) {
+			case -1:
+				table.setModel(new DefaultTableModel());
+				break;
+			case 0: {
+				StatsTableModel tableModel = new StatsTableModel(data.stats.globalStats);
+				table.setModel(tableModel);
+				tableModel.setColumnWidths(table);
+			} break;
+			case 1:
+				table.setModel(new DefaultTableModel());
+				//tableModel.setColumnWidths(table);
+				break;
+			default: {
+				int planetIndex = index-2;
+				StatsTableModel tableModel = new StatsTableModel(data.stats.planetStats.get(planetIndex).stats);
+				table.setModel(tableModel);
+				tableModel.setColumnWidths(table);
+			} break;
+			}
+		}
+	}
+	
+	private static class KnownWordsTableModel implements TableModel {
+		
+		private enum Column { WordID, TranslatedWord, Race }
+		private final static Column[] columns = { Column.WordID, Column.TranslatedWord };
+	
+		private KnownWords knownWords;
+		private int numberOfRaces;
+
+		public KnownWordsTableModel(KnownWords knownWords) {
+			this.knownWords = knownWords;
+			numberOfRaces = this.knownWords.wordCounts.length;
+		}
+		
+		@Override public void addTableModelListener(TableModelListener l) {}
+		@Override public void removeTableModelListener(TableModelListener l) {}
+		
+		private Column getColumnID(int columnIndex) {
+			if (columnIndex<0) return null;
+			if (columnIndex<columns.length) return columns[columnIndex];
+			if (columnIndex<columns.length+numberOfRaces) return Column.Race;
+			return null;
+		}
+	
+		@Override public int getRowCount() { return knownWords.wordList.size()+1; }
+		@Override public int getColumnCount() { return columns.length+numberOfRaces; }
+		@Override public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
+		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {}
+		
+		@Override
+		public String getColumnName(int columnIndex) {
+			Column col = getColumnID(columnIndex);
+			switch(col) {
+			case WordID: return "ID";
+			case TranslatedWord: return "Word";
+			case Race:
+				switch(columnIndex-columns.length) {
+				case 0: return "Gek";
+				case 1: return "Vy'keen";
+				case 2: return "Korvax";
+				case 4: return "Atlas";
+				default:
+					return "Race "+(columnIndex-columns.length);
+				}
+			}
+			return "???["+columnIndex+"]";
+		}
+	
+		@Override
+		public Class<?> getColumnClass(int columnIndex) {
+			Column col = getColumnID(columnIndex);
+			switch(col) {
+			case WordID:
+			case TranslatedWord: return String.class;
+			case Race: return Object.class;
+			}
+			return Object.class;
+		}
+	
+		@Override
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			if (rowIndex<0) return null;
+			if (rowIndex>=knownWords.wordList.size()+1) return null;
+			
+			Column col = getColumnID(columnIndex);
+			
+			if (col==null) return null;
+			
+			if (rowIndex==0) {
+				switch(col) {
+				case WordID: return "<number of words>";
+				case TranslatedWord: return "";
+				case Race:
+					int race = columnIndex-columns.length;
+					return knownWords.wordCounts[race];
+				}
+			} else {
+				KnownWord knownWord = knownWords.wordList.get(rowIndex-1);
+				if (knownWord==null) return null;
+				
+				switch(col) {
+				case WordID: return knownWord.word;
+				case TranslatedWord: return "";
+				case Race:
+					int race = columnIndex-columns.length;
+					return (race>=knownWord.races.length)?"???":(knownWord.races[race]?"known":"");
+				}
+			}
+			return null;
+		}
+	
+		public void setColumnWidths(JTable table) {
+			TableColumnModel columnModel = table.getColumnModel();
+			for (int i=0; i<columnModel.getColumnCount(); ++i)
+				setColumnWidth(i,columnModel.getColumn(i));
+		}
+	
+		private void setColumnWidth(int columnIndex, TableColumn column) {
+			Column col = getColumnID(columnIndex);
+			switch(col) {
+			case WordID        : setColumnWidth(column,50,-1,120,120); break;
+			case TranslatedWord: setColumnWidth(column,50,-1,100,100); break;
+			case Race          : setColumnWidth(column,20,-1, 50, 50); break;
+			}
+		}
+	
+		private void setColumnWidth(TableColumn column, int min, int max, int preferred, int width) {
+			if (min>=0) column.setMinWidth(min);
+			if (max>=0) column.setMinWidth(max);
+			if (preferred>=0) column.setPreferredWidth(preferred);
+			if (width    >=0) column.setWidth(width);
+		}
+	}
+
 	private static class StatsTableModel implements TableModel {
 		
 		enum Column { ID, Name, IntValue, FloatValue, Denominator }
@@ -106,7 +298,7 @@ class SaveGameView extends JPanel {
 			if (columnIndex>=columns.length) return null;
 			return columns[columnIndex];
 		}
-
+	
 		@Override public int getRowCount() { return statsList.size(); }
 		@Override public int getColumnCount() { return columns.length; }
 		@Override public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
@@ -158,13 +350,13 @@ class SaveGameView extends JPanel {
 			}
 			return null;
 		}
-
+	
 		public void setColumnWidths(JTable table) {
 			TableColumnModel columnModel = table.getColumnModel();
 			for (int i=0; i<columnModel.getColumnCount(); ++i)
 				setColumnWidth(i,columnModel.getColumn(i));
 		}
-
+	
 		private void setColumnWidth(int columnIndex, TableColumn column) {
 			// [125, 91, 59, 75, 36]
 			Column col = getColumnID(columnIndex);
@@ -176,7 +368,7 @@ class SaveGameView extends JPanel {
 			case Denominator: setColumnWidth(column,20,-1, 40, 40); break;
 			}
 		}
-
+	
 		private void setColumnWidth(TableColumn column, int min, int max, int preferred, int width) {
 			if (min>=0) column.setMinWidth(min);
 			if (max>=0) column.setMinWidth(max);
@@ -185,100 +377,71 @@ class SaveGameView extends JPanel {
 		}
 	}
 
-	private class StatsPanel extends JPanel {
-		private static final long serialVersionUID = -1541256209397699528L;
-		
-		private JTable table;
-		
-		public StatsPanel() {
-			super(new BorderLayout(3, 3));
-			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-			
-			table = new JTable();
-			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-			JScrollPane tableScrollPane = new JScrollPane(table);
-			tableScrollPane.setPreferredSize(new Dimension(600, 500));
-			
-			Vector<String> statConfigs = new Vector<>();
-			statConfigs.add("Global");
-			statConfigs.add("All Planets");
-			statConfigs.addAll(convertVector(data.stats.planetStats, t -> "Planet "+t.address ));
-			
-			JComboBox<String> selector = new JComboBox<>(statConfigs);
-			selector.addActionListener(e -> changeSelection( selector.getSelectedIndex() ));
-			
-			if (SaveViewer.DEBUG) {
-				JPanel northPanel = new JPanel();
-				northPanel.setLayout(new BoxLayout(northPanel, BoxLayout.X_AXIS));
-				northPanel.add(selector);
-				
-				JButton button;
-				button = new JButton("show widths");
-				button.addActionListener(e -> showColWidths());
-				northPanel.add(button);
-				button = new JButton("copy table content");
-				button.addActionListener(e -> copyTableContent());
-				northPanel.add(button);
-				
-				add(northPanel,BorderLayout.NORTH);
-			} else
-				add(selector,BorderLayout.NORTH);
-			
-			add(tableScrollPane,BorderLayout.CENTER);
-			
-			changeSelection( selector.getSelectedIndex() );
-		}
-
-		private void copyTableContent() {
-			TableModel model = table.getModel();
-			StringBuilder sb = new StringBuilder();
-			for (int row=0; row<model.getRowCount(); ++row) {
-				for (int col=0; col<model.getColumnCount(); ++col) {
-					if (col>0) sb.append("\t");
-					sb.append(model.getValueAt(row, col));
-				}
-				sb.append("\r\n");
-			}
-			
-			Toolkit toolkit = Toolkit.getDefaultToolkit();
-			Clipboard clipboard = toolkit.getSystemClipboard();
-			DataHandler content = new DataHandler(sb.toString(),"text/plain");
-			try { clipboard.setContents(content,null); }
-			catch (IllegalStateException e1) { e1.printStackTrace(); }
-		}
-
-		private void showColWidths() {
-			TableColumnModel columnModel = table.getColumnModel();
-			int[] widths = new int[columnModel.getColumnCount()];
-			for (int i=0; i<columnModel.getColumnCount(); ++i)
-				widths[i] = columnModel.getColumn(i).getWidth();
-			System.out.println(Arrays.toString(widths));
-		}
-
-		private void changeSelection(int index) {
-			switch (index) {
-			case -1:
-				table.setModel(new DefaultTableModel());
-				break;
-			case 0: {
-				StatsTableModel tableModel = new StatsTableModel(data.stats.globalStats);
-				table.setModel(tableModel);
-				tableModel.setColumnWidths(table);
-			} break;
-			case 1:
-				table.setModel(new DefaultTableModel());
-				//tableModel.setColumnWidths(table);
-				break;
-			default: {
-				int planetIndex = index-2;
-				StatsTableModel tableModel = new StatsTableModel(data.stats.planetStats.get(planetIndex).stats);
-				table.setModel(tableModel);
-				tableModel.setColumnWidths(table);
-			} break;
-			}
-		}
-	}
+	private static class DebugTableContextMenu implements MouseListener, ActionListener {
 	
+		private JTable table;
+		private JPopupMenu contextMenu;
+		private enum TableContextMenuActionCommand { ShowWidths, CopyTableContent }
+		
+		public DebugTableContextMenu(JTable table) {
+			this.table = table;
+			table.addMouseListener(this);
+			
+			contextMenu = new JPopupMenu("Contextmenu");
+			contextMenu.add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths));
+			contextMenu.add(createMenuItem("Copy Table Content",TableContextMenuActionCommand.CopyTableContent));
+		}
+	
+		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand) {
+			JMenuItem menuItem = new JMenuItem(label);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
+		}
+		
+		@Override public void mousePressed(MouseEvent e) {}
+		@Override public void mouseReleased(MouseEvent e) {}
+		@Override public void mouseEntered(MouseEvent e) {}
+		@Override public void mouseExited(MouseEvent e) {}
+		@Override public void mouseClicked(MouseEvent e) {
+			if (e.getButton()==MouseEvent.BUTTON3) {
+				contextMenu.show(table, e.getX(), e.getY());
+			}
+		}
+	
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			TableContextMenuActionCommand actionCommand = TableContextMenuActionCommand.valueOf(e.getActionCommand());
+			switch(actionCommand) {
+			case CopyTableContent: {
+				TableModel model = table.getModel();
+				StringBuilder sb = new StringBuilder();
+				for (int row=0; row<model.getRowCount(); ++row) {
+					for (int col=0; col<model.getColumnCount(); ++col) {
+						if (col>0) sb.append("\t");
+						sb.append(model.getValueAt(row, col));
+					}
+					sb.append("\r\n");
+				}
+				
+				Toolkit toolkit = Toolkit.getDefaultToolkit();
+				Clipboard clipboard = toolkit.getSystemClipboard();
+				DataHandler content = new DataHandler(sb.toString(),"text/plain");
+				try { clipboard.setContents(content,null); }
+				catch (IllegalStateException e1) { e1.printStackTrace(); }
+			} break;
+			case ShowWidths: {
+				TableColumnModel columnModel = table.getColumnModel();
+				int[] widths = new int[columnModel.getColumnCount()];
+				for (int i=0; i<columnModel.getColumnCount(); ++i)
+					widths[i] = columnModel.getColumn(i).getWidth();
+				System.out.println(Arrays.toString(widths));
+			} break;
+			}
+		}
+	
+	}
+
 	private class GeneralDataPanel extends JPanel {
 		private static final long serialVersionUID = -3866983525686776846L;
 		private JTextArea textArea;
