@@ -1,9 +1,9 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Vector;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -23,17 +23,36 @@ public class SaveGameData {
 	String errorMessage;
 	
 	final JSON_Object json_data;
+	final General general;
+	Universe universe;
 	Stats stats;
 	KnownWords knownWords;
 
 	public SaveGameData(JSON_Object json_data) {
 		this.json_data = json_data;
+		this.general = new General(this);
+		this.stats = null;
+		this.knownWords = null;
+		this.universe = new Universe();
 	}
 	
 	public SaveGameData parse() {
 		parseStats();
 		parseKnownWords();
+		universe.sort();
+		//universe.writeToConsole();
 		return this;
+	}
+
+	private void parseStats() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
+		if (arrayValue==null)
+			stats = null;
+		else {
+			stats = new Stats(this).parse(arrayValue);
+			if (!stats.notParsedStats.isEmpty())
+				System.out.println("Found "+stats.notParsedStats.size()+" not parseable Stats.");
+		}
 	}
 
 	private void parseKnownWords() {
@@ -47,14 +66,284 @@ public class SaveGameData {
 		}
 	}
 
-	private void parseStats() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
-		if (arrayValue==null)
-			stats = null;
-		else {
-			stats = new Stats(this).parse(arrayValue);
-			if (!stats.notParsedStats.isEmpty())
-				System.out.println("Found "+stats.notParsedStats.size()+" not parseable Stats.");
+	static final class UniverseAddress implements Comparable<UniverseAddress> {
+
+		int galacticIndex;
+		int voxelX,voxelY,voxelZ;
+		int solarSystemIndex;
+		int planetIndex;
+		
+		public UniverseAddress(long address) {
+			voxelX = (int)( address      & 0xFFF);
+			voxelZ = (int)((address>>12) & 0xFFF);
+			voxelY = (int)((address>>24) & 0xFF);
+			galacticIndex    = (int)((address>>32) & 0xFF);
+			solarSystemIndex = (int)((address>>40) & 0xFFF);
+			planetIndex      = (int)((address>>52) & 0xF);
+			if (voxelX>2047) voxelX -= 4096;
+			if (voxelY> 127) voxelY -=  256;
+			if (voxelZ>2047) voxelZ -= 4096;
+		}
+
+		public UniverseAddress(int galacticIndex, int voxelX, int voxelY, int voxelZ, int solarSystemIndex, int planetIndex) {
+			this.galacticIndex = galacticIndex;
+			this.voxelX = voxelX;
+			this.voxelY = voxelY;
+			this.voxelZ = voxelZ;
+			this.solarSystemIndex = solarSystemIndex;
+			this.planetIndex = planetIndex;
+		}
+
+		@Override
+		public int compareTo(UniverseAddress other) {
+			if (other==null) return -1;
+			if (this.galacticIndex!=other.galacticIndex) return this.galacticIndex-other.galacticIndex;
+			if (this.voxelX!=other.voxelX) return this.voxelX-other.voxelX;
+			if (this.voxelZ!=other.voxelZ) return this.voxelZ-other.voxelZ;
+			if (this.voxelY!=other.voxelY) return this.voxelY-other.voxelY;
+			if (this.solarSystemIndex!=other.solarSystemIndex) return this.solarSystemIndex-other.solarSystemIndex;
+			if (this.planetIndex!=other.planetIndex) return this.planetIndex-other.planetIndex;
+			return 0;
+		}
+
+		public String getReducedSigBoostCode() {
+			return String.format("%04X:%04X:%04X", voxelX+2047, voxelY+127, voxelZ+2047);
+		}
+
+		public String getSigBoostCode() {
+			return String.format("%s:%04X", getReducedSigBoostCode(), solarSystemIndex);
+		}
+
+		public String getExtendedSigBoostCode() {
+			return String.format("G%d|%s|P%d", galacticIndex, getSigBoostCode(), planetIndex);
+		}
+
+		public long getAddress() {
+			long address = (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF);
+			address = address | (((long)galacticIndex   &0xFF )<<32);
+			address = address | (((long)solarSystemIndex&0xFFF)<<40);
+			address = address | (((long)planetIndex     &0xFF )<<52);
+			return address;
+		}
+
+		public long getPortalGlyphCode() {
+			long portalGlyphCode = (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF);
+			portalGlyphCode |= ((long)solarSystemIndex&0xFFF)<<32;
+			portalGlyphCode |= ((long)planetIndex     &0xFF )<<44;
+			return portalGlyphCode;
+		}
+
+		@Override
+		public String toString() {
+			return "UniverseAddress [\r\n"+
+					"\tgalacticIndex=" + galacticIndex + ",\r\n"+
+					"\tvoxel=("+voxelX+", "+voxelY+", "+voxelZ+"),\r\n"+
+					"\tsolarSystemIndex=" + solarSystemIndex + ",\r\n"+
+					"\tplanetIndex=" + planetIndex + "\r\n"+
+					"]";
+		}
+		
+		
+	}
+	
+	static final class Universe {
+
+		final Vector<Galaxy> galaxies;
+		
+		Universe() {
+			galaxies = new Vector<>();
+		}
+		
+		@Override
+		public String toString() {
+			return "Universe";
+		}
+
+
+		public void sort() {
+			galaxies.sort(Comparator.comparing(g -> g.galacticIndex));
+			for (Galaxy g:galaxies) {
+				g.galacticRegions.sort(Comparator.comparing((GalacticRegion gr) -> gr.voxelY).thenComparing(Comparator.comparing((GalacticRegion gr) -> gr.voxelY)).thenComparing(Comparator.comparing((GalacticRegion gr) -> gr.voxelZ)));
+				for (GalacticRegion gr:g.galacticRegions) {
+					gr.solarSystems.sort(Comparator.comparing(sys -> sys.solarSystemIndex));
+					for (SolarSystem sys:gr.solarSystems) {
+						sys.planets.sort(Comparator.comparing(p -> p.planetIndex));
+					}
+				}
+			}
+		}
+
+
+		public void writeToConsole() {
+			System.out.println("Universe:");
+			for (Galaxy g:galaxies) {
+				System.out.println("\t"+g+":");
+				for (GalacticRegion gr:g.galacticRegions) {
+					System.out.println("\t\t"+gr+":");
+					for (SolarSystem sys:gr.solarSystems) {
+						System.out.println("\t\t\t"+sys+":");
+						for (Planet p:sys.planets)
+							System.out.println("\t\t\t\tPlanet "+p);
+					}
+				}
+			}
+		}
+
+
+		public Planet getOrCreatePlanet(long address) {
+			UniverseAddress uAddr = new UniverseAddress(address);
+			
+			Galaxy galaxy = findGalaxy(uAddr.galacticIndex);
+			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,uAddr.galacticIndex));
+			
+			GalacticRegion galacticRegion = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
+			if (galacticRegion==null) galaxy.addRegion(galacticRegion=new GalacticRegion(galaxy,uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ));
+			
+			SolarSystem solarSystem = galacticRegion.findSolarSystem(uAddr.solarSystemIndex);
+			if (solarSystem==null) galacticRegion.addSolarSystem(solarSystem=new SolarSystem(galacticRegion,uAddr.solarSystemIndex));
+			
+			Planet planet = solarSystem.findPlanet(uAddr.planetIndex);
+			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,uAddr.planetIndex));
+			
+			return planet;
+		}
+
+		private Galaxy findGalaxy(int galacticIndex) {
+			for (Galaxy g:galaxies)
+				if (g.galacticIndex==galacticIndex)
+					return g;
+			return null;
+		}
+
+		static final class Galaxy {
+			
+			final Universe universe;
+			final int galacticIndex;
+			final Vector<GalacticRegion> galacticRegions;
+			
+			public Galaxy(Universe universe, int galacticIndex) {
+				this.universe = universe;
+				this.galacticIndex = galacticIndex;
+				this.galacticRegions = new Vector<>();
+			}
+
+			@Override
+			public String toString() {
+				return "Galaxy "+galacticIndex;
+			}
+
+			public void addRegion(GalacticRegion galacticRegion) {
+				galacticRegions.add(galacticRegion);
+			}
+
+			public GalacticRegion findRegion(int voxelX, int voxelY, int voxelZ) {
+				for (GalacticRegion gr:galacticRegions)
+					if (gr.voxelX==voxelX && gr.voxelY==voxelY && gr.voxelZ==voxelZ)
+						return gr;
+				return null;
+			}
+		}
+		
+		static final class GalacticRegion {
+			
+			final Galaxy galaxy;
+			final int voxelX,voxelY,voxelZ;
+			final Vector<SolarSystem> solarSystems;
+			
+			public GalacticRegion(Galaxy galaxy, int x, int y, int z) {
+				this.galaxy = galaxy;
+				this.voxelX = x;
+				this.voxelY = y;
+				this.voxelZ = z;
+				this.solarSystems = new Vector<>();
+			}
+
+			@Override
+			public String toString() {
+				return "Region "+voxelX+","+voxelY+","+voxelZ;
+			}
+
+			public void addSolarSystem(SolarSystem solarSystem) {
+				solarSystems.add(solarSystem);
+			}
+
+			public SolarSystem findSolarSystem(int solarSystemIndex) {
+				for (SolarSystem sys:solarSystems)
+					if (sys.solarSystemIndex==solarSystemIndex)
+						return sys;
+				return null;
+			}
+
+			public UniverseAddress getUniverseAddress() {
+				if (galaxy==null) return null;
+				return new UniverseAddress( galaxy.galacticIndex, voxelX,voxelY,voxelZ, 0,0 );
+			}
+		}
+		
+		static final class SolarSystem {
+			
+			final int solarSystemIndex;
+			final GalacticRegion galacticRegion;
+			final Vector<Planet> planets;
+			
+			public SolarSystem(GalacticRegion galacticRegion, int solarSystemIndex) {
+				this.galacticRegion = galacticRegion;
+				this.solarSystemIndex = solarSystemIndex;
+				this.planets = new Vector<>();
+			}
+
+			@Override
+			public String toString() {
+				return String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+			}
+
+			public void addPlanet(Planet planet) {
+				planets.add(planet);
+			}
+
+			public Planet findPlanet(int planetIndex) {
+				for (Planet p:planets)
+					if (p.planetIndex==planetIndex)
+						return p;
+				return null;
+			}
+
+			public UniverseAddress getUniverseAddress() {
+				if (galacticRegion==null) return null;
+				UniverseAddress ua = galacticRegion.getUniverseAddress();
+				ua.solarSystemIndex = solarSystemIndex;
+				return ua;
+			}
+		}
+		
+		static final class Planet {
+			
+			final int planetIndex;
+			final SolarSystem solarSystem;
+			private Stats.PlanetStats stats;
+			
+			public Planet(SolarSystem solarSystem, int planetIndex) {
+				this.solarSystem = solarSystem;
+				this.planetIndex = planetIndex;
+			}
+
+			public void setPlanetStats(Stats.PlanetStats stats) {
+				this.stats = stats;
+			}
+
+			@Override
+			public String toString() {
+				UniverseAddress ua = getUniverseAddress();
+				if (ua!=null) return ua.getExtendedSigBoostCode();
+				return "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
+			}
+
+			public UniverseAddress getUniverseAddress() {
+				if (solarSystem==null) return null;
+				UniverseAddress ua = solarSystem.getUniverseAddress();
+				ua.planetIndex = planetIndex;
+				return ua;
+			}
 		}
 	}
 
@@ -137,7 +426,7 @@ public class SaveGameData {
 			globalStats = null;
 			planetStats = new Vector<>();
 			notParsedStats = new JSON_Array();
-			KnownID.setOrderNumbers();
+			StatValue.KnownID.setOrderNumbers();
 		}
 
 		public Stats parse(JSON_Array statList) {
@@ -164,22 +453,31 @@ public class SaveGameData {
 					Value addressValue = group.getValue("Address");
 					if (addressValue==null) { notParsedStats.add(groupValue); continue; }
 					
-					String address = null;
+					long addressLong = -1;
 					switch(addressValue.type) {
 					case String:
 						if (!(addressValue instanceof StringValue)) { notParsedStats.add(groupValue); continue; }
-						address = ((StringValue)addressValue).value;
+						String addressStr = ((StringValue)addressValue).value;
+						if (!isPlanetAddressOK(addressStr)) { notParsedStats.add(groupValue); continue; }
+						addressLong = Long.parseLong(addressStr.substring(2), 16);
 						break;
 					case Integer:
 						if (!(addressValue instanceof IntegerValue)) { notParsedStats.add(groupValue); continue; }
-						Long value = ((IntegerValue)addressValue).value;
-						address = String.format("0x%014X (%d)", value, value);
+						addressLong = ((IntegerValue)addressValue).value;
 						break;
 					default:
 						{ notParsedStats.add(groupValue); continue; }
 					}
 					
-					planetStats.add(new PlanetStats(address,groupStats));
+					
+					Universe.Planet planet = data.universe.getOrCreatePlanet(addressLong);
+					
+					PlanetStats ps = new PlanetStats(planet);
+					fillInto(groupStats,ps.stats);
+					
+					planet.setPlanetStats(ps);
+					
+					planetStats.add(ps);
 					
 					break;
 					
@@ -191,7 +489,7 @@ public class SaveGameData {
 		}
 
 		private void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {
-			KnownID[] knownIDs = StatValue.KnownID.values();
+			StatValue.KnownID[] knownIDs = StatValue.KnownID.values();
 			for (Value value : stats) {
 				if (!isOK(value,Type.Object)) continue;
 				JSON_Object statObject = ((ObjectValue)value).value;
@@ -313,15 +611,19 @@ public class SaveGameData {
 			}
 		}
 		
-		class PlanetStats {
+		static class PlanetStats {
 			
-			final String address;
+			final Universe.Planet planet;
 			Vector<StatValue> stats;
 			
-			PlanetStats(String address, JSON_Array groupStats) {
-				this.address = address;
+			PlanetStats(Universe.Planet planet) {
+				this.planet = planet;
 				this.stats = new Vector<>();
-				fillInto(groupStats,stats);
+			}
+
+			@Override
+			public String toString() {
+				return "PlanetStats [planet=" + planet + ", stats=...]";
 			}
 		}
 	
@@ -341,6 +643,19 @@ public class SaveGameData {
 		return false;
 	}
 	
+	public static boolean isPlanetAddressOK(String addressStr) {
+		if (!addressStr.startsWith("0x")) return false;
+		if (addressStr.length()>2+1+3+2+2+3+3) return false;
+		for (int i=2; i<addressStr.length(); ++i) {
+			char ch = addressStr.charAt(i);
+			if ('0'<=ch && ch<='9') continue;
+			if ('a'<=ch && ch<='f') continue;
+			if ('A'<=ch && ch<='F') continue;
+			return false;
+		}
+		return true;
+	}
+
 	enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
 
 	private Value getValue(JSON_Object data, Object... path) {
@@ -450,20 +765,29 @@ public class SaveGameData {
 			return null;
 		}
 	}
-
-	public Long getUnits          () { return getIntegerValue( json_data, "PlayerStateData","Units"           ); }
-	public Long getPlayerHealth   () { return getIntegerValue( json_data, "PlayerStateData","Health"          ); }
-	public Long getPlayerShield   () { return getIntegerValue( json_data, "PlayerStateData","Shield"          ); }
-	public Long getShipHealth     () { return getIntegerValue( json_data, "PlayerStateData","ShipHealth"      ); }
-	public Long getShipShield     () { return getIntegerValue( json_data, "PlayerStateData","ShipShield"      ); }
-	public Long getTimeAlive      () { return getIntegerValue( json_data, "PlayerStateData","TimeAlive"       ); }
-	public Long getTotalPlayTime  () { return getIntegerValue( json_data, "PlayerStateData","TotalPlayTime"   ); }
-	public Long getHazardTimeAlive() { return getIntegerValue( json_data, "PlayerStateData","HazardTimeAlive" ); }
 	
-	public Boolean     getTestBool   (Object... path) { return getBoolValue   (json_data, path); }
-	public Long        getTestInteger(Object... path) { return getIntegerValue(json_data, path); }
-	public Double      getTestFloat  (Object... path) { return getFloatValue  (json_data, path); }
-	public String      getTestString (Object... path) { return getStringValue (json_data, path); }
-	public JSON_Array  getTestArray  (Object... path) { return getArrayValue  (json_data, path); }
-	public JSON_Object getTestObject (Object... path) { return getObjectValue (json_data, path); }
+	final static class General {
+		
+		private SaveGameData data;
+		
+		public General(SaveGameData data) {
+			this.data = data;
+		}
+		
+		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
+		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
+		public Long getPlayerShield   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          ); }
+		public Long getShipHealth     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      ); }
+		public Long getShipShield     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      ); }
+		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
+		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
+		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
+		
+		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
+		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
+		public Double      getTestFloat  (Object... path) { return data.getFloatValue  (data.json_data, path); }
+		public String      getTestString (Object... path) { return data.getStringValue (data.json_data, path); }
+		public JSON_Array  getTestArray  (Object... path) { return data.getArrayValue  (data.json_data, path); }
+		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
+	}
 }

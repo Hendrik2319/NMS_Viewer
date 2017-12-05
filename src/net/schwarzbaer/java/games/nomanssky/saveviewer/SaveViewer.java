@@ -29,6 +29,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
+import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
@@ -38,16 +40,46 @@ public class SaveViewer implements ActionListener {
 	static final boolean DEBUG = true;
 	
 	private static StandardMainWindow mainWindow;
+
+	static IndexOnlyIconSource portalGlyphsIS_100_90;
+	static IndexOnlyIconSource portalGlyphsIS_50_45;
+	static IconSource<ToolbarIcons> toolbarIS;
+	
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
 	private JFileChooser jsonFileChooser;
 	private ContentPane contentPane;
 	private ComparePanel compareTab;
 	private Vector<SaveGameView> loadedSaveGames;
-
+	
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
+		
+		portalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
+		portalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
+		
+		portalGlyphsIS_50_45 = new IconSource.IndexOnlyIconSource(50,45,4);
+		portalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
+		
+		toolbarIS = new IconSource<ToolbarIcons>(16,16){
+			@Override protected int getIconIndexInImage(ToolbarIcons key) {
+				switch(key) {
+				case SwitchFolder: return 1;
+				case Open        : return 1;
+				case Compare     : return 0;
+				case SaveAs      : return 3;
+				}
+			 	throw new IllegalArgumentException("Unknown icon key: "+key);
+			}};
+		toolbarIS.readIconsFromResource("/Toolbar.png");
+		
+//		long address = 4623450600164292L;
+//		System.out.printf("0x%015X\r\n",address);
+//		UniverseAddress uAddr = new UniverseAddress(address);
+//		System.out.println(uAddr);
+//		System.out.println(uAddr.getExtSigBoostCode());
+		
 		
 //		writeUIDefaults("UIManagerDefaults",UIManager.getDefaults());
 //		writeUIDefaults("LookAndFeelDefaults",UIManager.getLookAndFeelDefaults());
@@ -193,7 +225,7 @@ public class SaveViewer implements ActionListener {
 			mainWindow.setTitle("No Man's Sky - Viewer");
 		else
 			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.currentSelected.file.getPath());
-		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
+//		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
 	}
 
 	private class ContentPane extends JPanel {
@@ -216,7 +248,7 @@ public class SaveViewer implements ActionListener {
 			
 			currentSelected = null;
 			tabbedPane = new JTabbedPane();
-			tabbedPane.setPreferredSize(new Dimension(600, 500));
+			tabbedPane.setPreferredSize(new Dimension(620, 500));
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent e) {
@@ -245,15 +277,16 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
-			toolBar.add(createButton("Switch to NMS Savegame Folder", ActionCommand.SwitchFolder,true));
-			toolBar.add(createButton("Open Savegame", ActionCommand.Open,true));
-			toolBar.add(createButton("Compare Savegames", ActionCommand.Compare,false));
-			toolBar.add(createButton("Write as HTML", ActionCommand.WriteHTML,false));
-			toolBar.add(createButton("Write as JSON", ActionCommand.WriteJSON,false));
+			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchFolder,true));
+			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open, ActionCommand.Open,true));
+			toolBar.add(createButton("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
+			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
+			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
 		}
 
-		private JButton createButton(String title, ActionCommand actionCommand, boolean enabled) {
+		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
 			JButton button = new JButton(title);
+			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
 			button.setActionCommand(actionCommand.toString());
 			button.addActionListener(SaveViewer.this);
 			button.setEnabled(enabled);
@@ -262,6 +295,8 @@ public class SaveViewer implements ActionListener {
 		}
 		
 	}
+
+	enum ToolbarIcons { SwitchFolder, Open, SaveAs, Compare }
 
 	private class ComparePanel extends JPanel {
 		private static final long serialVersionUID = -876150147630145750L;

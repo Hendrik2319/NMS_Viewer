@@ -24,7 +24,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 class TreeView {
 
-	static class CompareTreeNode extends AbstractTreeNode<CompareTreeNode> {
+	static class CompareTreeNode extends AbstractDataTreeNode<CompareTreeNode> {
 		
 		enum Source { First, Second, Both }
 		enum Equal{ Equal, UnEqual, Unknown }
@@ -232,7 +232,7 @@ class TreeView {
 		
 	}
 
-	static class JsonTreeNode extends AbstractTreeNode<JsonTreeNode> {
+	static class JsonTreeNode extends AbstractDataTreeNode<JsonTreeNode> {
 
 		public JsonTreeNode(JSON_Object data) {
 			this(null,null,new ObjectValue(data));
@@ -271,21 +271,16 @@ class TreeView {
 		}
 	}
 
-	abstract static class AbstractTreeNode<TreeNodeType extends TreeNode> implements TreeNode {
+	abstract static class AbstractDataTreeNode<TreeNodeType extends AbstractDataTreeNode<TreeNodeType>> extends AbstractTreeNode<TreeNodeType> {
 		
-		protected final TreeNodeType parent;
 		protected final String name;
 		protected final Value data;
-		protected TreeNodeType[] children;
 		
-		public AbstractTreeNode(TreeNodeType parent, String name, Value data) {
-			this.parent = parent;
+		public AbstractDataTreeNode(TreeNodeType parent, String name, Value data) {
+			super(parent);
 			this.name = name;
 			this.data = data;
-			this.children = null;
 		}
-
-		abstract void createChildren();
 
 		@Override
 		public String toString() {
@@ -304,6 +299,27 @@ class TreeView {
 			}
 			return data.toString();
 		}
+		
+		@Override
+		public boolean getAllowsChildren() {
+			return (data.type == Type.Object) || (data.type == Type.Array);
+		}
+		
+	}
+
+	abstract static class AbstractTreeNode<TreeNodeType extends TreeNode> implements TreeNode {
+		
+		protected final TreeNodeType parent;
+		protected TreeNodeType[] children;
+		
+		public AbstractTreeNode(TreeNodeType parent) {
+			this.parent = parent;
+			this.children = null;
+		}
+		
+		@Override
+		abstract public String toString();
+		abstract void createChildren();
 
 		@Override
 		public TreeNode getParent() {
@@ -319,11 +335,6 @@ class TreeView {
 		@Override
 		public boolean isLeaf() {
 			return getChildCount()==0;
-		}
-		
-		@Override
-		public boolean getAllowsChildren() {
-			return (data.type == Type.Object) || (data.type == Type.Array);
 		}
 	
 		@Override
