@@ -6,7 +6,16 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -32,11 +41,14 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
 	
+	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
+
 	static final boolean DEBUG = true;
 	
 	private static StandardMainWindow mainWindow;
@@ -73,6 +85,8 @@ public class SaveViewer implements ActionListener {
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
 		toolbarIS.readIconsFromResource("/Toolbar.png");
+		
+		loadKnownStatIDsFromFile();
 		
 //		long address = 4623450600164292L;
 //		System.out.printf("0x%015X\r\n",address);
@@ -372,5 +386,47 @@ public class SaveViewer implements ActionListener {
 		
 		File copyfile = new File("./"+sourcefile.getName()+".copy.txt"); 
 		FileExport.writeToJSON(json_Object,copyfile);
+	}
+
+	public static void loadKnownStatIDsFromFile() {
+		File file = new File(FILE_KNOWN_STAT_ID);
+		if (!file.isFile()) return;
+		
+		System.out.println();
+		String str;
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+			while ((str=in.readLine())!=null) {
+				int pos = str.indexOf('=');
+				if (pos<0) continue;
+				
+				KnownID knownID;
+				try { knownID = SaveGameData.Stats.StatValue.KnownID.valueOf(str.substring(0, pos)); }
+				catch (Exception e) { knownID = null; }
+				if (knownID == null) continue;
+				
+				String fullName = str.substring(pos+1);
+				if (!fullName.equals(knownID.fullName)) {
+					System.out.printf("Changed StatValue.KnownID.fullName found: [old]\"%s\" -> [new]\"%s\"\r\n",knownID.fullName,fullName);
+					knownID.fullName = fullName;
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println();
+	}
+
+	public static void saveKnownStatIDsToFile() {
+		KnownID[] knownIDs = SaveGameData.Stats.StatValue.KnownID.values();
+		
+		File file = new File(FILE_KNOWN_STAT_ID);
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+			for (KnownID id:knownIDs)
+				out.printf("%s=%s\r\n",id.toString(),id.fullName);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 	}
 }

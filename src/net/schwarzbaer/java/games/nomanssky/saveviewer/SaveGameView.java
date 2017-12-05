@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Function;
 
@@ -29,6 +30,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -279,7 +281,7 @@ class SaveGameView extends JPanel {
 			table = new JTable(tableModel);
 			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			JScrollPane tableScrollPane = new JScrollPane(table);
-			tableScrollPane.setPreferredSize(new Dimension(600, 500));
+			tableScrollPane.setPreferredSize(new Dimension(800, 500));
 			tableModel.setColumnWidths(table);
 			
 			if (SaveViewer.DEBUG)
@@ -359,11 +361,11 @@ class SaveGameView extends JPanel {
 			
 			if (rowIndex==0) {
 				switch(col) {
-				case WordID: return "<number of words>";
+				case WordID: return String.format("%d different words", knownWords.wordList.size());
 				case TranslatedWord: return "";
 				case Race:
 					int race = columnIndex-columns.length;
-					return knownWords.wordCounts[race];
+					return String.format(Locale.ENGLISH,"%d (%1.1f%%)", knownWords.wordCounts[race], knownWords.wordCounts[race]*100.0f/knownWords.wordList.size());
 				}
 			} else {
 				KnownWord knownWord = knownWords.wordList.get(rowIndex-1);
@@ -391,7 +393,7 @@ class SaveGameView extends JPanel {
 			switch(col) {
 			case WordID        : setColumnWidth(column,50,-1,120,120); break;
 			case TranslatedWord: setColumnWidth(column,50,-1,100,100); break;
-			case Race          : setColumnWidth(column,20,-1, 50, 50); break;
+			case Race          : setColumnWidth(column,20,-1, 80, 80); break;
 			}
 		}
 	
@@ -464,13 +466,24 @@ class SaveGameView extends JPanel {
 		private final static Column[] columns = { Column.ID, Column.Name, Column.IntValue, Column.FloatValue, Column.Denominator };
 		
 		private Vector<StatValue> statsList;
+
+		private Vector<TableModelListener> tableModelListeners;
 	
 		public StatsTableModel(Vector<StatValue> statsList) {
 			this.statsList = statsList;
+			this.tableModelListeners = new Vector<TableModelListener>();
 		}
 		
-		@Override public void addTableModelListener(TableModelListener l) {}
-		@Override public void removeTableModelListener(TableModelListener l) {}
+		@Override public void addTableModelListener(TableModelListener l) { tableModelListeners.add(l); }
+		@Override public void removeTableModelListener(TableModelListener l) { tableModelListeners.remove(l); }
+		
+		private void fireTableModelEvent(TableModelEvent e) {
+			for (TableModelListener tml:tableModelListeners)
+				tml.tableChanged(e);
+		}
+		private void fireTableCellUpdate(int rowIndex, int columnIndex) {
+			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, columnIndex, TableModelEvent.UPDATE));
+		}
 		
 		private Column getColumnID(int columnIndex) {
 			if (columnIndex<0) return null;
@@ -480,8 +493,25 @@ class SaveGameView extends JPanel {
 	
 		@Override public int getRowCount() { return statsList.size(); }
 		@Override public int getColumnCount() { return columns.length; }
-		@Override public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
-		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {}
+		
+		@Override public boolean isCellEditable(int rowIndex, int columnIndex) {
+			Column col = getColumnID(columnIndex);
+			if (col==Column.Name) return true;
+			return false;
+		}
+		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+			Column col = getColumnID(columnIndex);
+			if (col!=Column.Name) { fireTableCellUpdate(rowIndex, columnIndex); return; }
+			
+			if (rowIndex<0 || rowIndex>=statsList.size()) { fireTableCellUpdate(rowIndex, columnIndex); return; }
+			StatValue statValue = statsList.get(rowIndex);
+			
+			if (statValue.knownID==null || aValue==null) { fireTableCellUpdate(rowIndex, columnIndex); return; }
+			
+			statValue.knownID.fullName = aValue.toString();
+			SaveViewer.saveKnownStatIDsToFile();
+			
+		}
 		
 		@Override
 		public String getColumnName(int columnIndex) {
@@ -541,7 +571,7 @@ class SaveGameView extends JPanel {
 			Column col = getColumnID(columnIndex);
 			switch(col) {
 			case ID         : setColumnWidth(column,50,-1,120,120); break;
-			case Name       : setColumnWidth(column,50,-1,160,160); break;
+			case Name       : setColumnWidth(column,50,-1,210,210); break;
 			case IntValue   : setColumnWidth(column,20,-1, 70, 70); break;
 			case FloatValue : setColumnWidth(column,20,-1, 70, 70); break;
 			case Denominator: setColumnWidth(column,20,-1, 40, 40); break;
