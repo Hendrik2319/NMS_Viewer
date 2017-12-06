@@ -524,7 +524,6 @@ public class SaveViewer implements ActionListener {
 	public static void saveNamesOfUniverseObjectsToFile(Universe universe) {
 		File file = new File(FILE_UNIVERSE_OBJECT_NAMES);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			System.out.println("Universe:");
 			for (Galaxy g:universe.galaxies) {
 				for (GalacticRegion gr:g.galacticRegions) {
 					for (SolarSystem sys:gr.solarSystems) {
