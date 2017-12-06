@@ -459,15 +459,15 @@ public class SaveViewer implements ActionListener {
 				if (ua.isPlanet()) {
 					Planet planet = universe.findPlanet(ua);
 					if (planet!=null) {
-						planet.setName(nameStr);
-						System.out.printf("Name of planet %s is known: \"%s\"\r\n",ua.getExtendedSigBoostCode(),nameStr);
+						planet.setUserDefinedName(nameStr);
+						System.out.printf("Name of planet %s was defined: \"%s\"\r\n",ua.getExtendedSigBoostCode(),nameStr);
 					}
 				}
 				if (ua.isSolarSystem()) {
 					SolarSystem system = universe.findSolarSystem(ua);
 					if (system!=null) {
-						system.setName(nameStr);
-						System.out.printf("Name of solar system %s is known: \"%s\"\r\n",ua.getSigBoostCode(),nameStr);
+						system.setUserDefinedName(nameStr);
+						System.out.printf("Name of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),nameStr);
 					}
 				}
 			}
@@ -486,14 +486,14 @@ public class SaveViewer implements ActionListener {
 			for (Galaxy g:universe.galaxies) {
 				for (GalacticRegion gr:g.galacticRegions) {
 					for (SolarSystem sys:gr.solarSystems) {
-						if (sys.hasName()) {
+						if (sys.hasUserDefinedName()) {
 							UniverseAddress ua = sys.getUniverseAddress();
-							out.printf("%014X=%s\r\n",ua.getAddress(),sys.getName());
+							out.printf("%014X=%s\r\n",ua.getAddress(),sys.getUserDefinedName());
 						}
 						for (Planet p:sys.planets)
-							if (p.hasName()) {
+							if (p.hasUserDefinedName()) {
 								UniverseAddress ua = p.getUniverseAddress();
-								out.printf("%014X=%s\r\n",ua.getAddress(),p.getName());
+								out.printf("%014X=%s\r\n",ua.getAddress(),p.getUserDefinedName());
 							}
 					}
 				}

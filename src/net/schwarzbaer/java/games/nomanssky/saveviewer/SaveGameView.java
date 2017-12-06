@@ -143,32 +143,34 @@ class SaveGameView extends JPanel {
 				return;
 			}
 			
-			if (ua.isPlanet     ()) setNameForUniverseAddress(ua, data.universe.getOrCreatePlanet(ua));
-			if (ua.isSolarSystem()) setNameForUniverseAddress(ua, data.universe.getOrCreateSolarSystem(ua));
+			if (ua.isPlanet     ()) setNameForUniverseAddress(ua, data.universe.getOrCreatePlanet     (ua), "planet"      );
+			if (ua.isSolarSystem()) setNameForUniverseAddress(ua, data.universe.getOrCreateSolarSystem(ua), "solar system");
 			
 			updateContent();
 		}
 
-		protected void setNameForUniverseAddress(UniverseAddress ua, SolarSystem system) {
-			String name = JOptionPane.showInputDialog(this, "New name for solar system "+ua.getExtendedSigBoostCode(), system.getName());
-			if (name!=null) {
-				system.setName(name);
+		protected void clearNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
+			String message = "Are you sure, that you want to clear user defined name of "+objectStr+" "+ua.getExtendedSigBoostCode()+"?";
+			String title = "Clear user defined name of "+objectStr;
+			if (JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION)) {
+				object.setUserDefinedName(null);
 				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
 			}
 		}
 
-		protected void setNameForUniverseAddress(UniverseAddress ua, Planet planet) {
-			String name = JOptionPane.showInputDialog(this, "New name for planet "+ua.getExtendedSigBoostCode(), planet.getName());
+		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getUserDefinedName());
 			if (name!=null) {
-				planet.setName(name);
+				object.setUserDefinedName(name);
 				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
 			}
-			planet.setName(name);
 		}
 	}
 
-	private static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener {
+	private static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
 		private static final long serialVersionUID = -4594889224613582352L;
+		
+		enum UniverseTreeActionCommand { ChangeName, ClearName }
 		
 		private JTree tree;
 		private DefaultTreeModel treeModel;
@@ -176,7 +178,11 @@ class SaveGameView extends JPanel {
 
 		private JTextArea textArea;
 		private JLabel portalGlyphs;
-		private JButton buttonSetName;
+
+		private UniverseTreeNode clickedNode;
+		private JPopupMenu contextMenu;
+		private JMenuItem menuItemSetName;
+		private JMenuItem menuItemClearName;
 
 		public UniversePanel(SaveGameData data) {
 			super(data);
@@ -188,29 +194,36 @@ class SaveGameView extends JPanel {
 			JScrollPane treeScrollPane = new JScrollPane(tree);
 			//treeScrollPane.setPreferredSize(new Dimension(600, 500));
 			tree.addTreeSelectionListener(this);
+			tree.addMouseListener(this);
+			//tree.setCellRenderer(new DefaultTreeCellRenderer());
+			
+			contextMenu = new JPopupMenu("Contextmenu");
+			contextMenu.add(menuItemSetName   = createMenuItem("Change Name",UniverseTreeActionCommand.ChangeName));
+			contextMenu.add(menuItemClearName = createMenuItem("Clear Name",UniverseTreeActionCommand.ClearName));
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
-			textArea.setPreferredSize(new Dimension(600, 100));
+			//textArea.setPreferredSize(new Dimension(600, 100));
+			textArea.setBorder(BorderFactory.createEtchedBorder());
 			
 			portalGlyphs = new JLabel();
-			portalGlyphs.setPreferredSize(new Dimension(50*12, 45*1));
+			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
+			portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 			
-			JPanel southPanel = new JPanel(new BorderLayout(3, 3));
-//			southPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder(""), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
-			southPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
-			southPanel.add(textArea,BorderLayout.CENTER);
-			southPanel.add(portalGlyphs,BorderLayout.SOUTH);
-			
-			buttonSetName = createButton("Set name",e -> setNameForSelectedNode());
-			
-			JPanel buttonPanel = new JPanel();
-			buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-			buttonPanel.add(buttonSetName);
+			JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
+			//eastPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
+			eastPanel.add(portalGlyphs,BorderLayout.NORTH);
+			eastPanel.add(textArea,BorderLayout.CENTER);
 			
 			add(treeScrollPane,BorderLayout.CENTER);
-			add(southPanel,BorderLayout.SOUTH);
-			add(buttonPanel,BorderLayout.EAST);
+			add(eastPanel,BorderLayout.EAST);
+		}
+
+		private JMenuItem createMenuItem(String label, UniverseTreeActionCommand actionCommand) {
+			JMenuItem menuItem = new JMenuItem(label);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
 		}
 		
 		@Override
@@ -223,23 +236,66 @@ class SaveGameView extends JPanel {
 					treeModel.nodeChanged((TreeNode)comp);
 			}
 		}
-
-		private void disableSetNameButton() {
-			changeSetNameButton(false,"Set Name");
-		}
 		
-		private void changeSetNameButton(boolean enabled, String title) {
-			buttonSetName.setEnabled(enabled);
-			buttonSetName.setText(title);
-		}
-		
-		private void setNameForSelectedNode() {
-			switch(selectedNode.type) {
-			case Planet     : setNameForUniverseAddress(selectedNode.planet     .getUniverseAddress(),selectedNode.planet     ); break;
-			case SolarSystem: setNameForUniverseAddress(selectedNode.solarSystem.getUniverseAddress(),selectedNode.solarSystem); break;
-			default:break;
+		private void setNameForClickedNode() {
+			if (clickedNode!=null) {
+				switch(clickedNode.type) {
+				case Planet     : setNameForUniverseAddress(clickedNode.planet     .getUniverseAddress(),clickedNode.planet     , "planet"      ); break;
+				case SolarSystem: setNameForUniverseAddress(clickedNode.solarSystem.getUniverseAddress(),clickedNode.solarSystem, "solar system"); break;
+				default:break;
+				}
+				treeModel.nodeChanged(clickedNode);
 			}
-			treeModel.nodeChanged(selectedNode);
+		}
+		
+		private void clearNameForClickedNode() {
+			if (clickedNode!=null) {
+				switch(clickedNode.type) {
+				case Planet     : clearNameForUniverseAddress(clickedNode.planet     .getUniverseAddress(),clickedNode.planet     , "planet"      ); break;
+				case SolarSystem: clearNameForUniverseAddress(clickedNode.solarSystem.getUniverseAddress(),clickedNode.solarSystem, "solar system"); break;
+				default:break;
+				}
+				treeModel.nodeChanged(clickedNode);
+			}
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
+			switch(actionCommand) {
+			case ChangeName: setNameForClickedNode(); break;
+			case ClearName : clearNameForClickedNode(); break;
+			}
+			clickedNode = null;
+		}
+
+		@Override public void mousePressed(MouseEvent e) {}
+		@Override public void mouseReleased(MouseEvent e) {}
+		@Override public void mouseEntered(MouseEvent e) {}
+		@Override public void mouseExited(MouseEvent e) {}
+		@Override public void mouseClicked(MouseEvent e) {
+			if (e.getButton()==MouseEvent.BUTTON3) {
+				TreePath selectedTreePath = tree.getPathForLocation(e.getX(), e.getY());
+				Object object = selectedTreePath.getLastPathComponent();
+				if (object instanceof UniverseTreeNode) {
+					clickedNode = (UniverseTreeNode)object;
+					switch(clickedNode.type) {
+					case Universe      : changeSetNameMenuItem(false,"Set Name",false); break;
+					case Galaxy        : changeSetNameMenuItem(false,"Set Name",false); break;
+					case GalacticRegion: changeSetNameMenuItem(false,"Set Name",false); break;
+					case SolarSystem   : changeSetNameMenuItem(true, clickedNode.solarSystem.hasUserDefinedName()?"Change name":"Set name", clickedNode.solarSystem.hasUserDefinedName()); break;
+					case Planet        : changeSetNameMenuItem(true, clickedNode.planet     .hasUserDefinedName()?"Change name":"Set name", clickedNode.planet     .hasUserDefinedName()); break;
+					case Unknown       : changeSetNameMenuItem(false,"Set Name",false); break;
+					}
+				}
+				contextMenu.show(tree, e.getX(), e.getY());
+			}
+		}
+
+		private void changeSetNameMenuItem(boolean enabledSet, String titleSet, boolean enabledClear) {
+			menuItemSetName.setEnabled(enabledSet);
+			menuItemSetName.setText(titleSet);
+			menuItemClearName.setEnabled(enabledClear);
 		}
 
 		@Override
@@ -260,7 +316,6 @@ class SaveGameView extends JPanel {
 			
 			switch(selectedNode.type) {
 			case Planet:
-				changeSetNameButton(true, selectedNode.planet.hasName()?"Change name":"Set name");
 				ua = selectedNode.planet.getUniverseAddress();
 				long portalGlyphCode = ua.getPortalGlyphCode();
 				portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
@@ -268,45 +323,48 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("Universe Coordinates       : %s\r\n", ua.getCoordinates()));
 				textArea.append(String.format("Universe Address           : 0x%014X\r\n", ua.getAddress()));
 				textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
-				textArea.append(String.format("Extended SignalBoster Code : %s", ua.getExtendedSigBoostCode()));
+				textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
+				showDiscNameObj(selectedNode.planet);
 				break;
 				
 			case SolarSystem:
-				changeSetNameButton(true, selectedNode.solarSystem.hasName()?"Change name":"Set name");
 				n = selectedNode.solarSystem.planets.size();
 				textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
 				ua = selectedNode.solarSystem.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
-				textArea.append(String.format("SignalBoster Code    : %s", ua.getSigBoostCode()));
+				textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
+				showDiscNameObj(selectedNode.solarSystem);
 				break;
 				
 			case GalacticRegion:
-				disableSetNameButton();
 				n = selectedNode.galacticRegion.solarSystems.size();
 				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
 				ua = selectedNode.galacticRegion.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getGalacticRegionCoordinates()));
-				textArea.append(String.format("Reduced SignalBoster Code : %s", ua.getReducedSigBoostCode()));
+				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
 				break;
 				
 			case Galaxy:
-				disableSetNameButton();
 				n = selectedNode.galaxy.galacticRegions.size();
 				textArea.append(String.format("%d known region%s\r\n", n, n>1?"s":""));
 				break;
 				
 			case Universe:
-				disableSetNameButton();
 				n = selectedNode.universe.galaxies.size();
 				textArea.append(String.format("%d known galax%s\r\n", n, n>1?"ies":"y"));
 				break;
 				
 			case Unknown:
-				disableSetNameButton();
 				break;
 			}
 		}
 		
+		private void showDiscNameObj(Universe.DiscoverableAndNamableObject obj) {
+			if (obj.hasUserDefinedName()) textArea.append(String.format("Name by user : %s\r\n", obj.getUserDefinedName()));
+			if (obj.hasDataDefinedName()) textArea.append(String.format("Name by data : %s\r\n", obj.getDataDefinedName()));
+			if (obj.hasDiscoverer     ()) textArea.append(String.format("Discovered by: %s\r\n", obj.getDiscoverer()));
+		}
+
 		private Icon createPortalGlyphs(long portalGlyphCode) {
 			BufferedImage image = new BufferedImage(50*12, 45*1, BufferedImage.TYPE_INT_RGB);
 			Graphics graphics = image.getGraphics();

@@ -5,6 +5,8 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.Vector;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -149,6 +151,25 @@ public class SaveGameData {
 						catch (IllegalArgumentException e) {}
 					}
 					
+					Universe.DiscoverableAndNamableObject discnameObj = getDiscNameObj(stData.DD);
+					if (discnameObj!=null) {
+						discnameObj.fromDiscStore = true;
+						
+						if (stData.OWS_USN!=null) {
+							if (discnameObj.hasDiscoverer())
+								discnameObj.setDiscoverer(discnameObj.getDiscoverer()+" | "+stData.OWS_USN);
+							else
+								discnameObj.setDiscoverer(stData.OWS_USN);
+						}
+						if (stData.DM_CN!=null) {
+							if (discnameObj.hasDataDefinedName())
+								discnameObj.setDataDefinedName(discnameObj.getDataDefinedName()+" | "+stData.DM_CN);
+							else
+								discnameObj.setDataDefinedName(stData.DM_CN);
+						}
+					}
+					
+					
 					storeData.add(stData);
 				}
 			}
@@ -169,9 +190,28 @@ public class SaveGameData {
 					// DD.VP[1]  String | long
 					parseDD(data.getObjectValue(object,"DD"), availData.DD);
 					
+					Universe.DiscoverableAndNamableObject discnameObj = getDiscNameObj(availData.DD);
+					if (discnameObj!=null)
+						discnameObj.fromDiscAvail = true;
+					
+					
 					availableData.add(availData);
 				}
 			}
+		}
+
+		private Universe.DiscoverableAndNamableObject getDiscNameObj(DDblock dd) {
+			if (dd.DT==null || dd.UA==null) return null;
+				
+			Universe.DiscoverableAndNamableObject discnameObj = null;
+			
+			if (dd.DT.equals("Planet") && dd.UA.isPlanet())
+				discnameObj = data.universe.getOrCreatePlanet(dd.UA);
+			
+			if (dd.DT.equals("SolarSystem") && dd.UA.isSolarSystem())
+				discnameObj = data.universe.getOrCreateSolarSystem(dd.UA);
+				
+			return discnameObj;
 		}
 
 		private void parseDD(JSON_Object ddObj, DDblock dd) {
@@ -312,6 +352,14 @@ public class SaveGameData {
 					parseUniverseAddress(
 							data.getObjectValue(data.json_data,"PlayerStateData","UniverseAddress")
 							);
+			if(currentUniverseAddress.isPlanet()) {
+				Planet planet = data.universe.getOrCreatePlanet(currentUniverseAddress);
+				planet.fromCurrPos = true;
+			}
+			if(currentUniverseAddress.isSolarSystem()) {
+				SolarSystem system = data.universe.getOrCreateSolarSystem(currentUniverseAddress);
+				system.fromCurrPos = true;
+			}
 		}
 
 		private UniverseAddress parseUniverseAddress(JSON_Object universeAddressObj) {
@@ -626,30 +674,80 @@ public class SaveGameData {
 			}
 		}
 		
-		static final class SolarSystem {
+		static class DiscoverableAndNamableObject {
+			
+			private String discoverer;
+			boolean fromCurrPos;
+			boolean fromStats;
+			boolean fromDiscStore;
+			boolean fromDiscAvail;
+			
+			private String userdefinedName;
+			private String datadefinedName;
+			
+			protected DiscoverableAndNamableObject() {
+				userdefinedName = null;
+				datadefinedName = null;
+				discoverer = null;
+				fromCurrPos   = false;
+				fromStats     = false;
+				fromDiscStore = false;
+				fromDiscAvail = false;
+			}
+			
+			public boolean hasSourceID() {
+				return fromCurrPos || fromStats || fromDiscAvail || fromDiscStore;
+			}
+			
+			public String getSourceIDStr() {
+				StringBuilder sb = new StringBuilder();
+				if (fromCurrPos  ) {                                    sb.append("CP"); }
+				if (fromStats    ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
+				if (fromDiscStore) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
+				if (fromDiscAvail) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
+				return "<"+sb.toString()+">";
+			}
+			
+			public boolean hasDiscoverer() { return discoverer!=null; }
+			public String getDiscoverer() { return discoverer; }
+			public void setDiscoverer(String name) { this.discoverer = name; }
+
+			public boolean hasName() { return userdefinedName!=null || datadefinedName!=null; }
+			public boolean hasUserDefinedName() { return userdefinedName!=null; }
+			public boolean hasDataDefinedName() { return datadefinedName!=null; }
+			public String getName() {
+				if (userdefinedName!=null) {
+					if (datadefinedName!=null) return userdefinedName+" | "+datadefinedName;
+					return userdefinedName;
+				}
+				if (datadefinedName!=null) return datadefinedName;
+				return "";
+			}
+			public void setUserDefinedName(String name) { this.userdefinedName = name; }
+			public void setDataDefinedName(String name) { this.datadefinedName = name; }
+			public String getUserDefinedName() { return this.userdefinedName; }
+			public String getDataDefinedName() { return this.datadefinedName; }
+		}
+		
+		static final class SolarSystem extends DiscoverableAndNamableObject {
 			
 			final GalacticRegion galacticRegion;
 			final int solarSystemIndex;
-			private String name;
 			final Vector<Planet> planets;
 			
 			public SolarSystem(GalacticRegion galacticRegion, int solarSystemIndex) {
 				this.galacticRegion = galacticRegion;
 				this.solarSystemIndex = solarSystemIndex;
 				this.planets = new Vector<>();
-				this.name = null; 
 			}
-
-			public boolean hasName() { return name!=null; }
-			public String getName() { return name; }
-			public void setName(String name) { this.name = name; }
-
+			
 			@Override
 			public String toString() {
+				String sourceIDStr = hasSourceID()?getSourceIDStr()+"  ":"";
 				if (hasName())
-					return String.format("SolarSystem %03X (%d) - \"%s\"", solarSystemIndex, solarSystemIndex, name);
+					return String.format("%sSolarSystem %03X (%d) - \"%s\"", sourceIDStr, solarSystemIndex, solarSystemIndex, getName());
 				else
-					return String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+					return String.format("%sSolarSystem %03X (%d)", sourceIDStr, solarSystemIndex, solarSystemIndex);
 			}
 
 			public void addPlanet(Planet planet) {
@@ -671,22 +769,16 @@ public class SaveGameData {
 			}
 		}
 		
-		static final class Planet {
+		static final class Planet extends DiscoverableAndNamableObject {
 			
 			final SolarSystem solarSystem;
 			final int planetIndex;
-			private String name;
 			private Stats.PlanetStats stats;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
-				this.name = null; 
 			}
-
-			public boolean hasName() { return name!=null; }
-			public String getName() { return name; }
-			public void setName(String name) { this.name = name; }
 
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;
@@ -694,9 +786,10 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
+				String sourceIDStr = hasSourceID()?getSourceIDStr()+"  ":"";
 				UniverseAddress ua = getUniverseAddress();
-				if (ua!=null) return ua.getExtendedSigBoostCode() + (hasName()?" - \""+name+"\"":"");
-				return "Planet [planetIndex=" + planetIndex + (hasName()?", name=\""+name +"\"":"") + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
+				if (ua!=null) return sourceIDStr + ua.getExtendedSigBoostCode() + (hasName()?" - \""+getName()+"\"":"");
+				return "Planet [planetIndex=" + planetIndex + (hasName()?", name=\""+getName()+"\"":"") + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
 			}
 
 			public UniverseAddress getUniverseAddress() {
@@ -832,6 +925,7 @@ public class SaveGameData {
 					
 					
 					Universe.Planet planet = data.universe.getOrCreatePlanet(addressLong);
+					planet.fromStats = true;
 					
 					PlanetStats ps = new PlanetStats(planet);
 					fillInto(groupStats,ps.stats);
