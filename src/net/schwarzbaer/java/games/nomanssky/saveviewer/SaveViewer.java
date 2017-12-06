@@ -89,6 +89,8 @@ public class SaveViewer implements ActionListener {
 				case Open        : return 1;
 				case Compare     : return 0;
 				case SaveAs      : return 3;
+				case Close       : return 5;
+				case Reload      : return 4;
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
@@ -149,7 +151,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private enum ActionCommand {
-		Open, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected
+		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected
 	}
 
 	@Override
@@ -185,9 +187,37 @@ public class SaveViewer implements ActionListener {
 					contentPane.addSaveGameView(saveGameView);
 					updateWindowTitle();
 				}
-				contentPane.disabler.setEnable(ActionCommand.Compare, loadedSaveGames.size()>1 && compareTab==null);
+				contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
+				contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.currentSelected!=null);
+				contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
 				contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.currentSelected!=null);
 				contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
+			}
+			break;
+		case Close:
+			if (contentPane.currentSelected!=null) {
+				SaveGameView selected = contentPane.currentSelected;
+				loadedSaveGames.remove(selected);
+				contentPane.removeSaveGameView(selected);
+				updateWindowTitle();
+			}
+			if (loadedSaveGames.size()<2 && compareTab!=null) {
+				contentPane.removeTab(compareTab);
+				compareTab=null;
+			}
+			break;
+		case Reload:
+			if (contentPane.currentSelected!=null) {
+				File selectedFile = contentPane.currentSelected.file;
+				log_ln("");
+				log("Parse file \"%s\" ...",selectedFile.getPath());
+				JSON_Object new_json_data = new JSON_Parser(selectedFile).parse();
+				log_ln(" done");
+				if (new_json_data!=null) {
+					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+					loadNamesOfUniverseObjectsFromFile(saveGameData.universe);
+					contentPane.currentSelected.replaceData(saveGameData);
+				}
 			}
 			break;
 		case Compare:
@@ -227,6 +257,8 @@ public class SaveViewer implements ActionListener {
 			break;
 		case TabSelected:
 			updateWindowTitle();
+			contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
+			contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.currentSelected!=null);
 			contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.currentSelected!=null);
 			contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
 			if (contentPane.isSelected(compareTab))
@@ -288,7 +320,7 @@ public class SaveViewer implements ActionListener {
 		}
 
 		public boolean isSelected(JPanel panel) {
-			return tabbedPane.getSelectedComponent() == panel;
+			return panel!=null && tabbedPane.getSelectedComponent()==panel;
 		}
 
 		public void addTab(String name, JPanel panel, int index) {
@@ -299,9 +331,19 @@ public class SaveViewer implements ActionListener {
 			tabbedPane.addTab(saveGameView.toString(), null, saveGameView, saveGameView.file.getPath());
 		}
 
+		public void removeTab(JPanel panel) {
+			tabbedPane.remove(panel);
+		}
+
+		public void removeSaveGameView(SaveGameView saveGameView) {
+			tabbedPane.remove(saveGameView);
+		}
+
 		private void addButtons(JToolBar toolBar) {
 			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchFolder,true));
-			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open, ActionCommand.Open,true));
+			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
+			toolBar.add(createButton("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
+			toolBar.add(createButton("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
 			toolBar.add(createButton("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
@@ -319,7 +361,7 @@ public class SaveViewer implements ActionListener {
 		
 	}
 
-	enum ToolbarIcons { SwitchFolder, Open, SaveAs, Compare }
+	enum ToolbarIcons { SwitchFolder, Open, SaveAs, Close, Reload, Compare }
 
 	private class ComparePanel extends JPanel {
 		private static final long serialVersionUID = -876150147630145750L;

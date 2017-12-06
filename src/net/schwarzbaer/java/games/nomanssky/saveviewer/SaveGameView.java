@@ -68,7 +68,7 @@ class SaveGameView extends JPanel {
 	private static final long serialVersionUID = -1641171938196309864L;
 	
 	final File file;
-	final SaveGameData data;
+	SaveGameData data;
 	private JTabbedPane tabbedPane;
 
 	public SaveGameView(File file, SaveGameData data) {
@@ -81,15 +81,7 @@ class SaveGameView extends JPanel {
 		tabbedPane = new JTabbedPane();
 		//tabbedPane.setPreferredSize(new Dimension(620, 500));
 		
-		tabbedPane.addTab("General",new GeneralDataPanel(data));
-		tabbedPane.addTab("Known Universe",new UniversePanel(data));
-		if (data.stats     !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
-		if (data.knownWords!=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
-		
-		tabbedPane.addTab("DiscoveryData (Avail.)",new DiscoveryDataAvailablePanel(data));
-		tabbedPane.addTab("DiscoveryData (Store)",new DiscoveryDataStorePanel(data));
-		
-		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data));
+		addAllTabs();
 		
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -103,8 +95,28 @@ class SaveGameView extends JPanel {
 		
 		add(tabbedPane,BorderLayout.CENTER);
 	}
+
+
+	private void addAllTabs() {
+		tabbedPane.addTab("General",new GeneralDataPanel(data));
+		tabbedPane.addTab("Known Universe",new UniversePanel(data));
+		if (data.stats     !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
+		if (data.knownWords!=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
+		
+		tabbedPane.addTab("DiscoveryData (Avail.)",new DiscoveryDataAvailablePanel(data));
+		tabbedPane.addTab("DiscoveryData (Store)",new DiscoveryDataStorePanel(data));
+		
+		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data));
+	}
 	
 	
+	public void replaceData(SaveGameData data) {
+		this.data = data;
+		tabbedPane.removeAll();
+		addAllTabs();
+	}
+
+
 	@Override
 	public String toString() {
 		return file.getName();
