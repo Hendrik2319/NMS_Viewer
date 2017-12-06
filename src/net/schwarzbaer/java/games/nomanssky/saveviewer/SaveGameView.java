@@ -11,7 +11,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Function;
@@ -30,14 +29,9 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
@@ -277,7 +271,7 @@ class SaveGameView extends JPanel {
 			super(new BorderLayout(3, 3));
 			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
-			KnownWordsTableModel2 tableModel = new KnownWordsTableModel2(data.knownWords);
+			KnownWordsTableModel tableModel = new KnownWordsTableModel(data.knownWords);
 			table = new JTable(tableModel);
 			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			JScrollPane tableScrollPane = new JScrollPane(table);
@@ -285,166 +279,34 @@ class SaveGameView extends JPanel {
 			tableModel.setColumnWidths(table);
 			
 			if (SaveViewer.DEBUG)
-				new DebugTableContextMenu(table);
+				new TableView.DebugTableContextMenu(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
-	
 	}
 	
-	private static class SimplifiedColumnConfig {
-		public String name;
-		public int minWidth;
-		public int maxWidth;
-		public int prefWidth;
-		public int currentWidth;
-		public Class<?> columnClass;
-		
-		SimplifiedColumnConfig() {
-			this("",String.class,-1,-1,-1,-1);
-		}
-		SimplifiedColumnConfig(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			this.name = name;
-			this.columnClass = columnClass;
-			this.minWidth = minWidth;
-			this.maxWidth = maxWidth;
-			this.prefWidth = prefWidth;
-			this.currentWidth = currentWidth;
-		}
-	}
-	
-	private static interface SimplifiedColumnIDInterface {
-		public SimplifiedColumnConfig getColumnConfig();
-//		public String getName();
-//		public Class<?> getColumnClass();
-//		public int getMinWidth();
-//		public int getMaxWidth();
-//		public int getPrefferredWidth();
-//		public int getCurrentWidth();
-	}
-	
-	private static abstract class SimplifiedTableModel<ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> implements TableModel {
-		
-		protected ColumnID[] columns;
-		private Vector<TableModelListener> tableModelListeners;
+	private enum KnownWordsTableColumnID implements TableView.SimplifiedColumnIDInterface {
+		WordID        ("ID"  , 50,-1,120,120),
+		TranslatedWord("Word", 50,-1,100,100),
+		Race          (""    , 20,-1, 70, 70);
 
-		protected SimplifiedTableModel(ColumnID[] columns) {
-			this.columns = columns;
-			tableModelListeners = new Vector<>();
-		}
-
-		@Override public void addTableModelListener(TableModelListener l) { tableModelListeners.add(l); }
-		@Override public void removeTableModelListener(TableModelListener l) { tableModelListeners.remove(l); }
-		
-		protected void fireTableModelEvent(TableModelEvent e) {
-			for (TableModelListener tml:tableModelListeners)
-				tml.tableChanged(e);
-		}
-		protected void fireTableCellUpdate(int rowIndex, int columnIndex) {
-			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, columnIndex, TableModelEvent.UPDATE));
-		}
-		
-		@Override public abstract int getRowCount();
-		public abstract Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID);
-		
-		
-		protected ColumnID getColumnID(int columnIndex) {
-			if (columnIndex<0) return null;
-			if (columnIndex<columns.length) return columns[columnIndex];
-			return null;
-		}
-		
-		@Override public int getColumnCount() { return columns.length; }
-		
-		@Override
-		public String getColumnName(int columnIndex) {
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return null;
-			return columnID.getColumnConfig().name; //getName();
-		}
-
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return null;
-			return columnID.getColumnConfig().columnClass; //getColumnClass();
-		}
-
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			if (rowIndex<0) return null;
-			if (rowIndex>=getRowCount()) return null;
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return null;
-			return getValueAt(rowIndex, columnIndex, columnID);
-		}
-
-		@Override public boolean isCellEditable(int rowIndex, int columnIndex) {
-			if (rowIndex<0) return false;
-			if (rowIndex>=getRowCount()) return false;
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return false;
-			return isCellEditable(rowIndex, columnIndex, columnID);
-		}
-		protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) { return false; }
-
-		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			if (rowIndex<0) return;
-			if (rowIndex>=getRowCount()) return;
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return;
-			setValueAt(aValue, rowIndex, columnIndex, columnID);
-		}
-		protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ColumnID columnID) {}
-
-		public void setColumnWidths(JTable table) {
-			TableColumnModel columnModel = table.getColumnModel();
-			for (int i=0; i<columnModel.getColumnCount(); ++i) {
-				ColumnID columnID = getColumnID(i);
-				if (columnID!=null) {
-					SimplifiedColumnConfig config = columnID.getColumnConfig();
-					setColumnWidth(columnModel.getColumn(i), config.minWidth, config.maxWidth, config.prefWidth, config.currentWidth);
-				}
-			}
-		}
-	
-		private void setColumnWidth(TableColumn column, int min, int max, int preferred, int width) {
-			if (min>=0) column.setMinWidth(min);
-			if (max>=0) column.setMinWidth(max);
-			if (preferred>=0) column.setPreferredWidth(preferred);
-			if (width    >=0) column.setWidth(width);
-		}
-	}
-
-	private enum KnownWordsTableColumnID implements SimplifiedColumnIDInterface {
-		WordID, TranslatedWord, Race;
-
-//		private String name;
-//		private int minWidth;
-//		private int maxWidth;
-		private SimplifiedColumnConfig columnConfig;
+		private TableView.SimplifiedColumnConfig columnConfig;
 		
 		KnownWordsTableColumnID() {
-			columnConfig = new SimplifiedColumnConfig();
+			columnConfig = new TableView.SimplifiedColumnConfig();
 		}
-		KnownWordsTableColumnID(String name, int minWidth, int maxWidth) {
-			columnConfig = new SimplifiedColumnConfig(name, String.class, minWidth, maxWidth, -1, -1);
+		KnownWordsTableColumnID(String name, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			columnConfig = new TableView.SimplifiedColumnConfig(name, String.class, minWidth, maxWidth, prefWidth, currentWidth);
 		}
-//		@Override public String getName() { return name; }
-//		@Override public Class<?> getColumnClass() { return String.class; }
-//		@Override public int getMinWidth() { return minWidth; }
-//		@Override public int getMaxWidth() { return maxWidth; }
-//		@Override public int getPrefferredWidth() { return -1; }
-//		@Override public int getCurrentWidth() { return -1; }
-		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 	
-	private static class KnownWordsTableModel2 extends SimplifiedTableModel<KnownWordsTableColumnID> {
+	private static class KnownWordsTableModel extends TableView.SimplifiedTableModel<KnownWordsTableColumnID> {
 
 		private KnownWords knownWords;
 		private int numberOfRaces;
 		
-		public KnownWordsTableModel2(KnownWords knownWords) {
+		public KnownWordsTableModel(KnownWords knownWords) {
 			super(new KnownWordsTableColumnID[]{ KnownWordsTableColumnID.WordID, KnownWordsTableColumnID.TranslatedWord });
 			this.knownWords = knownWords;
 			numberOfRaces = this.knownWords.wordCounts.length;
@@ -503,119 +365,6 @@ class SaveGameView extends JPanel {
 		}
 	}
 
-	private static class KnownWordsTableModel implements TableModel {
-		
-		private enum Column { WordID, TranslatedWord, Race }
-		private final static Column[] columns = { Column.WordID, Column.TranslatedWord };
-	
-		private KnownWords knownWords;
-		private int numberOfRaces;
-	
-		public KnownWordsTableModel(KnownWords knownWords) {
-			this.knownWords = knownWords;
-			numberOfRaces = this.knownWords.wordCounts.length;
-		}
-		
-		@Override public void addTableModelListener(TableModelListener l) {}
-		@Override public void removeTableModelListener(TableModelListener l) {}
-		
-		private Column getColumnID(int columnIndex) {
-			if (columnIndex<0) return null;
-			if (columnIndex<columns.length) return columns[columnIndex];
-			if (columnIndex<columns.length+numberOfRaces) return Column.Race;
-			return null;
-		}
-	
-		@Override public int getRowCount() { return knownWords.wordList.size()+1; }
-		@Override public int getColumnCount() { return columns.length+numberOfRaces; }
-		@Override public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
-		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {}
-		
-		@Override
-		public String getColumnName(int columnIndex) {
-			Column col = getColumnID(columnIndex);
-			switch(col) {
-			case WordID: return "ID";
-			case TranslatedWord: return "Word";
-			case Race:
-				switch(columnIndex-columns.length) {
-				case 0: return "Gek";
-				case 1: return "Vy'keen";
-				case 2: return "Korvax";
-				case 4: return "Atlas";
-				default:
-					return "Race "+(columnIndex-columns.length);
-				}
-			}
-			return "???["+columnIndex+"]";
-		}
-	
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			Column col = getColumnID(columnIndex);
-			switch(col) {
-			case WordID:
-			case TranslatedWord: return String.class;
-			case Race: return Object.class;
-			}
-			return Object.class;
-		}
-	
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			if (rowIndex<0) return null;
-			if (rowIndex>=knownWords.wordList.size()+1) return null;
-			
-			Column col = getColumnID(columnIndex);
-			
-			if (col==null) return null;
-			
-			if (rowIndex==0) {
-				switch(col) {
-				case WordID: return String.format("%d different words", knownWords.wordList.size());
-				case TranslatedWord: return "";
-				case Race:
-					int race = columnIndex-columns.length;
-					return String.format(Locale.ENGLISH,"%d (%1.1f%%)", knownWords.wordCounts[race], knownWords.wordCounts[race]*100.0f/knownWords.wordList.size());
-				}
-			} else {
-				KnownWord knownWord = knownWords.wordList.get(rowIndex-1);
-				if (knownWord==null) return null;
-				
-				switch(col) {
-				case WordID: return knownWord.word;
-				case TranslatedWord: return "";
-				case Race:
-					int race = columnIndex-columns.length;
-					return (race>=knownWord.races.length)?"???":(knownWord.races[race]?"known":"");
-				}
-			}
-			return null;
-		}
-	
-		public void setColumnWidths(JTable table) {
-			TableColumnModel columnModel = table.getColumnModel();
-			for (int i=0; i<columnModel.getColumnCount(); ++i)
-				setColumnWidth(i,columnModel.getColumn(i));
-		}
-	
-		private void setColumnWidth(int columnIndex, TableColumn column) {
-			Column col = getColumnID(columnIndex);
-			switch(col) {
-			case WordID        : setColumnWidth(column,50,-1,120,120); break;
-			case TranslatedWord: setColumnWidth(column,50,-1,100,100); break;
-			case Race          : setColumnWidth(column,20,-1, 80, 80); break;
-			}
-		}
-	
-		private void setColumnWidth(TableColumn column, int min, int max, int preferred, int width) {
-			if (min>=0) column.setMinWidth(min);
-			if (max>=0) column.setMinWidth(max);
-			if (preferred>=0) column.setPreferredWidth(preferred);
-			if (width    >=0) column.setWidth(width);
-		}
-	}
-
 	private class StatsPanel extends JPanel {
 		private static final long serialVersionUID = -1541256209397699528L;
 		
@@ -639,7 +388,7 @@ class SaveGameView extends JPanel {
 			selector.addActionListener(e -> changeSelection( selector.getSelectedIndex() ));
 			
 			if (SaveViewer.DEBUG)
-				new DebugTableContextMenu(table);
+				new TableView.DebugTableContextMenu(table);
 				
 			add(selector,BorderLayout.NORTH);
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -653,7 +402,7 @@ class SaveGameView extends JPanel {
 				table.setModel(new DefaultTableModel());
 				break;
 			case 0: {
-				StatsTableModel2 tableModel = new StatsTableModel2(data.stats.globalStats);
+				StatsTableModel tableModel = new StatsTableModel(data.stats.globalStats);
 				table.setModel(tableModel);
 				tableModel.setColumnWidths(table);
 			} break;
@@ -663,7 +412,7 @@ class SaveGameView extends JPanel {
 				break;
 			default: {
 				int planetIndex = index-2;
-				StatsTableModel2 tableModel = new StatsTableModel2(data.stats.planetStats.get(planetIndex).stats);
+				StatsTableModel tableModel = new StatsTableModel(data.stats.planetStats.get(planetIndex).stats);
 				table.setModel(tableModel);
 				tableModel.setColumnWidths(table);
 			} break;
@@ -671,49 +420,30 @@ class SaveGameView extends JPanel {
 		}
 	}
 
-	private enum StatsTableColumnID implements SimplifiedColumnIDInterface {
+	private enum StatsTableColumnID implements TableView.SimplifiedColumnIDInterface {
 		ID         ("ID"         , String.class, 50,-1,120,120),
 		Name       ("Name"       , String.class, 50,-1,210,210),
 		IntValue   ("Int"        , Long.class  , 20,-1, 70, 70),
 		FloatValue ("Float"      , Double.class, 20,-1, 70, 70),
 		Denominator("Denominator", Double.class, 20,-1, 40, 40);
 		
-		private SimplifiedColumnConfig columnConfig;
-//		private String name;
-//		private int minWidth;
-//		private int maxWidth;
-//		private int prefWidth;
-//		private int currentWidth;
-//		private Class<?> columnClass;
+		private TableView.SimplifiedColumnConfig columnConfig;
 		
 		StatsTableColumnID() {
-//			this("",String.class,-1,-1,-1,-1);
-			columnConfig = new SimplifiedColumnConfig();
+			columnConfig = new TableView.SimplifiedColumnConfig();
 			columnConfig.name = toString();
 		}
 		StatsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
-//			this.name = name;
-//			this.columnClass = columnClass;
-//			this.minWidth = minWidth;
-//			this.maxWidth = maxWidth;
-//			this.prefWidth = prefWidth;
-//			this.currentWidth = currentWidth;
+			columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 		}
-//		@Override public String getName() { return name; }
-//		@Override public Class<?> getColumnClass() { return columnClass; }
-//		@Override public int getMinWidth() { return minWidth; }
-//		@Override public int getMaxWidth() { return maxWidth; }
-//		@Override public int getPrefferredWidth() { return prefWidth; }
-//		@Override public int getCurrentWidth() { return currentWidth; }
-		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 	
-	private static class StatsTableModel2 extends SimplifiedTableModel<StatsTableColumnID> {
+	private static class StatsTableModel extends TableView.SimplifiedTableModel<StatsTableColumnID> {
 		
 		private Vector<StatValue> statsList;
 		
-		public StatsTableModel2(Vector<StatValue> statsList) {
+		public StatsTableModel(Vector<StatValue> statsList) {
 			super(new StatsTableColumnID[]{ StatsTableColumnID.ID, StatsTableColumnID.Name, StatsTableColumnID.IntValue, StatsTableColumnID.FloatValue, StatsTableColumnID.Denominator });
 			this.statsList = statsList;
 		}
@@ -752,199 +482,6 @@ class SaveGameView extends JPanel {
 			statValue.knownID.fullName = aValue.toString();
 			SaveViewer.saveKnownStatIDsToFile();
 		}
-		
-		
-	}
-	
-	private static class StatsTableModel implements TableModel {
-		
-		enum Column { ID, Name, IntValue, FloatValue, Denominator }
-		private final static Column[] columns = { Column.ID, Column.Name, Column.IntValue, Column.FloatValue, Column.Denominator };
-		
-		private Vector<StatValue> statsList;
-
-		private Vector<TableModelListener> tableModelListeners;
-	
-		public StatsTableModel(Vector<StatValue> statsList) {
-			this.statsList = statsList;
-			this.tableModelListeners = new Vector<TableModelListener>();
-		}
-		
-		@Override public void addTableModelListener(TableModelListener l) { tableModelListeners.add(l); }
-		@Override public void removeTableModelListener(TableModelListener l) { tableModelListeners.remove(l); }
-		
-		private void fireTableModelEvent(TableModelEvent e) {
-			for (TableModelListener tml:tableModelListeners)
-				tml.tableChanged(e);
-		}
-		private void fireTableCellUpdate(int rowIndex, int columnIndex) {
-			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, columnIndex, TableModelEvent.UPDATE));
-		}
-		
-		private Column getColumnID(int columnIndex) {
-			if (columnIndex<0) return null;
-			if (columnIndex>=columns.length) return null;
-			return columns[columnIndex];
-		}
-	
-		@Override public int getRowCount() { return statsList.size(); }
-		@Override public int getColumnCount() { return columns.length; }
-		
-		@Override public boolean isCellEditable(int rowIndex, int columnIndex) {
-			Column col = getColumnID(columnIndex);
-			if (col==Column.Name) return true;
-			return false;
-		}
-		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			Column col = getColumnID(columnIndex);
-			if (col!=Column.Name) { fireTableCellUpdate(rowIndex, columnIndex); return; }
-			
-			if (rowIndex<0 || rowIndex>=statsList.size()) { fireTableCellUpdate(rowIndex, columnIndex); return; }
-			StatValue statValue = statsList.get(rowIndex);
-			
-			if (statValue.knownID==null || aValue==null) { fireTableCellUpdate(rowIndex, columnIndex); return; }
-			
-			statValue.knownID.fullName = aValue.toString();
-			SaveViewer.saveKnownStatIDsToFile();
-			
-		}
-		
-		@Override
-		public String getColumnName(int columnIndex) {
-			Column col = getColumnID(columnIndex);
-			switch(col) {
-			case ID  : return "ID";
-			case Name: return "Name";
-			case IntValue: return "Int";
-			case FloatValue: return "Float";
-			case Denominator: return "Denominator";
-			}
-			return "???["+columnIndex+"]";
-		}
-	
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			Column col = getColumnID(columnIndex);
-			switch(col) {
-			case ID  : 
-			case Name: return String.class;
-			case IntValue: return Long.class;
-			case FloatValue: return Double.class;
-			case Denominator: return Double.class;
-			}
-			return Object.class;
-		}
-	
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			if (rowIndex<0) return null;
-			if (rowIndex>=statsList.size()) return null;
-			
-			Column col = getColumnID(columnIndex);
-			StatValue statValue = statsList.get(rowIndex);
-			
-			if (col==null) return null;
-			if (statValue==null) return null;
-			
-			switch(col) {
-			case ID  : return statValue.ID;
-			case Name: if (statValue.knownID!=null) return statValue.knownID.fullName; else return statValue.ID;
-			case IntValue: return statValue.IntValue;
-			case FloatValue: return statValue.FloatValue;
-			case Denominator: return statValue.Denominator;
-			}
-			return null;
-		}
-	
-		public void setColumnWidths(JTable table) {
-			TableColumnModel columnModel = table.getColumnModel();
-			for (int i=0; i<columnModel.getColumnCount(); ++i)
-				setColumnWidth(i,columnModel.getColumn(i));
-		}
-	
-		private void setColumnWidth(int columnIndex, TableColumn column) {
-			// [125, 91, 59, 75, 36]
-			Column col = getColumnID(columnIndex);
-			switch(col) {
-			case ID         : setColumnWidth(column,50,-1,120,120); break;
-			case Name       : setColumnWidth(column,50,-1,210,210); break;
-			case IntValue   : setColumnWidth(column,20,-1, 70, 70); break;
-			case FloatValue : setColumnWidth(column,20,-1, 70, 70); break;
-			case Denominator: setColumnWidth(column,20,-1, 40, 40); break;
-			}
-		}
-	
-		private void setColumnWidth(TableColumn column, int min, int max, int preferred, int width) {
-			if (min>=0) column.setMinWidth(min);
-			if (max>=0) column.setMinWidth(max);
-			if (preferred>=0) column.setPreferredWidth(preferred);
-			if (width    >=0) column.setWidth(width);
-		}
-	}
-
-	private static class DebugTableContextMenu implements MouseListener, ActionListener {
-	
-		private JTable table;
-		private JPopupMenu contextMenu;
-		private enum TableContextMenuActionCommand { ShowWidths, CopyTableContent }
-		
-		public DebugTableContextMenu(JTable table) {
-			this.table = table;
-			table.addMouseListener(this);
-			
-			contextMenu = new JPopupMenu("Contextmenu");
-			contextMenu.add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths));
-			contextMenu.add(createMenuItem("Copy Table Content",TableContextMenuActionCommand.CopyTableContent));
-		}
-	
-		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand) {
-			JMenuItem menuItem = new JMenuItem(label);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand(actionCommand.toString());
-			return menuItem;
-		}
-		
-		@Override public void mousePressed(MouseEvent e) {}
-		@Override public void mouseReleased(MouseEvent e) {}
-		@Override public void mouseEntered(MouseEvent e) {}
-		@Override public void mouseExited(MouseEvent e) {}
-		@Override public void mouseClicked(MouseEvent e) {
-			if (e.getButton()==MouseEvent.BUTTON3) {
-				contextMenu.show(table, e.getX(), e.getY());
-			}
-		}
-	
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			TableContextMenuActionCommand actionCommand = TableContextMenuActionCommand.valueOf(e.getActionCommand());
-			switch(actionCommand) {
-			case CopyTableContent: {
-				TableModel model = table.getModel();
-				StringBuilder sb = new StringBuilder();
-				for (int row=0; row<model.getRowCount(); ++row) {
-					for (int col=0; col<model.getColumnCount(); ++col) {
-						if (col>0) sb.append("\t");
-						sb.append(model.getValueAt(row, col));
-					}
-					sb.append("\r\n");
-				}
-				
-				Toolkit toolkit = Toolkit.getDefaultToolkit();
-				Clipboard clipboard = toolkit.getSystemClipboard();
-				DataHandler content = new DataHandler(sb.toString(),"text/plain");
-				try { clipboard.setContents(content,null); }
-				catch (IllegalStateException e1) { e1.printStackTrace(); }
-			} break;
-			case ShowWidths: {
-				TableColumnModel columnModel = table.getColumnModel();
-				int[] widths = new int[columnModel.getColumnCount()];
-				for (int i=0; i<columnModel.getColumnCount(); ++i)
-					widths[i] = columnModel.getColumn(i).getWidth();
-				System.out.println(Arrays.toString(widths));
-			} break;
-			}
-		}
-	
 	}
 
 	private class GeneralDataPanel extends JPanel {
