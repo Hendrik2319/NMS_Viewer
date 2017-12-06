@@ -1,6 +1,7 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.Vector;
 
@@ -21,24 +22,33 @@ public class SaveGameData {
 
 	Error error;
 	String errorMessage;
+	private boolean isStackTraceEnabled;
 	
 	final JSON_Object json_data;
 	final General general;
 	Universe universe;
 	Stats stats;
 	KnownWords knownWords;
-
+	DiscoveryData discoveryData;
+	
 	public SaveGameData(JSON_Object json_data) {
+		error = Error.NoError;
+		errorMessage = "";
+		isStackTraceEnabled = true;
+		
 		this.json_data = json_data;
 		this.general = new General(this);
+		this.universe = new Universe();
 		this.stats = null;
 		this.knownWords = null;
-		this.universe = new Universe();
+		this.discoveryData = new DiscoveryData(this);
 	}
 	
 	public SaveGameData parse() {
+		general.parse();
 		parseStats();
 		parseKnownWords();
+		parseDiscoveryData();
 		universe.sort();
 		//universe.writeToConsole();
 		return this;
@@ -66,9 +76,299 @@ public class SaveGameData {
 		}
 	}
 
+	private void parseDiscoveryData() {
+		JSON_Array arrayValue_Store = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
+		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
+		
+		discoveryData.parse(arrayValue_Store,arrayValue_Available);
+		
+		if (!discoveryData.notParsedStoreData.isEmpty())
+			System.out.println("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+		if (!discoveryData.notParsedAvailableData.isEmpty())
+			System.out.println("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+	}
+
+	final static class DiscoveryData {
+		
+		private SaveGameData data;
+		Vector<StoreData> storeData;
+		Vector<AvailableData> availableData;
+		JSON_Array notParsedStoreData;
+		JSON_Array notParsedAvailableData;
+		
+		public DiscoveryData(SaveGameData data) {
+			this.data = data;
+			this.storeData = new Vector<>();
+			this.availableData = new Vector<>();
+			notParsedStoreData     = new JSON_Array();
+			notParsedAvailableData = new JSON_Array();
+		}
+		
+		public void parse(JSON_Array arrStore, JSON_Array arrAvailable) {
+			if (arrStore!=null) {
+				for (Value objValue:arrStore) {
+					if (!isOK(objValue, Type.Object)) { notParsedAvailableData.add(objValue); continue; }
+					JSON_Object object = ((ObjectValue)objValue).value;
+					
+					StoreData stData = new StoreData();
+					
+					// DD.UA  UniverseAddress
+					// DD.DT  String
+					// DD.VP[0]  String
+					// DD.VP[1]  String | long
+					parseDD(data.getObjectValue(object,"DD"), stData.DD);
+					
+					// DM  empty object
+					JSON_Object dmObj = data.getObjectValue(object,"DM");
+					if (dmObj!=null && !dmObj.isEmpty()) {
+						stData.DM = "{"+dmObj.size()+"}";
+						stData.DM_CN = data.getStringValue(dmObj,"CN");
+					}
+					
+					// OWS
+					//    LID  String
+					//    UID  String
+					//    USN  String
+					//    TS   Long
+					JSON_Object owsObj = data.getObjectValue(object,"OWS");
+					if (owsObj!=null) {
+						stData.OWS_LID = data.getStringValue(owsObj,"LID");
+						stData.OWS_UID = data.getStringValue(owsObj,"UID");
+						stData.OWS_USN = data.getStringValue(owsObj,"USN");
+						stData.OWS_TS  = data.getIntegerValue(owsObj,"TS");
+					}
+					
+					// RID  String (evtl.)
+					stData.RID = data.getStringValue_silent(object,"RID");
+					if (stData.RID!=null) {
+						try {
+							stData.RID_bytes = Base64.getDecoder().decode(stData.RID/*.replace("\\","")*/);
+							//stData.RID = Arrays.toString(stData.RID_bytes);
+							//stData.RID = new String(stData.RID_bytes);
+						}
+						catch (IllegalArgumentException e) {}
+					}
+					
+					storeData.add(stData);
+				}
+			}
+			
+			if (arrAvailable!=null) {
+				for (Value objValue:arrAvailable) {
+					if (!isOK(objValue, Type.Object)) { notParsedAvailableData.add(objValue); continue; }
+					JSON_Object object = ((ObjectValue)objValue).value;
+					
+					AvailableData availData = new AvailableData();
+					
+					// TSrec  long
+					availData.TSrec = data.getIntegerValue(object,"TSrec");
+					
+					// DD.UA  UniverseAddress
+					// DD.DT  String
+					// DD.VP[0]  String
+					// DD.VP[1]  String | long
+					parseDD(data.getObjectValue(object,"DD"), availData.DD);
+					
+					availableData.add(availData);
+				}
+			}
+		}
+
+		private void parseDD(JSON_Object ddObj, DDblock dd) {
+			if (ddObj==null) return;
+				
+			// DD.UA  UniverseAddress
+			Value addressValue = ddObj.getValue("UA");
+			if (addressValue!=null) {
+				switch(addressValue.type) {
+				case String:
+					if (addressValue instanceof StringValue) {
+						String addressStr = ((StringValue)addressValue).value;
+						if (isPlanetAddressOK(addressStr))
+							dd.UA = new UniverseAddress( Long.parseLong(addressStr.substring(2), 16) );
+					}
+					break;
+					
+				case Integer:
+					if (addressValue instanceof IntegerValue)
+						dd.UA = new UniverseAddress( ((IntegerValue)addressValue).value );
+					break;
+					
+				default:
+					break;
+				}
+			}
+			
+			// DD.DT  String
+			dd.DT = data.getStringValue(ddObj,"DT");
+			
+			// DD.VP
+			JSON_Array vpArr = data.getArrayValue(ddObj,"VP");
+			if (vpArr!=null) {
+				
+				// DD.VP[0]  String
+				if (vpArr.size()>0) {
+					Value value = vpArr.get(0);
+					switch (value.type) {
+					case Integer: dd.VP0 = ""+((IntegerValue)value).value; break;
+					case String : dd.VP0 = ((StringValue)value).value; break;
+					default:
+						break;
+					}
+				}
+				
+				// DD.VP[1]  String | long
+				if (vpArr.size()>1) {
+					Value value = vpArr.get(1);
+					switch (value.type) {
+					case Integer: dd.VP1 = ""+((IntegerValue)value).value; break;
+					case String : dd.VP1 = ((StringValue)value).value; break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+		
+		static class StoreData {
+			// DD.UA  UniverseAddress
+			// DD.DT  String
+			// DD.VP[0]  String
+			// DD.VP[1]  String | long
+			// DM  mostly empty object
+			//    CN (evtl.) String
+			// OWS
+			//    LID  String
+			//    UID  String
+			//    USN  String
+			//    TS   Long
+			// RID  String (evtl.)
+			
+			DDblock DD;
+			String DM;
+			String DM_CN;
+			String OWS_LID;
+			String OWS_UID;
+			String OWS_USN;
+			Long   OWS_TS;
+			String RID;
+			byte[] RID_bytes;
+			
+			public StoreData() {
+				DD = new DDblock();
+				DM = null;
+				DM_CN = null;
+				OWS_LID = null;
+				OWS_UID = null;
+				OWS_USN = null;
+				OWS_TS = null;
+				RID = null;
+				RID_bytes = null;
+			}
+		}
+		
+		static class AvailableData {
+			// TSrec  long
+			// DD.UA  UniverseAddress
+			// DD.DT  String
+			// DD.VP[0]  String
+			// DD.VP[1]  String | long
+			
+			Long TSrec;
+			DDblock DD;
+			
+			AvailableData() {
+				TSrec = null;
+				DD = new DDblock();
+			}
+		}
+		
+		static class DDblock {
+			UniverseAddress UA;
+			String DT;
+			String VP0;
+			String VP1;
+			
+			DDblock() {
+				UA = null;
+				DT = null;
+				VP0 = null;
+				VP1 = null;
+			}
+		}
+	}
+
+	final static class General {
+		
+		private SaveGameData data;
+		private UniverseAddress currentUniverseAddress;
+		
+		public General(SaveGameData data) {
+			this.data = data;
+		}
+		
+		public void parse() {
+			currentUniverseAddress =
+					parseUniverseAddress(
+							data.getObjectValue(data.json_data,"PlayerStateData","UniverseAddress")
+							);
+		}
+
+		private UniverseAddress parseUniverseAddress(JSON_Object universeAddressObj) {
+			if (universeAddressObj==null) return null;
+			
+			UniverseAddress newUA = new UniverseAddress(0);
+			
+			Long galaxyIndexLong = data.getIntegerValue(universeAddressObj,"RealityIndex");
+			if (galaxyIndexLong==null) return null;
+			newUA.galaxyIndex = (int)(long)galaxyIndexLong;
+			
+			JSON_Object galacticAddressObj = data.getObjectValue(universeAddressObj,"GalacticAddress");
+			if (galacticAddressObj==null) return null;
+			
+			Long voxelXLong = data.getIntegerValue(galacticAddressObj,"VoxelX");
+			Long voxelYLong = data.getIntegerValue(galacticAddressObj,"VoxelY");
+			Long voxelZLong = data.getIntegerValue(galacticAddressObj,"VoxelZ");
+			if (voxelXLong==null) return null;
+			if (voxelYLong==null) return null;
+			if (voxelZLong==null) return null;
+			newUA.voxelX = (int)(long)voxelXLong;
+			newUA.voxelY = (int)(long)voxelYLong;
+			newUA.voxelZ = (int)(long)voxelZLong;
+			
+			Long solarSystemIndexLong = data.getIntegerValue(galacticAddressObj,"SolarSystemIndex");
+			if (solarSystemIndexLong==null) return null;
+			newUA.solarSystemIndex = (int)(long)solarSystemIndexLong;
+			
+			Long planetIndexLong = data.getIntegerValue(galacticAddressObj,"PlanetIndex");
+			if (planetIndexLong==null) return null;
+			newUA.planetIndex = (int)(long)planetIndexLong;
+			
+			return newUA;
+		}
+
+		public UniverseAddress getCurrentUniverseAddress() { return currentUniverseAddress; }
+		
+		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
+		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
+		public Long getPlayerShield   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          ); }
+		public Long getShipHealth     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      ); }
+		public Long getShipShield     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      ); }
+		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
+		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
+		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
+		
+		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
+		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
+		public Double      getTestFloat  (Object... path) { return data.getFloatValue  (data.json_data, path); }
+		public String      getTestString (Object... path) { return data.getStringValue (data.json_data, path); }
+		public JSON_Array  getTestArray  (Object... path) { return data.getArrayValue  (data.json_data, path); }
+		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
+	}
+
 	static final class UniverseAddress implements Comparable<UniverseAddress> {
 
-		int galacticIndex;
+		int galaxyIndex;
 		int voxelX,voxelY,voxelZ;
 		int solarSystemIndex;
 		int planetIndex;
@@ -77,7 +377,7 @@ public class SaveGameData {
 			voxelX = (int)( address      & 0xFFF);
 			voxelZ = (int)((address>>12) & 0xFFF);
 			voxelY = (int)((address>>24) & 0xFF);
-			galacticIndex    = (int)((address>>32) & 0xFF);
+			galaxyIndex    = (int)((address>>32) & 0xFF);
 			solarSystemIndex = (int)((address>>40) & 0xFFF);
 			planetIndex      = (int)((address>>52) & 0xF);
 			if (voxelX>2047) voxelX -= 4096;
@@ -86,7 +386,7 @@ public class SaveGameData {
 		}
 
 		public UniverseAddress(int galacticIndex, int voxelX, int voxelY, int voxelZ, int solarSystemIndex, int planetIndex) {
-			this.galacticIndex = galacticIndex;
+			this.galaxyIndex = galacticIndex;
 			this.voxelX = voxelX;
 			this.voxelY = voxelY;
 			this.voxelZ = voxelZ;
@@ -97,13 +397,33 @@ public class SaveGameData {
 		@Override
 		public int compareTo(UniverseAddress other) {
 			if (other==null) return -1;
-			if (this.galacticIndex!=other.galacticIndex) return this.galacticIndex-other.galacticIndex;
+			if (this.galaxyIndex!=other.galaxyIndex) return this.galaxyIndex-other.galaxyIndex;
 			if (this.voxelX!=other.voxelX) return this.voxelX-other.voxelX;
 			if (this.voxelZ!=other.voxelZ) return this.voxelZ-other.voxelZ;
 			if (this.voxelY!=other.voxelY) return this.voxelY-other.voxelY;
 			if (this.solarSystemIndex!=other.solarSystemIndex) return this.solarSystemIndex-other.solarSystemIndex;
 			if (this.planetIndex!=other.planetIndex) return this.planetIndex-other.planetIndex;
 			return 0;
+		}
+
+		public boolean isPlanet() {
+			return planetIndex>0;
+		}
+
+		public boolean isSolarSystem() {
+			return planetIndex==0 && solarSystemIndex>0;
+		}
+
+		public String getCoordinates() {
+			return String.format("%d | %d,%d,%d | %d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
+		}
+
+		public String getSolarSystemCoordinates() {
+			return String.format("%d | %d,%d,%d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex);
+		}
+
+		public String getGalacticRegionCoordinates() {
+			return String.format("%d | %d,%d,%d", galaxyIndex, voxelX, voxelY, voxelZ);
 		}
 
 		public String getReducedSigBoostCode() {
@@ -115,12 +435,12 @@ public class SaveGameData {
 		}
 
 		public String getExtendedSigBoostCode() {
-			return String.format("G%d|%s|P%d", galacticIndex, getSigBoostCode(), planetIndex);
+			return String.format("G%d|%s|P%d", galaxyIndex, getSigBoostCode(), planetIndex);
 		}
 
 		public long getAddress() {
 			long address = (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF);
-			address = address | (((long)galacticIndex   &0xFF )<<32);
+			address = address | (((long)galaxyIndex   &0xFF )<<32);
 			address = address | (((long)solarSystemIndex&0xFFF)<<40);
 			address = address | (((long)planetIndex     &0xFF )<<52);
 			return address;
@@ -136,7 +456,7 @@ public class SaveGameData {
 		@Override
 		public String toString() {
 			return "UniverseAddress [\r\n"+
-					"\tgalacticIndex=" + galacticIndex + ",\r\n"+
+					"\tgalacticIndex=" + galaxyIndex + ",\r\n"+
 					"\tvoxel=("+voxelX+", "+voxelY+", "+voxelZ+"),\r\n"+
 					"\tsolarSystemIndex=" + solarSystemIndex + ",\r\n"+
 					"\tplanetIndex=" + planetIndex + "\r\n"+
@@ -190,11 +510,40 @@ public class SaveGameData {
 		}
 
 
+		public Planet findPlanet(UniverseAddress uAddr) {
+			SolarSystem solarSystem = findSolarSystem(uAddr);
+			if (solarSystem==null) return null;
+			
+			return solarSystem.findPlanet(uAddr.planetIndex);
+		}
+
+		public SolarSystem findSolarSystem(UniverseAddress uAddr) {
+			Galaxy galaxy = findGalaxy(uAddr.galaxyIndex);
+			if (galaxy==null) return null;
+			
+			GalacticRegion galacticRegion = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
+			if (galacticRegion==null) return null;
+			
+			return galacticRegion.findSolarSystem(uAddr.solarSystemIndex);
+		}
+
 		public Planet getOrCreatePlanet(long address) {
 			UniverseAddress uAddr = new UniverseAddress(address);
+			return getOrCreatePlanet(uAddr);
+		}
+
+		public Planet getOrCreatePlanet(UniverseAddress uAddr) {
+			SolarSystem solarSystem = getOrCreateSolarSystem(uAddr);
 			
-			Galaxy galaxy = findGalaxy(uAddr.galacticIndex);
-			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,uAddr.galacticIndex));
+			Planet planet = solarSystem.findPlanet(uAddr.planetIndex);
+			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,uAddr.planetIndex));
+			
+			return planet;
+		}
+
+		public SolarSystem getOrCreateSolarSystem(UniverseAddress uAddr) {
+			Galaxy galaxy = findGalaxy(uAddr.galaxyIndex);
+			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,uAddr.galaxyIndex));
 			
 			GalacticRegion galacticRegion = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
 			if (galacticRegion==null) galaxy.addRegion(galacticRegion=new GalacticRegion(galaxy,uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ));
@@ -202,10 +551,7 @@ public class SaveGameData {
 			SolarSystem solarSystem = galacticRegion.findSolarSystem(uAddr.solarSystemIndex);
 			if (solarSystem==null) galacticRegion.addSolarSystem(solarSystem=new SolarSystem(galacticRegion,uAddr.solarSystemIndex));
 			
-			Planet planet = solarSystem.findPlanet(uAddr.planetIndex);
-			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,uAddr.planetIndex));
-			
-			return planet;
+			return solarSystem;
 		}
 
 		private Galaxy findGalaxy(int galacticIndex) {
@@ -282,19 +628,28 @@ public class SaveGameData {
 		
 		static final class SolarSystem {
 			
-			final int solarSystemIndex;
 			final GalacticRegion galacticRegion;
+			final int solarSystemIndex;
+			private String name;
 			final Vector<Planet> planets;
 			
 			public SolarSystem(GalacticRegion galacticRegion, int solarSystemIndex) {
 				this.galacticRegion = galacticRegion;
 				this.solarSystemIndex = solarSystemIndex;
 				this.planets = new Vector<>();
+				this.name = null; 
 			}
+
+			public boolean hasName() { return name!=null; }
+			public String getName() { return name; }
+			public void setName(String name) { this.name = name; }
 
 			@Override
 			public String toString() {
-				return String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+				if (hasName())
+					return String.format("SolarSystem %03X (%d) - \"%s\"", solarSystemIndex, solarSystemIndex, name);
+				else
+					return String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
 			}
 
 			public void addPlanet(Planet planet) {
@@ -318,14 +673,20 @@ public class SaveGameData {
 		
 		static final class Planet {
 			
-			final int planetIndex;
 			final SolarSystem solarSystem;
+			final int planetIndex;
+			private String name;
 			private Stats.PlanetStats stats;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
+				this.name = null; 
 			}
+
+			public boolean hasName() { return name!=null; }
+			public String getName() { return name; }
+			public void setName(String name) { this.name = name; }
 
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;
@@ -334,8 +695,8 @@ public class SaveGameData {
 			@Override
 			public String toString() {
 				UniverseAddress ua = getUniverseAddress();
-				if (ua!=null) return ua.getExtendedSigBoostCode();
-				return "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
+				if (ua!=null) return ua.getExtendedSigBoostCode() + (hasName()?" - \""+name+"\"":"");
+				return "Planet [planetIndex=" + planetIndex + (hasName()?", name=\""+name +"\"":"") + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
 			}
 
 			public UniverseAddress getUniverseAddress() {
@@ -525,25 +886,25 @@ public class SaveGameData {
 
 		static class StatValue implements Comparable<StatValue> {
 			enum KnownID {
-				MONEY("Units"),
 				TIME, DEATHS, LONGEST_LIFE, LONGEST_LIFE_EX, TIMES_IN_SPACE,
 				GLOBAL_MISSION, ATLAS_PATH, ATLAS_STORY,
 				DIST_WALKED("Distance walked"),
 				DIST_SWAM  ("Distance swam"),
 				DIST_FLY   ("Distance flown"),
-				DIST_WARP  ("Number of warps"),
 				ALIENS_MET ("Aliens met"),
 				WORDS_LEARNT("Words learnt"),
-				TRA_STANDING("Gek"    +" standing"), TSEEN_SYSTEMS("Gek"    +" Systems seen"), TWORDS_LEARNT("Gek"    +" words learnt"), TDONE_MISSIONS("Gek"    +" missions done"),
-				EXP_STANDING("Korvax" +" standing"), ESEEN_SYSTEMS("Korvax" +" Systems seen"), EWORDS_LEARNT("Korvax" +" words learnt"), EDONE_MISSIONS("Korvax" +" missions done"),
-				WAR_STANDING("Vy'keen"+" standing"), WSEEN_SYSTEMS("Vy'keen"+" Systems seen"), WWORDS_LEARNT("Vy'keen"+" words learnt"), WDONE_MISSIONS("Vy'keen"+" missions done"),
-				TGUILD_STAND("Traders"  +" guild standing"), TGDONE_MISSIONS("Traders"  +" guild missions done"),
-				EGUILD_STAND("Explorers"+" guild standing"), EGDONE_MISSIONS("Explorers"+" guild missions done"),
-				WGUILD_STAND("Warriors" +" guild standing"), WGDONE_MISSIONS("Warriors" +" guild missions done"),
-				SENTINEL_KILLS("Sentinels killed (all)"), DRONES_KILLED("Sentinel drones killed"), QUADS_KILLED("Sentinel quads killed"), WALKERS_KILLED("Sentinel walkers killed"),
-				POLICE_KILLED, PIRATES_KILLED, ENEMIES_KILLED,
+				TRA_STANDING("Gek"    +" standing"), TSEEN_SYSTEMS("Gek"    +" systems seen"), TWORDS_LEARNT("Gek"    +" words learnt"), TDONE_MISSIONS("Gek"    +" missions done"),
+				EXP_STANDING("Korvax" +" standing"), ESEEN_SYSTEMS("Korvax" +" systems seen"), EWORDS_LEARNT("Korvax" +" words learnt"), EDONE_MISSIONS("Korvax" +" missions done"),
+				WAR_STANDING("Vy'keen"+" standing"), WSEEN_SYSTEMS("Vy'keen"+" systems seen"), WWORDS_LEARNT("Vy'keen"+" words learnt"), WDONE_MISSIONS("Vy'keen"+" missions done"),
+				TGUILD_STAND("Traders"  +" guild standing"), TGDONE_MISSIONS("Traders"  +" guild missions done"), MONEY("Units earned"), PLANTS_PLANTED("Plants planted"),
+				EGUILD_STAND("Explorers"+" guild standing"), EGDONE_MISSIONS("Explorers"+" guild missions done"), DIST_WARP  ("Number of warps"), RARE_SCANNED("Rare creatures scanned"),
+				WGUILD_STAND("Warriors" +" guild standing"), WGDONE_MISSIONS("Warriors" +" guild missions done"), SENTINEL_KILLS("Sentinels killed (all)"), ENEMIES_KILLED("Enemies killed"),
+				DRONES_KILLED("Sentinel drones killed"), QUADS_KILLED("Sentinel quads killed"), WALKERS_KILLED("Sentinel walkers killed"),
+				POLICE_KILLED("Sentinel ships killed"),
+				PIRATES_KILLED("Pirates killed"),
 				PREDS_KILLED, CREATURES_KILL,
-				DISC_ALL_CREATU, DISC_FLORA, DISC_CREATURES, DISC_MINERALS, DISC_PLANETS, DISC_WAYPOINTS,
+				DISC_ALL_CREATU("Planets, where all creatures were found"),
+				DISC_FLORA, DISC_CREATURES, DISC_MINERALS, DISC_PLANETS, DISC_WAYPOINTS,
 				TUTORIAL,
 				TECH_BOUGHT, SHIPS_BOUGHT,
 				DEPOTS_BROKEN,
@@ -552,11 +913,9 @@ public class SaveGameData {
 				BLACKHOLE_WARPS,
 				ITEMS_TELEPRT,
 				STATION_VISITED,
-				RARE_SCANNED,
 				SPACE_BATTLES,
 				PHOTO_MODE_USED,
 				ARTIFACT_HINTS,
-				PLANTS_PLANTED,
 				RES_EXTRACTED,
 				SALVAGE_LOOTED,
 				VISIT_EXT_BASE,
@@ -658,6 +1017,10 @@ public class SaveGameData {
 
 	enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
 
+	private void enableStackTrace(boolean isStackTraceEnabled) {
+		this.isStackTraceEnabled = isStackTraceEnabled;
+	}
+
 	private Value getValue(JSON_Object data, Object... path) {
 		Value value = null;
 		try {
@@ -669,7 +1032,7 @@ public class SaveGameData {
 				errorMessage = String.format("Value is null. (path: %s)", Arrays.toString(path));
 			}
 		} catch (PathIsNotSolvableException e) {
-			e.printStackTrace();
+			if (isStackTraceEnabled) e.printStackTrace();
 			error = Error.PathIsNotSolvable;
 			errorMessage = "PathIsNotSolvable: "+Arrays.toString(path);
 		}
@@ -721,6 +1084,13 @@ public class SaveGameData {
 		}
 	}
 
+	private String getStringValue_silent(JSON_Object data, Object... path) {
+		enableStackTrace(false);
+		String value = getStringValue(data, path);
+		enableStackTrace(true);
+		return value;
+	}
+
 	private String getStringValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
@@ -764,30 +1134,5 @@ public class SaveGameData {
 			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Object, value.type, Arrays.toString(path));
 			return null;
 		}
-	}
-	
-	final static class General {
-		
-		private SaveGameData data;
-		
-		public General(SaveGameData data) {
-			this.data = data;
-		}
-		
-		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
-		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
-		public Long getPlayerShield   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          ); }
-		public Long getShipHealth     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      ); }
-		public Long getShipShield     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      ); }
-		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
-		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
-		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
-		
-		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
-		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
-		public Double      getTestFloat  (Object... path) { return data.getFloatValue  (data.json_data, path); }
-		public String      getTestString (Object... path) { return data.getStringValue (data.json_data, path); }
-		public JSON_Array  getTestArray  (Object... path) { return data.getArrayValue  (data.json_data, path); }
-		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
 	}
 }

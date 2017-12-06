@@ -42,14 +42,22 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.GalacticRegion;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
 	
 	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
+	private static final String FILE_UNIVERSE_OBJECT_NAMES = "NMS_Viewer.UniverseObjects.txt";
 
 	static final boolean DEBUG = true;
+
 	
 	private static StandardMainWindow mainWindow;
 
@@ -171,6 +179,7 @@ public class SaveViewer implements ActionListener {
 				log_ln(" done");
 				if (new_json_data!=null) {
 					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+					loadNamesOfUniverseObjectsFromFile(saveGameData.universe);
 					SaveGameView saveGameView = new SaveGameView(selectedFile,saveGameData);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
@@ -262,7 +271,7 @@ public class SaveViewer implements ActionListener {
 			
 			currentSelected = null;
 			tabbedPane = new JTabbedPane();
-			tabbedPane.setPreferredSize(new Dimension(620, 500));
+			tabbedPane.setPreferredSize(new Dimension(1500, 800));
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent e) {
@@ -406,7 +415,7 @@ public class SaveViewer implements ActionListener {
 				
 				String fullName = str.substring(pos+1);
 				if (!fullName.equals(knownID.fullName)) {
-					System.out.printf("Changed StatValue.KnownID.fullName found: [old]\"%s\" -> [new]\"%s\"\r\n",knownID.fullName,fullName);
+					System.out.printf("Changed StatValue.KnownID.fullName found: %16s [old]\"%s\" -> [new]\"%s\"\r\n",knownID,knownID.fullName,fullName);
 					knownID.fullName = fullName;
 				}
 			}
@@ -425,6 +434,73 @@ public class SaveViewer implements ActionListener {
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (KnownID id:knownIDs)
 				out.printf("%s=%s\r\n",id.toString(),id.fullName);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void loadNamesOfUniverseObjectsFromFile(Universe universe) {
+		File file = new File(FILE_UNIVERSE_OBJECT_NAMES);
+		if (!file.isFile()) return;
+		
+		System.out.println();
+		String str;
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+			while ((str=in.readLine())!=null) {
+				int pos = str.indexOf('=');
+				if (pos<0) continue;
+				
+				String addressStr = str.substring(0, pos);
+				String nameStr = str.substring(pos+1);
+				
+				long address = Long.parseLong(addressStr, 16);
+				UniverseAddress ua = new UniverseAddress(address);
+				
+				if (ua.isPlanet()) {
+					Planet planet = universe.findPlanet(ua);
+					if (planet!=null) {
+						planet.setName(nameStr);
+						System.out.printf("Name of planet %s is known: \"%s\"\r\n",ua.getExtendedSigBoostCode(),nameStr);
+					}
+				}
+				if (ua.isSolarSystem()) {
+					SolarSystem system = universe.findSolarSystem(ua);
+					if (system!=null) {
+						system.setName(nameStr);
+						System.out.printf("Name of solar system %s is known: \"%s\"\r\n",ua.getSigBoostCode(),nameStr);
+					}
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println();
+	}
+
+	public static void saveNamesOfUniverseObjectsToFile(Universe universe) {
+		File file = new File(FILE_UNIVERSE_OBJECT_NAMES);
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+			System.out.println("Universe:");
+			for (Galaxy g:universe.galaxies) {
+				for (GalacticRegion gr:g.galacticRegions) {
+					for (SolarSystem sys:gr.solarSystems) {
+						if (sys.hasName()) {
+							UniverseAddress ua = sys.getUniverseAddress();
+							out.printf("%014X=%s\r\n",ua.getAddress(),sys.getName());
+						}
+						for (Planet p:sys.planets)
+							if (p.hasName()) {
+								UniverseAddress ua = p.getUniverseAddress();
+								out.printf("%014X=%s\r\n",ua.getAddress(),p.getName());
+							}
+					}
+				}
+			}
+//			
+//			for (KnownID id:knownIDs)
+//				out.printf("%s=%s\r\n",id.toString(),id.fullName);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
