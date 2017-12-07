@@ -1,8 +1,10 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -33,6 +35,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -43,15 +46,15 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords.KnownWord;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.GalacticRegion;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
@@ -190,10 +193,9 @@ class SaveGameView extends JPanel {
 		private static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
 		private static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
-		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet }
 		private static final int TreeIconHeight = 20;
-		private static final IconSource<UniverseTreeIcons> UniverseTreeIconsIS = new IconSource<UniverseTreeIcons>(30,TreeIconHeight){
-			@Override protected int getIconIndexInImage(UniverseTreeIcons key) {
+		private static final IconSource<NodeType> UniverseTreeIconsIS = new IconSource<NodeType>(30,TreeIconHeight){
+			@Override protected int getIconIndexInImage(NodeType key) {
 				switch(key) {
 				case Universe   : return 0;
 				case Galaxy     : return 1;
@@ -209,17 +211,17 @@ class SaveGameView extends JPanel {
 			PortalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
 			PortalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
 			UniverseTreeIconsIS.readIconsFromResource("/UniverseTreeIcons.png");
-			UniverseTreeIconsIS.cacheIcons(UniverseTreeIcons.values());
+			UniverseTreeIconsIS.cacheIcons(NodeType.values());
 		}
 
 		private JTree tree;
 		private DefaultTreeModel treeModel;
-		private UniverseTreeNode selectedNode;
+		private GenericTreeNode<?> selectedNode;
 
 		private JTextArea textArea;
 		private JLabel portalGlyphs;
 
-		private UniverseTreeNode clickedNode;
+		private GenericTreeNode<?> clickedNode;
 		private JPopupMenu contextMenu;
 		private JMenuItem menuItemSetName;
 		private JMenuItem menuItemClearName;
@@ -229,7 +231,7 @@ class SaveGameView extends JPanel {
 			
 			selectedNode = null;
 			
-			treeModel = new DefaultTreeModel(new UniverseTreeNode(data.universe));
+			treeModel = new DefaultTreeModel(new UniverseNode(data.universe));
 			tree = new JTree(treeModel);
 			JScrollPane treeScrollPane = new JScrollPane(tree);
 			//treeScrollPane.setPreferredSize(new Dimension(600, 500));
@@ -281,8 +283,8 @@ class SaveGameView extends JPanel {
 		private void setNameForClickedNode() {
 			if (clickedNode!=null) {
 				switch(clickedNode.type) {
-				case Planet     : setNameForUniverseAddress(clickedNode.planet     .getUniverseAddress(),clickedNode.planet     , "planet"      ); break;
-				case SolarSystem: setNameForUniverseAddress(clickedNode.solarSystem.getUniverseAddress(),clickedNode.solarSystem, "solar system"); break;
+				case Planet     : setNameForUniverseAddress(((     PlanetNode)clickedNode).value.getUniverseAddress(),((     PlanetNode)clickedNode).value, "planet"      ); break;
+				case SolarSystem: setNameForUniverseAddress(((SolarSystemNode)clickedNode).value.getUniverseAddress(),((SolarSystemNode)clickedNode).value, "solar system"); break;
 				default:break;
 				}
 				treeModel.nodeChanged(clickedNode);
@@ -292,8 +294,8 @@ class SaveGameView extends JPanel {
 		private void clearNameForClickedNode() {
 			if (clickedNode!=null) {
 				switch(clickedNode.type) {
-				case Planet     : clearNameForUniverseAddress(clickedNode.planet     .getUniverseAddress(),clickedNode.planet     , "planet"      ); break;
-				case SolarSystem: clearNameForUniverseAddress(clickedNode.solarSystem.getUniverseAddress(),clickedNode.solarSystem, "solar system"); break;
+				case Planet     : clearNameForUniverseAddress(((     PlanetNode)clickedNode).value.getUniverseAddress(),((     PlanetNode)clickedNode).value, "planet"      ); break;
+				case SolarSystem: clearNameForUniverseAddress(((SolarSystemNode)clickedNode).value.getUniverseAddress(),((SolarSystemNode)clickedNode).value, "solar system"); break;
 				default:break;
 				}
 				treeModel.nodeChanged(clickedNode);
@@ -318,15 +320,14 @@ class SaveGameView extends JPanel {
 			if (e.getButton()==MouseEvent.BUTTON3) {
 				TreePath selectedTreePath = tree.getPathForLocation(e.getX(), e.getY());
 				Object object = selectedTreePath.getLastPathComponent();
-				if (object instanceof UniverseTreeNode) {
-					clickedNode = (UniverseTreeNode)object;
+				if (object instanceof GenericTreeNode<?>) {
+					clickedNode = (GenericTreeNode<?>)object;
 					switch(clickedNode.type) {
-					case Universe      : changeSetNameMenuItem(false,"Set Name",false); break;
-					case Galaxy        : changeSetNameMenuItem(false,"Set Name",false); break;
-					case GalacticRegion: changeSetNameMenuItem(false,"Set Name",false); break;
-					case SolarSystem   : changeSetNameMenuItem(true, clickedNode.solarSystem.hasUserDefinedName()?"Change name":"Set name", clickedNode.solarSystem.hasUserDefinedName()); break;
-					case Planet        : changeSetNameMenuItem(true, clickedNode.planet     .hasUserDefinedName()?"Change name":"Set name", clickedNode.planet     .hasUserDefinedName()); break;
-					case Unknown       : changeSetNameMenuItem(false,"Set Name",false); break;
+					case Universe   : changeSetNameMenuItem(false,"Set Name",false); break;
+					case Galaxy     : changeSetNameMenuItem(false,"Set Name",false); break;
+					case Region     : changeSetNameMenuItem(false,"Set Name",false); break;
+					case SolarSystem: changeSetNameMenuItem(true, ((SolarSystemNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name", ((SolarSystemNode)clickedNode).value.hasUserDefinedName()); break;
+					case Planet     : changeSetNameMenuItem(true, ((     PlanetNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name", ((     PlanetNode)clickedNode).value.hasUserDefinedName()); break;
 					}
 				}
 				contextMenu.show(tree, e.getX(), e.getY());
@@ -342,13 +343,13 @@ class SaveGameView extends JPanel {
 		@Override
 		public void valueChanged(TreeSelectionEvent e) {
 			Object comp = e.getPath().getLastPathComponent();
-			if (!(comp instanceof UniverseTreeNode)) {
+			if (!(comp instanceof GenericTreeNode<?>)) {
 				selectedNode = null;
 				return;
 			}
 			
 			textArea.setText("");
-			selectedNode = (UniverseTreeNode)comp;
+			selectedNode = (GenericTreeNode<?>)comp;
 			UniverseAddress ua;
 			int n;
 			
@@ -357,7 +358,8 @@ class SaveGameView extends JPanel {
 			
 			switch(selectedNode.type) {
 			case Planet:
-				ua = selectedNode.planet.getUniverseAddress();
+				Planet planet = ((PlanetNode)selectedNode).value;
+				ua = planet.getUniverseAddress();
 				long portalGlyphCode = ua.getPortalGlyphCode();
 				portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 				
@@ -365,37 +367,35 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("Universe Address           : 0x%014X\r\n", ua.getAddress()));
 				textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
 				textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
-				showDiscNameObj(selectedNode.planet);
+				showDiscNameObj(planet);
 				break;
 				
 			case SolarSystem:
-				n = selectedNode.solarSystem.planets.size();
+				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
-				ua = selectedNode.solarSystem.getUniverseAddress();
+				SolarSystem system = ((SolarSystemNode)selectedNode).value;
+				ua = system.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
 				textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
-				showDiscNameObj(selectedNode.solarSystem);
+				showDiscNameObj(system);
 				break;
 				
-			case GalacticRegion:
-				n = selectedNode.galacticRegion.solarSystems.size();
+			case Region:
+				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
-				ua = selectedNode.galacticRegion.getUniverseAddress();
+				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getGalacticRegionCoordinates()));
 				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
 				break;
 				
 			case Galaxy:
-				n = selectedNode.galaxy.galacticRegions.size();
+				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known region%s\r\n", n, n>1?"s":""));
 				break;
 				
 			case Universe:
-				n = selectedNode.universe.galaxies.size();
+				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known galax%s\r\n", n, n>1?"ies":"y"));
-				break;
-				
-			case Unknown:
 				break;
 			}
 		}
@@ -419,91 +419,116 @@ class SaveGameView extends JPanel {
 			return new ImageIcon(image);
 		}
 		
-		class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
+		static class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
+
+			private static final Color TEXTCOLOR__CURRENT_POS  = new Color(0x2EA000);
+			private static final Color TEXTCOLOR__WITHOUT_NAME = new Color(0x808080);
+			private static final Color TEXTCOLOR__NO_UPLOADED  = new Color(0x0000FF); // or 0x1D67AE
+
 			private static final long serialVersionUID = 4733567681038484432L;
+			
+			private Font boldfont;
+			private Font standardFont;
+			
+			UniverseTreeCellRenderer() {
+				standardFont = UIManager.getFont("Tree.font");
+				boldfont = standardFont.deriveFont(Font.BOLD);
+			}
 
 			@Override
-			public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-				Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-				if (value instanceof UniverseTreeNode) {
-					UniverseTreeNode node = (UniverseTreeNode)value;
+			public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+				Component component = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+				if (value instanceof GenericTreeNode<?>) {
+					GenericTreeNode<?> node = (GenericTreeNode<?>)value;
 					switch (node.type) {
-					case Universe      : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Universe   )); break;
-					case Galaxy        : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy     )); break;
-					case GalacticRegion: setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Region     )); break;
-					case SolarSystem   : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem)); break;
-					case Planet        : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     )); break;
-					case Unknown: break;
+					case Universe   : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Universe   )); break;
+					case Galaxy     : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Galaxy     )); break;
+					case Region     : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Region     )); break;
+					case SolarSystem: setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.SolarSystem)); break;
+					case Planet     : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Planet     )); break;
+					}
+					setFont(standardFont);
+					Universe.DiscoverableAndNamableObject obj = null;
+					if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
+					if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
+					if (obj != null) {
+						if (!selected && !obj.hasName()   ) setForeground(TEXTCOLOR__WITHOUT_NAME);
+						if (!selected && obj.fromDiscAvail) setForeground(TEXTCOLOR__NO_UPLOADED);
+						if (obj.fromCurrPos) {
+							if (!selected) setForeground(TEXTCOLOR__CURRENT_POS);
+							setFont(boldfont);
+						}
 					}
 				}
 				return component;
 			}
 		}
 		
-		enum NodeType { Universe, Galaxy, GalacticRegion, SolarSystem, Planet, Unknown }
+		enum NodeType { Universe, Galaxy, Region, SolarSystem, Planet }
 		
-		static class UniverseTreeNode extends AbstractTreeNode<UniverseTreeNode> {
-
-			private NodeType type;
-			private Universe universe;
-			private Galaxy galaxy;
-			private GalacticRegion galacticRegion;
-			private SolarSystem solarSystem;
-			private Planet planet;
-
-			private UniverseTreeNode(UniverseTreeNode parent) {
-				super(parent);
-				this.type = NodeType.Unknown;
-				this.universe = null;
-				this.galaxy = null;
-				this.galacticRegion = null;
-				this.solarSystem = null;
-				this.planet = null;
-			}
+		static abstract class LocalTreeNode extends AbstractTreeNode<LocalTreeNode> {
 			
-			public UniverseTreeNode(Universe universe) {
-				this((UniverseTreeNode)null);
-				this.universe = universe;
-				this.type = NodeType.Universe;
+			protected LocalTreeNode(LocalTreeNode parent) {
+				super(parent);
 			}
 
-			public UniverseTreeNode(UniverseTreeNode parent, Object obj) {
-				this(parent);
-				if (obj instanceof Galaxy        ) { this.galaxy         = (Galaxy        )obj; type = NodeType.Galaxy        ; }
-				if (obj instanceof GalacticRegion) { this.galacticRegion = (GalacticRegion)obj; type = NodeType.GalacticRegion; }
-				if (obj instanceof SolarSystem   ) { this.solarSystem    = (SolarSystem   )obj; type = NodeType.SolarSystem   ; }
-				if (obj instanceof Planet        ) { this.planet         = (Planet        )obj; type = NodeType.Planet        ; }
-			}
-
-			@Override
-			public String toString() {
-				if (universe      !=null) { return universe.toString(); }
-				if (galaxy        !=null) { return galaxy.toString(); }
-				if (galacticRegion!=null) { return galacticRegion.toString(); }
-				if (solarSystem   !=null) { return solarSystem.toString(); }
-				if (planet        !=null) { return planet.toString(); }
-				return "???";
-			}
-
-			@Override
-			public boolean getAllowsChildren() {
-				return (universe!=null || galaxy!=null || galacticRegion!=null || solarSystem!=null);
-			}
+			@Override public String toString() { return getLabel(); }
+			
+			protected abstract String getLabel();
+			protected abstract int getDataChildrenCount();
+			protected abstract LocalTreeNode createTreeChild(int i);
 
 			@Override
 			void createChildren() {
-				if (universe      !=null) { createChildren(universe.galaxies          ); return; }
-				if (galaxy        !=null) { createChildren(galaxy.galacticRegions     ); return; }
-				if (galacticRegion!=null) { createChildren(galacticRegion.solarSystems); return; }
-				if (solarSystem   !=null) { createChildren(solarSystem.planets        ); return; }
-				if (planet        !=null) { children = new UniverseTreeNode[0]; return; }
+				children = new LocalTreeNode[getDataChildrenCount()];
+				for (int i=0; i<children.length; ++i)
+					children[i] = createTreeChild(i);
 			}
 			
-			<T> void createChildren(Vector<T> vector) {
-				children = new UniverseTreeNode[vector.size()];
-				for (int i=0; i<children.length; ++i)
-					children[i] = new UniverseTreeNode(this,vector.get(i));
+		}
+		
+		static abstract class GenericTreeNode<V> extends LocalTreeNode {
+			
+			NodeType type;
+			V value;
+
+			protected GenericTreeNode(LocalTreeNode parent, NodeType type, V value) {
+				super(parent);
+				this.value = value;
+				this.type = type;
 			}
+
+			@Override public boolean getAllowsChildren() { return true; /*except Planet*/ }
+			@Override protected String getLabel() { return value.toString(); }
+		}
+		
+		static class UniverseNode extends GenericTreeNode<Universe> {
+			private UniverseNode(Universe value) { super(null, NodeType.Universe, value); }
+			@Override protected int getDataChildrenCount() { return value.galaxies.size(); }
+			@Override protected LocalTreeNode createTreeChild(int i) { return new GalaxyNode(this,value.galaxies.get(i)); }
+		}
+		static class GalaxyNode extends GenericTreeNode<Galaxy> {
+			private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, NodeType.Galaxy, value); }
+			@Override protected int getDataChildrenCount() { return value.regions.size(); }
+			@Override protected LocalTreeNode createTreeChild(int i) { return new RegionNode(this,value.regions.get(i)); }
+		}
+		static class RegionNode extends GenericTreeNode<Region> {
+			private RegionNode(GalaxyNode parent, Region value) { super(parent, NodeType.Region, value); }
+			@Override protected int getDataChildrenCount() { return value.solarSystems.size(); }
+			@Override protected LocalTreeNode createTreeChild(int i) { return new SolarSystemNode(this,value.solarSystems.get(i)); }
+		}
+		static class SolarSystemNode extends GenericTreeNode<SolarSystem> {
+			private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); }
+			@Override protected int getDataChildrenCount() { return value.planets.size(); }
+			@Override protected LocalTreeNode createTreeChild(int i) { return new PlanetNode(this,value.planets.get(i)); }
+			@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
+		}
+		static class PlanetNode extends GenericTreeNode<Planet> {
+			private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); }
+			@Override protected int getDataChildrenCount() { return 0; }
+			@Override protected LocalTreeNode createTreeChild(int i) { throw new UnsupportedOperationException("Can't create a TreeChild from a PlanetNode."); }
+			@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
+			@Override public boolean getAllowsChildren() { return false; }
 		}
 	}
 	

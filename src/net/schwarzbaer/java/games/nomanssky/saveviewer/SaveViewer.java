@@ -42,7 +42,7 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.GalacticRegion;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
@@ -100,6 +100,8 @@ public class SaveViewer implements ActionListener {
 		
 //		writeUIDefaults("UIManagerDefaults",UIManager.getDefaults());
 //		writeUIDefaults("LookAndFeelDefaults",UIManager.getLookAndFeelDefaults());
+//		System.out.println("UIManager(Tree.font):          "+UIManager.getFont("Tree.font"));
+//		System.out.println("LookAndFeelDefaults(Tree.font):"+UIManager.getLookAndFeelDefaults().getFont("Tree.font"));
 		
 		new SaveViewer().createGUI();
 	}
@@ -518,7 +520,7 @@ public class SaveViewer implements ActionListener {
 		File file = new File(FILE_UNIVERSE_OBJECT_NAMES);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (Galaxy g:universe.galaxies) {
-				for (GalacticRegion gr:g.galacticRegions) {
+				for (Region gr:g.regions) {
 					for (SolarSystem sys:gr.solarSystems) {
 						if (sys.hasUserDefinedName()) {
 							UniverseAddress ua = sys.getUniverseAddress();

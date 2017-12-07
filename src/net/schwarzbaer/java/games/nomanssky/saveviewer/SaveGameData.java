@@ -531,11 +531,11 @@ public class SaveGameData {
 		public void sort() {
 			galaxies.sort(Comparator.comparing(g -> g.galacticIndex));
 			for (Galaxy g:galaxies) {
-				g.galacticRegions.sort(Comparator.comparing((GalacticRegion gr) -> gr.voxelY).thenComparing(Comparator.comparing((GalacticRegion gr) -> gr.voxelY)).thenComparing(Comparator.comparing((GalacticRegion gr) -> gr.voxelZ)));
-				for (GalacticRegion gr:g.galacticRegions) {
-					gr.solarSystems.sort(Comparator.comparing(sys -> sys.solarSystemIndex));
-					for (SolarSystem sys:gr.solarSystems) {
-						sys.planets.sort(Comparator.comparing(p -> p.planetIndex));
+				g.regions.sort(Comparator.comparing((Region r) -> r.voxelY).thenComparing(Comparator.comparing((Region r) -> r.voxelY)).thenComparing(Comparator.comparing((Region r) -> r.voxelZ)));
+				for (Region r:g.regions) {
+					r.solarSystems.sort(Comparator.comparing(s -> s.solarSystemIndex));
+					for (SolarSystem s:r.solarSystems) {
+						s.planets.sort(Comparator.comparing(p -> p.planetIndex));
 					}
 				}
 			}
@@ -546,11 +546,11 @@ public class SaveGameData {
 			System.out.println("Universe:");
 			for (Galaxy g:galaxies) {
 				System.out.println("\t"+g+":");
-				for (GalacticRegion gr:g.galacticRegions) {
-					System.out.println("\t\t"+gr+":");
-					for (SolarSystem sys:gr.solarSystems) {
-						System.out.println("\t\t\t"+sys+":");
-						for (Planet p:sys.planets)
+				for (Region r:g.regions) {
+					System.out.println("\t\t"+r+":");
+					for (SolarSystem s:r.solarSystems) {
+						System.out.println("\t\t\t"+s+":");
+						for (Planet p:s.planets)
 							System.out.println("\t\t\t\tPlanet "+p);
 					}
 				}
@@ -569,10 +569,10 @@ public class SaveGameData {
 			Galaxy galaxy = findGalaxy(uAddr.galaxyIndex);
 			if (galaxy==null) return null;
 			
-			GalacticRegion galacticRegion = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
-			if (galacticRegion==null) return null;
+			Region region = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
+			if (region==null) return null;
 			
-			return galacticRegion.findSolarSystem(uAddr.solarSystemIndex);
+			return region.findSolarSystem(uAddr.solarSystemIndex);
 		}
 
 		public Planet getOrCreatePlanet(long address) {
@@ -593,11 +593,11 @@ public class SaveGameData {
 			Galaxy galaxy = findGalaxy(uAddr.galaxyIndex);
 			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,uAddr.galaxyIndex));
 			
-			GalacticRegion galacticRegion = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
-			if (galacticRegion==null) galaxy.addRegion(galacticRegion=new GalacticRegion(galaxy,uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ));
+			Region region = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
+			if (region==null) galaxy.addRegion(region=new Region(galaxy,uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ));
 			
-			SolarSystem solarSystem = galacticRegion.findSolarSystem(uAddr.solarSystemIndex);
-			if (solarSystem==null) galacticRegion.addSolarSystem(solarSystem=new SolarSystem(galacticRegion,uAddr.solarSystemIndex));
+			SolarSystem solarSystem = region.findSolarSystem(uAddr.solarSystemIndex);
+			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,uAddr.solarSystemIndex));
 			
 			return solarSystem;
 		}
@@ -613,12 +613,12 @@ public class SaveGameData {
 			
 			final Universe universe;
 			final int galacticIndex;
-			final Vector<GalacticRegion> galacticRegions;
+			final Vector<Region> regions;
 			
 			public Galaxy(Universe universe, int galacticIndex) {
 				this.universe = universe;
 				this.galacticIndex = galacticIndex;
-				this.galacticRegions = new Vector<>();
+				this.regions = new Vector<>();
 			}
 
 			@Override
@@ -626,25 +626,25 @@ public class SaveGameData {
 				return "Galaxy "+galacticIndex;
 			}
 
-			public void addRegion(GalacticRegion galacticRegion) {
-				galacticRegions.add(galacticRegion);
+			public void addRegion(Region galacticRegion) {
+				regions.add(galacticRegion);
 			}
 
-			public GalacticRegion findRegion(int voxelX, int voxelY, int voxelZ) {
-				for (GalacticRegion gr:galacticRegions)
-					if (gr.voxelX==voxelX && gr.voxelY==voxelY && gr.voxelZ==voxelZ)
-						return gr;
+			public Region findRegion(int voxelX, int voxelY, int voxelZ) {
+				for (Region r:regions)
+					if (r.voxelX==voxelX && r.voxelY==voxelY && r.voxelZ==voxelZ)
+						return r;
 				return null;
 			}
 		}
 		
-		static final class GalacticRegion {
+		static final class Region {
 			
 			final Galaxy galaxy;
 			final int voxelX,voxelY,voxelZ;
 			final Vector<SolarSystem> solarSystems;
 			
-			public GalacticRegion(Galaxy galaxy, int x, int y, int z) {
+			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
 				this.voxelX = x;
 				this.voxelY = y;
@@ -731,23 +731,22 @@ public class SaveGameData {
 		
 		static final class SolarSystem extends DiscoverableAndNamableObject {
 			
-			final GalacticRegion galacticRegion;
+			final Region region;
 			final int solarSystemIndex;
 			final Vector<Planet> planets;
 			
-			public SolarSystem(GalacticRegion galacticRegion, int solarSystemIndex) {
-				this.galacticRegion = galacticRegion;
+			public SolarSystem(Region region, int solarSystemIndex) {
+				this.region = region;
 				this.solarSystemIndex = solarSystemIndex;
 				this.planets = new Vector<>();
 			}
 			
 			@Override
 			public String toString() {
-				String sourceIDStr = hasSourceID()?getSourceIDStr()+"  ":"";
 				if (hasName())
-					return String.format("%sSolarSystem %03X (%d) - \"%s\"", sourceIDStr, solarSystemIndex, solarSystemIndex, getName());
+					return String.format("SolarSystem %03X (%d) - \"%s\"", solarSystemIndex, solarSystemIndex, getName());
 				else
-					return String.format("%sSolarSystem %03X (%d)", sourceIDStr, solarSystemIndex, solarSystemIndex);
+					return String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
 			}
 
 			public void addPlanet(Planet planet) {
@@ -762,8 +761,8 @@ public class SaveGameData {
 			}
 
 			public UniverseAddress getUniverseAddress() {
-				if (galacticRegion==null) return null;
-				UniverseAddress ua = galacticRegion.getUniverseAddress();
+				if (region==null) return null;
+				UniverseAddress ua = region.getUniverseAddress();
 				ua.solarSystemIndex = solarSystemIndex;
 				return ua;
 			}
@@ -786,9 +785,8 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
-				String sourceIDStr = hasSourceID()?getSourceIDStr()+"  ":"";
 				UniverseAddress ua = getUniverseAddress();
-				if (ua!=null) return sourceIDStr + ua.getExtendedSigBoostCode() + (hasName()?" - \""+getName()+"\"":"");
+				if (ua!=null) return ua.getExtendedSigBoostCode() + (hasName()?" - \""+getName()+"\"":"");
 				return "Planet [planetIndex=" + planetIndex + (hasName()?", name=\""+getName()+"\"":"") + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
 			}
 
