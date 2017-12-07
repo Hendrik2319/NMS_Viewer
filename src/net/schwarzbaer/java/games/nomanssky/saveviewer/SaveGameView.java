@@ -38,12 +38,15 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
+import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords.KnownWord;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue;
@@ -179,11 +182,36 @@ class SaveGameView extends JPanel {
 		}
 	}
 
-	private static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
+	static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
 		enum UniverseTreeActionCommand { ChangeName, ClearName }
 		
+		private static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
+		private static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
+		
+		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet }
+		private static final int TreeIconHeight = 20;
+		private static final IconSource<UniverseTreeIcons> UniverseTreeIconsIS = new IconSource<UniverseTreeIcons>(30,TreeIconHeight){
+			@Override protected int getIconIndexInImage(UniverseTreeIcons key) {
+				switch(key) {
+				case Universe   : return 0;
+				case Galaxy     : return 1;
+				case Region     : return 2;
+				case SolarSystem: return 3;
+				case Planet     : return 4;
+				}
+			 	throw new IllegalArgumentException("Unknown icon key: "+key);
+			}
+		};
+
+		public static void prepareIconSources() {
+			PortalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
+			PortalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
+			UniverseTreeIconsIS.readIconsFromResource("/UniverseTreeIcons.png");
+			UniverseTreeIconsIS.cacheIcons(UniverseTreeIcons.values());
+		}
+
 		private JTree tree;
 		private DefaultTreeModel treeModel;
 		private UniverseTreeNode selectedNode;
@@ -207,7 +235,8 @@ class SaveGameView extends JPanel {
 			//treeScrollPane.setPreferredSize(new Dimension(600, 500));
 			tree.addTreeSelectionListener(this);
 			tree.addMouseListener(this);
-			//tree.setCellRenderer(new DefaultTreeCellRenderer());
+			tree.setCellRenderer(new UniverseTreeCellRenderer());
+			tree.setRowHeight(TreeIconHeight+1);
 			
 			contextMenu = new JPopupMenu("Contextmenu");
 			contextMenu.add(menuItemSetName   = createMenuItem("Change Name",UniverseTreeActionCommand.ChangeName));
@@ -384,12 +413,33 @@ class SaveGameView extends JPanel {
 			for (int i=11; i>=0; --i) {
 				int nr = (int)(portalGlyphCode&0xF);
 				portalGlyphCode = portalGlyphCode>>4;
-				BufferedImage glyph = SaveViewer.portalGlyphsIS_50_45.getImage(nr);
+				BufferedImage glyph = PortalGlyphsIS_50_45.getImage(nr);
 				graphics.drawImage(glyph, i*50, 0, null);
 			}
 			return new ImageIcon(image);
 		}
+		
+		class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
+			private static final long serialVersionUID = 4733567681038484432L;
 
+			@Override
+			public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+				Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+				if (value instanceof UniverseTreeNode) {
+					UniverseTreeNode node = (UniverseTreeNode)value;
+					switch (node.type) {
+					case Universe      : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Universe   )); break;
+					case Galaxy        : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy     )); break;
+					case GalacticRegion: setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Region     )); break;
+					case SolarSystem   : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem)); break;
+					case Planet        : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     )); break;
+					case Unknown: break;
+					}
+				}
+				return component;
+			}
+		}
+		
 		enum NodeType { Universe, Galaxy, GalacticRegion, SolarSystem, Planet, Unknown }
 		
 		static class UniverseTreeNode extends AbstractTreeNode<UniverseTreeNode> {

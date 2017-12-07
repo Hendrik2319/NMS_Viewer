@@ -39,7 +39,6 @@ import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -61,8 +60,6 @@ public class SaveViewer implements ActionListener {
 	
 	private static StandardMainWindow mainWindow;
 
-	static IndexOnlyIconSource portalGlyphsIS_100_90;
-	static IndexOnlyIconSource portalGlyphsIS_50_45;
 	static IconSource<ToolbarIcons> toolbarIS;
 	
 	private JFileChooser inputFileChooser;
@@ -76,11 +73,7 @@ public class SaveViewer implements ActionListener {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
-		portalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
-		portalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
-		
-		portalGlyphsIS_50_45 = new IconSource.IndexOnlyIconSource(50,45,4);
-		portalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
+		SaveGameView.UniversePanel.prepareIconSources();
 		
 		toolbarIS = new IconSource<ToolbarIcons>(16,16){
 			@Override protected int getIconIndexInImage(ToolbarIcons key) {
