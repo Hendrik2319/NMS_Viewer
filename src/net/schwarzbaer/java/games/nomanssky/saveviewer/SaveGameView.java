@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
@@ -54,11 +55,13 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords.KnownWord;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.ExtraInfo;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnConfig;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TreeView.AbstractTreeNode;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TreeView.JsonTreeNode;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
@@ -167,18 +170,19 @@ class SaveGameView extends JPanel {
 			updateContent();
 		}
 
-		protected void clearNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
-			String message = "Are you sure, that you want to clear user defined name of "+objectStr+" "+ua.getExtendedSigBoostCode()+"?";
-			String title = "Clear user defined name of "+objectStr;
-			if (JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION)) {
-				object.setUserDefinedName(null);
-				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
-			}
-		}
+//		protected void clearNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
+//			String message = "Are you sure, that you want to clear user defined name of "+objectStr+" "+ua.getExtendedSigBoostCode()+"?";
+//			String title = "Clear user defined name of "+objectStr;
+//			if (JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION)) {
+//				object.setUserDefinedName(null);
+//				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
+//			}
+//		}
 
 		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
 			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getUserDefinedName());
 			if (name!=null) {
+				if (name.isEmpty()) name=null;
 				object.setUserDefinedName(name);
 				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
 			}
@@ -188,7 +192,7 @@ class SaveGameView extends JPanel {
 	static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
-		enum UniverseTreeActionCommand { ChangeName, ClearName }
+		enum UniverseTreeActionCommand { ChangeName/*, ClearName*/, ExpandAll, CollapseRemainingTree }
 		
 		private static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
 		private static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
@@ -212,20 +216,25 @@ class SaveGameView extends JPanel {
 			PortalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
 			UniverseTreeIconsIS.readIconsFromResource("/UniverseTreeIcons.png");
 			UniverseTreeIconsIS.cacheIcons(NodeType.values());
+			Icon icon = UniverseTreeIconsIS.getCachedIcon(NodeType.Galaxy);
+			icon = IconSource.cutIcon(icon,5,0,20,20);
+			UniverseTreeIconsIS.setCachedIcon(NodeType.Galaxy,icon);
 		}
 
 		private JTree tree;
 		private DefaultTreeModel treeModel;
 		private GenericTreeNode<?> selectedNode;
 
-		private JTextArea textArea;
 		private JLabel portalGlyphs;
-
+		private JTextArea textArea;
+		private ExtraInfoTableModel extraInfoTableModel;
+		
 		private GenericTreeNode<?> clickedNode;
+		private TreePath clickedTreePath;
 		private JPopupMenu contextMenu;
 		private JMenuItem menuItemSetName;
-		private JMenuItem menuItemClearName;
-
+//		private JMenuItem menuItemClearName;
+		
 		public UniversePanel(SaveGameData data) {
 			super(data);
 			
@@ -242,21 +251,33 @@ class SaveGameView extends JPanel {
 			
 			contextMenu = new JPopupMenu("Contextmenu");
 			contextMenu.add(menuItemSetName   = createMenuItem("Change Name",UniverseTreeActionCommand.ChangeName));
-			contextMenu.add(menuItemClearName = createMenuItem("Clear Name",UniverseTreeActionCommand.ClearName));
+//			contextMenu.add(menuItemClearName = createMenuItem("Clear Name",UniverseTreeActionCommand.ClearName));
+			contextMenu.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+			contextMenu.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
 			//textArea.setPreferredSize(new Dimension(600, 100));
 			textArea.setBorder(BorderFactory.createEtchedBorder());
 			
+			extraInfoTableModel = new ExtraInfoTableModel();
+			JTable extraInfoTable = new JTable(extraInfoTableModel);
+			extraInfoTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			extraInfoTableModel.setColumnWidths(extraInfoTable);
+			new TableView.DebugTableContextMenu(extraInfoTable);
+			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
 			portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 			
+			JPanel infoPanel = new JPanel(new GridLayout(2,1,3,3));
+			infoPanel.add(new JScrollPane(textArea));
+			infoPanel.add(new JScrollPane(extraInfoTable));
+			
 			JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
 			//eastPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 			eastPanel.add(portalGlyphs,BorderLayout.NORTH);
-			eastPanel.add(textArea,BorderLayout.CENTER);
+			eastPanel.add(infoPanel,BorderLayout.CENTER);
 			
 			add(treeScrollPane,BorderLayout.CENTER);
 			add(eastPanel,BorderLayout.EAST);
@@ -291,25 +312,44 @@ class SaveGameView extends JPanel {
 			}
 		}
 		
-		private void clearNameForClickedNode() {
-			if (clickedNode!=null) {
-				switch(clickedNode.type) {
-				case Planet     : clearNameForUniverseAddress(((     PlanetNode)clickedNode).value.getUniverseAddress(),((     PlanetNode)clickedNode).value, "planet"      ); break;
-				case SolarSystem: clearNameForUniverseAddress(((SolarSystemNode)clickedNode).value.getUniverseAddress(),((SolarSystemNode)clickedNode).value, "solar system"); break;
-				default:break;
-				}
-				treeModel.nodeChanged(clickedNode);
-			}
-		}
+//		private void clearNameForClickedNode() {
+//			if (clickedNode!=null) {
+//				switch(clickedNode.type) {
+//				case Planet     : clearNameForUniverseAddress(((     PlanetNode)clickedNode).value.getUniverseAddress(),((     PlanetNode)clickedNode).value, "planet"      ); break;
+//				case SolarSystem: clearNameForUniverseAddress(((SolarSystemNode)clickedNode).value.getUniverseAddress(),((SolarSystemNode)clickedNode).value, "solar system"); break;
+//				default:break;
+//				}
+//				treeModel.nodeChanged(clickedNode);
+//			}
+//		}
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
 			switch(actionCommand) {
 			case ChangeName: setNameForClickedNode(); break;
-			case ClearName : clearNameForClickedNode(); break;
+//			case ClearName : clearNameForClickedNode(); break;
+			case ExpandAll:
+				for (int row=0; row<tree.getRowCount(); ++row)
+					if (!tree.isExpanded(row))
+						tree.expandRow(row);
+				break;
+			case CollapseRemainingTree:
+				for (int row=tree.getRowCount()-1; row>=0; --row)
+					tree.collapseRow(row);
+				expandPath(clickedTreePath);
+//				clickedTreePath.getParentPath();
+//				tree.expandPath(clickedTreePath);
+				break;
 			}
 			clickedNode = null;
+			clickedTreePath = null;
+		}
+
+		private void expandPath(TreePath path) {
+			TreePath parentPath = path.getParentPath();
+			if (parentPath!=null) expandPath(parentPath);
+			tree.expandPath(path);
 		}
 
 		@Override public void mousePressed(MouseEvent e) {}
@@ -318,8 +358,9 @@ class SaveGameView extends JPanel {
 		@Override public void mouseExited(MouseEvent e) {}
 		@Override public void mouseClicked(MouseEvent e) {
 			if (e.getButton()==MouseEvent.BUTTON3) {
-				TreePath selectedTreePath = tree.getPathForLocation(e.getX(), e.getY());
-				Object object = selectedTreePath.getLastPathComponent();
+				clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
+				if (clickedTreePath==null) return;
+				Object object = clickedTreePath.getLastPathComponent();
 				if (object instanceof GenericTreeNode<?>) {
 					clickedNode = (GenericTreeNode<?>)object;
 					switch(clickedNode.type) {
@@ -329,32 +370,36 @@ class SaveGameView extends JPanel {
 					case SolarSystem: changeSetNameMenuItem(true, ((SolarSystemNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name", ((SolarSystemNode)clickedNode).value.hasUserDefinedName()); break;
 					case Planet     : changeSetNameMenuItem(true, ((     PlanetNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name", ((     PlanetNode)clickedNode).value.hasUserDefinedName()); break;
 					}
+					contextMenu.show(tree, e.getX(), e.getY());
 				}
-				contextMenu.show(tree, e.getX(), e.getY());
 			}
 		}
 
 		private void changeSetNameMenuItem(boolean enabledSet, String titleSet, boolean enabledClear) {
 			menuItemSetName.setEnabled(enabledSet);
 			menuItemSetName.setText(titleSet);
-			menuItemClearName.setEnabled(enabledClear);
+			//menuItemClearName.setEnabled(enabledClear);
 		}
 
 		@Override
 		public void valueChanged(TreeSelectionEvent e) {
+			textArea.setText("");
+			
 			Object comp = e.getPath().getLastPathComponent();
 			if (!(comp instanceof GenericTreeNode<?>)) {
 				selectedNode = null;
+				extraInfoTableModel.clearData();
 				return;
 			}
 			
-			textArea.setText("");
 			selectedNode = (GenericTreeNode<?>)comp;
 			UniverseAddress ua;
 			int n;
 			
-			if (selectedNode.type!=NodeType.Planet)
+			if (selectedNode.type!=NodeType.Planet) {
 				portalGlyphs.setIcon(null);
+				extraInfoTableModel.clearData();
+			}
 			
 			switch(selectedNode.type) {
 			case Planet:
@@ -368,6 +413,8 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
 				textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
 				showDiscNameObj(planet);
+				
+				extraInfoTableModel.setData(planet.extraInfos);
 				break;
 				
 			case SolarSystem:
@@ -417,6 +464,74 @@ class SaveGameView extends JPanel {
 				graphics.drawImage(glyph, i*50, 0, null);
 			}
 			return new ImageIcon(image);
+		}
+		
+		private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
+			Label("Label", String.class, 20,-1, 50, 50),
+			Info ("Info" , String.class, 50,-1,500,500);
+			
+			private SimplifiedColumnConfig config;
+
+			private ExtraInfoColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				config = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			
+			@Override public SimplifiedColumnConfig getColumnConfig() { return config; }
+		}
+		private class ExtraInfoTableModel extends TableView.SimplifiedTableModel<ExtraInfoColumnID> {
+
+			private Vector<ExtraInfo> tableData;
+
+			protected ExtraInfoTableModel() {
+				super(ExtraInfoColumnID.values());
+				this.tableData = null;
+			}
+
+			public void clearData() { setData(null); }
+			public void setData(Vector<ExtraInfo> data) {
+				this.tableData = data;
+				fireTableUpdate();
+			}
+
+			@Override
+			public int getRowCount() {
+				if (tableData==null) return 0;
+				return tableData.size()+1;
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
+				if (tableData==null) return null;
+				if (rowIndex==tableData.size()) return "";
+				switch(columnID) {
+				case Label: return tableData.get(rowIndex).shortLabel;
+				case Info : return tableData.get(rowIndex).info;
+				}
+				return null;
+			}
+
+			@Override
+			protected boolean isCellEditable(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
+				return true;
+			}
+
+			@Override
+			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
+				if (tableData==null) return;
+				if (rowIndex==tableData.size()) {
+					switch(columnID) {
+					case Label: tableData.add(new ExtraInfo(aValue.toString(),"")); break;
+					case Info : tableData.add(new ExtraInfo("",aValue.toString())); break;
+					}
+					fireTableRowAdded(rowIndex+1);
+				} else
+					switch(columnID) {
+					case Label: tableData.get(rowIndex).shortLabel = aValue.toString(); break;
+					case Info : tableData.get(rowIndex).info       = aValue.toString(); break;
+					}
+				treeModel.nodeChanged(selectedNode);
+				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
+			}
 		}
 		
 		static class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
@@ -521,13 +636,13 @@ class SaveGameView extends JPanel {
 			private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); }
 			@Override protected int getDataChildrenCount() { return value.planets.size(); }
 			@Override protected LocalTreeNode createTreeChild(int i) { return new PlanetNode(this,value.planets.get(i)); }
-			@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
+			//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
 		}
 		static class PlanetNode extends GenericTreeNode<Planet> {
 			private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); }
 			@Override protected int getDataChildrenCount() { return 0; }
 			@Override protected LocalTreeNode createTreeChild(int i) { throw new UnsupportedOperationException("Can't create a TreeChild from a PlanetNode."); }
-			@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
+			//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
 			@Override public boolean getAllowsChildren() { return false; }
 		}
 	}

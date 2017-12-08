@@ -45,6 +45,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
@@ -53,7 +54,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 public class SaveViewer implements ActionListener {
 	
 	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
-	private static final String FILE_UNIVERSE_OBJECT_NAMES = "NMS_Viewer.UniverseObjects.txt";
+	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 
 	static final boolean DEBUG = true;
 
@@ -477,34 +478,52 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static void loadNamesOfUniverseObjectsFromFile(Universe universe) {
-		File file = new File(FILE_UNIVERSE_OBJECT_NAMES);
+		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) return;
 		
 		System.out.println();
-		String str;
+		String str, lastLabel=null;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
 				int pos = str.indexOf('=');
 				if (pos<0) continue;
 				
 				String addressStr = str.substring(0, pos);
-				String nameStr = str.substring(pos+1);
+				String valueStr = str.substring(pos+1);
 				
+				boolean isExtraInfoShortLabel = false;
+				boolean isExtraInfo = false;
+				if (addressStr.endsWith(".short")) {
+					isExtraInfoShortLabel = true;
+					addressStr = addressStr.substring(0, addressStr.length()-".short".length());
+				} else if (addressStr.endsWith(".info")) {
+					isExtraInfo = true;
+					addressStr = addressStr.substring(0, addressStr.length()-".info".length());
+				}
 				long address = Long.parseLong(addressStr, 16);
 				UniverseAddress ua = new UniverseAddress(address);
 				
 				if (ua.isPlanet()) {
 					Planet planet = universe.findPlanet(ua);
 					if (planet!=null) {
-						planet.setUserDefinedName(nameStr);
-						System.out.printf("Name of planet %s was defined: \"%s\"\r\n",ua.getExtendedSigBoostCode(),nameStr);
+						if (isExtraInfoShortLabel) {
+							lastLabel = valueStr;
+						} else if (isExtraInfo) {
+							if (lastLabel!=null) {
+								planet.extraInfos.add(new ExtraInfo(lastLabel,valueStr));
+								lastLabel=null;
+							}
+						} else {
+							planet.setUserDefinedName(valueStr);
+							System.out.printf("Name of planet %s was defined: \"%s\"\r\n",ua.getExtendedSigBoostCode(),valueStr);
+						}
 					}
 				}
 				if (ua.isSolarSystem()) {
 					SolarSystem system = universe.findSolarSystem(ua);
 					if (system!=null) {
-						system.setUserDefinedName(nameStr);
-						System.out.printf("Name of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),nameStr);
+						system.setUserDefinedName(valueStr);
+						System.out.printf("Name of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),valueStr);
 					}
 				}
 			}
@@ -517,7 +536,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static void saveNamesOfUniverseObjectsToFile(Universe universe) {
-		File file = new File(FILE_UNIVERSE_OBJECT_NAMES);
+		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (Galaxy g:universe.galaxies) {
 				for (Region gr:g.regions) {
@@ -526,11 +545,16 @@ public class SaveViewer implements ActionListener {
 							UniverseAddress ua = sys.getUniverseAddress();
 							out.printf("%014X=%s\r\n",ua.getAddress(),sys.getUserDefinedName());
 						}
-						for (Planet p:sys.planets)
-							if (p.hasUserDefinedName()) {
-								UniverseAddress ua = p.getUniverseAddress();
-								out.printf("%014X=%s\r\n",ua.getAddress(),p.getUserDefinedName());
-							}
+						for (Planet p:sys.planets) {
+							long address = p.getUniverseAddress().getAddress();
+							if (p.hasUserDefinedName())
+								out.printf("%014X=%s\r\n",address,p.getUserDefinedName());
+							for (ExtraInfo ei:p.extraInfos)
+								if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
+									out.printf("%014X.short=%s\r\n",address,ei.shortLabel);
+									out.printf("%014X.info=%s\r\n" ,address,ei.info);
+								}
+						}
 					}
 				}
 			}

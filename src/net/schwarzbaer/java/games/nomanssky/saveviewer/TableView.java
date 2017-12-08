@@ -131,7 +131,13 @@ class TableView {
 		protected void fireTableCellUpdate(int rowIndex, int columnIndex) {
 			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, columnIndex, TableModelEvent.UPDATE));
 		}
-		
+		protected void fireTableRowAdded(int rowIndex) {
+			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
+		}
+		protected void fireTableUpdate() {
+			fireTableModelEvent(new TableModelEvent(this));
+		}
+
 		@Override public abstract int getRowCount();
 		public abstract Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID);
 		
