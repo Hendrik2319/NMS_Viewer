@@ -22,9 +22,11 @@ import java.util.function.Function;
 import javax.activation.DataHandler;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -60,6 +62,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Pla
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnConfig;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TreeView.AbstractTreeNode;
@@ -157,34 +160,13 @@ class SaveGameView extends JPanel {
 			button.addActionListener(l);
 			return button;
 		}
-		
-		protected void setNameForUniverseAddress(UniverseAddress ua) {
-			if (ua==null) {
-				JOptionPane.showMessageDialog(this, "Current location couldn't be identified.");
-				return;
-			}
-			
-			if (ua.isPlanet     ()) setNameForUniverseAddress(ua, data.universe.getOrCreatePlanet     (ua), "planet"      );
-			if (ua.isSolarSystem()) setNameForUniverseAddress(ua, data.universe.getOrCreateSolarSystem(ua), "solar system");
-			
-			updateContent();
-		}
 
-//		protected void clearNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
-//			String message = "Are you sure, that you want to clear user defined name of "+objectStr+" "+ua.getExtendedSigBoostCode()+"?";
-//			String title = "Clear user defined name of "+objectStr;
-//			if (JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_CANCEL_OPTION)) {
-//				object.setUserDefinedName(null);
-//				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
-//			}
-//		}
-
-		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.DiscoverableAndNamableObject object, String objectStr) {
+		protected void setNameForUniverseAddress(Universe.DiscoverableAndNamableObject object, UniverseAddress ua, String objectStr) {
 			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getUserDefinedName());
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
 				object.setUserDefinedName(name);
-				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
+				SaveViewer.saveUniverseObjectDataToFile(data.universe);
 			}
 		}
 	}
@@ -192,7 +174,7 @@ class SaveGameView extends JPanel {
 	static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
-		enum UniverseTreeActionCommand { ChangeName/*, ClearName*/, ExpandAll, CollapseRemainingTree }
+		enum UniverseTreeActionCommand { SetName, SetRace_Gek, SetRace_Korvax, SetRace_Vykeen, ExpandAll, CollapseRemainingTree }
 		
 		private static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
 		private static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
@@ -231,9 +213,14 @@ class SaveGameView extends JPanel {
 		
 		private GenericTreeNode<?> clickedNode;
 		private TreePath clickedTreePath;
-		private JPopupMenu contextMenu;
-		private JMenuItem menuItemSetName;
-//		private JMenuItem menuItemClearName;
+		private JPopupMenu contextMenu_Other;
+		private JPopupMenu contextMenu_SolarSystem;
+		private JPopupMenu contextMenu_Planet;
+		private JMenuItem miSetName_SolarSystem;
+		private JMenuItem miSetName_Planet;
+		private JCheckBoxMenuItem miSetRace_Gek;
+		private JCheckBoxMenuItem miSetRace_Korvax;
+		private JCheckBoxMenuItem miSetRace_Vykeen;
 		
 		public UniversePanel(SaveGameData data) {
 			super(data);
@@ -249,11 +236,26 @@ class SaveGameView extends JPanel {
 			tree.setCellRenderer(new UniverseTreeCellRenderer());
 			tree.setRowHeight(TreeIconHeight+1);
 			
-			contextMenu = new JPopupMenu("Contextmenu");
-			contextMenu.add(menuItemSetName   = createMenuItem("Change Name",UniverseTreeActionCommand.ChangeName));
-//			contextMenu.add(menuItemClearName = createMenuItem("Clear Name",UniverseTreeActionCommand.ClearName));
-			contextMenu.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
-			contextMenu.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+			contextMenu_Other = new JPopupMenu("Contextmenu");
+			contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+			contextMenu_Other.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+			
+			ButtonGroup bgRace = new ButtonGroup();
+			contextMenu_SolarSystem = new JPopupMenu("SolarSystem");
+			contextMenu_SolarSystem.add(miSetName_SolarSystem = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			contextMenu_SolarSystem.addSeparator();
+			contextMenu_SolarSystem.add(miSetRace_Gek    = createCheckBoxMenuItem("Gek"    ,UniverseTreeActionCommand.SetRace_Gek   ,false)); bgRace.add(miSetRace_Gek   );
+			contextMenu_SolarSystem.add(miSetRace_Korvax = createCheckBoxMenuItem("Korvax" ,UniverseTreeActionCommand.SetRace_Korvax,false)); bgRace.add(miSetRace_Korvax);
+			contextMenu_SolarSystem.add(miSetRace_Vykeen = createCheckBoxMenuItem("Vy'keen",UniverseTreeActionCommand.SetRace_Vykeen,false)); bgRace.add(miSetRace_Vykeen);
+			contextMenu_SolarSystem.addSeparator();
+			contextMenu_SolarSystem.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+			contextMenu_SolarSystem.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+			
+			contextMenu_Planet = new JPopupMenu("Planet");
+			contextMenu_Planet.add(miSetName_Planet = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			contextMenu_Planet.addSeparator();
+			contextMenu_Planet.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+			contextMenu_Planet.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
@@ -289,6 +291,14 @@ class SaveGameView extends JPanel {
 			menuItem.setActionCommand(actionCommand.toString());
 			return menuItem;
 		}
+
+		private JCheckBoxMenuItem createCheckBoxMenuItem(String label, UniverseTreeActionCommand actionCommand, boolean selected) {
+			JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(label);
+			menuItem.setSelected(selected);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
+		}
 		
 		@Override
 		public void updateContent() {
@@ -301,49 +311,49 @@ class SaveGameView extends JPanel {
 			}
 		}
 		
-		private void setNameForClickedNode() {
-			if (clickedNode!=null) {
-				switch(clickedNode.type) {
-				case Planet     : setNameForUniverseAddress(((     PlanetNode)clickedNode).value.getUniverseAddress(),((     PlanetNode)clickedNode).value, "planet"      ); break;
-				case SolarSystem: setNameForUniverseAddress(((SolarSystemNode)clickedNode).value.getUniverseAddress(),((SolarSystemNode)clickedNode).value, "solar system"); break;
-				default:break;
-				}
-				treeModel.nodeChanged(clickedNode);
-			}
-		}
-		
-//		private void clearNameForClickedNode() {
-//			if (clickedNode!=null) {
-//				switch(clickedNode.type) {
-//				case Planet     : clearNameForUniverseAddress(((     PlanetNode)clickedNode).value.getUniverseAddress(),((     PlanetNode)clickedNode).value, "planet"      ); break;
-//				case SolarSystem: clearNameForUniverseAddress(((SolarSystemNode)clickedNode).value.getUniverseAddress(),((SolarSystemNode)clickedNode).value, "solar system"); break;
-//				default:break;
-//				}
-//				treeModel.nodeChanged(clickedNode);
-//			}
-//		}
-
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
+			Planet planet; SolarSystem system;
 			switch(actionCommand) {
-			case ChangeName: setNameForClickedNode(); break;
-//			case ClearName : clearNameForClickedNode(); break;
+			case SetName:
+				if (clickedNode!=null) {
+					switch(clickedNode.type) {
+					case Planet     : planet=((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet,planet.getUniverseAddress(), "planet"      ); break;
+					case SolarSystem: system=((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system,system.getUniverseAddress(), "solar system"); break;
+					default:break;
+					}
+					treeModel.nodeChanged(clickedNode);
+				}
+				break;
+				
+			case SetRace_Gek   : setRaceOfClickedNode(Race.Gek   , miSetRace_Gek   ); break;
+			case SetRace_Korvax: setRaceOfClickedNode(Race.Korvax, miSetRace_Korvax); break;
+			case SetRace_Vykeen: setRaceOfClickedNode(Race.Vykeen, miSetRace_Vykeen); break;
+				
 			case ExpandAll:
 				for (int row=0; row<tree.getRowCount(); ++row)
 					if (!tree.isExpanded(row))
 						tree.expandRow(row);
 				break;
+				
 			case CollapseRemainingTree:
 				for (int row=tree.getRowCount()-1; row>=0; --row)
 					tree.collapseRow(row);
 				expandPath(clickedTreePath);
-//				clickedTreePath.getParentPath();
-//				tree.expandPath(clickedTreePath);
 				break;
 			}
 			clickedNode = null;
 			clickedTreePath = null;
+		}
+
+		private void setRaceOfClickedNode(Race race, JMenuItem menuItem) {
+			if (clickedNode!=null && clickedNode.type==NodeType.SolarSystem) {
+				((SolarSystemNode)clickedNode).value.race = race;
+				menuItem.setSelected(true);
+				treeModel.nodeChanged(clickedNode);
+				SaveViewer.saveUniverseObjectDataToFile(data.universe);
+			}
 		}
 
 		private void expandPath(TreePath path) {
@@ -364,21 +374,28 @@ class SaveGameView extends JPanel {
 				if (object instanceof GenericTreeNode<?>) {
 					clickedNode = (GenericTreeNode<?>)object;
 					switch(clickedNode.type) {
-					case Universe   : changeSetNameMenuItem(false,"Set Name",false); break;
-					case Galaxy     : changeSetNameMenuItem(false,"Set Name",false); break;
-					case Region     : changeSetNameMenuItem(false,"Set Name",false); break;
-					case SolarSystem: changeSetNameMenuItem(true, ((SolarSystemNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name", ((SolarSystemNode)clickedNode).value.hasUserDefinedName()); break;
-					case Planet     : changeSetNameMenuItem(true, ((     PlanetNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name", ((     PlanetNode)clickedNode).value.hasUserDefinedName()); break;
+					case Universe   :
+					case Galaxy     :
+					case Region     :
+						contextMenu_Other.show(tree, e.getX(), e.getY());
+						break;
+						
+					case SolarSystem:
+						SolarSystem system = ((SolarSystemNode)clickedNode).value;
+						miSetName_SolarSystem.setText(system.hasUserDefinedName()?"Change name":"Set name");
+						miSetRace_Gek   .setSelected(system.race==Race.Gek   );
+						miSetRace_Korvax.setSelected(system.race==Race.Korvax);
+						miSetRace_Vykeen.setSelected(system.race==Race.Vykeen);
+						contextMenu_SolarSystem.show(tree, e.getX(), e.getY());
+						break;
+						
+					case Planet     :
+						miSetName_Planet.setText(((PlanetNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name");
+						contextMenu_Planet.show(tree, e.getX(), e.getY());
+						break;
 					}
-					contextMenu.show(tree, e.getX(), e.getY());
 				}
 			}
-		}
-
-		private void changeSetNameMenuItem(boolean enabledSet, String titleSet, boolean enabledClear) {
-			menuItemSetName.setEnabled(enabledSet);
-			menuItemSetName.setText(titleSet);
-			//menuItemClearName.setEnabled(enabledClear);
 		}
 
 		@Override
@@ -530,7 +547,8 @@ class SaveGameView extends JPanel {
 					case Info : tableData.get(rowIndex).info       = aValue.toString(); break;
 					}
 				treeModel.nodeChanged(selectedNode);
-				SaveViewer.saveNamesOfUniverseObjectsToFile(data.universe);
+				treeModel.nodeChanged(selectedNode.parent);
+				SaveViewer.saveUniverseObjectDataToFile(data.universe);
 			}
 		}
 		
@@ -1025,6 +1043,18 @@ class SaveGameView extends JPanel {
 			
 			add(treeScrollPane,BorderLayout.CENTER);
 			add(buttonPanel,BorderLayout.SOUTH);
+			
+			updateContent();
+		}
+		
+		private void setNameForUniverseAddress(UniverseAddress ua) {
+			if (ua==null) {
+				JOptionPane.showMessageDialog(this, "Current location couldn't be identified.");
+				return;
+			}
+			
+			if (ua.isPlanet     ()) setNameForUniverseAddress(data.universe.getOrCreatePlanet     (ua), ua, "planet"      );
+			if (ua.isSolarSystem()) setNameForUniverseAddress(data.universe.getOrCreateSolarSystem(ua), ua, "solar system");
 			
 			updateContent();
 		}

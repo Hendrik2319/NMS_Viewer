@@ -177,7 +177,7 @@ public class SaveViewer implements ActionListener {
 				log_ln(" done");
 				if (new_json_data!=null) {
 					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
-					loadNamesOfUniverseObjectsFromFile(saveGameData.universe);
+					loadUniverseObjectDataFromFile(saveGameData.universe);
 					SaveGameView saveGameView = new SaveGameView(selectedFile,saveGameData);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
@@ -211,7 +211,7 @@ public class SaveViewer implements ActionListener {
 				log_ln(" done");
 				if (new_json_data!=null) {
 					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
-					loadNamesOfUniverseObjectsFromFile(saveGameData.universe);
+					loadUniverseObjectDataFromFile(saveGameData.universe);
 					contentPane.currentSelected.replaceData(saveGameData);
 				}
 			}
@@ -476,13 +476,17 @@ public class SaveViewer implements ActionListener {
 			e.printStackTrace();
 		}
 	}
-
-	public static void loadNamesOfUniverseObjectsFromFile(Universe universe) {
+	
+	private enum DataField { Short, Info, Race }
+	
+	public static void loadUniverseObjectDataFromFile(Universe universe) {
+		System.out.println("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\".");
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) return;
 		
 		System.out.println();
 		String str, lastLabel=null;
+		DataField dataField = null; 
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
 				int pos = str.indexOf('=');
@@ -491,39 +495,49 @@ public class SaveViewer implements ActionListener {
 				String addressStr = str.substring(0, pos);
 				String valueStr = str.substring(pos+1);
 				
-				boolean isExtraInfoShortLabel = false;
-				boolean isExtraInfo = false;
-				if (addressStr.endsWith(".short")) {
-					isExtraInfoShortLabel = true;
-					addressStr = addressStr.substring(0, addressStr.length()-".short".length());
-				} else if (addressStr.endsWith(".info")) {
-					isExtraInfo = true;
-					addressStr = addressStr.substring(0, addressStr.length()-".info".length());
-				}
+				dataField = null;
+				if (addressStr.endsWith(".short")) { dataField = DataField.Short; addressStr = addressStr.substring(0, addressStr.length()-".short".length()); } else
+				if (addressStr.endsWith(".info" )) { dataField = DataField.Info ; addressStr = addressStr.substring(0, addressStr.length()-".info" .length()); } else
+				if (addressStr.endsWith(".race" )) { dataField = DataField.Race ; addressStr = addressStr.substring(0, addressStr.length()-".race" .length()); }
+				
 				long address = Long.parseLong(addressStr, 16);
 				UniverseAddress ua = new UniverseAddress(address);
 				
 				if (ua.isPlanet()) {
 					Planet planet = universe.findPlanet(ua);
 					if (planet!=null) {
-						if (isExtraInfoShortLabel) {
-							lastLabel = valueStr;
-						} else if (isExtraInfo) {
-							if (lastLabel!=null) {
-								planet.extraInfos.add(new ExtraInfo(lastLabel,valueStr));
-								lastLabel=null;
-							}
-						} else {
+						if (dataField==null) {
 							planet.setUserDefinedName(valueStr);
 							System.out.printf("Name of planet %s was defined: \"%s\"\r\n",ua.getExtendedSigBoostCode(),valueStr);
-						}
+						} else
+							switch(dataField) {
+							case Short: lastLabel = valueStr; break;
+							case Info:
+								if (lastLabel!=null) {
+									ExtraInfo ei; planet.extraInfos.add(ei = new ExtraInfo(lastLabel,valueStr)); lastLabel=null;
+									System.out.printf("Info of planet %s was defined: \"%s\" -> \"%s\"\r\n",ua.getExtendedSigBoostCode(),ei.shortLabel,ei.info);
+								}
+								break;
+							case Race: break;
+							}
 					}
 				}
 				if (ua.isSolarSystem()) {
 					SolarSystem system = universe.findSolarSystem(ua);
 					if (system!=null) {
-						system.setUserDefinedName(valueStr);
-						System.out.printf("Name of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),valueStr);
+						if (dataField==null) {
+							system.setUserDefinedName(valueStr);
+							System.out.printf("Name of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),valueStr);
+						} else
+							switch(dataField) {
+							case Short: break;
+							case Info: break;
+							case Race:
+								try { system.race = Universe.SolarSystem.Race.valueOf(valueStr); }
+								catch (Exception e) { system.race = null; }
+								System.out.printf("Race of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),valueStr);
+								break;
+							}
 					}
 				}
 			}
@@ -535,16 +549,18 @@ public class SaveViewer implements ActionListener {
 		System.out.println();
 	}
 
-	public static void saveNamesOfUniverseObjectsToFile(Universe universe) {
+	public static void saveUniverseObjectDataToFile(Universe universe) {
+		System.out.println("Write data of universe objects to file \""+FILE_UNIVERSE_OBJECT_DATA+"\".");
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (Galaxy g:universe.galaxies) {
 				for (Region gr:g.regions) {
 					for (SolarSystem sys:gr.solarSystems) {
-						if (sys.hasUserDefinedName()) {
-							UniverseAddress ua = sys.getUniverseAddress();
+						UniverseAddress ua = sys.getUniverseAddress();
+						if (sys.hasUserDefinedName())
 							out.printf("%014X=%s\r\n",ua.getAddress(),sys.getUserDefinedName());
-						}
+						if (sys.race!=null)
+							out.printf("%014X.race=%s\r\n",ua.getAddress(),sys.race);
 						for (Planet p:sys.planets) {
 							long address = p.getUniverseAddress().getAddress();
 							if (p.hasUserDefinedName())

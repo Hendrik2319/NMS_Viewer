@@ -3,6 +3,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
@@ -83,7 +84,8 @@ public class SaveGameData {
 		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
 		
 		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
-		discoveryData.parseData();
+		discoveryData.findPlanetsAndSolarSystems();
+		discoveryData.findAdditionalPlanetsAndSolarSystems();
 		
 		if (!discoveryData.notParsedStoreData.isEmpty())
 			System.out.println("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
@@ -235,7 +237,47 @@ public class SaveGameData {
 			}
 		}
 
-		public void parseData() {
+		public void findAdditionalPlanetsAndSolarSystems() {
+			HashSet<UniverseAddress> unknownAdresses = new HashSet<>();
+			HashSet<String> knownTypes = new HashSet<>();
+			for (StoreData stData:storeData) {
+				if (stData.DD==null) continue;
+				if (stData.DD.DT!=null) {
+					if (stData.DD.DT.equals("Planet")) continue;
+					if (stData.DD.DT.equals("SolarSystem")) continue;
+					knownTypes.add(stData.DD.DT);
+				}
+				
+				if (stData.DD.UA==null) continue;
+				if (stData.DD.UA.isPlanet()      && data.universe.findPlanet     (stData.DD.UA)==null) unknownAdresses.add(stData.DD.UA);
+				if (stData.DD.UA.isSolarSystem() && data.universe.findSolarSystem(stData.DD.UA)==null) unknownAdresses.add(stData.DD.UA);
+			}
+			
+			for (AvailableData avData:availableData) {
+				if (avData.DD==null) continue;
+				if (avData.DD.DT!=null) {
+					if (avData.DD.DT.equals("Planet")) continue;
+					if (avData.DD.DT.equals("SolarSystem")) continue;
+					knownTypes.add(avData.DD.DT);
+				}
+				
+				if (avData.DD.UA==null) continue;
+				if (avData.DD.UA.isPlanet()      && data.universe.findPlanet     (avData.DD.UA)==null) unknownAdresses.add(avData.DD.UA);
+				if (avData.DD.UA.isSolarSystem() && data.universe.findSolarSystem(avData.DD.UA)==null) unknownAdresses.add(avData.DD.UA);
+			}
+			
+//			System.out.println("Known Types ["+knownTypes.size()+"]");
+//			for (String type:knownTypes)
+//				System.out.println("   "+type);
+			
+			if (!unknownAdresses.isEmpty()) {
+				System.out.println("Found undiscovered addresses ["+unknownAdresses.size()+"]");
+				for (UniverseAddress ua:unknownAdresses)
+					System.out.println("   "+ua.getCoordinates());
+			}
+		}
+
+		public void findPlanetsAndSolarSystems() {
 			Universe.DiscoverableAndNamableObject obj;
 			
 			for (StoreData data:storeData)
@@ -370,11 +412,9 @@ public class SaveGameData {
 		private UniverseAddress parseUniverseAddress(JSON_Object universeAddressObj) {
 			if (universeAddressObj==null) return null;
 			
-			UniverseAddress newUA = new UniverseAddress(0);
-			
 			Long galaxyIndexLong = data.getIntegerValue(universeAddressObj,"RealityIndex");
 			if (galaxyIndexLong==null) return null;
-			newUA.galaxyIndex = (int)(long)galaxyIndexLong;
+			int galaxyIndex = (int)(long)galaxyIndexLong;
 			
 			JSON_Object galacticAddressObj = data.getObjectValue(universeAddressObj,"GalacticAddress");
 			if (galacticAddressObj==null) return null;
@@ -385,19 +425,19 @@ public class SaveGameData {
 			if (voxelXLong==null) return null;
 			if (voxelYLong==null) return null;
 			if (voxelZLong==null) return null;
-			newUA.voxelX = (int)(long)voxelXLong;
-			newUA.voxelY = (int)(long)voxelYLong;
-			newUA.voxelZ = (int)(long)voxelZLong;
+			int voxelX = (int)(long)voxelXLong;
+			int voxelY = (int)(long)voxelYLong;
+			int voxelZ = (int)(long)voxelZLong;
 			
 			Long solarSystemIndexLong = data.getIntegerValue(galacticAddressObj,"SolarSystemIndex");
 			if (solarSystemIndexLong==null) return null;
-			newUA.solarSystemIndex = (int)(long)solarSystemIndexLong;
+			int solarSystemIndex = (int)(long)solarSystemIndexLong;
 			
 			Long planetIndexLong = data.getIntegerValue(galacticAddressObj,"PlanetIndex");
 			if (planetIndexLong==null) return null;
-			newUA.planetIndex = (int)(long)planetIndexLong;
+			int planetIndex = (int)(long)planetIndexLong;
 			
-			return newUA;
+			return new UniverseAddress(galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
 		}
 
 		public UniverseAddress getCurrentUniverseAddress() { return currentUniverseAddress; }
@@ -421,30 +461,68 @@ public class SaveGameData {
 
 	static final class UniverseAddress implements Comparable<UniverseAddress> {
 
-		int galaxyIndex;
-		int voxelX,voxelY,voxelZ;
-		int solarSystemIndex;
-		int planetIndex;
+		final int galaxyIndex;
+		final int voxelX,voxelY,voxelZ;
+		final int solarSystemIndex;
+		final int planetIndex;
+		private final long address;
 		
 		public UniverseAddress(long address) {
-			voxelX = (int)( address      & 0xFFF);
-			voxelZ = (int)((address>>12) & 0xFFF);
-			voxelY = (int)((address>>24) & 0xFF);
+			int voxelX_1 = (int)( address      & 0xFFF);
+			int voxelZ_1 = (int)((address>>12) & 0xFFF);
+			int voxelY_1 = (int)((address>>24) & 0xFF);
+			if (voxelX_1>2047) voxelX = voxelX_1-4096; else voxelX = voxelX_1;
+			if (voxelY_1> 127) voxelY = voxelY_1- 256; else voxelY = voxelY_1;
+			if (voxelZ_1>2047) voxelZ = voxelZ_1-4096; else voxelZ = voxelZ_1;
 			galaxyIndex    = (int)((address>>32) & 0xFF);
 			solarSystemIndex = (int)((address>>40) & 0xFFF);
 			planetIndex      = (int)((address>>52) & 0xF);
-			if (voxelX>2047) voxelX -= 4096;
-			if (voxelY> 127) voxelY -=  256;
-			if (voxelZ>2047) voxelZ -= 4096;
+			this.address = address;
 		}
 
-		public UniverseAddress(int galacticIndex, int voxelX, int voxelY, int voxelZ, int solarSystemIndex, int planetIndex) {
-			this.galaxyIndex = galacticIndex;
+		public UniverseAddress(int galaxyIndex, int voxelX, int voxelY, int voxelZ, int solarSystemIndex, int planetIndex) {
+			this.galaxyIndex = galaxyIndex;
 			this.voxelX = voxelX;
 			this.voxelY = voxelY;
 			this.voxelZ = voxelZ;
 			this.solarSystemIndex = solarSystemIndex;
 			this.planetIndex = planetIndex;
+			long address_ = (((long)this.voxelY&0xFF)<<24) | (((long)this.voxelZ&0xFFF)<<12) | ((long)this.voxelX&0xFFF);
+			address_ = address_ | (((long)this.galaxyIndex     &0xFF )<<32);
+			address_ = address_ | (((long)this.solarSystemIndex&0xFFF)<<40);
+			address_ = address_ | (((long)this.planetIndex     &0xFF )<<52);
+			this.address = address_;
+		}
+
+		public long getPortalGlyphCode() {
+			long portalGlyphCode = (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF);
+			portalGlyphCode |= ((long)solarSystemIndex&0xFFF)<<32;
+			portalGlyphCode |= ((long)planetIndex     &0xFF )<<44;
+			return portalGlyphCode;
+		}
+
+		public UniverseAddress(UniverseAddress ua, int solarSystemIndex, int planetIndex) {
+			this(ua.galaxyIndex,ua.voxelX,ua.voxelY,ua.voxelZ,solarSystemIndex,planetIndex);
+		}
+
+		public UniverseAddress(UniverseAddress ua, int planetIndex) {
+			this(ua.galaxyIndex,ua.voxelX,ua.voxelY,ua.voxelZ,ua.solarSystemIndex,planetIndex);
+		}
+
+		public long getAddress() {
+			return address;
+		}
+
+		@Override
+		public int hashCode() {
+			return (int)((address>>32)&0xFFFFFFFF);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof UniverseAddress) return false;
+			UniverseAddress other = (UniverseAddress)obj;
+			return this.address == other.address;
 		}
 
 		@Override
@@ -489,21 +567,6 @@ public class SaveGameData {
 
 		public String getExtendedSigBoostCode() {
 			return String.format("G%d|%s|P%d", galaxyIndex, getSigBoostCode(), planetIndex);
-		}
-
-		public long getAddress() {
-			long address = (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF);
-			address = address | (((long)galaxyIndex   &0xFF )<<32);
-			address = address | (((long)solarSystemIndex&0xFFF)<<40);
-			address = address | (((long)planetIndex     &0xFF )<<52);
-			return address;
-		}
-
-		public long getPortalGlyphCode() {
-			long portalGlyphCode = (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF);
-			portalGlyphCode |= ((long)solarSystemIndex&0xFFF)<<32;
-			portalGlyphCode |= ((long)planetIndex     &0xFF )<<44;
-			return portalGlyphCode;
 		}
 
 		@Override
@@ -736,22 +799,45 @@ public class SaveGameData {
 		
 		static final class SolarSystem extends DiscoverableAndNamableObject {
 			
+			enum Race {
+				Gek("Gek"), Korvax("Korvax"), Vykeen("Vy'keen");
+
+				private String fullName;
+				private Race(String fullName) { this.fullName = fullName; }
+			}
+			
 			final Region region;
 			final int solarSystemIndex;
 			final Vector<Planet> planets;
+			Race race;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
 				this.solarSystemIndex = solarSystemIndex;
 				this.planets = new Vector<>();
+				this.race = null;
 			}
 			
 			@Override
 			public String toString() {
-				if (hasName())
-					return String.format("Sys%03X %s", solarSystemIndex, getName());
-				else
-					return String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+				String str;
+				if (hasName()) str = String.format("Sys%03X %s", solarSystemIndex, getName());
+				else           str = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+				
+				if (race!=null)
+					 str+=" ["+race.fullName+"]";
+				
+				String str1, strEI="";
+				for (Planet p:planets) {
+					str1 = p.getCombinedExtraInfoLabels();
+					if (!str1.isEmpty()) {
+						if (!strEI.isEmpty()) strEI+=", ";
+						strEI+=str1;
+					}
+				}
+				if (!strEI.isEmpty()) str+=" ("+strEI+")";
+				
+				return str;
 			}
 
 			public void addPlanet(Planet planet) {
@@ -768,8 +854,8 @@ public class SaveGameData {
 			public UniverseAddress getUniverseAddress() {
 				if (region==null) return null;
 				UniverseAddress ua = region.getUniverseAddress();
-				ua.solarSystemIndex = solarSystemIndex;
-				return ua;
+				if (ua==null) return null;
+				return new UniverseAddress(ua,solarSystemIndex,0);
 			}
 		}
 		
@@ -792,35 +878,41 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
-				String string = null;
+				String str = null;
 				if (hasName())
-					string = String.format("P%1X %s", planetIndex, getName());
+					str = String.format("P%1X %s", planetIndex, getName());
 				else {
 					UniverseAddress ua = getUniverseAddress();
 					if (ua!=null)
-						string = ua.getExtendedSigBoostCode();
+						str = ua.getExtendedSigBoostCode();
 					else
-						string = "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
+						str = "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
 				}
 				if (!extraInfos.isEmpty()) {
-					StringBuilder sb = new StringBuilder();
-					boolean sbIsEmpty = true;
-					for (ExtraInfo ei:extraInfos)
-						if (!ei.shortLabel.isEmpty()) {
-							if (!sbIsEmpty) sb.append(", ");
-							sb.append(ei.shortLabel);
-							sbIsEmpty = false;
-						}
-					if (!sbIsEmpty) string += " ("+sb.toString()+")";
+					String str1 = getCombinedExtraInfoLabels();
+					if (!str1.isEmpty()) str += " ("+str1+")";
 				}
-				return string;
+				return str;
+			}
+
+			private String getCombinedExtraInfoLabels() {
+				StringBuilder sb = new StringBuilder();
+				boolean sbIsEmpty = true;
+				for (ExtraInfo ei:extraInfos)
+					if (!ei.shortLabel.isEmpty()) {
+						if (!sbIsEmpty) sb.append(", ");
+						sb.append(ei.shortLabel);
+						sbIsEmpty = false;
+					}
+				String string2 = sb.toString();
+				return string2;
 			}
 
 			public UniverseAddress getUniverseAddress() {
 				if (solarSystem==null) return null;
 				UniverseAddress ua = solarSystem.getUniverseAddress();
-				ua.planetIndex = planetIndex;
-				return ua;
+				if (ua==null) return null;
+				return new UniverseAddress(ua,planetIndex);
 			}
 			
 			static final class ExtraInfo {
