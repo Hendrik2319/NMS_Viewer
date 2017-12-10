@@ -1,10 +1,31 @@
-006D00FAA8CBC4=Naibolsk
-006D00FAA8CBC4.race=Gek
-306D00FAA8CBC4=Loyarnaulic
-01EA00FAA8CBC4=Gagada-Arzam
-01EA00FAA8CBC4.race=Korvax
-11EA00FAA8CBC4=Uagetuhuals
-21EA00FAA8CBC4=Belevskom SX986
-21EA00FAA8CBC4.short=Ra
-21EA00FAA8CBC4.info=Radnox
-51EA00FAA8CBC4=Rudoindain-Tuzl VS533
+[Sys006D00FAA8CBC4]
+name=Naibolsk
+race=Gek
+
+[Pln306D00FAA8CBC4]
+name=Loyarnaulic
+
+[Pln316F00FAA8CBC4]
+short=VC
+info=Vortex Cubes
+
+[Sys01C800FAA8CBC4]
+race=Gek
+
+[Sys01EA00FAA8CBC4]
+name=Gagada-Arzam
+race=Korvax
+
+[Pln11EA00FAA8CBC4]
+name=Uagetuhuals
+
+[Pln21EA00FAA8CBC4]
+name=Belevskom SX986
+short=Ra
+info=Radnox
+
+[Pln51EA00FAA8CBC4]
+name=Rudoindain-Tuzl VS533
+
+[Sys020700FAA8CBC4]
+race=Vykeen

@@ -179,15 +179,19 @@ class SaveGameView extends JPanel {
 		private static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
 		private static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
+		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys }
 		private static final int TreeIconHeight = 20;
-		private static final IconSource<NodeType> UniverseTreeIconsIS = new IconSource<NodeType>(30,TreeIconHeight){
-			@Override protected int getIconIndexInImage(NodeType key) {
+		private static final IconSource<UniverseTreeIcons> UniverseTreeIconsIS = new IconSource<UniverseTreeIcons>(30,TreeIconHeight){
+			@Override protected int getIconIndexInImage(UniverseTreeIcons key) {
 				switch(key) {
 				case Universe   : return 0;
 				case Galaxy     : return 1;
 				case Region     : return 2;
 				case SolarSystem: return 3;
 				case Planet     : return 4;
+				case GekSys     : return 5;
+				case KorvaxSys  : return 6;
+				case VykeenSys  : return 7;
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}
@@ -197,10 +201,17 @@ class SaveGameView extends JPanel {
 			PortalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
 			PortalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
 			UniverseTreeIconsIS.readIconsFromResource("/UniverseTreeIcons.png");
-			UniverseTreeIconsIS.cacheIcons(NodeType.values());
-			Icon icon = UniverseTreeIconsIS.getCachedIcon(NodeType.Galaxy);
+			UniverseTreeIconsIS.cacheIcons(UniverseTreeIcons.values());
+			Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy);
 			icon = IconSource.cutIcon(icon,5,0,20,20);
-			UniverseTreeIconsIS.setCachedIcon(NodeType.Galaxy,icon);
+			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.Galaxy,icon);
+			icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem);
+			Icon iconG = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys);
+			Icon iconK = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys);
+			Icon iconV = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys);
+			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.GekSys   ,IconSource.combine(icon,iconG));   
+			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.KorvaxSys,IconSource.combine(icon,iconK));
+			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.VykeenSys,IconSource.combine(icon,iconV));
 		}
 
 		private JTree tree;
@@ -574,11 +585,23 @@ class SaveGameView extends JPanel {
 				if (value instanceof GenericTreeNode<?>) {
 					GenericTreeNode<?> node = (GenericTreeNode<?>)value;
 					switch (node.type) {
-					case Universe   : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Universe   )); break;
-					case Galaxy     : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Galaxy     )); break;
-					case Region     : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Region     )); break;
-					case SolarSystem: setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.SolarSystem)); break;
-					case Planet     : setIcon(UniverseTreeIconsIS.getCachedIcon(NodeType.Planet     )); break;
+					case Universe   : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Universe   )); break;
+					case Galaxy     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy     )); break;
+					case Region     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Region     )); break;
+					case SolarSystem:
+						if (node instanceof SolarSystemNode) {
+							SolarSystem system = ((SolarSystemNode)node).value;
+							if (system.race==null)
+								setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem));
+							else
+								switch(system.race) {
+								case Gek   : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys   )); break;
+								case Korvax: setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys)); break;
+								case Vykeen: setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys)); break;
+								}
+						}
+						break;
+					case Planet     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     )); break;
 					}
 					setFont(standardFont);
 					Universe.DiscoverableAndNamableObject obj = null;
