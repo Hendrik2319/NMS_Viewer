@@ -10,7 +10,14 @@ short=VC
 info=Vortex Cubes
 
 [Sys01C800FAA8CBC4]
+name=Xandop-Isuma
 race=Gek
+
+[Pln11C800FAA8CBC4]
+name=Uwonokob Antaka
+
+[Pln21C800FAA8CBC4]
+name=Malmetyug Buzhn
 
 [Sys01EA00FAA8CBC4]
 name=Gagada-Arzam
@@ -24,8 +31,34 @@ name=Belevskom SX986
 short=Ra
 info=Radnox
 
+[Pln31EA00FAA8CBC4]
+name=Ikokstelmh Gronis
+short=Grav
+info=Gravitino-Balls
+
+[Pln41EA00FAA8CBC4]
+name=Omoriyamama
+
 [Pln51EA00FAA8CBC4]
 name=Rudoindain-Tuzl VS533
 
-[Sys020700FAA8CBC4]
+[Sys001B00FC4AD502]
+name=Hunyaz-Elfer VIII
 race=Vykeen
+
+[Pln101B00FC4AD502]
+name=Bibataga Hamat
+
+[Pln201B00FC4AD502]
+name=Urabkausop Pretho
+
+[Pln301B00FC4AD502]
+name=Lichouvalil-4
+
+[Sys003800024F14BB]
+name=Kolovki-Poh
+race=Vykeen
+
+[Sys007200024F14BB]
+name=Alchukovr
+race=Gek

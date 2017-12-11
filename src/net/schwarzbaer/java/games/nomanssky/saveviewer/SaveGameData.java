@@ -3,6 +3,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -95,11 +96,17 @@ public class SaveGameData {
 
 	final static class DiscoveryData {
 		
+		enum SourceArray { AvailableData, StoreData }
+		
 		private SaveGameData data;
 		Vector<StoreData> storeData;
 		Vector<AvailableData> availableData;
 		JSON_Array notParsedStoreData;
 		JSON_Array notParsedAvailableData;
+		int storedDiscoveredItemOnPlanets;
+		int storedDiscoveredItemInSolarSystms;
+		int availDiscoveredItemOnPlanets;
+		int availDiscoveredItemInSolarSystms;
 		
 		public DiscoveryData(SaveGameData data) {
 			this.data = data;
@@ -107,6 +114,10 @@ public class SaveGameData {
 			this.availableData = new Vector<>();
 			notParsedStoreData     = new JSON_Array();
 			notParsedAvailableData = new JSON_Array();
+			storedDiscoveredItemOnPlanets = 0;
+			storedDiscoveredItemInSolarSystms = 0;
+			availDiscoveredItemOnPlanets = 0;
+			availDiscoveredItemInSolarSystms = 0;
 		}
 		
 		public void parseJsonArrays(JSON_Array arrStore, JSON_Array arrAvailable) {
@@ -240,30 +251,27 @@ public class SaveGameData {
 		public void findAdditionalPlanetsAndSolarSystems() {
 			HashSet<UniverseAddress> unknownAdresses = new HashSet<>();
 			HashSet<String> knownTypes = new HashSet<>();
+			
+			storedDiscoveredItemOnPlanets = 0;
+			storedDiscoveredItemInSolarSystms = 0;
+			
 			for (StoreData stData:storeData) {
-				if (stData.DD==null) continue;
-				if (stData.DD.DT!=null) {
-					if (stData.DD.DT.equals("Planet")) continue;
-					if (stData.DD.DT.equals("SolarSystem")) continue;
-					knownTypes.add(stData.DD.DT);
+				int universeObject = processDDblock(stData.DD, SourceArray.StoreData, unknownAdresses, knownTypes);
+				switch(universeObject) {
+				case 1: ++storedDiscoveredItemOnPlanets; break;
+				case 2: ++storedDiscoveredItemInSolarSystms; break;
 				}
-				
-				if (stData.DD.UA==null) continue;
-				if (stData.DD.UA.isPlanet()      && data.universe.findPlanet     (stData.DD.UA)==null) unknownAdresses.add(stData.DD.UA);
-				if (stData.DD.UA.isSolarSystem() && data.universe.findSolarSystem(stData.DD.UA)==null) unknownAdresses.add(stData.DD.UA);
 			}
 			
+			availDiscoveredItemOnPlanets = 0;
+			availDiscoveredItemInSolarSystms = 0;
+			
 			for (AvailableData avData:availableData) {
-				if (avData.DD==null) continue;
-				if (avData.DD.DT!=null) {
-					if (avData.DD.DT.equals("Planet")) continue;
-					if (avData.DD.DT.equals("SolarSystem")) continue;
-					knownTypes.add(avData.DD.DT);
+				int universeObject = processDDblock(avData.DD, SourceArray.AvailableData, unknownAdresses, knownTypes);
+				switch(universeObject) {
+				case 1: ++availDiscoveredItemOnPlanets; break;
+				case 2: ++availDiscoveredItemInSolarSystms; break;
 				}
-				
-				if (avData.DD.UA==null) continue;
-				if (avData.DD.UA.isPlanet()      && data.universe.findPlanet     (avData.DD.UA)==null) unknownAdresses.add(avData.DD.UA);
-				if (avData.DD.UA.isSolarSystem() && data.universe.findSolarSystem(avData.DD.UA)==null) unknownAdresses.add(avData.DD.UA);
 			}
 			
 //			System.out.println("Known Types ["+knownTypes.size()+"]");
@@ -275,6 +283,36 @@ public class SaveGameData {
 				for (UniverseAddress ua:unknownAdresses)
 					System.out.println("   "+ua.getCoordinates());
 			}
+		}
+		
+		private int processDDblock(DDblock DD, SourceArray sourceArray, HashSet<UniverseAddress> unknownAdresses, HashSet<String> knownTypes) {
+			int universeObject = 0;
+			
+			if (DD==null) return universeObject;
+			if (DD.DT!=null) {
+				if (DD.DT.equals("Planet")) return universeObject;
+				if (DD.DT.equals("SolarSystem")) return universeObject;
+				knownTypes.add(DD.DT);
+			}
+			
+			if (DD.UA==null) return universeObject;
+			if (DD.UA.isPlanet()) {
+				universeObject = 1;
+				Planet planet = data.universe.findPlanet(DD.UA);
+				if (planet==null)
+					unknownAdresses.add(DD.UA);
+				else
+					planet.addDiscoveredItem(DD.DT,sourceArray);
+			}
+			if (DD.UA.isSolarSystem()) {
+				universeObject = 2;
+				SolarSystem solarSystem = data.universe.findSolarSystem(DD.UA);
+				if (solarSystem==null)
+					unknownAdresses.add(DD.UA);
+				else
+					solarSystem.addDiscoveredItem(DD.DT,sourceArray);
+			}
+			return universeObject;
 		}
 
 		public void findPlanetsAndSolarSystems() {
@@ -753,6 +791,9 @@ public class SaveGameData {
 			private String userdefinedName;
 			private String datadefinedName;
 			
+			final HashMap<String,Integer> discoveredItems_Avail;
+			final HashMap<String,Integer> discoveredItems_Store;
+			
 			protected DiscoverableAndNamableObject() {
 				userdefinedName = null;
 				datadefinedName = null;
@@ -761,7 +802,22 @@ public class SaveGameData {
 				fromStats     = false;
 				fromDiscStore = false;
 				fromDiscAvail = false;
+				
+				discoveredItems_Avail = new HashMap<>();
+				discoveredItems_Store = new HashMap<>();
 			}
+
+			public void addDiscoveredItem(String itemLabel, DiscoveryData.SourceArray sourceArray) {
+				HashMap<String, Integer> map = null;
+				switch (sourceArray) {
+				case AvailableData: map = discoveredItems_Avail; break;
+				case StoreData    : map = discoveredItems_Store; break;
+				}
+				Integer value = map.get(itemLabel);
+				if (value==null) map.put(itemLabel, 1);
+				else             map.put(itemLabel, value+1);
+			}
+
 			
 			public boolean hasSourceID() {
 				return fromCurrPos || fromStats || fromDiscAvail || fromDiscStore;
@@ -817,7 +873,7 @@ public class SaveGameData {
 				this.planets = new Vector<>();
 				this.race = null;
 			}
-			
+
 			@Override
 			public String toString() {
 				String str;
@@ -871,7 +927,6 @@ public class SaveGameData {
 				this.planetIndex = planetIndex;
 				this.extraInfos = new Vector<>();
 			}
-
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;
 			}
@@ -1115,7 +1170,7 @@ public class SaveGameData {
 				TRA_STANDING("Gek"    +" standing"), TSEEN_SYSTEMS("Gek"    +" systems seen"), TWORDS_LEARNT("Gek"    +" words learnt"), TDONE_MISSIONS("Gek"    +" missions done"),
 				EXP_STANDING("Korvax" +" standing"), ESEEN_SYSTEMS("Korvax" +" systems seen"), EWORDS_LEARNT("Korvax" +" words learnt"), EDONE_MISSIONS("Korvax" +" missions done"),
 				WAR_STANDING("Vy'keen"+" standing"), WSEEN_SYSTEMS("Vy'keen"+" systems seen"), WWORDS_LEARNT("Vy'keen"+" words learnt"), WDONE_MISSIONS("Vy'keen"+" missions done"),
-				TGUILD_STAND("Traders"  +" guild standing"), TGDONE_MISSIONS("Traders"  +" guild missions done"), MONEY("Units earned"), PLANTS_PLANTED("Plants planted"),
+				TGUILD_STAND("Traders"  +" guild standing"), TGDONE_MISSIONS("Traders"  +" guild missions done"), MONEY("Units max. earned"), PLANTS_PLANTED("Plants planted"),
 				EGUILD_STAND("Explorers"+" guild standing"), EGDONE_MISSIONS("Explorers"+" guild missions done"), DIST_WARP  ("Number of warps"), RARE_SCANNED("Rare creatures scanned"),
 				WGUILD_STAND("Warriors" +" guild standing"), WGDONE_MISSIONS("Warriors" +" guild missions done"), SENTINEL_KILLS("Sentinels killed (all)"), ENEMIES_KILLED("Enemies killed"),
 				DRONES_KILLED("Sentinel drones killed"), QUADS_KILLED("Sentinel quads killed"), WALKERS_KILLED("Sentinel walkers killed"),

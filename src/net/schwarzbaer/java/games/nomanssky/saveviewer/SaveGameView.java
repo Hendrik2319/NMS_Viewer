@@ -16,6 +16,7 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Locale;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.function.Function;
 
@@ -35,7 +36,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.UIManager;
@@ -65,6 +65,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Sol
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnConfig;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedTable;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TreeView.AbstractTreeNode;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TreeView.JsonTreeNode;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
@@ -250,6 +253,7 @@ class SaveGameView extends JPanel {
 			contextMenu_Other = new JPopupMenu("Contextmenu");
 			contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_Other.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+			//contextMenu_Other.add(createCheckBoxMenuItem("Show discovered items in ",UniverseTreeActionCommand.CollapseRemainingTree));
 			
 			ButtonGroup bgRace = new ButtonGroup();
 			contextMenu_SolarSystem = new JPopupMenu("SolarSystem");
@@ -274,10 +278,7 @@ class SaveGameView extends JPanel {
 			textArea.setBorder(BorderFactory.createEtchedBorder());
 			
 			extraInfoTableModel = new ExtraInfoTableModel();
-			JTable extraInfoTable = new JTable(extraInfoTableModel);
-			extraInfoTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-			extraInfoTableModel.setColumnWidths(extraInfoTable);
-			new TableView.DebugTableContextMenu(extraInfoTable);
+			SimplifiedTable extraInfoTable = new SimplifiedTable(extraInfoTableModel,true,SaveViewer.DEBUG,true);
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
@@ -351,7 +352,8 @@ class SaveGameView extends JPanel {
 			case CollapseRemainingTree:
 				for (int row=tree.getRowCount()-1; row>=0; --row)
 					tree.collapseRow(row);
-				expandPath(clickedTreePath);
+				if (clickedTreePath!=null)
+					expandPath(clickedTreePath);
 				break;
 			}
 			clickedNode = null;
@@ -379,8 +381,13 @@ class SaveGameView extends JPanel {
 		@Override public void mouseExited(MouseEvent e) {}
 		@Override public void mouseClicked(MouseEvent e) {
 			if (e.getButton()==MouseEvent.BUTTON3) {
+				System.out.println("mouseClicked( BUTTON3, "+e.getX()+", "+e.getY()+" )");
 				clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
-				if (clickedTreePath==null) return;
+				if (clickedTreePath==null) {
+					clickedNode = null;
+					contextMenu_Other.show(tree, e.getX(), e.getY());
+					return;
+				}
 				Object object = clickedTreePath.getLastPathComponent();
 				if (object instanceof GenericTreeNode<?>) {
 					clickedNode = (GenericTreeNode<?>)object;
@@ -411,16 +418,23 @@ class SaveGameView extends JPanel {
 
 		@Override
 		public void valueChanged(TreeSelectionEvent e) {
+			Object comp = e.getPath().getLastPathComponent();
+			if (!(comp instanceof GenericTreeNode<?>))
+				selectionChanged(null);
+			else
+				selectionChanged((GenericTreeNode<?>)comp);
+		}
+
+		private void selectionChanged(GenericTreeNode<?> comp) {
+			selectedNode = comp;
+			
 			textArea.setText("");
 			
-			Object comp = e.getPath().getLastPathComponent();
-			if (!(comp instanceof GenericTreeNode<?>)) {
-				selectedNode = null;
+			if (selectedNode==null) {
 				extraInfoTableModel.clearData();
 				return;
 			}
 			
-			selectedNode = (GenericTreeNode<?>)comp;
 			UniverseAddress ua;
 			int n;
 			
@@ -476,9 +490,23 @@ class SaveGameView extends JPanel {
 		}
 		
 		private void showDiscNameObj(Universe.DiscoverableAndNamableObject obj) {
+			textArea.append("\r\n");
 			if (obj.hasUserDefinedName()) textArea.append(String.format("Name by user : %s\r\n", obj.getUserDefinedName()));
 			if (obj.hasDataDefinedName()) textArea.append(String.format("Name by data : %s\r\n", obj.getDataDefinedName()));
 			if (obj.hasDiscoverer     ()) textArea.append(String.format("Discovered by: %s\r\n", obj.getDiscoverer()));
+			if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
+				textArea.append("Discovered Items:\r\n");
+				if (!obj.discoveredItems_Avail.isEmpty()) {
+					textArea.append("   available:\r\n");
+					for (String item:new TreeSet<>(obj.discoveredItems_Avail.keySet()))
+						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Avail.get(item)));
+				}
+				if (!obj.discoveredItems_Store.isEmpty()) {
+					textArea.append("   stored:\r\n");
+					for (String item:new TreeSet<>(obj.discoveredItems_Store.keySet()))
+						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Store.get(item)));
+				}
+			}
 		}
 
 		private Icon createPortalGlyphs(long portalGlyphCode) {
@@ -693,20 +721,12 @@ class SaveGameView extends JPanel {
 	private static class KnownWordsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 7096092479075372171L;
 		
-		private JTable table;
-		
 		public KnownWordsPanel(SaveGameData data) {
 			super(data);
 			
 			KnownWordsTableModel tableModel = new KnownWordsTableModel(data.knownWords);
-			table = new JTable(tableModel);
-			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			SimplifiedTable table = new SimplifiedTable(tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
-			tableScrollPane.setPreferredSize(new Dimension(800, 500));
-			tableModel.setColumnWidths(table);
-			
-			if (SaveViewer.DEBUG)
-				new TableView.DebugTableContextMenu(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
@@ -794,20 +814,13 @@ class SaveGameView extends JPanel {
 	
 	private static class DiscoveryDataAvailablePanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 2870833302184314416L;
-		
-		private JTable table;
 
 		public DiscoveryDataAvailablePanel(SaveGameData data) {
 			super(data);
 			
 			DDATableModel tableModel = new DDATableModel();
-			table = new JTable(tableModel);
-			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			SimplifiedTable table = new SimplifiedTable(tableModel,true,true,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
-			tableScrollPane.setPreferredSize(new Dimension(600, 500));
-			tableModel.setColumnWidths(table);
-			
-			new TableView.DebugTableContextMenu(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
@@ -856,20 +869,13 @@ class SaveGameView extends JPanel {
 	
 	private static class DiscoveryDataStorePanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6619075068331735784L;
-		
-		private JTable table;
 
 		public DiscoveryDataStorePanel(SaveGameData data) {
 			super(data);
 			
 			DDSTableModel tableModel = new DDSTableModel();
-			table = new JTable(tableModel);
-			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			SimplifiedTable table = new SimplifiedTable(tableModel,true,true,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
-			tableScrollPane.setPreferredSize(new Dimension(600, 500));
-			tableModel.setColumnWidths(table);
-			
-			new TableView.DebugTableContextMenu(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
@@ -931,13 +937,12 @@ class SaveGameView extends JPanel {
 	private static class StatsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -1541256209397699528L;
 		
-		private JTable table;
+		private SimplifiedTable table;
 		
 		public StatsPanel(SaveGameData data) {
 			super(data);
 			
-			table = new JTable();
-			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			table = new SimplifiedTable(true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			tableScrollPane.setPreferredSize(new Dimension(600, 500));
 			
@@ -948,9 +953,6 @@ class SaveGameView extends JPanel {
 			
 			JComboBox<String> selector = new JComboBox<>(statConfigs);
 			selector.addActionListener(e -> changeSelection( selector.getSelectedIndex() ));
-			
-			if (SaveViewer.DEBUG)
-				new TableView.DebugTableContextMenu(table);
 				
 			add(selector,BorderLayout.NORTH);
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -960,28 +962,14 @@ class SaveGameView extends JPanel {
 
 		private void changeSelection(int index) {
 			switch (index) {
-			case -1:
-				table.setModel(new DefaultTableModel());
-				break;
-			case 0: {
-				StatsTableModel tableModel = new StatsTableModel(data.stats.globalStats);
-				table.setModel(tableModel);
-				tableModel.setColumnWidths(table);
-			} break;
-			case 1:
-				table.setModel(new DefaultTableModel());
-				//tableModel.setColumnWidths(table);
-				break;
-			default: {
-				int planetIndex = index-2;
-				StatsTableModel tableModel = new StatsTableModel(data.stats.planetStats.get(planetIndex).stats);
-				table.setModel(tableModel);
-				tableModel.setColumnWidths(table);
-			} break;
+			case -1: table.setModel(new DefaultTableModel()); break;
+			case  0: table.setModel(new StatsTableModel(data.stats.globalStats)); break;
+			case  1: table.setModel(new DefaultTableModel()); break;
+			default: table.setModel(new StatsTableModel(data.stats.planetStats.get(index-2).stats)); break;
 			}
 		}
 
-		private enum StatsTableColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum StatsTableColumnID implements SimplifiedColumnIDInterface {
 			ID         ("ID"         , String.class, 50,-1,120,120),
 			Name       ("Name"       , String.class, 50,-1,210,210),
 			IntValue   ("Int"        , Long.class  , 20,-1, 70, 70),
@@ -991,16 +979,16 @@ class SaveGameView extends JPanel {
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
 			StatsTableColumnID() {
-				columnConfig = new TableView.SimplifiedColumnConfig();
+				columnConfig = new SimplifiedColumnConfig();
 				columnConfig.name = toString();
 			}
 			StatsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 
-		private static class StatsTableModel extends TableView.SimplifiedTableModel<StatsTableColumnID> {
+		private static class StatsTableModel extends SimplifiedTableModel<StatsTableColumnID> {
 			
 			private Vector<StatValue> statsList;
 			
@@ -1093,6 +1081,15 @@ class SaveGameView extends JPanel {
 			appendValue("Time Alive       ", data.general.getTimeAlive() );
 			appendValue("Total PlayTime   ", data.general.getTotalPlayTime() );
 			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive() );
+			
+			appendEmptyLine();
+			appendLine("Discovered Items:");
+			appendValue("   available"          , (long)data.discoveryData.availableData.size() );
+			appendValue("      on planets"      , (long)data.discoveryData.availDiscoveredItemOnPlanets );
+			appendValue("      in solar systems", (long)data.discoveryData.availDiscoveredItemInSolarSystms );
+			appendValue("   stored   ", (long)data.discoveryData.storeData.size() );
+			appendValue("      on planets"      , (long)data.discoveryData.storedDiscoveredItemOnPlanets );
+			appendValue("      in solar systems", (long)data.discoveryData.storedDiscoveredItemInSolarSystms );
 			
 			appendEmptyLine();
 			UniverseAddress currentUA = data.general.getCurrentUniverseAddress();

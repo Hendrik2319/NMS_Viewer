@@ -86,6 +86,34 @@ class TableView {
 	
 	}
 
+	static class SimplifiedTable extends JTable {
+		private static final long serialVersionUID = 6963749333892762675L;
+//		private boolean useRowSorter;
+		
+		SimplifiedTable(boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
+			super();
+//			this.useRowSorter = useRowSorter;
+			if (disableAutoResize)
+				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+			if (installDebugContextMenu)
+				new TableView.DebugTableContextMenu(this);
+			setAutoCreateRowSorter(useRowSorter);
+		}
+		
+		SimplifiedTable(SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
+			this(disableAutoResize, installDebugContextMenu, useRowSorter);
+			setModel(dataModel);
+		}
+
+		public void setModel(SimplifiedTableModel<?> dataModel) {
+			super.setModel(dataModel);
+			dataModel.setColumnWidths(this);
+//			if (useRowSorter)
+//				setRowSorter(new TableRowSorter<TableModel>(dataModel));
+		}
+		
+	}
+
 	static class SimplifiedColumnConfig {
 		public String name;
 		public int minWidth;
