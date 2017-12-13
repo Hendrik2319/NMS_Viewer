@@ -28,7 +28,6 @@ import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -167,7 +166,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private enum ActionCommand {
-		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputePortalGlyphs
+		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates
 	}
 
 	@Override
@@ -282,8 +281,8 @@ public class SaveViewer implements ActionListener {
 			if (contentPane.isSelected(compareTab))
 				compareTab.updatePanel();
 			break;
-		case ComputePortalGlyphs:
-			new PortalGlyphDialog(mainWindow).showDialog(Position.PARENT_CENTER);
+		case ComputeCoordinates:
+			new ComputeCoordinatesDialog(mainWindow).showDialog(Position.PARENT_CENTER);
 			break;
 		}
 	}
@@ -367,7 +366,7 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
-			toolBar.add(createButton("Compute portal glyphs", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputePortalGlyphs,true));
+			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
@@ -445,7 +444,7 @@ public class SaveViewer implements ActionListener {
 	
 	}
 	
-	private static class PortalGlyphDialog extends StandardDialog {
+	private static class ComputeCoordinatesDialog extends StandardDialog {
 		private static final long serialVersionUID = -2899608237998750242L;
 		
 		private JLabel[] glyphLabels;
@@ -454,22 +453,22 @@ public class SaveViewer implements ActionListener {
 		private static abstract class AbstractInputPanel extends JPanel {
 			private static final long serialVersionUID = -2301492858089122177L;
 			
-			protected PortalGlyphDialog parent;
+			protected ComputeCoordinatesDialog parent;
 			protected JButton btnCompute;
 		
-			AbstractInputPanel(PortalGlyphDialog parent) {
+			AbstractInputPanel(ComputeCoordinatesDialog parent) {
 				this.parent = parent;
 				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
 				
 				btnCompute = new JButton("Compute");
-				btnCompute.addActionListener(e->computePortalGlyphs());
+				btnCompute.addActionListener(e->computeUniverseAddress());
 			}
 		
-			protected abstract void computePortalGlyphs();
+			protected abstract void computeUniverseAddress();
 		}
 		
-		PortalGlyphDialog(Window parent) {
-			super(parent,"Compute Portal Glyphs",ModalityType.APPLICATION_MODAL);
+		ComputeCoordinatesDialog(Window parent) {
+			super(parent,"Compute Coordinates",ModalityType.APPLICATION_MODAL);
 			
 			JPanel inputPanels = new JPanel(new GridLayout(-1,1,3,3));
 			inputPanels.add(new InputAsAddress(this));
@@ -579,7 +578,7 @@ public class SaveViewer implements ActionListener {
 			private static final long serialVersionUID = 5365096410288633609L;
 			private InputField universeAddress;
 
-			InputAsAddress(PortalGlyphDialog parent) {
+			InputAsAddress(ComputeCoordinatesDialog parent) {
 				super(parent);
 				add(new JLabel("Universe Address:"));
 				add(universeAddress = new InputField(200,20));
@@ -588,7 +587,7 @@ public class SaveViewer implements ActionListener {
 			}
 
 			@Override
-			protected void computePortalGlyphs() {
+			protected void computeUniverseAddress() {
 				TextFieldValue universeAddressValue = universeAddress.getValue();
 				if (universeAddressValue.parseError) { universeAddress.setError(); parent.showError("Wrong Input"); return; }
 				UniverseAddress ua = new UniverseAddress(universeAddressValue.value);
@@ -602,7 +601,7 @@ public class SaveViewer implements ActionListener {
 			private InputField sigBoostCode;
 			private InputField planetIndex;
 
-			InputAsSigBoostCode(PortalGlyphDialog parent) {
+			InputAsSigBoostCode(ComputeCoordinatesDialog parent) {
 				super(parent);
 				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 				add(new JLabel("Galaxy:"));
@@ -616,7 +615,7 @@ public class SaveViewer implements ActionListener {
 			}
 
 			@Override
-			protected void computePortalGlyphs() {
+			protected void computeUniverseAddress() {
 				TextFieldValue galaxyIndexValue = galaxyIndex .getValue();
 				String         sigBoostCodeStr  = sigBoostCode.getText();
 				TextFieldValue planetIndexValue = planetIndex .getValue();
@@ -667,7 +666,7 @@ public class SaveViewer implements ActionListener {
 			private InputField regionVoxelY;
 			private InputField regionVoxelZ;
 			
-			InputAsCoords(PortalGlyphDialog parent) {
+			InputAsCoords(ComputeCoordinatesDialog parent) {
 				super(parent);
 				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 				add(new JLabel("Planet:"));
@@ -683,7 +682,7 @@ public class SaveViewer implements ActionListener {
 			}
 		
 			@Override
-			protected void computePortalGlyphs() {
+			protected void computeUniverseAddress() {
 				TextFieldValue planetIndexValue      = planetIndex     .getValue();
 				TextFieldValue solarSystemIndexValue = solarSystemIndex.getValue();
 				TextFieldValue regionVoxelXValue     = regionVoxelX    .getValue();
