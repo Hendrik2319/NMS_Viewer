@@ -12,6 +12,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
@@ -229,10 +230,26 @@ class SaveGameView extends JPanel {
 		public static void prepareIconSources() {
 			PortalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
 			PortalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
+			PortalGlyphsIS_50_45.cacheImages(16);
+			String[] labels = new String[]{"N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"};
+			for (int i=0; i<16; ++i) {
+				BufferedImage cachedImage = PortalGlyphsIS_50_45.getCachedImage(i);
+				Graphics g = cachedImage.getGraphics();
+				if (!(g instanceof Graphics2D)) return;
+				Graphics2D g2 = (Graphics2D)g;
+				
+				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				g2.setFont(g2.getFont().deriveFont(10.0f).deriveFont(Font.BOLD));
+				g2.setPaint(new Color(0xFFAF00));
+				g2.drawString(i+" "+labels[i], 2, 10);
+			}
+			
 			UniverseTreeIconsIS.readIconsFromResource("/UniverseTreeIcons.png");
 			UniverseTreeIconsIS.cacheIcons(UniverseTreeIcons.values());
+			
 			Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy);
 			icon = IconSource.cutIcon(icon,5,0,20,20);
+			
 			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.Galaxy,icon);
 			icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem);
 			Icon iconG = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys);
@@ -275,6 +292,7 @@ class SaveGameView extends JPanel {
 			tree.addMouseListener(this);
 			tree.setCellRenderer(new UniverseTreeCellRenderer());
 			tree.setRowHeight(TreeIconHeight+1);
+			expandFullTree();
 			
 			contextMenu_Other = new JPopupMenu("Contextmenu");
 			contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
@@ -373,9 +391,7 @@ class SaveGameView extends JPanel {
 			case SetRace_Vykeen: setRaceOfClickedNode(Race.Vykeen, miSetRace_Vykeen); break;
 				
 			case ExpandAll:
-				for (int row=0; row<tree.getRowCount(); ++row)
-					if (!tree.isExpanded(row))
-						tree.expandRow(row);
+				expandFullTree();
 				break;
 				
 			case CollapseRemainingTree:
@@ -387,6 +403,12 @@ class SaveGameView extends JPanel {
 			}
 			clickedNode = null;
 			clickedTreePath = null;
+		}
+
+		private void expandFullTree() {
+			for (int row=0; row<tree.getRowCount(); ++row)
+				if (!tree.isExpanded(row))
+					tree.expandRow(row);
 		}
 
 		private void setRaceOfClickedNode(Race race, JMenuItem menuItem) {
@@ -1123,15 +1145,6 @@ class SaveGameView extends JPanel {
 			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive() );
 			
 			appendEmptyLine();
-			appendLine("Discovered Items:");
-			appendValue("   available"          , (long)data.discoveryData.availableData.size() );
-			appendValue("      on planets"      , (long)data.discoveryData.availDiscoveredItemOnPlanets );
-			appendValue("      in solar systems", (long)data.discoveryData.availDiscoveredItemInSolarSystms );
-			appendValue("   stored   ", (long)data.discoveryData.storeData.size() );
-			appendValue("      on planets"      , (long)data.discoveryData.storedDiscoveredItemOnPlanets );
-			appendValue("      in solar systems", (long)data.discoveryData.storedDiscoveredItemInSolarSystms );
-			
-			appendEmptyLine();
 			UniverseAddress currentUA = data.general.getCurrentUniverseAddress();
 			if (currentUA!=null) {
 				appendLine("Current Location in Universe:");
@@ -1151,7 +1164,33 @@ class SaveGameView extends JPanel {
 				}
 				appendLine("    "+currentUA.getCoordinates());
 				appendLine("    "+currentUA.getExtendedSigBoostCode());
+				appendLine(String.format(Locale.ENGLISH, "    Distance to Center of Galaxy: %1.1f regions", currentUA.getDistToCenter_inRegionUnits()));
 			}
+			
+			Long knownGlyphs = data.general.getKnownGlyphsMaks();
+			if (knownGlyphs!=null) {
+				appendEmptyLine();
+				appendLine("Known portal glyphs:");
+				String str = "";
+				int n = (int)(long)knownGlyphs;
+				for (int i=0; i<16; ++i) {
+					if ((n&1) > 0) {
+						if (!str.isEmpty()) str+=", ";
+						str+=i;
+					}
+					n = n>>1;
+				}
+				appendLine("   "+str);
+			}
+			
+			appendEmptyLine();
+			appendLine("Discovered Items:");
+			appendValue("   available"          , (long)data.discoveryData.availableData.size() );
+			appendValue("      on planets"      , (long)data.discoveryData.availDiscoveredItemOnPlanets );
+			appendValue("      in solar systems", (long)data.discoveryData.availDiscoveredItemInSolarSystms );
+			appendValue("   stored   ", (long)data.discoveryData.storeData.size() );
+			appendValue("      on planets"      , (long)data.discoveryData.storedDiscoveredItemOnPlanets );
+			appendValue("      in solar systems", (long)data.discoveryData.storedDiscoveredItemInSolarSystms );
 			
 			
 			
@@ -1391,9 +1430,15 @@ class SaveGameView extends JPanel {
 		private static class GlyphNumber {
 			private int value;
 			private GlyphNumber(int value) { this.value = value; }
-			@Override public String toString() { return String.format("%d glyph%s", value, value>1?"s":""); }
+			@Override public String toString() {
+				switch (value) {
+				case 1 : return "Glyph 0";
+				case 17: return "Known Glyphs";
+				default: return String.format("Glyphs 0..%d", value-1);
+				}
+			}
 			public static GlyphNumber[] create() {
-				GlyphNumber[] arr = new GlyphNumber[16];
+				GlyphNumber[] arr = new GlyphNumber[17];
 				for (int i=0; i<arr.length; ++i) arr[i] = new GlyphNumber(i+1);
 				return arr;
 			}
@@ -1404,6 +1449,11 @@ class SaveGameView extends JPanel {
 			this.mainWindow = mainWindow;
 			
 			CombinedListener combiListener = new CombinedListener();
+			
+			int preselectedGalaxy = 0;
+			JComboBox<Galaxy> cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
+			cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
+			cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy((Galaxy)cmbbxGalaxies.getSelectedItem()));
 			
 			zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
 			zoomField.addActionListener(
@@ -1417,6 +1467,8 @@ class SaveGameView extends JPanel {
 			
 			JCheckBox chkbxShowGlyphRegions = new JCheckBox("Show region reachable by known glyphs", false);
 			JComboBox<GlyphNumber> cmbbxKnownGlyphs = new JComboBox<>(GlyphNumber.create());
+			cmbbxKnownGlyphs.setSelectedItem(null);
+			cmbbxKnownGlyphs.setEnabled(false);
 
 			chkbxShowGlyphRegions.addActionListener(e->{
 				boolean show = chkbxShowGlyphRegions.isSelected();
@@ -1425,23 +1477,30 @@ class SaveGameView extends JPanel {
 			});
 			cmbbxKnownGlyphs.addActionListener(e->showGlyphOverlay(cmbbxKnownGlyphs.getSelectedIndex()+1));
 			
-			JPanel overlayPanel = new JPanel();
-			overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.X_AXIS));
-			overlayPanel.add(chkbxShowGlyphRegions);
-			overlayPanel.add(cmbbxKnownGlyphs);
+			JPanel rightStatusPanel = new JPanel();
+			rightStatusPanel.setLayout(new BoxLayout(rightStatusPanel, BoxLayout.X_AXIS));
+			rightStatusPanel.add(chkbxShowGlyphRegions);
+			rightStatusPanel.add(cmbbxKnownGlyphs);
+			
+			JPanel leftStatusPanel = new JPanel();
+			leftStatusPanel.setLayout(new BoxLayout(leftStatusPanel, BoxLayout.X_AXIS));
+			leftStatusPanel.add(cmbbxGalaxies);
+			leftStatusPanel.add(zoomField);
 			
 			
 			JPanel statusPanel = new JPanel(new BorderLayout(3,3));
-			statusPanel.add(zoomField,BorderLayout.WEST);
+			statusPanel.add(leftStatusPanel,BorderLayout.WEST);
 			statusPanel.add(statusField,BorderLayout.CENTER);
-			statusPanel.add(overlayPanel,BorderLayout.EAST);
+			statusPanel.add(rightStatusPanel,BorderLayout.EAST);
 			
 			JPanel mapview = new JPanel();
 			GridBagLayout layout = new GridBagLayout();
 			GridBagConstraints c = new GridBagConstraints();
 			mapview.setLayout(layout);
 			
-			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(0));
+			Long knownGlyphs = data.general.getKnownGlyphsMaks();
+			//knownGlyphs = 0b110111100L;
+			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.getCurrentUniverseAddress(),knownGlyphs);
 			galaxyMap.prepareMap();
 			galaxyMap.addMouseWheelListener(combiListener);
 			galaxyMap.addMouseMotionListener(combiListener);
@@ -1451,19 +1510,7 @@ class SaveGameView extends JPanel {
 			scrollBarHoriz = new JScrollBar(JScrollBar.HORIZONTAL);
 			
 			scrollBarVert.addAdjustmentListener(combiListener);
-//			scrollBarVert.addAdjustmentListener(new AdjustmentListener() {
-//				@Override public void adjustmentValueChanged(AdjustmentEvent e) {
-//					Adjustable adj = e.getAdjustable();
-//					System.out.printf("scrollBarVert .adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
-//				}
-//			});
 			scrollBarHoriz.addAdjustmentListener(combiListener);
-//			scrollBarHoriz.addAdjustmentListener(new AdjustmentListener() {
-//				@Override public void adjustmentValueChanged(AdjustmentEvent e) {
-//					Adjustable adj = e.getAdjustable();
-//					System.out.printf("scrollBarHoriz.adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
-//				}
-//			});
 			
 			addComp(mapview,layout,c, galaxyMap     , 1,1,1,GridBagConstraints.BOTH);
 			addComp(mapview,layout,c, scrollBarVert , 0,1,GridBagConstraints.REMAINDER,GridBagConstraints.VERTICAL);
@@ -1529,7 +1576,9 @@ class SaveGameView extends JPanel {
 				int voxelX = galaxyMap.computeMapX(x);
 				int voxelZ = galaxyMap.computeMapY(y);
 				UniverseAddress ua = new UniverseAddress(0,voxelX,0,voxelZ,0,0);
-				str += String.format(Locale.ENGLISH, ",  Region: (%d,0,%d),  GlyphCode: %s", voxelX,voxelZ, ua.getPortalGlyphCodeStr());
+				str += String.format(Locale.ENGLISH, ",  Region: (%d,0,%d)", voxelX,voxelZ);
+				str += String.format(Locale.ENGLISH, ",  GlyphCode: %s", ua.getPortalGlyphCodeStr());
+				str += String.format(Locale.ENGLISH, ",  Distance to Center: %1.1f regions", ua.getDistToCenter_inRegionUnits() /*Math.sqrt(voxelX*voxelX+voxelZ*voxelZ)*/);
 			}
 			statusField.setText(str);
 		}
@@ -1548,16 +1597,14 @@ class SaveGameView extends JPanel {
 				Adjustable adj = e.getAdjustable();
 				switch (adj.getOrientation()) {
 				case Adjustable.HORIZONTAL:
-					System.out.printf("scrollBarHoriz.adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
+//					System.out.printf("scrollBarHoriz.adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
 					galaxyMap.setXOffset(adj.getValue());
 					break;
 				case Adjustable.VERTICAL:
-					System.out.printf("scrollBarVert .adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
+//					System.out.printf("scrollBarVert .adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
 					galaxyMap.setYOffset(adj.getValue());
 					break;
 				}
-				// TODO Auto-generated method stub
-				
 			}
 
 			public void setHorizScrollBar(int min, int value, int max, int visible) {
@@ -1606,6 +1653,7 @@ class SaveGameView extends JPanel {
 			private static final Color COLOR_GRID = new Color(0x202020);
 			private static final Color COLOR_AXIS = new Color(0x000090);
 			private static final Color COLOR_KNOWN_REGION = Color.YELLOW;
+			private static final Color COLOR_CURRENT_POS  = Color.MAGENTA;
 			private static final Color COLOR_GALAXY_CENTER = Color.RED;
 			
 			private static final int MAP_WIDTH  = 4096;
@@ -1616,7 +1664,7 @@ class SaveGameView extends JPanel {
 			
 			private static final double ZOOM_INC = 1.1;
 			
-			private final Galaxy galaxy;
+			private Galaxy galaxy;
 			private BufferedImage mapBaseImage;
 			private BufferedImage mapImage;
 
@@ -1627,11 +1675,15 @@ class SaveGameView extends JPanel {
 			private double zoomRatio;
 
 			private CombinedListener combiListener;
+			private UniverseAddress currentPos;
+			private Long knownGlyphs;
 			
-			GalaxyMap(CombinedListener combiListener, Galaxy galaxy) {
+			GalaxyMap(CombinedListener combiListener, Galaxy galaxy, UniverseAddress currentPos, Long knownGlyphs) {
 				this.combiListener = combiListener;
 				//withDebugOutput = true;
 				this.galaxy = galaxy;
+				this.currentPos = currentPos;
+				this.knownGlyphs = knownGlyphs;
 				this.mapBaseImage = null;
 				this.mapImage = null;
 				this.offsetX = 0;
@@ -1641,6 +1693,12 @@ class SaveGameView extends JPanel {
 				this.zoomRatio = 1.0;
 			}
 
+			public void setGalaxy(Galaxy galaxy) {
+				this.galaxy = galaxy;
+				prepareMap();
+				repaint();
+			}
+
 			public int computeMapX(int screenX) { return (int) Math.floor((screenX+offsetX)/zoomRatio)-MAP_CENTER_X; }
 			public int computeMapY(int screenY) { return (int) Math.floor((screenY+offsetY)/zoomRatio)-MAP_CENTER_Y; }
 
@@ -1648,7 +1706,7 @@ class SaveGameView extends JPanel {
 			public int getViewHeight() { return height; }
 
 			public Worker showGlyphOverlay(int numberOfKnownGlyphs) {
-				if (numberOfKnownGlyphs==0) {
+				if (numberOfKnownGlyphs==0 || (numberOfKnownGlyphs==17 && knownGlyphs==null)) {
 					mapImage = mapBaseImage;
 					repaint();
 //					System.out.printf(Locale.ENGLISH, "showGlyphOverlay( %d ) -> disable overlay\r\n", numberOfKnownGlyphs);
@@ -1663,28 +1721,60 @@ class SaveGameView extends JPanel {
 						Graphics graphics = newMapImage.getGraphics();
 						graphics.drawImage(mapBaseImage,0,0,null);
 						
-						setProgress(0,MAP_WIDTH);
-						graphics.setColor(new Color(0x00,0xFF,0x00,0x7F));
-						for (int x=0; (x<MAP_WIDTH) && !stopNow; ++x) {
-							setProgress(x);
-							int cX = (x-MAP_CENTER_X)&0xFFF;
-							if (((cX>>8)&0xF)>=numberOfKnownGlyphs) continue;
-							if (((cX>>4)&0xF)>=numberOfKnownGlyphs) continue;
-							if (((cX>>0)&0xF)>=numberOfKnownGlyphs) continue;
-							for (int y=0; (y<MAP_HEIGHT) && !stopNow; ++y) {
-								int cY = (y-MAP_CENTER_Y)&0xFFF;
-								if (((cY>>8)&0xF)>=numberOfKnownGlyphs) continue;
-								if (((cY>>4)&0xF)>=numberOfKnownGlyphs) continue;
-								if (((cY>>0)&0xF)>=numberOfKnownGlyphs) continue;
-								graphics.fillRect(x,y,1,1);
+						if (numberOfKnownGlyphs<17) {
+							// N consecutive glyphs
+							int N = numberOfKnownGlyphs;
+							setProgress(0,N*N);
+							graphics.setColor(new Color(0x00,0xFF,0x00,0x7F));
+							for (int x1=0; (x1<N) && !stopNow; ++x1)
+								for (int y1=0; (y1<N) && !stopNow; ++y1) {
+									setProgress(x1*N+y1);
+									for (int x2=0; (x2<N) && !stopNow; ++x2)
+										for (int y2=0; (y2<N) && !stopNow; ++y2)
+											drawRect(graphics, x1*16+x2*256+MAP_CENTER_X, y1*16+y2*256+MAP_CENTER_Y, N, N);
+								}
+							setProgress(N*N);
+						} else {
+							int bitmask = (int)(long)knownGlyphs;
+							// bit mask of known glyphs
+							setProgress(0,MAP_WIDTH);
+							graphics.setColor(new Color(0x00,0xFF,0x00,0x7F));
+							for (int x=0; (x<MAP_WIDTH) && !stopNow; ++x) {
+								setProgress(x);
+								int cX = (x-MAP_CENTER_X)&0xFFF;
+								if (((bitmask>>((cX>>8)&0xF))&1)==0) continue;
+								if (((bitmask>>((cX>>4)&0xF))&1)==0) continue;
+								if (((bitmask>>((cX>>0)&0xF))&1)==0) continue;
+								for (int y=0; (y<MAP_HEIGHT) && !stopNow; ++y) {
+									int cY = (y-MAP_CENTER_Y)&0xFFF;
+									if (((bitmask>>((cY>>8)&0xF))&1)==0) continue;
+									if (((bitmask>>((cY>>4)&0xF))&1)==0) continue;
+									if (((bitmask>>((cY>>0)&0xF))&1)==0) continue;
+									graphics.fillRect(x,y,1,1);
+								}
 							}
+							setProgress(MAP_WIDTH);
 						}
-						setProgress(MAP_WIDTH);
+						
 						if (!stopNow) {
 							setMapImage(newMapImage);
 							repaint();
 //							System.out.printf(Locale.ENGLISH, "showGlyphOverlay( %d ) -> enable overlay\r\n", numberOfKnownGlyphs);
 						}
+					}
+
+					private void drawRect(Graphics graphics, int x, int y, int width, int height) {
+						while (x >= MAP_WIDTH ) x -= MAP_WIDTH;
+						while (y >= MAP_HEIGHT) y -= MAP_HEIGHT;
+						if (x+width > MAP_WIDTH) {
+							drawRect(graphics, x, y, MAP_WIDTH-x, height);
+							drawRect(graphics, 0, y, x+width-MAP_WIDTH, height);
+						}
+						if (y+height > MAP_HEIGHT) {
+							drawRect(graphics, x, y, width, MAP_HEIGHT-y);
+							drawRect(graphics, x, 0, width, y+height-MAP_HEIGHT);
+						}
+						graphics.fillRect(x,y,width,height);
 					}
 				};
 			}
@@ -1732,6 +1822,8 @@ class SaveGameView extends JPanel {
 				for (Region region:galaxy.regions) {
 					graphics.fillRect(region.voxelX+MAP_CENTER_X, region.voxelZ+MAP_CENTER_Y, 1, 1);
 				}
+				graphics.setColor(COLOR_CURRENT_POS);
+				graphics.fillRect(currentPos.voxelX+MAP_CENTER_X, currentPos.voxelZ+MAP_CENTER_Y, 1, 1);
 				
 				graphics.setColor(COLOR_GALAXY_CENTER);
 				graphics.fillRect(MAP_CENTER_X, MAP_CENTER_Y, 1, 1);

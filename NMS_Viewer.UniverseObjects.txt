@@ -12,8 +12,10 @@ name=Magnandram Ilioc
 name=Loyarnaulic
 
 [Sys007900FAA8CBC4]
-name=Kihgora-Agyu X (Blackhole)
+name=Kihgora-Agyu X
 race=Vykeen
+short=Blackhole
+info=
 
 [Pln107900FAA8CBC4]
 name=Axellenboe Ummi

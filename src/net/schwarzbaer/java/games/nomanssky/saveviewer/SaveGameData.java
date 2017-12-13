@@ -488,6 +488,7 @@ public class SaveGameData {
 		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
 		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
 		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
+		public Long getKnownGlyphsMaks() { return data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes"); }
 		
 		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
 		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
@@ -609,6 +610,10 @@ public class SaveGameData {
 
 		public String getExtendedSigBoostCode() {
 			return String.format("G%d|%s|P%d", galaxyIndex, getSigBoostCode(), planetIndex);
+		}
+
+		public double getDistToCenter_inRegionUnits() {
+			return Math.sqrt(voxelX*voxelX+voxelY*voxelY+voxelZ*voxelZ);
 		}
 
 		@Override
