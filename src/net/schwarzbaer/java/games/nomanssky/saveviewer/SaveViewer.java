@@ -42,11 +42,12 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.ExtraInfo;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
@@ -59,7 +60,7 @@ public class SaveViewer implements ActionListener {
 	static final boolean DEBUG = true;
 
 	
-	private static StandardMainWindow mainWindow;
+	private StandardMainWindow mainWindow;
 
 	static IconSource<ToolbarIcons> toolbarIS;
 	
@@ -138,10 +139,11 @@ public class SaveViewer implements ActionListener {
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JSON-File (*.json)","json"));;
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JavaScript-File (*.js)","js"));;
 		
+		mainWindow = new StandardMainWindow();
+		
 		compareTab = null;
 		contentPane = new ContentPane();
 		
-		mainWindow = new StandardMainWindow();
 		mainWindow.startGUI(contentPane);
 		updateWindowTitle();
 	}
@@ -178,7 +180,7 @@ public class SaveViewer implements ActionListener {
 				if (new_json_data!=null) {
 					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
 					loadUniverseObjectDataFromFile(saveGameData.universe);
-					SaveGameView saveGameView = new SaveGameView(selectedFile,saveGameData);
+					SaveGameView saveGameView = new SaveGameView(mainWindow,selectedFile,saveGameData);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
 					updateWindowTitle();
@@ -488,22 +490,32 @@ public class SaveViewer implements ActionListener {
 			UniverseAddress ua = null;
 			SolarSystem system = null;
 			Planet planet = null;
+			UniverseObject uniObj = null;
+			String uniObjName = null;
+			
 			String lastLabel = null;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
 				if ((str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
-					system = null; planet = null;
+					system = null;
+					planet = null;
+					uniObj = null;
+					uniObjName = null;
 					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
 					long address = Long.parseLong(addressStr, 16);
 					ua = new UniverseAddress(address);
 					if (str.startsWith("[Sys") && ua.isSolarSystem()) { system = universe.findSolarSystem(ua); System.out.printf("Solar system %s\r\n",ua.getSigBoostCode()); }
 					if (str.startsWith("[Pln") && ua.isPlanet     ()) { planet = universe.findPlanet     (ua); System.out.printf("Planet %s\r\n",ua.getExtendedSigBoostCode()); }
+					if (system!=null) { uniObj = system; uniObjName = "solar system "+ua.getSigBoostCode(); }
+					if (planet!=null) { uniObj = planet; uniObjName = "planet "+ua.getExtendedSigBoostCode(); }
 					continue;
 				}
 				if (str.startsWith("name=")) {
 					String name = str.substring("name=".length());
-					if (system!=null) { system.setUserDefinedName(name); System.out.printf("   Name of solar system %s was defined: \"%s\"\r\n",ua.getSigBoostCode(),name); }
-					if (planet!=null) { planet.setUserDefinedName(name); System.out.printf("   Name of planet "+   "%s was defined: \"%s\"\r\n",ua.getExtendedSigBoostCode(),name); }
+					if (uniObj!=null) {
+						uniObj.setUserDefinedName(name);
+						System.out.printf("   Name of %s was defined: \"%s\"\r\n",uniObjName,name);
+					}
 					continue;
 				}
 				if (str.startsWith("race=")) {
@@ -520,9 +532,12 @@ public class SaveViewer implements ActionListener {
 				}
 				if (str.startsWith("info=")) {
 					String info = str.substring("info=".length());
-					if (lastLabel!=null && planet!=null) {
-						ExtraInfo ei; planet.extraInfos.add(ei = new ExtraInfo(lastLabel,info));
-						System.out.printf("   Info of planet %s was defined: ( \"%s\", \"%s\" )\r\n",ua.getExtendedSigBoostCode(),ei.shortLabel,ei.info);
+					if (lastLabel!=null) {
+						ExtraInfo ei = new ExtraInfo(lastLabel,info);
+						if (uniObj!=null) {
+							uniObj.extraInfos.add(ei);
+							System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",uniObjName,ei.shortLabel,ei.info);
+						}
 					}
 					lastLabel=null;
 					continue;
@@ -549,6 +564,11 @@ public class SaveViewer implements ActionListener {
 							out.printf("[Sys%014X]\r\n",sys.getUniverseAddress().getAddress());
 							if (sys.hasUserDefinedName()) out.printf("name=%s\r\n",sys.getUserDefinedName());
 							if (sys.race!=null          ) out.printf("race=%s\r\n",sys.race);
+							for (ExtraInfo ei:sys.extraInfos)
+								if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
+									out.printf("short=%s\r\n",ei.shortLabel);
+									out.printf("info=%s\r\n" ,ei.info);
+								}
 						}
 						for (Planet p:sys.planets) {
 							if (p.hasUserDefinedName() || !p.extraInfos.isEmpty()) {

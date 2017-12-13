@@ -316,11 +316,11 @@ public class SaveGameData {
 		}
 
 		public void findPlanetsAndSolarSystems() {
-			Universe.DiscoverableAndNamableObject obj;
+			Universe.UniverseObject obj;
 			
 			for (StoreData data:storeData)
 				if ((obj = getDiscNameObj(data.DD))!=null) {
-					obj.fromDiscStore = true;
+					obj.foundInDiscStore = true;
 					
 					if (data.OWS_USN!=null) {
 						if (obj.hasDiscoverer())
@@ -338,13 +338,13 @@ public class SaveGameData {
 			
 			for (AvailableData data:availableData)
 				if ((obj = getDiscNameObj(data.DD))!=null)
-					obj.fromDiscAvail = true;
+					obj.isNotUploaded = true;
 		}
 
-		private Universe.DiscoverableAndNamableObject getDiscNameObj(DDblock dd) {
+		private Universe.UniverseObject getDiscNameObj(DDblock dd) {
 			if (dd.DT==null || dd.UA==null) return null;
 				
-			Universe.DiscoverableAndNamableObject discnameObj = null;
+			Universe.UniverseObject discnameObj = null;
 			
 			if (dd.DT.equals("Planet") && dd.UA.isPlanet())
 				discnameObj = data.universe.getOrCreatePlanet(dd.UA);
@@ -439,11 +439,11 @@ public class SaveGameData {
 							);
 			if(currentUniverseAddress.isPlanet()) {
 				Planet planet = data.universe.getOrCreatePlanet(currentUniverseAddress);
-				planet.fromCurrPos = true;
+				planet.isCurrPos = true;
 			}
 			if(currentUniverseAddress.isSolarSystem()) {
 				SolarSystem system = data.universe.getOrCreateSolarSystem(currentUniverseAddress);
-				system.fromCurrPos = true;
+				system.isCurrPos = true;
 			}
 		}
 
@@ -537,6 +537,10 @@ public class SaveGameData {
 			portalGlyphCode |= ((long)solarSystemIndex&0xFFF)<<32;
 			portalGlyphCode |= ((long)planetIndex     &0xFF )<<44;
 			return portalGlyphCode;
+		}
+
+		public String getPortalGlyphCodeStr() {
+			return String.format("%012X",getPortalGlyphCode());
 		}
 
 		public UniverseAddress(UniverseAddress ua, int solarSystemIndex, int planetIndex) {
@@ -780,13 +784,15 @@ public class SaveGameData {
 			}
 		}
 		
-		static class DiscoverableAndNamableObject {
+		static class UniverseObject {
 			
 			private String discoverer;
-			boolean fromCurrPos;
-			boolean fromStats;
-			boolean fromDiscStore;
-			boolean fromDiscAvail;
+			boolean isCurrPos;
+			boolean foundInStats;
+			boolean foundInDiscStore;
+			boolean isNotUploaded;
+			
+			final Vector<ExtraInfo> extraInfos;
 			
 			private String userdefinedName;
 			private String datadefinedName;
@@ -794,17 +800,33 @@ public class SaveGameData {
 			final HashMap<String,Integer> discoveredItems_Avail;
 			final HashMap<String,Integer> discoveredItems_Store;
 			
-			protected DiscoverableAndNamableObject() {
+			protected UniverseObject() {
+				discoverer = null;
+				isCurrPos   = false;
+				foundInStats     = false;
+				foundInDiscStore = false;
+				isNotUploaded = false;
+				
+				this.extraInfos = new Vector<>();
+				
 				userdefinedName = null;
 				datadefinedName = null;
-				discoverer = null;
-				fromCurrPos   = false;
-				fromStats     = false;
-				fromDiscStore = false;
-				fromDiscAvail = false;
 				
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
+			}
+
+			protected String getCombinedExtraInfoLabels() {
+				StringBuilder sb = new StringBuilder();
+				boolean sbIsEmpty = true;
+				for (ExtraInfo ei:extraInfos)
+					if (!ei.shortLabel.isEmpty()) {
+						if (!sbIsEmpty) sb.append(", ");
+						sb.append(ei.shortLabel);
+						sbIsEmpty = false;
+					}
+				String string2 = sb.toString();
+				return string2;
 			}
 
 			public void addDiscoveredItem(String itemLabel, DiscoveryData.SourceArray sourceArray) {
@@ -820,15 +842,15 @@ public class SaveGameData {
 
 			
 			public boolean hasSourceID() {
-				return fromCurrPos || fromStats || fromDiscAvail || fromDiscStore;
+				return isCurrPos || foundInStats || isNotUploaded || foundInDiscStore;
 			}
 			
 			public String getSourceIDStr() {
 				StringBuilder sb = new StringBuilder();
-				if (fromCurrPos  ) {                                    sb.append("CP"); }
-				if (fromStats    ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
-				if (fromDiscStore) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
-				if (fromDiscAvail) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
+				if (isCurrPos    ) {                                    sb.append("CP"); }
+				if (foundInStats    ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
+				if (foundInDiscStore) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
+				if (isNotUploaded  ) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
 				return "<"+sb.toString()+">";
 			}
 			
@@ -836,24 +858,33 @@ public class SaveGameData {
 			public String getDiscoverer() { return discoverer; }
 			public void setDiscoverer(String name) { this.discoverer = name; }
 
-			public boolean hasName() { return userdefinedName!=null || datadefinedName!=null; }
+//			public boolean hasName() { return userdefinedName!=null || datadefinedName!=null; }
 			public boolean hasUserDefinedName() { return userdefinedName!=null; }
 			public boolean hasDataDefinedName() { return datadefinedName!=null; }
-			public String getName() {
-				if (userdefinedName!=null) {
-					if (datadefinedName!=null) return userdefinedName+" | "+datadefinedName;
-					return userdefinedName;
-				}
-				if (datadefinedName!=null) return datadefinedName;
-				return "";
-			}
+//			public String getName() {
+//				if (userdefinedName!=null) {
+//					if (datadefinedName!=null) return userdefinedName+" | "+datadefinedName;
+//					return userdefinedName;
+//				}
+//				if (datadefinedName!=null) return datadefinedName;
+//				return "";
+//			}
 			public void setUserDefinedName(String name) { this.userdefinedName = name; }
 			public void setDataDefinedName(String name) { this.datadefinedName = name; }
 			public String getUserDefinedName() { return this.userdefinedName; }
 			public String getDataDefinedName() { return this.datadefinedName; }
+			
+			static final class ExtraInfo {
+				String shortLabel;
+				String info;
+				public ExtraInfo(String shortLabel, String info) {
+					this.shortLabel = shortLabel;
+					this.info = info;
+				}
+			}
 		}
 		
-		static final class SolarSystem extends DiscoverableAndNamableObject {
+		static final class SolarSystem extends UniverseObject {
 			
 			enum Race {
 				Gek("Gek"), Korvax("Korvax"), Vykeen("Vy'keen");
@@ -876,24 +907,25 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
-				String str;
-				if (hasName()) str = String.format("Sys%03X %s", solarSystemIndex, getName());
-				else           str = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+				String strName;
+				if (hasUserDefinedName()) strName = String.format("Sys%03X %s", solarSystemIndex, getUserDefinedName());
+				else                      strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
 				
-				if (race!=null)
-					 str+=" ["+race.fullName+"]";
+				String strDataName = (!hasDataDefinedName()?"":(" | "+getDataDefinedName()));
 				
-				String str1, strEI="";
+				String strRace = (race==null)?"":(" ["+race.fullName+"]");
+				
+				String str1, strExtraInfo=getCombinedExtraInfoLabels();
 				for (Planet p:planets) {
 					str1 = p.getCombinedExtraInfoLabels();
 					if (!str1.isEmpty()) {
-						if (!strEI.isEmpty()) strEI+=", ";
-						strEI+=str1;
+						if (!strExtraInfo.isEmpty()) strExtraInfo+=", ";
+						strExtraInfo+=str1;
 					}
 				}
-				if (!strEI.isEmpty()) str+=" ("+strEI+")";
+				if (!strExtraInfo.isEmpty()) strExtraInfo=" ("+strExtraInfo+")";
 				
-				return str;
+				return strName+strExtraInfo+strDataName+strRace;
 			}
 
 			public void addPlanet(Planet planet) {
@@ -915,17 +947,15 @@ public class SaveGameData {
 			}
 		}
 		
-		static final class Planet extends DiscoverableAndNamableObject {
+		static final class Planet extends UniverseObject {
 			
 			final SolarSystem solarSystem;
 			final int planetIndex;
 			private Stats.PlanetStats stats;
-			final Vector<ExtraInfo> extraInfos;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
-				this.extraInfos = new Vector<>();
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;
@@ -933,34 +963,26 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
-				String str = null;
-				if (hasName())
-					str = String.format("P%1X %s", planetIndex, getName());
+				String strName;
+				if (hasUserDefinedName())
+					strName = String.format("P%1X %s", planetIndex, getUserDefinedName());
 				else {
 					UniverseAddress ua = getUniverseAddress();
 					if (ua!=null)
-						str = ua.getExtendedSigBoostCode();
+						strName = ua.getExtendedSigBoostCode();
 					else
-						str = "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
+						return "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
 				}
+				
+				String strDataName = (!hasDataDefinedName()?"":(" | "+getDataDefinedName()));
+				
+				String strExtraInfo="";
 				if (!extraInfos.isEmpty()) {
-					String str1 = getCombinedExtraInfoLabels();
-					if (!str1.isEmpty()) str += " ("+str1+")";
+					strExtraInfo = getCombinedExtraInfoLabels();
+					if (!strExtraInfo.isEmpty()) strExtraInfo = " ("+strExtraInfo+")";
 				}
-				return str;
-			}
-
-			private String getCombinedExtraInfoLabels() {
-				StringBuilder sb = new StringBuilder();
-				boolean sbIsEmpty = true;
-				for (ExtraInfo ei:extraInfos)
-					if (!ei.shortLabel.isEmpty()) {
-						if (!sbIsEmpty) sb.append(", ");
-						sb.append(ei.shortLabel);
-						sbIsEmpty = false;
-					}
-				String string2 = sb.toString();
-				return string2;
+				
+				return strName+strExtraInfo+strDataName;
 			}
 
 			public UniverseAddress getUniverseAddress() {
@@ -968,15 +990,6 @@ public class SaveGameData {
 				UniverseAddress ua = solarSystem.getUniverseAddress();
 				if (ua==null) return null;
 				return new UniverseAddress(ua,planetIndex);
-			}
-			
-			static final class ExtraInfo {
-				String shortLabel;
-				String info;
-				public ExtraInfo(String shortLabel, String info) {
-					this.shortLabel = shortLabel;
-					this.info = info;
-				}
 			}
 		}
 	}
@@ -1105,7 +1118,7 @@ public class SaveGameData {
 					
 					
 					Universe.Planet planet = data.universe.getOrCreatePlanet(addressLong);
-					planet.fromStats = true;
+					planet.foundInStats = true;
 					
 					PlanetStats ps = new PlanetStats(planet);
 					fillInto(groupStats,ps.stats);

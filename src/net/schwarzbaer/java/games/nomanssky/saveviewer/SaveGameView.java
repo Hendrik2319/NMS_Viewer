@@ -1,18 +1,31 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.Adjustable;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GridLayout;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Locale;
@@ -27,6 +40,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -34,23 +48,30 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
+import net.schwarzbaer.gui.ProgressDialog;
+import net.schwarzbaer.gui.ProgressDialog.CancelListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
@@ -59,10 +80,10 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatVa
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnConfig;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnIDInterface;
@@ -86,10 +107,13 @@ class SaveGameView extends JPanel {
 	SaveGameData data;
 	private JTabbedPane tabbedPane;
 
-	public SaveGameView(File file, SaveGameData data) {
+	private Window mainWindow;
+
+	public SaveGameView(Window mainWindow, File file, SaveGameData data) {
 		super(new BorderLayout(3, 3));
 		setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		
+		this.mainWindow = mainWindow;
 		this.file = file;
 		this.data = data;
 		
@@ -115,6 +139,8 @@ class SaveGameView extends JPanel {
 	private void addAllTabs() {
 		tabbedPane.addTab("General",new GeneralDataPanel(data));
 		tabbedPane.addTab("Known Universe",new UniversePanel(data));
+		tabbedPane.addTab("Galaxy Map",new GalaxyMapPanel(data,mainWindow));
+		
 		if (data.stats     !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
 		if (data.knownWords!=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
 		
@@ -164,7 +190,7 @@ class SaveGameView extends JPanel {
 			return button;
 		}
 
-		protected void setNameForUniverseAddress(Universe.DiscoverableAndNamableObject object, UniverseAddress ua, String objectStr) {
+		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.UniverseObject object, String objectStr) {
 			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getUserDefinedName());
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
@@ -279,14 +305,17 @@ class SaveGameView extends JPanel {
 			
 			extraInfoTableModel = new ExtraInfoTableModel();
 			SimplifiedTable extraInfoTable = new SimplifiedTable(extraInfoTableModel,true,SaveViewer.DEBUG,true);
+			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			extraInfoTableModel.setTable(extraInfoTable);
+			//extraInfoTable.isEditing();
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
 			portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 			
-			JPanel infoPanel = new JPanel(new GridLayout(2,1,3,3));
-			infoPanel.add(new JScrollPane(textArea));
-			infoPanel.add(new JScrollPane(extraInfoTable));
+			JPanel infoPanel = new JPanel(new BorderLayout(3,3));
+			infoPanel.add(new JScrollPane(textArea),BorderLayout.CENTER);
+			infoPanel.add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
 			
 			JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
 			//eastPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
@@ -331,8 +360,8 @@ class SaveGameView extends JPanel {
 			case SetName:
 				if (clickedNode!=null) {
 					switch(clickedNode.type) {
-					case Planet     : planet=((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet,planet.getUniverseAddress(), "planet"      ); break;
-					case SolarSystem: system=((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system,system.getUniverseAddress(), "solar system"); break;
+					case Planet     : planet=((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet.getUniverseAddress(),planet, "planet"      ); break;
+					case SolarSystem: system=((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system.getUniverseAddress(),system, "solar system"); break;
 					default:break;
 					}
 					treeModel.nodeChanged(clickedNode);
@@ -381,7 +410,7 @@ class SaveGameView extends JPanel {
 		@Override public void mouseExited(MouseEvent e) {}
 		@Override public void mouseClicked(MouseEvent e) {
 			if (e.getButton()==MouseEvent.BUTTON3) {
-				System.out.println("mouseClicked( BUTTON3, "+e.getX()+", "+e.getY()+" )");
+				//System.out.println("mouseClicked( BUTTON3, "+e.getX()+", "+e.getY()+" )");
 				clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
 				if (clickedTreePath==null) {
 					clickedNode = null;
@@ -454,9 +483,8 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("Universe Address           : 0x%014X\r\n", ua.getAddress()));
 				textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
 				textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
-				showDiscNameObj(planet);
 				
-				extraInfoTableModel.setData(planet.extraInfos);
+				showDiscNameObj(planet);
 				break;
 				
 			case SolarSystem:
@@ -466,6 +494,7 @@ class SaveGameView extends JPanel {
 				ua = system.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
 				textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
+				
 				showDiscNameObj(system);
 				break;
 				
@@ -489,7 +518,7 @@ class SaveGameView extends JPanel {
 			}
 		}
 		
-		private void showDiscNameObj(Universe.DiscoverableAndNamableObject obj) {
+		private void showDiscNameObj(Universe.UniverseObject obj) {
 			textArea.append("\r\n");
 			if (obj.hasUserDefinedName()) textArea.append(String.format("Name by user : %s\r\n", obj.getUserDefinedName()));
 			if (obj.hasDataDefinedName()) textArea.append(String.format("Name by data : %s\r\n", obj.getDataDefinedName()));
@@ -507,6 +536,7 @@ class SaveGameView extends JPanel {
 						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Store.get(item)));
 				}
 			}
+			extraInfoTableModel.setData(obj.extraInfos);
 		}
 
 		private Icon createPortalGlyphs(long portalGlyphCode) {
@@ -537,14 +567,24 @@ class SaveGameView extends JPanel {
 		private class ExtraInfoTableModel extends TableView.SimplifiedTableModel<ExtraInfoColumnID> {
 
 			private Vector<ExtraInfo> tableData;
+			private JTable table;
 
 			protected ExtraInfoTableModel() {
 				super(ExtraInfoColumnID.values());
 				this.tableData = null;
+				this.table = null;
+			}
+
+			public void setTable(JTable table) {
+				this.table = table;
 			}
 
 			public void clearData() { setData(null); }
 			public void setData(Vector<ExtraInfo> data) {
+				if (table!=null && table.isEditing()) {
+					TableCellEditor cellEditor = table.getCellEditor();
+					if (cellEditor!=null) cellEditor.cancelCellEditing();
+				}
 				this.tableData = data;
 				fireTableUpdate();
 			}
@@ -632,13 +672,13 @@ class SaveGameView extends JPanel {
 					case Planet     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     )); break;
 					}
 					setFont(standardFont);
-					Universe.DiscoverableAndNamableObject obj = null;
+					Universe.UniverseObject obj = null;
 					if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
 					if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
 					if (obj != null) {
-						if (!selected && !obj.hasName()   ) setForeground(TEXTCOLOR__WITHOUT_NAME);
-						if (!selected && obj.fromDiscAvail) setForeground(TEXTCOLOR__NO_UPLOADED);
-						if (obj.fromCurrPos) {
+						if (!selected && !obj.hasUserDefinedName() && !obj.hasDataDefinedName()) setForeground(TEXTCOLOR__WITHOUT_NAME);
+						if (!selected && obj.isNotUploaded) setForeground(TEXTCOLOR__NO_UPLOADED);
+						if (obj.isCurrPos) {
 							if (!selected) setForeground(TEXTCOLOR__CURRENT_POS);
 							setFont(boldfont);
 						}
@@ -1064,8 +1104,8 @@ class SaveGameView extends JPanel {
 				return;
 			}
 			
-			if (ua.isPlanet     ()) setNameForUniverseAddress(data.universe.getOrCreatePlanet     (ua), ua, "planet"      );
-			if (ua.isSolarSystem()) setNameForUniverseAddress(data.universe.getOrCreateSolarSystem(ua), ua, "solar system");
+			if (ua.isPlanet     ()) setNameForUniverseAddress(ua, data.universe.getOrCreatePlanet     (ua), "planet"      );
+			if (ua.isSolarSystem()) setNameForUniverseAddress(ua, data.universe.getOrCreateSolarSystem(ua), "solar system");
 			
 			updateContent();
 		}
@@ -1097,15 +1137,15 @@ class SaveGameView extends JPanel {
 				appendLine("Current Location in Universe:");
 				if (currentUA.isPlanet     ()) {
 					Planet planet = data.universe.findPlanet(currentUA);
-					if (planet!=null && planet.hasName())
-						appendLine("    on planet \""+planet.getName()+"\"");
+					if (planet!=null)
+						appendLine("    on planet \""+planet+"\"");
 					else
 						appendLine("    on a planet");
 				}
 				if (currentUA.isSolarSystem()) {
 					SolarSystem system = data.universe.findSolarSystem(currentUA);
-					if (system!=null && system.hasName())
-						appendLine("    in solar system \""+system.getName()+"\"");
+					if (system!=null)
+						appendLine("    in solar system \""+system+"\"");
 					else
 						appendLine("    in a solar system");
 				}
@@ -1323,6 +1363,475 @@ class SaveGameView extends JPanel {
 					sb.append("<unknown class of \""+pathComponent+"\">");
 			}
 			return sb.toString();
+		}
+	}
+
+	private static class GalaxyMapPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 9055290876621464068L;
+
+		private Window mainWindow;
+		
+		private GalaxyMap galaxyMap;
+		private JScrollBar scrollBarHoriz;
+		private JScrollBar scrollBarVert;
+
+		private JComboBox<ZoomStep> zoomField;
+		private JLabel statusField;
+		
+		private static class ZoomStep {
+			private double value;
+			private ZoomStep(double value) { this.value = value; }
+			@Override public String toString() { return String.format(Locale.ENGLISH, "%1.1f%%", value*100); }
+			public static ZoomStep[] create(double[] zoomSteps) {
+				ZoomStep[] arr = new ZoomStep[zoomSteps.length];
+				for (int i=0; i<zoomSteps.length; ++i) arr[i] = new ZoomStep(zoomSteps[i]);
+				return arr;
+			}
+		}
+		private static class GlyphNumber {
+			private int value;
+			private GlyphNumber(int value) { this.value = value; }
+			@Override public String toString() { return String.format("%d glyph%s", value, value>1?"s":""); }
+			public static GlyphNumber[] create() {
+				GlyphNumber[] arr = new GlyphNumber[16];
+				for (int i=0; i<arr.length; ++i) arr[i] = new GlyphNumber(i+1);
+				return arr;
+			}
+		}
+		
+		public GalaxyMapPanel(SaveGameData data, Window mainWindow) {
+			super(data);
+			this.mainWindow = mainWindow;
+			
+			CombinedListener combiListener = new CombinedListener();
+			
+			zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
+			zoomField.addActionListener(
+					e->{
+						ZoomStep zoomStep = (ZoomStep)zoomField.getSelectedItem();
+						if (zoomStep!=null) { galaxyMap.setZoom(zoomStep.value); showStatus(-1,-1); }
+						}
+					);
+			
+			statusField = new JLabel("");
+			
+			JCheckBox chkbxShowGlyphRegions = new JCheckBox("Show region reachable by known glyphs", false);
+			JComboBox<GlyphNumber> cmbbxKnownGlyphs = new JComboBox<>(GlyphNumber.create());
+
+			chkbxShowGlyphRegions.addActionListener(e->{
+				boolean show = chkbxShowGlyphRegions.isSelected();
+				cmbbxKnownGlyphs.setEnabled(show);
+				showGlyphOverlay(show?cmbbxKnownGlyphs.getSelectedIndex()+1:0);
+			});
+			cmbbxKnownGlyphs.addActionListener(e->showGlyphOverlay(cmbbxKnownGlyphs.getSelectedIndex()+1));
+			
+			JPanel overlayPanel = new JPanel();
+			overlayPanel.setLayout(new BoxLayout(overlayPanel, BoxLayout.X_AXIS));
+			overlayPanel.add(chkbxShowGlyphRegions);
+			overlayPanel.add(cmbbxKnownGlyphs);
+			
+			
+			JPanel statusPanel = new JPanel(new BorderLayout(3,3));
+			statusPanel.add(zoomField,BorderLayout.WEST);
+			statusPanel.add(statusField,BorderLayout.CENTER);
+			statusPanel.add(overlayPanel,BorderLayout.EAST);
+			
+			JPanel mapview = new JPanel();
+			GridBagLayout layout = new GridBagLayout();
+			GridBagConstraints c = new GridBagConstraints();
+			mapview.setLayout(layout);
+			
+			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(0));
+			galaxyMap.prepareMap();
+			galaxyMap.addMouseWheelListener(combiListener);
+			galaxyMap.addMouseMotionListener(combiListener);
+			galaxyMap.addMouseListener(combiListener);
+			
+			scrollBarVert = new JScrollBar(JScrollBar.VERTICAL);
+			scrollBarHoriz = new JScrollBar(JScrollBar.HORIZONTAL);
+			
+			scrollBarVert.addAdjustmentListener(combiListener);
+//			scrollBarVert.addAdjustmentListener(new AdjustmentListener() {
+//				@Override public void adjustmentValueChanged(AdjustmentEvent e) {
+//					Adjustable adj = e.getAdjustable();
+//					System.out.printf("scrollBarVert .adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
+//				}
+//			});
+			scrollBarHoriz.addAdjustmentListener(combiListener);
+//			scrollBarHoriz.addAdjustmentListener(new AdjustmentListener() {
+//				@Override public void adjustmentValueChanged(AdjustmentEvent e) {
+//					Adjustable adj = e.getAdjustable();
+//					System.out.printf("scrollBarHoriz.adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
+//				}
+//			});
+			
+			addComp(mapview,layout,c, galaxyMap     , 1,1,1,GridBagConstraints.BOTH);
+			addComp(mapview,layout,c, scrollBarVert , 0,1,GridBagConstraints.REMAINDER,GridBagConstraints.VERTICAL);
+			addComp(mapview,layout,c, scrollBarHoriz, 1,0,1,GridBagConstraints.HORIZONTAL);
+			addComp(mapview,layout,c, new JLabel()  , 0,0,GridBagConstraints.REMAINDER,GridBagConstraints.NONE);
+			
+			add(mapview,BorderLayout.CENTER);
+			add(statusPanel,BorderLayout.SOUTH);
+			
+			zoomField.setSelectedItem(null);
+		}
+
+		private void showGlyphOverlay(int numberOfKnownGlyphs) {
+			Worker worker = galaxyMap.showGlyphOverlay(numberOfKnownGlyphs);
+			if (worker==null) return;
+			
+			ProgressDialog pd = new ProgressDialog(mainWindow,"Create Glyph Overlay");
+			ProgressDialogWorker pdWorker = new ProgressDialogWorker(pd,worker);
+			
+			pd.addCancelListener(pdWorker);
+			
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override public void run() {
+					new Thread(pdWorker).start();
+					pd.showDialog();
+				}
+			});
+		}
+		
+		private static abstract class Worker implements Runnable {
+			boolean stopNow;
+			private ProgressDialog pd;
+			Worker() { stopNow = false; pd = null; }
+			
+			protected void setProgress(int value         ) { if (pd!=null) pd.setValue(value    ); }
+			protected void setProgress(int value, int max) { if (pd!=null) pd.setValue(value,max); }
+			protected void setTaskTitle(String title) { if (pd!=null) pd.setTaskTitle(title); }
+		}
+		
+		private static class ProgressDialogWorker implements CancelListener, Runnable {
+			private Worker worker;
+			public ProgressDialogWorker(ProgressDialog pd, Worker worker) {
+				this.worker = worker;
+				this.worker.pd = pd;
+			}
+
+			@Override public void cancelTask() { worker.stopNow = true; worker.pd.closeDialog(); }
+			@Override public void run() { worker.run(); worker.pd.closeDialog(); }
+		}
+
+		private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int fill) {
+			c.weightx=weightx;
+			c.weighty=weighty;
+			c.gridwidth=gridwidth;
+			c.fill = fill;
+			layout.setConstraints(comp, c);
+			panel.add(comp);
+		}
+
+		private void showStatus(int x, int y) {
+			String str = String.format(Locale.ENGLISH, "Zoom: %1.1f%%", galaxyMap.zoomRatio*100);
+			if (x>=0 && y>=0) {
+				int voxelX = galaxyMap.computeMapX(x);
+				int voxelZ = galaxyMap.computeMapY(y);
+				UniverseAddress ua = new UniverseAddress(0,voxelX,0,voxelZ,0,0);
+				str += String.format(Locale.ENGLISH, ",  Region: (%d,0,%d),  GlyphCode: %s", voxelX,voxelZ, ua.getPortalGlyphCodeStr());
+			}
+			statusField.setText(str);
+		}
+		
+		private class CombinedListener implements MouseWheelListener, MouseMotionListener, MouseListener, AdjustmentListener {
+			
+			private boolean isScrollBarListeningEnabled;
+			CombinedListener() {
+				isScrollBarListeningEnabled = true;
+			}
+			
+			@Override
+			public void adjustmentValueChanged(AdjustmentEvent e) {
+				if (!isScrollBarListeningEnabled) return;
+				
+				Adjustable adj = e.getAdjustable();
+				switch (adj.getOrientation()) {
+				case Adjustable.HORIZONTAL:
+					System.out.printf("scrollBarHoriz.adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
+					galaxyMap.setXOffset(adj.getValue());
+					break;
+				case Adjustable.VERTICAL:
+					System.out.printf("scrollBarVert .adjustmentValueChanged: %d..%d..%d (%d) %s\r\n", adj.getMinimum(),adj.getValue(),adj.getMaximum(),adj.getVisibleAmount(),e.getValueIsAdjusting() );
+					galaxyMap.setYOffset(adj.getValue());
+					break;
+				}
+				// TODO Auto-generated method stub
+				
+			}
+
+			public void setHorizScrollBar(int min, int value, int max, int visible) {
+				isScrollBarListeningEnabled = false;
+				scrollBarHoriz.setValues(value, visible, min, max);
+				scrollBarHoriz.setBlockIncrement(Math.min((max-min)/10, visible));
+				isScrollBarListeningEnabled = true;
+			}
+			
+			public void setVertScrollBar(int min, int value, int max, int visible) {
+				isScrollBarListeningEnabled = false;
+				scrollBarVert.setValues(value, visible, min, max);
+				scrollBarVert.setBlockIncrement(Math.min((max-min)/10, visible));
+				isScrollBarListeningEnabled = true;
+			}
+			
+			@Override public void mouseWheelMoved(MouseWheelEvent e) {
+//				System.out.printf(Locale.ENGLISH, "mouseWheelMoved()%s%s %f %d\r\n", e.isShiftDown()?" shift":"", e.isControlDown()?" ctrl":"",e.getPreciseWheelRotation(), e.getUnitsToScroll());
+				if (e.isControlDown()) {
+					zoomField.setSelectedItem(null);
+					galaxyMap.incZoom(e.getX(),e.getY(),-e.getWheelRotation());
+				} else {
+					int canvasSize = e.isShiftDown()?galaxyMap.getViewWidth():galaxyMap.getViewHeight();
+					double scrollAmount = Math.max(canvasSize*0.05,1.0);
+					int offsetInc = (int)Math.round(e.getPreciseWheelRotation()*scrollAmount);
+					if (e.isShiftDown()) galaxyMap.incXOffset(offsetInc);
+					else                 galaxyMap.incYOffset(offsetInc);
+				}
+				showStatus(e.getX(),e.getY());
+			}
+
+			@Override public void mouseEntered (MouseEvent e) { showStatus(e.getX(),e.getY()); }
+			@Override public void mouseMoved   (MouseEvent e) { showStatus(e.getX(),e.getY()); }
+			@Override public void mouseExited  (MouseEvent e) { showStatus(-1,-1); }
+
+			@Override public void mouseClicked (MouseEvent e) {}
+			@Override public void mousePressed (MouseEvent e) {}
+			@Override public void mouseReleased(MouseEvent e) {}
+			@Override public void mouseDragged (MouseEvent e) {}
+		}
+		
+		private static class GalaxyMap extends Canvas {
+			private static final long serialVersionUID = -6290765806544803046L;
+
+			private static final Color COLOR_BACKGROUND = Color.BLACK;
+			private static final Color COLOR_GRID = new Color(0x202020);
+			private static final Color COLOR_AXIS = new Color(0x000090);
+			private static final Color COLOR_KNOWN_REGION = Color.YELLOW;
+			private static final Color COLOR_GALAXY_CENTER = Color.RED;
+			
+			private static final int MAP_WIDTH  = 4096;
+			private static final int MAP_HEIGHT = 4096;
+			private static final int MAP_CENTER_X = 2047;
+			private static final int MAP_CENTER_Y = 2047;
+			private static final int MAP_GRID = 16;
+			
+			private static final double ZOOM_INC = 1.1;
+			
+			private final Galaxy galaxy;
+			private BufferedImage mapBaseImage;
+			private BufferedImage mapImage;
+
+			private int offsetX;
+			private int offsetY;
+			private int scaledMapWidth;
+			private int scaledMapHeight;
+			private double zoomRatio;
+
+			private CombinedListener combiListener;
+			
+			GalaxyMap(CombinedListener combiListener, Galaxy galaxy) {
+				this.combiListener = combiListener;
+				//withDebugOutput = true;
+				this.galaxy = galaxy;
+				this.mapBaseImage = null;
+				this.mapImage = null;
+				this.offsetX = 0;
+				this.offsetY = 0;
+				this.scaledMapWidth  = MAP_WIDTH;
+				this.scaledMapHeight = MAP_HEIGHT;
+				this.zoomRatio = 1.0;
+			}
+
+			public int computeMapX(int screenX) { return (int) Math.floor((screenX+offsetX)/zoomRatio)-MAP_CENTER_X; }
+			public int computeMapY(int screenY) { return (int) Math.floor((screenY+offsetY)/zoomRatio)-MAP_CENTER_Y; }
+
+			public int getViewWidth () { return width; }
+			public int getViewHeight() { return height; }
+
+			public Worker showGlyphOverlay(int numberOfKnownGlyphs) {
+				if (numberOfKnownGlyphs==0) {
+					mapImage = mapBaseImage;
+					repaint();
+//					System.out.printf(Locale.ENGLISH, "showGlyphOverlay( %d ) -> disable overlay\r\n", numberOfKnownGlyphs);
+					return null;
+				}
+				
+				return new Worker() {
+					@Override public void run() {
+						setTaskTitle("Create portal glyph overlay");
+						
+						BufferedImage newMapImage = createEmptyMap();
+						Graphics graphics = newMapImage.getGraphics();
+						graphics.drawImage(mapBaseImage,0,0,null);
+						
+						setProgress(0,MAP_WIDTH);
+						graphics.setColor(new Color(0x00,0xFF,0x00,0x7F));
+						for (int x=0; (x<MAP_WIDTH) && !stopNow; ++x) {
+							setProgress(x);
+							int cX = (x-MAP_CENTER_X)&0xFFF;
+							if (((cX>>8)&0xF)>=numberOfKnownGlyphs) continue;
+							if (((cX>>4)&0xF)>=numberOfKnownGlyphs) continue;
+							if (((cX>>0)&0xF)>=numberOfKnownGlyphs) continue;
+							for (int y=0; (y<MAP_HEIGHT) && !stopNow; ++y) {
+								int cY = (y-MAP_CENTER_Y)&0xFFF;
+								if (((cY>>8)&0xF)>=numberOfKnownGlyphs) continue;
+								if (((cY>>4)&0xF)>=numberOfKnownGlyphs) continue;
+								if (((cY>>0)&0xF)>=numberOfKnownGlyphs) continue;
+								graphics.fillRect(x,y,1,1);
+							}
+						}
+						setProgress(MAP_WIDTH);
+						if (!stopNow) {
+							setMapImage(newMapImage);
+							repaint();
+//							System.out.printf(Locale.ENGLISH, "showGlyphOverlay( %d ) -> enable overlay\r\n", numberOfKnownGlyphs);
+						}
+					}
+				};
+			}
+
+			public void prepareMap() {
+				if (galaxy==null) {
+					mapBaseImage = null;
+					setMapImage(null);
+					return;
+				}
+				prepareBaseMap();
+				copyToMapImage(mapBaseImage);
+			}
+			
+			private synchronized void setMapImage(BufferedImage newMapImage) {
+				mapImage = newMapImage;
+			}
+			
+			private synchronized void copyToMapImage(Image newMapImage) {
+				mapImage = createEmptyMap();
+				Graphics graphics = mapImage.getGraphics();
+				graphics.drawImage(newMapImage,0,0,null);
+			}
+
+			private synchronized boolean isMapImageNull() {
+				return mapImage==null;
+			}
+
+			private void prepareBaseMap() {
+				mapBaseImage = createEmptyMap();
+				Graphics graphics = mapBaseImage.getGraphics();
+				
+				graphics.setColor(COLOR_BACKGROUND);
+				graphics.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+				
+				graphics.setColor(COLOR_GRID);
+				for (int x=MAP_CENTER_X%MAP_GRID; x<MAP_WIDTH ; x+=MAP_GRID) graphics.drawLine(x, 0, x, MAP_HEIGHT);
+				for (int y=MAP_CENTER_Y%MAP_GRID; y<MAP_HEIGHT; y+=MAP_GRID) graphics.drawLine(0, y, MAP_WIDTH, y);
+				
+				graphics.setColor(COLOR_AXIS);
+				graphics.drawLine(MAP_CENTER_X, 0, MAP_CENTER_X, MAP_HEIGHT);
+				graphics.drawLine(0, MAP_CENTER_Y, MAP_WIDTH, MAP_CENTER_Y);
+				
+				graphics.setColor(COLOR_KNOWN_REGION);
+				for (Region region:galaxy.regions) {
+					graphics.fillRect(region.voxelX+MAP_CENTER_X, region.voxelZ+MAP_CENTER_Y, 1, 1);
+				}
+				
+				graphics.setColor(COLOR_GALAXY_CENTER);
+				graphics.fillRect(MAP_CENTER_X, MAP_CENTER_Y, 1, 1);
+			}
+
+			private BufferedImage createEmptyMap() {
+				return new BufferedImage(MAP_WIDTH, MAP_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+			}
+
+			public void setZoom(double value) {
+				incZoom(width/2,height/2, value/zoomRatio);
+//				System.out.printf(Locale.ENGLISH, "setZoom( %f ) -> offset:%d,%d zoom:%f\r\n", value, offsetX,offsetY,zoomRatio);
+			}
+
+			public void incZoom(int zoomCenterX, int zoomCenterY, int zoomInc) {
+				incZoom(zoomCenterX, zoomCenterY, Math.pow(ZOOM_INC, zoomInc));
+//				System.out.printf(Locale.ENGLISH, "incZoom( %d,%d,%d, ) -> offset:%d,%d zoom:%f\r\n", zoomCenterX,zoomCenterY,zoomInc, offsetX,offsetY,zoomRatio);
+			}
+
+			private void incZoom(int zoomCenterX, int zoomCenterY, double zoomRatioInc) {
+				if (this.zoomRatio<0.1 && zoomRatioInc<1) return;
+				
+				this.zoomRatio *= zoomRatioInc;
+				if ((1/ZOOM_INC+1)/2<zoomRatio && zoomRatio<(ZOOM_INC+1)/2) zoomRatio=1.0; // normalize zoomRatio to 1 if it's near 1
+				
+				offsetX = (int) (Math.round((offsetX+zoomCenterX)*zoomRatioInc)-zoomCenterX);
+				offsetY = (int) (Math.round((offsetY+zoomCenterY)*zoomRatioInc)-zoomCenterY);
+				scaledMapWidth  = (int)Math.round(MAP_WIDTH*zoomRatio);
+				scaledMapHeight = (int)Math.round(MAP_HEIGHT*zoomRatio);
+				
+				offsetsChanged();
+				combiListener.setHorizScrollBar(0,offsetX,scaledMapWidth ,width );
+				combiListener.setVertScrollBar (0,offsetY,scaledMapHeight,height);
+			}
+
+			public void incYOffset(int offsetYInc) {
+				setYOffset(offsetY+offsetYInc);
+			}
+			
+			public void setYOffset(int offsetY) {
+				this.offsetY = offsetY;
+				offsetsChanged();
+				combiListener.setVertScrollBar (0,this.offsetY,scaledMapHeight,height);
+//				System.out.printf(Locale.ENGLISH, "incYOffset( %d ) -> offsetY:%d\r\n", offsetYInc, offsetY);
+			}
+
+			public void incXOffset(int offsetXInc) {
+				setXOffset(offsetX+offsetXInc);
+			}
+
+			public void setXOffset(int offsetX) {
+				this.offsetX = offsetX;
+				offsetsChanged();
+				combiListener.setHorizScrollBar(0,this.offsetX,scaledMapWidth ,width );
+//				System.out.printf(Locale.ENGLISH, "incXOffset( %d ) -> offsetX:%d\r\n", offsetXInc, offsetX);
+			}
+			
+			private void offsetsChanged() {
+				offsetX = Math.min(offsetX,scaledMapWidth-width);
+				offsetX = Math.max(offsetX,0);
+				offsetY = Math.min(offsetY,scaledMapHeight-height);
+				offsetY = Math.max(offsetY,0);
+				repaint();
+			}
+			
+			@Override
+			protected void paintCanvas(Graphics g, int width, int height) {
+				if (isMapImageNull()) return;
+				if (!(g instanceof Graphics2D)) return;
+				Graphics2D g2 = (Graphics2D)g;
+				
+				g2.setClip(new Rectangle(0, 0, width, height));
+				
+				AffineTransform transform = new AffineTransform();
+//				transform.setToScale(zoomRatio, zoomRatio);
+//				transform.translate(-offsetX,-offsetY);
+				transform.setToTranslation(-offsetX,-offsetY);
+				transform.scale(zoomRatio, zoomRatio);
+				
+				int type = zoomRatio<1.0?AffineTransformOp.TYPE_BICUBIC:AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
+				AffineTransformOp op = new AffineTransformOp(transform, type);
+				synchronized(this) {
+					g2.drawImage(mapImage, op, 0, 0);
+				}
+				
+//				g.drawImage(mapImage,
+//						0,0,width,height,
+//						(int)Math.round(offsetX/zoomRatio),
+//						(int)Math.round(offsetY/zoomRatio),
+//						(int)Math.round((offsetX+width)/zoomRatio),
+//						(int)Math.round((offsetY+height)/zoomRatio),
+//						null);
+			}
+
+			@Override
+			protected void sizeChanged(int width, int height) {
+				offsetsChanged();
+				combiListener.setHorizScrollBar(0,offsetX,scaledMapWidth ,width );
+				combiListener.setVertScrollBar (0,offsetY,scaledMapHeight,height);
+			}
 		}
 	}
 }

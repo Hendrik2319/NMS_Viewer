@@ -1,13 +1,64 @@
 [Sys006D00FAA8CBC4]
 name=Naibolsk
-race=Gek
+race=Vykeen
+
+[Pln106D00FAA8CBC4]
+name=Syamnonerger
+
+[Pln206D00FAA8CBC4]
+name=Magnandram Ilioc
 
 [Pln306D00FAA8CBC4]
 name=Loyarnaulic
 
+[Sys007900FAA8CBC4]
+name=Kihgora-Agyu X (Blackhole)
+race=Vykeen
+
+[Pln107900FAA8CBC4]
+name=Axellenboe Ummi
+
+[Pln207900FAA8CBC4]
+name=Tisluitsoch
+short=Grav
+info=Gravitino-Balls
+
+[Pln307900FAA8CBC4]
+name=Dessilaum Ramm
+short=ExtRad
+info=Extreme verstrahlter Planet
+short=Ka
+info=Kalium
+
+[Pln407900FAA8CBC4]
+name=Biyskogolo Unzhe
+short=ExtTox
+info=Extrem giftiger Planet
+short=Ka
+info=Kalium
+
+[Pln116F00FAA8CBC4]
+name=Haktiscudol-1
+
+[Pln216F00FAA8CBC4]
+name=Gujalptakma-Nenuma
+
 [Pln316F00FAA8CBC4]
 short=VC
 info=Vortex Cubes
+
+[Sys018000FAA8CBC4]
+name=Aylovk XVI (Rot)
+race=Korvax
+
+[Pln118000FAA8CBC4]
+name=Yanentunent-Obyt
+short=ExtRad
+info=Extrem verstrahler Planet
+short=Ka
+info=Kalium (Kugeln)
+short=Ru
+info=Rubeum (Große Kegel)
 
 [Sys01C800FAA8CBC4]
 name=Xandop-Isuma
