@@ -206,12 +206,12 @@ class SaveGameView extends JPanel {
 		
 		enum UniverseTreeActionCommand { SetName, SetRace_Gek, SetRace_Korvax, SetRace_Vykeen, ExpandAll, CollapseRemainingTree }
 		
-		private static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
-		private static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
+		static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
+		static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
 		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys }
 		private static final int TreeIconHeight = 20;
-		private static final IconSource<UniverseTreeIcons> UniverseTreeIconsIS = new IconSource<UniverseTreeIcons>(30,TreeIconHeight){
+		static final IconSource<UniverseTreeIcons> UniverseTreeIconsIS = new IconSource<UniverseTreeIcons>(30,TreeIconHeight){
 			@Override protected int getIconIndexInImage(UniverseTreeIcons key) {
 				switch(key) {
 				case Universe   : return 0;
@@ -1465,6 +1465,9 @@ class SaveGameView extends JPanel {
 			
 			statusField = new JLabel("");
 			
+			JCheckBox chkbxShowMarkers = new JCheckBox("Show markers", false);
+			chkbxShowMarkers.addActionListener(e->galaxyMap.showMarkers(chkbxShowMarkers.isSelected()));
+			
 			JCheckBox chkbxShowGlyphRegions = new JCheckBox("Show region reachable by known glyphs", false);
 			JComboBox<GlyphNumber> cmbbxKnownGlyphs = new JComboBox<>(GlyphNumber.create());
 			cmbbxKnownGlyphs.setSelectedItem(null);
@@ -1477,16 +1480,16 @@ class SaveGameView extends JPanel {
 			});
 			cmbbxKnownGlyphs.addActionListener(e->showGlyphOverlay(cmbbxKnownGlyphs.getSelectedIndex()+1));
 			
-			JPanel rightStatusPanel = new JPanel();
-			rightStatusPanel.setLayout(new BoxLayout(rightStatusPanel, BoxLayout.X_AXIS));
-			rightStatusPanel.add(chkbxShowGlyphRegions);
-			rightStatusPanel.add(cmbbxKnownGlyphs);
-			
 			JPanel leftStatusPanel = new JPanel();
 			leftStatusPanel.setLayout(new BoxLayout(leftStatusPanel, BoxLayout.X_AXIS));
 			leftStatusPanel.add(cmbbxGalaxies);
 			leftStatusPanel.add(zoomField);
 			
+			JPanel rightStatusPanel = new JPanel();
+			rightStatusPanel.setLayout(new BoxLayout(rightStatusPanel, BoxLayout.X_AXIS));
+			rightStatusPanel.add(chkbxShowMarkers);
+			rightStatusPanel.add(chkbxShowGlyphRegions);
+			rightStatusPanel.add(cmbbxKnownGlyphs);
 			
 			JPanel statusPanel = new JPanel(new BorderLayout(3,3));
 			statusPanel.add(leftStatusPanel,BorderLayout.WEST);
@@ -1573,8 +1576,8 @@ class SaveGameView extends JPanel {
 		private void showStatus(int x, int y) {
 			String str = String.format(Locale.ENGLISH, "Zoom: %1.1f%%", galaxyMap.zoomRatio*100);
 			if (x>=0 && y>=0) {
-				int voxelX = galaxyMap.computeMapX(x);
-				int voxelZ = galaxyMap.computeMapY(y);
+				int voxelX = galaxyMap.computeVoxelX(x);
+				int voxelZ = galaxyMap.computeVoxelZ(y);
 				UniverseAddress ua = new UniverseAddress(0,voxelX,0,voxelZ,0,0);
 				str += String.format(Locale.ENGLISH, ",  Region: (%d,0,%d)", voxelX,voxelZ);
 				str += String.format(Locale.ENGLISH, ",  GlyphCode: %s", ua.getPortalGlyphCodeStr());
@@ -1677,6 +1680,7 @@ class SaveGameView extends JPanel {
 			private CombinedListener combiListener;
 			private UniverseAddress currentPos;
 			private Long knownGlyphs;
+			private boolean showMarkers;
 			
 			GalaxyMap(CombinedListener combiListener, Galaxy galaxy, UniverseAddress currentPos, Long knownGlyphs) {
 				this.combiListener = combiListener;
@@ -1691,6 +1695,12 @@ class SaveGameView extends JPanel {
 				this.scaledMapWidth  = MAP_WIDTH;
 				this.scaledMapHeight = MAP_HEIGHT;
 				this.zoomRatio = 1.0;
+				this.showMarkers = false;
+			}
+
+			public void showMarkers(boolean showMarkers) {
+				this.showMarkers = showMarkers;
+				repaint();
 			}
 
 			public void setGalaxy(Galaxy galaxy) {
@@ -1699,8 +1709,11 @@ class SaveGameView extends JPanel {
 				repaint();
 			}
 
-			public int computeMapX(int screenX) { return (int) Math.floor((screenX+offsetX)/zoomRatio)-MAP_CENTER_X; }
-			public int computeMapY(int screenY) { return (int) Math.floor((screenY+offsetY)/zoomRatio)-MAP_CENTER_Y; }
+			public int computeVoxelX(int screenX) { return (int) Math.floor((screenX+offsetX)/zoomRatio)-MAP_CENTER_X; }
+			public int computeVoxelZ(int screenY) { return (int) Math.floor((screenY+offsetY)/zoomRatio)-MAP_CENTER_Y; }
+
+			public int computeScreenX(int voxelX) { return (int) Math.round((voxelX+0.5+MAP_CENTER_X)*zoomRatio-offsetX); }
+			public int computeScreenY(int voxelZ) { return (int) Math.round((voxelZ+0.5+MAP_CENTER_Y)*zoomRatio-offsetY); }
 
 			public int getViewWidth () { return width; }
 			public int getViewHeight() { return height; }
@@ -1909,13 +1922,30 @@ class SaveGameView extends JPanel {
 					g2.drawImage(mapImage, op, 0, 0);
 				}
 				
-//				g.drawImage(mapImage,
-//						0,0,width,height,
-//						(int)Math.round(offsetX/zoomRatio),
-//						(int)Math.round(offsetY/zoomRatio),
-//						(int)Math.round((offsetX+width)/zoomRatio),
-//						(int)Math.round((offsetY+height)/zoomRatio),
-//						null);
+				if (showMarkers) {
+					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+					g2.setColor(COLOR_KNOWN_REGION);
+					int markerSize = 5;
+					for (Region region:galaxy.regions)
+						if (region.voxelX!=currentPos.voxelX && region.voxelY!=currentPos.voxelY)
+							drawMarker(g2, region.voxelX, region.voxelZ, markerSize);
+					
+					g2.setColor(COLOR_CURRENT_POS);
+					drawMarker(g2, currentPos.voxelX, currentPos.voxelZ, markerSize);
+					
+					g2.setColor(COLOR_GALAXY_CENTER);
+					drawMarker(g2, 0,0, markerSize);
+					
+				}
+			}
+
+			private void drawMarker(Graphics2D g2, int voxelX, int voxelZ, int size) {
+				int x = computeScreenX(voxelX);
+				int y = computeScreenY(voxelZ);
+				if (0<=x && x<this.width && 0<=y && y<this.height) {
+					g2.drawLine(x-size,y-size,x+size,y+size);
+					g2.drawLine(x+size,y-size,x-size,y+size);
+				}
 			}
 
 			@Override

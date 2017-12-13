@@ -1,11 +1,16 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,19 +21,28 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
@@ -39,6 +53,8 @@ import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -86,6 +102,7 @@ public class SaveViewer implements ActionListener {
 				case SaveAs      : return 3;
 				case Close       : return 5;
 				case Reload      : return 4;
+				case ComputePortalGlyphs: return 6;
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
@@ -108,15 +125,16 @@ public class SaveViewer implements ActionListener {
 		new SaveViewer().createGUI();
 	}
 
-//	private static void writeUIDefaults(String title, UIDefaults defaults) {
-//		System.out.println(title+".keys: [");
-//		Set<Object> keySet = defaults.keySet();
-//		TreeSet<Object> sortedSet = new TreeSet<Object>(Comparator.nullsLast((o1, o2) -> o1.toString().compareTo(o2.toString())));
-//		sortedSet.addAll(keySet);
-//		for (Object key:sortedSet)
-//			System.out.println("\t"+key);
-//		System.out.println("]");
-//	}
+	@SuppressWarnings("unused")
+	private static void writeUIDefaults(String title, UIDefaults defaults) {
+		System.out.println(title+".keys: [");
+		Set<Object> keySet = defaults.keySet();
+		TreeSet<Object> sortedSet = new TreeSet<Object>(Comparator.nullsLast((o1, o2) -> o1.toString().compareTo(o2.toString())));
+		sortedSet.addAll(keySet);
+		for (Object key:sortedSet)
+			System.out.println("\t"+key);
+		System.out.println("]");
+	}
 	
 	public SaveViewer() {
 		loadedSaveGames = new Vector<SaveGameView>();
@@ -149,7 +167,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private enum ActionCommand {
-		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected
+		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputePortalGlyphs
 	}
 
 	@Override
@@ -177,7 +195,9 @@ public class SaveViewer implements ActionListener {
 				log("Parse file \"%s\" ...",selectedFile.getPath());
 				JSON_Object new_json_data = new JSON_Parser(selectedFile).parse();
 				log_ln(" done");
-				if (new_json_data!=null) {
+				if (new_json_data==null) {
+					JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
+				} else {
 					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
 					loadUniverseObjectDataFromFile(saveGameData.universe);
 					SaveGameView saveGameView = new SaveGameView(mainWindow,selectedFile,saveGameData);
@@ -262,6 +282,9 @@ public class SaveViewer implements ActionListener {
 			if (contentPane.isSelected(compareTab))
 				compareTab.updatePanel();
 			break;
+		case ComputePortalGlyphs:
+			new PortalGlyphDialog(mainWindow).showDialog(Position.PARENT_CENTER);
+			break;
 		}
 	}
 	
@@ -284,7 +307,6 @@ public class SaveViewer implements ActionListener {
 	private class ContentPane extends JPanel {
 		private static final long serialVersionUID = -2737846401785644788L;
 		
-//		private JTree tree;
 		private Disabler<ActionCommand> disabler;
 		private JTabbedPane tabbedPane;
 		private SaveGameView currentSelected;
@@ -345,6 +367,7 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
+			toolBar.add(createButton("Compute portal glyphs", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputePortalGlyphs,true));
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
@@ -359,7 +382,7 @@ public class SaveViewer implements ActionListener {
 		
 	}
 
-	enum ToolbarIcons { SwitchFolder, Open, SaveAs, Close, Reload, Compare }
+	enum ToolbarIcons { SwitchFolder, Open, SaveAs, Close, Reload, Compare, ComputePortalGlyphs }
 
 	private class ComparePanel extends JPanel {
 		private static final long serialVersionUID = -876150147630145750L;
@@ -421,7 +444,276 @@ public class SaveViewer implements ActionListener {
 		}
 	
 	}
+	
+	private static class PortalGlyphDialog extends StandardDialog {
+		private static final long serialVersionUID = -2899608237998750242L;
+		
+		private JLabel[] glyphLabels;
+		private JTextArea statusField;
+		
+		private static abstract class AbstractInputPanel extends JPanel {
+			private static final long serialVersionUID = -2301492858089122177L;
+			
+			protected PortalGlyphDialog parent;
+			protected JButton btnCompute;
+		
+			AbstractInputPanel(PortalGlyphDialog parent) {
+				this.parent = parent;
+				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
+				
+				btnCompute = new JButton("Compute");
+				btnCompute.addActionListener(e->computePortalGlyphs());
+			}
+		
+			protected abstract void computePortalGlyphs();
+		}
+		
+		PortalGlyphDialog(Window parent) {
+			super(parent,"Compute Portal Glyphs",ModalityType.APPLICATION_MODAL);
+			
+			JPanel inputPanels = new JPanel(new GridLayout(-1,1,3,3));
+			inputPanels.add(new InputAsAddress(this));
+			inputPanels.add(new InputAsCoords(this));
+			inputPanels.add(new InputAsSigBoostCode(this));
+			
+			JPanel portalGlyphPanel = new JPanel(new GridLayout(1, 12, 3,3));
+			portalGlyphPanel.setBorder(BorderFactory.createEtchedBorder());
+			glyphLabels = new JLabel[12];
+			Dimension preferredSize = new Dimension(50,50);
+			for (int i=0; i<glyphLabels.length; ++i) {
+				glyphLabels[i] = new JLabel();
+				glyphLabels[i].setPreferredSize(preferredSize);
+				portalGlyphPanel.add(glyphLabels[i]);
+			}
+			
+			statusField = new JTextArea();
+			statusField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
+			statusField.setPreferredSize(new Dimension(300,20));
+			statusField.setEditable(false);
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(inputPanels,BorderLayout.WEST);
+			contentPane.add(statusField,BorderLayout.CENTER);
+			contentPane.add(portalGlyphPanel,BorderLayout.SOUTH);
+			
+			super.createGUI( contentPane );
+			//super.setSizeAsMinSize();
+			super.setResizable(false);
+		}
 
+		private void showUniverseAddress(UniverseAddress ua) {
+			long portalGlyphCode = ua.getPortalGlyphCode();
+			
+			for (int i=11; i>=0; --i) {
+				int nr = (int) (portalGlyphCode&0xF);
+				portalGlyphCode = portalGlyphCode>>4;
+				BufferedImage image = SaveGameView.UniversePanel.PortalGlyphsIS_50_45.getCachedImage(nr);
+				ImageIcon icon = image==null?null:new ImageIcon( image );
+				glyphLabels[i].setIcon(icon);
+			}
+			
+			statusField.setText(ua.getExtendedSigBoostCode());
+			statusField.append("\r\n"+ua.getCoordinates());
+			statusField.append("\r\n"+ua.getPortalGlyphCodeStr());
+			statusField.append("\r\n"+ua.getAddressStr());
+		}
+
+		private void showError(String message) {
+			statusField.setText(message);
+		}
+		
+		private static class InputField extends JTextField {
+			private static final long serialVersionUID = -4256186100798813519L;
+			
+			final static private Color bgcolor = UIManager.getLookAndFeelDefaults().getColor("TextField.background");
+			final static private FocusListener bgResetter = new FocusListener() {
+				@Override public void focusLost(FocusEvent e) {}
+				@Override public void focusGained(FocusEvent e) {
+					Component comp = e.getComponent();
+					if (comp!=null) comp.setBackground(bgcolor);
+				}
+			};
+			
+			InputField(int prefWidth, int prefHeight) {
+				addFocusListener(bgResetter);
+				setPreferredSize(new Dimension(prefWidth,prefHeight));
+			}
+
+			TextFieldValue getValue() {
+				TextFieldValue result = new TextFieldValue();
+				String str = getText();
+				if (str.startsWith("0x")) {
+					try { result.value = Long.parseLong(str.substring("0x".length()),16); result.valueWasHex = true; }
+					catch (NumberFormatException e) { result.parseError = true; }
+				} else {
+					try { result.value = Long.parseLong(str); }
+					catch (NumberFormatException e) { result.parseError = true; }
+				}
+				return result;
+			}
+
+			void setError() {
+				setBackground(Color.RED);
+			}
+		}
+
+		private static class TextFieldValue {
+
+			boolean valueWasHex;
+			boolean parseError;
+			long value;
+			
+			TextFieldValue() {
+				valueWasHex = false;
+				parseError = false;
+				value = -1;
+			}
+
+			public boolean isInt() {
+				return value == (long)((int)value);
+			}
+		}
+
+		private static class InputAsAddress extends AbstractInputPanel {
+			private static final long serialVersionUID = 5365096410288633609L;
+			private InputField universeAddress;
+
+			InputAsAddress(PortalGlyphDialog parent) {
+				super(parent);
+				add(new JLabel("Universe Address:"));
+				add(universeAddress = new InputField(200,20));
+				add(new JLabel("  "));
+				add(btnCompute);
+			}
+
+			@Override
+			protected void computePortalGlyphs() {
+				TextFieldValue universeAddressValue = universeAddress.getValue();
+				if (universeAddressValue.parseError) { universeAddress.setError(); parent.showError("Wrong Input"); return; }
+				UniverseAddress ua = new UniverseAddress(universeAddressValue.value);
+				parent.showUniverseAddress(ua);
+			}
+		}
+
+		private static class InputAsSigBoostCode extends AbstractInputPanel {
+			private static final long serialVersionUID = -108501123032087816L;
+			private InputField galaxyIndex;
+			private InputField sigBoostCode;
+			private InputField planetIndex;
+
+			InputAsSigBoostCode(PortalGlyphDialog parent) {
+				super(parent);
+				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+				add(new JLabel("Galaxy:"));
+				add(galaxyIndex = new InputField(35,20));
+				add(new JLabel("  Signal Booster Code:"));
+				add(sigBoostCode = new InputField(150,20));
+				add(new JLabel("  Planet:"));
+				add(planetIndex = new InputField(35,20));
+				add(new JLabel("  "));
+				add(btnCompute);
+			}
+
+			@Override
+			protected void computePortalGlyphs() {
+				TextFieldValue galaxyIndexValue = galaxyIndex .getValue();
+				String         sigBoostCodeStr  = sigBoostCode.getText();
+				TextFieldValue planetIndexValue = planetIndex .getValue();
+				
+				boolean error = false;
+				if (planetIndexValue.parseError || !planetIndexValue.isInt()) { planetIndex.setError(); error = true; }
+				if (galaxyIndexValue.parseError || !galaxyIndexValue.isInt()) { galaxyIndex.setError(); error = true; }
+				
+				boolean sigBoostCodeError = false;
+				if (sigBoostCodeStr.length()<19) { sigBoostCode.setError(); sigBoostCodeError = true; }
+				
+				String[] strings = null;
+				if (!sigBoostCodeError) {
+					strings = sigBoostCodeStr.split(":");
+					if (strings.length!=4) { sigBoostCode.setError(); sigBoostCodeError = true; }
+				}
+				
+				long[] values = null;
+				if (!sigBoostCodeError) {
+					values = new long[strings.length];
+					for (int i=0; i<strings.length; ++i)
+						try { values[i] =Long.parseLong( strings[i], 16 ); }
+						catch (NumberFormatException e) {
+							sigBoostCode.setError(); sigBoostCodeError = true;
+						}
+				}
+				
+				if (error || sigBoostCodeError) {
+					parent.showError("Wrong Input");
+				} else {
+					int voxelX = (int) (values[0]-2047);
+					int voxelY = (int) (values[1]-127);
+					int voxelZ = (int) (values[2]-2047);
+					int solarSystemIndex = (int) values[3];
+					
+					UniverseAddress ua = new UniverseAddress((int)galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndex, (int)planetIndexValue.value);
+					parent.showUniverseAddress(ua);
+				}
+			}
+		}
+
+		private static class InputAsCoords extends AbstractInputPanel {
+			private static final long serialVersionUID = 5940223603403241578L;
+			
+			private InputField planetIndex;
+			private InputField solarSystemIndex;
+			private InputField regionVoxelX;
+			private InputField regionVoxelY;
+			private InputField regionVoxelZ;
+			
+			InputAsCoords(PortalGlyphDialog parent) {
+				super(parent);
+				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+				add(new JLabel("Planet:"));
+				add(planetIndex = new InputField(35,20));
+				add(new JLabel("  Solar System:"));
+				add(solarSystemIndex = new InputField(50,20));
+				add(new JLabel("  Region:"));
+				add(regionVoxelX = new InputField(50,20));
+				add(regionVoxelY = new InputField(40,20));
+				add(regionVoxelZ = new InputField(50,20));
+				add(new JLabel("  "));
+				add(btnCompute);
+			}
+		
+			@Override
+			protected void computePortalGlyphs() {
+				TextFieldValue planetIndexValue      = planetIndex     .getValue();
+				TextFieldValue solarSystemIndexValue = solarSystemIndex.getValue();
+				TextFieldValue regionVoxelXValue     = regionVoxelX    .getValue();
+				TextFieldValue regionVoxelYValue     = regionVoxelY    .getValue();
+				TextFieldValue regionVoxelZValue     = regionVoxelZ    .getValue();
+				
+				boolean error = false;
+				if (planetIndexValue     .parseError || !planetIndexValue     .isInt()) { planetIndex     .setError(); error = true; }
+				if (solarSystemIndexValue.parseError || !solarSystemIndexValue.isInt()) { solarSystemIndex.setError(); error = true; }
+				if (regionVoxelXValue    .parseError || !regionVoxelXValue    .isInt()) { regionVoxelX    .setError(); error = true; }
+				if (regionVoxelYValue    .parseError || !regionVoxelYValue    .isInt()) { regionVoxelY    .setError(); error = true; }
+				if (regionVoxelZValue    .parseError || !regionVoxelZValue    .isInt()) { regionVoxelZ    .setError(); error = true; }
+				
+				if (error) {
+					parent.showError("Wrong Input");
+				} else {
+					int voxelX = (int)regionVoxelXValue.value;
+					int voxelY = (int)regionVoxelYValue.value;
+					int voxelZ = (int)regionVoxelZValue.value;
+					if (regionVoxelXValue.valueWasHex) { if (voxelX>0x7FF) voxelX |= 0xFFFFF000; }
+					if (regionVoxelYValue.valueWasHex) { if (voxelY> 0x7F) voxelY |= 0xFFFFFF00; }
+					if (regionVoxelZValue.valueWasHex) { if (voxelZ>0x7FF) voxelZ |= 0xFFFFF000; }
+					
+					UniverseAddress ua = new UniverseAddress(0, voxelX, voxelY, voxelZ, (int)solarSystemIndexValue.value, (int)planetIndexValue.value);
+					parent.showUniverseAddress(ua);
+				}
+			}
+		}
+	}
+	
 	public static void test() {
 //		String filepath = "c:/Users/Hendrik 2/AppData/Roaming/HelloGames/NMS/st_76561198016584395/save.hg";
 		String filepath = "save.hg";

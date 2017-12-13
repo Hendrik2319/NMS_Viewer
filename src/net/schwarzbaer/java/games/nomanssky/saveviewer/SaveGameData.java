@@ -556,6 +556,10 @@ public class SaveGameData {
 			return address;
 		}
 
+		public String getAddressStr() {
+			return String.format("0x%014X", address);
+		}
+
 		@Override
 		public int hashCode() {
 			return (int)((address>>32)&0xFFFFFFFF);
