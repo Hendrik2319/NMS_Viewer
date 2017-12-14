@@ -609,11 +609,11 @@ public class SaveGameData {
 		}
 
 		public String getReducedSigBoostCode() {
-			return String.format("%04X:%04X:%04X", voxelX+2047, voxelY+127, voxelZ+2047);
+			return String.format("%04X:%04X:%04X", (voxelX+2047)&0xFFFF, (voxelY+127)&0xFFFF, (voxelZ+2047)&0xFFFF);
 		}
 
 		public String getSigBoostCode() {
-			return String.format("%s:%04X", getReducedSigBoostCode(), solarSystemIndex);
+			return String.format("%s:%04X", getReducedSigBoostCode(), solarSystemIndex&0xFFFF);
 		}
 
 		public String getExtendedSigBoostCode() {
