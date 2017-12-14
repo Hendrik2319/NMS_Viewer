@@ -592,6 +592,10 @@ public class SaveGameData {
 			return planetIndex==0 && solarSystemIndex>0;
 		}
 
+		public boolean isRegion() {
+			return planetIndex==0 && solarSystemIndex==0;
+		}
+
 		public String getCoordinates() {
 			return String.format("%d | %d,%d,%d | %d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
 		}
@@ -600,7 +604,7 @@ public class SaveGameData {
 			return String.format("%d | %d,%d,%d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex);
 		}
 
-		public String getGalacticRegionCoordinates() {
+		public String getRegionCoordinates() {
 			return String.format("%d | %d,%d,%d", galaxyIndex, voxelX, voxelY, voxelZ);
 		}
 
@@ -677,48 +681,25 @@ public class SaveGameData {
 		}
 
 
-		public Planet findPlanet(UniverseAddress uAddr) {
-			SolarSystem solarSystem = findSolarSystem(uAddr);
+		public Planet findPlanet(UniverseAddress ua) {
+			SolarSystem solarSystem = findSolarSystem(ua);
 			if (solarSystem==null) return null;
 			
-			return solarSystem.findPlanet(uAddr.planetIndex);
+			return solarSystem.findPlanet(ua.planetIndex);
 		}
 
-		public SolarSystem findSolarSystem(UniverseAddress uAddr) {
-			Galaxy galaxy = findGalaxy(uAddr.galaxyIndex);
-			if (galaxy==null) return null;
-			
-			Region region = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
+		public SolarSystem findSolarSystem(UniverseAddress ua) {
+			Region region = findRegion(ua);
 			if (region==null) return null;
 			
-			return region.findSolarSystem(uAddr.solarSystemIndex);
+			return region.findSolarSystem(ua.solarSystemIndex);
 		}
 
-		public Planet getOrCreatePlanet(long address) {
-			UniverseAddress uAddr = new UniverseAddress(address);
-			return getOrCreatePlanet(uAddr);
-		}
-
-		public Planet getOrCreatePlanet(UniverseAddress uAddr) {
-			SolarSystem solarSystem = getOrCreateSolarSystem(uAddr);
+		public Region findRegion(UniverseAddress ua) {
+			Galaxy galaxy = findGalaxy(ua.galaxyIndex);
+			if (galaxy==null) return null;
 			
-			Planet planet = solarSystem.findPlanet(uAddr.planetIndex);
-			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,uAddr.planetIndex));
-			
-			return planet;
-		}
-
-		public SolarSystem getOrCreateSolarSystem(UniverseAddress uAddr) {
-			Galaxy galaxy = findGalaxy(uAddr.galaxyIndex);
-			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,uAddr.galaxyIndex));
-			
-			Region region = galaxy.findRegion(uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ);
-			if (region==null) galaxy.addRegion(region=new Region(galaxy,uAddr.voxelX,uAddr.voxelY,uAddr.voxelZ));
-			
-			SolarSystem solarSystem = region.findSolarSystem(uAddr.solarSystemIndex);
-			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,uAddr.solarSystemIndex));
-			
-			return solarSystem;
+			return galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
 		}
 
 		private Galaxy findGalaxy(int galacticIndex) {
@@ -726,6 +707,32 @@ public class SaveGameData {
 				if (g.galacticIndex==galacticIndex)
 					return g;
 			return null;
+		}
+
+		public Planet getOrCreatePlanet(long address) {
+			return getOrCreatePlanet(new UniverseAddress(address));
+		}
+
+		public Planet getOrCreatePlanet(UniverseAddress ua) {
+			SolarSystem solarSystem = getOrCreateSolarSystem(ua);
+			
+			Planet planet = solarSystem.findPlanet(ua.planetIndex);
+			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,ua.planetIndex));
+			
+			return planet;
+		}
+
+		public SolarSystem getOrCreateSolarSystem(UniverseAddress ua) {
+			Galaxy galaxy = findGalaxy(ua.galaxyIndex);
+			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,ua.galaxyIndex));
+			
+			Region region = galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
+			if (region==null) galaxy.addRegion(region=new Region(galaxy,ua.voxelX,ua.voxelY,ua.voxelZ));
+			
+			SolarSystem solarSystem = region.findSolarSystem(ua.solarSystemIndex);
+			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,ua.solarSystemIndex));
+			
+			return solarSystem;
 		}
 
 		static final class Galaxy {
@@ -762,6 +769,7 @@ public class SaveGameData {
 			final Galaxy galaxy;
 			final int voxelX,voxelY,voxelZ;
 			final Vector<SolarSystem> solarSystems;
+			Double distanceToCenter;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
@@ -769,6 +777,7 @@ public class SaveGameData {
 				this.voxelY = y;
 				this.voxelZ = z;
 				this.solarSystems = new Vector<>();
+				this.distanceToCenter = null;
 			}
 
 			@Override
@@ -895,6 +904,10 @@ public class SaveGameData {
 		
 		static final class SolarSystem extends UniverseObject {
 			
+			enum StarClass {
+				Yellow, Red
+			}
+			
 			enum Race {
 				Gek("Gek"), Korvax("Korvax"), Vykeen("Vy'keen");
 
@@ -906,12 +919,14 @@ public class SaveGameData {
 			final int solarSystemIndex;
 			final Vector<Planet> planets;
 			Race race;
+			StarClass starClass;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
 				this.solarSystemIndex = solarSystemIndex;
 				this.planets = new Vector<>();
 				this.race = null;
+				this.starClass = null;
 			}
 
 			@Override

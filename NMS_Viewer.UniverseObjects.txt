@@ -1,6 +1,7 @@
 [Sys006D00FAA8CBC4]
 name=Naibolsk
 race=Vykeen
+class=Yellow
 
 [Pln106D00FAA8CBC4]
 name=Syamnonerger
@@ -14,6 +15,7 @@ name=Loyarnaulic
 [Sys007900FAA8CBC4]
 name=Kihgora-Agyu X
 race=Vykeen
+class=Yellow
 short=Blackhole
 info=
 
@@ -50,8 +52,9 @@ short=VC
 info=Vortex Cubes
 
 [Sys018000FAA8CBC4]
-name=Aylovk XVI (Rot)
+name=Aylovk XVI
 race=Korvax
+class=Red
 
 [Pln118000FAA8CBC4]
 name=Yanentunent-Obyt

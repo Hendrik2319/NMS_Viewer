@@ -42,7 +42,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -73,6 +72,7 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.ProgressDialog.CancelListener;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GUI.EnumCheckBoxMenuItem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
@@ -84,6 +84,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Pla
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.StarClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.TableView.SimplifiedColumnConfig;
@@ -204,7 +205,7 @@ class SaveGameView extends JPanel {
 	static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
-		enum UniverseTreeActionCommand { SetName, SetRace_Gek, SetRace_Korvax, SetRace_Vykeen, ExpandAll, CollapseRemainingTree }
+		enum UniverseTreeActionCommand { SetName, SetDistance, SetRace, SetStarClass, ExpandAll, CollapseRemainingTree }
 		
 		static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
 		static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
@@ -271,14 +272,15 @@ class SaveGameView extends JPanel {
 		private GenericTreeNode<?> clickedNode;
 		private TreePath clickedTreePath;
 		private JPopupMenu contextMenu_Other;
+		private JPopupMenu contextMenu_Region;
 		private JPopupMenu contextMenu_SolarSystem;
 		private JPopupMenu contextMenu_Planet;
 		private JMenuItem miSetName_SolarSystem;
 		private JMenuItem miSetName_Planet;
-		private JCheckBoxMenuItem miSetRace_Gek;
-		private JCheckBoxMenuItem miSetRace_Korvax;
-		private JCheckBoxMenuItem miSetRace_Vykeen;
-		
+		private EnumCheckBoxMenuItem_StarClass[] miSetStarClassArr;
+		private EnumCheckBoxMenuItem_Race[] miSetRaceArr;
+		private ButtonGroup bgSetStarClass;
+		private ButtonGroup bgSetRace;
 		public UniversePanel(SaveGameData data) {
 			super(data);
 			
@@ -297,15 +299,36 @@ class SaveGameView extends JPanel {
 			contextMenu_Other = new JPopupMenu("Contextmenu");
 			contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_Other.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
-			//contextMenu_Other.add(createCheckBoxMenuItem("Show discovered items in ",UniverseTreeActionCommand.CollapseRemainingTree));
 			
-			ButtonGroup bgRace = new ButtonGroup();
+			contextMenu_Region = new JPopupMenu("Contextmenu");
+			contextMenu_Region.add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
+			contextMenu_Region.addSeparator();
+			contextMenu_Region.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+			contextMenu_Region.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+			
 			contextMenu_SolarSystem = new JPopupMenu("SolarSystem");
 			contextMenu_SolarSystem.add(miSetName_SolarSystem = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			
 			contextMenu_SolarSystem.addSeparator();
-			contextMenu_SolarSystem.add(miSetRace_Gek    = createCheckBoxMenuItem("Gek"    ,UniverseTreeActionCommand.SetRace_Gek   ,false)); bgRace.add(miSetRace_Gek   );
-			contextMenu_SolarSystem.add(miSetRace_Korvax = createCheckBoxMenuItem("Korvax" ,UniverseTreeActionCommand.SetRace_Korvax,false)); bgRace.add(miSetRace_Korvax);
-			contextMenu_SolarSystem.add(miSetRace_Vykeen = createCheckBoxMenuItem("Vy'keen",UniverseTreeActionCommand.SetRace_Vykeen,false)); bgRace.add(miSetRace_Vykeen);
+			bgSetRace = new ButtonGroup();
+			Race[] races = Universe.SolarSystem.Race.values();
+			miSetRaceArr = new EnumCheckBoxMenuItem_Race[races.length];
+			for (int i=0; i<races.length; ++i) {
+				miSetRaceArr[i] = new EnumCheckBoxMenuItem_Race(races[i].toString(),UniverseTreeActionCommand.SetRace,races[i],false,this);
+				contextMenu_SolarSystem.add(miSetRaceArr[i]);
+				bgSetRace.add(miSetRaceArr[i]);
+			}
+			
+			contextMenu_SolarSystem.addSeparator();
+			bgSetStarClass = new ButtonGroup();
+			StarClass[] starClasses = Universe.SolarSystem.StarClass.values();
+			miSetStarClassArr = new EnumCheckBoxMenuItem_StarClass[starClasses.length];
+			for (int i=0; i<starClasses.length; ++i) {
+				miSetStarClassArr[i] = new EnumCheckBoxMenuItem_StarClass(starClasses[i].toString()+" Class",UniverseTreeActionCommand.SetStarClass,starClasses[i],false,this);
+				contextMenu_SolarSystem.add(miSetStarClassArr[i]);
+				bgSetStarClass.add(miSetStarClassArr[i]);
+			}
+			
 			contextMenu_SolarSystem.addSeparator();
 			contextMenu_SolarSystem.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_SolarSystem.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
@@ -350,13 +373,19 @@ class SaveGameView extends JPanel {
 			menuItem.setActionCommand(actionCommand.toString());
 			return menuItem;
 		}
-
-		private JCheckBoxMenuItem createCheckBoxMenuItem(String label, UniverseTreeActionCommand actionCommand, boolean selected) {
-			JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(label);
-			menuItem.setSelected(selected);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand(actionCommand.toString());
-			return menuItem;
+		
+		private static class EnumCheckBoxMenuItem_Race extends EnumCheckBoxMenuItem<Race,UniverseTreeActionCommand> {
+			private static final long serialVersionUID = 8764557520719990435L;
+			public EnumCheckBoxMenuItem_Race(String label, UniverseTreeActionCommand actionCommand, Race key, boolean selected, ActionListener actionListener) {
+				super(label, actionCommand, key, selected, actionListener);
+			}
+		}
+		
+		private static class EnumCheckBoxMenuItem_StarClass extends EnumCheckBoxMenuItem<StarClass,UniverseTreeActionCommand> {
+			private static final long serialVersionUID = -3616686445304535043L;
+			public EnumCheckBoxMenuItem_StarClass(String label, UniverseTreeActionCommand actionCommand, StarClass key, boolean selected, ActionListener actionListener) {
+				super(label, actionCommand, key, selected, actionListener);
+			}
 		}
 		
 		@Override
@@ -373,6 +402,7 @@ class SaveGameView extends JPanel {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
+			Object source = e.getSource();
 			Planet planet; SolarSystem system;
 			switch(actionCommand) {
 			case SetName:
@@ -386,9 +416,40 @@ class SaveGameView extends JPanel {
 				}
 				break;
 				
-			case SetRace_Gek   : setRaceOfClickedNode(Race.Gek   , miSetRace_Gek   ); break;
-			case SetRace_Korvax: setRaceOfClickedNode(Race.Korvax, miSetRace_Korvax); break;
-			case SetRace_Vykeen: setRaceOfClickedNode(Race.Vykeen, miSetRace_Vykeen); break;
+			case SetDistance:
+				if (clickedNode instanceof RegionNode) {
+					Region region=((RegionNode)clickedNode).value;
+					UniverseAddress ua = region.getUniverseAddress();
+					String initialValue;
+					if (region.distanceToCenter==null) initialValue="";
+					else initialValue=String.format(Locale.ENGLISH,"%f",region.distanceToCenter.doubleValue());
+					String valueStr = JOptionPane.showInputDialog(this, "Distance to center of galaxy for region \""+ua.getRegionCoordinates()+"\"",initialValue);
+					if (valueStr!=null) {
+						if (valueStr.isEmpty())
+							region.distanceToCenter=null;
+						else {
+							try { region.distanceToCenter = Double.parseDouble(valueStr); }
+							catch (NumberFormatException e1) {}
+						}
+						SaveViewer.saveUniverseObjectDataToFile(data.universe);
+					}
+				}
+				break;
+				
+			case SetRace:
+				if (source instanceof EnumCheckBoxMenuItem_Race && clickedNode instanceof SolarSystemNode) {
+					((SolarSystemNode)clickedNode).value.race = ((EnumCheckBoxMenuItem_Race)source).key;
+					treeModel.nodeChanged(clickedNode);
+					SaveViewer.saveUniverseObjectDataToFile(data.universe);
+				}
+				break;
+			case SetStarClass:
+				if (source instanceof EnumCheckBoxMenuItem_StarClass && clickedNode instanceof SolarSystemNode) {
+					((SolarSystemNode)clickedNode).value.starClass = ((EnumCheckBoxMenuItem_StarClass)source).key;
+					treeModel.nodeChanged(clickedNode);
+					SaveViewer.saveUniverseObjectDataToFile(data.universe);
+				}
+				break;
 				
 			case ExpandAll:
 				expandFullTree();
@@ -409,15 +470,6 @@ class SaveGameView extends JPanel {
 			for (int row=0; row<tree.getRowCount(); ++row)
 				if (!tree.isExpanded(row))
 					tree.expandRow(row);
-		}
-
-		private void setRaceOfClickedNode(Race race, JMenuItem menuItem) {
-			if (clickedNode!=null && clickedNode.type==NodeType.SolarSystem) {
-				((SolarSystemNode)clickedNode).value.race = race;
-				menuItem.setSelected(true);
-				treeModel.nodeChanged(clickedNode);
-				SaveViewer.saveUniverseObjectDataToFile(data.universe);
-			}
 		}
 
 		private void expandPath(TreePath path) {
@@ -445,16 +497,17 @@ class SaveGameView extends JPanel {
 					switch(clickedNode.type) {
 					case Universe   :
 					case Galaxy     :
-					case Region     :
 						contextMenu_Other.show(tree, e.getX(), e.getY());
+						break;
+					case Region     :
+						contextMenu_Region.show(tree, e.getX(), e.getY());
 						break;
 						
 					case SolarSystem:
 						SolarSystem system = ((SolarSystemNode)clickedNode).value;
 						miSetName_SolarSystem.setText(system.hasUserDefinedName()?"Change name":"Set name");
-						miSetRace_Gek   .setSelected(system.race==Race.Gek   );
-						miSetRace_Korvax.setSelected(system.race==Race.Korvax);
-						miSetRace_Vykeen.setSelected(system.race==Race.Vykeen);
+						EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetRaceArr     , system.race     , Race     .values(), bgSetRace     );
+						EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetStarClassArr, system.starClass, StarClass.values(), bgSetStarClass);
 						contextMenu_SolarSystem.show(tree, e.getX(), e.getY());
 						break;
 						
@@ -523,9 +576,12 @@ class SaveGameView extends JPanel {
 			case Region:
 				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
+				Region region = ((RegionNode)selectedNode).value;
 				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
-				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getGalacticRegionCoordinates()));
+				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getRegionCoordinates()));
 				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
+				if (region.distanceToCenter!=null)
+					textArea.append(String.format(Locale.ENGLISH,"Distance to Galaxy Center : %1.3f Ly\r\n", region.distanceToCenter.doubleValue()));
 				break;
 				
 			case Galaxy:
