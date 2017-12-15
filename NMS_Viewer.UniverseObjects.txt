@@ -1,3 +1,23 @@
+[Sys000100F8008FF8]
+name=Imurag
+race=Gek
+class=Red
+
+[Pln100100F8008FF8]
+name=???
+short=Ru
+info=
+
+[Pln200100F8008FF8]
+name=Guyinkannurtu
+short=Ru
+info=
+
+[Pln300100F8008FF8]
+name=Ezka'oeregus
+short=Ru
+info=Rubeum
+
 [Sys006D00FAA8CBC4]
 name=Naibolsk
 race=Vykeen
@@ -120,6 +140,12 @@ name=Urabkausop Pretho
 
 [Pln301B00FC4AD502]
 name=Lichouvalil-4
+
+[Sys00010000444444]
+name=Idewij-Hizdr
+
+[Pln10010000444444]
+name=Beokayas Bigase
 
 [Sys003800024F14BB]
 name=Kolovki-Poh

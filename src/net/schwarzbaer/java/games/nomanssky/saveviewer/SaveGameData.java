@@ -9,6 +9,7 @@ import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -622,6 +623,13 @@ public class SaveGameData {
 
 		public double getDistToCenter_inRegionUnits() {
 			return Math.sqrt(voxelX*voxelX+voxelY*voxelY+voxelZ*voxelZ);
+		}
+
+		public double getDistToOther_inRegionUnits(UniverseAddress other) {
+			return Math.sqrt(
+					(voxelX-other.voxelX)*(voxelX-other.voxelX)+
+					(voxelY-other.voxelY)*(voxelY-other.voxelY)+
+					(voxelZ-other.voxelZ)*(voxelZ-other.voxelZ) );
 		}
 
 		@Override

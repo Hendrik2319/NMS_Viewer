@@ -450,6 +450,7 @@ class SaveGameView extends JPanel {
 					default:break;
 					}
 					treeModel.nodeChanged(clickedNode);
+					if (selectedNode==clickedNode) selectionChanged();
 				}
 				break;
 				
@@ -477,6 +478,7 @@ class SaveGameView extends JPanel {
 				if (source instanceof EnumCheckBoxMenuItem_Race && clickedNode instanceof SolarSystemNode) {
 					((SolarSystemNode)clickedNode).value.race = ((EnumCheckBoxMenuItem_Race)source).key;
 					treeModel.nodeChanged(clickedNode);
+					if (selectedNode==clickedNode) selectionChanged();
 					SaveViewer.saveUniverseObjectDataToFile(data.universe);
 				}
 				break;
@@ -484,6 +486,7 @@ class SaveGameView extends JPanel {
 				if (source instanceof EnumCheckBoxMenuItem_StarClass && clickedNode instanceof SolarSystemNode) {
 					((SolarSystemNode)clickedNode).value.starClass = ((EnumCheckBoxMenuItem_StarClass)source).key;
 					treeModel.nodeChanged(clickedNode);
+					if (selectedNode==clickedNode) selectionChanged();
 					SaveViewer.saveUniverseObjectDataToFile(data.universe);
 				}
 				break;
@@ -611,6 +614,11 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
 				if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
 				if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
+				
+				distance_reg = ua.getDistToOther_inRegionUnits(data.general.getCurrentUniverseAddress());
+				textArea.append("\r\n");
+				textArea.append(                                 "Distance to current position:\r\n");
+				textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
 				
 				distance_reg = ua.getDistToCenter_inRegionUnits();
 				textArea.append("\r\n");
