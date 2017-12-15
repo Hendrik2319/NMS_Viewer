@@ -780,7 +780,6 @@ public class SaveViewer implements ActionListener {
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			String str;
 			UniverseAddress ua = null;
-			Region region = null;
 			SolarSystem system = null;
 			Planet planet = null;
 			UniverseObject uniObj = null;
@@ -789,8 +788,7 @@ public class SaveViewer implements ActionListener {
 			String lastLabel = null;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
-				if ((str.startsWith("[Sys") || str.startsWith("[Pln") || str.startsWith("[Reg")) && str.endsWith("]")) {
-					region = null;
+				if ((str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
 					system = null;
 					planet = null;
 					uniObj = null;
@@ -798,7 +796,6 @@ public class SaveViewer implements ActionListener {
 					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
 					long address = Long.parseLong(addressStr, 16);
 					ua = new UniverseAddress(address);
-					if (str.startsWith("[Reg") && ua.isRegion     ()) { region = universe.findRegion     (ua); System.out.printf("Region %s\r\n",ua.getRegionCoordinates()); }
 					if (str.startsWith("[Sys") && ua.isSolarSystem()) { system = universe.findSolarSystem(ua); System.out.printf("Solar system %s\r\n",ua.getSigBoostCode()); }
 					if (str.startsWith("[Pln") && ua.isPlanet     ()) { planet = universe.findPlanet     (ua); System.out.printf("Planet %s\r\n",ua.getExtendedSigBoostCode()); }
 					if (system!=null) { uniObj = system; uniObjName = "solar system "+ua.getSigBoostCode(); }
@@ -808,7 +805,7 @@ public class SaveViewer implements ActionListener {
 				if (str.startsWith("name=")) {
 					String name = str.substring("name=".length());
 					if (uniObj!=null) {
-						uniObj.setUserDefinedName(name);
+						uniObj.setOriginalName(name);
 						System.out.printf("   Name of %s was defined: \"%s\"\r\n",uniObjName,name);
 					}
 					continue;
@@ -830,11 +827,11 @@ public class SaveViewer implements ActionListener {
 					continue;
 				}
 				if (str.startsWith("distance=")) {
-					if (region==null) continue;
+					if (system==null) continue;
 					String distance = str.substring("distance=".length());
-					try { region.distanceToCenter = Double.parseDouble(distance); }
-					catch (NumberFormatException e) { region.distanceToCenter = null; }
-					System.out.printf("   Distance to galactic center of region \"%s\" was defined: %s -> [%s]\r\n",ua.getRegionCoordinates(),distance,region.distanceToCenter);
+					try { system.distanceToCenter = Double.parseDouble(distance); }
+					catch (NumberFormatException e) { system.distanceToCenter = null; }
+					System.out.printf("   Distance to galactic center of solar system %s was defined: %s -> [%s]\r\n",ua.getSigBoostCode(),distance,system.distanceToCenter);
 					continue;
 				}
 				if (str.startsWith("short=")) {
@@ -868,20 +865,15 @@ public class SaveViewer implements ActionListener {
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (Galaxy g:universe.galaxies) {
 				for (Region gr:g.regions) {
-					if (gr.distanceToCenter!=null) {
-						if (!isFirst) out.println();
-						isFirst = false;
-						out.printf("[Reg%014X]\r\n",gr.getUniverseAddress().getAddress());
-						out.printf(Locale.ENGLISH,"distance=%f\r\n",gr.distanceToCenter.doubleValue());
-					}
 					for (SolarSystem sys:gr.solarSystems) {
-						if (sys.hasUserDefinedName() || sys.race!=null) {
+						if (sys.hasOriginalName() || sys.race!=null || sys.starClass!=null || sys.distanceToCenter!=null) {
 							if (!isFirst) out.println();
 							isFirst = false;
 							out.printf("[Sys%014X]\r\n",sys.getUniverseAddress().getAddress());
-							if (sys.hasUserDefinedName()) out.printf("name=%s\r\n",sys.getUserDefinedName());
-							if (sys.race!=null          ) out.printf("race=%s\r\n",sys.race);
-							if (sys.starClass!=null     ) out.printf("class=%s\r\n",sys.starClass);
+							if (sys.hasOriginalName()  ) out.printf("name=%s\r\n",sys.getOriginalName());
+							if (sys.race!=null            ) out.printf("race=%s\r\n",sys.race);
+							if (sys.starClass!=null       ) out.printf("class=%s\r\n",sys.starClass);
+							if (sys.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",sys.distanceToCenter.doubleValue());
 							for (ExtraInfo ei:sys.extraInfos)
 								if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
 									out.printf("short=%s\r\n",ei.shortLabel);
@@ -889,11 +881,11 @@ public class SaveViewer implements ActionListener {
 								}
 						}
 						for (Planet p:sys.planets) {
-							if (p.hasUserDefinedName() || !p.extraInfos.isEmpty()) {
+							if (p.hasOriginalName() || !p.extraInfos.isEmpty()) {
 								if (!isFirst) out.println();
 								isFirst = false;
 								out.printf("[Pln%014X]\r\n",p.getUniverseAddress().getAddress());
-								if (p.hasUserDefinedName()) out.printf("name=%s\r\n",p.getUserDefinedName());
+								if (p.hasOriginalName()) out.printf("name=%s\r\n",p.getOriginalName());
 								for (ExtraInfo ei:p.extraInfos)
 									if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
 										out.printf("short=%s\r\n",ei.shortLabel);

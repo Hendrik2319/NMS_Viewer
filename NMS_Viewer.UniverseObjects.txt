@@ -2,6 +2,7 @@
 name=Naibolsk
 race=Vykeen
 class=Yellow
+distance=707016.000000
 
 [Pln106D00FAA8CBC4]
 name=Syamnonerger
@@ -41,6 +42,9 @@ info=Extrem giftiger Planet
 short=Ka
 info=Kalium
 
+[Sys016F00FAA8CBC4]
+name=Esvets
+
 [Pln116F00FAA8CBC4]
 name=Haktiscudol-1
 
@@ -48,6 +52,7 @@ name=Haktiscudol-1
 name=Gujalptakma-Nenuma
 
 [Pln316F00FAA8CBC4]
+name=Osfellaggni
 short=VC
 info=Vortex Cubes
 
@@ -118,3 +123,42 @@ race=Vykeen
 [Sys007200024F14BB]
 name=Alchukovr
 race=Gek
+
+[Sys00010008FF8FF8]
+name=Detadfal
+race=Korvax
+class=Red
+
+[Pln10010008FF8FF8]
+name=Yewagesta Edvard
+
+[Pln20010008FF8FF8]
+name=[GRA] Kumerat-Gader Tutimil
+
+[Pln30010008FF8FF8]
+name=[GRA] Sekart Ryugaile
+
+[Sys00010008008FF8]
+name=Yaring
+race=Korvax
+class=Blue
+
+[Pln10010008008FF8]
+name=Lutieneralat
+
+[Pln20010008008FF8]
+name=LmaoIBrokeIt
+
+[Pln30010008008FF8]
+name=Perthymeng Avndas
+
+[Sys00010010000000]
+name=Saitamb-Nabla
+race=Vykeen
+class=Green
+
+[Pln10010010000000]
+name=Nooitbili Bleijk
+
+[Pln20010010000000]
+name=Bihopisnik Uque

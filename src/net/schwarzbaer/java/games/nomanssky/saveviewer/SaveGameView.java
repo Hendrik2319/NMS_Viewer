@@ -101,8 +101,10 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.PathIsNotSolvableException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
+import sun.misc.SharedSecrets;
 
 class SaveGameView extends JPanel {
+
 	private static final long serialVersionUID = -1641171938196309864L;
 	
 	final File file;
@@ -193,10 +195,10 @@ class SaveGameView extends JPanel {
 		}
 
 		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.UniverseObject object, String objectStr) {
-			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getUserDefinedName());
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getOriginalName());
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
-				object.setUserDefinedName(name);
+				object.setOriginalName(name);
 				SaveViewer.saveUniverseObjectDataToFile(data.universe);
 			}
 		}
@@ -210,23 +212,71 @@ class SaveGameView extends JPanel {
 		static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
 		static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
-		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys }
+		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue }
 		private static final int TreeIconHeight = 20;
 		static final IconSource<UniverseTreeIcons> UniverseTreeIconsIS = new IconSource<UniverseTreeIcons>(30,TreeIconHeight){
 			@Override protected int getIconIndexInImage(UniverseTreeIcons key) {
-				switch(key) {
-				case Universe   : return 0;
-				case Galaxy     : return 1;
-				case Region     : return 2;
-				case SolarSystem: return 3;
-				case Planet     : return 4;
-				case GekSys     : return 5;
-				case KorvaxSys  : return 6;
-				case VykeenSys  : return 7;
-				}
+				if (key!=null) return key.ordinal();
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}
 		};
+		
+		private static class UniverseTreeSolarSystemIconsMap {
+			
+			private Icon[][] values;
+			
+			UniverseTreeSolarSystemIconsMap() {
+				values = null;
+			}
+			
+			void createValues() {
+				Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem);
+				
+				Race[] races = Race.values();
+				Icon[] raceIcons = new Icon[races.length];
+				for (Race race:races)
+					switch(race) {
+					case Gek   : raceIcons[race.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys);    break;
+					case Korvax: raceIcons[race.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys); break;
+					case Vykeen: raceIcons[race.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys); break;
+					}
+				
+				StarClass[] starClasses = StarClass.values();
+				Icon[] starClassIcons = new Icon[starClasses.length];
+				for (StarClass starClass:starClasses)
+					switch(starClass) {
+					case Yellow: starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Yellow); break;
+					case Red   : starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Red   ); break;
+					case Green : starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Green ); break;
+					case Blue  : starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Blue  ); break;
+					}
+				
+				values = new Icon[races.length+1][starClasses.length+1];
+				values[0][0] = icon;
+				Icon icon2;
+				for (Race race:races) {
+					icon2 = IconSource.combine(icon, raceIcons[race.ordinal()]);
+					values[race.ordinal()+1][0] = icon2;
+					for (StarClass starClass:starClasses)
+						values[race.ordinal()+1][starClass.ordinal()+1] = IconSource.combine(icon2, starClassIcons[starClass.ordinal()]);
+				}
+				for (StarClass starClass:starClasses)
+					values[0][starClass.ordinal()+1] = IconSource.combine(icon, starClassIcons[starClass.ordinal()]);
+				
+			}
+			
+//			void put(Race race, StarClass starClass, Icon value) {
+//				values[race.ordinal()][starClass.ordinal()] = value;
+//			}
+			
+			Icon get(Race race, StarClass starClass) {
+				int raceIndex      = race     ==null?0:(race     .ordinal()+1);
+				int starClassIndex = starClass==null?0:(starClass.ordinal()+1);
+				return values[raceIndex][starClassIndex];
+			}
+		}
+		
+		private static UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons = null;
 
 		public static void prepareIconSources() {
 			PortalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
@@ -250,15 +300,10 @@ class SaveGameView extends JPanel {
 			
 			Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy);
 			icon = IconSource.cutIcon(icon,5,0,20,20);
-			
 			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.Galaxy,icon);
-			icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem);
-			Icon iconG = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys);
-			Icon iconK = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys);
-			Icon iconV = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys);
-			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.GekSys   ,IconSource.combine(icon,iconG));   
-			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.KorvaxSys,IconSource.combine(icon,iconK));
-			UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.VykeenSys,IconSource.combine(icon,iconV));
+			
+			UniverseTreeSolarSystemIcons = new UniverseTreeSolarSystemIconsMap();
+			UniverseTreeSolarSystemIcons.createValues();
 		}
 
 		private JTree tree;
@@ -272,7 +317,6 @@ class SaveGameView extends JPanel {
 		private GenericTreeNode<?> clickedNode;
 		private TreePath clickedTreePath;
 		private JPopupMenu contextMenu_Other;
-		private JPopupMenu contextMenu_Region;
 		private JPopupMenu contextMenu_SolarSystem;
 		private JPopupMenu contextMenu_Planet;
 		private JMenuItem miSetName_SolarSystem;
@@ -300,21 +344,16 @@ class SaveGameView extends JPanel {
 			contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_Other.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 			
-			contextMenu_Region = new JPopupMenu("Contextmenu");
-			contextMenu_Region.add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
-			contextMenu_Region.addSeparator();
-			contextMenu_Region.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
-			contextMenu_Region.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
-			
 			contextMenu_SolarSystem = new JPopupMenu("SolarSystem");
 			contextMenu_SolarSystem.add(miSetName_SolarSystem = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			contextMenu_SolarSystem.add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
 			
 			contextMenu_SolarSystem.addSeparator();
 			bgSetRace = new ButtonGroup();
 			Race[] races = Universe.SolarSystem.Race.values();
 			miSetRaceArr = new EnumCheckBoxMenuItem_Race[races.length];
 			for (int i=0; i<races.length; ++i) {
-				miSetRaceArr[i] = new EnumCheckBoxMenuItem_Race(races[i].toString(),UniverseTreeActionCommand.SetRace,races[i],false,this);
+				miSetRaceArr[i] = new EnumCheckBoxMenuItem_Race(races[i].fullName,UniverseTreeActionCommand.SetRace,races[i],false,this);
 				contextMenu_SolarSystem.add(miSetRaceArr[i]);
 				bgSetRace.add(miSetRaceArr[i]);
 			}
@@ -403,13 +442,13 @@ class SaveGameView extends JPanel {
 		public void actionPerformed(ActionEvent e) {
 			UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
 			Object source = e.getSource();
-			Planet planet; SolarSystem system;
 			switch(actionCommand) {
 			case SetName:
 				if (clickedNode!=null) {
+					Planet planet; SolarSystem system;
 					switch(clickedNode.type) {
-					case Planet     : planet=((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet.getUniverseAddress(),planet, "planet"      ); break;
-					case SolarSystem: system=((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system.getUniverseAddress(),system, "solar system"); break;
+					case Planet     : planet = ((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet.getUniverseAddress(),planet, "planet"      ); break;
+					case SolarSystem: system = ((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system.getUniverseAddress(),system, "solar system"); break;
 					default:break;
 					}
 					treeModel.nodeChanged(clickedNode);
@@ -417,18 +456,18 @@ class SaveGameView extends JPanel {
 				break;
 				
 			case SetDistance:
-				if (clickedNode instanceof RegionNode) {
-					Region region=((RegionNode)clickedNode).value;
-					UniverseAddress ua = region.getUniverseAddress();
+				if (clickedNode instanceof SolarSystemNode) {
+					SolarSystem system=((SolarSystemNode)clickedNode).value;
+					UniverseAddress ua = system.getUniverseAddress();
 					String initialValue;
-					if (region.distanceToCenter==null) initialValue="";
-					else initialValue=String.format(Locale.ENGLISH,"%f",region.distanceToCenter.doubleValue());
-					String valueStr = JOptionPane.showInputDialog(this, "Distance to center of galaxy for region \""+ua.getRegionCoordinates()+"\"",initialValue);
+					if (system.distanceToCenter==null) initialValue="";
+					else initialValue=String.format(Locale.ENGLISH,"%f",system.distanceToCenter.doubleValue());
+					String valueStr = JOptionPane.showInputDialog(this, "Distance to center of galaxy for solar system \""+ua.getSigBoostCode()+"\"",initialValue);
 					if (valueStr!=null) {
 						if (valueStr.isEmpty())
-							region.distanceToCenter=null;
+							system.distanceToCenter=null;
 						else {
-							try { region.distanceToCenter = Double.parseDouble(valueStr); }
+							try { system.distanceToCenter = Double.parseDouble(valueStr); }
 							catch (NumberFormatException e1) {}
 						}
 						SaveViewer.saveUniverseObjectDataToFile(data.universe);
@@ -495,24 +534,22 @@ class SaveGameView extends JPanel {
 				if (object instanceof GenericTreeNode<?>) {
 					clickedNode = (GenericTreeNode<?>)object;
 					switch(clickedNode.type) {
-					case Universe   :
-					case Galaxy     :
+					case Universe:
+					case Galaxy:
+					case Region:
 						contextMenu_Other.show(tree, e.getX(), e.getY());
-						break;
-					case Region     :
-						contextMenu_Region.show(tree, e.getX(), e.getY());
 						break;
 						
 					case SolarSystem:
 						SolarSystem system = ((SolarSystemNode)clickedNode).value;
-						miSetName_SolarSystem.setText(system.hasUserDefinedName()?"Change name":"Set name");
+						miSetName_SolarSystem.setText(system.hasOriginalName()?"Change name":"Set name");
 						EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetRaceArr     , system.race     , Race     .values(), bgSetRace     );
 						EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetStarClassArr, system.starClass, StarClass.values(), bgSetStarClass);
 						contextMenu_SolarSystem.show(tree, e.getX(), e.getY());
 						break;
 						
-					case Planet     :
-						miSetName_Planet.setText(((PlanetNode)clickedNode).value.hasUserDefinedName()?"Change name":"Set name");
+					case Planet:
+						miSetName_Planet.setText(((PlanetNode)clickedNode).value.hasOriginalName()?"Change name":"Set name");
 						contextMenu_Planet.show(tree, e.getX(), e.getY());
 						break;
 					}
@@ -570,18 +607,25 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
 				textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
 				
+				double distance_reg = ua.getDistToCenter_inRegionUnits();
+				textArea.append("\r\n");
+				textArea.append(                                 "Distance to Galaxy Center :\r\n");
+				textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+				if (system.distanceToCenter!=null) {
+					double distance_LY  = system.distanceToCenter.doubleValue();
+					textArea.append(String.format(Locale.ENGLISH,"    measured: %1.1f ly\r\n", distance_LY));
+					textArea.append(String.format(Locale.ENGLISH,"    -> Region size: %1.2f ly\r\n", distance_LY/distance_reg));
+				}
+				
 				showDiscNameObj(system);
 				break;
 				
 			case Region:
 				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
-				Region region = ((RegionNode)selectedNode).value;
 				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getRegionCoordinates()));
 				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
-				if (region.distanceToCenter!=null)
-					textArea.append(String.format(Locale.ENGLISH,"Distance to Galaxy Center : %1.3f Ly\r\n", region.distanceToCenter.doubleValue()));
 				break;
 				
 			case Galaxy:
@@ -598,9 +642,9 @@ class SaveGameView extends JPanel {
 		
 		private void showDiscNameObj(Universe.UniverseObject obj) {
 			textArea.append("\r\n");
-			if (obj.hasUserDefinedName()) textArea.append(String.format("Name by user : %s\r\n", obj.getUserDefinedName()));
-			if (obj.hasDataDefinedName()) textArea.append(String.format("Name by data : %s\r\n", obj.getDataDefinedName()));
-			if (obj.hasDiscoverer     ()) textArea.append(String.format("Discovered by: %s\r\n", obj.getDiscoverer()));
+			if (obj.hasOriginalName()) textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName()));
+			if (obj.hasUploadedName()) textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));
+			if (obj.hasDiscoverer  ()) textArea.append(String.format("Discovered by : %s\r\n", obj.getDiscoverer()));
 			if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
 				textArea.append("Discovered Items:\r\n");
 				if (!obj.discoveredItems_Avail.isEmpty()) {
@@ -737,14 +781,7 @@ class SaveGameView extends JPanel {
 					case SolarSystem:
 						if (node instanceof SolarSystemNode) {
 							SolarSystem system = ((SolarSystemNode)node).value;
-							if (system.race==null)
-								setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem));
-							else
-								switch(system.race) {
-								case Gek   : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys   )); break;
-								case Korvax: setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys)); break;
-								case Vykeen: setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys)); break;
-								}
+							setIcon(UniverseTreeSolarSystemIcons.get(system.race, system.starClass));
 						}
 						break;
 					case Planet     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     )); break;
@@ -754,7 +791,7 @@ class SaveGameView extends JPanel {
 					if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
 					if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
 					if (obj != null) {
-						if (!selected && !obj.hasUserDefinedName() && !obj.hasDataDefinedName()) setForeground(TEXTCOLOR__WITHOUT_NAME);
+						if (!selected && !obj.hasOriginalName() && !obj.hasUploadedName()) setForeground(TEXTCOLOR__WITHOUT_NAME);
 						if (!selected && obj.isNotUploaded) setForeground(TEXTCOLOR__NO_UPLOADED);
 						if (obj.isCurrPos) {
 							if (!selected) setForeground(TEXTCOLOR__CURRENT_POS);
@@ -2011,5 +2048,34 @@ class SaveGameView extends JPanel {
 				combiListener.setVertScrollBar (0,offsetY,scaledMapHeight,height);
 			}
 		}
+	}
+	
+	static class EnumMap2K<K1 extends Enum<K1>, K2 extends Enum<K2>, V> {
+		
+		private K1[] keys1;
+		private K2[] keys2;
+		private Object[][] values;
+
+		EnumMap2K(Class<K1> keyType1, Class<K2> keyType2) {
+			keys1 = getKeyUniverse(keyType1);
+			keys2 = getKeyUniverse(keyType2);
+			values = new Object[keys1.length][keys2.length];
+			for (K1 k1:keys1)
+				for (K2 k2:keys2)
+					put(k1,k2,null);
+		}
+		
+		void put(K1 key1, K2 key2, V value) {
+			values[key1.ordinal()][key2.ordinal()] = value;
+		}
+		
+		@SuppressWarnings("unchecked")
+		V get(K1 key1, K2 key2) {
+			return (V) values[key1.ordinal()][key2.ordinal()];
+		}
+		
+	    private static <K extends Enum<K>> K[] getKeyUniverse(Class<K> keyType) {
+	        return SharedSecrets.getJavaLangAccess().getEnumConstantsShared(keyType);
+	    }
 	}
 }

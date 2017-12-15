@@ -329,10 +329,10 @@ public class SaveGameData {
 							obj.setDiscoverer(data.OWS_USN);
 					}
 					if (data.DM_CN!=null) {
-						if (obj.hasDataDefinedName())
-							obj.setDataDefinedName(obj.getDataDefinedName()+" | "+data.DM_CN);
+						if (obj.hasUploadedName())
+							obj.setUploadedName(obj.getUploadedName()+" | "+data.DM_CN);
 						else
-							obj.setDataDefinedName(data.DM_CN);
+							obj.setUploadedName(data.DM_CN);
 					}
 				}
 			
@@ -769,7 +769,6 @@ public class SaveGameData {
 			final Galaxy galaxy;
 			final int voxelX,voxelY,voxelZ;
 			final Vector<SolarSystem> solarSystems;
-			Double distanceToCenter;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
@@ -777,7 +776,6 @@ public class SaveGameData {
 				this.voxelY = y;
 				this.voxelZ = z;
 				this.solarSystems = new Vector<>();
-				this.distanceToCenter = null;
 			}
 
 			@Override
@@ -812,23 +810,23 @@ public class SaveGameData {
 			
 			final Vector<ExtraInfo> extraInfos;
 			
-			private String userdefinedName;
-			private String datadefinedName;
+			private String originalName;
+			private String uploadedName;
 			
 			final HashMap<String,Integer> discoveredItems_Avail;
 			final HashMap<String,Integer> discoveredItems_Store;
 			
 			protected UniverseObject() {
 				discoverer = null;
-				isCurrPos   = false;
+				isCurrPos        = false;
 				foundInStats     = false;
 				foundInDiscStore = false;
-				isNotUploaded = false;
+				isNotUploaded    = false;
 				
 				this.extraInfos = new Vector<>();
 				
-				userdefinedName = null;
-				datadefinedName = null;
+				originalName = null;
+				uploadedName = null;
 				
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
@@ -865,10 +863,10 @@ public class SaveGameData {
 			
 			public String getSourceIDStr() {
 				StringBuilder sb = new StringBuilder();
-				if (isCurrPos    ) {                                    sb.append("CP"); }
+				if (isCurrPos       ) {                                    sb.append("CP"); }
 				if (foundInStats    ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
 				if (foundInDiscStore) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
-				if (isNotUploaded  ) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
+				if (isNotUploaded   ) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
 				return "<"+sb.toString()+">";
 			}
 			
@@ -876,21 +874,12 @@ public class SaveGameData {
 			public String getDiscoverer() { return discoverer; }
 			public void setDiscoverer(String name) { this.discoverer = name; }
 
-//			public boolean hasName() { return userdefinedName!=null || datadefinedName!=null; }
-			public boolean hasUserDefinedName() { return userdefinedName!=null; }
-			public boolean hasDataDefinedName() { return datadefinedName!=null; }
-//			public String getName() {
-//				if (userdefinedName!=null) {
-//					if (datadefinedName!=null) return userdefinedName+" | "+datadefinedName;
-//					return userdefinedName;
-//				}
-//				if (datadefinedName!=null) return datadefinedName;
-//				return "";
-//			}
-			public void setUserDefinedName(String name) { this.userdefinedName = name; }
-			public void setDataDefinedName(String name) { this.datadefinedName = name; }
-			public String getUserDefinedName() { return this.userdefinedName; }
-			public String getDataDefinedName() { return this.datadefinedName; }
+			public boolean hasOriginalName() { return originalName!=null; }
+			public boolean hasUploadedName() { return uploadedName!=null; }
+			public void setOriginalName(String name) { this.originalName = name; }
+			public void setUploadedName(String name) { this.uploadedName = name; }
+			public String getOriginalName() { return this.originalName; }
+			public String getUploadedName() { return this.uploadedName; }
 			
 			static final class ExtraInfo {
 				String shortLabel;
@@ -905,13 +894,20 @@ public class SaveGameData {
 		static final class SolarSystem extends UniverseObject {
 			
 			enum StarClass {
-				Yellow, Red
+				Yellow("G"), Red("K"), Green, Blue;
+				
+				@SuppressWarnings("unused")
+				private String[] letters;
+				
+				StarClass(String... letters) {
+					this.letters = letters;
+				}
 			}
 			
 			enum Race {
 				Gek("Gek"), Korvax("Korvax"), Vykeen("Vy'keen");
 
-				private String fullName;
+				final String fullName;
 				private Race(String fullName) { this.fullName = fullName; }
 			}
 			
@@ -920,6 +916,7 @@ public class SaveGameData {
 			final Vector<Planet> planets;
 			Race race;
 			StarClass starClass;
+			Double distanceToCenter;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
@@ -927,15 +924,16 @@ public class SaveGameData {
 				this.planets = new Vector<>();
 				this.race = null;
 				this.starClass = null;
+				this.distanceToCenter = null;
 			}
 
 			@Override
 			public String toString() {
 				String strName;
-				if (hasUserDefinedName()) strName = String.format("Sys%03X %s", solarSystemIndex, getUserDefinedName());
+				if (hasOriginalName()) strName = String.format("Sys%03X %s", solarSystemIndex, getOriginalName());
 				else                      strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
 				
-				String strDataName = (!hasDataDefinedName()?"":(" | "+getDataDefinedName()));
+				String strDataName = (!hasUploadedName()?"":(" | "+getUploadedName()));
 				
 				String strRace = (race==null)?"":(" ["+race.fullName+"]");
 				
@@ -988,8 +986,8 @@ public class SaveGameData {
 			@Override
 			public String toString() {
 				String strName;
-				if (hasUserDefinedName())
-					strName = String.format("P%1X %s", planetIndex, getUserDefinedName());
+				if (hasOriginalName())
+					strName = String.format("P%1X %s", planetIndex, getOriginalName());
 				else {
 					UniverseAddress ua = getUniverseAddress();
 					if (ua!=null)
@@ -998,7 +996,7 @@ public class SaveGameData {
 						return "Planet [planetIndex=" + planetIndex + ", solarSystem=" + solarSystem + ", stats=" + stats + "]";
 				}
 				
-				String strDataName = (!hasDataDefinedName()?"":(" | "+getDataDefinedName()));
+				String strDataName = (!hasUploadedName()?"":(" | "+getUploadedName()));
 				
 				String strExtraInfo="";
 				if (!extraInfos.isEmpty()) {
