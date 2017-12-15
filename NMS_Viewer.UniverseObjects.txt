@@ -75,6 +75,7 @@ info=Rubeum (Große Kegel)
 [Sys01C800FAA8CBC4]
 name=Xandop-Isuma
 race=Gek
+class=Yellow
 
 [Pln11C800FAA8CBC4]
 name=Uwonokob Antaka
@@ -85,6 +86,7 @@ name=Malmetyug Buzhn
 [Sys01EA00FAA8CBC4]
 name=Gagada-Arzam
 race=Korvax
+class=Yellow
 
 [Pln11EA00FAA8CBC4]
 name=Uagetuhuals
@@ -108,6 +110,7 @@ name=Rudoindain-Tuzl VS533
 [Sys001B00FC4AD502]
 name=Hunyaz-Elfer VIII
 race=Vykeen
+class=Yellow
 
 [Pln101B00FC4AD502]
 name=Bibataga Hamat
@@ -121,10 +124,12 @@ name=Lichouvalil-4
 [Sys003800024F14BB]
 name=Kolovki-Poh
 race=Vykeen
+class=Yellow
 
 [Sys007200024F14BB]
 name=Alchukovr
 race=Gek
+class=Yellow
 
 [Sys00010008FF8FF8]
 name=Detadfal
@@ -161,6 +166,19 @@ class=Green
 
 [Pln10010010000000]
 name=Nooitbili Bleijk
+short=Vi
+info=Viridium
 
 [Pln20010010000000]
 name=Bihopisnik Uque
+short=Vi
+info=Viridium
+
+[Pln30010010000000]
+name=Urneferi Fukiha
+short=Vi
+info=Viridium
+short=ExtRad
+info=Extrem verstrahlter Planet
+short=Ka
+info=Kalium
