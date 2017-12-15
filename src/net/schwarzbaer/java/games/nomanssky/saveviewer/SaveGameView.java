@@ -204,7 +204,7 @@ class SaveGameView extends JPanel {
 		}
 	}
 
-	static class UniversePanel extends SaveGameViewTabPanel implements TreeSelectionListener, ActionListener, MouseListener {
+	static class UniversePanel extends SaveGameViewTabPanel implements ActionListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
 		enum UniverseTreeActionCommand { SetName, SetDistance, SetRace, SetStarClass, ExpandAll, CollapseRemainingTree }
@@ -329,13 +329,13 @@ class SaveGameView extends JPanel {
 			super(data);
 			
 			selectedNode = null;
+			TreeListener listener = new TreeListener();
 			
 			treeModel = new DefaultTreeModel(new UniverseNode(data.universe));
 			tree = new JTree(treeModel);
 			JScrollPane treeScrollPane = new JScrollPane(tree);
-			//treeScrollPane.setPreferredSize(new Dimension(600, 500));
-			tree.addTreeSelectionListener(this);
-			tree.addMouseListener(this);
+			tree.addTreeSelectionListener(listener);
+			tree.addMouseListener(listener);
 			tree.setCellRenderer(new UniverseTreeCellRenderer());
 			tree.setRowHeight(TreeIconHeight+1);
 			expandFullTree();
@@ -380,14 +380,12 @@ class SaveGameView extends JPanel {
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
-			//textArea.setPreferredSize(new Dimension(600, 100));
 			textArea.setBorder(BorderFactory.createEtchedBorder());
 			
 			extraInfoTableModel = new ExtraInfoTableModel();
 			SimplifiedTable extraInfoTable = new SimplifiedTable(extraInfoTableModel,true,SaveViewer.DEBUG,true);
 			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
 			extraInfoTableModel.setTable(extraInfoTable);
-			//extraInfoTable.isEditing();
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
@@ -516,59 +514,60 @@ class SaveGameView extends JPanel {
 			if (parentPath!=null) expandPath(parentPath);
 			tree.expandPath(path);
 		}
-
-		@Override public void mousePressed(MouseEvent e) {}
-		@Override public void mouseReleased(MouseEvent e) {}
-		@Override public void mouseEntered(MouseEvent e) {}
-		@Override public void mouseExited(MouseEvent e) {}
-		@Override public void mouseClicked(MouseEvent e) {
-			if (e.getButton()==MouseEvent.BUTTON3) {
-				//System.out.println("mouseClicked( BUTTON3, "+e.getX()+", "+e.getY()+" )");
-				clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
-				if (clickedTreePath==null) {
+		
+		private class TreeListener implements TreeSelectionListener, MouseListener {
+			@Override public void mousePressed(MouseEvent e) {}
+			@Override public void mouseReleased(MouseEvent e) {}
+			@Override public void mouseEntered(MouseEvent e) {}
+			@Override public void mouseExited(MouseEvent e) {}
+			@Override public void mouseClicked(MouseEvent e) {
+				if (e.getButton()==MouseEvent.BUTTON3) {
+					//System.out.println("mouseClicked( BUTTON3, "+e.getX()+", "+e.getY()+" )");
+					clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
 					clickedNode = null;
-					contextMenu_Other.show(tree, e.getX(), e.getY());
-					return;
-				}
-				Object object = clickedTreePath.getLastPathComponent();
-				if (object instanceof GenericTreeNode<?>) {
-					clickedNode = (GenericTreeNode<?>)object;
-					switch(clickedNode.type) {
-					case Universe:
-					case Galaxy:
-					case Region:
-						contextMenu_Other.show(tree, e.getX(), e.getY());
-						break;
-						
-					case SolarSystem:
-						SolarSystem system = ((SolarSystemNode)clickedNode).value;
-						miSetName_SolarSystem.setText(system.hasOriginalName()?"Change name":"Set name");
-						EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetRaceArr     , system.race     , Race     .values(), bgSetRace     );
-						EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetStarClassArr, system.starClass, StarClass.values(), bgSetStarClass);
-						contextMenu_SolarSystem.show(tree, e.getX(), e.getY());
-						break;
-						
-					case Planet:
-						miSetName_Planet.setText(((PlanetNode)clickedNode).value.hasOriginalName()?"Change name":"Set name");
-						contextMenu_Planet.show(tree, e.getX(), e.getY());
-						break;
+					if (clickedTreePath!=null) {
+						Object object = clickedTreePath.getLastPathComponent();
+						if (object instanceof GenericTreeNode<?>)
+							clickedNode = (GenericTreeNode<?>)object;
 					}
+					JPopupMenu contextMenu = UniversePanel.this.mouseClicked();
+					contextMenu.show(tree, e.getX(), e.getY());
 				}
+			}
+
+			@Override
+			public void valueChanged(TreeSelectionEvent e) {
+				Object comp = e.getPath().getLastPathComponent();
+				if (!(comp instanceof GenericTreeNode<?>))
+					selectedNode = null;
+				else
+					selectedNode = (GenericTreeNode<?>)comp;
+				selectionChanged();
+			}
+		}
+		
+		private JPopupMenu mouseClicked() {
+			if (clickedNode!=null)
+				return contextMenu_Other;
+			
+			switch(clickedNode.type) {
+			case SolarSystem:
+				SolarSystem system = ((SolarSystemNode)clickedNode).value;
+				miSetName_SolarSystem.setText(system.hasOriginalName()?"Change name":"Set name");
+				EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetRaceArr     , system.race     , Race     .values(), bgSetRace     );
+				EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetStarClassArr, system.starClass, StarClass.values(), bgSetStarClass);
+				return contextMenu_SolarSystem;
+				
+			case Planet:
+				miSetName_Planet.setText(((PlanetNode)clickedNode).value.hasOriginalName()?"Change name":"Set name");
+				return contextMenu_Planet;
+				
+			default:
+				return contextMenu_Other;
 			}
 		}
 
-		@Override
-		public void valueChanged(TreeSelectionEvent e) {
-			Object comp = e.getPath().getLastPathComponent();
-			if (!(comp instanceof GenericTreeNode<?>))
-				selectionChanged(null);
-			else
-				selectionChanged((GenericTreeNode<?>)comp);
-		}
-
-		private void selectionChanged(GenericTreeNode<?> comp) {
-			selectedNode = comp;
-			
+		private void selectionChanged() {
 			textArea.setText("");
 			
 			if (selectedNode==null) {
@@ -576,19 +575,23 @@ class SaveGameView extends JPanel {
 				return;
 			}
 			
-			UniverseAddress ua;
-			int n;
-			
 			if (selectedNode.type!=NodeType.Planet) {
 				portalGlyphs.setIcon(null);
 				extraInfoTableModel.clearData();
 			}
 			
+			int n;
+			UniverseAddress ua;
+			Planet planet;
+			SolarSystem system;
+			long portalGlyphCode;
+			double distance_reg;
+			
 			switch(selectedNode.type) {
 			case Planet:
-				Planet planet = ((PlanetNode)selectedNode).value;
+				planet = ((PlanetNode)selectedNode).value;
 				ua = planet.getUniverseAddress();
-				long portalGlyphCode = ua.getPortalGlyphCode();
+				portalGlyphCode = ua.getPortalGlyphCode();
 				portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 				
 				textArea.append(String.format("Universe Coordinates       : %s\r\n", ua.getCoordinates()));
@@ -597,28 +600,30 @@ class SaveGameView extends JPanel {
 				textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
 				
 				showDiscNameObj(planet);
-				break;
+			break;
 				
 			case SolarSystem:
 				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
-				SolarSystem system = ((SolarSystemNode)selectedNode).value;
+				system = ((SolarSystemNode)selectedNode).value;
 				ua = system.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
 				textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
+				if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
+				if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
 				
-				double distance_reg = ua.getDistToCenter_inRegionUnits();
+				distance_reg = ua.getDistToCenter_inRegionUnits();
 				textArea.append("\r\n");
 				textArea.append(                                 "Distance to Galaxy Center :\r\n");
 				textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
 				if (system.distanceToCenter!=null) {
-					double distance_LY  = system.distanceToCenter.doubleValue();
+					double distance_LY = system.distanceToCenter.doubleValue();
 					textArea.append(String.format(Locale.ENGLISH,"    measured: %1.1f ly\r\n", distance_LY));
 					textArea.append(String.format(Locale.ENGLISH,"    -> Region size: %1.2f ly\r\n", distance_LY/distance_reg));
 				}
 				
 				showDiscNameObj(system);
-				break;
+			break;
 				
 			case Region:
 				n = selectedNode.getDataChildrenCount();
@@ -626,17 +631,22 @@ class SaveGameView extends JPanel {
 				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
 				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getRegionCoordinates()));
 				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
-				break;
+				
+				distance_reg = ua.getDistToCenter_inRegionUnits();
+				textArea.append("\r\n");
+				textArea.append(                             "Distance to Galaxy Center :\r\n");
+				textArea.append(String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+			break;
 				
 			case Galaxy:
 				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known region%s\r\n", n, n>1?"s":""));
-				break;
+			break;
 				
 			case Universe:
 				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known galax%s\r\n", n, n>1?"ies":"y"));
-				break;
+			break;
 			}
 		}
 		

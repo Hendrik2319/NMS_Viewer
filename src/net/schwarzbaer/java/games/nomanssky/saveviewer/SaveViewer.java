@@ -7,11 +7,14 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,6 +34,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -80,7 +84,9 @@ public class SaveViewer implements ActionListener {
 	
 	private StandardMainWindow mainWindow;
 
+	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
 	static IconSource<ToolbarIcons> toolbarIS;
+	static IconSource<TabHeaderIcons> tabheaderIS;
 	
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
@@ -94,6 +100,11 @@ public class SaveViewer implements ActionListener {
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
 		SaveGameView.UniversePanel.prepareIconSources();
+		
+		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
+			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }
+		};
+		tabheaderIS.readIconsFromResource("/TabHeader.png");
 		
 		toolbarIS = new IconSource<ToolbarIcons>(16,16){
 			@Override protected int getIconIndexInImage(ToolbarIcons key) {
@@ -214,32 +225,15 @@ public class SaveViewer implements ActionListener {
 				contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
 			}
 			break;
+			
 		case Close:
-			if (contentPane.currentSelected!=null) {
-				SaveGameView selected = contentPane.currentSelected;
-				loadedSaveGames.remove(selected);
-				contentPane.removeSaveGameView(selected);
-				updateWindowTitle();
-			}
-			if (loadedSaveGames.size()<2 && compareTab!=null) {
-				contentPane.removeTab(compareTab);
-				compareTab=null;
-			}
+			if (contentPane.currentSelected!=null) closeSaveGameView(contentPane.currentSelected);
 			break;
+			
 		case Reload:
-			if (contentPane.currentSelected!=null) {
-				File selectedFile = contentPane.currentSelected.file;
-				log_ln("");
-				log("Parse file \"%s\" ...",selectedFile.getPath());
-				JSON_Object new_json_data = new JSON_Parser(selectedFile).parse();
-				log_ln(" done");
-				if (new_json_data!=null) {
-					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
-					loadUniverseObjectDataFromFile(saveGameData.universe);
-					contentPane.currentSelected.replaceData(saveGameData);
-				}
-			}
+			if (contentPane.currentSelected!=null) reloadSaveGameView(contentPane.currentSelected);
 			break;
+			
 		case Compare:
 			if (compareTab==null) {
 				compareTab = new ComparePanel();
@@ -247,6 +241,7 @@ public class SaveViewer implements ActionListener {
 				contentPane.disabler.setEnable(ActionCommand.Compare, false);
 			}
 			break;
+			
 		case WriteHTML:
 			if (contentPane.currentSelected!=null) {
 				htmlFileChooser.setSelectedFile(
@@ -261,6 +256,7 @@ public class SaveViewer implements ActionListener {
 				}
 			}
 			break;
+			
 		case WriteJSON:
 			if (contentPane.currentSelected!=null) {
 				jsonFileChooser.setSelectedFile(
@@ -275,6 +271,7 @@ public class SaveViewer implements ActionListener {
 				}
 			}
 			break;
+			
 		case TabSelected:
 			updateWindowTitle();
 			contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
@@ -284,9 +281,34 @@ public class SaveViewer implements ActionListener {
 			if (contentPane.isSelected(compareTab))
 				compareTab.updatePanel();
 			break;
+			
 		case ComputeCoordinates:
 			new ComputeCoordinatesDialog(mainWindow).showDialog(Position.PARENT_CENTER);
 			break;
+		}
+	}
+
+	private void reloadSaveGameView(SaveGameView view) {
+		File file = view.file;
+		log_ln("");
+		log("Parse file \"%s\" ...",file.getPath());
+		JSON_Object new_json_data = new JSON_Parser(file).parse();
+		log_ln(" done");
+		if (new_json_data!=null) {
+			SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+			loadUniverseObjectDataFromFile(saveGameData.universe);
+			view.replaceData(saveGameData);
+		}
+	}
+
+	private void closeSaveGameView(SaveGameView view) {
+		loadedSaveGames.remove(view);
+		contentPane.removeSaveGameView(view);
+		updateWindowTitle();
+		
+		if (loadedSaveGames.size()<2 && compareTab!=null) {
+			contentPane.removeTab(compareTab);
+			compareTab=null;
 		}
 	}
 	
@@ -304,6 +326,30 @@ public class SaveViewer implements ActionListener {
 		else
 			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.currentSelected.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
+	}
+
+	class TabHeader extends JPanel {
+		private static final long serialVersionUID = 2135969080088517737L;
+
+		public TabHeader(SaveGameView saveGameView) {
+			super();
+			setOpaque(false);
+			setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+			add(new JLabel(saveGameView.toString()+" "));
+			add(createButton(TabHeaderIcons.Reload, TabHeaderIcons.Reload_Inactive, e->reloadSaveGameView(saveGameView)));
+			add(createButton(TabHeaderIcons.Close , TabHeaderIcons.Close_Inactive , e-> closeSaveGameView(saveGameView)));
+		}
+
+		private JButton createButton(TabHeaderIcons activeIcon, TabHeaderIcons inactiveIcon, ActionListener l) {
+			JButton button = new JButton(tabheaderIS.getIcon(inactiveIcon));
+			button.setFocusable(false);
+			button.setMargin(new Insets(0,0,0,0));
+			button.setRolloverIcon(tabheaderIS.getIcon(activeIcon));
+			button.setContentAreaFilled(false);
+			button.addActionListener(l);
+			button.setPreferredSize(new Dimension(12,10));
+			return button;
+		}
 	}
 
 	private class ContentPane extends JPanel {
@@ -350,7 +396,9 @@ public class SaveViewer implements ActionListener {
 		}
 
 		public void addSaveGameView(SaveGameView saveGameView) {
-			tabbedPane.addTab(saveGameView.toString(), null, saveGameView, saveGameView.file.getPath());
+			int index = tabbedPane.getTabCount();
+			tabbedPane.insertTab(saveGameView.toString(),null, saveGameView, saveGameView.file.getPath(), index);
+			tabbedPane.setTabComponentAt(index, new TabHeader(saveGameView));
 		}
 
 		public void removeTab(JPanel panel) {
@@ -364,8 +412,8 @@ public class SaveViewer implements ActionListener {
 		private void addButtons(JToolBar toolBar) {
 			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchFolder,true));
 			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
-			toolBar.add(createButton("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
-			toolBar.add(createButton("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
+//			toolBar.add(createButton("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
+//			toolBar.add(createButton("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
 			toolBar.add(createButton("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
