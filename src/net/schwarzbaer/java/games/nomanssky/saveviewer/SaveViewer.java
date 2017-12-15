@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -455,14 +457,19 @@ public class SaveViewer implements ActionListener {
 			private static final long serialVersionUID = -2301492858089122177L;
 			
 			protected ComputeCoordinatesDialog parent;
-			protected JButton btnCompute;
 		
 			AbstractInputPanel(ComputeCoordinatesDialog parent) {
 				this.parent = parent;
 				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
-				
-				btnCompute = new JButton("Compute");
+			}
+			
+			JPanel createButtonPanel() {
+				JPanel panel = new JPanel();
+				panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
+				JButton btnCompute = new JButton("Compute");
 				btnCompute.addActionListener(e->computeUniverseAddress());
+				panel.add(btnCompute);
+				return panel;
 			}
 		
 			protected abstract void computeUniverseAddress();
@@ -471,10 +478,12 @@ public class SaveViewer implements ActionListener {
 		ComputeCoordinatesDialog(Window parent) {
 			super(parent,"Compute Coordinates",ModalityType.APPLICATION_MODAL);
 			
-			JPanel inputPanels = new JPanel(new GridLayout(-1,1,3,3));
-			inputPanels.add(new InputAsAddress(this));
-			inputPanels.add(new InputAsCoords(this));
-			inputPanels.add(new InputAsSigBoostCode(this));
+			GridBagLayout layout = new GridBagLayout();
+			JPanel inputPanels = new JPanel(layout);
+			addInputPanel(inputPanels, layout, new InputAsCoords(this));
+			addInputPanel(inputPanels, layout, new InputAsSigBoostCode(this));
+			addInputPanel(inputPanels, layout, new InputAsPortalGlyphCode(this));
+			addInputPanel(inputPanels, layout, new InputAsAddress(this));
 			
 			JPanel portalGlyphPanel = new JPanel(new GridLayout(1, 12, 3,3));
 			portalGlyphPanel.setBorder(BorderFactory.createEtchedBorder());
@@ -498,8 +507,25 @@ public class SaveViewer implements ActionListener {
 			contentPane.add(portalGlyphPanel,BorderLayout.SOUTH);
 			
 			super.createGUI( contentPane );
-			//super.setSizeAsMinSize();
-			super.setResizable(false);
+			super.setSizeAsMinSize();
+//			super.setResizable(false);
+		}
+
+		private void addInputPanel(JPanel inputPanels, GridBagLayout layout, AbstractInputPanel inputPanel) {
+			GridBagConstraints c = new GridBagConstraints();
+			
+			c.weightx=1;
+			c.gridwidth=1;
+			c.fill = GridBagConstraints.BOTH;
+			layout.setConstraints(inputPanel, c);
+			inputPanels.add(inputPanel);
+			
+			JPanel buttonPanel = inputPanel.createButtonPanel();
+			c.weightx=0;
+			c.gridwidth=GridBagConstraints.REMAINDER;
+			c.fill = GridBagConstraints.BOTH;
+			layout.setConstraints(buttonPanel, c);
+			inputPanels.add(buttonPanel);
 		}
 
 		private void showUniverseAddress(UniverseAddress ua) {
@@ -513,8 +539,8 @@ public class SaveViewer implements ActionListener {
 				glyphLabels[i].setIcon(icon);
 			}
 			
-			statusField.setText(ua.getExtendedSigBoostCode());
-			statusField.append("\r\n"+ua.getCoordinates());
+			statusField.setText(ua.getCoordinates());
+			statusField.append("\r\n"+ua.getExtendedSigBoostCode());
 			statusField.append("\r\n"+ua.getPortalGlyphCodeStr());
 			statusField.append("\r\n"+ua.getAddressStr());
 		}
@@ -540,38 +566,85 @@ public class SaveViewer implements ActionListener {
 				setPreferredSize(new Dimension(prefWidth,prefHeight));
 			}
 
-			TextFieldValue getValue() {
-				TextFieldValue result = new TextFieldValue();
+			private void getValue(TextFieldValue result, boolean forceHex) {
 				String str = getText();
+				if (forceHex) {
+					try { result.parseHex(str); result.valueWasHex = true; }
+					catch (NumberFormatException e) { result.parseError = true; }
+				} else
 				if (str.startsWith("0x")) {
-					try { result.value = Long.parseLong(str.substring("0x".length()),16); result.valueWasHex = true; }
+					try { result.parseHex(str.substring("0x".length())); result.valueWasHex = true; }
 					catch (NumberFormatException e) { result.parseError = true; }
 				} else {
-					try { result.value = Long.parseLong(str); }
+					try { result.parseDec(str); result.valueWasHex = false; }
 					catch (NumberFormatException e) { result.parseError = true; }
 				}
-				return result;
 			}
+
+			TextFieldValueLong getLongValue() { TextFieldValueLong result = new TextFieldValueLong(); getValue(result,false); return result; }
+			TextFieldValueInt  getIntValue () { TextFieldValueInt  result = new TextFieldValueInt (); getValue(result,false); return result; }
+			TextFieldValueLong getLongHexValue() { TextFieldValueLong result = new TextFieldValueLong(); getValue(result,true); return result; }
+			@SuppressWarnings("unused")
+			TextFieldValueInt  getIntHexValue () { TextFieldValueInt  result = new TextFieldValueInt (); getValue(result,true); return result; }
 
 			void setError() {
 				setBackground(Color.RED);
 			}
 		}
 
-		private static class TextFieldValue {
-
+		private static abstract class TextFieldValue {
 			boolean valueWasHex;
 			boolean parseError;
-			long value;
-			
 			TextFieldValue() {
 				valueWasHex = false;
 				parseError = false;
-				value = -1;
+			}
+			abstract void parseHex(String str) throws NumberFormatException;
+			abstract void parseDec(String str) throws NumberFormatException;
+		}
+
+		private static class TextFieldValueLong extends TextFieldValue {
+			long value;
+			TextFieldValueLong() { value = 0L; }
+			@Override void parseHex(String str) throws NumberFormatException { value = Long.parseLong(str,16); }
+			@Override void parseDec(String str) throws NumberFormatException { value = Long.parseLong(str); }
+		}
+
+		private static class TextFieldValueInt extends TextFieldValue {
+			int value;
+			TextFieldValueInt() { value = 0; }
+			@Override void parseHex(String str) throws NumberFormatException { value = Integer.parseInt(str,16); }
+			@Override void parseDec(String str) throws NumberFormatException { value = Integer.parseInt(str); }
+		}
+
+		private static class InputAsPortalGlyphCode extends AbstractInputPanel {
+			private static final long serialVersionUID = -5005085383637770875L;
+			private InputField galaxyIndex;
+			private InputField portalGlyphCode;
+
+			InputAsPortalGlyphCode(ComputeCoordinatesDialog parent) {
+				super(parent);
+				add(new JLabel("Galaxy:"));
+				add(galaxyIndex = new InputField(35,20));
+				add(new JLabel("PortalGlyphCode:"));
+				add(portalGlyphCode = new InputField(200,20));
 			}
 
-			public boolean isInt() {
-				return value == (long)((int)value);
+			@Override
+			protected void computeUniverseAddress() {
+				TextFieldValueInt  galaxyIndexValue     = galaxyIndex    .getIntValue();
+				TextFieldValueLong portalGlyphCodeValue = portalGlyphCode.getLongHexValue();
+				boolean error = false;
+				if (galaxyIndexValue    .parseError) { galaxyIndex    .setError(); error = true; }
+				if (portalGlyphCodeValue.parseError) { portalGlyphCode.setError(); error = true; }
+				if (error) {
+					parent.showError("Wrong Input");
+				} else {
+					long region = portalGlyphCodeValue.value & 0xFFFFFFFFL;
+					long plnsys = (portalGlyphCodeValue.value>>32) & 0xFFFF;
+					UniverseAddress ua = new UniverseAddress( (plnsys<<40) | (((long)galaxyIndexValue.value&0xFF)<<32) | region);
+					parent.showUniverseAddress(ua);
+				}
 			}
 		}
 
@@ -583,13 +656,11 @@ public class SaveViewer implements ActionListener {
 				super(parent);
 				add(new JLabel("Universe Address:"));
 				add(universeAddress = new InputField(200,20));
-				add(new JLabel("  "));
-				add(btnCompute);
 			}
 
 			@Override
 			protected void computeUniverseAddress() {
-				TextFieldValue universeAddressValue = universeAddress.getValue();
+				TextFieldValueLong universeAddressValue = universeAddress.getLongValue();
 				if (universeAddressValue.parseError) { universeAddress.setError(); parent.showError("Wrong Input"); return; }
 				UniverseAddress ua = new UniverseAddress(universeAddressValue.value);
 				parent.showUniverseAddress(ua);
@@ -611,19 +682,17 @@ public class SaveViewer implements ActionListener {
 				add(sigBoostCode = new InputField(150,20));
 				add(new JLabel("  Planet:"));
 				add(planetIndex = new InputField(35,20));
-				add(new JLabel("  "));
-				add(btnCompute);
 			}
 
 			@Override
 			protected void computeUniverseAddress() {
-				TextFieldValue galaxyIndexValue = galaxyIndex .getValue();
-				String         sigBoostCodeStr  = sigBoostCode.getText();
-				TextFieldValue planetIndexValue = planetIndex .getValue();
+				TextFieldValueInt galaxyIndexValue = galaxyIndex .getIntValue();
+				String            sigBoostCodeStr  = sigBoostCode.getText();
+				TextFieldValueInt planetIndexValue = planetIndex .getIntValue();
 				
 				boolean error = false;
-				if (planetIndexValue.parseError || !planetIndexValue.isInt()) { planetIndex.setError(); error = true; }
-				if (galaxyIndexValue.parseError || !galaxyIndexValue.isInt()) { galaxyIndex.setError(); error = true; }
+				if (planetIndexValue.parseError) { planetIndex.setError(); error = true; }
+				if (galaxyIndexValue.parseError) { galaxyIndex.setError(); error = true; }
 				
 				boolean sigBoostCodeError = false;
 				if (sigBoostCodeStr.length()<19) { sigBoostCode.setError(); sigBoostCodeError = true; }
@@ -652,7 +721,7 @@ public class SaveViewer implements ActionListener {
 					int voxelZ = (int) (values[2]-2047);
 					int solarSystemIndex = (int) values[3];
 					
-					UniverseAddress ua = new UniverseAddress((int)galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndex, (int)planetIndexValue.value);
+					UniverseAddress ua = new UniverseAddress(galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndexValue.value);
 					parent.showUniverseAddress(ua);
 				}
 			}
@@ -661,53 +730,56 @@ public class SaveViewer implements ActionListener {
 		private static class InputAsCoords extends AbstractInputPanel {
 			private static final long serialVersionUID = 5940223603403241578L;
 			
-			private InputField planetIndex;
-			private InputField solarSystemIndex;
+			private InputField galaxyIndex;
 			private InputField regionVoxelX;
 			private InputField regionVoxelY;
 			private InputField regionVoxelZ;
+			private InputField solarSystemIndex;
+			private InputField planetIndex;
 			
 			InputAsCoords(ComputeCoordinatesDialog parent) {
 				super(parent);
 				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-				add(new JLabel("Planet:"));
-				add(planetIndex = new InputField(35,20));
-				add(new JLabel("  Solar System:"));
-				add(solarSystemIndex = new InputField(50,20));
+				add(new JLabel("Galaxy:"));
+				add(galaxyIndex = new InputField(35,20));
 				add(new JLabel("  Region:"));
 				add(regionVoxelX = new InputField(50,20));
 				add(regionVoxelY = new InputField(40,20));
 				add(regionVoxelZ = new InputField(50,20));
-				add(new JLabel("  "));
-				add(btnCompute);
+				add(new JLabel("  Solar System:"));
+				add(solarSystemIndex = new InputField(50,20));
+				add(new JLabel("  Planet:"));
+				add(planetIndex = new InputField(35,20));
 			}
 		
 			@Override
 			protected void computeUniverseAddress() {
-				TextFieldValue planetIndexValue      = planetIndex     .getValue();
-				TextFieldValue solarSystemIndexValue = solarSystemIndex.getValue();
-				TextFieldValue regionVoxelXValue     = regionVoxelX    .getValue();
-				TextFieldValue regionVoxelYValue     = regionVoxelY    .getValue();
-				TextFieldValue regionVoxelZValue     = regionVoxelZ    .getValue();
+				TextFieldValueInt planetIndexValue      = planetIndex     .getIntValue();
+				TextFieldValueInt solarSystemIndexValue = solarSystemIndex.getIntValue();
+				TextFieldValueInt regionVoxelXValue     = regionVoxelX    .getIntValue();
+				TextFieldValueInt regionVoxelYValue     = regionVoxelY    .getIntValue();
+				TextFieldValueInt regionVoxelZValue     = regionVoxelZ    .getIntValue();
+				TextFieldValueInt galaxyIndexValue      = galaxyIndex     .getIntValue();
 				
 				boolean error = false;
-				if (planetIndexValue     .parseError || !planetIndexValue     .isInt()) { planetIndex     .setError(); error = true; }
-				if (solarSystemIndexValue.parseError || !solarSystemIndexValue.isInt()) { solarSystemIndex.setError(); error = true; }
-				if (regionVoxelXValue    .parseError || !regionVoxelXValue    .isInt()) { regionVoxelX    .setError(); error = true; }
-				if (regionVoxelYValue    .parseError || !regionVoxelYValue    .isInt()) { regionVoxelY    .setError(); error = true; }
-				if (regionVoxelZValue    .parseError || !regionVoxelZValue    .isInt()) { regionVoxelZ    .setError(); error = true; }
+				if (planetIndexValue     .parseError) { planetIndex     .setError(); error = true; }
+				if (solarSystemIndexValue.parseError) { solarSystemIndex.setError(); error = true; }
+				if (regionVoxelXValue    .parseError) { regionVoxelX    .setError(); error = true; }
+				if (regionVoxelYValue    .parseError) { regionVoxelY    .setError(); error = true; }
+				if (regionVoxelZValue    .parseError) { regionVoxelZ    .setError(); error = true; }
+				if (galaxyIndexValue     .parseError) { galaxyIndex     .setError(); error = true; }
 				
 				if (error) {
 					parent.showError("Wrong Input");
 				} else {
-					int voxelX = (int)regionVoxelXValue.value;
-					int voxelY = (int)regionVoxelYValue.value;
-					int voxelZ = (int)regionVoxelZValue.value;
+					int voxelX = regionVoxelXValue.value;
+					int voxelY = regionVoxelYValue.value;
+					int voxelZ = regionVoxelZValue.value;
 					if (regionVoxelXValue.valueWasHex) { if (voxelX>0x7FF) voxelX |= 0xFFFFF000; }
 					if (regionVoxelYValue.valueWasHex) { if (voxelY> 0x7F) voxelY |= 0xFFFFFF00; }
 					if (regionVoxelZValue.valueWasHex) { if (voxelZ>0x7FF) voxelZ |= 0xFFFFF000; }
 					
-					UniverseAddress ua = new UniverseAddress(0, voxelX, voxelY, voxelZ, (int)solarSystemIndexValue.value, (int)planetIndexValue.value);
+					UniverseAddress ua = new UniverseAddress(galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndexValue.value, planetIndexValue.value);
 					parent.showUniverseAddress(ua);
 				}
 			}

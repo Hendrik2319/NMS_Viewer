@@ -1589,11 +1589,6 @@ class SaveGameView extends JPanel {
 			statusPanel.add(statusField,BorderLayout.CENTER);
 			statusPanel.add(rightStatusPanel,BorderLayout.EAST);
 			
-			JPanel mapview = new JPanel();
-			GridBagLayout layout = new GridBagLayout();
-			GridBagConstraints c = new GridBagConstraints();
-			mapview.setLayout(layout);
-			
 			Long knownGlyphs = data.general.getKnownGlyphsMaks();
 			//knownGlyphs = 0b110111100L;
 			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.getCurrentUniverseAddress(),knownGlyphs);
@@ -1608,6 +1603,11 @@ class SaveGameView extends JPanel {
 			scrollBarVert.addAdjustmentListener(combiListener);
 			scrollBarHoriz.addAdjustmentListener(combiListener);
 			
+			JPanel mapview = new JPanel();
+			GridBagLayout layout = new GridBagLayout();
+			GridBagConstraints c = new GridBagConstraints();
+			mapview.setLayout(layout);
+			
 			addComp(mapview,layout,c, galaxyMap     , 1,1,1,GridBagConstraints.BOTH);
 			addComp(mapview,layout,c, scrollBarVert , 0,1,GridBagConstraints.REMAINDER,GridBagConstraints.VERTICAL);
 			addComp(mapview,layout,c, scrollBarHoriz, 1,0,1,GridBagConstraints.HORIZONTAL);
@@ -1617,6 +1617,15 @@ class SaveGameView extends JPanel {
 			add(statusPanel,BorderLayout.SOUTH);
 			
 			zoomField.setSelectedItem(null);
+		}
+
+		private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int fill) {
+			c.weightx=weightx;
+			c.weighty=weighty;
+			c.gridwidth=gridwidth;
+			c.fill = fill;
+			layout.setConstraints(comp, c);
+			panel.add(comp);
 		}
 
 		private void showGlyphOverlay(int numberOfKnownGlyphs) {
@@ -1655,15 +1664,6 @@ class SaveGameView extends JPanel {
 
 			@Override public void cancelTask() { worker.stopNow = true; worker.pd.closeDialog(); }
 			@Override public void run() { worker.run(); worker.pd.closeDialog(); }
-		}
-
-		private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int fill) {
-			c.weightx=weightx;
-			c.weighty=weighty;
-			c.gridwidth=gridwidth;
-			c.fill = fill;
-			layout.setConstraints(comp, c);
-			panel.add(comp);
 		}
 
 		private void showStatus(int x, int y) {
