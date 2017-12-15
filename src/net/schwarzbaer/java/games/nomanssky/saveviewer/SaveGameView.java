@@ -547,7 +547,7 @@ class SaveGameView extends JPanel {
 		}
 		
 		private JPopupMenu mouseClicked() {
-			if (clickedNode!=null)
+			if (clickedNode==null)
 				return contextMenu_Other;
 			
 			switch(clickedNode.type) {

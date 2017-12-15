@@ -44,6 +44,8 @@ info=Kalium
 
 [Sys016F00FAA8CBC4]
 name=Esvets
+race=Vykeen
+class=Yellow
 
 [Pln116F00FAA8CBC4]
 name=Haktiscudol-1
