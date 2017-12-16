@@ -62,6 +62,11 @@ info=Extrem giftiger Planet
 short=Ka
 info=Kalium
 
+[Sys007A00FAA8CBC4]
+name=Sibirsky
+short=Atlas
+info=Atlasstation
+
 [Sys016F00FAA8CBC4]
 name=Esvets
 race=Vykeen

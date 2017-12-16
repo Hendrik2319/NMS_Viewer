@@ -102,7 +102,7 @@ public class SaveViewer implements ActionListener {
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
 			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }
 		};
-		tabheaderIS.readIconsFromResource("/TabHeader.png");
+		tabheaderIS.readIconsFromResource("/images/TabHeader.png");
 		
 		toolbarIS = new IconSource<ToolbarIcons>(16,16){
 			@Override protected int getIconIndexInImage(ToolbarIcons key) {
@@ -117,7 +117,7 @@ public class SaveViewer implements ActionListener {
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
-		toolbarIS.readIconsFromResource("/Toolbar.png");
+		toolbarIS.readIconsFromResource("/images/Toolbar.png");
 		
 		loadKnownStatIDsFromFile();
 		
@@ -580,7 +580,7 @@ public class SaveViewer implements ActionListener {
 			for (int i=11; i>=0; --i) {
 				int nr = (int) (portalGlyphCode&0xF);
 				portalGlyphCode = portalGlyphCode>>4;
-				BufferedImage image = SaveGameView.UniversePanel.PortalGlyphsIS_50_45.getCachedImage(nr);
+				BufferedImage image = SaveGameView.UniversePanel.PortalGlyphsIS.getCachedImage(nr);
 				ImageIcon icon = image==null?null:new ImageIcon( image );
 				glyphLabels[i].setIcon(icon);
 			}

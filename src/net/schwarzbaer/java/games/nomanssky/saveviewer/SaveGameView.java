@@ -209,8 +209,7 @@ class SaveGameView extends JPanel {
 		
 		enum UniverseTreeActionCommand { SetName, SetDistance, SetRace, SetStarClass, ExpandAll, CollapseRemainingTree }
 		
-		static final IndexOnlyIconSource PortalGlyphsIS_100_90 = new IconSource.IndexOnlyIconSource(100,90,4);
-		static final IndexOnlyIconSource PortalGlyphsIS_50_45  = new IconSource.IndexOnlyIconSource( 50,45,4);
+		static final IndexOnlyIconSource PortalGlyphsIS  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
 		enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue }
 		private static final int TreeIconHeight = 20;
@@ -279,12 +278,11 @@ class SaveGameView extends JPanel {
 		private static UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons = null;
 
 		public static void prepareIconSources() {
-			PortalGlyphsIS_100_90.readIconsFromResource("/PortalGlyphs.100.90.png");
-			PortalGlyphsIS_50_45.readIconsFromResource("/PortalGlyphs.50.45.png");
-			PortalGlyphsIS_50_45.cacheImages(16);
+			PortalGlyphsIS.readIconsFromResource("/images/PortalGlyphs.50.45.png");
+			PortalGlyphsIS.cacheImages(16);
 			String[] labels = new String[]{"N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"};
 			for (int i=0; i<16; ++i) {
-				BufferedImage cachedImage = PortalGlyphsIS_50_45.getCachedImage(i);
+				BufferedImage cachedImage = PortalGlyphsIS.getCachedImage(i);
 				Graphics g = cachedImage.getGraphics();
 				if (!(g instanceof Graphics2D)) return;
 				Graphics2D g2 = (Graphics2D)g;
@@ -295,7 +293,7 @@ class SaveGameView extends JPanel {
 				g2.drawString(i+" "+labels[i], 2, 10);
 			}
 			
-			UniverseTreeIconsIS.readIconsFromResource("/UniverseTreeIcons.png");
+			UniverseTreeIconsIS.readIconsFromResource("/images/UniverseTreeIcons.png");
 			UniverseTreeIconsIS.cacheIcons(UniverseTreeIcons.values());
 			
 			Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy);
@@ -686,7 +684,7 @@ class SaveGameView extends JPanel {
 			for (int i=11; i>=0; --i) {
 				int nr = (int)(portalGlyphCode&0xF);
 				portalGlyphCode = portalGlyphCode>>4;
-				BufferedImage glyph = PortalGlyphsIS_50_45.getImage(nr);
+				BufferedImage glyph = PortalGlyphsIS.getImage(nr);
 				graphics.drawImage(glyph, i*50, 0, null);
 			}
 			return new ImageIcon(image);
