@@ -5,17 +5,17 @@ class=Red
 
 [Pln100100F8008FF8]
 name=???
-short=Ru
+short.P=Ru
 info=
 
 [Pln200100F8008FF8]
 name=Guyinkannurtu
-short=Ru
+short.P=Ru
 info=
 
 [Pln300100F8008FF8]
 name=Ezka'oeregus
-short=Ru
+short.P=Ru
 info=Rubeum
 
 [Sys006D00FAA8CBC4]
@@ -45,21 +45,21 @@ name=Axellenboe Ummi
 
 [Pln207900FAA8CBC4]
 name=Tisluitsoch
-short=Grav
+short.P=Grav
 info=Gravitino-Balls
 
 [Pln307900FAA8CBC4]
 name=Dessilaum Ramm
 short=ExtRad
 info=Extreme verstrahlter Planet
-short=Ka
+short.P=Ka
 info=Kalium
 
 [Pln407900FAA8CBC4]
 name=Biyskogolo Unzhe
 short=ExtTox
 info=Extrem giftiger Planet
-short=Ka
+short.P=Ka
 info=Kalium
 
 [Sys007A00FAA8CBC4]
@@ -80,7 +80,7 @@ name=Gujalptakma-Nenuma
 
 [Pln316F00FAA8CBC4]
 name=Osfellaggni
-short=VC
+short.P=VC
 info=Vortex Cubes
 
 [Sys018000FAA8CBC4]
@@ -92,9 +92,9 @@ class=Red
 name=Yanentunent-Obyt
 short=ExtRad
 info=Extrem verstrahler Planet
-short=Ka
+short.P=Ka
 info=Kalium (Kugeln)
-short=Ru
+short.P=Ru
 info=Rubeum (Große Kegel)
 
 [Sys01C800FAA8CBC4]
@@ -118,12 +118,12 @@ name=Uagetuhuals
 
 [Pln21EA00FAA8CBC4]
 name=Belevskom SX986
-short=Ra
+short.P=Ra
 info=Radnox
 
 [Pln31EA00FAA8CBC4]
 name=Ikokstelmh Gronis
-short=Grav
+short.P=Grav
 info=Gravitino-Balls
 
 [Pln41EA00FAA8CBC4]
@@ -197,19 +197,19 @@ class=Green
 
 [Pln10010010000000]
 name=Nooitbili Bleijk
-short=Vi
+short.P=Vi
 info=Viridium
 
 [Pln20010010000000]
 name=Bihopisnik Uque
-short=Vi
+short.P=Vi
 info=Viridium
 
 [Pln30010010000000]
 name=Urneferi Fukiha
-short=Vi
+short.P=Vi
 info=Viridium
 short=ExtRad
 info=Extrem verstrahlter Planet
-short=Ka
+short.P=Ka
 info=Kalium

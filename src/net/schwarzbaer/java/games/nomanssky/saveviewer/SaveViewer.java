@@ -903,7 +903,8 @@ public class SaveViewer implements ActionListener {
 			UniverseObject uniObj = null;
 			String uniObjName = null;
 			
-			String lastLabel = null;
+			String nextShortLabel = null;
+			boolean showInParent = false;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
 				if ((str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
@@ -953,19 +954,25 @@ public class SaveViewer implements ActionListener {
 					continue;
 				}
 				if (str.startsWith("short=")) {
-					lastLabel = str.substring("short=".length());
+					nextShortLabel = str.substring("short=".length());
+					showInParent = false;
+					continue;
+				}
+				if (str.startsWith("short.P=")) {
+					nextShortLabel = str.substring("short.P=".length());
+					showInParent = true;
 					continue;
 				}
 				if (str.startsWith("info=")) {
 					String info = str.substring("info=".length());
-					if (lastLabel!=null) {
-						ExtraInfo ei = new ExtraInfo(lastLabel,info);
+					if (nextShortLabel!=null) {
+						ExtraInfo ei = new ExtraInfo(showInParent,nextShortLabel,info);
 						if (uniObj!=null) {
 							uniObj.extraInfos.add(ei);
 							System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",uniObjName,ei.shortLabel,ei.info);
 						}
 					}
-					lastLabel=null;
+					nextShortLabel=null;
 					continue;
 				}
 			}
@@ -994,8 +1001,8 @@ public class SaveViewer implements ActionListener {
 							if (sys.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",sys.distanceToCenter.doubleValue());
 							for (ExtraInfo ei:sys.extraInfos)
 								if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
-									out.printf("short=%s\r\n",ei.shortLabel);
-									out.printf("info=%s\r\n" ,ei.info);
+									out.printf("short=%s\r\n", ei.shortLabel);
+									out.printf("info=%s\r\n" , ei.info);
 								}
 						}
 						for (Planet p:sys.planets) {
@@ -1006,7 +1013,7 @@ public class SaveViewer implements ActionListener {
 								if (p.hasOriginalName()) out.printf("name=%s\r\n",p.getOriginalName());
 								for (ExtraInfo ei:p.extraInfos)
 									if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
-										out.printf("short=%s\r\n",ei.shortLabel);
+										out.printf("short%s=%s\r\n", ei.showInParent?".P":"", ei.shortLabel);
 										out.printf("info=%s\r\n" ,ei.info);
 									}
 							}

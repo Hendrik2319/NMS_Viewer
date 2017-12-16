@@ -51,7 +51,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -61,7 +60,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -307,13 +305,14 @@ class SaveGameView extends JPanel {
 		private JTree tree;
 		private DefaultTreeModel treeModel;
 		private GenericTreeNode<?> selectedNode;
-
-		private JLabel portalGlyphs;
-		private JTextArea textArea;
-		private ExtraInfoTableModel extraInfoTableModel;
-		
 		private GenericTreeNode<?> clickedNode;
 		private TreePath clickedTreePath;
+		
+		private JLabel portalGlyphs;
+		private JTextArea textArea;
+//		private ExtraInfoTableModel extraInfoTableModel;
+		private SimplifiedTable extraInfoTable;
+		
 		private JPopupMenu contextMenu_Other;
 		private JPopupMenu contextMenu_SolarSystem;
 		private JPopupMenu contextMenu_Planet;
@@ -380,10 +379,10 @@ class SaveGameView extends JPanel {
 			textArea.setEditable(false);
 			textArea.setBorder(BorderFactory.createEtchedBorder());
 			
-			extraInfoTableModel = new ExtraInfoTableModel();
-			SimplifiedTable extraInfoTable = new SimplifiedTable(extraInfoTableModel,true,SaveViewer.DEBUG,true);
+//			extraInfoTableModel = new ExtraInfoTableModel();
+			extraInfoTable = new SimplifiedTable(true,SaveViewer.DEBUG,true);
 			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
-			extraInfoTableModel.setTable(extraInfoTable);
+//			extraInfoTableModel.setTable(extraInfoTable);
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
@@ -572,13 +571,15 @@ class SaveGameView extends JPanel {
 			textArea.setText("");
 			
 			if (selectedNode==null) {
-				extraInfoTableModel.clearData();
+				extraInfoTable.setModel(new DefaultTableModel());
+//				extraInfoTableModel.clearData();
 				return;
 			}
 			
 			if (selectedNode.type!=NodeType.Planet) {
 				portalGlyphs.setIcon(null);
-				extraInfoTableModel.clearData();
+				extraInfoTable.setModel(new DefaultTableModel());
+//				extraInfoTableModel.clearData();
 			}
 			
 			int n;
@@ -674,7 +675,8 @@ class SaveGameView extends JPanel {
 						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Store.get(item)));
 				}
 			}
-			extraInfoTableModel.setData(obj.extraInfos);
+			extraInfoTable.setModel(new ExtraInfoTableModel(obj instanceof Planet, obj.extraInfos));
+//			extraInfoTableModel.setData(obj.extraInfos);
 		}
 
 		private Icon createPortalGlyphs(long portalGlyphCode) {
@@ -691,6 +693,7 @@ class SaveGameView extends JPanel {
 		}
 		
 		private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
+			ShowInParent("", Boolean.class, 10,-1, 20, 20),
 			Label("Label", String.class, 20,-1, 50, 50),
 			Info ("Info" , String.class, 50,-1,500,500);
 			
@@ -705,27 +708,32 @@ class SaveGameView extends JPanel {
 		private class ExtraInfoTableModel extends TableView.SimplifiedTableModel<ExtraInfoColumnID> {
 
 			private Vector<ExtraInfo> tableData;
-			private JTable table;
+//			private JTable table;
+			private boolean isPlanet;
 
-			protected ExtraInfoTableModel() {
-				super(ExtraInfoColumnID.values());
-				this.tableData = null;
-				this.table = null;
+			protected ExtraInfoTableModel(boolean isPlanet, Vector<ExtraInfo> tableData) {
+				super(isPlanet?
+						new ExtraInfoColumnID[]{ExtraInfoColumnID.ShowInParent,ExtraInfoColumnID.Label,ExtraInfoColumnID.Info}:
+						new ExtraInfoColumnID[]{ExtraInfoColumnID.Label,ExtraInfoColumnID.Info}
+					);
+				this.isPlanet = isPlanet;
+				this.tableData = tableData;
+//				this.table = null;
 			}
 
-			public void setTable(JTable table) {
-				this.table = table;
-			}
-
-			public void clearData() { setData(null); }
-			public void setData(Vector<ExtraInfo> data) {
-				if (table!=null && table.isEditing()) {
-					TableCellEditor cellEditor = table.getCellEditor();
-					if (cellEditor!=null) cellEditor.cancelCellEditing();
-				}
-				this.tableData = data;
-				fireTableUpdate();
-			}
+//			public void setTable(JTable table) {
+//				this.table = table;
+//			}
+//
+//			public void clearData() { setData(null); }
+//			public void setData(Vector<ExtraInfo> data) {
+//				if (table!=null && table.isEditing()) {
+//					TableCellEditor cellEditor = table.getCellEditor();
+//					if (cellEditor!=null) cellEditor.cancelCellEditing();
+//				}
+//				this.tableData = data;
+//				fireTableUpdate();
+//			}
 
 			@Override
 			public int getRowCount() {
@@ -736,10 +744,10 @@ class SaveGameView extends JPanel {
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
 				if (tableData==null) return null;
-				if (rowIndex==tableData.size()) return "";
 				switch(columnID) {
-				case Label: return tableData.get(rowIndex).shortLabel;
-				case Info : return tableData.get(rowIndex).info;
+				case ShowInParent: if (rowIndex==tableData.size()) return false; return tableData.get(rowIndex).showInParent;
+				case Label       : if (rowIndex==tableData.size()) return "";    return tableData.get(rowIndex).shortLabel;
+				case Info        : if (rowIndex==tableData.size()) return "";    return tableData.get(rowIndex).info;
 				}
 				return null;
 			}
@@ -754,17 +762,19 @@ class SaveGameView extends JPanel {
 				if (tableData==null) return;
 				if (rowIndex==tableData.size()) {
 					switch(columnID) {
-					case Label: tableData.add(new ExtraInfo(aValue.toString(),"")); break;
-					case Info : tableData.add(new ExtraInfo("",aValue.toString())); break;
+					case ShowInParent: tableData.add(new ExtraInfo((Boolean)aValue,"","")); break;
+					case Label       : tableData.add(new ExtraInfo(aValue.toString(),"")); break;
+					case Info        : tableData.add(new ExtraInfo("",aValue.toString())); break;
 					}
 					fireTableRowAdded(rowIndex+1);
 				} else
 					switch(columnID) {
-					case Label: tableData.get(rowIndex).shortLabel = aValue.toString(); break;
-					case Info : tableData.get(rowIndex).info       = aValue.toString(); break;
+					case ShowInParent: tableData.get(rowIndex).showInParent = (aValue instanceof Boolean)?(Boolean)aValue:false; break;
+					case Label       : tableData.get(rowIndex).shortLabel   = aValue.toString(); break;
+					case Info        : tableData.get(rowIndex).info         = aValue.toString(); break;
 					}
 				treeModel.nodeChanged(selectedNode);
-				treeModel.nodeChanged(selectedNode.parent);
+				if (isPlanet) treeModel.nodeChanged(selectedNode.parent);
 				SaveViewer.saveUniverseObjectDataToFile(data.universe);
 			}
 		}

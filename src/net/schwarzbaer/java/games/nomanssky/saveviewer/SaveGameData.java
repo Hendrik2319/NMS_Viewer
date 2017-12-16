@@ -893,9 +893,14 @@ public class SaveGameData {
 			public String getUploadedName() { return this.uploadedName; }
 			
 			static final class ExtraInfo {
+				boolean showInParent;
 				String shortLabel;
 				String info;
 				public ExtraInfo(String shortLabel, String info) {
+					this(false,shortLabel,info);
+				}
+				public ExtraInfo(boolean showInParent, String shortLabel, String info) {
+					this.showInParent = showInParent;
 					this.shortLabel = shortLabel;
 					this.info = info;
 				}
@@ -942,19 +947,21 @@ public class SaveGameData {
 			public String toString() {
 				String strName;
 				if (hasOriginalName()) strName = String.format("Sys%03X %s", solarSystemIndex, getOriginalName());
-				else                      strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+				else                   strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
 				
 				String strDataName = (!hasUploadedName()?"":(" | "+getUploadedName()));
 				
 				String strRace = (race==null)?"":(" ["+race.fullName+"]");
 				
-				String str1, strExtraInfo=getCombinedExtraInfoLabels();
-				for (Planet p:planets) {
-					str1 = p.getCombinedExtraInfoLabels();
-					if (!str1.isEmpty()) {
-						if (!strExtraInfo.isEmpty()) strExtraInfo+=", ";
-						strExtraInfo+=str1;
-					}
+				HashSet<String> foundLabels = new HashSet<>();
+				for (Planet p:planets)
+					for (ExtraInfo ei:p.extraInfos)
+						if (ei.showInParent && !ei.shortLabel.isEmpty())
+							foundLabels.add(ei.shortLabel);
+				String strExtraInfo=getCombinedExtraInfoLabels();
+				for (String str:foundLabels) {
+					if (!strExtraInfo.isEmpty()) strExtraInfo+=", ";
+					strExtraInfo+=str;
 				}
 				if (!strExtraInfo.isEmpty()) strExtraInfo=" ("+strExtraInfo+")";
 				
