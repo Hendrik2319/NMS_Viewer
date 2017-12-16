@@ -1000,7 +1000,7 @@ class SaveGameView extends JPanel {
 			super(data);
 			
 			DDATableModel tableModel = new DDATableModel();
-			SimplifiedTable table = new SimplifiedTable(tableModel,true,true,true);
+			SimplifiedTable table = new SimplifiedTable(tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -1055,7 +1055,7 @@ class SaveGameView extends JPanel {
 			super(data);
 			
 			DDSTableModel tableModel = new DDSTableModel();
-			SimplifiedTable table = new SimplifiedTable(tableModel,true,true,true);
+			SimplifiedTable table = new SimplifiedTable(tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);

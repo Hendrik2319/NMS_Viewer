@@ -24,7 +24,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
@@ -78,7 +80,7 @@ public class SaveViewer implements ActionListener {
 	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 
 	static final boolean DEBUG = true;
-
+	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	
 	private StandardMainWindow mainWindow;
 
@@ -120,6 +122,7 @@ public class SaveViewer implements ActionListener {
 		toolbarIS.readIconsFromResource("/images/Toolbar.png");
 		
 		loadKnownStatIDsFromFile();
+		loadUniverseObjectDataFromFile();
 		
 //		long address = 4623450600164292L;
 //		System.out.printf("0x%015X\r\n",address);
@@ -210,7 +213,7 @@ public class SaveViewer implements ActionListener {
 					JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 				} else {
 					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
-					loadUniverseObjectDataFromFile(saveGameData.universe);
+					readUniverseObjectDataFromDataPool(saveGameData.universe);
 					SaveGameView saveGameView = new SaveGameView(mainWindow,selectedFile,saveGameData);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
@@ -294,7 +297,7 @@ public class SaveViewer implements ActionListener {
 		log_ln(" done");
 		if (new_json_data!=null) {
 			SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
-			loadUniverseObjectDataFromFile(saveGameData.universe);
+			readUniverseObjectDataFromDataPool(saveGameData.universe);
 			view.replaceData(saveGameData);
 		}
 	}
@@ -889,68 +892,62 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
-	public static void loadUniverseObjectDataFromFile(Universe universe) {
-		System.out.println("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\".");
-		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
-		if (!file.isFile()) return;
+	public static void loadUniverseObjectDataFromFile() {
+		System.out.println("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\"...");
+		universeObjectDataArr = new HashMap<>();
 		
-		System.out.println();
+		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
+		if (!file.isFile()) {
+			System.out.println("done");
+			return;
+		}
+		
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			String str;
-			UniverseAddress ua = null;
-			SolarSystem system = null;
-			Planet planet = null;
-			UniverseObject uniObj = null;
-			String uniObjName = null;
+			UniverseObjectData uoData = null;
 			
 			String nextShortLabel = null;
 			boolean showInParent = false;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
 				if ((str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
-					system = null;
-					planet = null;
-					uniObj = null;
-					uniObjName = null;
+					uoData = null;
 					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
-					long address = Long.parseLong(addressStr, 16);
-					ua = new UniverseAddress(address);
-					if (str.startsWith("[Sys") && ua.isSolarSystem()) { system = universe.findSolarSystem(ua); System.out.printf("Solar system %s\r\n",ua.getSigBoostCode()); }
-					if (str.startsWith("[Pln") && ua.isPlanet     ()) { planet = universe.findPlanet     (ua); System.out.printf("Planet %s\r\n",ua.getExtendedSigBoostCode()); }
-					if (system!=null) { uniObj = system; uniObjName = "solar system "+ua.getSigBoostCode(); }
-					if (planet!=null) { uniObj = planet; uniObjName = "planet "+ua.getExtendedSigBoostCode(); }
+					long address;
+					try { address = Long.parseLong(addressStr, 16); }
+					catch (NumberFormatException e) {
+						System.err.printf("Can't parse universe address in: \"%s\"\r\n",str);
+						continue;
+					}
+					UniverseAddress ua = new UniverseAddress(address);
+					if (str.startsWith("[Sys") && ua.isSolarSystem()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.SolarSystem);
+					if (str.startsWith("[Pln") && ua.isPlanet     ()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.Planet);
+					if (uoData != null) universeObjectDataArr.put(address, uoData);
 					continue;
 				}
 				if (str.startsWith("name=")) {
-					String name = str.substring("name=".length());
-					if (uniObj!=null) {
-						uniObj.setOriginalName(name);
-						System.out.printf("   Name of %s was defined: \"%s\"\r\n",uniObjName,name);
-					}
+					if (uoData!=null) uoData.name = str.substring("name=".length());
 					continue;
 				}
 				if (str.startsWith("race=")) {
-					if (system==null) continue;
+					if (uoData==null) continue;
 					String race = str.substring("race=".length());
-					try { system.race = Universe.SolarSystem.Race.valueOf(race); }
-					catch (Exception e) { system.race = null; }
-					System.out.printf("   Race of solar system %s was defined: \"%s\" -> [%s]\r\n",ua.getSigBoostCode(),race,system.race);
+					try { uoData.race = Universe.SolarSystem.Race.valueOf(race); }
+					catch (Exception e) { uoData.race = null; }
 					continue;
 				}
 				if (str.startsWith("class=")) {
-					if (system==null) continue;
+					if (uoData==null) continue;
 					String starClass = str.substring("class=".length());
-					try { system.starClass = Universe.SolarSystem.StarClass.valueOf(starClass); }
-					catch (Exception e) { system.starClass = null; }
-					System.out.printf("   StarClass of solar system %s was defined: \"%s\" -> [%s]\r\n",ua.getSigBoostCode(),starClass,system.starClass);
+					try { uoData.starClass = Universe.SolarSystem.StarClass.valueOf(starClass); }
+					catch (Exception e) { uoData.starClass = null; }
 					continue;
 				}
 				if (str.startsWith("distance=")) {
-					if (system==null) continue;
+					if (uoData==null) continue;
 					String distance = str.substring("distance=".length());
-					try { system.distanceToCenter = Double.parseDouble(distance); }
-					catch (NumberFormatException e) { system.distanceToCenter = null; }
-					System.out.printf("   Distance to galactic center of solar system %s was defined: %s -> [%s]\r\n",ua.getSigBoostCode(),distance,system.distanceToCenter);
+					try { uoData.distanceToCenter = Double.parseDouble(distance); }
+					catch (NumberFormatException e) { uoData.distanceToCenter = null; }
 					continue;
 				}
 				if (str.startsWith("short=")) {
@@ -965,13 +962,8 @@ public class SaveViewer implements ActionListener {
 				}
 				if (str.startsWith("info=")) {
 					String info = str.substring("info=".length());
-					if (nextShortLabel!=null) {
-						ExtraInfo ei = new ExtraInfo(showInParent,nextShortLabel,info);
-						if (uniObj!=null) {
-							uniObj.extraInfos.add(ei);
-							System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",uniObjName,ei.shortLabel,ei.info);
-						}
-					}
+					if (nextShortLabel!=null && uoData!=null)
+						uoData.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,info));
 					nextShortLabel=null;
 					continue;
 				}
@@ -981,48 +973,163 @@ public class SaveViewer implements ActionListener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		System.out.println("done");
+	}
+	
+	public static void readUniverseObjectDataFromDataPool(Universe universe) {
+		System.out.println("Read data of universe objects from data pool ... ");
+		
+		boolean withOutput = false; // DEBUG;
+		
+		SolarSystem system = null;
+		Planet planet = null;
+		UniverseObject uniObj = null;
+		String uniObjName = null;
+		for (Long address:universeObjectDataArr.keySet()) {
+			UniverseObjectData uoData = universeObjectDataArr.get(address);
+			UniverseAddress ua = new UniverseAddress(address);
+			
+			system = null;
+			planet = null;
+			
+			if (uoData.type==UniverseObjectData.Type.SolarSystem && ua.isSolarSystem()) system = universe.findSolarSystem(ua);
+			if (uoData.type==UniverseObjectData.Type.Planet      && ua.isPlanet     ()) planet = universe.findPlanet     (ua);
+			if (system!=null) { uniObj = system; uniObjName = "solar system "+ua.getSigBoostCode();   if (withOutput) System.out.printf("Solar system %s\r\n",ua.getSigBoostCode());   }
+			if (planet!=null) { uniObj = planet; uniObjName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) System.out.printf("Planet %s\r\n",ua.getExtendedSigBoostCode()); }
+			
+			if (uoData.name!=null && uniObj!=null) {
+				uniObj.setOriginalName(uoData.name);
+				if (withOutput) System.out.printf("   Name of %s was defined: \"%s\"\r\n",uniObjName,uoData.name);
+			}
+			
+			if (uoData.race!=null && system!=null) {
+				system.race = uoData.race;
+				if (withOutput) System.out.printf("   Race of %s was defined: %s\r\n",uniObjName,system.race);
+			}
+			
+			if (uoData.starClass!=null && system!=null) {
+				system.starClass = uoData.starClass;
+				if (withOutput) System.out.printf("   StarClass of %s was defined: %s\r\n",uniObjName,system.starClass);
+			}
+			
+			if (uoData.distanceToCenter!=null && system!=null) {
+				system.distanceToCenter = uoData.distanceToCenter;
+				if (withOutput) System.out.printf("   Distance to galactic center of %s was defined: %s\r\n",uniObjName,system.distanceToCenter);
+			}
+			
+			for (ExtraInfo ei:uoData.extraInfos) {
+				if (uniObj!=null) {
+					uniObj.extraInfos.add(ei);
+					if (withOutput) System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",uniObjName,ei.shortLabel,ei.info);
+				}
+			}
+			
+		}
+		if (!withOutput) System.out.println(" done");
 	}
 
 	public static void saveUniverseObjectDataToFile(Universe universe) {
-		System.out.println("Write data of universe objects to file \""+FILE_UNIVERSE_OBJECT_DATA+"\".");
+		System.out.print("Write data of universe objects to data pool ...");
+		for (Galaxy g:universe.galaxies)
+			for (Region gr:g.regions)
+				for (SolarSystem sys:gr.solarSystems) {
+					UniverseAddress ua = sys.getUniverseAddress();
+					universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,sys));
+					for (Planet p:sys.planets) {
+						ua = p.getUniverseAddress();
+						universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,p));
+					}
+				}
+		System.out.println(" done");
+		
+		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
+		Collections.sort(values);
+		
+		System.out.print("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		boolean isFirst = true;
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (Galaxy g:universe.galaxies) {
-				for (Region gr:g.regions) {
-					for (SolarSystem sys:gr.solarSystems) {
-						if (sys.hasOriginalName() || sys.race!=null || sys.starClass!=null || sys.distanceToCenter!=null) {
-							if (!isFirst) out.println();
-							isFirst = false;
-							out.printf("[Sys%014X]\r\n",sys.getUniverseAddress().getAddress());
-							if (sys.hasOriginalName()  ) out.printf("name=%s\r\n",sys.getOriginalName());
-							if (sys.race!=null            ) out.printf("race=%s\r\n",sys.race);
-							if (sys.starClass!=null       ) out.printf("class=%s\r\n",sys.starClass);
-							if (sys.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",sys.distanceToCenter.doubleValue());
-							for (ExtraInfo ei:sys.extraInfos)
-								if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
-									out.printf("short=%s\r\n", ei.shortLabel);
-									out.printf("info=%s\r\n" , ei.info);
-								}
-						}
-						for (Planet p:sys.planets) {
-							if (p.hasOriginalName() || !p.extraInfos.isEmpty()) {
-								if (!isFirst) out.println();
-								isFirst = false;
-								out.printf("[Pln%014X]\r\n",p.getUniverseAddress().getAddress());
-								if (p.hasOriginalName()) out.printf("name=%s\r\n",p.getOriginalName());
-								for (ExtraInfo ei:p.extraInfos)
-									if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
-										out.printf("short%s=%s\r\n", ei.showInParent?".P":"", ei.shortLabel);
-										out.printf("info=%s\r\n" ,ei.info);
-									}
-							}
-						}
-					}
+			for (UniverseObjectData uoData:values) {
+				if (!uoData.hasData()) continue;
+				
+				if (!isFirst) out.println();
+				isFirst = false;
+				
+				switch (uoData.type) {
+				case SolarSystem: out.printf("[Sys%014X]\r\n",uoData.universeAddress.getAddress()); break;
+				case Planet     : out.printf("[Pln%014X]\r\n",uoData.universeAddress.getAddress()); break;
 				}
+				
+				if (uoData.name!=null) out.printf("name=%s\r\n",uoData.name);
+				if (uoData.type==UniverseObjectData.Type.SolarSystem) {
+					if (uoData.race!=null            ) out.printf("race=%s\r\n",uoData.race);
+					if (uoData.starClass!=null       ) out.printf("class=%s\r\n",uoData.starClass);
+					if (uoData.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uoData.distanceToCenter.doubleValue());
+				}
+				
+				for (ExtraInfo ei:uoData.extraInfos)
+					if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
+						String showInParentStr="";
+						if (uoData.type==UniverseObjectData.Type.Planet && ei.showInParent) showInParentStr = ".P";
+						out.printf("short%s=%s\r\n", showInParentStr, ei.shortLabel);
+						out.printf("info=%s\r\n" , ei.info);
+					}
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+		System.out.println(" done");
+	}
+	
+	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
+		enum Type { SolarSystem,Planet }
+		
+		final UniverseAddress universeAddress;
+		final Type type;
+		String name;
+		Universe.SolarSystem.Race race;
+		Universe.SolarSystem.StarClass starClass; 
+		Double distanceToCenter;
+		Vector<ExtraInfo> extraInfos;
+		
+		public UniverseObjectData(UniverseAddress universeAddress, Type type) {
+			this.universeAddress = universeAddress;
+			this.type = type;
+			this.name = null;
+			this.race = null;
+			this.starClass = null;
+			this.distanceToCenter = null;
+			this.extraInfos = new Vector<>();
+		}
+
+		public boolean hasData() {
+			return name!=null || race!=null || starClass!=null || distanceToCenter!=null || !extraInfos.isEmpty();
+		}
+
+		public UniverseObjectData(UniverseAddress universeAddress, SolarSystem sys) {
+			this(universeAddress,Type.SolarSystem,sys);
+			race = sys.race;
+			starClass = sys.starClass;
+			distanceToCenter = sys.distanceToCenter;
+		}
+		
+		public UniverseObjectData(UniverseAddress universeAddress, Planet planet) {
+			this(universeAddress,Type.Planet,planet);
+		}
+		
+		public UniverseObjectData(UniverseAddress universeAddress, Type type, UniverseObject uo) {
+			this(universeAddress,type);
+			name = uo.getOriginalName();
+			for (ExtraInfo ei:uo.extraInfos)
+				extraInfos.add(new ExtraInfo(ei));
+		}
+
+		@Override
+		public int compareTo(UniverseObjectData other) {
+			if (other==null) return -1;
+			return universeAddress.compareTo(other.universeAddress);
+		}
+		
+		
 	}
 }
