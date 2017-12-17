@@ -47,6 +47,12 @@ name=Sibirsky
 short=Atlas
 info=Atlasstation
 
+[Pln207A00FAA8CBC4]
+name=Obinzhichi Udamad
+
+[Pln307A00FAA8CBC4]
+name=Yecheveli Kawari
+
 [Sys016F00FAA8CBC4]
 name=Esvets
 race=Vykeen

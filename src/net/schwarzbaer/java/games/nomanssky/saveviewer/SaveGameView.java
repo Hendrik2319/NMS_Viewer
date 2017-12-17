@@ -149,6 +149,9 @@ class SaveGameView extends JPanel {
 		tabbedPane.addTab("DiscoveryData (Avail.)",new DiscoveryDataAvailablePanel(data));
 		tabbedPane.addTab("DiscoveryData (Store)",new DiscoveryDataStorePanel(data));
 		
+		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
+		
+		
 		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data));
 	}
 	
@@ -380,7 +383,7 @@ class SaveGameView extends JPanel {
 			textArea.setBorder(BorderFactory.createEtchedBorder());
 			
 //			extraInfoTableModel = new ExtraInfoTableModel();
-			extraInfoTable = new SimplifiedTable(true,SaveViewer.DEBUG,true);
+			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
 			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
 //			extraInfoTableModel.setTable(extraInfoTable);
 			
@@ -896,8 +899,59 @@ class SaveGameView extends JPanel {
 			@Override public boolean getAllowsChildren() { return false; }
 		}
 	}
-	
-	
+
+	private static class SortTestPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = -8896141429868126519L;
+
+		public SortTestPanel(SaveGameData data) {
+			super(data);
+			
+			SortTestTableModel tableModel = new SortTestTableModel();
+			SimplifiedTable table = new SimplifiedTable("SortTest",tableModel,true,SaveViewer.DEBUG,true);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			
+			add(tableScrollPane,BorderLayout.CENTER);
+		}
+
+		private enum SortTestTableColumnID implements TableView.SimplifiedColumnIDInterface {
+			Val1,Val2,Val3,Val4;
+			SimplifiedColumnConfig colConf;
+			SortTestTableColumnID() { colConf = new SimplifiedColumnConfig(toString(),String.class,10,-1,60,60); }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return colConf; }
+		}
+		
+		private static class SortTestTableModel extends SimplifiedTableModel<SortTestTableColumnID> {
+			
+			private static final int UNSORTEDT_ROWS = 3;
+
+			protected SortTestTableModel() {
+				super(SortTestTableColumnID.values());
+			}
+
+			@Override
+			public int getRowCount() {
+				return 200;
+			}
+
+			@Override
+			public int getUnsortedRowsCount() {
+				return UNSORTEDT_ROWS;
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, SortTestTableColumnID columnID) {
+				if (rowIndex<UNSORTEDT_ROWS)
+					return String.format("%s.%d", columnID,rowIndex);
+				switch(columnID) {
+				case Val1: return ""+(((rowIndex-UNSORTEDT_ROWS)>>0) & 7);
+				case Val2: return ""+(((rowIndex-UNSORTEDT_ROWS)>>3) & 7);
+				case Val3: return ""+(((rowIndex-UNSORTEDT_ROWS)>>6) & 7);
+				case Val4: return ""+(((rowIndex-UNSORTEDT_ROWS)>>9) & 7);
+				}
+				return null;
+			}
+		}
+	}
 
 	private static class KnownWordsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 7096092479075372171L;
@@ -906,7 +960,7 @@ class SaveGameView extends JPanel {
 			super(data);
 			
 			KnownWordsTableModel tableModel = new KnownWordsTableModel(data.knownWords);
-			SimplifiedTable table = new SimplifiedTable(tableModel,true,SaveViewer.DEBUG,true);
+			SimplifiedTable table = new SimplifiedTable("KnownWords",tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -967,6 +1021,11 @@ class SaveGameView extends JPanel {
 			}
 			
 			@Override
+			public int getUnsortedRowsCount() {
+				return 1;
+			}
+
+			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, KnownWordsTableColumnID columnID) {
 				if (rowIndex==0) {
 					switch(columnID) {
@@ -1000,7 +1059,7 @@ class SaveGameView extends JPanel {
 			super(data);
 			
 			DDATableModel tableModel = new DDATableModel();
-			SimplifiedTable table = new SimplifiedTable(tableModel,true,SaveViewer.DEBUG,true);
+			SimplifiedTable table = new SimplifiedTable("DDATable",tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -1055,7 +1114,7 @@ class SaveGameView extends JPanel {
 			super(data);
 			
 			DDSTableModel tableModel = new DDSTableModel();
-			SimplifiedTable table = new SimplifiedTable(tableModel,true,SaveViewer.DEBUG,true);
+			SimplifiedTable table = new SimplifiedTable("DDSTable",tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -1123,7 +1182,7 @@ class SaveGameView extends JPanel {
 		public StatsPanel(SaveGameData data) {
 			super(data);
 			
-			table = new SimplifiedTable(true,SaveViewer.DEBUG,true);
+			table = new SimplifiedTable("StatsTable",true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			tableScrollPane.setPreferredSize(new Dimension(600, 500));
 			

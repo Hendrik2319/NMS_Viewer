@@ -661,7 +661,7 @@ public class SaveGameData {
 		public void sort() {
 			galaxies.sort(Comparator.comparing(g -> g.galacticIndex));
 			for (Galaxy g:galaxies) {
-				g.regions.sort(Comparator.comparing((Region r) -> r.voxelX).thenComparing(Comparator.comparing((Region r) -> r.voxelY)).thenComparing(Comparator.comparing((Region r) -> r.voxelZ)));
+				g.regions.sort(Comparator.comparing((Region r) -> r.voxelX).thenComparing((Region r) -> r.voxelY).thenComparing((Region r) -> r.voxelZ));
 				for (Region r:g.regions) {
 					r.solarSystems.sort(Comparator.comparing(s -> s.solarSystemIndex));
 					for (SolarSystem s:r.solarSystems) {
