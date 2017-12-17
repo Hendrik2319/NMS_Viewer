@@ -1023,8 +1023,8 @@ class SaveGameView extends JPanel {
 			public Object getValueAt(int rowIndex, int columnIndex, KnownWordsTableColumnID columnID) {
 				if (rowIndex<ADDITIONAL_ROWS) {
 					switch(columnID) {
-					case WordID: return rowIndex==0?String.format("%d different words", knownWords.wordList.size()):"";
-					case TranslatedWord: return "";
+					case WordID: return rowIndex>0?"":String.format("%d different words", knownWords.wordList.size());
+					case TranslatedWord: break;
 					case Race:
 						int race = columnIndex-columns.length;
 						switch (rowIndex) {
