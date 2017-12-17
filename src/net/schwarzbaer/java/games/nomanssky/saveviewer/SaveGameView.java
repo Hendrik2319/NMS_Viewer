@@ -149,8 +149,7 @@ class SaveGameView extends JPanel {
 		tabbedPane.addTab("DiscoveryData (Avail.)",new DiscoveryDataAvailablePanel(data));
 		tabbedPane.addTab("DiscoveryData (Store)",new DiscoveryDataStorePanel(data));
 		
-		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
-		
+//		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
 		
 		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data));
 	}
@@ -900,7 +899,8 @@ class SaveGameView extends JPanel {
 		}
 	}
 
-	private static class SortTestPanel extends SaveGameViewTabPanel {
+/*
+ 	private static class SortTestPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -8896141429868126519L;
 
 		public SortTestPanel(SaveGameData data) {
@@ -928,15 +928,8 @@ class SaveGameView extends JPanel {
 				super(SortTestTableColumnID.values());
 			}
 
-			@Override
-			public int getRowCount() {
-				return 200;
-			}
-
-			@Override
-			public int getUnsortedRowsCount() {
-				return UNSORTEDT_ROWS;
-			}
+			@Override public int getRowCount() { return 200; }
+			@Override public int getUnsortedRowsCount() { return UNSORTEDT_ROWS; }
 
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, SortTestTableColumnID columnID) {
@@ -952,7 +945,7 @@ class SaveGameView extends JPanel {
 			}
 		}
 	}
-
+*/
 	private static class KnownWordsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 7096092479075372171L;
 		
@@ -984,6 +977,7 @@ class SaveGameView extends JPanel {
 
 		private static class KnownWordsTableModel extends TableView.SimplifiedTableModel<KnownWordsTableColumnID> {
 		
+			private static final int ADDITIONAL_ROWS = 2;
 			private KnownWords knownWords;
 			private int numberOfRaces;
 			
@@ -1017,26 +1011,30 @@ class SaveGameView extends JPanel {
 		
 			@Override
 			public int getRowCount() {
-				return knownWords.wordList.size()+1;
+				return knownWords.wordList.size()+ADDITIONAL_ROWS;
 			}
 			
 			@Override
 			public int getUnsortedRowsCount() {
-				return 1;
+				return ADDITIONAL_ROWS;
 			}
 
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, KnownWordsTableColumnID columnID) {
-				if (rowIndex==0) {
+				if (rowIndex<ADDITIONAL_ROWS) {
 					switch(columnID) {
-					case WordID: return String.format("%d different words", knownWords.wordList.size());
+					case WordID: return rowIndex==0?String.format("%d different words", knownWords.wordList.size()):"";
 					case TranslatedWord: return "";
 					case Race:
 						int race = columnIndex-columns.length;
-						return String.format(Locale.ENGLISH,"%d (%1.1f%%)", knownWords.wordCounts[race], knownWords.wordCounts[race]*100.0f/knownWords.wordList.size());
+						switch (rowIndex) {
+						case 0: return String.format(Locale.ENGLISH,"%d (%1.1f%%)", knownWords.wordCounts[race], knownWords.wordCounts[race]*100.0f/knownWords.wordList.size());
+						case 1: return (knownWords.wordList.size()-knownWords.wordCounts[race])+" left";
+						}
 					}
+					return "";
 				} else {
-					KnownWord knownWord = knownWords.wordList.get(rowIndex-1);
+					KnownWord knownWord = knownWords.wordList.get(rowIndex-ADDITIONAL_ROWS);
 					if (knownWord==null) return null;
 					
 					switch(columnID) {

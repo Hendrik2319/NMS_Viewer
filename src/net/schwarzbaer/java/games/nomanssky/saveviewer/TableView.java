@@ -127,8 +127,9 @@ class TableView {
 
 		private SimplifiedTableModel<?> model;
 		private LinkedList<RowSorter.SortKey> keys;
+		@SuppressWarnings("unused")
 		private String name;
-		private ModelRow[] modelRowIndexes;
+		private Integer[] modelRowIndexes;
 		private int[] viewRowIndexes;
 
 		SimplifiedRowSorter(String name, SimplifiedTableModel<?> model) {
@@ -148,7 +149,7 @@ class TableView {
 		@Override public SimplifiedTableModel<?> getModel() { return model; }
 
 		private void log(String format, Object... values) {
-			System.out.printf(String.format("[%08X:%s] ", this.hashCode(), name)+format+"\r\n",values);
+			//System.out.printf(String.format("[%08X:%s] ", this.hashCode(), name)+format+"\r\n",values);
 		}
 
 		private static String toString(List<? extends RowSorter.SortKey> keys) {
@@ -162,11 +163,6 @@ class TableView {
 			return str;
 		}
 		
-		private static class ModelRow {
-			private int modelRowIndex;
-			public ModelRow(int modelRowIndex) { this.modelRowIndex = modelRowIndex; }
-		}
-		
 		private void sort() {
 			if (model==null) {
 				this.modelRowIndexes = null;
@@ -178,31 +174,31 @@ class TableView {
 			
 			int rowCount = getModelRowCount();
 			if (modelRowIndexes==null || modelRowIndexes.length!=rowCount)
-				modelRowIndexes = new ModelRow[rowCount];
+				modelRowIndexes = new Integer[rowCount];
 			
 			for (int i=0; i<modelRowIndexes.length; ++i)
-				modelRowIndexes[i] = new ModelRow(i);
+				modelRowIndexes[i] = i;
 			
-			Comparator<ModelRow> comparator = null;
+			Comparator<Integer> comparator = null;
 			
 			int unsortedRows = model.getUnsortedRowsCount();
 			if (0<unsortedRows)
-				comparator = Comparator.comparingInt((ModelRow si)->(si.modelRowIndex<unsortedRows?si.modelRowIndex:unsortedRows));
+				comparator = Comparator.comparingInt((Integer row)->(row<unsortedRows?row:unsortedRows));
 			
 			for (SortKey key:keys) {
 				SortOrder sortOrder = key.getSortOrder();
 				if (sortOrder==SortOrder.UNSORTED) continue;
 				int column = key.getColumn();
 				
-				if      (model.getColumnClass(column) == Boolean.class) comparator = setComparator(comparator,sortOrder,(ModelRow mr)->(Boolean)model.getValueAt(mr.modelRowIndex, column));
-				else if (model.getColumnClass(column) == String .class) comparator = setComparator(comparator,sortOrder,(ModelRow mr)->(String )model.getValueAt(mr.modelRowIndex, column));
-				else if (model.getColumnClass(column) == Long   .class) comparator = setComparator(comparator,sortOrder,(ModelRow mr)->(Long   )model.getValueAt(mr.modelRowIndex, column));
-				else if (model.getColumnClass(column) == Integer.class) comparator = setComparator(comparator,sortOrder,(ModelRow mr)->(Integer)model.getValueAt(mr.modelRowIndex, column));
-				else if (model.getColumnClass(column) == Double .class) comparator = setComparator(comparator,sortOrder,(ModelRow mr)->(Double )model.getValueAt(mr.modelRowIndex, column));
-				else if (model.getColumnClass(column) == Float  .class) comparator = setComparator(comparator,sortOrder,(ModelRow mr)->(Float  )model.getValueAt(mr.modelRowIndex, column));
+				if      (model.getColumnClass(column) == Boolean.class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Boolean)model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == String .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(String )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Long   .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Long   )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Integer.class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Integer)model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Double .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Double )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Float  .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Float  )model.getValueAt(row,column));
 				else comparator = setComparator(comparator,sortOrder,
-							(ModelRow mr)->{
-								Object object = model.getValueAt(mr.modelRowIndex, column);
+							(Integer row)->{
+								Object object = model.getValueAt(row,column);
 								if (object==null) return null;
 								return object.toString();
 							});
@@ -214,18 +210,18 @@ class TableView {
 			if (viewRowIndexes==null || viewRowIndexes.length!=rowCount)
 				viewRowIndexes = new int[rowCount];
 			for (int i=0; i<viewRowIndexes.length; ++i) viewRowIndexes[i] = -1;
-			for (int i=0; i<modelRowIndexes    .length; ++i) viewRowIndexes[modelRowIndexes[i].modelRowIndex] = i;
+			for (int i=0; i<modelRowIndexes    .length; ++i) viewRowIndexes[modelRowIndexes[i]] = i;
 			
 			fireSortOrderChanged();
 		}
 		
-		private <U extends Comparable<? super U>> Comparator<ModelRow> setComparator(Comparator<ModelRow> comp, SortOrder sortOrder, Function<? super ModelRow,? extends U> keyExtractor) {
+		private <U extends Comparable<? super U>> Comparator<Integer> setComparator(Comparator<Integer> comp, SortOrder sortOrder, Function<? super Integer,? extends U> keyExtractor) {
 			if (sortOrder==SortOrder.DESCENDING) {
 				if (comp==null) {
-					Comparator<ModelRow> comparator = Comparator.comparing(keyExtractor);
+					Comparator<Integer> comparator = Comparator.comparing(keyExtractor);
 					return comparator.reversed();
 				}
-				Comparator<ModelRow> comparator = comp.reversed().thenComparing(keyExtractor);
+				Comparator<Integer> comparator = comp.reversed().thenComparing(keyExtractor);
 				return comparator.reversed();
 			} else {
 				if (comp==null) return Comparator.comparing(keyExtractor);
@@ -280,7 +276,7 @@ class TableView {
 			if (modelRowIndexes==null) return index;
 			if (index<0) return -1;
 			if (index>=modelRowIndexes.length) return -1;
-			return modelRowIndexes[index].modelRowIndex;
+			return modelRowIndexes[index];
 		}
 
 		@Override
