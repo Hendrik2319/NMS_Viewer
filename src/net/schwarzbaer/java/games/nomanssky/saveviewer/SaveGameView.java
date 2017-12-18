@@ -99,7 +99,6 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.PathIsNotSolvableException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
-import sun.misc.SharedSecrets;
 
 class SaveGameView extends JPanel {
 
@@ -1627,6 +1626,10 @@ class SaveGameView extends JPanel {
 			CombinedListener combiListener = new CombinedListener();
 			
 			int preselectedGalaxy = 0;
+			Long knownGlyphs = data.general.getKnownGlyphsMaks();
+			//knownGlyphs = 0b110111100L;
+			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.getCurrentUniverseAddress(),knownGlyphs);
+			
 			JComboBox<Galaxy> cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
 			cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
 			cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy((Galaxy)cmbbxGalaxies.getSelectedItem()));
@@ -1641,7 +1644,10 @@ class SaveGameView extends JPanel {
 			
 			statusField = new JLabel("");
 			
-			JCheckBox chkbxShowMarkers = new JCheckBox("Show markers", false);
+			JCheckBox chkbxUsePreparedBitmap = new JCheckBox("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
+			chkbxUsePreparedBitmap.addActionListener(e->galaxyMap.usePreparedBitmap(chkbxUsePreparedBitmap.isSelected()));
+			
+			JCheckBox chkbxShowMarkers = new JCheckBox("Show markers", galaxyMap.showMarkers);
 			chkbxShowMarkers.addActionListener(e->galaxyMap.showMarkers(chkbxShowMarkers.isSelected()));
 			
 			JCheckBox chkbxShowGlyphRegions = new JCheckBox("Show region reachable by known glyphs", false);
@@ -1663,6 +1669,7 @@ class SaveGameView extends JPanel {
 			
 			JPanel rightStatusPanel = new JPanel();
 			rightStatusPanel.setLayout(new BoxLayout(rightStatusPanel, BoxLayout.X_AXIS));
+			rightStatusPanel.add(chkbxUsePreparedBitmap);
 			rightStatusPanel.add(chkbxShowMarkers);
 			rightStatusPanel.add(chkbxShowGlyphRegions);
 			rightStatusPanel.add(cmbbxKnownGlyphs);
@@ -1672,9 +1679,6 @@ class SaveGameView extends JPanel {
 			statusPanel.add(statusField,BorderLayout.CENTER);
 			statusPanel.add(rightStatusPanel,BorderLayout.EAST);
 			
-			Long knownGlyphs = data.general.getKnownGlyphsMaks();
-			//knownGlyphs = 0b110111100L;
-			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.getCurrentUniverseAddress(),knownGlyphs);
 			galaxyMap.prepareMap();
 			galaxyMap.addMouseWheelListener(combiListener);
 			galaxyMap.addMouseMotionListener(combiListener);
@@ -1815,9 +1819,9 @@ class SaveGameView extends JPanel {
 				showStatus(e.getX(),e.getY());
 			}
 
-			@Override public void mouseEntered (MouseEvent e) { showStatus(e.getX(),e.getY()); }
-			@Override public void mouseMoved   (MouseEvent e) { showStatus(e.getX(),e.getY()); }
-			@Override public void mouseExited  (MouseEvent e) { showStatus(-1,-1); }
+			@Override public void mouseEntered (MouseEvent e) { showStatus(e.getX(),e.getY()); galaxyMap.setMousePos(e.getX(),e.getY()); }
+			@Override public void mouseMoved   (MouseEvent e) { showStatus(e.getX(),e.getY()); galaxyMap.setMousePos(e.getX(),e.getY()); }
+			@Override public void mouseExited  (MouseEvent e) { showStatus(-1,-1); galaxyMap.clearMousePos(); }
 
 			@Override public void mouseClicked (MouseEvent e) {}
 			@Override public void mousePressed (MouseEvent e) {}
@@ -1826,10 +1830,11 @@ class SaveGameView extends JPanel {
 		}
 		
 		private static class GalaxyMap extends Canvas {
+
 			private static final long serialVersionUID = -6290765806544803046L;
 
 			private static final Color COLOR_BACKGROUND = Color.BLACK;
-			private static final Color COLOR_GRID = new Color(0x202020);
+			private static final Color COLOR_GRID  = new Color(0x202020);
 			private static final Color COLOR_AXIS = new Color(0x000090);
 			private static final Color COLOR_KNOWN_REGION = Color.YELLOW;
 			private static final Color COLOR_CURRENT_POS  = Color.MAGENTA;
@@ -1840,6 +1845,8 @@ class SaveGameView extends JPanel {
 			private static final int MAP_CENTER_X = 2047;
 			private static final int MAP_CENTER_Y = 2047;
 			private static final int MAP_GRID = 16;
+			private static final int GRID_MIN = 5;
+			private static final int GRID_STEP = 4;
 			
 			private static final double ZOOM_INC = 1.1;
 			
@@ -1857,6 +1864,12 @@ class SaveGameView extends JPanel {
 			private UniverseAddress currentPos;
 			private Long knownGlyphs;
 			private boolean showMarkers;
+			private boolean usePreparedBitmap;
+
+			private int mouseVoxelX;
+			private int mouseVoxelZ;
+			private boolean ignoreMousePos;
+			
 			
 			GalaxyMap(CombinedListener combiListener, Galaxy galaxy, UniverseAddress currentPos, Long knownGlyphs) {
 				this.combiListener = combiListener;
@@ -1872,6 +1885,32 @@ class SaveGameView extends JPanel {
 				this.scaledMapHeight = MAP_HEIGHT;
 				this.zoomRatio = 1.0;
 				this.showMarkers = false;
+				this.usePreparedBitmap = true;
+				
+				this.mouseVoxelX = 0;
+				this.mouseVoxelZ = 0;
+				this.ignoreMousePos = true;
+			}
+
+			public void setMousePos(int mouseX, int mouseY) {
+				int newMouseVoxelX = computeVoxelX(mouseX);
+				int newMouseVoxelZ = computeVoxelZ(mouseY);
+				if (ignoreMousePos || mouseVoxelX!=newMouseVoxelX || mouseVoxelZ!=newMouseVoxelZ) {
+					mouseVoxelX = newMouseVoxelX;
+					mouseVoxelZ = newMouseVoxelZ;
+					repaint();
+				}
+				ignoreMousePos = false;
+			}
+
+			public void clearMousePos() {
+				ignoreMousePos = true;
+				repaint();
+			}
+
+			public void usePreparedBitmap(boolean usePreparedBitmap) {
+				this.usePreparedBitmap = usePreparedBitmap;
+				repaint();
 			}
 
 			public void showMarkers(boolean showMarkers) {
@@ -1888,8 +1927,10 @@ class SaveGameView extends JPanel {
 			public int computeVoxelX(int screenX) { return (int) Math.floor((screenX+offsetX)/zoomRatio)-MAP_CENTER_X; }
 			public int computeVoxelZ(int screenY) { return (int) Math.floor((screenY+offsetY)/zoomRatio)-MAP_CENTER_Y; }
 
-			public int computeScreenX(int voxelX) { return (int) Math.round((voxelX+0.5+MAP_CENTER_X)*zoomRatio-offsetX); }
-			public int computeScreenY(int voxelZ) { return (int) Math.round((voxelZ+0.5+MAP_CENTER_Y)*zoomRatio-offsetY); }
+			public double computeScreenX_d(int voxelX) { return (voxelX+0.5+MAP_CENTER_X)*zoomRatio-offsetX; }
+			public double computeScreenY_d(int voxelZ) { return (voxelZ+0.5+MAP_CENTER_Y)*zoomRatio-offsetY; }
+			public int computeScreenX(int voxelX) { return (int) Math.round(computeScreenX_d(voxelX)); }
+			public int computeScreenY(int voxelZ) { return (int) Math.round(computeScreenY_d(voxelZ)); }
 
 			public int getViewWidth () { return width; }
 			public int getViewHeight() { return height; }
@@ -2084,7 +2125,8 @@ class SaveGameView extends JPanel {
 				if (!(g instanceof Graphics2D)) return;
 				Graphics2D g2 = (Graphics2D)g;
 				
-				g2.setClip(new Rectangle(0, 0, width, height));
+				int maxX = Math.min(scaledMapWidth-offsetX,width);
+				int maxY = Math.min(scaledMapHeight-offsetY,height);
 				
 				AffineTransform transform = new AffineTransform();
 //				transform.setToScale(zoomRatio, zoomRatio);
@@ -2094,11 +2136,99 @@ class SaveGameView extends JPanel {
 				
 				int type = zoomRatio<1.0?AffineTransformOp.TYPE_BICUBIC:AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
 				AffineTransformOp op = new AffineTransformOp(transform, type);
-				synchronized(this) {
-					g2.drawImage(mapImage, op, 0, 0);
+				
+				if (usePreparedBitmap) {
+					g2.setClip(new Rectangle(0, 0, maxX, maxY));
+					synchronized(this) {
+						g2.drawImage(mapImage, op, 0, 0);
+					}
+				} else {
+					
+					g2.setPaint(COLOR_BACKGROUND);
+					g2.fillRect(0, 0, maxX, maxY);
+					
+					double axisX_d = computeScreenX_d(0);
+					double axisY_d = computeScreenY_d(0);
+					
+					double smallGridV = MAP_GRID*zoomRatio;
+					while (smallGridV<GRID_MIN) {
+						smallGridV *= GRID_STEP;
+					}
+					
+					int minIX = (int)Math.ceil((-axisX_d)/smallGridV);
+					int minIY = (int)Math.ceil((-axisY_d)/smallGridV);
+					int maxIX = (int)Math.floor((maxX-axisX_d)/smallGridV);
+					int maxIY = (int)Math.floor((maxY-axisY_d)/smallGridV);
+					
+					if (zoomRatio>1) {
+						int thickness = (int)Math.round(zoomRatio);
+						
+						g2.setColor(COLOR_GRID);
+						double x = axisX_d+minIX*smallGridV-zoomRatio/2;
+						for (int i=minIX; i<=maxIX; ++i, x+=smallGridV)
+							if (i!=0) fillRect(g2,maxX,maxY, (int)Math.round(x),0, thickness,maxY);
+
+						double y = axisY_d+minIY*smallGridV-zoomRatio/2;
+						for (int i=minIY; i<=maxIY; ++i, y+=smallGridV)
+							if (i!=0) fillRect(g2,maxX,maxY, 0,(int)Math.round(y), maxX,thickness);
+						
+						g2.setColor(COLOR_AXIS);
+						int axisX = (int)Math.round(axisX_d-zoomRatio/2);
+						int axisY = (int)Math.round(axisY_d-zoomRatio/2);
+						fillRect(g2,maxX,maxY, axisX,0, thickness,maxY);
+						fillRect(g2,maxX,maxY, 0,axisY, maxX,thickness);
+						
+						g2.setColor(COLOR_KNOWN_REGION);
+						for (Region region:galaxy.regions)
+							if (region.voxelX!=currentPos.voxelX && region.voxelY!=currentPos.voxelY)
+								fillBox(g2, maxX, maxY,region.voxelX,region.voxelZ);
+						
+						g2.setColor(COLOR_CURRENT_POS);
+						fillBox(g2, maxX, maxY,currentPos.voxelX,currentPos.voxelZ);
+						
+						g2.setColor(COLOR_GALAXY_CENTER);
+						fillBox(g2, maxX,maxY,0,0);
+					} else { 
+//						System.out.printf(Locale.ENGLISH,"%d..%d, %d..%d",minIX,maxIX,minIY,maxIY);
+//						System.out.printf(Locale.ENGLISH,"-> %1.1f..%1.1f, %1.1f..%1.1f\r\n",minIX*smallGridV+axisX_d,maxIX*smallGridV+axisX_d,minIY*smallGridV+axisY_d,maxIY*smallGridV+axisY_d);
+						
+						float f = Math.min(1.0f,(float)(smallGridV-GRID_MIN)/(GRID_STEP*GRID_MIN-GRID_MIN)*3.0f);
+						Color smallGridColor = new Color(
+								COLOR_GRID.getRed  ()*f/255,
+								COLOR_GRID.getGreen()*f/255,
+								COLOR_GRID.getBlue ()*f/255);
+						double x = axisX_d+minIX*smallGridV;
+						for (int i=minIX; i<=maxIX; ++i, x+=smallGridV)
+							if (i!=0) {
+								if (i%GRID_STEP == 0) g2.setColor(COLOR_GRID);
+								else g2.setColor(smallGridColor);
+								int x_ = (int)Math.round(x);
+								g2.drawLine(x_, 0, x_, maxY-1);
+							}
+
+						double y = axisY_d+minIY*smallGridV;
+						for (int i=minIY; i<=maxIY; ++i, y+=smallGridV)
+							if (i!=0) {
+								if (i%GRID_STEP == 0) g2.setColor(COLOR_GRID);
+								else g2.setColor(smallGridColor);
+								int y_ = (int)Math.round(y);
+								g2.drawLine(0, y_, maxX-1, y_);
+							}
+						
+//						for (int x=MAP_CENTER_X%MAP_GRID; x<MAP_WIDTH ; x+=MAP_GRID) graphics.drawLine(x, 0, x, MAP_HEIGHT);
+//						for (int y=MAP_CENTER_Y%MAP_GRID; y<MAP_HEIGHT; y+=MAP_GRID) graphics.drawLine(0, y, MAP_WIDTH, y);
+						
+						g2.setColor(COLOR_AXIS);
+						int axisX = (int)Math.round(axisX_d);
+						int axisY = (int)Math.round(axisY_d);
+						if (0<=axisX && axisX< width) g2.drawLine(axisX, 0, axisX, maxY-1);
+						if (0<=axisY && axisY<height) g2.drawLine(0, axisY, maxX-1, axisY);
+					}
 				}
 				
-				if (showMarkers) {
+				if (showMarkers || !usePreparedBitmap) {
+					g2.setClip(new Rectangle(0, 0, maxX, maxY));
+					
 					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 					g2.setColor(COLOR_KNOWN_REGION);
 					int markerSize = 5;
@@ -2113,6 +2243,41 @@ class SaveGameView extends JPanel {
 					drawMarker(g2, 0,0, markerSize);
 					
 				}
+				
+				if (zoomRatio>5 && !ignoreMousePos) {
+					int x = (int)Math.round(computeScreenX_d(mouseVoxelX)-zoomRatio/2);
+					int y = (int)Math.round(computeScreenY_d(mouseVoxelZ)-zoomRatio/2);
+					int thickness = (int)Math.round(zoomRatio);
+					if (0<=x && x+thickness<maxX && 0<=y && y+thickness<maxY) {
+						g2.setColor(Color.WHITE);
+						g2.setXORMode(Color.BLACK);
+						g2.drawRect(x, y, thickness, thickness);
+						g2.setPaintMode();
+					}
+				}
+			}
+
+			private void fillRect(Graphics2D g2, int maxX, int maxY, int x, int y, int w, int h) {
+				int x2 = x+w;
+				int y2 = y+h;
+				if (maxY<=y || y2<0) return;
+				if (maxX<=x || x2<0) return;
+				
+				x = Math.max(0,x);
+				x2 = Math.min(x2,maxX);
+				y = Math.max(0,y);
+				y2 = Math.min(y2,maxY);
+				w = x2-x;
+				h = y2-y;
+				
+				g2.fillRect(x, y, w, h);
+			}
+
+			private void fillBox(Graphics2D g2, int maxX, int maxY, int voxelX, int voxelZ) {
+				int x = (int)Math.round(computeScreenX_d(voxelX)-zoomRatio/2);
+				int y = (int)Math.round(computeScreenY_d(voxelZ)-zoomRatio/2);
+				int thickness = (int)Math.round(zoomRatio);
+				fillRect(g2,maxX,maxY, x,y,thickness,thickness);
 			}
 
 			private void drawMarker(Graphics2D g2, int voxelX, int voxelZ, int size) {
@@ -2131,34 +2296,5 @@ class SaveGameView extends JPanel {
 				combiListener.setVertScrollBar (0,offsetY,scaledMapHeight,height);
 			}
 		}
-	}
-	
-	static class EnumMap2K<K1 extends Enum<K1>, K2 extends Enum<K2>, V> {
-		
-		private K1[] keys1;
-		private K2[] keys2;
-		private Object[][] values;
-
-		EnumMap2K(Class<K1> keyType1, Class<K2> keyType2) {
-			keys1 = getKeyUniverse(keyType1);
-			keys2 = getKeyUniverse(keyType2);
-			values = new Object[keys1.length][keys2.length];
-			for (K1 k1:keys1)
-				for (K2 k2:keys2)
-					put(k1,k2,null);
-		}
-		
-		void put(K1 key1, K2 key2, V value) {
-			values[key1.ordinal()][key2.ordinal()] = value;
-		}
-		
-		@SuppressWarnings("unchecked")
-		V get(K1 key1, K2 key2) {
-			return (V) values[key1.ordinal()][key2.ordinal()];
-		}
-		
-	    private static <K extends Enum<K>> K[] getKeyUniverse(Class<K> keyType) {
-	        return SharedSecrets.getJavaLangAccess().getEnumConstantsShared(keyType);
-	    }
 	}
 }
