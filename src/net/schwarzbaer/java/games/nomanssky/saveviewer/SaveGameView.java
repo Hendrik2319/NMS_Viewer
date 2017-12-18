@@ -10,7 +10,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
@@ -42,6 +41,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -1630,25 +1630,38 @@ class SaveGameView extends JPanel {
 			//knownGlyphs = 0b110111100L;
 			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.getCurrentUniverseAddress(),knownGlyphs);
 			
+			
+			JCheckBoxMenuItem chkbxUsePreparedBitmap = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
+			JCheckBoxMenuItem chkbxShowMarkers = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
+			chkbxShowMarkers.setEnabled(!galaxyMap.usePreparedBitmap);
+			
+			chkbxUsePreparedBitmap.addActionListener( e->{
+				boolean usePreparedBitmap = chkbxUsePreparedBitmap.isSelected();
+				galaxyMap.usePreparedBitmap(usePreparedBitmap);
+				chkbxShowMarkers.setEnabled(usePreparedBitmap);
+				if (!usePreparedBitmap) chkbxShowMarkers.setSelected(true);
+			});
+			chkbxShowMarkers.addActionListener( e->{
+				galaxyMap.showMarkers(chkbxShowMarkers.isSelected());
+			});
+			
+			JPopupMenu contextMenu = new JPopupMenu("Contextmenu");
+			contextMenu.add(chkbxUsePreparedBitmap);
+			contextMenu.add(chkbxShowMarkers);
+			combiListener.setContextMenu(galaxyMap,contextMenu);
+			
+			
 			JComboBox<Galaxy> cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
 			cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
 			cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy((Galaxy)cmbbxGalaxies.getSelectedItem()));
 			
 			zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
-			zoomField.addActionListener(
-					e->{
-						ZoomStep zoomStep = (ZoomStep)zoomField.getSelectedItem();
-						if (zoomStep!=null) { galaxyMap.setZoom(zoomStep.value); showStatus(-1,-1); }
-						}
-					);
+			zoomField.addActionListener( e->{
+				ZoomStep zoomStep = (ZoomStep)zoomField.getSelectedItem();
+				if (zoomStep!=null) { galaxyMap.setZoom(zoomStep.value); showStatus(-1,-1); }
+			});
 			
 			statusField = new JLabel("");
-			
-			JCheckBox chkbxUsePreparedBitmap = new JCheckBox("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
-			chkbxUsePreparedBitmap.addActionListener(e->galaxyMap.usePreparedBitmap(chkbxUsePreparedBitmap.isSelected()));
-			
-			JCheckBox chkbxShowMarkers = new JCheckBox("Show markers", galaxyMap.showMarkers);
-			chkbxShowMarkers.addActionListener(e->galaxyMap.showMarkers(chkbxShowMarkers.isSelected()));
 			
 			JCheckBox chkbxShowGlyphRegions = new JCheckBox("Show region reachable by known glyphs", false);
 			JComboBox<GlyphNumber> cmbbxKnownGlyphs = new JComboBox<>(GlyphNumber.create());
@@ -1669,8 +1682,6 @@ class SaveGameView extends JPanel {
 			
 			JPanel rightStatusPanel = new JPanel();
 			rightStatusPanel.setLayout(new BoxLayout(rightStatusPanel, BoxLayout.X_AXIS));
-			rightStatusPanel.add(chkbxUsePreparedBitmap);
-			rightStatusPanel.add(chkbxShowMarkers);
 			rightStatusPanel.add(chkbxShowGlyphRegions);
 			rightStatusPanel.add(cmbbxKnownGlyphs);
 			
@@ -1769,10 +1780,20 @@ class SaveGameView extends JPanel {
 		private class CombinedListener implements MouseWheelListener, MouseMotionListener, MouseListener, AdjustmentListener {
 			
 			private boolean isScrollBarListeningEnabled;
+			private JPopupMenu contextMenu;
+			private Component contextMenuInvoker;
+			
 			CombinedListener() {
 				isScrollBarListeningEnabled = true;
+				contextMenuInvoker = null;
+				contextMenu = null;
 			}
 			
+			public void setContextMenu(Component invoker, JPopupMenu contextMenu) {
+				this.contextMenuInvoker = invoker;
+				this.contextMenu = contextMenu;
+			}
+
 			@Override
 			public void adjustmentValueChanged(AdjustmentEvent e) {
 				if (!isScrollBarListeningEnabled) return;
@@ -1822,8 +1843,8 @@ class SaveGameView extends JPanel {
 			@Override public void mouseEntered (MouseEvent e) { showStatus(e.getX(),e.getY()); galaxyMap.setMousePos(e.getX(),e.getY()); }
 			@Override public void mouseMoved   (MouseEvent e) { showStatus(e.getX(),e.getY()); galaxyMap.setMousePos(e.getX(),e.getY()); }
 			@Override public void mouseExited  (MouseEvent e) { showStatus(-1,-1); galaxyMap.clearMousePos(); }
-
-			@Override public void mouseClicked (MouseEvent e) {}
+			@Override public void mouseClicked (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON3 && contextMenu!=null) contextMenu.show(contextMenuInvoker, e.getX(), e.getY()); }
+			
 			@Override public void mousePressed (MouseEvent e) {}
 			@Override public void mouseReleased(MouseEvent e) {}
 			@Override public void mouseDragged (MouseEvent e) {}
@@ -1845,14 +1866,17 @@ class SaveGameView extends JPanel {
 			private static final int MAP_CENTER_X = 2047;
 			private static final int MAP_CENTER_Y = 2047;
 			private static final int MAP_GRID = 16;
+			
 			private static final int GRID_MIN = 5;
-			private static final int GRID_STEP = 4;
+			private static final int GRID_STEP = 2;
+			private static final float GRID_DIM_RANGE = 1.0f;
 			
 			private static final double ZOOM_INC = 1.1;
 			
 			private Galaxy galaxy;
 			private BufferedImage mapBaseImage;
-			private BufferedImage mapImage;
+//			private BufferedImage mapImage;
+			private BufferedImage overlayImage;
 
 			private int offsetX;
 			private int offsetY;
@@ -1870,22 +1894,24 @@ class SaveGameView extends JPanel {
 			private int mouseVoxelZ;
 			private boolean ignoreMousePos;
 			
-			
 			GalaxyMap(CombinedListener combiListener, Galaxy galaxy, UniverseAddress currentPos, Long knownGlyphs) {
 				this.combiListener = combiListener;
 				//withDebugOutput = true;
 				this.galaxy = galaxy;
 				this.currentPos = currentPos;
 				this.knownGlyphs = knownGlyphs;
+				
 				this.mapBaseImage = null;
-				this.mapImage = null;
+				this.overlayImage = null;
+//				this.mapImage = null;
+				
 				this.offsetX = 0;
 				this.offsetY = 0;
 				this.scaledMapWidth  = MAP_WIDTH;
 				this.scaledMapHeight = MAP_HEIGHT;
 				this.zoomRatio = 1.0;
-				this.showMarkers = false;
-				this.usePreparedBitmap = true;
+				this.showMarkers = true;
+				this.usePreparedBitmap = false;
 				
 				this.mouseVoxelX = 0;
 				this.mouseVoxelZ = 0;
@@ -1937,7 +1963,8 @@ class SaveGameView extends JPanel {
 
 			public Worker showGlyphOverlay(int numberOfKnownGlyphs) {
 				if (numberOfKnownGlyphs==0 || (numberOfKnownGlyphs==17 && knownGlyphs==null)) {
-					mapImage = mapBaseImage;
+					setOverlayImage(null);
+					//mapImage = mapBaseImage;
 					repaint();
 //					System.out.printf(Locale.ENGLISH, "showGlyphOverlay( %d ) -> disable overlay\r\n", numberOfKnownGlyphs);
 					return null;
@@ -1947,9 +1974,9 @@ class SaveGameView extends JPanel {
 					@Override public void run() {
 						setTaskTitle("Create portal glyph overlay");
 						
-						BufferedImage newMapImage = createEmptyMap();
-						Graphics graphics = newMapImage.getGraphics();
-						graphics.drawImage(mapBaseImage,0,0,null);
+						BufferedImage newOverlayImage = createEmptyMap();
+						Graphics graphics = newOverlayImage.getGraphics();
+						//graphics.drawImage(mapBaseImage,0,0,null);
 						
 						if (numberOfKnownGlyphs<17) {
 							// N consecutive glyphs
@@ -1987,7 +2014,7 @@ class SaveGameView extends JPanel {
 						}
 						
 						if (!stopNow) {
-							setMapImage(newMapImage);
+							setOverlayImage(newOverlayImage);
 							repaint();
 //							System.out.printf(Locale.ENGLISH, "showGlyphOverlay( %d ) -> enable overlay\r\n", numberOfKnownGlyphs);
 						}
@@ -2010,32 +2037,21 @@ class SaveGameView extends JPanel {
 			}
 
 			public void prepareMap() {
-				if (galaxy==null) {
-					mapBaseImage = null;
-					setMapImage(null);
-					return;
-				}
-				prepareBaseMap();
-				copyToMapImage(mapBaseImage);
+				if (galaxy==null) setMapBaseImage(null);
+				else setMapBaseImage( prepareBaseMap() );
 			}
 			
-			private synchronized void setMapImage(BufferedImage newMapImage) {
-				mapImage = newMapImage;
+			private synchronized void setOverlayImage(BufferedImage newOverlayImage) {
+				overlayImage = newOverlayImage;
 			}
 			
-			private synchronized void copyToMapImage(Image newMapImage) {
-				mapImage = createEmptyMap();
-				Graphics graphics = mapImage.getGraphics();
-				graphics.drawImage(newMapImage,0,0,null);
+			private synchronized void setMapBaseImage(BufferedImage newMapBaseImage) {
+				mapBaseImage = newMapBaseImage;
 			}
 
-			private synchronized boolean isMapImageNull() {
-				return mapImage==null;
-			}
-
-			private void prepareBaseMap() {
-				mapBaseImage = createEmptyMap();
-				Graphics graphics = mapBaseImage.getGraphics();
+			private BufferedImage prepareBaseMap() {
+				BufferedImage newMapBaseImage = createEmptyMap();
+				Graphics graphics = newMapBaseImage.getGraphics();
 				
 				graphics.setColor(COLOR_BACKGROUND);
 				graphics.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -2057,6 +2073,8 @@ class SaveGameView extends JPanel {
 				
 				graphics.setColor(COLOR_GALAXY_CENTER);
 				graphics.fillRect(MAP_CENTER_X, MAP_CENTER_Y, 1, 1);
+				
+				return newMapBaseImage;
 			}
 
 			private BufferedImage createEmptyMap() {
@@ -2121,7 +2139,7 @@ class SaveGameView extends JPanel {
 			
 			@Override
 			protected void paintCanvas(Graphics g, int width, int height) {
-				if (isMapImageNull()) return;
+//				if (isMapImageNull()) return;
 				if (!(g instanceof Graphics2D)) return;
 				Graphics2D g2 = (Graphics2D)g;
 				
@@ -2140,7 +2158,8 @@ class SaveGameView extends JPanel {
 				if (usePreparedBitmap) {
 					g2.setClip(new Rectangle(0, 0, maxX, maxY));
 					synchronized(this) {
-						g2.drawImage(mapImage, op, 0, 0);
+						if (mapBaseImage!=null)
+							g2.drawImage(mapBaseImage, op, 0, 0);
 					}
 				} else {
 					
@@ -2192,7 +2211,7 @@ class SaveGameView extends JPanel {
 //						System.out.printf(Locale.ENGLISH,"%d..%d, %d..%d",minIX,maxIX,minIY,maxIY);
 //						System.out.printf(Locale.ENGLISH,"-> %1.1f..%1.1f, %1.1f..%1.1f\r\n",minIX*smallGridV+axisX_d,maxIX*smallGridV+axisX_d,minIY*smallGridV+axisY_d,maxIY*smallGridV+axisY_d);
 						
-						float f = Math.min(1.0f,(float)(smallGridV-GRID_MIN)/(GRID_STEP*GRID_MIN-GRID_MIN)*3.0f);
+						float f = Math.min(1.0f,(float)(smallGridV-GRID_MIN)/(GRID_STEP*GRID_MIN-GRID_MIN)/GRID_DIM_RANGE);
 						Color smallGridColor = new Color(
 								COLOR_GRID.getRed  ()*f/255,
 								COLOR_GRID.getGreen()*f/255,
@@ -2223,6 +2242,13 @@ class SaveGameView extends JPanel {
 						int axisY = (int)Math.round(axisY_d);
 						if (0<=axisX && axisX< width) g2.drawLine(axisX, 0, axisX, maxY-1);
 						if (0<=axisY && axisY<height) g2.drawLine(0, axisY, maxX-1, axisY);
+					}
+				}
+				
+				synchronized(this) {
+					if (overlayImage!=null) {
+						g2.setClip(new Rectangle(0, 0, maxX, maxY));
+						g2.drawImage(overlayImage, op, 0, 0);
 					}
 				}
 				
