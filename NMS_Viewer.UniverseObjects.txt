@@ -18,7 +18,7 @@ name=Kihgora-Agyu X
 race=Vykeen
 class=Yellow
 short=Blackhole
-info=
+info=Schwarzes Loch im System
 
 [Pln107900FAA8CBC4]
 name=Axellenboe Ummi
@@ -31,27 +31,41 @@ info=Gravitino-Balls
 [Pln307900FAA8CBC4]
 name=Dessilaum Ramm
 short=ExtRad
-info=Extreme verstrahlter Planet
+info=Extrem verstrahlter Planet
 short.P=Ka
-info=Kalium
+info=Kalium (Kugeln)
 
 [Pln407900FAA8CBC4]
 name=Biyskogolo Unzhe
 short=ExtTox
 info=Extrem giftiger Planet
 short.P=Ka
-info=Kalium
+info=Kalium (Kugeln)
 
 [Sys007A00FAA8CBC4]
 name=Sibirsky
+race=Vykeen
+class=Yellow
 short=Atlas
-info=Atlasstation
+info=Atlas-Station
+
+[Pln107A00FAA8CBC4]
+name=Guyohldemigla
 
 [Pln207A00FAA8CBC4]
 name=Obinzhichi Udamad
 
 [Pln307A00FAA8CBC4]
 name=Yecheveli Kawari
+
+[Pln407A00FAA8CBC4]
+name=Oansum Inleug
+
+[Pln507A00FAA8CBC4]
+name=Kipatjil Kagog
+
+[Pln607A00FAA8CBC4]
+name=Gautumis Hobar
 
 [Sys016F00FAA8CBC4]
 name=Esvets
@@ -77,7 +91,7 @@ class=Red
 [Pln118000FAA8CBC4]
 name=Yanentunent-Obyt
 short=ExtRad
-info=Extrem verstrahler Planet
+info=Extrem verstrahlter Planet
 short.P=Ka
 info=Kalium (Kugeln)
 short.P=Ru
@@ -106,6 +120,8 @@ name=Uagetuhuals
 name=Belevskom SX986
 short.P=Ra
 info=Radnox
+short=ExtTemp
+info=Extrem kalter Planet
 
 [Pln31EA00FAA8CBC4]
 name=Ikokstelmh Gronis
@@ -140,17 +156,17 @@ class=Red
 [Pln100100F8008FF8]
 name=???
 short.P=Ru
-info=
+info=Rubeum (Große Kegel)
 
 [Pln200100F8008FF8]
 name=Guyinkannurtu
 short.P=Ru
-info=
+info=Rubeum (Große Kegel)
 
 [Pln300100F8008FF8]
 name=Ezka'oeregus
 short.P=Ru
-info=Rubeum
+info=Rubeum (Große Kegel)
 
 [Sys00010008008FF8]
 name=Yaring
@@ -188,7 +204,7 @@ info=Viridium
 short=ExtRad
 info=Extrem verstrahlter Planet
 short.P=Ka
-info=Kalium
+info=Kalium (Kugeln)
 
 [Sys00010000444444]
 name=Idewij-Hizdr

@@ -827,6 +827,8 @@ public class SaveGameData {
 			final HashMap<String,Integer> discoveredItems_Avail;
 			final HashMap<String,Integer> discoveredItems_Store;
 			
+			public boolean isSelected;
+			
 			protected UniverseObject() {
 				discoverer = null;
 				isCurrPos        = false;
@@ -841,6 +843,8 @@ public class SaveGameData {
 				
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
+				
+				isSelected = false;
 			}
 
 			protected String getCombinedExtraInfoLabels() {

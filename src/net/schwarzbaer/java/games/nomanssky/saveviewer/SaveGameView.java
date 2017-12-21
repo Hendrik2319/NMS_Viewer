@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -28,6 +29,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -69,6 +71,7 @@ import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.ProgressDialog;
+import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.ProgressDialog.CancelListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GUI.EnumCheckBoxMenuItem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
@@ -81,6 +84,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Gal
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.StarClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
@@ -139,7 +143,7 @@ class SaveGameView extends JPanel {
 
 	private void addAllTabs() {
 		tabbedPane.addTab("General",new GeneralDataPanel(data));
-		tabbedPane.addTab("Known Universe",new UniversePanel(data));
+		tabbedPane.addTab("Known Universe",new UniversePanel(data,mainWindow));
 		tabbedPane.addTab("Galaxy Map",new GalaxyMapPanel(data,mainWindow));
 		
 		if (data.stats     !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
@@ -193,6 +197,12 @@ class SaveGameView extends JPanel {
 			return button;
 		}
 
+		protected static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
+			JCheckBox button = new JCheckBox(title,isSelected);
+			if (l!=null) button.addActionListener(l);
+			return button;
+		}
+
 		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.UniverseObject object, String objectStr) {
 			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getOriginalName());
 			if (name!=null) {
@@ -206,7 +216,7 @@ class SaveGameView extends JPanel {
 	static class UniversePanel extends SaveGameViewTabPanel implements ActionListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
-		enum UniverseTreeActionCommand { SetName, SetDistance, SetRace, SetStarClass, ExpandAll, CollapseRemainingTree }
+		enum UniverseTreeActionCommand { SetName, SetDistance, SetRace, SetStarClass, ExpandAll, CollapseRemainingTree, FindObject }
 		
 		static final IndexOnlyIconSource PortalGlyphsIS  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
@@ -305,6 +315,8 @@ class SaveGameView extends JPanel {
 
 		private JTree tree;
 		private DefaultTreeModel treeModel;
+		private UniverseNode treeRoot;
+		
 		private GenericTreeNode<?> selectedNode;
 		private GenericTreeNode<?> clickedNode;
 		private TreePath clickedTreePath;
@@ -323,13 +335,18 @@ class SaveGameView extends JPanel {
 		private EnumCheckBoxMenuItem_Race[] miSetRaceArr;
 		private ButtonGroup bgSetStarClass;
 		private ButtonGroup bgSetRace;
-		public UniversePanel(SaveGameData data) {
+		
+		private Window mainWindow;
+		
+		public UniversePanel(SaveGameData data, Window mainWindow) {
 			super(data);
+			this.mainWindow = mainWindow;
 			
 			selectedNode = null;
 			TreeListener listener = new TreeListener();
 			
-			treeModel = new DefaultTreeModel(new UniverseNode(data.universe));
+			treeRoot = new UniverseNode(data.universe);
+			treeModel = new DefaultTreeModel(treeRoot);
 			tree = new JTree(treeModel);
 			JScrollPane treeScrollPane = new JScrollPane(tree);
 			tree.addTreeSelectionListener(listener);
@@ -339,6 +356,8 @@ class SaveGameView extends JPanel {
 			expandFullTree();
 			
 			contextMenu_Other = new JPopupMenu("Contextmenu");
+			contextMenu_Other.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
+			contextMenu_Other.addSeparator();
 			contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_Other.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 			
@@ -367,11 +386,15 @@ class SaveGameView extends JPanel {
 			}
 			
 			contextMenu_SolarSystem.addSeparator();
+			contextMenu_SolarSystem.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
+			contextMenu_SolarSystem.addSeparator();
 			contextMenu_SolarSystem.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_SolarSystem.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 			
 			contextMenu_Planet = new JPopupMenu("Planet");
 			contextMenu_Planet.add(miSetName_Planet = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			contextMenu_Planet.addSeparator();
+			contextMenu_Planet.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
 			contextMenu_Planet.addSeparator();
 			contextMenu_Planet.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			contextMenu_Planet.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
@@ -499,9 +522,30 @@ class SaveGameView extends JPanel {
 				if (clickedTreePath!=null)
 					expandPath(clickedTreePath);
 				break;
+				
+			case FindObject:
+				FindObjectDialog dialog = new FindObjectDialog(mainWindow,data.universe);
+				dialog.showDialog();
+				updateChangedObjects(treeRoot,dialog.getChangedObjects());
+				//tree.repaint();
+				break;
 			}
 			clickedNode = null;
 			clickedTreePath = null;
+		}
+
+		private void updateChangedObjects(LocalTreeNode node, UniverseObject[] changedObjects) {
+			for (LocalTreeNode child:node.getChildren()) {
+				if (child instanceof GenericTreeNode<?>) {
+					GenericTreeNode<?> genericNode = (GenericTreeNode<?>)child;
+					for (UniverseObject obj:changedObjects)
+						if (genericNode.value.equals(obj)) {
+							treeModel.nodeChanged(genericNode);
+							break;
+						}
+				}
+				updateChangedObjects(child, changedObjects);
+			}
 		}
 
 		private void expandFullTree() {
@@ -693,6 +737,192 @@ class SaveGameView extends JPanel {
 			return new ImageIcon(image);
 		}
 		
+		private static class FindObjectDialog extends StandardDialog {
+			private static final long serialVersionUID = -356863578675221086L;
+			
+			private Universe universe;
+			private SimplifiedTable table;
+			private FoundExtraInfoTableModel tableModel;
+
+			public FindObjectDialog(Window parent, Universe universe) {
+				super(parent, "Find Universe Object", ModalityType.APPLICATION_MODAL);
+				this.universe = universe;
+				
+				table = new SimplifiedTable("FindObjectDialog",false,SaveViewer.DEBUG,true);
+				table.setPreferredScrollableViewportSize(new Dimension(500, 600));;
+				tableModel = null;
+				
+				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+				JCheckBox chkbx;
+				buttonPanel.add(chkbx = createCheckbox("Allow Editing", null, false));
+				buttonPanel.add(createButton("Show Selected in Tree", e->{ if (tableModel!=null) tableModel.setSelected(); closeDialog(); }));
+				buttonPanel.add(createButton("Cancel", e->closeDialog()));
+				
+				chkbx.addActionListener(e->{ if (tableModel!=null) { tableModel.allowEditing(chkbx.isSelected()); table.setModel(tableModel); } });
+				
+				JPanel contentPane = new JPanel(new BorderLayout(3,3));
+				contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+				contentPane.add(new JScrollPane(table),BorderLayout.CENTER);
+				contentPane.add(buttonPanel,BorderLayout.SOUTH);
+				
+				createGUI( contentPane );
+				setSizeAsMinSize();
+			}
+
+			public UniverseObject[] getChangedObjects() {
+				if (tableModel!=null) return tableModel.changedObj.toArray(new UniverseObject[0]);
+				return new UniverseObject[0];
+			}
+
+			@Override
+			public void showDialog() {
+				HashSet<FoundExtraInfo> infos = new HashSet<>();
+				
+				for (Galaxy g:universe.galaxies)
+					for (Region r:g.regions)
+						for (SolarSystem s:r.solarSystems) {
+							addInfos(infos,s,false);
+							for (Planet p:s.planets)
+								addInfos(infos,p,true);
+						}
+				
+				tableModel = new FoundExtraInfoTableModel(universe, infos.toArray(new FoundExtraInfo[0]));
+				table.setModel(tableModel);
+				
+				super.showDialog();
+			}
+
+			private void addInfos(HashSet<FoundExtraInfo> infos, UniverseObject obj, boolean isPanet) {
+				for (ExtraInfo ei:obj.extraInfos) {
+					FoundExtraInfo existingFEI = null;
+					for (FoundExtraInfo fei:infos) {
+						if (fei.fromPlanet != isPanet) continue;
+						if (!fei.label.equals(ei.shortLabel)) continue;
+						if (!fei.info.equals(ei.info)) continue;
+						existingFEI = fei;
+						break;
+					}
+					if (existingFEI!=null) existingFEI.add(obj,ei);
+					else infos.add(new FoundExtraInfo(isPanet,obj,ei));
+				}
+			}
+
+			private static class FoundExtraInfo {
+				boolean isSelected;
+				boolean fromPlanet;
+				String label;
+				String info;
+				Vector<ExtraInfo> sourceEIs;
+				Vector<UniverseObject> sourceObjs;
+				
+				public FoundExtraInfo(boolean fromPlanet, UniverseObject obj, ExtraInfo ei) {
+					this.fromPlanet = fromPlanet;
+					this.label = ei.shortLabel;
+					this.info = ei.info;
+					this.sourceEIs = new Vector<>();
+					this.sourceObjs = new Vector<>();
+					this.isSelected = false;
+					add(obj,ei);
+				}
+
+				public void add(UniverseObject obj, ExtraInfo ei) {
+					this.sourceEIs.add(ei);
+					this.sourceObjs.add(obj);
+				}
+			}
+
+			private enum FoundExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
+				Selected(""      , Boolean.class, 10,-1, 30, 30),
+				Source  ("Source", String .class, 20,-1, 90, 90),
+				Label   ("Label" , String .class, 20,-1, 70, 70),
+				Info    ("Info"  , String .class, 50,-1,300,300);
+				
+				private SimplifiedColumnConfig config;
+
+				private FoundExtraInfoColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+					config = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				}
+				
+				@Override public SimplifiedColumnConfig getColumnConfig() { return config; }
+			}
+			
+			private static class FoundExtraInfoTableModel extends TableView.SimplifiedTableModel<FoundExtraInfoColumnID> {
+
+				private FoundExtraInfo[] data;
+				private HashSet<UniverseObject> changedObj;
+				private boolean allowEditing;
+				private Universe universe;
+
+				protected FoundExtraInfoTableModel(Universe universe, FoundExtraInfo[] data) {
+					super(FoundExtraInfoColumnID.values());
+					this.universe = universe;
+					this.data = data;
+					this.changedObj = new HashSet<>();
+					this.allowEditing = false;
+				}
+
+				public void allowEditing(boolean allowEditing) {
+					this.allowEditing = allowEditing;
+				}
+
+				public void setSelected() {
+					//changedObj.clear();
+					for (FoundExtraInfo fei:data)
+						for (UniverseObject obj:fei.sourceObjs) {
+							if (obj.isSelected != fei.isSelected) changedObj.add(obj);
+							obj.isSelected = fei.isSelected;
+						}
+				}
+
+				@Override public int getRowCount() { return data.length; }
+
+				@Override
+				public Object getValueAt(int rowIndex, int columnIndex, FoundExtraInfoColumnID columnID) {
+					switch(columnID) {
+					case Selected: return data[rowIndex].isSelected;
+					case Source  : int n = data[rowIndex].sourceObjs.size(); return String.format("%d %s%s", n, data[rowIndex].fromPlanet?"Planet":"Solar System", n==1?"":"s");
+					case Label   : return data[rowIndex].label;
+					case Info    : return data[rowIndex].info;
+					}
+					return null;
+				}
+
+				@Override
+				protected boolean isCellEditable(int rowIndex, int columnIndex, FoundExtraInfoColumnID columnID) {
+					switch(columnID) {
+					case Selected: return true;
+					case Source  : return false;
+					case Label   : return allowEditing;
+					case Info    : return allowEditing;
+					}
+					return false;
+				}
+
+				@Override
+				protected void setValueAt(Object aValue, int rowIndex, int columnIndex, FoundExtraInfoColumnID columnID) {
+					switch(columnID) {
+					case Selected: data[rowIndex].isSelected = (Boolean)aValue; break;
+					case Source  : break;
+					case Label   :
+						data[rowIndex].label = (String)aValue;
+						for (     ExtraInfo  ei:data[rowIndex].sourceEIs ) ei.shortLabel = (String)aValue;
+						for (UniverseObject obj:data[rowIndex].sourceObjs) changedObj.add(obj);
+						SaveViewer.saveUniverseObjectDataToFile(universe);
+						break;
+						
+					case Info    :
+						data[rowIndex].info = (String)aValue;
+						for (     ExtraInfo  ei:data[rowIndex].sourceEIs ) ei.info = (String)aValue;
+						for (UniverseObject obj:data[rowIndex].sourceObjs) changedObj.add(obj);
+						SaveViewer.saveUniverseObjectDataToFile(universe);
+						break;
+					}
+				}
+				
+			}
+			
+		}
+		
 		private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
 			ShowInParent("", Boolean.class, 10,-1, 20, 20),
 			Label("Label", String.class, 20,-1, 50, 50),
@@ -782,9 +1012,10 @@ class SaveGameView extends JPanel {
 		
 		static class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
 
+			private static final Color TEXTCOLOR__SELECTED     = Color.RED;
 			private static final Color TEXTCOLOR__CURRENT_POS  = new Color(0x2EA000);
 			private static final Color TEXTCOLOR__WITHOUT_NAME = new Color(0x808080);
-			private static final Color TEXTCOLOR__NO_UPLOADED  = new Color(0x0000FF); // or 0x1D67AE
+			private static final Color TEXTCOLOR__NOT_UPLOADED  = new Color(0x0000FF); // or 0x1D67AE
 
 			private static final long serialVersionUID = 4733567681038484432L;
 			
@@ -819,9 +1050,13 @@ class SaveGameView extends JPanel {
 					if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
 					if (obj != null) {
 						if (!selected && !obj.hasOriginalName() && !obj.hasUploadedName()) setForeground(TEXTCOLOR__WITHOUT_NAME);
-						if (!selected && obj.isNotUploaded) setForeground(TEXTCOLOR__NO_UPLOADED);
+						if (!selected && obj.isNotUploaded) setForeground(TEXTCOLOR__NOT_UPLOADED);
 						if (obj.isCurrPos) {
 							if (!selected) setForeground(TEXTCOLOR__CURRENT_POS);
+							setFont(boldfont);
+						}
+						if (obj.isSelected) {
+							if (!selected) setForeground(TEXTCOLOR__SELECTED);
 							setFont(boldfont);
 						}
 					}

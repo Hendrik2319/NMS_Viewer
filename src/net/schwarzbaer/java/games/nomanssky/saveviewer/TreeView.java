@@ -325,7 +325,12 @@ class TreeView {
 		public TreeNode getParent() {
 			return parent;
 		}
-	
+		
+		public TreeNodeType[] getChildren() {
+			if (children == null) createChildren();
+			return children;
+		}
+		
 		@Override
 		public int getChildCount() {
 			if (children == null) createChildren();
