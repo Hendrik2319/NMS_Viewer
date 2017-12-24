@@ -1,4 +1,4 @@
-package net.schwarzbaer.java.games.nomanssky.saveviewer;
+package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;

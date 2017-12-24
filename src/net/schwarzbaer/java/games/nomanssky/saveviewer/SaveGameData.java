@@ -24,16 +24,16 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 public class SaveGameData {
 
-	Error error;
-	String errorMessage;
+	public Error error;
+	public String errorMessage;
 	private boolean isStackTraceEnabled;
 	
-	final JSON_Object json_data;
-	final General general;
-	Universe universe;
-	Stats stats;
-	KnownWords knownWords;
-	DiscoveryData discoveryData;
+	public final JSON_Object json_data;
+	public final General general;
+	public Universe universe;
+	public Stats stats;
+	public KnownWords knownWords;
+	public DiscoveryData discoveryData;
 	
 	public SaveGameData(JSON_Object json_data) {
 		error = Error.NoError;
@@ -94,19 +94,19 @@ public class SaveGameData {
 			System.out.println("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
 	}
 
-	final static class DiscoveryData {
+	public final static class DiscoveryData {
 		
 		enum SourceArray { AvailableData, StoreData }
 		
 		private SaveGameData data;
-		Vector<StoreData> storeData;
-		Vector<AvailableData> availableData;
+		public Vector<StoreData> storeData;
+		public Vector<AvailableData> availableData;
 		JSON_Array notParsedStoreData;
 		JSON_Array notParsedAvailableData;
-		int storedDiscoveredItemOnPlanets;
-		int storedDiscoveredItemInSolarSystms;
-		int availDiscoveredItemOnPlanets;
-		int availDiscoveredItemInSolarSystms;
+		public int storedDiscoveredItemOnPlanets;
+		public int storedDiscoveredItemInSolarSystms;
+		public int availDiscoveredItemOnPlanets;
+		public int availDiscoveredItemInSolarSystms;
 		
 		public DiscoveryData(SaveGameData data) {
 			this.data = data;
@@ -355,7 +355,7 @@ public class SaveGameData {
 			return discnameObj;
 		}
 
-		static class StoreData {
+		public static class StoreData {
 			// DD.UA  UniverseAddress
 			// DD.DT  String
 			// DD.VP[0]  String
@@ -369,14 +369,14 @@ public class SaveGameData {
 			//    TS   Long
 			// RID  String (evtl.)
 			
-			DDblock DD;
-			String DM;
-			String DM_CN;
-			String OWS_LID;
-			String OWS_UID;
-			String OWS_USN;
-			Long   OWS_TS;
-			String RID;
+			public DDblock DD;
+			public String DM;
+			public String DM_CN;
+			public String OWS_LID;
+			public String OWS_UID;
+			public String OWS_USN;
+			public Long   OWS_TS;
+			public String RID;
 			byte[] RID_bytes;
 			
 			public StoreData() {
@@ -392,15 +392,15 @@ public class SaveGameData {
 			}
 		}
 		
-		static class AvailableData {
+		public static class AvailableData {
 			// TSrec  long
 			// DD.UA  UniverseAddress
 			// DD.DT  String
 			// DD.VP[0]  String
 			// DD.VP[1]  String | long
 			
-			Long TSrec;
-			DDblock DD;
+			public Long TSrec;
+			public DDblock DD;
 			
 			AvailableData() {
 				TSrec = null;
@@ -408,11 +408,11 @@ public class SaveGameData {
 			}
 		}
 		
-		static class DDblock {
-			UniverseAddress UA;
-			String DT;
-			String VP0;
-			String VP1;
+		public static class DDblock {
+			public UniverseAddress UA;
+			public String DT;
+			public String VP0;
+			public String VP1;
 			
 			DDblock() {
 				UA = null;
@@ -423,7 +423,7 @@ public class SaveGameData {
 		}
 	}
 
-	final static class General {
+	public final static class General {
 		
 		private SaveGameData data;
 		private UniverseAddress currentUniverseAddress;
@@ -498,10 +498,12 @@ public class SaveGameData {
 		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
 	}
 
-	static final class UniverseAddress implements Comparable<UniverseAddress> {
+	public static final class UniverseAddress implements Comparable<UniverseAddress> {
 
 		final int galaxyIndex;
-		final int voxelX,voxelY,voxelZ;
+		public  final int voxelX;
+		private final int voxelY;
+		public  final int voxelZ;
 		final int solarSystemIndex;
 		final int planetIndex;
 		private final long address;
@@ -644,9 +646,9 @@ public class SaveGameData {
 		
 	}
 	
-	static final class Universe {
+	public static final class Universe {
 
-		final Vector<Galaxy> galaxies;
+		public final Vector<Galaxy> galaxies;
 		
 		Universe() {
 			galaxies = new Vector<>();
@@ -742,13 +744,13 @@ public class SaveGameData {
 			return solarSystem;
 		}
 
-		static final class Galaxy {
+		public static final class Galaxy {
 			private final static String[] PREDEFINED_NAMES_EN = {"Euclid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
 			@SuppressWarnings("unused")
 			private final static String[] PREDEFINED_NAMES_DE = {"Euklid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
 			final Universe universe;
 			final int galacticIndex;
-			final Vector<Region> regions;
+			public final Vector<Region> regions;
 			
 			public Galaxy(Universe universe, int galacticIndex) {
 				this.universe = universe;
@@ -775,11 +777,13 @@ public class SaveGameData {
 			}
 		}
 		
-		static final class Region {
+		public static final class Region {
 			
 			final Galaxy galaxy;
-			final int voxelX,voxelY,voxelZ;
-			final Vector<SolarSystem> solarSystems;
+			public final int voxelX;
+			private final int voxelY;
+			public final int voxelZ;
+			public final Vector<SolarSystem> solarSystems;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
@@ -811,21 +815,21 @@ public class SaveGameData {
 			}
 		}
 		
-		static class UniverseObject {
+		public static class UniverseObject {
 			
 			private String discoverer;
-			boolean isCurrPos;
+			public boolean isCurrPos;
 			boolean foundInStats;
 			boolean foundInDiscStore;
-			boolean isNotUploaded;
+			public boolean isNotUploaded;
 			
-			final Vector<ExtraInfo> extraInfos;
+			public final Vector<ExtraInfo> extraInfos;
 			
 			private String originalName;
 			private String uploadedName;
 			
-			final HashMap<String,Integer> discoveredItems_Avail;
-			final HashMap<String,Integer> discoveredItems_Store;
+			public final HashMap<String,Integer> discoveredItems_Avail;
+			public final HashMap<String,Integer> discoveredItems_Store;
 			
 			public boolean isSelected;
 			
@@ -896,10 +900,10 @@ public class SaveGameData {
 			public String getOriginalName() { return this.originalName; }
 			public String getUploadedName() { return this.uploadedName; }
 			
-			static final class ExtraInfo {
-				boolean showInParent;
-				String shortLabel;
-				String info;
+			public static final class ExtraInfo {
+				public boolean showInParent;
+				public String shortLabel;
+				public String info;
 				public ExtraInfo(String shortLabel, String info) {
 					this(false,shortLabel,info);
 				}
@@ -914,9 +918,9 @@ public class SaveGameData {
 			}
 		}
 		
-		static final class SolarSystem extends UniverseObject {
+		public static final class SolarSystem extends UniverseObject {
 			
-			enum StarClass {
+			public enum StarClass {
 				Yellow("G"), Red("K"), Green, Blue;
 				
 				@SuppressWarnings("unused")
@@ -927,19 +931,19 @@ public class SaveGameData {
 				}
 			}
 			
-			enum Race {
+			public enum Race {
 				Gek("Gek"), Korvax("Korvax"), Vykeen("Vy'keen");
 
-				final String fullName;
+				public final String fullName;
 				private Race(String fullName) { this.fullName = fullName; }
 			}
 			
 			final Region region;
 			final int solarSystemIndex;
-			final Vector<Planet> planets;
-			Race race;
-			StarClass starClass;
-			Double distanceToCenter;
+			public final Vector<Planet> planets;
+			public Race race;
+			public StarClass starClass;
+			public Double distanceToCenter;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
@@ -994,7 +998,7 @@ public class SaveGameData {
 			}
 		}
 		
-		static final class Planet extends UniverseObject {
+		public static final class Planet extends UniverseObject {
 			
 			final SolarSystem solarSystem;
 			final int planetIndex;
@@ -1041,12 +1045,12 @@ public class SaveGameData {
 		}
 	}
 
-	static final class KnownWords {
+	public static final class KnownWords {
 
 		private final SaveGameData data;
-		Vector<KnownWord> wordList;
+		public Vector<KnownWord> wordList;
 		JSON_Array notParsedKnownWords;
-		int[] wordCounts;
+		public int[] wordCounts;
 
 		public KnownWords(SaveGameData data) {
 			this.data = data;
@@ -1096,10 +1100,10 @@ public class SaveGameData {
 		}
 		
 		
-		static class KnownWord implements Comparable<KnownWord>{
+		public static class KnownWord implements Comparable<KnownWord>{
 			
-			String word;
-			boolean[] races;
+			public String word;
+			public boolean[] races;
 			
 			@Override
 			public int compareTo(KnownWord o) {
@@ -1108,10 +1112,10 @@ public class SaveGameData {
 		}
 	}
 	
-	final static class Stats {
+	public final static class Stats {
 		
-		Vector<StatValue> globalStats;
-		Vector<PlanetStats> planetStats;
+		public Vector<StatValue> globalStats;
+		public Vector<PlanetStats> planetStats;
 		JSON_Array notParsedStats;
 		private final SaveGameData data;
 
@@ -1218,8 +1222,8 @@ public class SaveGameData {
 			statsVector.sort(null);
 		}
 
-		static class StatValue implements Comparable<StatValue> {
-			enum KnownID {
+		public static class StatValue implements Comparable<StatValue> {
+			public enum KnownID {
 				TIME, DEATHS, LONGEST_LIFE, LONGEST_LIFE_EX, TIMES_IN_SPACE,
 				GLOBAL_MISSION, ATLAS_PATH, ATLAS_STORY,
 				DIST_WALKED("Distance walked"),
@@ -1275,11 +1279,11 @@ public class SaveGameData {
 				}
 			}
 			
-			String ID;
-			KnownID knownID;
-			long IntValue;
-			double FloatValue;
-			double Denominator;
+			public String ID;
+			public KnownID knownID;
+			public long IntValue;
+			public double FloatValue;
+			public double Denominator;
 			
 			
 			public StatValue() {
@@ -1304,10 +1308,10 @@ public class SaveGameData {
 			}
 		}
 		
-		static class PlanetStats {
+		public static class PlanetStats {
 			
-			final Universe.Planet planet;
-			Vector<StatValue> stats;
+			public final Universe.Planet planet;
+			public Vector<StatValue> stats;
 			
 			PlanetStats(Universe.Planet planet) {
 				this.planet = planet;
@@ -1349,7 +1353,7 @@ public class SaveGameData {
 		return true;
 	}
 
-	enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
+	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
 
 	private void enableStackTrace(boolean isStackTraceEnabled) {
 		this.isStackTraceEnabled = isStackTraceEnabled;

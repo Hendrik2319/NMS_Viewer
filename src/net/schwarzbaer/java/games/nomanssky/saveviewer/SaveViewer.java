@@ -62,6 +62,9 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
@@ -79,7 +82,7 @@ public class SaveViewer implements ActionListener {
 	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
 	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 
-	static final boolean DEBUG = true;
+	public static final boolean DEBUG = true;
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	
 	private StandardMainWindow mainWindow;
@@ -99,7 +102,7 @@ public class SaveViewer implements ActionListener {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
-		SaveGameView.UniversePanel.prepareIconSources();
+		UniversePanel.prepareIconSources();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
 			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }
@@ -313,11 +316,11 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
-	static void log_ln( String format, Object... values ) {
+	public static void log_ln( String format, Object... values ) {
 		System.out.printf(format+"\r\n",values);
 	}
 	
-	static void log( String format, Object... values ) {
+	public static void log( String format, Object... values ) {
 		System.out.printf(format,values);
 	}
 
@@ -583,7 +586,7 @@ public class SaveViewer implements ActionListener {
 			for (int i=11; i>=0; --i) {
 				int nr = (int) (portalGlyphCode&0xF);
 				portalGlyphCode = portalGlyphCode>>4;
-				BufferedImage image = SaveGameView.UniversePanel.PortalGlyphsIS.getCachedImage(nr);
+				BufferedImage image = UniversePanel.PortalGlyphsIS.getCachedImage(nr);
 				ImageIcon icon = image==null?null:new ImageIcon( image );
 				glyphLabels[i].setIcon(icon);
 			}

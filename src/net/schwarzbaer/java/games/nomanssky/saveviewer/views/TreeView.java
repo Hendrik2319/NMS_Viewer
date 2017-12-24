@@ -1,4 +1,4 @@
-package net.schwarzbaer.java.games.nomanssky.saveviewer;
+package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -22,9 +22,9 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
-class TreeView {
+public class TreeView {
 
-	static class CompareTreeNode extends AbstractDataTreeNode<CompareTreeNode> {
+	public static class CompareTreeNode extends AbstractDataTreeNode<CompareTreeNode> {
 		
 		enum Source { First, Second, Both }
 		enum Equal{ Equal, UnEqual, Unknown }
@@ -205,7 +205,7 @@ class TreeView {
 			}
 		}
 
-		static class CellRenderer extends DefaultTreeCellRenderer {
+		public static class CellRenderer extends DefaultTreeCellRenderer {
 			private static final long serialVersionUID = -7036052917753626469L;
 		
 			private static final Color FIRST   = new Color(0xFF0000);
