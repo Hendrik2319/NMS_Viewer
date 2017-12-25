@@ -28,7 +28,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, ActionListener {
 	private static final long serialVersionUID = -50409207801775293L;
 	
-	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue }
+	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName }
 
 	private JTree tree;
 	private JPopupMenu contextMenu;
@@ -47,6 +47,7 @@ class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, Ac
 		
 		contextMenu = new JPopupMenu("Contextmenu");
 		contextMenu.add(createMenuItem("Copy Path",RawDataTreeActionCommand.CopyPath));
+		contextMenu.add(createMenuItem("Copy Value Name",RawDataTreeActionCommand.CopyValueName));		
 		contextMenu.add(createMenuItem("Copy Value",RawDataTreeActionCommand.CopyValue));
 		contextMenu.add(createMenuItem("Show Path",RawDataTreeActionCommand.ShowPath));
 		
@@ -67,7 +68,8 @@ class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, Ac
 	@Override public void mouseClicked(MouseEvent e) {
 		if (e.getButton()==MouseEvent.BUTTON3) {
 			contextMenuTarget = tree.getPathForLocation(e.getX(), e.getY());
-			contextMenu.show(tree, e.getX(), e.getY());
+			if (contextMenuTarget!=null)
+				contextMenu.show(tree, e.getX(), e.getY());
 		}
 	}
 
@@ -81,6 +83,16 @@ class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, Ac
 			DataHandler content = new DataHandler(pathToShortString(contextMenuTarget),"text/plain");
 			try { clipboard.setContents(content,null); }
 			catch (IllegalStateException e1) { e1.printStackTrace(); }
+		} break;
+		case CopyValueName: {
+			Toolkit toolkit = Toolkit.getDefaultToolkit();
+			Clipboard clipboard = toolkit.getSystemClipboard();
+			Object pathComp = contextMenuTarget.getLastPathComponent();
+			if (pathComp instanceof JsonTreeNode) {
+				DataHandler content = new DataHandler(getName((JsonTreeNode)pathComp),"text/plain");
+				try { clipboard.setContents(content,null); }
+				catch (IllegalStateException e1) { e1.printStackTrace(); }
+			}
 		} break;
 		case ShowPath:
 			System.out.println("Path: "+contextMenuTarget);
@@ -99,6 +111,16 @@ class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, Ac
 			catch (IllegalStateException e1) { e1.printStackTrace(); }
 			break;
 		}
+	}
+
+	private Object getName(JsonTreeNode node) {
+		if (node.parent==null) return "[root]";
+		if (node.name==null) {
+			if (node.parent.data.type!=Type.Array)
+				return "<nameless value inside of non array>";
+			return "["+node.parent.getIndex(node)+"]";
+		}
+		return node.name;
 	}
 
 	private String pathToShortString(TreePath treePath) {

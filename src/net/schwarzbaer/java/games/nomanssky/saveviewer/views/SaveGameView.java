@@ -50,8 +50,8 @@ public class SaveGameView extends JPanel {
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
 				Component comp = tabbedPane.getSelectedComponent();
-				if (comp instanceof SaveGameViewTabPanel) {
-					SaveGameViewTabPanel tabPanel = (SaveGameViewTabPanel)comp;
+				if (comp instanceof SaveGameViewTab) {
+					SaveGameViewTab tabPanel = (SaveGameViewTab)comp;
 					tabPanel.updateContent();
 				}
 			}
@@ -66,8 +66,9 @@ public class SaveGameView extends JPanel {
 		tabbedPane.addTab("Known Universe",new UniversePanel(data,mainWindow));
 		tabbedPane.addTab("Galaxy Map",new GalaxyMapPanel(data,mainWindow));
 		
-		if (data.stats     !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
-		if (data.knownWords!=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
+		if (data.inventories!=null) tabbedPane.addTab("Inventories",new InventoriesPanel(data));
+		if (data.stats      !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
+		if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
 		
 		tabbedPane.addTab("DiscoveryData (Avail.)",new DiscoveryDataPanels.AvailableDataPanel(data));
 		tabbedPane.addTab("DiscoveryData (Store)",new DiscoveryDataPanels.StoredDataPanel(data));
@@ -98,7 +99,11 @@ public class SaveGameView extends JPanel {
 		return result;
 	}
 	
-	static class SaveGameViewTabPanel extends JPanel {
+	static interface SaveGameViewTab {
+		public void updateContent();
+	}
+	
+	static class SaveGameViewTabPanel extends JPanel implements SaveGameViewTab {
 		private static final long serialVersionUID = -5779057150309507685L;
 		
 		protected SaveGameData data;
@@ -109,7 +114,8 @@ public class SaveGameView extends JPanel {
 			this.data = data;
 		}
 		
-		public void updateContent() {};
+		@Override
+		public void updateContent() {}
 
 		protected static JButton createButton(String title, ActionListener l) {
 			JButton button = new JButton(title);
