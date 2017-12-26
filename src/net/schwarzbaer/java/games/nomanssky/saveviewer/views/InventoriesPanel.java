@@ -1,13 +1,18 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -48,6 +53,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 	final static class InventoryPanel extends JPanel implements MouseListener, MouseMotionListener {
 		private static final long serialVersionUID = 8549406812793642121L;
+		private static final int BORDER = 5;
 		private static final int SLOT_WIDTH  = 107;
 		private static final int SLOT_HEIGHT = 126;
 		private static final int SLOT_RASTER_X = SLOT_WIDTH+3;
@@ -71,16 +77,42 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				JLabel inventoryLabel = new JLabel();
+				//inventoryLabel.setBorder(BorderFactory.createEtchedBorder());
 				inventoryLabel.setIcon(makeInvImage((int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots));
 				inventoryLabel.addMouseListener(this);
 				inventoryLabel.addMouseMotionListener(this);
+				add(new JScrollPane(inventoryLabel), BorderLayout.WEST);
 			}
 		}
 
 		private Icon makeInvImage(int width, int height, Slot[][] slots) {
 			if (width<=0 || height<=0) return null;
-			// TODO Auto-generated method stub
-			return null;
+			
+			int imageWidth  = (width -1)*SLOT_RASTER_X+SLOT_WIDTH +2*BORDER;
+			int imageHeight = (height-1)*SLOT_RASTER_Y+SLOT_HEIGHT+2*BORDER;
+			BufferedImage image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+			
+			Graphics g = image.getGraphics();
+			if (!(g instanceof Graphics2D)) return null;
+			Graphics2D g2 = (Graphics2D)g;
+			
+			g2.setPaint(Color.BLACK);
+			g2.drawRect(0, 0, imageWidth, imageHeight);
+			
+			for (int x=0; x<width; ++x)
+				for (int y=0; y<height; ++y)
+					if (slots[x][y]!=null) {
+						int x_=x*SLOT_RASTER_X+BORDER;
+						int y_=y*SLOT_RASTER_Y+BORDER;
+						if (!slots[x][y].isEmpty) {
+							g2.setPaint(Color.WHITE);
+							g2.fillRect(x_, y_, SLOT_WIDTH, SLOT_HEIGHT);
+						}
+						g2.setPaint(Color.BLACK);
+						g2.drawRect(x_, y_, SLOT_WIDTH, SLOT_HEIGHT);
+					}
+
+			return new ImageIcon(image);
 		}
 
 		private void showValues() {
@@ -107,10 +139,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		}
 
 		private boolean hoveredSlotChanged(int screenX, int screenY) {
-			int x = screenX/SLOT_RASTER_X;
-			int y = screenY/SLOT_RASTER_Y;
-			if (screenX-x*SLOT_RASTER_X > SLOT_WIDTH ) x = -1;
-			if (screenY-y*SLOT_RASTER_Y > SLOT_HEIGHT) y = -1;
+			int x = (screenX-BORDER)/SLOT_RASTER_X;
+			int y = (screenY-BORDER)/SLOT_RASTER_Y;
+			if (screenX-BORDER-x*SLOT_RASTER_X > SLOT_WIDTH ) x = -1;
+			if (screenY-BORDER-y*SLOT_RASTER_Y > SLOT_HEIGHT) y = -1;
 			Point newP = null;
 			if (x>=0 && y>=0) newP = new Point(x, y);
 			
