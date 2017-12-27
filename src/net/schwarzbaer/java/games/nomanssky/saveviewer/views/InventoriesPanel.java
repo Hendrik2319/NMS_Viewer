@@ -2,6 +2,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -18,6 +19,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.JViewport;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
@@ -62,6 +64,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private Inventory inventory;
 		private JTextArea textarea;
 		private Point hoveredSlot;
+		private JLabel inventoryLabel;
+		private JScrollPane inventoryLabelScrollPane;
 
 		public InventoryPanel(Inventory inventory) {
 			super(new BorderLayout(3, 3));
@@ -72,16 +76,22 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			textarea = new JTextArea();
 			textarea.setEditable(false);
-			add(new JScrollPane(textarea), BorderLayout.CENTER);
+			JScrollPane textareaScrollPane = new JScrollPane(textarea);
+			textareaScrollPane.getViewport().setPreferredSize(new Dimension(500, 300));
+			add(textareaScrollPane, BorderLayout.EAST);
 			showValues();
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
-				JLabel inventoryLabel = new JLabel();
+				inventoryLabel = new JLabel();
 				//inventoryLabel.setBorder(BorderFactory.createEtchedBorder());
 				inventoryLabel.setIcon(makeInvImage((int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots));
 				inventoryLabel.addMouseListener(this);
 				inventoryLabel.addMouseMotionListener(this);
-				add(new JScrollPane(inventoryLabel), BorderLayout.WEST);
+				inventoryLabelScrollPane = new JScrollPane(inventoryLabel);
+				add(inventoryLabelScrollPane, BorderLayout.CENTER);
+			} else {
+				inventoryLabel = null;
+				inventoryLabelScrollPane = null;
 			}
 		}
 
@@ -117,6 +127,19 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 		private void showValues() {
 			textarea.setText("");
+			if (inventoryLabel!=null) {
+				textarea.append("IconTextGap  : "+inventoryLabel.getIconTextGap()+"\r\n");
+				textarea.append("X,Y          : "+inventoryLabel.getX()+","+inventoryLabel.getY()+"\r\n");
+				textarea.append("Insets       : "+inventoryLabel.getInsets()+"\r\n");
+				textarea.append("Bounds       : "+inventoryLabel.getBounds()+"\r\n");
+				textarea.append("MousePosition: "+inventoryLabel.getMousePosition()+"\r\n");
+				JViewport viewport = inventoryLabelScrollPane.getViewport();
+				textarea.append("viewport.ViewPos   : "+viewport.getViewPosition()+"\r\n");
+				textarea.append("viewport.ExtentSize: "+viewport.getExtentSize()+"\r\n");
+				textarea.append("viewport.MousePos  : "+viewport.getMousePosition()+"\r\n");
+				textarea.append("\r\n");
+			}
+			
 			if (hoveredSlot==null || inventory.slots==null || inventory.slots.length<=hoveredSlot.x || inventory.slots[hoveredSlot.x].length<=hoveredSlot.y) {
 				textarea.append("Width        : "+inventory.width+"\r\n");
 				textarea.append("Height       : "+inventory.height+"\r\n");
@@ -135,6 +158,18 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				}
 			} else {
 				Slot slot = inventory.slots[hoveredSlot.x][hoveredSlot.y];
+				textarea.append("Inventory Slot "+hoveredSlot.x+","+hoveredSlot.y+"\r\n");
+				if (slot==null) {
+					textarea.append("   is invalid\r\n");
+				} else
+				if (slot.isEmpty) {
+					textarea.append("   is valid, but empty\r\n");
+				} else {
+					textarea.append("   ID    : "+slot.id+"\r\n");
+					textarea.append("   Type  : "+slot.type+"\r\n");
+					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
+					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
+				}
 			}
 		}
 
