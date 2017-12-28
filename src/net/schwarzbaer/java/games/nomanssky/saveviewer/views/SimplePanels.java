@@ -3,20 +3,102 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 import java.awt.BorderLayout;
 
 import javax.swing.JScrollPane;
+import javax.swing.table.TableCellEditor;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
-class DiscoveryDataPanels {
+class SimplePanels {
+	
+	static class BlueprintsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = -3032632553321731912L;
+		enum BlueprintType { KnownProductBlueprints, KnownTechBlueprints }
+		
+		private final SimplifiedTable table;
+		private final BlueprintsTableModel tableModel;
+		private final BlueprintType type;
+		
+		public BlueprintsPanel(SaveGameData data, BlueprintType type, String tableDebugLabel) {
+			super(data);
+			this.type = type;
+			
+			GeneralizedID[] blueprints = null;
+			switch(type) {
+			case KnownProductBlueprints: blueprints=data.knownBlueprints.products; break;
+			case KnownTechBlueprints   : blueprints=data.knownBlueprints.technologies; break;
+			}
+			if (blueprints == null) {
+				tableModel = null;
+				table = null;
+				return;
+			}
+			
+			tableModel = new BlueprintsTableModel(blueprints);
+			table = new SimplifiedTable(tableDebugLabel,tableModel,true,SaveViewer.DEBUG,true);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			
+			add(tableScrollPane,BorderLayout.CENTER);
+		}
+		
+		@Override
+		public void updateContent() {
+			TableCellEditor cellEditor = table.getCellEditor();
+			if (cellEditor!=null) cellEditor.stopCellEditing();
+			tableModel.fireTableUpdate();
+		}
 
-	static class AvailableDataPanel extends SaveGameViewTabPanel {
+		private enum BlueprintsColumnID implements TableView.SimplifiedColumnIDInterface {
+			ID    ("ID"    , String.class, 100,-1,120,120),
+			Label ("Label" , String.class, 200,-1,220,220);
+			
+			private TableView.SimplifiedColumnConfig columnConfig;
+			
+			BlueprintsColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+	
+		private class BlueprintsTableModel extends TableView.SimplifiedTableModel<BlueprintsColumnID> {
+
+			private GeneralizedID[] blueprints;
+
+			protected BlueprintsTableModel(GeneralizedID[] blueprints) {
+				super(BlueprintsColumnID.values());
+				this.blueprints = blueprints;
+			}
+
+			@Override public int getRowCount() { return blueprints.length; }
+			@Override public Object getValueAt(int rowIndex, int columnIndex, BlueprintsColumnID columnID) {
+				switch(columnID) {
+				case ID   : return blueprints[rowIndex].id;
+				case Label: return blueprints[rowIndex].label;
+				}
+				return null;
+			}
+
+			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, BlueprintsColumnID columnID) { return columnID == BlueprintsColumnID.Label; }
+			@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, BlueprintsColumnID columnID) {
+				if (columnID == BlueprintsColumnID.Label) {
+					blueprints[rowIndex].label = aValue==null?"":aValue.toString();
+					switch(type) {
+					case KnownProductBlueprints: SaveViewer.saveProductIDsToFile(); break;
+					case KnownTechBlueprints   : SaveViewer.saveTechIDsToFile(); break;
+					}
+				}
+			}
+		}
+	}
+
+	static class DiscoveredDataAvailablePanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 2870833302184314416L;
 	
-		public AvailableDataPanel(SaveGameData data) {
+		public DiscoveredDataAvailablePanel(SaveGameData data) {
 			super(data);
 			
 			DDATableModel tableModel = new DDATableModel();
@@ -41,7 +123,7 @@ class DiscoveryDataPanels {
 			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class DDATableModel extends TableView.SimplifiedTableModel<AvailableDataPanel.DDAColumnID> {
+		private class DDATableModel extends TableView.SimplifiedTableModel<DDAColumnID> {
 	
 			protected DDATableModel() {
 				super(DDAColumnID.values());
@@ -53,7 +135,7 @@ class DiscoveryDataPanels {
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, AvailableDataPanel.DDAColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, DDAColumnID columnID) {
 				AvailableData availableData = data.discoveryData.availableData.get(rowIndex);
 				if (availableData==null) return null;
 				switch(columnID) {
@@ -68,10 +150,10 @@ class DiscoveryDataPanels {
 		}
 	}
 
-	static class StoredDataPanel extends SaveGameViewTabPanel {
+	static class DiscoveredDataStoredPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6619075068331735784L;
 	
-		public StoredDataPanel(SaveGameData data) {
+		public DiscoveredDataStoredPanel(SaveGameData data) {
 			super(data);
 			
 			DDSTableModel tableModel = new DDSTableModel();
@@ -102,7 +184,7 @@ class DiscoveryDataPanels {
 			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class DDSTableModel extends TableView.SimplifiedTableModel<StoredDataPanel.DDSColumnID> {
+		private class DDSTableModel extends TableView.SimplifiedTableModel<DDSColumnID> {
 	
 			protected DDSTableModel() {
 				super(DDSColumnID.values());
@@ -114,7 +196,7 @@ class DiscoveryDataPanels {
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, StoredDataPanel.DDSColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, DDSColumnID columnID) {
 				StoreData storeData = data.discoveryData.storeData.get(rowIndex);
 				if (storeData==null) return null;
 				switch(columnID) {

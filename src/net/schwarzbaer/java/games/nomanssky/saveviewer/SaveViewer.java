@@ -80,10 +80,16 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 public class SaveViewer implements ActionListener {
 	
 	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
+	private static final String FILE_PRODUCT_ID    = "NMS_Viewer.ProdIDs.txt";
+	private static final String FILE_TECH_ID       = "NMS_Viewer.TechIDs.txt";
+	private static final String FILE_SUBSTANCE_ID  = "NMS_Viewer.SubstanceIDs.txt";
 	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 
 	public static final boolean DEBUG = true;
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
+	public static final HashMap<String,GeneralizedID> productIDs   = new HashMap<>();
+	public static final HashMap<String,GeneralizedID> techIDs      = new HashMap<>();
+	public static final HashMap<String,GeneralizedID> substanceIDs = new HashMap<>();
 	
 	private StandardMainWindow mainWindow;
 
@@ -125,6 +131,9 @@ public class SaveViewer implements ActionListener {
 		toolbarIS.readIconsFromResource("/images/Toolbar.png");
 		
 		loadKnownStatIDsFromFile();
+		loadProductIDsFromFile();
+		loadTechIDsFromFile();
+		loadSubstanceIDsFromFile();
 		loadUniverseObjectDataFromFile();
 		
 //		long address = 4623450600164292L;
@@ -184,50 +193,28 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private enum ActionCommand {
-		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates
+		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
 		switch (actionCommand) {
+		case save_hg:
+			openSaveGame(new File(getGameFolder().getPath()+"/st_76561198016584395/save.hg"));
+			break;
+		case save2_hg:
+			openSaveGame(new File(getGameFolder().getPath()+"/st_76561198016584395/save2.hg"));
+			break;
 		case SwitchFolder: {
-			Properties prop = System.getProperties();
-//			ArrayList<Object> keys = new ArrayList<>(prop.keySet());
-//			keys.sort(null);
-//			for (Object key : keys) {
-//				System.out.printf("[%s] = %s\r\n",key,prop.get(key));
-//			}
-			String home = prop.get("user.home").toString();
-			String fs = prop.get("file.separator").toString();
-			String path = home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
-			inputFileChooser.setCurrentDirectory(new File(path));
+			inputFileChooser.setCurrentDirectory(getGameFolder());
 			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
 			JOptionPane.showMessageDialog(mainWindow, message, "Current folder", JOptionPane.INFORMATION_MESSAGE);
 			break;
 		}
 		case Open:
-			if (inputFileChooser.showOpenDialog(mainWindow)==JFileChooser.APPROVE_OPTION) {
-				File selectedFile = inputFileChooser.getSelectedFile();
-				log("Parse file \"%s\" ...",selectedFile.getPath());
-				JSON_Object new_json_data = new JSON_Parser(selectedFile).parse();
-				log_ln(" done");
-				if (new_json_data==null) {
-					JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
-				} else {
-					SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
-					readUniverseObjectDataFromDataPool(saveGameData.universe);
-					SaveGameView saveGameView = new SaveGameView(mainWindow,selectedFile,saveGameData);
-					loadedSaveGames.add(saveGameView);
-					contentPane.addSaveGameView(saveGameView);
-					updateWindowTitle();
-				}
-				contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
-				contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.currentSelected!=null);
-				contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
-				contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.currentSelected!=null);
-				contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
-			}
+			if (inputFileChooser.showOpenDialog(mainWindow)==JFileChooser.APPROVE_OPTION)
+				openSaveGame(inputFileChooser.getSelectedFile());
 			break;
 			
 		case Close:
@@ -290,6 +277,40 @@ public class SaveViewer implements ActionListener {
 			new ComputeCoordinatesDialog(mainWindow).showDialog(Position.PARENT_CENTER);
 			break;
 		}
+	}
+
+	private File getGameFolder() {
+		Properties prop = System.getProperties();
+//			ArrayList<Object> keys = new ArrayList<>(prop.keySet());
+//			keys.sort(null);
+//			for (Object key : keys) {
+//				System.out.printf("[%s] = %s\r\n",key,prop.get(key));
+//			}
+		String home = prop.get("user.home").toString();
+		String fs = prop.get("file.separator").toString();
+		String path = home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
+		return new File(path);
+	}
+
+	private void openSaveGame(File saveGameFile) {
+		log("Parse file \"%s\" ...",saveGameFile.getPath());
+		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
+		log_ln(" done");
+		if (new_json_data==null) {
+			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
+		} else {
+			SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+			readUniverseObjectDataFromDataPool(saveGameData.universe);
+			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData);
+			loadedSaveGames.add(saveGameView);
+			contentPane.addSaveGameView(saveGameView);
+			updateWindowTitle();
+		}
+		contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
+		contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.currentSelected!=null);
+		contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
+		contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.currentSelected!=null);
+		contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
 	}
 
 	private void reloadSaveGameView(SaveGameView view) {
@@ -414,6 +435,8 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
+			toolBar.add(createButton("Load \"save.hg\"", ToolbarIcons.Open, ActionCommand.save_hg,true));
+			toolBar.add(createButton("Load \"save2.hg\"", ToolbarIcons.Open, ActionCommand.save2_hg,true));
 			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchFolder,true));
 			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
 //			toolBar.add(createButton("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
@@ -875,11 +898,9 @@ public class SaveViewer implements ActionListener {
 					knownID.fullName = fullName;
 				}
 			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
+		catch (FileNotFoundException e) { e.printStackTrace(); }
+		catch (IOException e) { e.printStackTrace(); }
 		System.out.println();
 	}
 
@@ -893,6 +914,47 @@ public class SaveViewer implements ActionListener {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static void loadProductIDsFromFile  () { loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   ); }
+	public static void loadTechIDsFromFile     () { loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology"); }
+	public static void loadSubstanceIDsFromFile() { loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); }
+
+	private static void loadIDsFromFile(String filePath, HashMap<String,GeneralizedID> map, String idLabel) {
+		File file = new File(filePath);
+		if (!file.isFile()) return;
+		
+		System.out.println("Read "+idLabel+" IDs from file \""+filePath+"\"...");
+		String str;
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+			while ((str=in.readLine())!=null) {
+				int pos = str.indexOf('=');
+				if (pos<0) continue;
+				
+				String id = str.substring(0, pos);
+				String label = str.substring(pos+1);
+				map.put(id, new GeneralizedID(id,label));
+			}
+		}
+		catch (FileNotFoundException e) { e.printStackTrace(); }
+		catch (IOException e) { e.printStackTrace(); }
+		System.out.println("done");
+	}
+
+	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
+	public static void saveTechIDsToFile     () { saveIDsToFile(FILE_TECH_ID     ,techIDs     ,"technologie"); }
+	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
+
+	public static void saveIDsToFile(String filePath, HashMap<String, GeneralizedID> map, String idLabel) {
+		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
+		File file = new File(filePath);
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+			Vector<String> keys = new Vector<>(map.keySet());
+			keys.sort(null);
+			for (String id:keys) out.printf("%s=%s\r\n",id,map.get(id).label);
+		}
+		catch (FileNotFoundException e) { e.printStackTrace(); }
+		System.out.println("done");
 	}
 	
 	public static void loadUniverseObjectDataFromFile() {
@@ -971,11 +1033,9 @@ public class SaveViewer implements ActionListener {
 					continue;
 				}
 			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
+		catch (FileNotFoundException e) { e.printStackTrace(); }
+		catch (IOException e) { e.printStackTrace(); }
 		System.out.println("done");
 	}
 	
@@ -1134,5 +1194,27 @@ public class SaveViewer implements ActionListener {
 		}
 		
 		
+	}
+	
+	public static class GeneralizedID {
+		
+		public final String id;
+		public String label;
+		private final HashMap<SaveGameData,Vector<String>> usage;
+		
+		public GeneralizedID(String id) {
+			this(id,"");
+		}
+		private GeneralizedID(String id, String label) {
+			this.id = id;
+			this.label = label;
+			this.usage = new HashMap<>();
+		}
+
+		public void addUsage(SaveGameData base, String string) {
+			Vector<String> arr = usage.get(base);
+			if (arr==null) usage.put(base,arr=new Vector<>());
+			arr.add(string);
+		}
 	}
 }

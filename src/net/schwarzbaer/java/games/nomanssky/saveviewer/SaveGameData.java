@@ -11,6 +11,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Ba
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -37,6 +38,7 @@ public class SaveGameData {
 	public KnownWords knownWords;
 	public DiscoveryData discoveryData;
 	public Inventories inventories;
+	public KnownBlueprints knownBlueprints;
 	
 	public SaveGameData(JSON_Object json_data) {
 		error = Error.NoError;
@@ -55,6 +57,7 @@ public class SaveGameData {
 	public SaveGameData parse() {
 		general.parse();
 		parseStats();
+		parseKnownBlueprints();
 		parseKnownWords();
 		parseDiscoveryData();
 		parseInventories();
@@ -124,6 +127,31 @@ public class SaveGameData {
 		}
 	}
 
+	private void parseKnownBlueprints() {
+		knownBlueprints = new KnownBlueprints();
+		knownBlueprints.technologies = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownTech"    ), SaveViewer.techIDs   );
+		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), SaveViewer.productIDs);
+	}
+
+	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, HashMap<String, GeneralizedID> map) {
+		if (arrayValue==null) return new GeneralizedID[0];
+		
+		GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			String id = Value.getString(value );
+			if (id!=null) knownBlueprints[i] = addGeneralizedID(map, id);
+		}
+		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
+		return knownBlueprints;
+	}
+
+	private static GeneralizedID addGeneralizedID(HashMap<String, GeneralizedID> map, String id) {
+		GeneralizedID newID = new GeneralizedID(id);
+		GeneralizedID existingID = map.putIfAbsent(id, newID);
+		return existingID==null?newID:existingID;
+	}
+
 	private void parseKnownWords() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","KnownWords");
 		if (arrayValue==null)
@@ -147,6 +175,13 @@ public class SaveGameData {
 			System.out.println("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
 		if (!discoveryData.notParsedAvailableData.isEmpty())
 			System.out.println("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+	}
+
+	public static final class KnownBlueprints {
+
+		public GeneralizedID[] products;
+		public GeneralizedID[] technologies;
+	
 	}
 
 	public static final class Inventories {
@@ -223,20 +258,42 @@ public class SaveGameData {
 				JSON_Object slotObj = Value.getObject(value);
 				if (slotObj==null) { wrongSlots.add(value); continue; }
 				Slot slot = new Slot(false);
-				slot.type         = base.getStringValue (slotObj, "Type","InventoryType");
-				slot.id           = base.getStringValue (slotObj, "Id");
+				slot.typeStr      = base.getStringValue (slotObj, "Type","InventoryType");
+				slot.idStr        = base.getStringValue (slotObj, "Id");
 				slot.amount       = base.getIntegerValue(slotObj, "Amount");
 				slot.maxAmount    = base.getIntegerValue(slotObj, "MaxAmount");
 				slot.damageFactor = base.getFloatValue  (slotObj, "DamageFactor");
 				slot.indexX       = base.getIntegerValue(slotObj, "Index","X");
 				slot.indexY       = base.getIntegerValue(slotObj, "Index","Y");
+				
+				if (slot.typeStr!=null) {
+					switch(slot.typeStr) {
+					case "Product"   : slot.type = Slot.Type.Product; break;
+					case "Technology": slot.type = Slot.Type.Technology; break;
+					case "Substance" : slot.type = Slot.Type.Substance; break;
+					}
+				}
 				if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
 				if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
 				int x = (int)(long)slot.indexX;
 				int y = (int)(long)slot.indexY;
 				if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
 				if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantSlots; continue; }
+				
 				slots[x][y] = slot;
+				
+				if (slot.type!=null && slot.idStr!=null) {
+					HashMap<String, GeneralizedID> map = null;
+					switch(slot.type) {
+					case Product   : map = SaveViewer.productIDs;   break;
+					case Technology: map = SaveViewer.techIDs;      break;
+					case Substance : map = SaveViewer.substanceIDs; break;
+					}
+					if (map!=null) {
+						slot.id_ = addGeneralizedID(map, slot.idStr);
+						slot.id_.addUsage(base,String.format("%s(%d,%d)", inventoryLabel,x,y));
+					}
+				}
 			}
 			if (!wrongSlots.isEmpty()) System.err.println(inventoryLabel+": Found "+wrongSlots.size()+" wrong slots.");
 			if (redundantSlots>0     ) System.err.println(inventoryLabel+": Found "+redundantSlots+" redundant slots.");
@@ -324,11 +381,14 @@ public class SaveGameData {
 		}
 
 		public static final class Slot {
-
+			public enum Type { Product, Technology, Substance }
+			
 			public Long indexX;
 			public Long indexY;
-			public String id;
-			public String type;
+			public String idStr;
+			public GeneralizedID id_;
+			public String typeStr;
+			public Type type;
 			public Long amount;
 			public Long maxAmount;
 			public Double damageFactor;
@@ -338,7 +398,9 @@ public class SaveGameData {
 			public Slot(boolean isEmpty) {
 				this.indexX = null;
 				this.indexY = null;
-				this.id = null;
+				this.idStr = null;
+				this.id_ = null;
+				this.typeStr = null;
 				this.type = null;
 				this.amount = null;
 				this.maxAmount = null;

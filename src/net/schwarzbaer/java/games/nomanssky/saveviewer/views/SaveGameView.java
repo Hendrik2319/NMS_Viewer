@@ -13,6 +13,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -23,6 +24,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels.BlueprintsPanel.BlueprintType;
 
 public class SaveGameView extends JPanel {
 
@@ -70,8 +72,10 @@ public class SaveGameView extends JPanel {
 		if (data.stats      !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
 		if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
 		
-		tabbedPane.addTab("DiscoveryData (Avail.)",new DiscoveryDataPanels.AvailableDataPanel(data));
-		tabbedPane.addTab("DiscoveryData (Store)",new DiscoveryDataPanels.StoredDataPanel(data));
+		tabbedPane.addTab("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
+		tabbedPane.addTab("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
+		tabbedPane.addTab("DiscoveryData (Avail.)",new SimplePanels.DiscoveredDataAvailablePanel(data));
+		tabbedPane.addTab("DiscoveryData (Store)",new SimplePanels.DiscoveredDataStoredPanel(data));
 		
 //		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
 		
@@ -121,6 +125,24 @@ public class SaveGameView extends JPanel {
 			JButton button = new JButton(title);
 			button.addActionListener(l);
 			return button;
+		}
+
+		protected static <ActionCommand extends Enum<ActionCommand>> JButton createButton(String title, ActionListener l, ActionCommand actionCommand) {
+			JButton button = createButton(title,l);
+			button.setActionCommand(actionCommand.toString());
+			return button;
+		}
+
+		protected static JMenuItem createMenuItem(String title, ActionListener l) {
+			JMenuItem menuItem = new JMenuItem(title);
+			menuItem.addActionListener(l);
+			return menuItem;
+		}
+
+		protected static <ActionCommand extends Enum<ActionCommand>> JMenuItem createMenuItem(String title, ActionListener l, ActionCommand actionCommand) {
+			JMenuItem menuItem = createMenuItem(title,l);
+			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
 		}
 
 		protected static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
