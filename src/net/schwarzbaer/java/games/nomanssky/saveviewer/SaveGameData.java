@@ -290,8 +290,8 @@ public class SaveGameData {
 					case Substance : map = SaveViewer.substanceIDs; break;
 					}
 					if (map!=null) {
-						slot.id_ = addGeneralizedID(map, slot.idStr);
-						slot.id_.addUsage(base,String.format("%s(%d,%d)", inventoryLabel,x,y));
+						slot.id = addGeneralizedID(map, slot.idStr);
+						slot.id.addUsage(base,String.format("%s(%d,%d)", inventoryLabel,x,y));
 					}
 				}
 			}
@@ -386,7 +386,7 @@ public class SaveGameData {
 			public Long indexX;
 			public Long indexY;
 			public String idStr;
-			public GeneralizedID id_;
+			public GeneralizedID id;
 			public String typeStr;
 			public Type type;
 			public Long amount;
@@ -399,7 +399,7 @@ public class SaveGameData {
 				this.indexX = null;
 				this.indexY = null;
 				this.idStr = null;
-				this.id_ = null;
+				this.id = null;
 				this.typeStr = null;
 				this.type = null;
 				this.amount = null;
