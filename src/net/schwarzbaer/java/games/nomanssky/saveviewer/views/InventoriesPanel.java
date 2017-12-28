@@ -48,6 +48,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 //		tabbedPane.addTab("Player", new InventoryPanel(data.inventories.player));
 //		tabbedPane.addTab("Player", new InventoryPanel(data.inventories.player));
 //		tabbedPane.addTab("Player", new InventoryPanel(data.inventories.player));
+		// TODO
 		
 		add(tabbedPane,BorderLayout.CENTER);
 	}
