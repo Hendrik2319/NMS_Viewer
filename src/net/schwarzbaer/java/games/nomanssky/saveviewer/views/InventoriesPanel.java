@@ -90,7 +90,6 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		
 		private Inventory inventory;
 		private JTextArea textarea;
-//		private JLabel inventoryLabel;
 		private InventoryDisplay inventoryLabel;
 		private JPopupMenu contextMenu;
 
@@ -196,7 +195,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				if (slot.isEmpty) {
 					textarea.append("   is valid, but empty\r\n");
 				} else {
-					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):(slot.id.label+" ["+slot.id.id+"]"))+"\r\n");
+					if (slot.id!=null && !slot.id.label.isEmpty())
+					textarea.append("   Label : "+slot.id.label+"\r\n");
+					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):("["+slot.id.id+"]"))+"\r\n");
 					textarea.append("   Type  : "+(slot.type==null?slot.typeStr:slot.type)+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
 					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
@@ -222,7 +223,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Stroke STROKE__SLOT_HOVERED = new BasicStroke(6.0f,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL);
 			private static final Stroke STROKE__STANDARD     = new BasicStroke(1.0f);
 			
-			private static final int SLOT_BORDER = 5;
+			private static final int SLOT_BORDER = 3;
 			private static final int SLOT_WIDTH  = 107;
 			private static final int SLOT_HEIGHT = 125;
 			private static final int SLOT_RASTER_X = SLOT_WIDTH +2*SLOT_BORDER;
@@ -284,22 +285,23 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 							g2.drawRect(xS, yS, SLOT_WIDTH-1, SLOT_HEIGHT-1);
 							
 							if (!slot.isEmpty) {
-//								g2.setClip(xS+1, yS+1, SLOT_WIDTH-2, SLOT_HEIGHT-2);
 								g2.setClip(baseClip.createIntersection(new Rectangle(xS+1, yS+1, SLOT_WIDTH-2, SLOT_HEIGHT-2)));
 								g2.setPaint(getSlotTextColor(slot.type));
-								int offset = 13;
+								int offsetX = 5;
+								int offsetY = 13;
+								int incrementY = 13;
 								
-								g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), xS+3, yS+offset); offset+=10;
+								g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), xS+offsetX, yS+offsetY); offsetY+=incrementY;
 								
 								if (slot.id!=null && !slot.id.label.isEmpty()) {
 									g2.setPaint(COLOR__SLOT_TEXT_LABEL);
-									g2.drawString(slot.id.label, xS+3, yS+offset); offset+=10;
+									g2.drawString(slot.id.label, xS+offsetX, yS+offsetY); offsetY+=incrementY;
 									g2.setPaint(getSlotTextColor(slot.type));
 								}
 								
-								g2.drawString(slot.id==null?slot.idStr:slot.id.id, xS+3, yS+offset); offset+=10;
+								g2.drawString(slot.id==null?slot.idStr:slot.id.id, xS+offsetX, yS+offsetY); offsetY+=incrementY;
 
-								g2.drawString(String.format("%d/%d", slot.amount, slot.maxAmount), xS+3, yS+offset); offset+=10;
+								g2.drawString(String.format("%d/%d", slot.amount, slot.maxAmount), xS+offsetX, yS+offsetY); offsetY+=incrementY;
 								
 								g2.setClip(baseClip);
 							}
@@ -348,7 +350,6 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		public InventoryListPanel() {
 			super();
 			contentPanel = new JPanel();
-//			contentPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 3, 3));
 			contentPanel.setLayout(new BoxLayout(contentPanel,BoxLayout.Y_AXIS));
 			setViewportView(contentPanel);
 		}
