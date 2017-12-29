@@ -62,9 +62,6 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
@@ -74,6 +71,11 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Sol
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
@@ -397,13 +399,17 @@ public class SaveViewer implements ActionListener {
 			currentSelected = null;
 			tabbedPane = new JTabbedPane();
 			tabbedPane.setPreferredSize(new Dimension(1500, 800));
+			tabbedPane.addTab("Technology IDs", new GeneralizedIDPanel(techIDs,"TechnologyIDsTable"));
+			tabbedPane.addTab("Product IDs", new GeneralizedIDPanel(productIDs,"ProductIDsTable"));
+			tabbedPane.addTab("Substance IDs", new GeneralizedIDPanel(substanceIDs,"SubstanceIDsTable"));
+			
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent e) {
 					Component comp = tabbedPane.getSelectedComponent();
 					if (comp instanceof SaveGameView) currentSelected = (SaveGameView)comp;
 					else currentSelected = null;
-					SaveViewer.this.actionPerformed(new ActionEvent(tabbedPane, ActionEvent.ACTION_FIRST, ActionCommand.TabSelected.toString()));
+					actionPerformed(new ActionEvent(tabbedPane, ActionEvent.ACTION_FIRST, ActionCommand.TabSelected.toString()));
 				}
 			});
 			
@@ -1215,6 +1221,84 @@ public class SaveViewer implements ActionListener {
 			Vector<String> arr = usage.get(base);
 			if (arr==null) usage.put(base,arr=new Vector<>());
 			arr.add(string);
+		}
+	}
+	
+	private static class GeneralizedIDPanel extends JPanel {
+		private static final long serialVersionUID = -4946966056212175920L;
+		
+		private int numberOfLabledIDs;
+		private HashMap<String, GeneralizedID> sourceIdMap;
+		private Vector<GeneralizedID> IDs;
+
+		public GeneralizedIDPanel(HashMap<String, GeneralizedID> idMap, String tableLabel) {
+			super(new BorderLayout(3, 3));
+			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+			
+			sourceIdMap = idMap;
+			updateIdList();
+			updateNumberOfLabledIDs();
+			
+			GeneralizedIDTableModel tableModel = new GeneralizedIDTableModel();
+			SimplifiedTable table = new SimplifiedTable(tableLabel,tableModel,true,SaveViewer.DEBUG,true);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			
+			add(tableScrollPane,BorderLayout.CENTER);
+		}
+
+		private void updateIdList() {
+			IDs = new Vector<>(sourceIdMap.values());
+			IDs.sort(Comparator.comparing(id->id.id));
+		}
+
+		private void updateNumberOfLabledIDs() {
+			numberOfLabledIDs = 0;
+			for (GeneralizedID id:IDs) {
+				if (!id.label.isEmpty())
+					++numberOfLabledIDs;
+			}
+		}
+		
+		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
+			ID    ("ID"    , String.class,  80,-1,120,120),
+			Label ("Label" , String.class, 150,-1,200,200);
+			
+			private TableView.SimplifiedColumnConfig columnConfig;
+			
+			GeneralizedIDColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+	
+		private class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
+	
+			private static final int EXTRA_ROWS = 1;
+
+			protected GeneralizedIDTableModel() {
+				super(GeneralizedIDColumnID.values());
+			}
+	
+			@Override public int getRowCount() { return IDs.size()+EXTRA_ROWS; }
+			@Override public int getUnsortedRowsCount() { return EXTRA_ROWS; }
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
+				if (rowIndex<EXTRA_ROWS) {
+					switch(columnID) {
+					case ID   : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
+					case Label: return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, numberOfLabledIDs*100.0f/IDs.size());
+					}
+					return null;
+				}
+				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
+				if (id==null) return null;
+				switch(columnID) {
+				case ID   : return id.id;
+				case Label: return id.label;
+				}
+				return null;
+			}
 		}
 	}
 }

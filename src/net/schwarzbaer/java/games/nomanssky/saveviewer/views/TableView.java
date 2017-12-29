@@ -26,7 +26,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-class TableView {
+public class TableView {
 
 	static class DebugTableContextMenu implements MouseListener, ActionListener {
 	
@@ -93,7 +93,7 @@ class TableView {
 	
 	}
 
-	static class SimplifiedTable extends JTable {
+	public static class SimplifiedTable extends JTable {
 		private static final long serialVersionUID = 6963749333892762675L;
 		private boolean useRowSorter;
 		private String name;
@@ -109,7 +109,7 @@ class TableView {
 			//setAutoCreateRowSorter(useRowSorter);
 		}
 		
-		SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
+		public SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
 			setModel(dataModel);
 		}
@@ -300,7 +300,7 @@ class TableView {
 		
 	}
 
-	static class SimplifiedColumnConfig {
+	public static class SimplifiedColumnConfig {
 		public String name;
 		public int minWidth;
 		public int maxWidth;
@@ -311,7 +311,7 @@ class TableView {
 		SimplifiedColumnConfig() {
 			this("",String.class,-1,-1,-1,-1);
 		}
-		SimplifiedColumnConfig(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+		public SimplifiedColumnConfig(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 			this.name = name;
 			this.columnClass = columnClass;
 			this.minWidth = minWidth;
@@ -321,11 +321,11 @@ class TableView {
 		}
 	}
 
-	static interface SimplifiedColumnIDInterface {
+	public static interface SimplifiedColumnIDInterface {
 		public SimplifiedColumnConfig getColumnConfig();
 	}
 
-	static abstract class SimplifiedTableModel<ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> implements TableModel {
+	public static abstract class SimplifiedTableModel<ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> implements TableModel {
 		
 		protected ColumnID[] columns;
 		private Vector<TableModelListener> tableModelListeners;
