@@ -48,12 +48,14 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.ListSelectionModel;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableCellEditor;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
@@ -71,6 +73,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Sol
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID.Usage;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
@@ -89,6 +92,7 @@ public class SaveViewer implements ActionListener {
 
 	public static final boolean DEBUG = true;
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
+	
 	public static final HashMap<String,GeneralizedID> productIDs   = new HashMap<>();
 	public static final HashMap<String,GeneralizedID> techIDs      = new HashMap<>();
 	public static final HashMap<String,GeneralizedID> substanceIDs = new HashMap<>();
@@ -220,11 +224,11 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case Close:
-			if (contentPane.currentSelected!=null) closeSaveGameView(contentPane.currentSelected);
+			if (contentPane.selectedSaveGameView!=null) closeSaveGameView(contentPane.selectedSaveGameView);
 			break;
 			
 		case Reload:
-			if (contentPane.currentSelected!=null) reloadSaveGameView(contentPane.currentSelected);
+			if (contentPane.selectedSaveGameView!=null) reloadSaveGameView(contentPane.selectedSaveGameView);
 			break;
 			
 		case Compare:
@@ -236,41 +240,41 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case WriteHTML:
-			if (contentPane.currentSelected!=null) {
+			if (contentPane.selectedSaveGameView!=null) {
 				htmlFileChooser.setSelectedFile(
 						new File(
 								htmlFileChooser.getCurrentDirectory(),
-								contentPane.currentSelected.file.getName()+".html"
+								contentPane.selectedSaveGameView.file.getName()+".html"
 						)
 				);
 				if (htmlFileChooser.showSaveDialog(mainWindow)==JFileChooser.APPROVE_OPTION) {
 					File selectedFile = htmlFileChooser.getSelectedFile();
-					FileExport.writeToHTML(contentPane.currentSelected.file.getName(),contentPane.currentSelected.data.json_data,selectedFile);
+					FileExport.writeToHTML(contentPane.selectedSaveGameView.file.getName(),contentPane.selectedSaveGameView.data.json_data,selectedFile);
 				}
 			}
 			break;
 			
 		case WriteJSON:
-			if (contentPane.currentSelected!=null) {
+			if (contentPane.selectedSaveGameView!=null) {
 				jsonFileChooser.setSelectedFile(
 						new File(
 								jsonFileChooser.getCurrentDirectory(),
-								contentPane.currentSelected.file.getName()+".js"
+								contentPane.selectedSaveGameView.file.getName()+".js"
 						)
 				);
 				if (jsonFileChooser.showSaveDialog(mainWindow)==JFileChooser.APPROVE_OPTION) {
 					File selectedFile = jsonFileChooser.getSelectedFile();
-					FileExport.writeToJSON(contentPane.currentSelected.data.json_data,selectedFile);
+					FileExport.writeToJSON(contentPane.selectedSaveGameView.data.json_data,selectedFile);
 				}
 			}
 			break;
 			
 		case TabSelected:
 			updateWindowTitle();
-			contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
-			contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.currentSelected!=null);
-			contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.currentSelected!=null);
-			contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
+			contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
+			contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
+			contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.selectedSaveGameView!=null);
+			contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.selectedSaveGameView!=null);
 			if (contentPane.isSelected(compareTab))
 				compareTab.updatePanel();
 			break;
@@ -301,18 +305,21 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data==null) {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
-			SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName()).parse();
 			readUniverseObjectDataFromDataPool(saveGameData.universe);
+			saveProductIDsToFile();
+			saveTechIDsToFile();
+			saveSubstanceIDsToFile();
 			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData);
 			loadedSaveGames.add(saveGameView);
 			contentPane.addSaveGameView(saveGameView);
 			updateWindowTitle();
 		}
-		contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.currentSelected!=null);
-		contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.currentSelected!=null);
+		contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
+		contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
 		contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
-		contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.currentSelected!=null);
-		contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.currentSelected!=null);
+		contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.selectedSaveGameView!=null);
+		contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.selectedSaveGameView!=null);
 	}
 
 	private void reloadSaveGameView(SaveGameView view) {
@@ -322,15 +329,18 @@ public class SaveViewer implements ActionListener {
 		JSON_Object new_json_data = new JSON_Parser(file).parse();
 		log_ln(" done");
 		if (new_json_data!=null) {
-			SaveGameData saveGameData = new SaveGameData(new_json_data).parse();
+			removeUsages(view.data);
+			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName()).parse();
 			readUniverseObjectDataFromDataPool(saveGameData.universe);
 			view.replaceData(saveGameData);
+			contentPane.updateIDPanels();
 		}
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
 		loadedSaveGames.remove(view);
 		contentPane.removeSaveGameView(view);
+		removeUsages(view.data);
 		updateWindowTitle();
 		
 		if (loadedSaveGames.size()<2 && compareTab!=null) {
@@ -339,6 +349,12 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
+	private void removeUsages(SaveGameData oldData) {
+		for (GeneralizedID id:productIDs  .values()) id.usage.remove(oldData);
+		for (GeneralizedID id:techIDs     .values()) id.usage.remove(oldData);
+		for (GeneralizedID id:substanceIDs.values()) id.usage.remove(oldData);
+	}
+
 	public static void log_ln( String format, Object... values ) {
 		System.out.printf(format+"\r\n",values);
 	}
@@ -348,10 +364,10 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void updateWindowTitle() {
-		if (contentPane.currentSelected == null)
+		if (contentPane.selectedSaveGameView == null)
 			mainWindow.setTitle("No Man's Sky - Viewer");
 		else
-			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.currentSelected.file.getPath());
+			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
 	}
 
@@ -384,7 +400,11 @@ public class SaveViewer implements ActionListener {
 		
 		private Disabler<ActionCommand> disabler;
 		private JTabbedPane tabbedPane;
-		private SaveGameView currentSelected;
+		private SaveGameView selectedSaveGameView;
+
+		private GeneralizedIDPanel techIDsPanel;
+		private GeneralizedIDPanel productIDsPanel;
+		private GeneralizedIDPanel substanceIDsPanel;
 		
 		ContentPane() {
 			super( new BorderLayout(3,3) );
@@ -396,19 +416,20 @@ public class SaveViewer implements ActionListener {
 			JToolBar toolBar = new JToolBar("Standard");
 			addButtons(toolBar);
 			
-			currentSelected = null;
+			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
 			tabbedPane.setPreferredSize(new Dimension(1500, 800));
-			tabbedPane.addTab("Technology IDs", new GeneralizedIDPanel(techIDs,"TechnologyIDsTable"));
-			tabbedPane.addTab("Product IDs", new GeneralizedIDPanel(productIDs,"ProductIDsTable"));
-			tabbedPane.addTab("Substance IDs", new GeneralizedIDPanel(substanceIDs,"SubstanceIDsTable"));
+			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GeneralizedIDPanel(techIDs     , "TechnologyIDsTable"));
+			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GeneralizedIDPanel(productIDs  , "ProductIDsTable"));
+			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GeneralizedIDPanel(substanceIDs, "SubstanceIDsTable"));
 			
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent e) {
 					Component comp = tabbedPane.getSelectedComponent();
-					if (comp instanceof SaveGameView) currentSelected = (SaveGameView)comp;
-					else currentSelected = null;
+					if (comp instanceof SaveGameView) selectedSaveGameView = (SaveGameView)comp;
+					else selectedSaveGameView = null;
+					if (comp instanceof GeneralizedIDPanel) ((GeneralizedIDPanel)comp).updatePanel();
 					actionPerformed(new ActionEvent(tabbedPane, ActionEvent.ACTION_FIRST, ActionCommand.TabSelected.toString()));
 				}
 			});
@@ -416,6 +437,12 @@ public class SaveViewer implements ActionListener {
 			add(toolBar,BorderLayout.PAGE_START);
 			add(tabbedPane,BorderLayout.CENTER);
 			
+		}
+
+		public void updateIDPanels() {
+			techIDsPanel     .updatePanel();
+			productIDsPanel  .updatePanel();
+			substanceIDsPanel.updatePanel();
 		}
 
 		public boolean isSelected(JPanel panel) {
@@ -430,6 +457,9 @@ public class SaveViewer implements ActionListener {
 			int index = tabbedPane.getTabCount();
 			tabbedPane.insertTab(saveGameView.toString(),null, saveGameView, saveGameView.file.getPath(), index);
 			tabbedPane.setTabComponentAt(index, new TabHeader(saveGameView));
+			techIDsPanel     .addUsage(saveGameView);
+			productIDsPanel  .addUsage(saveGameView);
+			substanceIDsPanel.addUsage(saveGameView);
 		}
 
 		public void removeTab(JPanel panel) {
@@ -438,6 +468,9 @@ public class SaveViewer implements ActionListener {
 
 		public void removeSaveGameView(SaveGameView saveGameView) {
 			tabbedPane.remove(saveGameView);
+			techIDsPanel     .removeUsage(saveGameView);
+			productIDsPanel  .removeUsage(saveGameView);
+			substanceIDsPanel.removeUsage(saveGameView);
 		}
 
 		private void addButtons(JToolBar toolBar) {
@@ -1206,7 +1239,7 @@ public class SaveViewer implements ActionListener {
 		
 		public final String id;
 		public String label;
-		private final HashMap<SaveGameData,Vector<String>> usage;
+		private final HashMap<SaveGameData,Usage> usage;
 		
 		public GeneralizedID(String id) {
 			this(id,"");
@@ -1217,51 +1250,104 @@ public class SaveViewer implements ActionListener {
 			this.usage = new HashMap<>();
 		}
 
-		public void addUsage(SaveGameData base, String string) {
-			Vector<String> arr = usage.get(base);
-			if (arr==null) usage.put(base,arr=new Vector<>());
-			arr.add(string);
+		public Usage getUsage(SaveGameData base) {
+			Usage newUsage = new Usage();
+			Usage oldUsage = usage.putIfAbsent(base, newUsage);
+			return oldUsage==null?newUsage:oldUsage;
+		}
+
+		public class Usage {
+			
+			public final Vector<String> inventoryUsages;
+			public final Vector<String> blueprintUsages;
+			
+			public Usage() {
+				inventoryUsages = new Vector<>();
+				blueprintUsages = new Vector<>();
+			}
+			
+			public void addInventoryUsage(String inventoryLabel, int x, int y) {
+				inventoryUsages.add(String.format("%s(%d,%d)", inventoryLabel, x, y));
+			}
+
+			public void addBlueprintUsage(String label, int i) {
+				blueprintUsages.add(label+" Blueprint "+i);
+			}
+
+			public boolean isEmpty() {
+				return inventoryUsages.isEmpty() && blueprintUsages.isEmpty();
+			}
 		}
 	}
 	
 	private static class GeneralizedIDPanel extends JPanel {
 		private static final long serialVersionUID = -4946966056212175920L;
-		
-		private int numberOfLabledIDs;
-		private HashMap<String, GeneralizedID> sourceIdMap;
-		private Vector<GeneralizedID> IDs;
+
+		private SimplifiedTable table;
+		private GeneralizedIDTableModel tableModel;
+
+		private JTextArea textarea;
 
 		public GeneralizedIDPanel(HashMap<String, GeneralizedID> idMap, String tableLabel) {
 			super(new BorderLayout(3, 3));
 			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
-			sourceIdMap = idMap;
-			updateIdList();
-			updateNumberOfLabledIDs();
+			tableModel = new GeneralizedIDTableModel(idMap);
+			table = new SimplifiedTable(tableLabel,tableModel,true,SaveViewer.DEBUG,true);
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			table.getSelectionModel().addListSelectionListener(e->showID(tableModel.getValue(table.getRowSorter().convertRowIndexToModel(table.getSelectedRow()))));
+			add(new JScrollPane(table),BorderLayout.CENTER);
 			
-			GeneralizedIDTableModel tableModel = new GeneralizedIDTableModel();
-			SimplifiedTable table = new SimplifiedTable(tableLabel,tableModel,true,SaveViewer.DEBUG,true);
-			JScrollPane tableScrollPane = new JScrollPane(table);
-			
-			add(tableScrollPane,BorderLayout.CENTER);
+			textarea = new JTextArea();
+			textarea.setEditable(false);
+			JScrollPane textareaScrollPane = new JScrollPane(textarea);
+			textareaScrollPane.getViewport().setPreferredSize(new Dimension(350, 150));
+			add(textareaScrollPane, BorderLayout.SOUTH);
 		}
 
-		private void updateIdList() {
-			IDs = new Vector<>(sourceIdMap.values());
-			IDs.sort(Comparator.comparing(id->id.id));
-		}
-
-		private void updateNumberOfLabledIDs() {
-			numberOfLabledIDs = 0;
-			for (GeneralizedID id:IDs) {
-				if (!id.label.isEmpty())
-					++numberOfLabledIDs;
+		private void showID(GeneralizedID id) {
+			textarea.setText("");
+			if (id==null) return;
+			textarea.append("ID   :"+id.id+"\r\n");
+			if (!id.label.isEmpty())
+				textarea.append("Label:"+id.label+"\r\n");
+			for (SaveGameData key:id.usage.keySet()) {
+				textarea.append("\r\n");
+				textarea.append(key.filename+":\r\n");
+				Usage usages = id.usage.get(key);
+				if (usages.isEmpty())
+					textarea.append("   none\r\n");
+				for (String str:usages.inventoryUsages) textarea.append("   "+str+"\r\n");
+				for (String str:usages.blueprintUsages) textarea.append("   "+str+"\r\n");
 			}
 		}
-		
+
+		public void addUsage(SaveGameView view) {
+			stopCellEditing();
+			tableModel.addUsage(view);
+			tableModel.setColumnWidths(table);
+		}
+
+		public void updatePanel() {
+			stopCellEditing();
+			tableModel.updateData();
+		}
+
+		public void removeUsage(SaveGameView view) {
+			stopCellEditing();
+			tableModel.removeUsage(view);
+			tableModel.setColumnWidths(table);
+		}
+
+		private void stopCellEditing() {
+			TableCellEditor cellEditor = table.getCellEditor();
+			if (cellEditor!=null) cellEditor.stopCellEditing();
+		}
+
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
 			ID    ("ID"    , String.class,  80,-1,120,120),
-			Label ("Label" , String.class, 150,-1,200,200);
+			Label ("Label" , String.class, 150,-1,200,200),
+			Usage (""      , String.class,  80,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -1271,23 +1357,92 @@ public class SaveViewer implements ActionListener {
 			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
+		private static class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
 	
 			private static final int EXTRA_ROWS = 1;
+			
+			private int numberOfLabledIDs;
+			private HashMap<String, GeneralizedID> sourceIdMap;
 
-			protected GeneralizedIDTableModel() {
-				super(GeneralizedIDColumnID.values());
+			private Vector<GeneralizedID> IDs;
+			private Vector<SaveGameView> usageKeys;
+
+			protected GeneralizedIDTableModel(HashMap<String, GeneralizedID> sourceIdMap) {
+				super(new GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Label });
+				
+				this.usageKeys = new Vector<>();
+				this.sourceIdMap = sourceIdMap;
+				updateIdList();
+				updateNumberOfLabledIDs();
 			}
-	
+
+			public void addUsage(SaveGameView view) {
+				usageKeys.add(view);
+				updateIdList();
+				updateNumberOfLabledIDs();
+				fireTableStructureUpdate();
+			}
+
+			public void updateData() {
+				updateIdList();
+				updateNumberOfLabledIDs();
+				fireTableUpdate();
+			}
+
+			public void removeUsage(SaveGameView view) {
+				usageKeys.remove(view);
+				fireTableStructureUpdate();
+			}
+
+			private void updateIdList() {
+				IDs = new Vector<>(sourceIdMap.values());
+				IDs.sort(Comparator.comparing(id->id.id));
+			}
+
+			private void updateNumberOfLabledIDs() {
+				numberOfLabledIDs = 0;
+				for (GeneralizedID id:IDs) {
+					if (!id.label.isEmpty())
+						++numberOfLabledIDs;
+				}
+			}
+
+			@Override
+			protected GeneralizedIDColumnID getColumnID(int columnIndex) {
+				if (columnIndex>=columns.length) return GeneralizedIDColumnID.Usage;
+				return super.getColumnID(columnIndex);
+			}
+
+			@Override public int getColumnCount() {
+				return columns.length+usageKeys.size();
+			}
+
+			@Override
+			public String getColumnName(int columnIndex) {
+				if (columnIndex>=columns.length) return usageKeys.get(columnIndex-columns.length).file.getName();
+				return super.getColumnName(columnIndex);
+			}
+
 			@Override public int getRowCount() { return IDs.size()+EXTRA_ROWS; }
 			@Override public int getUnsortedRowsCount() { return EXTRA_ROWS; }
+			
+			@Override
+			protected boolean isCellEditable(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
+				return columnID==GeneralizedIDColumnID.Label && rowIndex>=EXTRA_ROWS;
+			}
+
+			public GeneralizedID getValue(int rowIndex) {
+				if (rowIndex<EXTRA_ROWS) return null;
+				return IDs.get(rowIndex-EXTRA_ROWS);
+			}
 
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) {
 					switch(columnID) {
 					case ID   : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
-					case Label: return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, numberOfLabledIDs*100.0f/IDs.size());
+					case Label: return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
+					case Usage: return "";
 					}
 					return null;
 				}
@@ -1296,9 +1451,31 @@ public class SaveViewer implements ActionListener {
 				switch(columnID) {
 				case ID   : return id.id;
 				case Label: return id.label;
+				case Usage:
+					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
+					if (usage==null) return "";
+					if (usage.isEmpty()) return "";
+					String str = "";;
+					if (!usage.inventoryUsages.isEmpty()) str += usage.inventoryUsages.size()+"xI";
+					if (!usage.blueprintUsages.isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.blueprintUsages.size()+"xB"; }
+					return str;
 				}
 				return null;
 			}
+
+			@Override
+			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
+				if (columnID!=GeneralizedIDColumnID.Label) return;
+				if (rowIndex<EXTRA_ROWS) return;
+				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
+				if (id==null) return;
+				id.label = aValue==null?"":aValue.toString();
+				if (sourceIdMap==techIDs     ) saveTechIDsToFile();
+				if (sourceIdMap==productIDs  ) saveProductIDsToFile();
+				if (sourceIdMap==substanceIDs) saveSubstanceIDsToFile();
+			}
+			
+			
 		}
 	}
 }

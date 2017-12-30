@@ -218,7 +218,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_TEXT_TECH = new Color(0x800080);
 
 			private static final Color COLOR__SLOT_BG = Color.WHITE;
-			private static final Color COLOR__INVENTORY_BG = new Color(0xF0F0FF);
+			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
 			
 			private static final Stroke STROKE__SLOT_HOVERED = new BasicStroke(6.0f,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL);
 			private static final Stroke STROKE__STANDARD     = new BasicStroke(1.0f);

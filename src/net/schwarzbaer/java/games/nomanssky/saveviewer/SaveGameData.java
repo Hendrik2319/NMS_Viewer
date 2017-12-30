@@ -31,20 +31,23 @@ public class SaveGameData {
 	public String errorMessage;
 	private boolean isStackTraceEnabled;
 	
+	public final String filename;
 	public final JSON_Object json_data;
+	
 	public final General general;
-	public Universe universe;
+	public final Universe universe;
 	public Stats stats;
 	public KnownWords knownWords;
-	public DiscoveryData discoveryData;
+	public final DiscoveryData discoveryData;
 	public Inventories inventories;
 	public KnownBlueprints knownBlueprints;
 	
-	public SaveGameData(JSON_Object json_data) {
+	public SaveGameData(JSON_Object json_data, String filename) {
 		error = Error.NoError;
 		errorMessage = "";
 		isStackTraceEnabled = true;
 		
+		this.filename = filename;
 		this.json_data = json_data;
 		this.general = new General(this);
 		this.universe = new Universe();
@@ -140,7 +143,10 @@ public class SaveGameData {
 		for (int i=0; i<arrayValue.size(); ++i) {
 			Value value = arrayValue.get(i);
 			String id = Value.getString(value );
-			if (id!=null) knownBlueprints[i] = addGeneralizedID(map, id);
+			if (id!=null) {
+				knownBlueprints[i] = addGeneralizedID(map, id);
+				knownBlueprints[i].getUsage(this).addBlueprintUsage((SaveViewer.techIDs==map?"Technology":"Product"),i);
+			}
 		}
 		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
 		return knownBlueprints;
@@ -291,7 +297,7 @@ public class SaveGameData {
 					}
 					if (map!=null) {
 						slot.id = addGeneralizedID(map, slot.idStr);
-						slot.id.addUsage(base,String.format("%s(%d,%d)", inventoryLabel,x,y));
+						slot.id.getUsage(base).addInventoryUsage(inventoryLabel,x,y);
 					}
 				}
 			}

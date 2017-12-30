@@ -351,6 +351,9 @@ public class TableView {
 		protected void fireTableUpdate() {
 			fireTableModelEvent(new TableModelEvent(this));
 		}
+		protected void fireTableStructureUpdate() {
+			fireTableModelEvent(new TableModelEvent(this,TableModelEvent.HEADER_ROW));
+		}
 
 		@Override public abstract int getRowCount();
 		public abstract Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID);

@@ -4,6 +4,7 @@
 ^FUEL1=Kohlenstoff
 ^FUELRARE1=Plutonium
 ^FUELUNCOMMON1=Thamium-9
+^GAS2=
 ^SPACEGUNK3=Verrostetes Metall
 ^SUBBARREN=
 ^SUBCAVE=Kürbisknolle
