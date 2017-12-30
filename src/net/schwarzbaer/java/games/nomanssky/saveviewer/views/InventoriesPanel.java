@@ -7,6 +7,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -45,18 +46,18 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		super(data);
 		
 		tabbedPane = new JTabbedPane();
-		tabbedPane.addTab("Player"          , new InventoryPanel(data.inventories.player));
-		tabbedPane.addTab("Player (Tech)"   , new InventoryPanel(data.inventories.playerTech));
-		tabbedPane.addTab("Player (Cargo)"  , new InventoryPanel(data.inventories.playerCargo));
-		tabbedPane.addTab("Grave"           , new InventoryPanel(data.inventories.grave));
-		tabbedPane.addTab("MultiTool"       , new InventoryPanel(data.inventories.multitool));
-		tabbedPane.addTab("Freighter"       , new InventoryPanel(data.inventories.freighter));
-		tabbedPane.addTab("Freighter (Tech)", new InventoryPanel(data.inventories.freighterTech));
-		tabbedPane.addTab("Ship (old)"      , new InventoryPanel(data.inventories.ship_old));
-		tabbedPane.addTab("Ships"           , new InventoryListPanel().add(data.inventories.ships,"Ship",1,data.inventories.ships_Tech,"Ship Tech",1));
-		tabbedPane.addTab("Vehicles"        , new InventoryListPanel().add(data.inventories.vehicles,"Vehicle",1));
-		tabbedPane.addTab("Containers"      , new InventoryListPanel().add(data.inventories.chests,"Container",0));
-		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel().add(data.inventories.magicChest,"Magic Chest").add(data.inventories.magicChest2,"Magic Chest 2"));
+		addTab(data.inventories.player       );
+		addTab(data.inventories.playerTech   );
+		addTab(data.inventories.playerCargo  );
+		addTab(data.inventories.grave        );
+		addTab(data.inventories.multitool    );
+		addTab(data.inventories.freighter    );
+		addTab(data.inventories.freighterTech);
+		addTab(data.inventories.ship_old     );
+		tabbedPane.addTab("Ships"           , new InventoryListPanel().addInv(data.inventories.ships,data.inventories.ships_Tech));
+		tabbedPane.addTab("Vehicles"        , new InventoryListPanel().addInv(data.inventories.vehicles));
+		tabbedPane.addTab("Containers"      , new InventoryListPanel(0,2).addInv(data.inventories.chests));
+		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel().addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -65,6 +66,12 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		});
 
 		add(tabbedPane,BorderLayout.CENTER);
+	}
+
+
+	private void addTab(Inventory inventory) {
+		if (inventory!=null)
+			tabbedPane.addTab(inventory.label, new InventoryPanel(inventory));
 	}
 	
 	
@@ -98,13 +105,13 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private Updatable updateListener;
 
 		public InventoryPanel(Inventory inventory) {
-			this(null,inventory, true, null);
+			this(inventory, false, true, null);
 		}
 		
-		public InventoryPanel(String title, Inventory inventory, boolean makeInventoryScrollable, Updatable updateListener) {
+		public InventoryPanel(Inventory inventory, boolean withTitledBorder, boolean makeInventoryScrollable, Updatable updateListener) {
 			super(new BorderLayout(3, 3));
-			if (title==null) setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-			else             setBorder(BorderFactory.createTitledBorder(title));
+			if (withTitledBorder) setBorder(BorderFactory.createTitledBorder(inventory==null?"<null>":inventory.label));
+			else                  setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
 			this.updateListener = updateListener;
 			this.inventory = inventory;
@@ -208,14 +215,15 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private static class InventoryDisplay extends Canvas implements MouseListener, MouseMotionListener {
 			private static final long serialVersionUID = -1799938226122102016L;
 			
-			private static final Color COLOR__SLOT_HOVERED = Color.GREEN;
+			private static final Color COLOR__SLOT_HOVERED       = new Color(0xFFD800);
+			private static final Color COLOR__SLOT_HOVERED_FIXED = Color.GREEN;
 			private static final Color COLOR__SLOT_EDGE = Color.BLACK;
 			
 			private static final Paint COLOR__SLOT_TEXT_LABEL = Color.RED;
 			private static final Color COLOR__SLOT_TEXT = Color.BLUE;
 			private static final Color COLOR__SLOT_TEXT_PRODUCT = new Color(0x4040FF);
-			private static final Color COLOR__SLOT_TEXT_SUBSTANCE = new Color(0xE07000);
-			private static final Color COLOR__SLOT_TEXT_TECH = new Color(0x800080);
+			private static final Color COLOR__SLOT_TEXT_SUBSTANCE = new Color(0xFF6900);
+			private static final Color COLOR__SLOT_TEXT_TECH = new Color(0xAD00AD);
 
 			private static final Color COLOR__SLOT_BG = Color.WHITE;
 			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
@@ -237,12 +245,15 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private Point hoveredSlot;
 			private InventoryPanel panel;
 
+			private boolean isHoveredSlotFixed;
+
 			public InventoryDisplay(InventoryPanel panel, int inventoryWidth, int inventoryHeight, Slot[][] slots) {
 				this.panel = panel;
 				this.inventoryWidth = inventoryWidth;
 				this.inventoryHeight = inventoryHeight;
 				this.slots = slots;
 				this.hoveredSlot = null;
+				this.isHoveredSlotFixed = false;
 				this.imageWidth  = inventoryWidth *SLOT_RASTER_X;
 				this.imageHeight = inventoryHeight*SLOT_RASTER_Y;
 				setPreferredSize(imageWidth, imageHeight);
@@ -262,7 +273,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				
 				if (hoveredSlot!=null) {
 					g2.setStroke(STROKE__SLOT_HOVERED);
-					g2.setPaint(COLOR__SLOT_HOVERED);
+					g2.setPaint(isHoveredSlotFixed?COLOR__SLOT_HOVERED_FIXED:COLOR__SLOT_HOVERED);
 					int xS=hoveredSlot.x*SLOT_RASTER_X+SLOT_BORDER;
 					int yS=hoveredSlot.y*SLOT_RASTER_Y+SLOT_BORDER;
 					g2.drawRect(xS, yS, SLOT_WIDTH, SLOT_HEIGHT);
@@ -319,6 +330,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			}
 
 			private boolean hoveredSlotChanged(int screenX, int screenY) {
+				if (isHoveredSlotFixed) return false;
 				int x = screenX/SLOT_RASTER_X;
 				int y = screenY/SLOT_RASTER_Y;
 				Point newP = null;
@@ -331,13 +343,26 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				return true;
 			}
 
+			private boolean hoveredSlotFixed(int screenX, int screenY) {
+				boolean wasHoveredSlotFixed = isHoveredSlotFixed;
+				isHoveredSlotFixed = false;
+				boolean changed = hoveredSlotChanged(screenX, screenY);
+				isHoveredSlotFixed = !wasHoveredSlotFixed;
+				return changed;
+			}
+
 			@Override public void mouseEntered (MouseEvent e) { if (hoveredSlotChanged(e.getX(),e.getY())) { panel.showValues(); repaint(); } }
 			@Override public void mouseMoved   (MouseEvent e) { if (hoveredSlotChanged(e.getX(),e.getY())) { panel.showValues(); repaint(); } }
-			@Override public void mouseExited  (MouseEvent e) { hoveredSlot = null; panel.showValues(); repaint(); }
-			@Override public void mouseClicked (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON3) panel.showContextMenu(this,e.getX(),e.getY()); }
+			@Override public void mouseExited  (MouseEvent e) { if (!isHoveredSlotFixed) { hoveredSlot = null; panel.showValues(); repaint(); } }
 			@Override public void mousePressed (MouseEvent e) {}
 			@Override public void mouseReleased(MouseEvent e) {}
 			@Override public void mouseDragged (MouseEvent e) {}
+			@Override public void mouseClicked (MouseEvent e) {
+				switch(e.getButton()) {
+				case MouseEvent.BUTTON1: if (hoveredSlotFixed(e.getX(),e.getY())) { panel.showValues(); } repaint(); break;
+				case MouseEvent.BUTTON3: panel.showContextMenu(this,e.getX(),e.getY()); break;
+				}
+			}
 		}
 		
 	}
@@ -347,6 +372,12 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 		private JPanel contentPanel;
 
+		public InventoryListPanel(int rows, int cols) {
+			super();
+			contentPanel = new JPanel(new GridLayout(rows, cols));
+			setViewportView(contentPanel);
+		}
+		
 		public InventoryListPanel() {
 			super();
 			contentPanel = new JPanel();
@@ -361,26 +392,26 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					((Updatable)comp).updateContent();
 		}
 		
-		public InventoryListPanel add(Inventory inventory, String label) {
-			contentPanel.add(new InventoryPanel(label,inventory,false,this));
+		protected InventoryListPanel addInv(Inventory inventory) {
+			contentPanel.add(new InventoryPanel(inventory,true,false,this));
 			return this;
 		}
 
-		public InventoryListPanel add(Inventory[] inventories, String label, int firstIndex) {
+		public InventoryListPanel addInv(Inventory[] inventories) {
 			for (int i=0; i<inventories.length; ++i)
-				contentPanel.add(new InventoryPanel(label+" "+(i+firstIndex),inventories[i],false,this));
+				contentPanel.add(new InventoryPanel(inventories[i],true,false,this));
 			return this;
 		}
 
-		public InventoryListPanel add(Inventory[] inventories1, String label1, int firstIndex1, Inventory[] inventories2, String label2, int firstIndex2) {
+		public InventoryListPanel addInv(Inventory[] inventories1, Inventory[] inventories2) {
 			for (int i=0; i<inventories1.length; ++i) {
-				contentPanel.add(new InventoryPanel(label1+" "+(i+firstIndex1),inventories1[i],false,this));
+				contentPanel.add(new InventoryPanel(inventories1[i],true,false,this));
 				if (inventories2!=null && i<inventories2.length)
-					contentPanel.add(new InventoryPanel(label2+" "+(i+firstIndex2),inventories2[i],false,this));
+					contentPanel.add(new InventoryPanel(inventories2[i],true,false,this));
 			}
 			if (inventories2!=null)
 				for (int i=inventories1.length; i<inventories2.length; ++i)
-					contentPanel.add(new InventoryPanel(label2+" "+(i+firstIndex2),inventories2[i],false,this));
+					contentPanel.add(new InventoryPanel(inventories2[i],true,false,this));
 		
 			return this;
 		}

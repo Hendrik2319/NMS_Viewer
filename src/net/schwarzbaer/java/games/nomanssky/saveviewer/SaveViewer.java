@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
@@ -83,7 +84,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
-	
+
 	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
 	private static final String FILE_PRODUCT_ID    = "NMS_Viewer.ProdIDs.txt";
 	private static final String FILE_TECH_ID       = "NMS_Viewer.TechIDs.txt";
@@ -93,9 +94,9 @@ public class SaveViewer implements ActionListener {
 	public static final boolean DEBUG = true;
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	
-	public static final HashMap<String,GeneralizedID> productIDs   = new HashMap<>();
-	public static final HashMap<String,GeneralizedID> techIDs      = new HashMap<>();
-	public static final HashMap<String,GeneralizedID> substanceIDs = new HashMap<>();
+	public static final IDMap productIDs   = new IDMap();
+	public static final IDMap techIDs      = new IDMap();
+	public static final IDMap substanceIDs = new IDMap();
 	
 	private StandardMainWindow mainWindow;
 
@@ -350,9 +351,9 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private void removeUsages(SaveGameData oldData) {
-		for (GeneralizedID id:productIDs  .values()) id.usage.remove(oldData);
-		for (GeneralizedID id:techIDs     .values()) id.usage.remove(oldData);
-		for (GeneralizedID id:substanceIDs.values()) id.usage.remove(oldData);
+		for (GeneralizedID id:productIDs  .getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:techIDs     .getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:substanceIDs.getValues()) id.usage.remove(oldData);
 	}
 
 	public static void log_ln( String format, Object... values ) {
@@ -959,7 +960,7 @@ public class SaveViewer implements ActionListener {
 	public static void loadTechIDsFromFile     () { loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology"); }
 	public static void loadSubstanceIDsFromFile() { loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); }
 
-	private static void loadIDsFromFile(String filePath, HashMap<String,GeneralizedID> map, String idLabel) {
+	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
 		File file = new File(filePath);
 		if (!file.isFile()) return;
 		
@@ -972,7 +973,7 @@ public class SaveViewer implements ActionListener {
 				
 				String id = str.substring(0, pos);
 				String label = str.substring(pos+1);
-				map.put(id, new GeneralizedID(id,label));
+				map.set(id, new GeneralizedID(id,label));
 			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -984,13 +985,11 @@ public class SaveViewer implements ActionListener {
 	public static void saveTechIDsToFile     () { saveIDsToFile(FILE_TECH_ID     ,techIDs     ,"technologie"); }
 	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
 
-	public static void saveIDsToFile(String filePath, HashMap<String, GeneralizedID> map, String idLabel) {
+	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
 		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			Vector<String> keys = new Vector<>(map.keySet());
-			keys.sort(null);
-			for (String id:keys) out.printf("%s=%s\r\n",id,map.get(id).label);
+			for (String id:map.getSortedKeys()) out.printf("%s=%s\r\n",id,map.get(id).label);
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		System.out.println("done");
@@ -1266,8 +1265,8 @@ public class SaveViewer implements ActionListener {
 				blueprintUsages = new Vector<>();
 			}
 			
-			public void addInventoryUsage(String inventoryLabel, int x, int y) {
-				inventoryUsages.add(String.format("%s(%d,%d)", inventoryLabel, x, y));
+			public void addInventoryUsage(String label, int x, int y) {
+				inventoryUsages.add(String.format("%s @ (%d,%d)", label, x, y));
 			}
 
 			public void addBlueprintUsage(String label, int i) {
@@ -1280,6 +1279,44 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
+	public static class IDMap {
+		private HashMap<String, GeneralizedID> map;
+		
+		public IDMap() {
+			map = new HashMap<>();
+		}
+
+		public Iterable<GeneralizedID> getValues() {
+			return new Iterable<GeneralizedID>() {
+				@Override public Iterator<GeneralizedID> iterator() { return map.values().iterator(); }
+			}; 
+		}
+
+		public Vector<GeneralizedID> getSortedValues() {
+			Vector<GeneralizedID> vector = new Vector<GeneralizedID>(map.values());
+			vector.sort(Comparator.comparing(id->id.id));
+			return vector;
+		}
+
+		public Iterable<String> getSortedKeys() {
+			Vector<String> vector = new Vector<String>(map.keySet());
+			vector.sort(null);
+			return new Iterable<String>() {
+				@Override public Iterator<String> iterator() { return vector.iterator(); }
+			}; 
+		}
+
+		public void set(String id, GeneralizedID generalizedID) {
+			map.put(id, generalizedID);
+		}
+
+		public GeneralizedID get(String id) {
+			GeneralizedID newID = new GeneralizedID(id);
+			GeneralizedID existingID = map.putIfAbsent(id, newID);
+			return existingID==null?newID:existingID;
+		}
+	}
+	
 	private static class GeneralizedIDPanel extends JPanel {
 		private static final long serialVersionUID = -4946966056212175920L;
 
@@ -1288,7 +1325,7 @@ public class SaveViewer implements ActionListener {
 
 		private JTextArea textarea;
 
-		public GeneralizedIDPanel(HashMap<String, GeneralizedID> idMap, String tableLabel) {
+		public GeneralizedIDPanel(IDMap idMap, String tableLabel) {
 			super(new BorderLayout(3, 3));
 			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
@@ -1302,7 +1339,7 @@ public class SaveViewer implements ActionListener {
 			textarea.setEditable(false);
 			JScrollPane textareaScrollPane = new JScrollPane(textarea);
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(350, 150));
-			add(textareaScrollPane, BorderLayout.SOUTH);
+			add(textareaScrollPane, BorderLayout.EAST);
 		}
 
 		private void showID(GeneralizedID id) {
@@ -1362,12 +1399,12 @@ public class SaveViewer implements ActionListener {
 			private static final int EXTRA_ROWS = 1;
 			
 			private int numberOfLabledIDs;
-			private HashMap<String, GeneralizedID> sourceIdMap;
+			private IDMap sourceIdMap;
 
 			private Vector<GeneralizedID> IDs;
 			private Vector<SaveGameView> usageKeys;
 
-			protected GeneralizedIDTableModel(HashMap<String, GeneralizedID> sourceIdMap) {
+			protected GeneralizedIDTableModel(IDMap sourceIdMap) {
 				super(new GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Label });
 				
 				this.usageKeys = new Vector<>();
@@ -1395,8 +1432,7 @@ public class SaveViewer implements ActionListener {
 			}
 
 			private void updateIdList() {
-				IDs = new Vector<>(sourceIdMap.values());
-				IDs.sort(Comparator.comparing(id->id.id));
+				IDs = sourceIdMap.getSortedValues();
 			}
 
 			private void updateNumberOfLabledIDs() {

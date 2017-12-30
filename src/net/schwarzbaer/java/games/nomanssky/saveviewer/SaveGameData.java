@@ -12,6 +12,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Sl
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.IDMap;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -74,20 +75,20 @@ public class SaveGameData {
 		JSON_Object playerStateData = getObjectValue(json_data, "PlayerStateData");
 		if (playerStateData==null) return;
 		inventories = new Inventories();
-		inventories.player        = Inventories.parse(this,getObjectValue(playerStateData, "Inventory"         ), "Inventory"         );
-		inventories.playerTech    = Inventories.parse(this,getObjectValue(playerStateData, "Inventory_TechOnly"), "Inventory_TechOnly");
-		inventories.playerCargo   = Inventories.parse(this,getObjectValue(playerStateData, "Inventory_Cargo"   ), "Inventory_Cargo"   );
-		inventories.ship_old      = Inventories.parse(this,getObjectValue(playerStateData, "ShipInventory"     ), "ShipInventory"     );
-		inventories.multitool     = Inventories.parse(this,getObjectValue(playerStateData, "WeaponInventory"   ), "WeaponInventory"   );
-		inventories.grave         = Inventories.parse(this,getObjectValue(playerStateData, "GraveInventory"    ), "GraveInventory"    );
-		inventories.freighter     = Inventories.parse(this,getObjectValue(playerStateData, "FreighterInventory"), "FreighterInventory");
-		inventories.freighterTech = Inventories.parse(this,getObjectValue(playerStateData, "FreighterInventory_TechOnly"), "FreighterInventory_TechOnly");
+		inventories.player        = Inventories.parse(this,getObjectValue(playerStateData, "Inventory"                  ), "Player"          , "Inventory"         );
+		inventories.playerTech    = Inventories.parse(this,getObjectValue(playerStateData, "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
+		inventories.playerCargo   = Inventories.parse(this,getObjectValue(playerStateData, "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
+		inventories.ship_old      = Inventories.parse(this,getObjectValue(playerStateData, "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
+		inventories.multitool     = Inventories.parse(this,getObjectValue(playerStateData, "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
+		inventories.grave         = Inventories.parse(this,getObjectValue(playerStateData, "GraveInventory"             ), "Grave"           , "GraveInventory"    );
+		inventories.freighter     = Inventories.parse(this,getObjectValue(playerStateData, "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
+		inventories.freighterTech = Inventories.parse(this,getObjectValue(playerStateData, "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
 		
 		inventories.chests = new Inventory[10];
 		for (int i=0; i<inventories.chests.length; ++i)
-			inventories.chests[i] = Inventories.parse(this,getObjectValue(playerStateData, "Chest"+(i+1)+"Inventory"), "Chest"+(i+1)+"Inventory");
-		inventories.magicChest  = Inventories.parse(this,getObjectValue(playerStateData, "ChestMagicInventory" ), "ChestMagicInventory" );
-		inventories.magicChest2 = Inventories.parse(this,getObjectValue(playerStateData, "ChestMagic2Inventory"), "ChestMagic2Inventory");
+			inventories.chests[i] = Inventories.parse(this,getObjectValue(playerStateData, "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
+		inventories.magicChest  = Inventories.parse(this,getObjectValue(playerStateData, "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+		inventories.magicChest2 = Inventories.parse(this,getObjectValue(playerStateData, "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
 		
 		inventories.vehicles = null;
 		JSON_Array vehicles = getArrayValue(playerStateData,"VehicleOwnership");
@@ -97,7 +98,7 @@ public class SaveGameData {
 				JSON_Object vehicleData = Value.getObject(vehicles.get(i));
 				inventories.vehicles[i] = null;
 				if (vehicleData != null)
-					inventories.vehicles[i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory"),"VehicleOwnership["+i+"].Inventory");
+					inventories.vehicles[i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory"),"Vehicle "+(i+1), "VehicleOwnership["+i+"].Inventory");
 			}
 		}
 		
@@ -112,8 +113,8 @@ public class SaveGameData {
 				inventories.ships     [i] = null;
 				inventories.ships_Tech[i] = null;
 				if (shipData != null) {
-					inventories.ships     [i] = Inventories.parse(this,getObjectValue(shipData,"Inventory"         ),"ShipOwnership["+i+"].Inventory");
-					inventories.ships_Tech[i] = Inventories.parse(this,getObjectValue(shipData,"Inventory_TechOnly"),"ShipOwnership["+i+"].Inventory_TechOnly");
+					inventories.ships     [i] = Inventories.parse(this,getObjectValue(shipData,"Inventory"         ), "Ship "+(i+1)     , "ShipOwnership["+i+"].Inventory");
+					inventories.ships_Tech[i] = Inventories.parse(this,getObjectValue(shipData,"Inventory_TechOnly"), "Ship Tech "+(i+1), "ShipOwnership["+i+"].Inventory_TechOnly");
 				}
 			}
 		}		
@@ -136,7 +137,7 @@ public class SaveGameData {
 		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), SaveViewer.productIDs);
 	}
 
-	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, HashMap<String, GeneralizedID> map) {
+	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, IDMap map) {
 		if (arrayValue==null) return new GeneralizedID[0];
 		
 		GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
@@ -144,18 +145,12 @@ public class SaveGameData {
 			Value value = arrayValue.get(i);
 			String id = Value.getString(value );
 			if (id!=null) {
-				knownBlueprints[i] = addGeneralizedID(map, id);
+				knownBlueprints[i] = map.get(id);// addGeneralizedID(map, id);
 				knownBlueprints[i].getUsage(this).addBlueprintUsage((SaveViewer.techIDs==map?"Technology":"Product"),i);
 			}
 		}
 		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
 		return knownBlueprints;
-	}
-
-	private static GeneralizedID addGeneralizedID(HashMap<String, GeneralizedID> map, String id) {
-		GeneralizedID newID = new GeneralizedID(id);
-		GeneralizedID existingID = map.putIfAbsent(id, newID);
-		return existingID==null?newID:existingID;
 	}
 
 	private void parseKnownWords() {
@@ -192,10 +187,10 @@ public class SaveGameData {
 
 	public static final class Inventories {
 
-		private static Inventory parse(SaveGameData base, JSON_Object inventoryData, String inventoryLabel) {
+		private static Inventory parse(SaveGameData base, JSON_Object inventoryData, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
 			
-			Inventory inventory = new Inventory();
+			Inventory inventory = new Inventory(inventoryLabel);
 			inventory.substanceMaxStorageMultiplier = base.getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
 			inventory.productMaxStorageMultiplier   = base.getIntegerValue(inventoryData, "ProductMaxStorageMultiplier");
 			inventory.width   = base.getIntegerValue(inventoryData, "Width");
@@ -215,26 +210,26 @@ public class SaveGameData {
 			}
 			
 			if (inventory.width!=null && inventory.height!=null && inventory.width>0 && inventory.height>0) {
-				inventory.slots = parseSlots(base, (int)(long)inventory.width, (int)(long)inventory.height, base.getArrayValue(inventoryData,"Slots"),base.getArrayValue(inventoryData,"ValidSlotIndices"), inventoryLabel);
+				inventory.slots = parseSlots(base, (int)(long)inventory.width, (int)(long)inventory.height, base.getArrayValue(inventoryData,"Slots"),base.getArrayValue(inventoryData,"ValidSlotIndices"), inventoryLabel, inventorySourcePath);
 			}
-			inventory.baseStatValues = parseBaseStatValues(base, base.getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel);
-			inventory.specialSlots   = parseSpecialSlots  (base, base.getArrayValue(inventoryData,"SpecialSlots"  ), inventoryLabel);
+			inventory.baseStatValues = parseBaseStatValues(base, base.getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
+			inventory.specialSlots   = parseSpecialSlots  (base, base.getArrayValue(inventoryData,"SpecialSlots"  ), inventoryLabel, inventorySourcePath);
 			
 			return inventory;
 		}
 		
-		private static Slot[][] parseSlots(SaveGameData base, int width, int height, JSON_Array arrSlots, JSON_Array arrValidSlotIndices, String inventoryLabel) {
+		private static Slot[][] parseSlots(SaveGameData base, int width, int height, JSON_Array arrSlots, JSON_Array arrValidSlotIndices, String inventoryLabel, String inventorySourcePath) {
 			Slot[][] slots = new Slot[width][height];
 			for (Slot[] row:slots)
 				Arrays.fill(row, null);
 			
 			if (arrSlots==null) {
-				System.err.println(inventoryLabel+": Inventory has no slots.");
+				System.err.println(inventorySourcePath+": Inventory has no slots.");
 				return slots;
 			}
 			
 			if (arrValidSlotIndices==null) {
-				System.err.println(inventoryLabel+": Inventory has no valid slot indices.");
+				System.err.println(inventorySourcePath+": Inventory has no valid slot indices.");
 				return slots;
 			}
 			
@@ -253,9 +248,9 @@ public class SaveGameData {
 					++redundantSlots;
 			}
 			if (!wrongValidSlotIndices.isEmpty())
-				System.err.println(inventoryLabel+": Found "+wrongValidSlotIndices.size()+" wrong \"valid\" slot indices.");
+				System.err.println(inventorySourcePath+": Found "+wrongValidSlotIndices.size()+" wrong \"valid\" slot indices.");
 			if (redundantSlots>0)
-				System.err.println(inventoryLabel+": Found "+redundantSlots+" redundant \"valid\" slot indices.");
+				System.err.println(inventorySourcePath+": Found "+redundantSlots+" redundant \"valid\" slot indices.");
 			
 			redundantSlots = 0;
 			int notValidSlots = 0;
@@ -289,26 +284,26 @@ public class SaveGameData {
 				slots[x][y] = slot;
 				
 				if (slot.type!=null && slot.idStr!=null) {
-					HashMap<String, GeneralizedID> map = null;
+					IDMap map = null;
 					switch(slot.type) {
 					case Product   : map = SaveViewer.productIDs;   break;
 					case Technology: map = SaveViewer.techIDs;      break;
 					case Substance : map = SaveViewer.substanceIDs; break;
 					}
 					if (map!=null) {
-						slot.id = addGeneralizedID(map, slot.idStr);
+						slot.id = map.get(slot.idStr); // addGeneralizedID(map, slot.idStr);
 						slot.id.getUsage(base).addInventoryUsage(inventoryLabel,x,y);
 					}
 				}
 			}
-			if (!wrongSlots.isEmpty()) System.err.println(inventoryLabel+": Found "+wrongSlots.size()+" wrong slots.");
-			if (redundantSlots>0     ) System.err.println(inventoryLabel+": Found "+redundantSlots+" redundant slots.");
-			if (notValidSlots>0      ) System.err.println(inventoryLabel+": Found "+notValidSlots+" not valid slots.");
+			if (!wrongSlots.isEmpty()) System.err.println(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
+			if (redundantSlots>0     ) System.err.println(inventorySourcePath+": Found "+redundantSlots+" redundant slots.");
+			if (notValidSlots>0      ) System.err.println(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
 
 			return slots;
 		}
 
-		private static BaseStatValue[] parseBaseStatValues(SaveGameData base, JSON_Array valueArray, String inventoryLabel) {
+		private static BaseStatValue[] parseBaseStatValues(SaveGameData base, JSON_Array valueArray, String inventoryLabel, String inventorySourcePath) {
 			if (valueArray==null) return null;
 			
 			BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
@@ -320,7 +315,7 @@ public class SaveGameData {
 			return baseStatValues;
 		}
 
-		private static String parseSpecialSlots(SaveGameData base, JSON_Array specialSlots, String inventoryLabel) {
+		private static String parseSpecialSlots(SaveGameData base, JSON_Array specialSlots, String inventoryLabel, String inventorySourcePath) {
 			if (specialSlots==null) return null;
 			int n = specialSlots.size();
 			return (n>0?"no":(n+"")) +" special slot"+ (n==1?"":"s");
@@ -362,6 +357,7 @@ public class SaveGameData {
 
 	public static final class Inventory {
 
+		public final String label;
 		public Long width;
 		public Long height;
 		public Long version;
@@ -373,7 +369,8 @@ public class SaveGameData {
 		public BaseStatValue[] baseStatValues;
 		public String specialSlots;
 		
-		public Inventory() {
+		public Inventory(String label) {
+			this.label = label;
 			this.width = null;
 			this.height = null;
 			this.version = null;
