@@ -1,7 +1,17 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+
+import javax.imageio.ImageIO;
+
 public class Images {
-	public static final String[] images = new String[] {
+	
+	public static final Integer[] colors = new Integer[]{0xBB392C,0xFFC456,0x0249A1,0x5DCD93,0x4B2A57,0x5A6F36,0x4D585E,0x1C364D,0x10805C,0xF0A92B};
+	
+	public static final String[] imagesNames = new String[] {
 		"GAS.1.Schwefelin.png",
 		"GAS.2.Radon.png",
 		"GAS.3.Stickstoff.png",
@@ -24,7 +34,7 @@ public class Images {
 		"Substance.neutral.rare13.Frostkristall.png",
 		"Substance.neutral.rare14.Coprit.png",
 		"Substance.neutral.rare15.Mordit.png",
-		"Substance.neutral.rare3.KÃ¼rbisknolle.png",
+		"Substance.neutral.rare3.Kürbisknolle.png",
 		"Substance.neutral.rare4.Kaktusfleisch.png",
 		"Substance.neutral.rare5.Pugneum.png",
 		"Substance.neutral.rare6.Tropheum.png",
@@ -41,5 +51,24 @@ public class Images {
 		"Substance.tech.rare1.Chrysonit.png",
 		"Substance.tech.uncommon1.Platin.png"
 	};
-
+	
+	public static HashMap<String,BufferedImage> images = new HashMap<String,BufferedImage>();
+	
+	public static void readImages() {
+		long start = System.currentTimeMillis();
+		System.out.println("Read image resources ...");
+		
+		images.clear();
+		for (int i=0; i<imagesNames.length; ++i) {
+			InputStream stream = images.getClass().getResourceAsStream("/icons/"+imagesNames[i]);
+			BufferedImage image = null;
+			if (stream!=null)
+				try { image = ImageIO.read(stream); }
+				catch (IOException e) {}
+			if (image!=null)
+				images.put(imagesNames[i], image);
+		}
+		
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+	}
 }

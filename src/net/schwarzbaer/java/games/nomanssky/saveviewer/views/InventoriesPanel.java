@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -13,12 +14,21 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.Window;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -30,20 +40,26 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot.Type;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
 final class InventoriesPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = -6965281963499623839L;
 	private JTabbedPane tabbedPane;
+	private Window mainwindow;
 
-	public InventoriesPanel(SaveGameData data) {
+	public InventoriesPanel(SaveGameData data, Window mainwindow) {
 		super(data);
+		
+		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
 		addTab(data.inventories.player       );
@@ -54,10 +70,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		addTab(data.inventories.freighter    );
 		addTab(data.inventories.freighterTech);
 		addTab(data.inventories.ship_old     );
-		tabbedPane.addTab("Ships"           , new InventoryListPanel().addInv(data.inventories.ships,data.inventories.ships_Tech));
-		tabbedPane.addTab("Vehicles"        , new InventoryListPanel().addInv(data.inventories.vehicles));
-		tabbedPane.addTab("Containers"      , new InventoryListPanel(0,2).addInv(data.inventories.chests));
-		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel().addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2));
+		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships,data.inventories.ships_Tech));
+		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
+		tabbedPane.addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
+		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -71,7 +87,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 	private void addTab(Inventory inventory) {
 		if (inventory!=null)
-			tabbedPane.addTab(inventory.label, new InventoryPanel(inventory));
+			tabbedPane.addTab(inventory.label, new InventoryPanel(mainwindow, inventory));
 	}
 	
 	
@@ -91,8 +107,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		public void updateContent();
 	}
 
-	final static class InventoryPanel 
-	extends JPanel implements Updatable {
+	final static class InventoryPanel extends JPanel implements Updatable {
 		private static final long serialVersionUID = 8549406812793642121L;
 		
 		private Inventory inventory;
@@ -101,18 +116,23 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private JPopupMenu contextMenu;
 
 		private JMenuItem miSetLabel;
+		private JMenuItem miSetImage;
 		private Slot clickedSlot;
 		private Updatable updateListener;
 
-		public InventoryPanel(Inventory inventory) {
-			this(inventory, false, true, null);
+		private Window mainwindow;
+
+
+		public InventoryPanel(Window mainwindow, Inventory inventory) {
+			this(mainwindow, inventory, false, true, null);
 		}
 		
-		public InventoryPanel(Inventory inventory, boolean withTitledBorder, boolean makeInventoryScrollable, Updatable updateListener) {
+		public InventoryPanel(Window mainwindow, Inventory inventory, boolean withTitledBorder, boolean makeInventoryScrollable, Updatable updateListener) {
 			super(new BorderLayout(3, 3));
 			if (withTitledBorder) setBorder(BorderFactory.createTitledBorder(inventory==null?"<null>":inventory.label));
 			else                  setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
+			this.mainwindow = mainwindow;
 			this.updateListener = updateListener;
 			this.inventory = inventory;
 			this.clickedSlot = null;
@@ -126,6 +146,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			contextMenu = new JPopupMenu();
 			contextMenu.add(miSetLabel=createMenuItem("Set Label", e->setLabelForResource()));
+			contextMenu.add(miSetImage=createMenuItem("Set Image", e->setImageForResource()));
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				inventoryLabel = new InventoryDisplay(this,(int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots);
@@ -134,12 +155,131 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				inventoryLabel = null;
 		}
 
+		private static class IdImageDialog extends StandardDialog {
+			private static final long serialVersionUID = -4493777651637626630L;
+			
+			private JLabel imageField;
+			private JTextArea textarea;
+			
+			private GeneralizedID id;
+			private boolean hasDataChanged;
+		
+			public IdImageDialog(Window parent, String title, GeneralizedID id) {
+				super(parent, title, ModalityType.APPLICATION_MODAL);
+				
+				this.id = new GeneralizedID(id);
+				this.hasDataChanged = false;
+				
+				textarea = new JTextArea();
+				textarea.setEditable(false);
+				JScrollPane textareaScrollPane = new JScrollPane(textarea);
+				textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
+				
+				Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
+				images.insertElementAt("",0);
+				JComboBox<String> cmbbxImages = new JComboBox<String>(images);
+				cmbbxImages.setSelectedItem(id.getImageFileName());
+				cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
+				
+				Vector<Integer> colors = new Vector<>(Arrays.asList(Images.colors));
+				colors.insertElementAt(null,0);
+				JComboBox<Integer> cmbbxColors = new JComboBox<Integer>(colors);
+				cmbbxColors.setRenderer(new TableView.ColorRenderer());
+				cmbbxColors.setSelectedItem(id.getImageBG());
+				cmbbxColors.addActionListener(e->setImageBGColor((Integer)cmbbxColors.getSelectedItem()));
+				
+				JPanel buttonPanel = new JPanel(new GridLayout(1,0,3,3));
+				buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
+				buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
+				
+				JPanel cmbbxPanel = new JPanel(new GridLayout(0,1,3,3));
+				cmbbxPanel.add(cmbbxImages);
+				cmbbxPanel.add(cmbbxColors);
+				
+				JPanel inputPanel = new JPanel(new BorderLayout(3,3));
+				inputPanel.add(cmbbxPanel, BorderLayout.CENTER);
+				inputPanel.add(buttonPanel, BorderLayout.SOUTH);
+				
+				JPanel centerPanel = new JPanel(new BorderLayout(3,3));
+				centerPanel.add(textareaScrollPane, BorderLayout.CENTER);
+				centerPanel.add(inputPanel, BorderLayout.SOUTH);
+				
+				imageField = new JLabel();
+				imageField.setBorder(BorderFactory.createEtchedBorder());
+				imageField.setPreferredSize(new Dimension(256,256));
+				
+				JPanel contentPane = new JPanel(new BorderLayout(3,3));
+				contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+				contentPane.add(centerPanel,BorderLayout.WEST);
+				contentPane.add(imageField,BorderLayout.CENTER);
+				
+				showValues();
+				this.createGUI(contentPane);
+			}
+
+			private JButton createButton(String title, ActionListener l) {
+				JButton button = new JButton(title);
+				button.addActionListener(l);
+				return button;
+			}
+		
+			private void setImageBGColor(Integer color) {
+				id.setImageBG(color);
+				hasDataChanged = true;
+				showValues();
+			}
+
+			private void setImageFileName(String filename) {
+				id.setImageFileName(filename);
+				hasDataChanged = true;
+				showValues();
+			}
+
+			private void showValues() {
+				textarea.setText("");
+				
+				textarea.append("ID     : "+id.id+"\r\n");
+				if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
+				textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
+				textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
+				
+				BufferedImage image = id.getImage();
+				if (image==null) {
+					imageField.setIcon(null);
+				} else {
+					imageField.setIcon(new ImageIcon(image));
+					imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+				}
+			}
+
+			public boolean hasDataChanged() { return hasDataChanged; }
+			public Integer getImageBG() { return id.getImageBG(); }
+			public String getImageFileName() { return id.getImageFileName(); }
+		}
+
 		@Override
 		public void updateContent() {
 			if (inventoryLabel != null) inventoryLabel.repaint();
 			showValues();
 		}
 
+		private void setImageForResource() {
+			if (clickedSlot == null) return;
+			
+			if (clickedSlot.id==null || clickedSlot.type==null) return;
+			
+			IdImageDialog dlg = new IdImageDialog(mainwindow,"",clickedSlot.id);
+			dlg.showDialog();
+			
+			if (dlg.hasDataChanged()) {
+				clickedSlot.id.setImageBG(dlg.getImageBG());
+				clickedSlot.id.setImageFileName(dlg.getImageFileName());
+				updateAfterChangedIDdata();
+			}
+			
+			clickedSlot = null;
+		}
+		
 		private void setLabelForResource() {
 			if (clickedSlot == null) return;
 			
@@ -148,21 +288,26 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			String name = JOptionPane.showInputDialog(this, String.format("New name for %s ID \"%s\"", clickedSlot.type, clickedSlot.id.id), clickedSlot.id.label);
 			if (name!=null) {
 				clickedSlot.id.label = name;
-				switch(clickedSlot.type) {
-				case Product   : SaveViewer.saveProductIDsToFile();   break;
-				case Technology: SaveViewer.saveTechIDsToFile();      break;
-				case Substance : SaveViewer.saveSubstanceIDsToFile(); break;
-				}
-				if (updateListener!=null) updateListener.updateContent();
-				else inventoryLabel.repaint();
+				updateAfterChangedIDdata();
 			}
 			clickedSlot = null;
+		}
+
+		private void updateAfterChangedIDdata() {
+			switch(clickedSlot.type) {
+			case Product   : SaveViewer.saveProductIDsToFile();   break;
+			case Technology: SaveViewer.saveTechIDsToFile();      break;
+			case Substance : SaveViewer.saveSubstanceIDsToFile(); break;
+			}
+			if (updateListener!=null) updateListener.updateContent();
+			else inventoryLabel.repaint();
 		}
 
 		private void showContextMenu(Component invoker, int screenX, int screenY) {
 			if (!isValidSlotHovered()) return;
 			clickedSlot = inventory.slots[inventoryLabel.hoveredSlot.x][inventoryLabel.hoveredSlot.y];
 			miSetLabel.setEnabled(!clickedSlot.isEmpty && clickedSlot.id!=null && clickedSlot.type!=null);
+			miSetImage.setEnabled(!clickedSlot.isEmpty && clickedSlot.id!=null && clickedSlot.type!=null);
 			contextMenu.show(invoker, screenX, screenY);
 		}
 
@@ -232,8 +377,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Stroke STROKE__STANDARD     = new BasicStroke(1.0f);
 			
 			private static final int SLOT_BORDER = 3;
-			private static final int SLOT_WIDTH  = 107;
-			private static final int SLOT_HEIGHT = 125;
+			private static final int SLOT_WIDTH  = 90;
+			private static final int SLOT_HEIGHT = SLOT_WIDTH+13;
 			private static final int SLOT_RASTER_X = SLOT_WIDTH +2*SLOT_BORDER;
 			private static final int SLOT_RASTER_Y = SLOT_HEIGHT+2*SLOT_BORDER;
 
@@ -265,6 +410,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			protected void paintCanvas(Graphics g, int width, int height) {
 				if (!(g instanceof Graphics2D)) return;
 				Graphics2D g2 = (Graphics2D)g;
+				Font standardFont = g2.getFont().deriveFont(Font.PLAIN, 11);
+				g2.setFont(standardFont);
 				
 				Rectangle baseClip = g2.getClipBounds();
 				
@@ -282,37 +429,94 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 //				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 				g2.setStroke(STROKE__STANDARD);
-				for (int x=0; x<inventoryWidth; ++x)
-					for (int y=0; y<inventoryHeight; ++y) {
-						Slot slot = slots[x][y];
+				for (int indexX=0; indexX<inventoryWidth; ++indexX)
+					for (int indexY=0; indexY<inventoryHeight; ++indexY) {
+						Slot slot = slots[indexX][indexY];
 						if (slot!=null) {
-							int xS=x*SLOT_RASTER_X+SLOT_BORDER;
-							int yS=y*SLOT_RASTER_Y+SLOT_BORDER;
+							int x=indexX*SLOT_RASTER_X+SLOT_BORDER;
+							int y=indexY*SLOT_RASTER_Y+SLOT_BORDER;
 							if (!slot.isEmpty) {
 								g2.setPaint(COLOR__SLOT_BG);
-								g2.fillRect(xS, yS, SLOT_WIDTH, SLOT_HEIGHT);
+								g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
 							}
 							g2.setPaint(COLOR__SLOT_EDGE);
-							g2.drawRect(xS, yS, SLOT_WIDTH-1, SLOT_HEIGHT-1);
+							g2.drawRect(x, y, SLOT_WIDTH-1, SLOT_HEIGHT-1);
 							
 							if (!slot.isEmpty) {
-								g2.setClip(baseClip.createIntersection(new Rectangle(xS+1, yS+1, SLOT_WIDTH-2, SLOT_HEIGHT-2)));
-								g2.setPaint(getSlotTextColor(slot.type));
-								int offsetX = 5;
-								int offsetY = 13;
+								final int innerWidth  = SLOT_WIDTH-2;
+								final int innerHeight = SLOT_HEIGHT-2;
+								final int innerOffsetX = 1;
+								final int innerOffsetY = 1;
+								g2.setClip(baseClip.createIntersection(new Rectangle(x+innerOffsetX, y+innerOffsetY, innerWidth, innerHeight)));
+								
+								int imageBorder = 3;
+								int imageSize = innerWidth-2*imageBorder;
+								BufferedImage image = slot.id==null?null:slot.id.getImage(imageSize,imageSize);
+								
+								int strOffsetX = innerOffsetX+4;
+								int strOffsetY = innerOffsetY+12;
 								int incrementY = 13;
 								
-								g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), xS+offsetX, yS+offsetY); offsetY+=incrementY;
-								
-								if (slot.id!=null && !slot.id.label.isEmpty()) {
-									g2.setPaint(COLOR__SLOT_TEXT_LABEL);
-									g2.drawString(slot.id.label, xS+offsetX, yS+offsetY); offsetY+=incrementY;
+								if (image!=null) {
+									g2.setFont( standardFont.deriveFont(Font.BOLD) );
+									
+									String title = "";
+//									switch (slot.type) {
+//									case Product   : title += "P:"; break;
+//									case Substance : title += "S:"; break;
+//									case Technology: title += "T:"; break;
+//									}
+									if (slot.id.label.isEmpty()) title += slot.id.id;
+									else title += slot.id.label;
+									
+									//g2.setPaint(getSlotTextColor(slot.type));
+									g2.setPaint(Color.BLACK);
+									g2.drawString(title, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+									
+									g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
+									
+									if (slot.amount!=null && slot.maxAmount!=null) {
+										int amount    = (int)(long)slot.amount;
+										int maxAmount = (int)(long)slot.maxAmount;
+										
+										if (amount>=0 && maxAmount>1) {
+											int gaugeBorder = 3;
+											int gaugeWidth  = imageSize-2*gaugeBorder;
+											int gaugeHeight = 8;
+											int gaugeXOffset = innerOffsetX+imageBorder+gaugeBorder;
+											int gaugeYOffset = innerOffsetY+innerHeight-imageBorder-gaugeBorder-gaugeHeight;
+											int full = (amount*gaugeWidth)/maxAmount;
+											int empty = gaugeWidth-full;
+											
+											if (full>0) {
+												g2.setPaint(Color.WHITE);
+												g2.fillRect(x+gaugeXOffset,y+gaugeYOffset,full,gaugeHeight);
+											}
+											if (empty>0) {
+												g2.setPaint(new Color(255,255,255,128));
+												g2.fillRect(x+gaugeXOffset+full,y+gaugeYOffset,empty,gaugeHeight);
+											}
+											g2.setPaint(Color.WHITE);
+											g2.drawString(String.format("%d/%d",amount,maxAmount), x+gaugeXOffset, y+gaugeYOffset-4);
+										}
+									}
+									
+									g2.setFont( standardFont );
+								} else {
 									g2.setPaint(getSlotTextColor(slot.type));
-								}
-								
-								g2.drawString(slot.id==null?slot.idStr:slot.id.id, xS+offsetX, yS+offsetY); offsetY+=incrementY;
+									
+									g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+									
+									if (slot.id!=null && !slot.id.label.isEmpty()) {
+										g2.setPaint(COLOR__SLOT_TEXT_LABEL);
+										g2.drawString(slot.id.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+										g2.setPaint(getSlotTextColor(slot.type));
+									}
+									
+									g2.drawString(slot.id==null?slot.idStr:slot.id.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
 
-								g2.drawString(String.format("%d/%d", slot.amount, slot.maxAmount), xS+offsetX, yS+offsetY); offsetY+=incrementY;
+									g2.drawString(String.format("%s/%s", slot.amount, slot.maxAmount), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+								}
 								
 								g2.setClip(baseClip);
 							}
@@ -370,16 +574,19 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 	private static final class InventoryListPanel extends JScrollPane implements Updatable {
 		private static final long serialVersionUID = -662233636434233389L;
 
+		private Window mainwindow;
 		private JPanel contentPanel;
 
-		public InventoryListPanel(int rows, int cols) {
+		public InventoryListPanel(Window mainwindow, int rows, int cols) {
 			super();
+			this.mainwindow = mainwindow;
 			contentPanel = new JPanel(new GridLayout(rows, cols));
 			setViewportView(contentPanel);
 		}
 		
-		public InventoryListPanel() {
+		public InventoryListPanel(Window mainwindow) {
 			super();
+			this.mainwindow = mainwindow;
 			contentPanel = new JPanel();
 			contentPanel.setLayout(new BoxLayout(contentPanel,BoxLayout.Y_AXIS));
 			setViewportView(contentPanel);
@@ -393,25 +600,25 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		}
 		
 		protected InventoryListPanel addInv(Inventory inventory) {
-			contentPanel.add(new InventoryPanel(inventory,true,false,this));
+			contentPanel.add(new InventoryPanel(mainwindow,inventory,true,false,this));
 			return this;
 		}
 
 		public InventoryListPanel addInv(Inventory[] inventories) {
 			for (int i=0; i<inventories.length; ++i)
-				contentPanel.add(new InventoryPanel(inventories[i],true,false,this));
+				contentPanel.add(new InventoryPanel(mainwindow,inventories[i],true,false,this));
 			return this;
 		}
 
 		public InventoryListPanel addInv(Inventory[] inventories1, Inventory[] inventories2) {
 			for (int i=0; i<inventories1.length; ++i) {
-				contentPanel.add(new InventoryPanel(inventories1[i],true,false,this));
+				contentPanel.add(new InventoryPanel(mainwindow,inventories1[i],true,false,this));
 				if (inventories2!=null && i<inventories2.length)
-					contentPanel.add(new InventoryPanel(inventories2[i],true,false,this));
+					contentPanel.add(new InventoryPanel(mainwindow,inventories2[i],true,false,this));
 			}
 			if (inventories2!=null)
 				for (int i=inventories1.length; i<inventories2.length; ++i)
-					contentPanel.add(new InventoryPanel(inventories2[i],true,false,this));
+					contentPanel.add(new InventoryPanel(mainwindow,inventories2[i],true,false,this));
 		
 			return this;
 		}

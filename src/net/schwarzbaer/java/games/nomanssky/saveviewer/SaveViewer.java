@@ -5,10 +5,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -21,7 +23,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -37,7 +38,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -123,6 +123,7 @@ public class SaveViewer implements ActionListener {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
+		Images.readImages();
 		UniversePanel.prepareIconSources();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
@@ -469,6 +470,7 @@ public class SaveViewer implements ActionListener {
 			techIDsPanel     .addUsage(saveGameView);
 			productIDsPanel  .addUsage(saveGameView);
 			substanceIDsPanel.addUsage(saveGameView);
+			tabbedPane.setSelectedIndex(index);
 		}
 
 		public void removeTab(JPanel panel) {
@@ -972,6 +974,7 @@ public class SaveViewer implements ActionListener {
 		File file = new File(filePath);
 		if (!file.isFile()) return;
 		
+		long start = System.currentTimeMillis();
 		System.out.println("Read "+idLabel+" IDs from file \""+filePath+"\"...");
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
@@ -985,11 +988,11 @@ public class SaveViewer implements ActionListener {
 				if (idStr.endsWith(".image")) {
 					idStr = idStr.substring(0, idStr.length()-".image".length());
 					GeneralizedID id = map.get(idStr);
-					id.image = value;
+					id.setImageFileName(value);
 				} else if (idStr.endsWith(".imageBG")) {
 					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
 					GeneralizedID id = map.get(idStr);
-					try { id.imageBG = Integer.parseInt(value,16); }
+					try { id.setImageBG(Integer.parseInt(value,16)); }
 					catch (NumberFormatException e) {}
 				} else {
 					GeneralizedID id = map.get(idStr);
@@ -999,7 +1002,8 @@ public class SaveViewer implements ActionListener {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
-		System.out.println("done");
+		
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
@@ -1007,27 +1011,31 @@ public class SaveViewer implements ActionListener {
 	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
 
 	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
+		long start = System.currentTimeMillis();
 		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
+		
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (String idStr:map.getSortedKeys()) {
 				GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.label);
-				if (id.image!=null) out.printf("%s.image=%s\r\n",idStr,id.image);
-				if (id.imageBG!=null)  out.printf("%s.imageBG=%06X\r\n",idStr,id.imageBG);
+				if (id.hasImage  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
+				if (id.hasImageBG()) out.printf("%s.imageBG=%06X\r\n",idStr,id.getImageBG());
 			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
-		System.out.println("done");
+		
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
 	public static void loadUniverseObjectDataFromFile() {
+		long start = System.currentTimeMillis();
 		System.out.println("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\"...");
 		universeObjectDataArr = new HashMap<>();
 		
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) {
-			System.out.println("done");
+			System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			return;
 		}
 		
@@ -1100,10 +1108,11 @@ public class SaveViewer implements ActionListener {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
-		System.out.println("done");
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
 	public static void readUniverseObjectDataFromDataPool(Universe universe) {
+		long start = System.currentTimeMillis();
 		System.out.println("Read data of universe objects from data pool ... ");
 		
 		boolean withOutput = false; // DEBUG;
@@ -1152,10 +1161,11 @@ public class SaveViewer implements ActionListener {
 			}
 			
 		}
-		if (!withOutput) System.out.println(" done");
+		if (!withOutput) System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveUniverseObjectDataToFile(Universe universe) {
+		long start = System.currentTimeMillis();
 		System.out.print("Write data of universe objects to data pool ...");
 		for (Galaxy g:universe.galaxies)
 			for (Region gr:g.regions)
@@ -1167,8 +1177,9 @@ public class SaveViewer implements ActionListener {
 						universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,p));
 					}
 				}
-		System.out.println(" done");
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		
+		start = System.currentTimeMillis();
 		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
 		Collections.sort(values);
 		
@@ -1205,7 +1216,7 @@ public class SaveViewer implements ActionListener {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println(" done");
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
 	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
@@ -1264,21 +1275,96 @@ public class SaveViewer implements ActionListener {
 		
 		public final String id;
 		public String label;
-		public String image;
-		public Integer imageBG;
+		private String imageFileName;
+		private Integer imageBackground;
 		private final HashMap<SaveGameData,Usage> usage;
+		private BufferedImage cachedImage;
 		
-		public GeneralizedID(String id) {
-			this(id,"");
-		}
 		private GeneralizedID(String id, String label) {
 			this.id = id;
 			this.label = label;
 			this.usage = new HashMap<>();
-			this.image = null;
-			this.imageBG = null;
+			this.imageFileName = null;
+			this.imageBackground = null;
+			this.cachedImage = null;
 		}
-
+		public GeneralizedID(String id) {
+			this(id,"");
+		}
+		public GeneralizedID(GeneralizedID other) {
+			this.id = other.id;
+			this.label = other.label;
+			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
+			this.imageFileName = other.imageFileName;
+			this.imageBackground = other.imageBackground;
+			this.cachedImage = other.cachedImage;
+		}
+		
+		public boolean hasImage() { return imageFileName!=null; }
+		public String getImageFileName() { return imageFileName==null?"":imageFileName; }
+		public void setImageFileName(String fileName) {
+			if (fileName!=null && fileName.isEmpty()) fileName = null;
+			this.imageFileName = fileName;
+			cachedImage = null;
+		}
+		public void setImageFileName(Object aValue) {
+			setImageFileName(aValue==null?null:aValue.toString());
+		}
+		
+		public boolean hasImageBG() { return imageBackground!=null; }
+		public Integer getImageBG() { return imageBackground; }
+		public void setImageBG(Integer color) {
+			this.imageBackground = color;
+			cachedImage = null;
+		}
+		
+		public BufferedImage getCachedImage() {
+			if (cachedImage == null) cachedImage = getImage();
+			return cachedImage;
+		}
+		
+		public BufferedImage getImage() {
+			return getImage(-1,-1);
+		}
+		
+		public BufferedImage getCachedImage(int width, int height) {
+			if (cachedImage==null || cachedImage.getWidth()!=width || cachedImage.getHeight()!=height) cachedImage = getImage(width, height);
+			return cachedImage;
+		}
+		
+		public BufferedImage getImage(int width, int height) {
+			BufferedImage newImage = null;
+			
+			if (imageFileName!=null)
+				newImage = Images.images.get(imageFileName);
+			
+			if (imageBackground!=null) {
+				if (width <0) width  = (newImage==null)?256:newImage.getWidth();
+				if (height<0) height = (newImage==null)?256:newImage.getHeight();
+				BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+				Graphics g = combinedImage.getGraphics();
+				g.setColor(new Color(imageBackground));
+				g.fillRect(0,0,width,height);
+				if (newImage!=null) {
+					if (width==newImage.getWidth() && height==newImage.getHeight())
+						g.drawImage(newImage,0,0,null);
+					else {
+						if (g instanceof Graphics2D) {
+							Graphics2D g2 = (Graphics2D)g;
+							g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+							g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+							g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+							g2.drawImage(newImage,0,0,width,height,null);
+						} else
+							g.drawImage(newImage,0,0,width,height,null);
+					}
+				}
+				newImage = combinedImage;
+			}
+			
+			return newImage;
+		}
+		
 		public Usage getUsage(SaveGameData base) {
 			Usage newUsage = new Usage();
 			Usage oldUsage = usage.putIfAbsent(base, newUsage);
@@ -1371,7 +1457,7 @@ public class SaveViewer implements ActionListener {
 			textarea = new JTextArea();
 			textarea.setEditable(false);
 			JScrollPane textareaScrollPane = new JScrollPane(textarea);
-			textareaScrollPane.getViewport().setPreferredSize(new Dimension(350, 150));
+			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 150));
 			
 			imageField = new JLabel();
 			imageField.setBorder(BorderFactory.createEtchedBorder());
@@ -1387,13 +1473,15 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void prepareTable() {
-			Vector<String> images = new Vector<String>(Arrays.asList(Images.images));
+			Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
 			images.insertElementAt("",0);
 			setCellEditor(GeneralizedIDColumnID.Image, new TableView.ComboboxCellEditor<String>(images.toArray(new String[0])));
 			
-			Integer[] colors = new Integer[]{null,0xBB392C,0xFFC456,0x0249A1,0x5DCD93,0x4B2A57,0x5A6F36,0x4D585E,0x1C364D,0x10805C,0xF0A92B};
+			Vector<Integer> colors = new Vector<>(Arrays.asList(Images.colors));
+			colors.insertElementAt(null,0);
+			ComboboxCellEditor<Integer> colorCellEditor = new TableView.ComboboxCellEditor<Integer>(colors.toArray(new Integer[0]));
+			
 			TableView.ColorRenderer colorRenderer = new TableView.ColorRenderer();
-			ComboboxCellEditor<Integer> colorCellEditor = new TableView.ComboboxCellEditor<Integer>(colors);
 			colorCellEditor.setRenderer(colorRenderer);
 			setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
 			setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
@@ -1428,33 +1516,17 @@ public class SaveViewer implements ActionListener {
 				return;
 			}
 			
-			textarea.append("ID   :"+id.id+"\r\n");
-			if (!id.label.isEmpty()) textarea.append("Label  :"+id.label+"\r\n");
+			textarea.append("ID     : "+id.id+"\r\n");
+			if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
+			if (id.hasImage  ()    ) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
+			if (id.hasImageBG()    ) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
 			
-			BufferedImage newImage = null;
-			if (id.image!=null) {
-				textarea.append("Image  :"+id.image+"\r\n");
-				InputStream stream = getClass().getResourceAsStream("/icons/"+id.image);
-				if (stream!=null)
-					try { newImage = ImageIO.read(stream); }
-					catch (IOException e) {}
-			}
-			if (id.imageBG!=null) {
-				textarea.append("ImageBG:"+String.format("%06X",id.imageBG)+"\r\n");
-				int width  = (newImage==null)?256:newImage.getWidth();
-				int height = (newImage==null)?256:newImage.getHeight();
-				BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-				Graphics g = combinedImage.getGraphics();
-				g.setColor(new Color(id.imageBG));
-				g.fillRect(0,0,width,height);
-				if (newImage!=null) g.drawImage(newImage,0,0,null);
-				newImage = combinedImage;
-			}
-			if (newImage==null) {
+			BufferedImage image = id.getImage();
+			if (image==null) {
 				imageField.setIcon(null);
 			} else {
-				imageField.setIcon(new ImageIcon(newImage));
-				imageField.setPreferredSize(new Dimension(newImage.getWidth(), newImage.getHeight()));							
+				imageField.setIcon(new ImageIcon(image));
+				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
 			}
 			
 			for (SaveGameData key:id.usage.keySet()) {
@@ -1613,8 +1685,8 @@ public class SaveViewer implements ActionListener {
 				switch(columnID) {
 				case ID   : return id.id;
 				case Label: return id.label;
-				case Image: return id.image==null?"":id.image;
-				case ImgBG: return id.imageBG;
+				case Image: return id.getImageFileName();
+				case ImgBG: return id.getImageBG();
 				case Usage:
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";
@@ -1637,8 +1709,8 @@ public class SaveViewer implements ActionListener {
 				switch(columnID) {
 				case ID   : return;
 				case Label: id.label = aValue==null?"":aValue.toString(); break;
-				case Image: id.image = toString(aValue); break;
-				case ImgBG: id.imageBG = (aValue instanceof Integer)?(Integer)aValue:null; break;
+				case Image: id.setImageFileName(aValue); break;
+				case ImgBG: id.setImageBG((aValue instanceof Integer)?(Integer)aValue:null); break;
 				case Usage: return;
 				}
 				panel.showID(id);
@@ -1647,15 +1719,6 @@ public class SaveViewer implements ActionListener {
 				if (sourceIdMap==productIDs  ) saveProductIDsToFile();
 				if (sourceIdMap==substanceIDs) saveSubstanceIDsToFile();
 			}
-
-			private String toString(Object aValue) {
-				if (aValue==null) return null;
-				String str = aValue.toString();
-				if (str.isEmpty()) return null;
-				return str;
-			}
-			
-			
 		}
 	}
 }
