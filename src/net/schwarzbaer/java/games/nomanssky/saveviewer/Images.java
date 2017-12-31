@@ -1,0 +1,45 @@
+package net.schwarzbaer.java.games.nomanssky.saveviewer;
+
+public class Images {
+	public static final String[] images = new String[] {
+		"GAS.1.Schwefelin.png",
+		"GAS.2.Radon.png",
+		"GAS.3.Stickstoff.png",
+		"NmsResource_Armadium_Icon.png",
+		"NmsResource_Detritum_Icon.png",
+		"Substance.commodity.common1.Eisen.png",
+		"Substance.commodity.rare1.Titan.png",
+		"Substance.commodity.uncommon1.Zink.png",
+		"Substance.exotic.rare1.Cymatygen.png",
+		"Substance.fuel.common1.Kohlenstoff.png",
+		"Substance.fuel.rare1.Plutonium.png",
+		"Substance.fuel.uncommon1.Thamium9.png",
+		"Substance.neutral.common1.Kupfer.png",
+		"Substance.neutral.common2.Nickel.png",
+		"Substance.neutral.common3.Iridium.png",
+		"Substance.neutral.rare1.Emeril.png",
+		"Substance.neutral.rare10.Viridium.png",
+		"Substance.neutral.rare11.Pilzschimmel.png",
+		"Substance.neutral.rare12.Rubeum.png",
+		"Substance.neutral.rare13.Frostkristall.png",
+		"Substance.neutral.rare14.Coprit.png",
+		"Substance.neutral.rare15.Mordit.png",
+		"Substance.neutral.rare3.Kürbisknolle.png",
+		"Substance.neutral.rare4.Kaktusfleisch.png",
+		"Substance.neutral.rare5.Pugneum.png",
+		"Substance.neutral.rare6.Tropheum.png",
+		"Substance.neutral.rare7.Solanium.png",
+		"Substance.neutral.rare8.Gammawurzel.png",
+		"Substance.neutral.rare9.Kelpbeutel.png",
+		"Substance.neutral.uncommon1.Aluminium.png",
+		"Substance.neutral.uncommon2.Gold.png",
+		"Substance.precious.rare1.Omegon.png",
+		"Substance.precious.rare2.Radnox.png",
+		"Substance.precious.rare3.Murrine.png",
+		"Substance.precious.rare4.Kalium.png",
+		"Substance.tech.common1.Heridium.png",
+		"Substance.tech.rare1.Chrysonit.png",
+		"Substance.tech.uncommon1.Platin.png"
+	};
+
+}

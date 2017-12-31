@@ -1,5 +1,10 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
@@ -15,16 +20,24 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javax.activation.DataHandler;
+import javax.swing.AbstractCellEditor;
+import javax.swing.JComboBox;
+import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.ListCellRenderer;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
+
+import net.schwarzbaer.gui.Canvas;
 
 public class TableView {
 
@@ -120,7 +133,6 @@ public class TableView {
 			if (useRowSorter)
 				setRowSorter(new SimplifiedRowSorter(name,dataModel));
 		}
-		
 	}
 	
 	static class SimplifiedRowSorter extends RowSorter<SimplifiedTableModel<?>> {
@@ -365,6 +377,12 @@ public class TableView {
 			if (columnIndex<columns.length) return columns[columnIndex];
 			return null;
 		}
+		public int getColumn( ColumnID columnID ) {
+			for (int i=0; i<columns.length; ++i)
+				if (columns[i]==columnID)
+					return i;
+			return -1;
+		}
 		
 		@Override public int getColumnCount() { return columns.length; }
 		
@@ -426,6 +444,118 @@ public class TableView {
 			if (preferred>=0) column.setPreferredWidth(preferred);
 			if (width    >=0) column.setWidth(width);
 		}
+	}
+	
+	public static class ColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {
+		
+		private RendererComponent comp;
+		
+		public ColorRenderer() {
+			comp = new RendererComponent();
+			comp.setPreferredSize(new Dimension(50,16));
+		}
+		
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			Integer intValue = null;
+			if (value instanceof Integer) intValue = (Integer)value;
+			comp.set(intValue,isSelected?table.getSelectionBackground():table.getBackground());
+			return comp;
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<? extends Integer> list, Integer value, int index, boolean isSelected, boolean cellHasFocus) {
+			comp.set(value,isSelected?list.getSelectionBackground():list.getBackground());
+			return comp;
+		}
+
+		public static class RendererComponent extends Canvas {
+			private static final long serialVersionUID = -3943051255994570512L;
+			
+			private Color valueColor;
+			private Color bgColor;
+			
+			public void set(Integer value, Color bgColor) {
+				this.bgColor = bgColor;
+				if (value==null) valueColor = null;
+				else             valueColor = new Color(value);
+			}
+
+			@Override
+			protected void paintCanvas(Graphics g, int width, int height) {
+				if (valueColor==null) {
+					g.setColor(bgColor);
+					g.fillRect(0, 0, width, height);
+				} else {
+					g.setColor(bgColor);
+					g.drawRect(0, 0, width-1, height-1);
+					//g.drawRect(1, 1, width-3, height-3);
+					g.setColor(valueColor);
+					g.fillRect(1, 1, width-2, height-2);
+					//g.fillRect(2, 2, width-4, height-4);
+				}
+			}
+			
+			@Override public void revalidate() {}
+			@Override public void invalidate() {}
+			@Override public void validate() {}
+			@Override public void repaint(long tm, int x, int y, int width, int height) {}
+			@Override public void repaint(Rectangle r) {}
+			@Override public void repaint() {}
+			@Override public void repaint(long tm) {}
+			@Override public void repaint(int x, int y, int width, int height) {}
+	
+			@Override public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
+			@Override public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
+			@Override public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
+			@Override protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {}
+			@Override public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
+			@Override public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
+			@Override public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
+			@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
+			@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
+		}
+		
+	}
+	
+	public static class ComboboxCellEditor<T> extends AbstractCellEditor implements TableCellEditor {
+		private static final long serialVersionUID = -346693108757882917L;
+		
+		private Object currentValue;
+		private T[] values;
+		private ListCellRenderer<? super T> renderer;
+		
+		public ComboboxCellEditor(T[] values) {
+			this.values = values;
+			this.currentValue = null;
+			this.renderer = null;
+		}
+		
+		public void setRenderer(ListCellRenderer<? super T> renderer) {
+			this.renderer = renderer;
+		}
+		
+		@Override
+		public Object getCellEditorValue() {
+			return currentValue;
+		}
+
+		@Override
+		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+			this.currentValue = value;
+			
+			JComboBox<T> cmbbx = new JComboBox<T>(values);
+			if (renderer!=null) cmbbx.setRenderer(renderer);
+			cmbbx.setSelectedItem(currentValue);
+			cmbbx.setBackground(isSelected?table.getSelectionBackground():table.getBackground());
+			cmbbx.addActionListener(e->{
+				currentValue = cmbbx.getSelectedItem();
+				fireEditingStopped();
+			});
+			
+			return cmbbx;
+		}
+		
 	}
 
 }

@@ -1,0 +1,1 @@
+dir *.png /B > allpng.txt

@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -20,10 +21,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,6 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -57,6 +61,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
@@ -77,6 +84,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddr
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID.Usage;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.ComboboxCellEditor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
@@ -971,9 +979,22 @@ public class SaveViewer implements ActionListener {
 				int pos = str.indexOf('=');
 				if (pos<0) continue;
 				
-				String id = str.substring(0, pos);
-				String label = str.substring(pos+1);
-				map.set(id, new GeneralizedID(id,label));
+				String idStr = str.substring(0, pos);
+				String value = str.substring(pos+1);
+				
+				if (idStr.endsWith(".image")) {
+					idStr = idStr.substring(0, idStr.length()-".image".length());
+					GeneralizedID id = map.get(idStr);
+					id.image = value;
+				} else if (idStr.endsWith(".imageBG")) {
+					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
+					GeneralizedID id = map.get(idStr);
+					try { id.imageBG = Integer.parseInt(value,16); }
+					catch (NumberFormatException e) {}
+				} else {
+					GeneralizedID id = map.get(idStr);
+					id.label = value;
+				}
 			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -989,7 +1010,12 @@ public class SaveViewer implements ActionListener {
 		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (String id:map.getSortedKeys()) out.printf("%s=%s\r\n",id,map.get(id).label);
+			for (String idStr:map.getSortedKeys()) {
+				GeneralizedID id = map.get(idStr);
+				out.printf("%s=%s\r\n",idStr,id.label);
+				if (id.image!=null) out.printf("%s.image=%s\r\n",idStr,id.image);
+				if (id.imageBG!=null)  out.printf("%s.imageBG=%06X\r\n",idStr,id.imageBG);
+			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		System.out.println("done");
@@ -1238,6 +1264,8 @@ public class SaveViewer implements ActionListener {
 		
 		public final String id;
 		public String label;
+		public String image;
+		public Integer imageBG;
 		private final HashMap<SaveGameData,Usage> usage;
 		
 		public GeneralizedID(String id) {
@@ -1247,6 +1275,8 @@ public class SaveViewer implements ActionListener {
 			this.id = id;
 			this.label = label;
 			this.usage = new HashMap<>();
+			this.image = null;
+			this.imageBG = null;
 		}
 
 		public Usage getUsage(SaveGameData base) {
@@ -1324,30 +1354,109 @@ public class SaveViewer implements ActionListener {
 		private GeneralizedIDTableModel tableModel;
 
 		private JTextArea textarea;
+		private JLabel imageField;
 
 		public GeneralizedIDPanel(IDMap idMap, String tableLabel) {
 			super(new BorderLayout(3, 3));
 			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
-			tableModel = new GeneralizedIDTableModel(idMap);
+			tableModel = new GeneralizedIDTableModel(this,idMap);
 			table = new SimplifiedTable(tableLabel,tableModel,true,SaveViewer.DEBUG,true);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			table.getSelectionModel().addListSelectionListener(e->showID(tableModel.getValue(table.getRowSorter().convertRowIndexToModel(table.getSelectedRow()))));
+			prepareTable();
+			
 			add(new JScrollPane(table),BorderLayout.CENTER);
 			
 			textarea = new JTextArea();
 			textarea.setEditable(false);
 			JScrollPane textareaScrollPane = new JScrollPane(textarea);
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(350, 150));
-			add(textareaScrollPane, BorderLayout.EAST);
+			
+			imageField = new JLabel();
+			imageField.setBorder(BorderFactory.createEtchedBorder());
+			imageField.setPreferredSize(new Dimension(100,100));
+			
+			JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
+			eastPanel.add(imageField, BorderLayout.NORTH);
+			eastPanel.add(textareaScrollPane, BorderLayout.CENTER);
+			
+			
+			add(eastPanel, BorderLayout.EAST);
+			
+		}
+
+		private void prepareTable() {
+			Vector<String> images = new Vector<String>(Arrays.asList(Images.images));
+			images.insertElementAt("",0);
+			setCellEditor(GeneralizedIDColumnID.Image, new TableView.ComboboxCellEditor<String>(images.toArray(new String[0])));
+			
+			Integer[] colors = new Integer[]{null,0xBB392C,0xFFC456,0x0249A1,0x5DCD93,0x4B2A57,0x5A6F36,0x4D585E,0x1C364D,0x10805C,0xF0A92B};
+			TableView.ColorRenderer colorRenderer = new TableView.ColorRenderer();
+			ComboboxCellEditor<Integer> colorCellEditor = new TableView.ComboboxCellEditor<Integer>(colors);
+			colorCellEditor.setRenderer(colorRenderer);
+			setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
+			setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
+		}
+
+		private void setCellRenderer(GeneralizedIDColumnID columnID, TableCellRenderer cellRenderer) {
+			TableColumn column = getColumn(columnID);
+			if (column==null) return;
+			column.setCellRenderer(cellRenderer);
+		}
+
+		private void setCellEditor(GeneralizedIDColumnID columnID, TableCellEditor cellEditor) {
+			TableColumn column = getColumn(columnID);
+			if (column==null) return;
+			column.setCellEditor(cellEditor);
+		}
+
+		private TableColumn getColumn(GeneralizedIDColumnID columnID) {
+			TableColumnModel columnModel = table.getColumnModel();
+			if (columnModel==null) return null;
+			
+			int columnIndex = tableModel.getColumn(columnID);
+			if (columnIndex<0) return null;
+			
+			return columnModel.getColumn(columnIndex);
 		}
 
 		private void showID(GeneralizedID id) {
 			textarea.setText("");
-			if (id==null) return;
+			if (id==null) {
+				imageField.setIcon(null);
+				return;
+			}
+			
 			textarea.append("ID   :"+id.id+"\r\n");
-			if (!id.label.isEmpty())
-				textarea.append("Label:"+id.label+"\r\n");
+			if (!id.label.isEmpty()) textarea.append("Label  :"+id.label+"\r\n");
+			
+			BufferedImage newImage = null;
+			if (id.image!=null) {
+				textarea.append("Image  :"+id.image+"\r\n");
+				InputStream stream = getClass().getResourceAsStream("/icons/"+id.image);
+				if (stream!=null)
+					try { newImage = ImageIO.read(stream); }
+					catch (IOException e) {}
+			}
+			if (id.imageBG!=null) {
+				textarea.append("ImageBG:"+String.format("%06X",id.imageBG)+"\r\n");
+				int width  = (newImage==null)?256:newImage.getWidth();
+				int height = (newImage==null)?256:newImage.getHeight();
+				BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+				Graphics g = combinedImage.getGraphics();
+				g.setColor(new Color(id.imageBG));
+				g.fillRect(0,0,width,height);
+				if (newImage!=null) g.drawImage(newImage,0,0,null);
+				newImage = combinedImage;
+			}
+			if (newImage==null) {
+				imageField.setIcon(null);
+			} else {
+				imageField.setIcon(new ImageIcon(newImage));
+				imageField.setPreferredSize(new Dimension(newImage.getWidth(), newImage.getHeight()));							
+			}
+			
 			for (SaveGameData key:id.usage.keySet()) {
 				textarea.append("\r\n");
 				textarea.append(key.filename+":\r\n");
@@ -1363,6 +1472,7 @@ public class SaveViewer implements ActionListener {
 			stopCellEditing();
 			tableModel.addUsage(view);
 			tableModel.setColumnWidths(table);
+			prepareTable();
 		}
 
 		public void updatePanel() {
@@ -1374,6 +1484,7 @@ public class SaveViewer implements ActionListener {
 			stopCellEditing();
 			tableModel.removeUsage(view);
 			tableModel.setColumnWidths(table);
+			prepareTable();
 		}
 
 		private void stopCellEditing() {
@@ -1382,9 +1493,11 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
-			ID    ("ID"    , String.class,  80,-1,120,120),
-			Label ("Label" , String.class, 150,-1,200,200),
-			Usage (""      , String.class,  80,-1, 80, 80);
+			ID    ("ID"        ,  String.class,  80,-1,120,120),
+			Label ("Label"     ,  String.class, 150,-1,200,200),
+			Image ("Image"     ,  String.class, 150,-1,250,250),
+			ImgBG ("Background", Integer.class,  50,-1, 70, 70),
+			Usage (""          ,  String.class,  80,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -1404,8 +1517,11 @@ public class SaveViewer implements ActionListener {
 			private Vector<GeneralizedID> IDs;
 			private Vector<SaveGameView> usageKeys;
 
-			protected GeneralizedIDTableModel(IDMap sourceIdMap) {
-				super(new GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Label });
+			private GeneralizedIDPanel panel;
+
+			protected GeneralizedIDTableModel(GeneralizedIDPanel panel, IDMap sourceIdMap) {
+				super(new GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Label, GeneralizedIDColumnID.Image, GeneralizedIDColumnID.ImgBG });
+				this.panel = panel;
 				
 				this.usageKeys = new Vector<>();
 				this.sourceIdMap = sourceIdMap;
@@ -1464,7 +1580,15 @@ public class SaveViewer implements ActionListener {
 			
 			@Override
 			protected boolean isCellEditable(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
-				return columnID==GeneralizedIDColumnID.Label && rowIndex>=EXTRA_ROWS;
+				if (rowIndex<EXTRA_ROWS) return false;
+				switch(columnID) {
+				case ID   : return false;
+				case Label:
+				case Image: return true;
+				case ImgBG: return true;
+				case Usage: return false;
+				}
+				return false;
 			}
 
 			public GeneralizedID getValue(int rowIndex) {
@@ -1478,6 +1602,8 @@ public class SaveViewer implements ActionListener {
 					switch(columnID) {
 					case ID   : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
 					case Label: return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
+					case Image: return "";
+					case ImgBG: return "";
 					case Usage: return "";
 					}
 					return null;
@@ -1487,6 +1613,8 @@ public class SaveViewer implements ActionListener {
 				switch(columnID) {
 				case ID   : return id.id;
 				case Label: return id.label;
+				case Image: return id.image==null?"":id.image;
+				case ImgBG: return id.imageBG;
 				case Usage:
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";
@@ -1501,14 +1629,30 @@ public class SaveViewer implements ActionListener {
 
 			@Override
 			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
-				if (columnID!=GeneralizedIDColumnID.Label) return;
 				if (rowIndex<EXTRA_ROWS) return;
+				
 				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
 				if (id==null) return;
-				id.label = aValue==null?"":aValue.toString();
+				
+				switch(columnID) {
+				case ID   : return;
+				case Label: id.label = aValue==null?"":aValue.toString(); break;
+				case Image: id.image = toString(aValue); break;
+				case ImgBG: id.imageBG = (aValue instanceof Integer)?(Integer)aValue:null; break;
+				case Usage: return;
+				}
+				panel.showID(id);
+				
 				if (sourceIdMap==techIDs     ) saveTechIDsToFile();
 				if (sourceIdMap==productIDs  ) saveProductIDsToFile();
 				if (sourceIdMap==substanceIDs) saveSubstanceIDsToFile();
+			}
+
+			private String toString(Object aValue) {
+				if (aValue==null) return null;
+				String str = aValue.toString();
+				if (str.isEmpty()) return null;
+				return str;
 			}
 			
 			
