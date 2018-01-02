@@ -22,10 +22,12 @@
 ^BOLTRATE2.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTREL1=
 ^BOLTREL1.image=Render.projectile1mod.Blitzwerfer.grau.png
+^BOLTREL1.imageBG=F0A92B
 ^BOLTREL3=
 ^BOLTREL3.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTSTAB1=
 ^BOLTSTAB1.image=Render.projectile1mod.Blitzwerfer.grau.png
+^BOLTSTAB1.imageBG=10805C
 ^BOLTSTAB2=
 ^BOLTSTAB2.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTSTAB3=

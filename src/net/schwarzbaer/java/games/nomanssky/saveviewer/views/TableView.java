@@ -624,6 +624,12 @@ public class TableView {
 			this.renderer = null;
 		}
 		
+		public void addValue(T newValue) {
+			stopCellEditing();
+			values = Arrays.copyOf(values, values.length+1);
+			values[values.length-1] = newValue;
+		}
+
 		public void setRenderer(ListCellRenderer<? super T> renderer) {
 			this.renderer = renderer;
 		}

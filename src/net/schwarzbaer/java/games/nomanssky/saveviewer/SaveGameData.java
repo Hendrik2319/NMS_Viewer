@@ -67,6 +67,11 @@ public class SaveGameData {
 		parseInventories();
 		universe.sort();
 		//universe.writeToConsole();
+		
+		GameInfos.readUniverseObjectDataFromDataPool(universe);
+		GameInfos.saveProductIDsToFile();
+		GameInfos.saveTechIDsToFile();
+		GameInfos.saveSubstanceIDsToFile();
 		return this;
 	}
 

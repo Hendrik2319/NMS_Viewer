@@ -41,16 +41,17 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ColorListListender;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.ComboboxCellEditor;
@@ -125,7 +126,7 @@ public class GameInfos {
 		
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) {
-			System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			return;
 		}
 		
@@ -198,7 +199,7 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void readUniverseObjectDataFromDataPool(Universe universe) {
@@ -251,7 +252,7 @@ public class GameInfos {
 			}
 			
 		}
-		if (!withOutput) System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		if (!withOutput) System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveUniverseObjectDataToFile(Universe universe) {
@@ -267,7 +268,7 @@ public class GameInfos {
 						universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,p));
 					}
 				}
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		
 		start = System.currentTimeMillis();
 		Vector<GameInfos.UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
@@ -306,14 +307,15 @@ public class GameInfos {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void loadKnownStatIDsFromFile() {
 		File file = new File(FILE_KNOWN_STAT_ID);
 		if (!file.isFile()) return;
 		
-		System.out.println();
+		long start = System.currentTimeMillis();
+		System.out.println("Read known StatIDs from file \""+file.getPath()+"\" ...");
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -334,19 +336,23 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
-		System.out.println();
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveKnownStatIDsToFile() {
+		File file = new File(FILE_KNOWN_STAT_ID);
+		long start = System.currentTimeMillis();
+		System.out.println("Write known StatIDs to file \""+file.getPath()+"\" ...");
+		
 		KnownID[] knownIDs = KnownID.values();
 		
-		File file = new File(FILE_KNOWN_STAT_ID);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (KnownID id:knownIDs)
 				out.printf("%s=%s\r\n",id.toString(),id.fullName);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static final GameInfos.IDMap productIDs   = new IDMap();
@@ -429,7 +435,7 @@ public class GameInfos {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
@@ -453,7 +459,7 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static class GeneralizedID {
@@ -600,6 +606,8 @@ public class GameInfos {
 			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground));
 			contextMenuImageBG.add(createMenuItem("Copy Background",ActionCommand.CopyBackground));
 			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground));
+			contextMenuImageBG.addSeparator();
+			contextMenuImageBG.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
 			
 			
 			table.addMouseListener(new MouseAdapter() {
@@ -648,7 +656,7 @@ public class GameInfos {
 			return menuItem;
 		}
 	
-		enum ActionCommand { ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, ChangeImage }
+		enum ActionCommand { ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, ChangeImage, AddBackgroundColor }
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -688,6 +696,10 @@ public class GameInfos {
 					try { clickedID.setImageBG(Integer.parseInt(cbValue, 16)); idChanged = true; }
 					catch (NumberFormatException e1) {}
 				break;
+				
+			case AddBackgroundColor:
+				SaveViewer.images.showAddColorDialog(mainwindow,"Add Color");
+				break;
 			}
 			if (idChanged) {
 				if (clickedCell!=null) tableModel.updateTableCell(clickedCell.x,clickedCell.y);
@@ -708,6 +720,11 @@ public class GameInfos {
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
 			colors.insertElementAt(null,0);
 			ComboboxCellEditor<NamedColor> colorCellEditor = new TableView.ComboboxCellEditor<NamedColor>(colors.toArray(new NamedColor[0]));
+			SaveViewer.images.addColorListListender(new ColorListListender() {
+				@Override public void colorAdded(NamedColor color) {
+					colorCellEditor.addValue(color);
+				}
+			});
 			
 			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
 			colorCellEditor.setRenderer(colorRenderer);

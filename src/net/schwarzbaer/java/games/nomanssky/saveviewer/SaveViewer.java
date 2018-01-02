@@ -289,10 +289,6 @@ public class SaveViewer implements ActionListener {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
 			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName()).parse();
-			GameInfos.readUniverseObjectDataFromDataPool(saveGameData.universe);
-			GameInfos.saveProductIDsToFile();
-			GameInfos.saveTechIDsToFile();
-			GameInfos.saveSubstanceIDsToFile();
 			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData);
 			loadedSaveGames.add(saveGameView);
 			contentPane.addSaveGameView(saveGameView);
@@ -314,7 +310,6 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data!=null) {
 			removeUsages(view.data);
 			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName()).parse();
-			GameInfos.readUniverseObjectDataFromDataPool(saveGameData.universe);
 			view.replaceData(saveGameData);
 			contentPane.updateIDPanels();
 		}
