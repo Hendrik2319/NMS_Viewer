@@ -44,6 +44,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -472,8 +473,8 @@ public class Images {
 			this.createGUI(contentPane);
 		}
 		
-		@Override public void windowOpened(WindowEvent e) { SaveViewer.images.addColorListListender   (colorListListender); System.out.println("add"); }
-		@Override public void windowClosed(WindowEvent e) { SaveViewer.images.removeColorListListender(colorListListender); System.out.println("remove"); }
+		@Override public void windowOpened(WindowEvent e) { SaveViewer.images.addColorListListender   (colorListListender); }
+		@Override public void windowClosed(WindowEvent e) { SaveViewer.images.removeColorListListender(colorListListender); }
 
 		private void showImageList(JComboBox<String> cmbbxImages) {
 			ImageGridDialog dlg = new ImageGridDialog(this,id.getImageFileName());
@@ -534,6 +535,9 @@ public class Images {
 		private static Color COLOR_FOREGRIOUND_SELECTED = null;
 		
 		private String selected;
+		private int cols;
+		private int preselectedIndex;
+		private JScrollPane imageScrollPane;
 	
 		public ImageGridDialog(Window parent, String initialValue) {
 			super(parent,"Select Image",ModalityType.APPLICATION_MODAL);
@@ -548,20 +552,24 @@ public class Images {
 			COLOR_FOREGRIOUND_SELECTED = dummy.getSelectedTextColor();
 			COLOR_BACKGRIOUND_PRESELECTED = brighter(COLOR_BACKGRIOUND_SELECTED,0.7f);
 			
-			
-			JPanel imagePanel = new JPanel(new GridLayout(0,6,0,0));
+			cols = 6;
+			JPanel imagePanel = new JPanel(new GridLayout(0,cols,0,0));
 			imagePanel.setBorder(BorderFactory.createEtchedBorder());
 			imagePanel.setBackground(COLOR_BACKGRIOUND);
 			
-			JScrollPane imageScrollPane = new JScrollPane(imagePanel);
-			imageScrollPane.setPreferredSize(new Dimension(700,600));
-			
+			preselectedIndex = -1;
 			for (int i=0; i<SaveViewer.images.imagesNames.length; ++i) {
 				String name = SaveViewer.images.imagesNames[i];
 				BufferedImage image = SaveViewer.images.getImage(name,null,64,64);
-				if (image!=null)
-					imagePanel.add(new ImageLabel(this,name,image,name.equals(initialValue)));
+				if (image!=null) {
+					boolean isPreSelected = name.equals(initialValue);
+					imagePanel.add(new ImageLabel(this,name,image,isPreSelected));
+					if (isPreSelected) preselectedIndex=i;
+				}
 			}
+			
+			imageScrollPane = new JScrollPane(imagePanel);
+			imageScrollPane.setPreferredSize(new Dimension(700,600));
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
@@ -585,6 +593,32 @@ public class Images {
 			return new Color(r,g,b);
 		}
 	
+		@Override
+		public void windowOpened(WindowEvent e) {
+			if (preselectedIndex>=0) {
+				int row = preselectedIndex/cols;
+				int rowCount = Math.round((float)Math.ceil(SaveViewer.images.imagesNames.length*1.0f/cols));
+				//System.out.printf("Row %d/%d was preselected\r\n",row,rowCount);
+				
+				JScrollBar scrollBar = imageScrollPane.getVerticalScrollBar();
+				int val = scrollBar.getValue();
+				int max = scrollBar.getMaximum();
+				int min = scrollBar.getMinimum();
+				int ext = scrollBar.getVisibleAmount();
+				//System.out.printf("VerticalScrollBar is at %d..%d(%d)..%d \r\n",min,val,ext,max);
+				
+				int h = (max-min)/rowCount;
+				//System.out.printf("h = %d \r\n",h);
+				val = row*h - (ext-h)/2 + min;
+				//System.out.printf("val = %d \r\n",val);
+				val = Math.max(min,val);
+				val = Math.min(max-ext,val);
+				
+				scrollBar.setValue(val);
+				//System.out.printf("VerticalScrollBar set to %d..%d(%d)..%d \r\n",min,val,ext,max);
+			}
+		}
+
 		private void setResult(String name) {
 			selected = name;
 			closeDialog();

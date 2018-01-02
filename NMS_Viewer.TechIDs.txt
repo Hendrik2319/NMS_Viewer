@@ -2,7 +2,6 @@
 ^ARMOUR2=Gesundheitsmodul Tau
 ^BOLT=Blitzwerfer
 ^BOLT.image=Render.projectile1.Blitzwerfer.png
-^BOLT.imageBG=4D585E
 ^BOLTBOUNCE1=
 ^BOLTBOUNCE1.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTBOUNCE2=
@@ -11,7 +10,6 @@
 ^BOLTCLIP1.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTDMG1=
 ^BOLTDMG1.image=Render.projectile1mod.Blitzwerfer.grau.png
-^BOLTDMG1.imageBG=4D585E
 ^BOLTDMG2=
 ^BOLTDMG2.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTHOMING=
@@ -22,12 +20,10 @@
 ^BOLTRATE2.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTREL1=
 ^BOLTREL1.image=Render.projectile1mod.Blitzwerfer.grau.png
-^BOLTREL1.imageBG=F0A92B
 ^BOLTREL3=
 ^BOLTREL3.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTSTAB1=
 ^BOLTSTAB1.image=Render.projectile1mod.Blitzwerfer.grau.png
-^BOLTSTAB1.imageBG=10805C
 ^BOLTSTAB2=
 ^BOLTSTAB2.image=Render.projectile1mod.Blitzwerfer.grau.png
 ^BOLTSTAB3=

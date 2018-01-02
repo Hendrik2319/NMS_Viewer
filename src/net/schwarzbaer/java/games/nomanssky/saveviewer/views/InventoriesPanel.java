@@ -15,6 +15,8 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -22,7 +24,6 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -35,6 +36,7 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
@@ -99,7 +101,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		public void updateContent();
 	}
 
-	final static class InventoryPanel extends JPanel implements Updatable {
+	final static class InventoryPanel extends JPanel implements Updatable, ActionListener {
 		private static final long serialVersionUID = 8549406812793642121L;
 		
 		private Inventory inventory;
@@ -107,8 +109,6 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private InventoryDisplay inventoryLabel;
 		private JPopupMenu contextMenu;
 
-		private JMenuItem miSetLabel;
-		private JMenuItem miSetImage;
 		private Slot clickedSlot;
 		private Updatable updateListener;
 
@@ -137,8 +137,17 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			showValues();
 			
 			contextMenu = new JPopupMenu();
-			contextMenu.add(miSetLabel=SaveViewer.createMenuItem("Set Label", e->setLabelForResource()));
-			contextMenu.add(miSetImage=SaveViewer.createMenuItem("Set Image", e->setImageForResource()));
+			contextMenu.add(SaveViewer.createMenuItem("Set Label", this, ActionCommand.SetLabel ));
+			contextMenu.add(SaveViewer.createMenuItem("Set Image", this, ActionCommand.SetImage ));
+			contextMenu.addSeparator();;
+			contextMenu.add(SaveViewer.createMenuItem("Select Image File", this, ActionCommand.SelectImageFile ));
+			contextMenu.add(SaveViewer.createMenuItem("Copy Image File", this, ActionCommand.CopyImageFile ));
+			contextMenu.add(SaveViewer.createMenuItem("Paste Image File", this, ActionCommand.PasteImageFile ));
+			contextMenu.add(SaveViewer.createMenuItem("Remove Image File", this, ActionCommand.RemoveImageFile ));
+			contextMenu.addSeparator();;
+			contextMenu.add(SaveViewer.createMenuItem("Copy Background Color", this, ActionCommand.CopyBGColor ));
+			contextMenu.add(SaveViewer.createMenuItem("Paste Background Color", this, ActionCommand.PasteBGColor ));
+			contextMenu.add(SaveViewer.createMenuItem("Remove Background Color", this, ActionCommand.RemoveBGColor ));
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				inventoryLabel = new InventoryDisplay(this,(int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots);
@@ -146,41 +155,73 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			} else
 				inventoryLabel = null;
 		}
+		
+		private enum ActionCommand { SetLabel, SetImage, SelectImageFile, CopyImageFile, PasteImageFile, RemoveImageFile, CopyBGColor, PasteBGColor, RemoveBGColor }
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if (clickedSlot == null) return;
+			if (clickedSlot.id==null) return;
+			
+			String cbValue;
+			switch(ActionCommand.valueOf(e.getActionCommand())) {
+			case SetLabel:
+				String name = JOptionPane.showInputDialog(this, String.format("New name for %s ID \"%s\"", clickedSlot.type, clickedSlot.id.id), clickedSlot.id.label);
+				if (name!=null) {
+					clickedSlot.id.label = name;
+					updateAfterChangedIDdata();
+				}
+				break;
+			case SetImage: {
+				Images.IdImageDialog dlg = new Images.IdImageDialog(mainwindow,clickedSlot.id);
+				dlg.showDialog();
+				if (dlg.hasDataChanged()) {
+					clickedSlot.id.setImageBG(dlg.getImageBG());
+					clickedSlot.id.setImageFileName(dlg.getImageFileName());
+					updateAfterChangedIDdata();
+				}
+			} break;
+				
+			case SelectImageFile: {
+				ImageGridDialog dlg = new ImageGridDialog(mainwindow,clickedSlot.id.getImageFileName());
+				dlg.showDialog();
+				if (dlg.hasChoosen()) {
+					String result = dlg.getImageFileName();
+					clickedSlot.id.setImageFileName(result);
+					updateAfterChangedIDdata();
+				}
+			} break;
+				
+			case RemoveImageFile: clickedSlot.id.setImageFileName(""); updateAfterChangedIDdata(); break;
+			case RemoveBGColor  : clickedSlot.id.setImageBG(null); updateAfterChangedIDdata(); break;
+				
+			case CopyImageFile: SaveViewer.copyToClipBoard(clickedSlot.id.getImageFileName()); break;
+			case CopyBGColor  : if (clickedSlot.id.hasImageBG()) { SaveViewer.copyToClipBoard(String.format("%06X", clickedSlot.id.getImageBG())); } break;
+			
+			case PasteImageFile:
+				cbValue = SaveViewer.pasteFromClipBoard();
+				if (cbValue!=null) {
+					clickedSlot.id.setImageFileName(cbValue);
+					updateAfterChangedIDdata();
+				}
+				break;
+			case PasteBGColor:
+				cbValue = SaveViewer.pasteFromClipBoard();
+				if (cbValue!=null)
+					try {
+						clickedSlot.id.setImageBG(Integer.parseInt(cbValue, 16));
+						updateAfterChangedIDdata();
+					} catch (NumberFormatException e1) {}
+				break;
+			}
+			
+			clickedSlot = null;
+		}
 
 		@Override
 		public void updateContent() {
 			if (inventoryLabel != null) inventoryLabel.repaint();
 			showValues();
-		}
-
-		private void setImageForResource() {
-			if (clickedSlot == null) return;
-			
-			if (clickedSlot.id==null || clickedSlot.type==null) return;
-			
-			Images.IdImageDialog dlg = new Images.IdImageDialog(mainwindow,clickedSlot.id);
-			dlg.showDialog();
-			
-			if (dlg.hasDataChanged()) {
-				clickedSlot.id.setImageBG(dlg.getImageBG());
-				clickedSlot.id.setImageFileName(dlg.getImageFileName());
-				updateAfterChangedIDdata();
-			}
-			
-			clickedSlot = null;
-		}
-		
-		private void setLabelForResource() {
-			if (clickedSlot == null) return;
-			
-			if (clickedSlot.id==null || clickedSlot.type==null) return;
-			
-			String name = JOptionPane.showInputDialog(this, String.format("New name for %s ID \"%s\"", clickedSlot.type, clickedSlot.id.id), clickedSlot.id.label);
-			if (name!=null) {
-				clickedSlot.id.label = name;
-				updateAfterChangedIDdata();
-			}
-			clickedSlot = null;
 		}
 
 		private void updateAfterChangedIDdata() {
@@ -196,9 +237,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private void showContextMenu(Component invoker, int screenX, int screenY) {
 			if (!isValidSlotHovered()) return;
 			clickedSlot = inventory.slots[inventoryLabel.hoveredSlot.x][inventoryLabel.hoveredSlot.y];
-			miSetLabel.setEnabled(!clickedSlot.isEmpty && clickedSlot.id!=null && clickedSlot.type!=null);
-			miSetImage.setEnabled(!clickedSlot.isEmpty && clickedSlot.id!=null && clickedSlot.type!=null);
-			contextMenu.show(invoker, screenX, screenY);
+			if (clickedSlot!=null && !clickedSlot.isEmpty && clickedSlot.id!=null)
+				contextMenu.show(invoker, screenX, screenY);
 		}
 
 		private boolean isValidSlotHovered() {
