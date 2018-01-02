@@ -811,9 +811,9 @@ public class GameInfos {
 	
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
 			ID    ("ID"        ,     String.class,  80,-1,120,120),
-			Label ("Label"     ,     String.class, 100,-1,200,200),
-			Image ("Image"     ,     String.class, 100,-1,250,250),
-			ImgBG ("Background", NamedColor.class,  80,-1,120,120),
+			Label ("Label"     ,     String.class, 150,-1,200,200),
+			Image ("Image"     ,     String.class, 150,-1,250,250),
+			ImgBG ("Background", NamedColor.class, 150,-1,200,200),
 			Usage (""          ,     String.class,  50,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;

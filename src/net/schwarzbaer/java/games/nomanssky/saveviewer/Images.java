@@ -89,11 +89,17 @@ public class Images {
 		addColor(colorValuesVec, 0x5DCD93, "Neutrales Element" );
 		addColor(colorValuesVec, 0x5A6F36, "Pflanze 1" );
 		addColor(colorValuesVec, 0x4B2A57, "Pflanze 2" );
-		addColor(colorValuesVec, 0x4D585E, null );
 		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
 		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk" );
 		addColor(colorValuesVec, 0xF0A92B, "Produkt" );
-		
+		addColor(colorValuesVec, 0xC11746, "Energy" );
+		addColor(colorValuesVec, 0x085C78, "Tech 1" );
+		addColor(colorValuesVec, 0x0063B6, "Tech 2" );
+		addColor(colorValuesVec, 0x236D4C, "Weapon Impulswerfer" );
+		addColor(colorValuesVec, 0x19BC79, "Weapon Impulswerfer Upgrade" );
+		addColor(colorValuesVec, 0x495746, "Weapon Minenlaser" );
+		addColor(colorValuesVec, 0x5B9352, "Weapon Minenlaser Upgrade" );
+		addColor(colorValuesVec, 0x0D81A8, "Weapon Blitzwerfer Upgrade" );		
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);

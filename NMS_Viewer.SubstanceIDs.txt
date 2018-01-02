@@ -18,6 +18,7 @@
 ^FUELUNCOMMON1.imageBG=BB392C
 ^GAS2=
 ^SPACEGUNK3=Verrostetes Metall
+^SPACEGUNK3.image=Rustedmetalicon.png
 ^SPACEGUNK3.imageBG=5A6F36
 ^SUBBARREN=
 ^SUBCAVE=Kürbisknolle
