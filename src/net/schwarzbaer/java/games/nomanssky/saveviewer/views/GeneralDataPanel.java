@@ -12,6 +12,7 @@ import javax.swing.JTextArea;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
@@ -40,7 +41,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			
 			JPanel buttonPanel = new JPanel();
 			buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-			buttonPanel.add(createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.getCurrentUniverseAddress())));
+			buttonPanel.add(SaveViewer.createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.getCurrentUniverseAddress())));
 			
 			add(treeScrollPane,BorderLayout.CENTER);
 			add(buttonPanel,BorderLayout.SOUTH);

@@ -10,10 +10,7 @@ import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -120,36 +117,6 @@ public class SaveGameView extends JPanel {
 		
 		@Override
 		public void updateContent() {}
-
-		protected static JButton createButton(String title, ActionListener l) {
-			JButton button = new JButton(title);
-			button.addActionListener(l);
-			return button;
-		}
-
-		protected static <ActionCommand extends Enum<ActionCommand>> JButton createButton(String title, ActionListener l, ActionCommand actionCommand) {
-			JButton button = createButton(title,l);
-			button.setActionCommand(actionCommand.toString());
-			return button;
-		}
-
-		protected static JMenuItem createMenuItem(String title, ActionListener l) {
-			JMenuItem menuItem = new JMenuItem(title);
-			menuItem.addActionListener(l);
-			return menuItem;
-		}
-
-		protected static <ActionCommand extends Enum<ActionCommand>> JMenuItem createMenuItem(String title, ActionListener l, ActionCommand actionCommand) {
-			JMenuItem menuItem = createMenuItem(title,l);
-			menuItem.setActionCommand(actionCommand.toString());
-			return menuItem;
-		}
-
-		protected static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
-			JCheckBox button = new JCheckBox(title,isSelected);
-			if (l!=null) button.addActionListener(l);
-			return button;
-		}
 
 		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.UniverseObject object, String objectStr) {
 			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getOriginalName());

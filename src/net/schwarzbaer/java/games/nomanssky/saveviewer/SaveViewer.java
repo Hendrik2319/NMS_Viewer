@@ -4,18 +4,27 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.RenderingHints;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,6 +35,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,13 +49,16 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
+import javax.activation.DataHandler;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -59,6 +73,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
@@ -68,10 +83,12 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
+import net.schwarzbaer.gui.GUI;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
@@ -85,6 +102,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID.
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.ComboboxCellEditor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
@@ -124,6 +142,7 @@ public class SaveViewer implements ActionListener {
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
 		Images.readImages();
+		Images.prepareColors();
 		UniversePanel.prepareIconSources();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
@@ -208,9 +227,7 @@ public class SaveViewer implements ActionListener {
 		updateWindowTitle();
 	}
 	
-	private enum ActionCommand {
-		Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg
-	}
+	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, TestClipboardReading }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -292,6 +309,12 @@ public class SaveViewer implements ActionListener {
 		case ComputeCoordinates:
 			new ComputeCoordinatesDialog(mainWindow).showDialog(Position.PARENT_CENTER);
 			break;
+			
+		case TestClipboardReading:
+			System.out.println("Read from Clipboard:");
+			System.out.println("-> \""+pasteFromClipBoard()+"\"");
+			System.out.println("done");
+			break;
 		}
 	}
 
@@ -365,14 +388,6 @@ public class SaveViewer implements ActionListener {
 		for (GeneralizedID id:substanceIDs.getValues()) id.usage.remove(oldData);
 	}
 
-	public static void log_ln( String format, Object... values ) {
-		System.out.printf(format+"\r\n",values);
-	}
-	
-	public static void log( String format, Object... values ) {
-		System.out.printf(format,values);
-	}
-
 	private void updateWindowTitle() {
 		if (contentPane.selectedSaveGameView == null)
 			mainWindow.setTitle("No Man's Sky - Viewer");
@@ -429,9 +444,9 @@ public class SaveViewer implements ActionListener {
 			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
 			tabbedPane.setPreferredSize(new Dimension(1500, 800));
-			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GeneralizedIDPanel(techIDs     , "TechnologyIDsTable"));
-			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GeneralizedIDPanel(productIDs  , "ProductIDsTable"));
-			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GeneralizedIDPanel(substanceIDs, "SubstanceIDsTable"));
+			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GeneralizedIDPanel(mainWindow, techIDs     , "TechnologyIDsTable"));
+			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GeneralizedIDPanel(mainWindow, productIDs  , "ProductIDsTable"));
+			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GeneralizedIDPanel(mainWindow, substanceIDs, "SubstanceIDsTable"));
 			
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
@@ -495,6 +510,7 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
+			toolBar.add(createButton("Test Clipboard Reading", ToolbarIcons.Reload, ActionCommand.TestClipboardReading,true));
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
@@ -926,6 +942,93 @@ public class SaveViewer implements ActionListener {
 		FileExport.writeToJSON(json_Object,copyfile);
 	}
 
+	public static void copyToClipBoard(String str) {
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		Clipboard clipboard = toolkit.getSystemClipboard();
+		DataHandler content = new DataHandler(str,"text/plain");
+		try { clipboard.setContents(content,null); }
+		catch (IllegalStateException e1) { e1.printStackTrace(); }
+	}
+
+	public static String pasteFromClipBoard() {
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		Clipboard clipboard = toolkit.getSystemClipboard();
+		Transferable transferable = clipboard.getContents(null);
+		if (transferable==null) return null;
+		
+		DataFlavor textFlavor = new DataFlavor(String.class, "text/plain; class=<java.lang.String>");
+		
+		if (!transferable.isDataFlavorSupported(textFlavor)) {
+			DataFlavor[] transferDataFlavors = transferable.getTransferDataFlavors();
+			if (transferDataFlavors==null || transferDataFlavors.length==0) return null;
+			
+			System.out.println("transferDataFlavors: "+toString(transferDataFlavors));
+			textFlavor = DataFlavor.selectBestTextFlavor(transferDataFlavors);
+		}
+		
+		if (textFlavor==null) return null;
+		
+		Reader reader;
+		try { reader = textFlavor.getReaderForText(transferable); }
+		catch (UnsupportedFlavorException | IOException e) { return null; }
+		StringWriter sw = new StringWriter();
+		
+		int n; char[] cbuf = new char[100000];
+		try { while ((n=reader.read(cbuf))>=0) if (n>0) sw.write(cbuf, 0, n); }
+		catch (IOException e) {}
+		
+		try { reader.close(); } catch (IOException e) {}
+		return sw.toString();
+	}
+
+	private static String toString(DataFlavor[] dataFlavors) {
+		if (dataFlavors==null) return "<null>";
+		String str = "";
+		for (DataFlavor df:dataFlavors) {
+			if (!str.isEmpty()) str+=",\r\n";
+			str+=""+df;
+		}
+		return "[\r\n"+str+"\r\n]";
+	}
+
+	public static void log_ln( String format, Object... values ) {
+		System.out.printf(format+"\r\n",values);
+	}
+	
+	public static void log( String format, Object... values ) {
+		System.out.printf(format,values);
+	}
+
+	public static JButton createButton(String title, ActionListener l) {
+		JButton button = new JButton(title);
+		if (l!=null) button.addActionListener(l);
+		return button;
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
+		JButton button = createButton(title,l);
+		button.setActionCommand(actionCommand.toString());
+		return button;
+	}
+
+	public static JMenuItem createMenuItem(String title, ActionListener l) {
+		JMenuItem menuItem = new JMenuItem(title);
+		if (l!=null) menuItem.addActionListener(l);
+		return menuItem;
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
+		JMenuItem menuItem = createMenuItem(title,l);
+		menuItem.setActionCommand(actionCommand.toString());
+		return menuItem;
+	}
+
+	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
+		JCheckBox button = new JCheckBox(title,isSelected);
+		if (l!=null) button.addActionListener(l);
+		return button;
+	}
+
 	public static void loadKnownStatIDsFromFile() {
 		File file = new File(FILE_KNOWN_STAT_ID);
 		if (!file.isFile()) return;
@@ -1333,36 +1436,7 @@ public class SaveViewer implements ActionListener {
 		}
 		
 		public BufferedImage getImage(int width, int height) {
-			BufferedImage newImage = null;
-			
-			if (imageFileName!=null)
-				newImage = Images.images.get(imageFileName);
-			
-			if (imageBackground!=null) {
-				if (width <0) width  = (newImage==null)?256:newImage.getWidth();
-				if (height<0) height = (newImage==null)?256:newImage.getHeight();
-				BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-				Graphics g = combinedImage.getGraphics();
-				g.setColor(new Color(imageBackground));
-				g.fillRect(0,0,width,height);
-				if (newImage!=null) {
-					if (width==newImage.getWidth() && height==newImage.getHeight())
-						g.drawImage(newImage,0,0,null);
-					else {
-						if (g instanceof Graphics2D) {
-							Graphics2D g2 = (Graphics2D)g;
-							g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-							g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-							g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-							g2.drawImage(newImage,0,0,width,height,null);
-						} else
-							g.drawImage(newImage,0,0,width,height,null);
-					}
-				}
-				newImage = combinedImage;
-			}
-			
-			return newImage;
+			return Images.getImage(imageFileName,imageBackground,width,height);
 		}
 		
 		public Usage getUsage(SaveGameData base) {
@@ -1432,25 +1506,297 @@ public class SaveViewer implements ActionListener {
 			return existingID==null?newID:existingID;
 		}
 	}
+
+	public static class IdImageDialog extends StandardDialog {
+		private static final long serialVersionUID = -4493777651637626630L;
+		
+		private JLabel imageField;
+		private JTextArea textarea;
+		
+		private GeneralizedID id;
+		private boolean hasDataChanged;
 	
-	private static class GeneralizedIDPanel extends JPanel {
+		public IdImageDialog(Window parent, String title, GeneralizedID id) {
+			super(parent, title, ModalityType.APPLICATION_MODAL);
+			
+			this.id = new GeneralizedID(id);
+			this.hasDataChanged = false;
+			
+			textarea = new JTextArea();
+			textarea.setEditable(false);
+			JScrollPane textareaScrollPane = new JScrollPane(textarea);
+			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
+			
+			Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
+			images.insertElementAt("",0);
+			JComboBox<String> cmbbxImages = new JComboBox<String>(images);
+			cmbbxImages.setSelectedItem(id.getImageFileName());
+			cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
+			
+			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.colorValues));
+			colors.insertElementAt(null,0);
+			JComboBox<NamedColor> cmbbxColors = new JComboBox<NamedColor>(colors);
+			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
+			cmbbxColors.setSelectedItem(Images.getColor(id.getImageBG()));
+			cmbbxColors.addActionListener(e->setImageBGColor((NamedColor)cmbbxColors.getSelectedItem()));
+			
+			JPanel buttonPanel = new JPanel(new GridLayout(1,0,3,3));
+			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
+			buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
+			
+			JPanel cmbbxPanel = new JPanel(new GridLayout(0,1,3,3));
+			cmbbxPanel.add(GUI.createRightAlignedPanel(createButton("select ...",e->showImageList(cmbbxImages)), cmbbxImages));
+			cmbbxPanel.add(cmbbxColors);
+			
+			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
+			inputPanel.add(cmbbxPanel, BorderLayout.CENTER);
+			inputPanel.add(buttonPanel, BorderLayout.SOUTH);
+			
+			JPanel centerPanel = new JPanel(new BorderLayout(3,3));
+			centerPanel.add(textareaScrollPane, BorderLayout.CENTER);
+			centerPanel.add(inputPanel, BorderLayout.SOUTH);
+			
+			imageField = new JLabel();
+			imageField.setBorder(BorderFactory.createEtchedBorder());
+			imageField.setPreferredSize(new Dimension(256,256));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(centerPanel,BorderLayout.WEST);
+			contentPane.add(imageField,BorderLayout.CENTER);
+			
+			showValues();
+			this.createGUI(contentPane);
+		}
+
+		private void showImageList(JComboBox<String> cmbbxImages) {
+			ImageGridDialog dlg = new ImageGridDialog(this,"Select Image", id.getImageFileName());
+			dlg.showDialog();
+			if (dlg.hasChoosen()) {
+				String result = dlg.getImageFileName();
+				setImageFileName(result);
+				cmbbxImages.setSelectedItem(result);
+			}
+		}
+
+		private JButton createButton(String title, ActionListener l) {
+			JButton button = new JButton(title);
+			button.addActionListener(l);
+			return button;
+		}
+	
+		private void setImageBGColor(NamedColor namedColor) {
+			id.setImageBG(namedColor==null?null:namedColor.value);
+			hasDataChanged = true;
+			showValues();
+		}
+
+		private void setImageFileName(String filename) {
+			id.setImageFileName(filename);
+			hasDataChanged = true;
+			showValues();
+		}
+
+		private void showValues() {
+			textarea.setText("");
+			
+			textarea.append("ID     : "+id.id+"\r\n");
+			if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
+			textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
+			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
+			
+			BufferedImage image = id.getImage();
+			if (image==null) {
+				imageField.setIcon(null);
+			} else {
+				imageField.setIcon(new ImageIcon(image));
+				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+			}
+		}
+
+		public boolean hasDataChanged() { return hasDataChanged; }
+		public Integer getImageBG() { return id.getImageBG(); }
+		public String getImageFileName() { return id.getImageFileName(); }
+	}
+
+	private static class ImageGridDialog extends StandardDialog {
+		private static final long serialVersionUID = -3724853350437145460L;
+		private static Color COLOR_BACKGRIOUND = null;
+		private static Color COLOR_BACKGRIOUND_SELECTED = null;
+		private static Color COLOR_BACKGRIOUND_PRESELECTED = null;
+		private static Color COLOR_FOREGRIOUND = null;
+		private static Color COLOR_FOREGRIOUND_SELECTED = null;
+		
+		private String selected;
+
+		public ImageGridDialog(Window parent, String title, String initialValue) {
+			super(parent,title,ModalityType.APPLICATION_MODAL);
+			
+			selected = null;
+			
+			ImageLabel.defaultFont = new JLabel().getFont();
+			JTextArea dummy = new JTextArea();
+			COLOR_BACKGRIOUND = dummy.getBackground();
+			COLOR_FOREGRIOUND = dummy.getForeground();
+			COLOR_BACKGRIOUND_SELECTED = dummy.getSelectionColor();
+			COLOR_FOREGRIOUND_SELECTED = dummy.getSelectedTextColor();
+			COLOR_BACKGRIOUND_PRESELECTED = brighter(COLOR_BACKGRIOUND_SELECTED,0.7f);
+			
+			
+			JPanel imagePanel = new JPanel(new GridLayout(0,6,0,0));
+			imagePanel.setBorder(BorderFactory.createEtchedBorder());
+			imagePanel.setBackground(COLOR_BACKGRIOUND);
+			
+			JScrollPane imageScrollPane = new JScrollPane(imagePanel);
+			imageScrollPane.setPreferredSize(new Dimension(700,600));
+			
+			for (int i=0; i<Images.imagesNames.length; ++i) {
+				String name = Images.imagesNames[i];
+				BufferedImage image = Images.getImage(name,null,64,64);
+				if (image!=null)
+					imagePanel.add(new ImageLabel(this,name,image,name.equals(initialValue)));
+			}
+			
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			buttonPanel.add(createButton("Choose \"No Image\"",e->setResult("")));
+			buttonPanel.add(createButton("Cancel",e->closeDialog()));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(imageScrollPane,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
+			
+			this.createGUI(contentPane);
+		}
+
+		private Color brighter(Color color, float fraction) {
+			int r = color.getRed();
+			int g = color.getGreen();
+			int b = color.getBlue();
+			r = Math.min(255, Math.round(255-(255-r)*(1-fraction)));
+			g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
+			b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
+			return new Color(r,g,b);
+		}
+
+		private void setResult(String name) {
+			selected = name;
+			closeDialog();
+		}
+
+		public String getImageFileName() {
+			return selected;
+		}
+
+		public boolean hasChoosen() {
+			return selected != null;
+		}
+
+		private static final class ImageLabel extends JPanel {
+			private static final long serialVersionUID = 4629632101041946456L;
+			public static Font defaultFont;
+
+			public ImageLabel(ImageGridDialog parent, String name, BufferedImage image, boolean isPreSelected) {
+				super(new BorderLayout(3,3));
+				setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+				
+				JTextArea textArea = new JTextArea(name);
+				textArea.setPreferredSize(new Dimension(100,60));
+				textArea.setLineWrap(true);
+				textArea.setWrapStyleWord(false);
+				textArea.setEditable(false);
+				textArea.setFont(defaultFont);
+				textArea.setBackground(null);
+				MouseListener[] mouseListeners = textArea.getMouseListeners();
+				MouseMotionListener[] mouseMotionListeners = textArea.getMouseMotionListeners();
+				for (MouseListener l:mouseListeners) textArea.removeMouseListener(l);
+				for (MouseMotionListener l:mouseMotionListeners) textArea.removeMouseMotionListener(l);
+				
+				
+				add(new JLabel(new ImageIcon(image)),BorderLayout.NORTH);
+				add(textArea,BorderLayout.CENTER);
+				
+				MouseInputAdapter m = new MouseInputAdapter() {
+					@Override public void mouseClicked(MouseEvent e) { parent.setResult(name); }
+					@Override public void mouseEntered(MouseEvent e) { setBackground(COLOR_BACKGRIOUND_SELECTED); textArea.setForeground(COLOR_FOREGRIOUND_SELECTED); }
+					@Override public void mouseExited (MouseEvent e) { setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND); textArea.setForeground(COLOR_FOREGRIOUND); }
+				};
+				
+				setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND);
+				addMouseListener(m);
+				addMouseMotionListener(m);
+				textArea.addMouseListener(m);
+				textArea.addMouseMotionListener(m);
+			}
+		
+		}
+
+	}
+	
+	private static class GeneralizedIDPanel extends JPanel implements ActionListener {
 		private static final long serialVersionUID = -4946966056212175920L;
+
+		private Window mainwindow;
 
 		private SimplifiedTable table;
 		private GeneralizedIDTableModel tableModel;
+		private GeneralizedID clickedID;
+		private Point clickedCell;
 
 		private JTextArea textarea;
 		private JLabel imageField;
 
-		public GeneralizedIDPanel(IDMap idMap, String tableLabel) {
+		public GeneralizedIDPanel(Window mainwindow, IDMap idMap, String tableLabel) {
 			super(new BorderLayout(3, 3));
 			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
+			this.mainwindow = mainwindow;
+			
+			clickedID = null;
+			clickedCell = null;
 			tableModel = new GeneralizedIDTableModel(this,idMap);
-			table = new SimplifiedTable(tableLabel,tableModel,true,SaveViewer.DEBUG,true);
+			table = new SimplifiedTable(tableLabel,tableModel,true,false,true);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			table.getSelectionModel().addListSelectionListener(e->showID(tableModel.getValue(table.getRowSorter().convertRowIndexToModel(table.getSelectedRow()))));
 			prepareTable();
+			
+			DebugTableContextMenu contextMenuStd     = new DebugTableContextMenu(table);
+			DebugTableContextMenu contextMenuImage   = new DebugTableContextMenu(table);
+			DebugTableContextMenu contextMenuImageBG = new DebugTableContextMenu(table);
+			contextMenuStd.addSeparator();
+			contextMenuStd.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
+			contextMenuImage.addSeparator();
+			contextMenuImage.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
+			contextMenuImage.addSeparator();
+			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage));
+			contextMenuImage.add(createMenuItem("Copy ImageFile",ActionCommand.CopyImage));
+			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage));
+			contextMenuImageBG.addSeparator();
+			contextMenuImageBG.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
+			contextMenuImageBG.addSeparator();
+			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground));
+			contextMenuImageBG.add(createMenuItem("Copy Background",ActionCommand.CopyBackground));
+			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground));
+			
+			
+			table.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					clickedID = null;
+					if (e.getButton()==MouseEvent.BUTTON3) {
+						int rowM = table.convertRowIndexToModel(table.rowAtPoint(e.getPoint()));
+						int colM = table.convertColumnIndexToModel(table.columnAtPoint(e.getPoint()));
+						clickedCell = new Point(colM,rowM);
+						clickedID = tableModel.getValue(rowM);
+						
+						switch (tableModel.getColumnID(colM)) {
+						case Image: contextMenuImage  .show(table, e.getX(), e.getY()); break;
+						case ImgBG: contextMenuImageBG.show(table, e.getX(), e.getY()); break;
+						default   : contextMenuStd    .show(table, e.getX(), e.getY()); break;
+						}
+					}
+				}
+			});
+			
 			
 			add(new JScrollPane(table),BorderLayout.CENTER);
 			
@@ -1471,17 +1817,76 @@ public class SaveViewer implements ActionListener {
 			add(eastPanel, BorderLayout.EAST);
 			
 		}
+		
+		private JMenuItem createMenuItem(String label, ActionCommand actionCommand) {
+			JMenuItem menuItem = new JMenuItem(label);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
+		}
+
+		enum ActionCommand { ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, ChangeImage }
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
+			//if (clickedID!=null) System.out.printf("%s(%s)\r\n",actionCommand,clickedID.id);
+			if (clickedID==null) return;
+			
+			boolean idChanged = false;
+			String cbValue;
+			switch(actionCommand) {
+			case ChangeImage:
+				IdImageDialog dlg = new IdImageDialog(mainwindow,"Set Image and Background",clickedID);
+				dlg.showDialog();
+				if (dlg.hasDataChanged()) {
+					clickedID.setImageBG(dlg.getImageBG());
+					clickedID.setImageFileName(dlg.getImageFileName());
+					idChanged = true;
+				}
+				break;
+			
+			case ClearImage     : clickedID.setImageFileName(""); break;
+			case ClearBackground: clickedID.setImageBG(null); break;
+				
+			case CopyImage      : copyToClipBoard(clickedID.getImageFileName()); break;
+			case CopyBackground : if (clickedID.hasImageBG()) { copyToClipBoard(String.format("%06X", clickedID.getImageBG())); } break;
+			
+			case PasteImage:
+				cbValue = pasteFromClipBoard();
+				if (cbValue!=null) {
+					clickedID.setImageFileName(cbValue);
+					idChanged = true;
+				}
+				break;
+			case PasteBackground:
+				cbValue = pasteFromClipBoard();
+				if (cbValue!=null)
+					try { clickedID.setImageBG(Integer.parseInt(cbValue, 16)); idChanged = true; }
+					catch (NumberFormatException e1) {}
+				break;
+			}
+			if (idChanged) {
+				if (clickedCell!=null) tableModel.updateTableCell(clickedCell.x,clickedCell.y);
+				tableModel.updateAfterCellChange(clickedID);
+				if (clickedCell!=null) {
+					int row = table.convertRowIndexToView(clickedCell.y);
+					table.setRowSelectionInterval(row,row);
+				}
+			}
+			clickedID = null;
+		}
 
 		private void prepareTable() {
 			Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
 			images.insertElementAt("",0);
 			setCellEditor(GeneralizedIDColumnID.Image, new TableView.ComboboxCellEditor<String>(images.toArray(new String[0])));
 			
-			Vector<Integer> colors = new Vector<>(Arrays.asList(Images.colors));
+			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.colorValues));
 			colors.insertElementAt(null,0);
-			ComboboxCellEditor<Integer> colorCellEditor = new TableView.ComboboxCellEditor<Integer>(colors.toArray(new Integer[0]));
+			ComboboxCellEditor<NamedColor> colorCellEditor = new TableView.ComboboxCellEditor<NamedColor>(colors.toArray(new NamedColor[0]));
 			
-			TableView.ColorRenderer colorRenderer = new TableView.ColorRenderer();
+			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
 			colorCellEditor.setRenderer(colorRenderer);
 			setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
 			setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
@@ -1565,11 +1970,11 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
-			ID    ("ID"        ,  String.class,  80,-1,120,120),
-			Label ("Label"     ,  String.class, 150,-1,200,200),
-			Image ("Image"     ,  String.class, 150,-1,250,250),
-			ImgBG ("Background", Integer.class,  50,-1, 70, 70),
-			Usage (""          ,  String.class,  80,-1, 80, 80);
+			ID    ("ID"        ,     String.class,  80,-1,120,120),
+			Label ("Label"     ,     String.class, 100,-1,200,200),
+			Image ("Image"     ,     String.class, 100,-1,250,250),
+			ImgBG ("Background", NamedColor.class,  80,-1,120,120),
+			Usage (""          ,     String.class,  50,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -1599,6 +2004,10 @@ public class SaveViewer implements ActionListener {
 				this.sourceIdMap = sourceIdMap;
 				updateIdList();
 				updateNumberOfLabledIDs();
+			}
+
+			public void updateTableCell(int col, int row) {
+				fireTableCellUpdate(row, col);
 			}
 
 			public void addUsage(SaveGameView view) {
@@ -1686,7 +2095,7 @@ public class SaveViewer implements ActionListener {
 				case ID   : return id.id;
 				case Label: return id.label;
 				case Image: return id.getImageFileName();
-				case ImgBG: return id.getImageBG();
+				case ImgBG: return Images.getColor( id.getImageBG() );
 				case Usage:
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";
@@ -1710,9 +2119,13 @@ public class SaveViewer implements ActionListener {
 				case ID   : return;
 				case Label: id.label = aValue==null?"":aValue.toString(); break;
 				case Image: id.setImageFileName(aValue); break;
-				case ImgBG: id.setImageBG((aValue instanceof Integer)?(Integer)aValue:null); break;
+				case ImgBG: id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
 				case Usage: return;
 				}
+				updateAfterCellChange(id);
+			}
+
+			public void updateAfterCellChange(GeneralizedID id) {
 				panel.showID(id);
 				
 				if (sourceIdMap==techIDs     ) saveTechIDsToFile();

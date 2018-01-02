@@ -37,6 +37,7 @@
 ^TECH1.image=Substance.tech.common1.Heridium.png
 ^TECH1.imageBG=0249A1
 ^TECHFRAG=Nanit-Haufen
+^TECHFRAG.image=NmsMisc_Nanite_Cluster.png
 ^TECHFRAG.imageBG=1C364D
 ^TECHRARE1=Chrysonit
 ^TECHRARE1.image=Substance.tech.rare1.Chrysonit.png

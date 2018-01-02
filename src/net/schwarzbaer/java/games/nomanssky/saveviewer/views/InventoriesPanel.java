@@ -15,20 +15,13 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.Window;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -40,15 +33,12 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot.Type;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
 final class InventoriesPanel extends SaveGameViewTabPanel {
@@ -145,116 +135,14 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			showValues();
 			
 			contextMenu = new JPopupMenu();
-			contextMenu.add(miSetLabel=createMenuItem("Set Label", e->setLabelForResource()));
-			contextMenu.add(miSetImage=createMenuItem("Set Image", e->setImageForResource()));
+			contextMenu.add(miSetLabel=SaveViewer.createMenuItem("Set Label", e->setLabelForResource()));
+			contextMenu.add(miSetImage=SaveViewer.createMenuItem("Set Image", e->setImageForResource()));
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				inventoryLabel = new InventoryDisplay(this,(int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots);
 				add(makeInventoryScrollable?new JScrollPane(inventoryLabel):inventoryLabel, BorderLayout.CENTER);
 			} else
 				inventoryLabel = null;
-		}
-
-		private static class IdImageDialog extends StandardDialog {
-			private static final long serialVersionUID = -4493777651637626630L;
-			
-			private JLabel imageField;
-			private JTextArea textarea;
-			
-			private GeneralizedID id;
-			private boolean hasDataChanged;
-		
-			public IdImageDialog(Window parent, String title, GeneralizedID id) {
-				super(parent, title, ModalityType.APPLICATION_MODAL);
-				
-				this.id = new GeneralizedID(id);
-				this.hasDataChanged = false;
-				
-				textarea = new JTextArea();
-				textarea.setEditable(false);
-				JScrollPane textareaScrollPane = new JScrollPane(textarea);
-				textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
-				
-				Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
-				images.insertElementAt("",0);
-				JComboBox<String> cmbbxImages = new JComboBox<String>(images);
-				cmbbxImages.setSelectedItem(id.getImageFileName());
-				cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
-				
-				Vector<Integer> colors = new Vector<>(Arrays.asList(Images.colors));
-				colors.insertElementAt(null,0);
-				JComboBox<Integer> cmbbxColors = new JComboBox<Integer>(colors);
-				cmbbxColors.setRenderer(new TableView.ColorRenderer());
-				cmbbxColors.setSelectedItem(id.getImageBG());
-				cmbbxColors.addActionListener(e->setImageBGColor((Integer)cmbbxColors.getSelectedItem()));
-				
-				JPanel buttonPanel = new JPanel(new GridLayout(1,0,3,3));
-				buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
-				buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
-				
-				JPanel cmbbxPanel = new JPanel(new GridLayout(0,1,3,3));
-				cmbbxPanel.add(cmbbxImages);
-				cmbbxPanel.add(cmbbxColors);
-				
-				JPanel inputPanel = new JPanel(new BorderLayout(3,3));
-				inputPanel.add(cmbbxPanel, BorderLayout.CENTER);
-				inputPanel.add(buttonPanel, BorderLayout.SOUTH);
-				
-				JPanel centerPanel = new JPanel(new BorderLayout(3,3));
-				centerPanel.add(textareaScrollPane, BorderLayout.CENTER);
-				centerPanel.add(inputPanel, BorderLayout.SOUTH);
-				
-				imageField = new JLabel();
-				imageField.setBorder(BorderFactory.createEtchedBorder());
-				imageField.setPreferredSize(new Dimension(256,256));
-				
-				JPanel contentPane = new JPanel(new BorderLayout(3,3));
-				contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-				contentPane.add(centerPanel,BorderLayout.WEST);
-				contentPane.add(imageField,BorderLayout.CENTER);
-				
-				showValues();
-				this.createGUI(contentPane);
-			}
-
-			private JButton createButton(String title, ActionListener l) {
-				JButton button = new JButton(title);
-				button.addActionListener(l);
-				return button;
-			}
-		
-			private void setImageBGColor(Integer color) {
-				id.setImageBG(color);
-				hasDataChanged = true;
-				showValues();
-			}
-
-			private void setImageFileName(String filename) {
-				id.setImageFileName(filename);
-				hasDataChanged = true;
-				showValues();
-			}
-
-			private void showValues() {
-				textarea.setText("");
-				
-				textarea.append("ID     : "+id.id+"\r\n");
-				if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
-				textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
-				textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
-				
-				BufferedImage image = id.getImage();
-				if (image==null) {
-					imageField.setIcon(null);
-				} else {
-					imageField.setIcon(new ImageIcon(image));
-					imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
-				}
-			}
-
-			public boolean hasDataChanged() { return hasDataChanged; }
-			public Integer getImageBG() { return id.getImageBG(); }
-			public String getImageFileName() { return id.getImageFileName(); }
 		}
 
 		@Override
@@ -268,7 +156,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			if (clickedSlot.id==null || clickedSlot.type==null) return;
 			
-			IdImageDialog dlg = new IdImageDialog(mainwindow,"",clickedSlot.id);
+			SaveViewer.IdImageDialog dlg = new SaveViewer.IdImageDialog(mainwindow,"Set Image and Background",clickedSlot.id);
 			dlg.showDialog();
 			
 			if (dlg.hasDataChanged()) {

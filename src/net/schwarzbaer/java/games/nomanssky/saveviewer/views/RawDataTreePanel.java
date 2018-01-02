@@ -2,15 +2,12 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 
-import javax.activation.DataHandler;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -22,7 +19,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, ActionListener {
@@ -76,44 +72,27 @@ class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, Ac
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		RawDataTreePanel.RawDataTreeActionCommand actionCommand = RawDataTreeActionCommand.valueOf(e.getActionCommand());
+		Object pathComp = contextMenuTarget.getLastPathComponent();
 		switch(actionCommand) {
-		case CopyPath: {
-			Toolkit toolkit = Toolkit.getDefaultToolkit();
-			Clipboard clipboard = toolkit.getSystemClipboard();
-			DataHandler content = new DataHandler(pathToShortString(contextMenuTarget),"text/plain");
-			try { clipboard.setContents(content,null); }
-			catch (IllegalStateException e1) { e1.printStackTrace(); }
-		} break;
-		case CopyValueName: {
-			Toolkit toolkit = Toolkit.getDefaultToolkit();
-			Clipboard clipboard = toolkit.getSystemClipboard();
-			Object pathComp = contextMenuTarget.getLastPathComponent();
-			if (pathComp instanceof JsonTreeNode) {
-				DataHandler content = new DataHandler(getName((JsonTreeNode)pathComp),"text/plain");
-				try { clipboard.setContents(content,null); }
-				catch (IllegalStateException e1) { e1.printStackTrace(); }
-			}
-		} break;
+		case CopyPath:
+			SaveViewer.copyToClipBoard(pathToShortString(contextMenuTarget));
+			break;
 		case ShowPath:
 			System.out.println("Path: "+contextMenuTarget);
 			System.out.println("    = "+pathToShortString(contextMenuTarget));
 			break;
+		case CopyValueName:
+			if (pathComp instanceof JsonTreeNode)
+				SaveViewer.copyToClipBoard(getName((JsonTreeNode)pathComp));
+			break;
 		case CopyValue:
-			Toolkit toolkit = Toolkit.getDefaultToolkit();
-			Clipboard clipboard = toolkit.getSystemClipboard();
-			Object comp = contextMenuTarget.getLastPathComponent();
-			if (!(comp instanceof JsonTreeNode)) return;
-			
-			Value data = ((JsonTreeNode)comp).data;
-			
-			DataHandler content = new DataHandler(data.toString(),"text/plain");
-			try { clipboard.setContents(content,null); }
-			catch (IllegalStateException e1) { e1.printStackTrace(); }
+			if (pathComp instanceof JsonTreeNode)
+				SaveViewer.copyToClipBoard(((JsonTreeNode)pathComp).data.toString());
 			break;
 		}
 	}
 
-	private Object getName(JsonTreeNode node) {
+	private String getName(JsonTreeNode node) {
 		if (node.parent==null) return "[root]";
 		if (node.name==null) {
 			if (node.parent.data.type!=Type.Array)

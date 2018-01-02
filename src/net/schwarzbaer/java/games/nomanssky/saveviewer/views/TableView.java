@@ -5,23 +5,25 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import javax.activation.DataHandler;
 import javax.swing.AbstractCellEditor;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -38,29 +40,20 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
 public class TableView {
 
-	static class DebugTableContextMenu implements MouseListener, ActionListener {
-	
-		private JTable table;
-		private JPopupMenu contextMenu;
-		private enum TableContextMenuActionCommand { ShowWidths, CopyTableContent }
+	public static class ContextMenuInvoker implements MouseListener {
 		
-		public DebugTableContextMenu(JTable table) {
-			this.table = table;
-			table.addMouseListener(this);
-			
-			contextMenu = new JPopupMenu("Contextmenu");
-			contextMenu.add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths));
-			contextMenu.add(createMenuItem("Copy Table Content",TableContextMenuActionCommand.CopyTableContent));
-		}
-	
-		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand) {
-			JMenuItem menuItem = new JMenuItem(label);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand(actionCommand.toString());
-			return menuItem;
+		private Component invoker;
+		private JPopupMenu contextMenu;
+		
+		ContextMenuInvoker(Component invoker, JPopupMenu contextMenu) {
+			this.invoker = invoker;
+			this.contextMenu = contextMenu;
+			invoker.addMouseListener(this);
 		}
 		
 		@Override public void mousePressed(MouseEvent e) {}
@@ -69,8 +62,30 @@ public class TableView {
 		@Override public void mouseExited(MouseEvent e) {}
 		@Override public void mouseClicked(MouseEvent e) {
 			if (e.getButton()==MouseEvent.BUTTON3) {
-				contextMenu.show(table, e.getX(), e.getY());
+				contextMenu.show(invoker, e.getX(), e.getY());
 			}
+		}
+	}
+	
+	public static class DebugTableContextMenu extends JPopupMenu implements ActionListener {
+		private static final long serialVersionUID = 13123780239483223L;
+		
+		private JTable table;
+		private enum TableContextMenuActionCommand { ShowWidths, CopyTableContent }
+		
+		public DebugTableContextMenu(JTable table) {
+			super("DebugTableContextMenu");
+			this.table = table;
+			
+			add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths));
+			add(createMenuItem("Copy Table Content",TableContextMenuActionCommand.CopyTableContent));
+		}
+	
+		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand) {
+			JMenuItem menuItem = new JMenuItem(label);
+			menuItem.addActionListener(this);
+			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
 		}
 	
 		@Override
@@ -88,11 +103,7 @@ public class TableView {
 					sb.append("\r\n");
 				}
 				
-				Toolkit toolkit = Toolkit.getDefaultToolkit();
-				Clipboard clipboard = toolkit.getSystemClipboard();
-				DataHandler content = new DataHandler(sb.toString(),"text/plain");
-				try { clipboard.setContents(content,null); }
-				catch (IllegalStateException e1) { e1.printStackTrace(); }
+				SaveViewer.copyToClipBoard(sb.toString());
 			} break;
 			case ShowWidths: {
 				TableColumnModel columnModel = table.getColumnModel();
@@ -118,7 +129,7 @@ public class TableView {
 			if (disableAutoResize)
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			if (installDebugContextMenu)
-				new TableView.DebugTableContextMenu(this);
+				new ContextMenuInvoker(this, new DebugTableContextMenu(this));
 			//setAutoCreateRowSorter(useRowSorter);
 		}
 		
@@ -446,11 +457,93 @@ public class TableView {
 		}
 	}
 	
-	public static class ColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {
+	public static class NamedColorRenderer implements ListCellRenderer<NamedColor>, TableCellRenderer {
 		
 		private RendererComponent comp;
 		
-		public ColorRenderer() {
+		public NamedColorRenderer() {
+			comp = new RendererComponent();
+			comp.setPreferredSize(new Dimension(50,16));
+		}
+		
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			NamedColor colorValue = null;
+			if (value instanceof NamedColor) colorValue = (NamedColor)value;
+			if (isSelected) comp.set(colorValue,table.getSelectionBackground(),table.getSelectionForeground());
+			else            comp.set(colorValue,table.getBackground(),table.getForeground());
+			return comp;
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<? extends NamedColor> list, NamedColor value, int index, boolean isSelected, boolean cellHasFocus) {
+			if (isSelected) comp.set(value,list.getSelectionBackground(),list.getSelectionForeground());
+			else            comp.set(value,list.getBackground(),list.getForeground());
+			return comp;
+		}
+
+		public static class RendererComponent extends JLabel {
+			private static final long serialVersionUID = -5382894277961357430L;
+			
+			private HashMap<Integer,Icon> iconCache;
+			
+			private RendererComponent() {
+				iconCache = new HashMap<>();
+				setOpaque(true);
+			}
+			
+			public void set(NamedColor value, Color bgColor, Color textColor) {
+				setBackground(bgColor);
+				setForeground(textColor);
+				if (value==null) {
+					setIcon(null);
+					setText("");
+				} else {
+					setIcon(getCachedIcon(value));
+					setText(value.name);
+				}
+			}
+			
+			private Icon getCachedIcon(NamedColor value) {
+				Icon icon = iconCache.get(value.value);
+				if (icon==null) {
+					BufferedImage image = new BufferedImage(20, 13, BufferedImage.TYPE_INT_ARGB);
+					Graphics g = image.getGraphics();
+					g.setColor(value.color);
+					g.fillRect(0,0,20,13);
+					icon = new ImageIcon(image);
+					iconCache.put(value.value,icon);
+				}
+				return icon;
+			}
+
+			@Override public void revalidate() {}
+			@Override public void invalidate() {}
+			@Override public void validate() {}
+			@Override public void repaint(long tm, int x, int y, int width, int height) {}
+			@Override public void repaint(Rectangle r) {}
+			@Override public void repaint() {}
+			@Override public void repaint(long tm) {}
+			@Override public void repaint(int x, int y, int width, int height) {}
+	
+			@Override public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
+			@Override public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
+			@Override public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
+			@Override protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {}
+			@Override public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
+			@Override public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
+			@Override public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
+			@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
+			@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
+		}
+		
+	}
+	
+	public static class SimpleColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {
+		
+		private RendererComponent comp;
+		
+		public SimpleColorRenderer() {
 			comp = new RendererComponent();
 			comp.setPreferredSize(new Dimension(50,16));
 		}

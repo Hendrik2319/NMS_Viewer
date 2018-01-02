@@ -604,9 +604,9 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 				
 				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 				JCheckBox chkbx;
-				buttonPanel.add(chkbx = createCheckbox("Allow Editing", null, false));
-				buttonPanel.add(createButton("Show Selected in Tree", e->{ if (tableModel!=null) tableModel.setSelected(); closeDialog(); }));
-				buttonPanel.add(createButton("Cancel", e->closeDialog()));
+				buttonPanel.add(chkbx = SaveViewer.createCheckbox("Allow Editing", null, false));
+				buttonPanel.add(SaveViewer.createButton("Show Selected in Tree", e->{ if (tableModel!=null) tableModel.setSelected(); closeDialog(); }));
+				buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
 				
 				chkbx.addActionListener(e->{ if (tableModel!=null) { tableModel.allowEditing(chkbx.isSelected()); table.setModel(tableModel); } });
 				
