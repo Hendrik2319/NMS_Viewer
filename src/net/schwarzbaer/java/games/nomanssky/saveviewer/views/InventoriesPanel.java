@@ -33,6 +33,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
@@ -156,7 +158,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			if (clickedSlot.id==null || clickedSlot.type==null) return;
 			
-			SaveViewer.IdImageDialog dlg = new SaveViewer.IdImageDialog(mainwindow,"Set Image and Background",clickedSlot.id);
+			Images.IdImageDialog dlg = new Images.IdImageDialog(mainwindow,clickedSlot.id);
 			dlg.showDialog();
 			
 			if (dlg.hasDataChanged()) {
@@ -183,9 +185,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 		private void updateAfterChangedIDdata() {
 			switch(clickedSlot.type) {
-			case Product   : SaveViewer.saveProductIDsToFile();   break;
-			case Technology: SaveViewer.saveTechIDsToFile();      break;
-			case Substance : SaveViewer.saveSubstanceIDsToFile(); break;
+			case Product   : GameInfos.saveProductIDsToFile();   break;
+			case Technology: GameInfos.saveTechIDsToFile();      break;
+			case Substance : GameInfos.saveSubstanceIDsToFile(); break;
 			}
 			if (updateListener!=null) updateListener.updateContent();
 			else inventoryLabel.repaint();

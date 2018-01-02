@@ -7,12 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.IDMap;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -133,8 +133,8 @@ public class SaveGameData {
 
 	private void parseKnownBlueprints() {
 		knownBlueprints = new KnownBlueprints();
-		knownBlueprints.technologies = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownTech"    ), SaveViewer.techIDs   );
-		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), SaveViewer.productIDs);
+		knownBlueprints.technologies = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownTech"    ), GameInfos.techIDs   );
+		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), GameInfos.productIDs);
 	}
 
 	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, IDMap map) {
@@ -146,7 +146,7 @@ public class SaveGameData {
 			String id = Value.getString(value );
 			if (id!=null) {
 				knownBlueprints[i] = map.get(id);// addGeneralizedID(map, id);
-				knownBlueprints[i].getUsage(this).addBlueprintUsage((SaveViewer.techIDs==map?"Technology":"Product"),i);
+				knownBlueprints[i].getUsage(this).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
 			}
 		}
 		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
@@ -286,9 +286,9 @@ public class SaveGameData {
 				if (slot.type!=null && slot.idStr!=null) {
 					IDMap map = null;
 					switch(slot.type) {
-					case Product   : map = SaveViewer.productIDs;   break;
-					case Technology: map = SaveViewer.techIDs;      break;
-					case Substance : map = SaveViewer.substanceIDs; break;
+					case Product   : map = GameInfos.productIDs;   break;
+					case Technology: map = GameInfos.techIDs;      break;
+					case Substance : map = GameInfos.substanceIDs; break;
 					}
 					if (map!=null) {
 						slot.id = map.get(slot.idStr); // addGeneralizedID(map, slot.idStr);

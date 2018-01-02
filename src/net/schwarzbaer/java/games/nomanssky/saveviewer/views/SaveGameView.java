@@ -17,10 +17,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels.BlueprintsPanel.BlueprintType;
 
 public class SaveGameView extends JPanel {
@@ -123,7 +123,7 @@ public class SaveGameView extends JPanel {
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
 				object.setOriginalName(name);
-				SaveViewer.saveUniverseObjectDataToFile(data.universe);
+				GameInfos.saveUniverseObjectDataToFile(data.universe);
 			}
 		}
 	}

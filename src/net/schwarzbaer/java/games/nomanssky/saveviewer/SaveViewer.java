@@ -4,13 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
@@ -21,29 +18,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -67,43 +47,23 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
-import javax.swing.ListSelectionModel;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.MouseInputAdapter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.GUI;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID.Usage;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.ComboboxCellEditor;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
@@ -111,24 +71,13 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
 
-	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
-	private static final String FILE_PRODUCT_ID    = "NMS_Viewer.ProdIDs.txt";
-	private static final String FILE_TECH_ID       = "NMS_Viewer.TechIDs.txt";
-	private static final String FILE_SUBSTANCE_ID  = "NMS_Viewer.SubstanceIDs.txt";
-	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
-
 	public static final boolean DEBUG = true;
-	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
-	
-	public static final IDMap productIDs   = new IDMap();
-	public static final IDMap techIDs      = new IDMap();
-	public static final IDMap substanceIDs = new IDMap();
-	
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
 	static IconSource<ToolbarIcons> toolbarIS;
 	static IconSource<TabHeaderIcons> tabheaderIS;
+	public static Images images;
 	
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
@@ -141,8 +90,9 @@ public class SaveViewer implements ActionListener {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
-		Images.readImages();
-		Images.prepareColors();
+		images = new Images();
+		images.init();
+		
 		UniversePanel.prepareIconSources();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
@@ -165,11 +115,11 @@ public class SaveViewer implements ActionListener {
 			}};
 		toolbarIS.readIconsFromResource("/images/Toolbar.png");
 		
-		loadKnownStatIDsFromFile();
-		loadProductIDsFromFile();
-		loadTechIDsFromFile();
-		loadSubstanceIDsFromFile();
-		loadUniverseObjectDataFromFile();
+		GameInfos.loadKnownStatIDsFromFile();
+		GameInfos.loadProductIDsFromFile();
+		GameInfos.loadTechIDsFromFile();
+		GameInfos.loadSubstanceIDsFromFile();
+		GameInfos.loadUniverseObjectDataFromFile();
 		
 //		long address = 4623450600164292L;
 //		System.out.printf("0x%015X\r\n",address);
@@ -339,10 +289,10 @@ public class SaveViewer implements ActionListener {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
 			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName()).parse();
-			readUniverseObjectDataFromDataPool(saveGameData.universe);
-			saveProductIDsToFile();
-			saveTechIDsToFile();
-			saveSubstanceIDsToFile();
+			GameInfos.readUniverseObjectDataFromDataPool(saveGameData.universe);
+			GameInfos.saveProductIDsToFile();
+			GameInfos.saveTechIDsToFile();
+			GameInfos.saveSubstanceIDsToFile();
 			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData);
 			loadedSaveGames.add(saveGameView);
 			contentPane.addSaveGameView(saveGameView);
@@ -364,7 +314,7 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data!=null) {
 			removeUsages(view.data);
 			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName()).parse();
-			readUniverseObjectDataFromDataPool(saveGameData.universe);
+			GameInfos.readUniverseObjectDataFromDataPool(saveGameData.universe);
 			view.replaceData(saveGameData);
 			contentPane.updateIDPanels();
 		}
@@ -383,9 +333,9 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private void removeUsages(SaveGameData oldData) {
-		for (GeneralizedID id:productIDs  .getValues()) id.usage.remove(oldData);
-		for (GeneralizedID id:techIDs     .getValues()) id.usage.remove(oldData);
-		for (GeneralizedID id:substanceIDs.getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:GameInfos.productIDs  .getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:GameInfos.techIDs     .getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:GameInfos.substanceIDs.getValues()) id.usage.remove(oldData);
 	}
 
 	private void updateWindowTitle() {
@@ -427,9 +377,9 @@ public class SaveViewer implements ActionListener {
 		private JTabbedPane tabbedPane;
 		private SaveGameView selectedSaveGameView;
 
-		private GeneralizedIDPanel techIDsPanel;
-		private GeneralizedIDPanel productIDsPanel;
-		private GeneralizedIDPanel substanceIDsPanel;
+		private GameInfos.GeneralizedIDPanel techIDsPanel;
+		private GameInfos.GeneralizedIDPanel productIDsPanel;
+		private GameInfos.GeneralizedIDPanel substanceIDsPanel;
 		
 		ContentPane() {
 			super( new BorderLayout(3,3) );
@@ -444,9 +394,9 @@ public class SaveViewer implements ActionListener {
 			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
 			tabbedPane.setPreferredSize(new Dimension(1500, 800));
-			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GeneralizedIDPanel(mainWindow, techIDs     , "TechnologyIDsTable"));
-			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GeneralizedIDPanel(mainWindow, productIDs  , "ProductIDsTable"));
-			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GeneralizedIDPanel(mainWindow, substanceIDs, "SubstanceIDsTable"));
+			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.techIDs     , "TechnologyIDsTable"));
+			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.productIDs  , "ProductIDsTable"));
+			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.substanceIDs, "SubstanceIDsTable"));
 			
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
@@ -454,7 +404,7 @@ public class SaveViewer implements ActionListener {
 					Component comp = tabbedPane.getSelectedComponent();
 					if (comp instanceof SaveGameView) selectedSaveGameView = (SaveGameView)comp;
 					else selectedSaveGameView = null;
-					if (comp instanceof GeneralizedIDPanel) ((GeneralizedIDPanel)comp).updatePanel();
+					if (comp instanceof GameInfos.GeneralizedIDPanel) ((GameInfos.GeneralizedIDPanel)comp).updatePanel();
 					actionPerformed(new ActionEvent(tabbedPane, ActionEvent.ACTION_FIRST, ActionCommand.TabSelected.toString()));
 				}
 			});
@@ -1027,1111 +977,5 @@ public class SaveViewer implements ActionListener {
 		JCheckBox button = new JCheckBox(title,isSelected);
 		if (l!=null) button.addActionListener(l);
 		return button;
-	}
-
-	public static void loadKnownStatIDsFromFile() {
-		File file = new File(FILE_KNOWN_STAT_ID);
-		if (!file.isFile()) return;
-		
-		System.out.println();
-		String str;
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			while ((str=in.readLine())!=null) {
-				int pos = str.indexOf('=');
-				if (pos<0) continue;
-				
-				KnownID knownID;
-				try { knownID = KnownID.valueOf(str.substring(0, pos)); }
-				catch (Exception e) { knownID = null; }
-				if (knownID == null) continue;
-				
-				String fullName = str.substring(pos+1);
-				if (!fullName.equals(knownID.fullName)) {
-					System.out.printf("Changed StatValue.KnownID.fullName found: %16s [old]\"%s\" -> [new]\"%s\"\r\n",knownID,knownID.fullName,fullName);
-					knownID.fullName = fullName;
-				}
-			}
-		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		catch (IOException e) { e.printStackTrace(); }
-		System.out.println();
-	}
-
-	public static void saveKnownStatIDsToFile() {
-		KnownID[] knownIDs = KnownID.values();
-		
-		File file = new File(FILE_KNOWN_STAT_ID);
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (KnownID id:knownIDs)
-				out.printf("%s=%s\r\n",id.toString(),id.fullName);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static void loadProductIDsFromFile  () { loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   ); }
-	public static void loadTechIDsFromFile     () { loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology"); }
-	public static void loadSubstanceIDsFromFile() { loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); }
-
-	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
-		File file = new File(filePath);
-		if (!file.isFile()) return;
-		
-		long start = System.currentTimeMillis();
-		System.out.println("Read "+idLabel+" IDs from file \""+filePath+"\"...");
-		String str;
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			while ((str=in.readLine())!=null) {
-				int pos = str.indexOf('=');
-				if (pos<0) continue;
-				
-				String idStr = str.substring(0, pos);
-				String value = str.substring(pos+1);
-				
-				if (idStr.endsWith(".image")) {
-					idStr = idStr.substring(0, idStr.length()-".image".length());
-					GeneralizedID id = map.get(idStr);
-					id.setImageFileName(value);
-				} else if (idStr.endsWith(".imageBG")) {
-					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
-					GeneralizedID id = map.get(idStr);
-					try { id.setImageBG(Integer.parseInt(value,16)); }
-					catch (NumberFormatException e) {}
-				} else {
-					GeneralizedID id = map.get(idStr);
-					id.label = value;
-				}
-			}
-		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		catch (IOException e) { e.printStackTrace(); }
-		
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-
-	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
-	public static void saveTechIDsToFile     () { saveIDsToFile(FILE_TECH_ID     ,techIDs     ,"technologie"); }
-	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
-
-	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
-		long start = System.currentTimeMillis();
-		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
-		
-		File file = new File(filePath);
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (String idStr:map.getSortedKeys()) {
-				GeneralizedID id = map.get(idStr);
-				out.printf("%s=%s\r\n",idStr,id.label);
-				if (id.hasImage  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
-				if (id.hasImageBG()) out.printf("%s.imageBG=%06X\r\n",idStr,id.getImageBG());
-			}
-		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-	
-	public static void loadUniverseObjectDataFromFile() {
-		long start = System.currentTimeMillis();
-		System.out.println("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\"...");
-		universeObjectDataArr = new HashMap<>();
-		
-		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
-		if (!file.isFile()) {
-			System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-			return;
-		}
-		
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			String str;
-			UniverseObjectData uoData = null;
-			
-			String nextShortLabel = null;
-			boolean showInParent = false;
-			while ((str=in.readLine())!=null) {
-				if (str.isEmpty()) continue;
-				if ((str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
-					uoData = null;
-					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
-					long address;
-					try { address = Long.parseLong(addressStr, 16); }
-					catch (NumberFormatException e) {
-						System.err.printf("Can't parse universe address in: \"%s\"\r\n",str);
-						continue;
-					}
-					UniverseAddress ua = new UniverseAddress(address);
-					if (str.startsWith("[Sys") && ua.isSolarSystem()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.SolarSystem);
-					if (str.startsWith("[Pln") && ua.isPlanet     ()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.Planet);
-					if (uoData != null) universeObjectDataArr.put(address, uoData);
-					continue;
-				}
-				if (str.startsWith("name=")) {
-					if (uoData!=null) uoData.name = str.substring("name=".length());
-					continue;
-				}
-				if (str.startsWith("race=")) {
-					if (uoData==null) continue;
-					String race = str.substring("race=".length());
-					try { uoData.race = Universe.SolarSystem.Race.valueOf(race); }
-					catch (Exception e) { uoData.race = null; }
-					continue;
-				}
-				if (str.startsWith("class=")) {
-					if (uoData==null) continue;
-					String starClass = str.substring("class=".length());
-					try { uoData.starClass = Universe.SolarSystem.StarClass.valueOf(starClass); }
-					catch (Exception e) { uoData.starClass = null; }
-					continue;
-				}
-				if (str.startsWith("distance=")) {
-					if (uoData==null) continue;
-					String distance = str.substring("distance=".length());
-					try { uoData.distanceToCenter = Double.parseDouble(distance); }
-					catch (NumberFormatException e) { uoData.distanceToCenter = null; }
-					continue;
-				}
-				if (str.startsWith("short=")) {
-					nextShortLabel = str.substring("short=".length());
-					showInParent = false;
-					continue;
-				}
-				if (str.startsWith("short.P=")) {
-					nextShortLabel = str.substring("short.P=".length());
-					showInParent = true;
-					continue;
-				}
-				if (str.startsWith("info=")) {
-					String info = str.substring("info=".length());
-					if (nextShortLabel!=null && uoData!=null)
-						uoData.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,info));
-					nextShortLabel=null;
-					continue;
-				}
-			}
-		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		catch (IOException e) { e.printStackTrace(); }
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-	
-	public static void readUniverseObjectDataFromDataPool(Universe universe) {
-		long start = System.currentTimeMillis();
-		System.out.println("Read data of universe objects from data pool ... ");
-		
-		boolean withOutput = false; // DEBUG;
-		
-		SolarSystem system = null;
-		Planet planet = null;
-		UniverseObject uniObj = null;
-		String uniObjName = null;
-		for (Long address:universeObjectDataArr.keySet()) {
-			UniverseObjectData uoData = universeObjectDataArr.get(address);
-			UniverseAddress ua = new UniverseAddress(address);
-			
-			system = null;
-			planet = null;
-			
-			if (uoData.type==UniverseObjectData.Type.SolarSystem && ua.isSolarSystem()) system = universe.findSolarSystem(ua);
-			if (uoData.type==UniverseObjectData.Type.Planet      && ua.isPlanet     ()) planet = universe.findPlanet     (ua);
-			if (system!=null) { uniObj = system; uniObjName = "solar system "+ua.getSigBoostCode();   if (withOutput) System.out.printf("Solar system %s\r\n",ua.getSigBoostCode());   }
-			if (planet!=null) { uniObj = planet; uniObjName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) System.out.printf("Planet %s\r\n",ua.getExtendedSigBoostCode()); }
-			
-			if (uoData.name!=null && uniObj!=null) {
-				uniObj.setOriginalName(uoData.name);
-				if (withOutput) System.out.printf("   Name of %s was defined: \"%s\"\r\n",uniObjName,uoData.name);
-			}
-			
-			if (uoData.race!=null && system!=null) {
-				system.race = uoData.race;
-				if (withOutput) System.out.printf("   Race of %s was defined: %s\r\n",uniObjName,system.race);
-			}
-			
-			if (uoData.starClass!=null && system!=null) {
-				system.starClass = uoData.starClass;
-				if (withOutput) System.out.printf("   StarClass of %s was defined: %s\r\n",uniObjName,system.starClass);
-			}
-			
-			if (uoData.distanceToCenter!=null && system!=null) {
-				system.distanceToCenter = uoData.distanceToCenter;
-				if (withOutput) System.out.printf("   Distance to galactic center of %s was defined: %s\r\n",uniObjName,system.distanceToCenter);
-			}
-			
-			for (ExtraInfo ei:uoData.extraInfos) {
-				if (uniObj!=null) {
-					uniObj.extraInfos.add(ei);
-					if (withOutput) System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",uniObjName,ei.shortLabel,ei.info);
-				}
-			}
-			
-		}
-		if (!withOutput) System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-
-	public static void saveUniverseObjectDataToFile(Universe universe) {
-		long start = System.currentTimeMillis();
-		System.out.print("Write data of universe objects to data pool ...");
-		for (Galaxy g:universe.galaxies)
-			for (Region gr:g.regions)
-				for (SolarSystem sys:gr.solarSystems) {
-					UniverseAddress ua = sys.getUniverseAddress();
-					universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,sys));
-					for (Planet p:sys.planets) {
-						ua = p.getUniverseAddress();
-						universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,p));
-					}
-				}
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-		
-		start = System.currentTimeMillis();
-		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
-		Collections.sort(values);
-		
-		System.out.print("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
-		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
-		boolean isFirst = true;
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (UniverseObjectData uoData:values) {
-				if (!uoData.hasData()) continue;
-				
-				if (!isFirst) out.println();
-				isFirst = false;
-				
-				switch (uoData.type) {
-				case SolarSystem: out.printf("[Sys%014X]\r\n",uoData.universeAddress.getAddress()); break;
-				case Planet     : out.printf("[Pln%014X]\r\n",uoData.universeAddress.getAddress()); break;
-				}
-				
-				if (uoData.name!=null) out.printf("name=%s\r\n",uoData.name);
-				if (uoData.type==UniverseObjectData.Type.SolarSystem) {
-					if (uoData.race!=null            ) out.printf("race=%s\r\n",uoData.race);
-					if (uoData.starClass!=null       ) out.printf("class=%s\r\n",uoData.starClass);
-					if (uoData.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uoData.distanceToCenter.doubleValue());
-				}
-				
-				for (ExtraInfo ei:uoData.extraInfos)
-					if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
-						String showInParentStr="";
-						if (uoData.type==UniverseObjectData.Type.Planet && ei.showInParent) showInParentStr = ".P";
-						out.printf("short%s=%s\r\n", showInParentStr, ei.shortLabel);
-						out.printf("info=%s\r\n" , ei.info);
-					}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-	
-	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
-		enum Type { SolarSystem,Planet }
-		
-		final UniverseAddress universeAddress;
-		final Type type;
-		String name;
-		Universe.SolarSystem.Race race;
-		Universe.SolarSystem.StarClass starClass; 
-		Double distanceToCenter;
-		Vector<ExtraInfo> extraInfos;
-		
-		public UniverseObjectData(UniverseAddress universeAddress, Type type) {
-			this.universeAddress = universeAddress;
-			this.type = type;
-			this.name = null;
-			this.race = null;
-			this.starClass = null;
-			this.distanceToCenter = null;
-			this.extraInfos = new Vector<>();
-		}
-
-		public boolean hasData() {
-			return name!=null || race!=null || starClass!=null || distanceToCenter!=null || !extraInfos.isEmpty();
-		}
-
-		public UniverseObjectData(UniverseAddress universeAddress, SolarSystem sys) {
-			this(universeAddress,Type.SolarSystem,sys);
-			race = sys.race;
-			starClass = sys.starClass;
-			distanceToCenter = sys.distanceToCenter;
-		}
-		
-		public UniverseObjectData(UniverseAddress universeAddress, Planet planet) {
-			this(universeAddress,Type.Planet,planet);
-		}
-		
-		public UniverseObjectData(UniverseAddress universeAddress, Type type, UniverseObject uo) {
-			this(universeAddress,type);
-			name = uo.getOriginalName();
-			for (ExtraInfo ei:uo.extraInfos)
-				extraInfos.add(new ExtraInfo(ei));
-		}
-
-		@Override
-		public int compareTo(UniverseObjectData other) {
-			if (other==null) return -1;
-			return universeAddress.compareTo(other.universeAddress);
-		}
-		
-		
-	}
-	
-	public static class GeneralizedID {
-		
-		public final String id;
-		public String label;
-		private String imageFileName;
-		private Integer imageBackground;
-		private final HashMap<SaveGameData,Usage> usage;
-		private BufferedImage cachedImage;
-		
-		private GeneralizedID(String id, String label) {
-			this.id = id;
-			this.label = label;
-			this.usage = new HashMap<>();
-			this.imageFileName = null;
-			this.imageBackground = null;
-			this.cachedImage = null;
-		}
-		public GeneralizedID(String id) {
-			this(id,"");
-		}
-		public GeneralizedID(GeneralizedID other) {
-			this.id = other.id;
-			this.label = other.label;
-			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
-			this.imageFileName = other.imageFileName;
-			this.imageBackground = other.imageBackground;
-			this.cachedImage = other.cachedImage;
-		}
-		
-		public boolean hasImage() { return imageFileName!=null; }
-		public String getImageFileName() { return imageFileName==null?"":imageFileName; }
-		public void setImageFileName(String fileName) {
-			if (fileName!=null && fileName.isEmpty()) fileName = null;
-			this.imageFileName = fileName;
-			cachedImage = null;
-		}
-		public void setImageFileName(Object aValue) {
-			setImageFileName(aValue==null?null:aValue.toString());
-		}
-		
-		public boolean hasImageBG() { return imageBackground!=null; }
-		public Integer getImageBG() { return imageBackground; }
-		public void setImageBG(Integer color) {
-			this.imageBackground = color;
-			cachedImage = null;
-		}
-		
-		public BufferedImage getCachedImage() {
-			if (cachedImage == null) cachedImage = getImage();
-			return cachedImage;
-		}
-		
-		public BufferedImage getImage() {
-			return getImage(-1,-1);
-		}
-		
-		public BufferedImage getCachedImage(int width, int height) {
-			if (cachedImage==null || cachedImage.getWidth()!=width || cachedImage.getHeight()!=height) cachedImage = getImage(width, height);
-			return cachedImage;
-		}
-		
-		public BufferedImage getImage(int width, int height) {
-			return Images.getImage(imageFileName,imageBackground,width,height);
-		}
-		
-		public Usage getUsage(SaveGameData base) {
-			Usage newUsage = new Usage();
-			Usage oldUsage = usage.putIfAbsent(base, newUsage);
-			return oldUsage==null?newUsage:oldUsage;
-		}
-
-		public class Usage {
-			
-			public final Vector<String> inventoryUsages;
-			public final Vector<String> blueprintUsages;
-			
-			public Usage() {
-				inventoryUsages = new Vector<>();
-				blueprintUsages = new Vector<>();
-			}
-			
-			public void addInventoryUsage(String label, int x, int y) {
-				inventoryUsages.add(String.format("%s @ (%d,%d)", label, x, y));
-			}
-
-			public void addBlueprintUsage(String label, int i) {
-				blueprintUsages.add(label+" Blueprint "+i);
-			}
-
-			public boolean isEmpty() {
-				return inventoryUsages.isEmpty() && blueprintUsages.isEmpty();
-			}
-		}
-	}
-	
-	public static class IDMap {
-		private HashMap<String, GeneralizedID> map;
-		
-		public IDMap() {
-			map = new HashMap<>();
-		}
-
-		public Iterable<GeneralizedID> getValues() {
-			return new Iterable<GeneralizedID>() {
-				@Override public Iterator<GeneralizedID> iterator() { return map.values().iterator(); }
-			}; 
-		}
-
-		public Vector<GeneralizedID> getSortedValues() {
-			Vector<GeneralizedID> vector = new Vector<GeneralizedID>(map.values());
-			vector.sort(Comparator.comparing(id->id.id));
-			return vector;
-		}
-
-		public Iterable<String> getSortedKeys() {
-			Vector<String> vector = new Vector<String>(map.keySet());
-			vector.sort(null);
-			return new Iterable<String>() {
-				@Override public Iterator<String> iterator() { return vector.iterator(); }
-			}; 
-		}
-
-		public void set(String id, GeneralizedID generalizedID) {
-			map.put(id, generalizedID);
-		}
-
-		public GeneralizedID get(String id) {
-			GeneralizedID newID = new GeneralizedID(id);
-			GeneralizedID existingID = map.putIfAbsent(id, newID);
-			return existingID==null?newID:existingID;
-		}
-	}
-
-	public static class IdImageDialog extends StandardDialog {
-		private static final long serialVersionUID = -4493777651637626630L;
-		
-		private JLabel imageField;
-		private JTextArea textarea;
-		
-		private GeneralizedID id;
-		private boolean hasDataChanged;
-	
-		public IdImageDialog(Window parent, String title, GeneralizedID id) {
-			super(parent, title, ModalityType.APPLICATION_MODAL);
-			
-			this.id = new GeneralizedID(id);
-			this.hasDataChanged = false;
-			
-			textarea = new JTextArea();
-			textarea.setEditable(false);
-			JScrollPane textareaScrollPane = new JScrollPane(textarea);
-			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
-			
-			Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
-			images.insertElementAt("",0);
-			JComboBox<String> cmbbxImages = new JComboBox<String>(images);
-			cmbbxImages.setSelectedItem(id.getImageFileName());
-			cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
-			
-			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.colorValues));
-			colors.insertElementAt(null,0);
-			JComboBox<NamedColor> cmbbxColors = new JComboBox<NamedColor>(colors);
-			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
-			cmbbxColors.setSelectedItem(Images.getColor(id.getImageBG()));
-			cmbbxColors.addActionListener(e->setImageBGColor((NamedColor)cmbbxColors.getSelectedItem()));
-			
-			JPanel buttonPanel = new JPanel(new GridLayout(1,0,3,3));
-			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
-			buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
-			
-			JPanel cmbbxPanel = new JPanel(new GridLayout(0,1,3,3));
-			cmbbxPanel.add(GUI.createRightAlignedPanel(createButton("select ...",e->showImageList(cmbbxImages)), cmbbxImages));
-			cmbbxPanel.add(cmbbxColors);
-			
-			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
-			inputPanel.add(cmbbxPanel, BorderLayout.CENTER);
-			inputPanel.add(buttonPanel, BorderLayout.SOUTH);
-			
-			JPanel centerPanel = new JPanel(new BorderLayout(3,3));
-			centerPanel.add(textareaScrollPane, BorderLayout.CENTER);
-			centerPanel.add(inputPanel, BorderLayout.SOUTH);
-			
-			imageField = new JLabel();
-			imageField.setBorder(BorderFactory.createEtchedBorder());
-			imageField.setPreferredSize(new Dimension(256,256));
-			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-			contentPane.add(centerPanel,BorderLayout.WEST);
-			contentPane.add(imageField,BorderLayout.CENTER);
-			
-			showValues();
-			this.createGUI(contentPane);
-		}
-
-		private void showImageList(JComboBox<String> cmbbxImages) {
-			ImageGridDialog dlg = new ImageGridDialog(this,"Select Image", id.getImageFileName());
-			dlg.showDialog();
-			if (dlg.hasChoosen()) {
-				String result = dlg.getImageFileName();
-				setImageFileName(result);
-				cmbbxImages.setSelectedItem(result);
-			}
-		}
-
-		private JButton createButton(String title, ActionListener l) {
-			JButton button = new JButton(title);
-			button.addActionListener(l);
-			return button;
-		}
-	
-		private void setImageBGColor(NamedColor namedColor) {
-			id.setImageBG(namedColor==null?null:namedColor.value);
-			hasDataChanged = true;
-			showValues();
-		}
-
-		private void setImageFileName(String filename) {
-			id.setImageFileName(filename);
-			hasDataChanged = true;
-			showValues();
-		}
-
-		private void showValues() {
-			textarea.setText("");
-			
-			textarea.append("ID     : "+id.id+"\r\n");
-			if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
-			textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
-			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
-			
-			BufferedImage image = id.getImage();
-			if (image==null) {
-				imageField.setIcon(null);
-			} else {
-				imageField.setIcon(new ImageIcon(image));
-				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
-			}
-		}
-
-		public boolean hasDataChanged() { return hasDataChanged; }
-		public Integer getImageBG() { return id.getImageBG(); }
-		public String getImageFileName() { return id.getImageFileName(); }
-	}
-
-	private static class ImageGridDialog extends StandardDialog {
-		private static final long serialVersionUID = -3724853350437145460L;
-		private static Color COLOR_BACKGRIOUND = null;
-		private static Color COLOR_BACKGRIOUND_SELECTED = null;
-		private static Color COLOR_BACKGRIOUND_PRESELECTED = null;
-		private static Color COLOR_FOREGRIOUND = null;
-		private static Color COLOR_FOREGRIOUND_SELECTED = null;
-		
-		private String selected;
-
-		public ImageGridDialog(Window parent, String title, String initialValue) {
-			super(parent,title,ModalityType.APPLICATION_MODAL);
-			
-			selected = null;
-			
-			ImageLabel.defaultFont = new JLabel().getFont();
-			JTextArea dummy = new JTextArea();
-			COLOR_BACKGRIOUND = dummy.getBackground();
-			COLOR_FOREGRIOUND = dummy.getForeground();
-			COLOR_BACKGRIOUND_SELECTED = dummy.getSelectionColor();
-			COLOR_FOREGRIOUND_SELECTED = dummy.getSelectedTextColor();
-			COLOR_BACKGRIOUND_PRESELECTED = brighter(COLOR_BACKGRIOUND_SELECTED,0.7f);
-			
-			
-			JPanel imagePanel = new JPanel(new GridLayout(0,6,0,0));
-			imagePanel.setBorder(BorderFactory.createEtchedBorder());
-			imagePanel.setBackground(COLOR_BACKGRIOUND);
-			
-			JScrollPane imageScrollPane = new JScrollPane(imagePanel);
-			imageScrollPane.setPreferredSize(new Dimension(700,600));
-			
-			for (int i=0; i<Images.imagesNames.length; ++i) {
-				String name = Images.imagesNames[i];
-				BufferedImage image = Images.getImage(name,null,64,64);
-				if (image!=null)
-					imagePanel.add(new ImageLabel(this,name,image,name.equals(initialValue)));
-			}
-			
-			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(createButton("Choose \"No Image\"",e->setResult("")));
-			buttonPanel.add(createButton("Cancel",e->closeDialog()));
-			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-			contentPane.add(imageScrollPane,BorderLayout.CENTER);
-			contentPane.add(buttonPanel,BorderLayout.SOUTH);
-			
-			this.createGUI(contentPane);
-		}
-
-		private Color brighter(Color color, float fraction) {
-			int r = color.getRed();
-			int g = color.getGreen();
-			int b = color.getBlue();
-			r = Math.min(255, Math.round(255-(255-r)*(1-fraction)));
-			g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
-			b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
-			return new Color(r,g,b);
-		}
-
-		private void setResult(String name) {
-			selected = name;
-			closeDialog();
-		}
-
-		public String getImageFileName() {
-			return selected;
-		}
-
-		public boolean hasChoosen() {
-			return selected != null;
-		}
-
-		private static final class ImageLabel extends JPanel {
-			private static final long serialVersionUID = 4629632101041946456L;
-			public static Font defaultFont;
-
-			public ImageLabel(ImageGridDialog parent, String name, BufferedImage image, boolean isPreSelected) {
-				super(new BorderLayout(3,3));
-				setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-				
-				JTextArea textArea = new JTextArea(name);
-				textArea.setPreferredSize(new Dimension(100,60));
-				textArea.setLineWrap(true);
-				textArea.setWrapStyleWord(false);
-				textArea.setEditable(false);
-				textArea.setFont(defaultFont);
-				textArea.setBackground(null);
-				MouseListener[] mouseListeners = textArea.getMouseListeners();
-				MouseMotionListener[] mouseMotionListeners = textArea.getMouseMotionListeners();
-				for (MouseListener l:mouseListeners) textArea.removeMouseListener(l);
-				for (MouseMotionListener l:mouseMotionListeners) textArea.removeMouseMotionListener(l);
-				
-				
-				add(new JLabel(new ImageIcon(image)),BorderLayout.NORTH);
-				add(textArea,BorderLayout.CENTER);
-				
-				MouseInputAdapter m = new MouseInputAdapter() {
-					@Override public void mouseClicked(MouseEvent e) { parent.setResult(name); }
-					@Override public void mouseEntered(MouseEvent e) { setBackground(COLOR_BACKGRIOUND_SELECTED); textArea.setForeground(COLOR_FOREGRIOUND_SELECTED); }
-					@Override public void mouseExited (MouseEvent e) { setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND); textArea.setForeground(COLOR_FOREGRIOUND); }
-				};
-				
-				setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND);
-				addMouseListener(m);
-				addMouseMotionListener(m);
-				textArea.addMouseListener(m);
-				textArea.addMouseMotionListener(m);
-			}
-		
-		}
-
-	}
-	
-	private static class GeneralizedIDPanel extends JPanel implements ActionListener {
-		private static final long serialVersionUID = -4946966056212175920L;
-
-		private Window mainwindow;
-
-		private SimplifiedTable table;
-		private GeneralizedIDTableModel tableModel;
-		private GeneralizedID clickedID;
-		private Point clickedCell;
-
-		private JTextArea textarea;
-		private JLabel imageField;
-
-		public GeneralizedIDPanel(Window mainwindow, IDMap idMap, String tableLabel) {
-			super(new BorderLayout(3, 3));
-			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-			
-			this.mainwindow = mainwindow;
-			
-			clickedID = null;
-			clickedCell = null;
-			tableModel = new GeneralizedIDTableModel(this,idMap);
-			table = new SimplifiedTable(tableLabel,tableModel,true,false,true);
-			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			table.getSelectionModel().addListSelectionListener(e->showID(tableModel.getValue(table.getRowSorter().convertRowIndexToModel(table.getSelectedRow()))));
-			prepareTable();
-			
-			DebugTableContextMenu contextMenuStd     = new DebugTableContextMenu(table);
-			DebugTableContextMenu contextMenuImage   = new DebugTableContextMenu(table);
-			DebugTableContextMenu contextMenuImageBG = new DebugTableContextMenu(table);
-			contextMenuStd.addSeparator();
-			contextMenuStd.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
-			contextMenuImage.addSeparator();
-			contextMenuImage.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
-			contextMenuImage.addSeparator();
-			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage));
-			contextMenuImage.add(createMenuItem("Copy ImageFile",ActionCommand.CopyImage));
-			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage));
-			contextMenuImageBG.addSeparator();
-			contextMenuImageBG.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
-			contextMenuImageBG.addSeparator();
-			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground));
-			contextMenuImageBG.add(createMenuItem("Copy Background",ActionCommand.CopyBackground));
-			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground));
-			
-			
-			table.addMouseListener(new MouseAdapter() {
-				@Override public void mouseClicked(MouseEvent e) {
-					clickedID = null;
-					if (e.getButton()==MouseEvent.BUTTON3) {
-						int rowM = table.convertRowIndexToModel(table.rowAtPoint(e.getPoint()));
-						int colM = table.convertColumnIndexToModel(table.columnAtPoint(e.getPoint()));
-						clickedCell = new Point(colM,rowM);
-						clickedID = tableModel.getValue(rowM);
-						
-						switch (tableModel.getColumnID(colM)) {
-						case Image: contextMenuImage  .show(table, e.getX(), e.getY()); break;
-						case ImgBG: contextMenuImageBG.show(table, e.getX(), e.getY()); break;
-						default   : contextMenuStd    .show(table, e.getX(), e.getY()); break;
-						}
-					}
-				}
-			});
-			
-			
-			add(new JScrollPane(table),BorderLayout.CENTER);
-			
-			textarea = new JTextArea();
-			textarea.setEditable(false);
-			JScrollPane textareaScrollPane = new JScrollPane(textarea);
-			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 150));
-			
-			imageField = new JLabel();
-			imageField.setBorder(BorderFactory.createEtchedBorder());
-			imageField.setPreferredSize(new Dimension(100,100));
-			
-			JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
-			eastPanel.add(imageField, BorderLayout.NORTH);
-			eastPanel.add(textareaScrollPane, BorderLayout.CENTER);
-			
-			
-			add(eastPanel, BorderLayout.EAST);
-			
-		}
-		
-		private JMenuItem createMenuItem(String label, ActionCommand actionCommand) {
-			JMenuItem menuItem = new JMenuItem(label);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand(actionCommand.toString());
-			return menuItem;
-		}
-
-		enum ActionCommand { ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, ChangeImage }
-		
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
-			//if (clickedID!=null) System.out.printf("%s(%s)\r\n",actionCommand,clickedID.id);
-			if (clickedID==null) return;
-			
-			boolean idChanged = false;
-			String cbValue;
-			switch(actionCommand) {
-			case ChangeImage:
-				IdImageDialog dlg = new IdImageDialog(mainwindow,"Set Image and Background",clickedID);
-				dlg.showDialog();
-				if (dlg.hasDataChanged()) {
-					clickedID.setImageBG(dlg.getImageBG());
-					clickedID.setImageFileName(dlg.getImageFileName());
-					idChanged = true;
-				}
-				break;
-			
-			case ClearImage     : clickedID.setImageFileName(""); break;
-			case ClearBackground: clickedID.setImageBG(null); break;
-				
-			case CopyImage      : copyToClipBoard(clickedID.getImageFileName()); break;
-			case CopyBackground : if (clickedID.hasImageBG()) { copyToClipBoard(String.format("%06X", clickedID.getImageBG())); } break;
-			
-			case PasteImage:
-				cbValue = pasteFromClipBoard();
-				if (cbValue!=null) {
-					clickedID.setImageFileName(cbValue);
-					idChanged = true;
-				}
-				break;
-			case PasteBackground:
-				cbValue = pasteFromClipBoard();
-				if (cbValue!=null)
-					try { clickedID.setImageBG(Integer.parseInt(cbValue, 16)); idChanged = true; }
-					catch (NumberFormatException e1) {}
-				break;
-			}
-			if (idChanged) {
-				if (clickedCell!=null) tableModel.updateTableCell(clickedCell.x,clickedCell.y);
-				tableModel.updateAfterCellChange(clickedID);
-				if (clickedCell!=null) {
-					int row = table.convertRowIndexToView(clickedCell.y);
-					table.setRowSelectionInterval(row,row);
-				}
-			}
-			clickedID = null;
-		}
-
-		private void prepareTable() {
-			Vector<String> images = new Vector<>(Arrays.asList(Images.imagesNames));
-			images.insertElementAt("",0);
-			setCellEditor(GeneralizedIDColumnID.Image, new TableView.ComboboxCellEditor<String>(images.toArray(new String[0])));
-			
-			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.colorValues));
-			colors.insertElementAt(null,0);
-			ComboboxCellEditor<NamedColor> colorCellEditor = new TableView.ComboboxCellEditor<NamedColor>(colors.toArray(new NamedColor[0]));
-			
-			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
-			colorCellEditor.setRenderer(colorRenderer);
-			setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
-			setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
-		}
-
-		private void setCellRenderer(GeneralizedIDColumnID columnID, TableCellRenderer cellRenderer) {
-			TableColumn column = getColumn(columnID);
-			if (column==null) return;
-			column.setCellRenderer(cellRenderer);
-		}
-
-		private void setCellEditor(GeneralizedIDColumnID columnID, TableCellEditor cellEditor) {
-			TableColumn column = getColumn(columnID);
-			if (column==null) return;
-			column.setCellEditor(cellEditor);
-		}
-
-		private TableColumn getColumn(GeneralizedIDColumnID columnID) {
-			TableColumnModel columnModel = table.getColumnModel();
-			if (columnModel==null) return null;
-			
-			int columnIndex = tableModel.getColumn(columnID);
-			if (columnIndex<0) return null;
-			
-			return columnModel.getColumn(columnIndex);
-		}
-
-		private void showID(GeneralizedID id) {
-			textarea.setText("");
-			if (id==null) {
-				imageField.setIcon(null);
-				return;
-			}
-			
-			textarea.append("ID     : "+id.id+"\r\n");
-			if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
-			if (id.hasImage  ()    ) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
-			if (id.hasImageBG()    ) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
-			
-			BufferedImage image = id.getImage();
-			if (image==null) {
-				imageField.setIcon(null);
-			} else {
-				imageField.setIcon(new ImageIcon(image));
-				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
-			}
-			
-			for (SaveGameData key:id.usage.keySet()) {
-				textarea.append("\r\n");
-				textarea.append(key.filename+":\r\n");
-				Usage usages = id.usage.get(key);
-				if (usages.isEmpty())
-					textarea.append("   none\r\n");
-				for (String str:usages.inventoryUsages) textarea.append("   "+str+"\r\n");
-				for (String str:usages.blueprintUsages) textarea.append("   "+str+"\r\n");
-			}
-		}
-
-		public void addUsage(SaveGameView view) {
-			stopCellEditing();
-			tableModel.addUsage(view);
-			tableModel.setColumnWidths(table);
-			prepareTable();
-		}
-
-		public void updatePanel() {
-			stopCellEditing();
-			tableModel.updateData();
-		}
-
-		public void removeUsage(SaveGameView view) {
-			stopCellEditing();
-			tableModel.removeUsage(view);
-			tableModel.setColumnWidths(table);
-			prepareTable();
-		}
-
-		private void stopCellEditing() {
-			TableCellEditor cellEditor = table.getCellEditor();
-			if (cellEditor!=null) cellEditor.stopCellEditing();
-		}
-
-		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
-			ID    ("ID"        ,     String.class,  80,-1,120,120),
-			Label ("Label"     ,     String.class, 100,-1,200,200),
-			Image ("Image"     ,     String.class, 100,-1,250,250),
-			ImgBG ("Background", NamedColor.class,  80,-1,120,120),
-			Usage (""          ,     String.class,  50,-1, 80, 80);
-			
-			private TableView.SimplifiedColumnConfig columnConfig;
-			
-			GeneralizedIDColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
-			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
-		}
-	
-		private static class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
-	
-			private static final int EXTRA_ROWS = 1;
-			
-			private int numberOfLabledIDs;
-			private IDMap sourceIdMap;
-
-			private Vector<GeneralizedID> IDs;
-			private Vector<SaveGameView> usageKeys;
-
-			private GeneralizedIDPanel panel;
-
-			protected GeneralizedIDTableModel(GeneralizedIDPanel panel, IDMap sourceIdMap) {
-				super(new GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Label, GeneralizedIDColumnID.Image, GeneralizedIDColumnID.ImgBG });
-				this.panel = panel;
-				
-				this.usageKeys = new Vector<>();
-				this.sourceIdMap = sourceIdMap;
-				updateIdList();
-				updateNumberOfLabledIDs();
-			}
-
-			public void updateTableCell(int col, int row) {
-				fireTableCellUpdate(row, col);
-			}
-
-			public void addUsage(SaveGameView view) {
-				usageKeys.add(view);
-				updateIdList();
-				updateNumberOfLabledIDs();
-				fireTableStructureUpdate();
-			}
-
-			public void updateData() {
-				updateIdList();
-				updateNumberOfLabledIDs();
-				fireTableUpdate();
-			}
-
-			public void removeUsage(SaveGameView view) {
-				usageKeys.remove(view);
-				fireTableStructureUpdate();
-			}
-
-			private void updateIdList() {
-				IDs = sourceIdMap.getSortedValues();
-			}
-
-			private void updateNumberOfLabledIDs() {
-				numberOfLabledIDs = 0;
-				for (GeneralizedID id:IDs) {
-					if (!id.label.isEmpty())
-						++numberOfLabledIDs;
-				}
-			}
-
-			@Override
-			protected GeneralizedIDColumnID getColumnID(int columnIndex) {
-				if (columnIndex>=columns.length) return GeneralizedIDColumnID.Usage;
-				return super.getColumnID(columnIndex);
-			}
-
-			@Override public int getColumnCount() {
-				return columns.length+usageKeys.size();
-			}
-
-			@Override
-			public String getColumnName(int columnIndex) {
-				if (columnIndex>=columns.length) return usageKeys.get(columnIndex-columns.length).file.getName();
-				return super.getColumnName(columnIndex);
-			}
-
-			@Override public int getRowCount() { return IDs.size()+EXTRA_ROWS; }
-			@Override public int getUnsortedRowsCount() { return EXTRA_ROWS; }
-			
-			@Override
-			protected boolean isCellEditable(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
-				if (rowIndex<EXTRA_ROWS) return false;
-				switch(columnID) {
-				case ID   : return false;
-				case Label:
-				case Image: return true;
-				case ImgBG: return true;
-				case Usage: return false;
-				}
-				return false;
-			}
-
-			public GeneralizedID getValue(int rowIndex) {
-				if (rowIndex<EXTRA_ROWS) return null;
-				return IDs.get(rowIndex-EXTRA_ROWS);
-			}
-
-			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
-				if (rowIndex<EXTRA_ROWS) {
-					switch(columnID) {
-					case ID   : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
-					case Label: return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
-					case Image: return "";
-					case ImgBG: return "";
-					case Usage: return "";
-					}
-					return null;
-				}
-				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
-				if (id==null) return null;
-				switch(columnID) {
-				case ID   : return id.id;
-				case Label: return id.label;
-				case Image: return id.getImageFileName();
-				case ImgBG: return Images.getColor( id.getImageBG() );
-				case Usage:
-					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
-					if (usage==null) return "";
-					if (usage.isEmpty()) return "";
-					String str = "";;
-					if (!usage.inventoryUsages.isEmpty()) str += usage.inventoryUsages.size()+"xI";
-					if (!usage.blueprintUsages.isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.blueprintUsages.size()+"xB"; }
-					return str;
-				}
-				return null;
-			}
-
-			@Override
-			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
-				if (rowIndex<EXTRA_ROWS) return;
-				
-				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
-				if (id==null) return;
-				
-				switch(columnID) {
-				case ID   : return;
-				case Label: id.label = aValue==null?"":aValue.toString(); break;
-				case Image: id.setImageFileName(aValue); break;
-				case ImgBG: id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
-				case Usage: return;
-				}
-				updateAfterCellChange(id);
-			}
-
-			public void updateAfterCellChange(GeneralizedID id) {
-				panel.showID(id);
-				
-				if (sourceIdMap==techIDs     ) saveTechIDsToFile();
-				if (sourceIdMap==productIDs  ) saveProductIDsToFile();
-				if (sourceIdMap==substanceIDs) saveSubstanceIDsToFile();
-			}
-		}
 	}
 }

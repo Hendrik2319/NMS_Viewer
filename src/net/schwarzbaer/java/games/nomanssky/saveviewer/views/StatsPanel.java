@@ -8,6 +8,7 @@ import javax.swing.JComboBox;
 import javax.swing.JScrollPane;
 import javax.swing.table.DefaultTableModel;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
@@ -112,7 +113,7 @@ class StatsPanel extends SaveGameViewTabPanel {
 			if (statValue.knownID==null || aValue==null) { fireTableCellUpdate(rowIndex, columnIndex); return; }
 			
 			statValue.knownID.fullName = aValue.toString();
-			SaveViewer.saveKnownStatIDsToFile();
+			GameInfos.saveKnownStatIDsToFile();
 		}
 	}
 }

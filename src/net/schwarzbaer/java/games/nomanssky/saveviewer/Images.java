@@ -1,30 +1,63 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.RenderingHints;
+import java.awt.Window;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.event.MouseInputAdapter;
+
+import net.schwarzbaer.gui.GUI;
+import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 public class Images {
 	
-	public static NamedColor[] colorValues = null;
-	private static HashMap<Integer,NamedColor> colorMap = null; 
+	public NamedColor[] colorValues;
+	private HashMap<Integer,NamedColor> colorMap; 
 	
-	public static NamedColor getColor(Integer value) {
-		if (value == null) return null;
-		NamedColor color = colorMap.get(value);
-		if (color==null) color = new NamedColor(value,String.format("%06X", value));
-		return color;
+	public String[] imagesNames;
+	public HashMap<String,BufferedImage> images;
+	
+	public Images() {
+		colorValues = null;
+		colorMap = null;
+		imagesNames = null;
+		images = new HashMap<String,BufferedImage>();
 	}
 	
-	public static void prepareColors() {
+	public void init() {
+		prepareColors();
+		readImages();
+	}
+	
+	private void prepareColors() {
 		colorMap = new HashMap<>();
 		Vector<NamedColor> colorValuesVec = new Vector<>(); 
 		addColor(colorValuesVec, 0xBB392C, "Isotop" );
@@ -39,233 +72,57 @@ public class Images {
 		addColor(colorValuesVec, 0xF0A92B, "Produkt" );
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
 	}
+
+	public NamedColor getColor(Integer value) {
+		if (value == null) return null;
+		NamedColor color = colorMap.get(value);
+		if (color==null) color = new NamedColor(value,String.format("%06X", value));
+		return color;
+	}
 	
-	private static void addColor(Vector<NamedColor> colorValuesVec, int value, String name) {
+	private void addColor(Vector<NamedColor> colorValuesVec, int value, String name) {
 		if (name==null) name=String.format("[%d]%06X", colorValuesVec.size()+1, value);
 		NamedColor namedColor = new NamedColor(value,name);
 		colorMap.put(value, namedColor);
 		colorValuesVec.add(namedColor);
 	}
 
-	public static class NamedColor {
-
-		public final int value;
-		public final String name;
-		public final Color color;
-
-		public NamedColor(int value, String name) {
-			this.value = value;
-			this.color = new Color(value);
-			this.name = name;
+	private void readImages() {
+		long start = System.currentTimeMillis();
+		File folder = new File("extra/resource_icons");
+		System.out.println("Read image resources from \""+folder.getPath()+"\" ...");
+		if (!folder.isDirectory()) {
+			System.out.println("   ... abort reading. Can't open folder.");
+			return;
 		}
+		
+		imagesNames = folder.list(new FilenameFilter() {
+			@Override public boolean accept(File dir, String name) {
+				name = name.toLowerCase();
+				if (name.endsWith(".png")) return true;
+				if (name.endsWith(".jpg")) return true;
+				if (name.endsWith(".jpeg")) return true;
+				return false;
+			}
+		});
+		Arrays.sort(imagesNames);
+		
+		images.clear();
+		for (int i=0; i<imagesNames.length; ++i) {
+			File file = new File(folder,imagesNames[i]);
+			//InputStream stream = images.getClass().getResourceAsStream("/icons/"+imagesNames[i]);
+			BufferedImage image = null;
+			//if (file!=null)
+				try { image = ImageIO.read(file); }
+				catch (IOException e) {}
+			if (image!=null)
+				images.put(imagesNames[i], image);
+		}
+		
+		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
-	
-	public static final String[] imagesNames = new String[] {
-			"AdvMiningLaserIcon.png",
-			"ATLASSEED.1.png",
-			"ATLASSEED.10.png",
-			"ATLASSEED.2.png",
-			"ATLASSEED.3.png",
-			"ATLASSEED.4.png",
-			"ATLASSEED.5.png",
-			"ATLASSEED.6.png",
-			"ATLASSEED.7.png",
-			"ATLASSEED.8.png",
-			"ATLASSEED.9.png",
-			"Bio-dome_icon.png",
-			"Blaze_javelin.png",
-			"Blaze_javelin_upgrade.png",
-			"BUILDABLE.VEHICLEGARAGEL.png",
-			"BUILDABLE.VEHICLEGARAGES.png",
-			"Circuit_Board_icon.png",
-			"Cyclotron_ballista.png",
-			"Cyclotron_ballista_upgrade.png",
-			"Exocraft_Terminal.png",
-			"Freighter_Warp_Reactor_Icon.png",
-			"GAS.1.Schwefelin.png",
-			"GAS.2.Radon.png",
-			"GAS.3.Stickstoff.png",
-			"Korvax_Convergence_Cube.png",
-			"NmsBase_Cuboid_Room_Flooring_Icon.png",
-			"NmsBase_Cuboid_Room_Foundation_Strut_Icon.png",
-			"NmsBase_Cuboid_Room_Strut_Quad_Icon.png",
-			"NmsBase_Storage_Container_Icon.png",
-			"NmsCommodity_AmmoniumSalt_icon.png",
-			"NmsCommodity_AquaSpheres_Icon.png",
-			"NmsCommodity_Enriched_Carbon_icon.AngereicherterKohlenstoff.png",
-			"NmsCommodity_Fusion_Accelerant_icon.png",
-			"NmsCommodity_Organic_Catalyst_icon.png",
-			"NmsCommodity_Semiconductor_Icon.png",
-			"NmsCommodity_Thermic_Condensate_icon.ThermischesKondensat.png",
-			"NmsFarming_Albumen_Pearl_Orb_Icon.Eiweissperle.png",
-			"NmsFarming_Bloodsbane_Icon.Giftigel.png",
-			"NmsFarming_Carrion_Root_Icon.Morditwurzel.png",
-			"NmsFarming_Coprite_Orb_Icon.Copritblume.png",
-			"NmsFarming_Cucrassula_Icon.Echinokaktus.png",
-			"NmsFarming_Dicotyl_Icon.Gammagras.png",
-			"NmsFarming_Gravitino_Orb_Icon.GravitinoWirt.png",
-			"NmsFarming_NipNip_Icon.png",
-			"NmsFarming_Skywort_Icon.Frostwurz.png",
-			"NmsFarming_Vivilava_Icon.Solanium-Pflanze.png",
-			"NmsMisc_Nanite_Cluster.png",
-			"NmsProduct_Cryo-Pump_Icon.png",
-			"NmsProduct_CryogenicChamber_Icon.png",
-			"NmsProduct_FreighterFuel_Icon.png",
-			"NmsProduct_FusionIgnitor_Icon.png",
-			"NmsProduct_HotIce_Icon.png",
-			"NmsProduct_MindArc_Icon.Gedankenbogen.png",
-			"NmsProduct_QuantumProcessor_Icon.png",
-			"NmsProduct_StasisDevice_Icon.png",
-			"NmsProduct_Superconductor_Icon.Supraleiter.png",
-			"NmsResource_Armadium_Icon.png",
-			"NmsResource_Detritum_Icon.png",
-			"NmsResource_Star_Bulb_icon.Sternenknolle.png",
-			"NmsTech_Acid_Icon_13.Saeure.png",
-			"NmsTech_Agricultural_Terminal_Icon.png",
-			"NmsTech_AMU_Icon.AutonomeBergbaueinheit.png",
-			"NmsTech_Atmosphere_Harvester_Icon_13.png",
-			"NmsTech_Beacon_Icon.png",
-			"NmsTech_Construction_Terminal_Icon.png",
-			"NmsTech_Exocraft_Acceleration_Module_Icon.png",
-			"NmsTech_Exocraft_Acceleration_Module_Upgrade_Icon.png",
-			"NmsTech_Exocraft_Mining_Laser_Icon.png",
-			"NmsTech_Exocraft_Mounted_Cannon_Icon.png",
-			"NmsTech_Exocraft_Scan_Equipment_Icon.png",
-			"NmsTech_Exocraft_Scan_Equipment_Upgrade_Icon.png",
-			"NmsTech_Explosive_Icon.png",
-			"NmsTech_Galactic_Trade_Terminal_Icon.png",
-			"NmsTech_Glass_Icon_13.png",
-			"NmsTech_Heat_Capacitor_Icon_13.png",
-			"NmsTech_Hydroponics_Tray_Icon.png",
-			"NmsTech_Insulating_Gel_Icon.png",
-			"NmsTech_Landing_Pad_Icon.png",
-			"NmsTech_Liquid_Explosive_Icon_13.png",
-			"NmsTech_Living_Glass_Icon_13.png",
-			"NmsTech_Poly_Fibre_Icon_13.png",
-			"NmsTech_Science_Terminal_Icon.png",
-			"NmsTech_Unstable_Gel_Icon_13.png",
-			"NmsTech_Voltaic_Cell_Icon_13.Galvanische Zelle.png",
-			"NmsTech_Weapons_Terminal_Icon.png",
-			"NmsTech_Weatherproof_Rubber_Icon_13.png",
-			"NmsWeapon_Infra-Knife_Accelerator_Icon.png",
-			"NmsWeapon_Infra-Knife_Accelerator_Upgrade_Icon.png",
-			"NmsWeapon_Scatter_Blaster_Icon.png",
-			"NmsWeapon_Scatter_Blaster_Upgrade_Icon.png",
-			"NsmComponent_Lubricant_Icon.png",
-			"Phase_beam.png",
-			"Phase_beam_upgrade.png",
-			"Positron_ejector.png",
-			"Positron_ejector_upgrade.png",
-			"Product.abumenpearl.Eiweissperle.png",
-			"Product.antimatter.png",
-			"Product.atlaspass.png",
-			"Product.atlasstone.Remembrance.png",
-			"Product.dimensionmatrix.png",
-			"Product.dynamicres.png",
-			"Product.effigy.VykeenBildnis.png",
-			"Product.element.base1.Suspensionsfluessigkeit.png",
-			"Product.element.crystal1.Nachtkristall.png",
-			"Product.element.gel2.Elektronendampf.png",
-			"Product.emp.Ueberbrueckungschip.png",
-			"Product.fabric1.MikrodichtesGewebe.png",
-			"Product.fasbead.FaszinierendePerle.png",
-			"Product.gekcharm.GekAmulett.png",
-			"Product.geknip.png",
-			"Product.gekstatue.png",
-			"Product.gel1.Energiegel.png",
-			"Product.gel2.Energiekanister.png",
-			"Product.gel3.Energiespeicher.png",
-			"Product.grahgrah.png",
-			"Product.gravball.png",
-			"Product.korvaxcasing.png",
-			"Product.metallic.1.Aronium.png",
-			"Product.metallic.2.StrassenkoeterBronze.png",
-			"Product.metallic.3.Herox.png",
-			"Product.metallic.4.Crolium.png",
-			"Product.metallic.4.Lemmium.png",
-			"Product.metallic.5.Magno-Gold.png",
-			"Product.metallic.6.Grantine.png",
-			"PRODUCT.METALLIC.7.Geodesit.png",
-			"Product.metallic.7.Terumin.png",
-			"Product.metallic.8.Iridesite.png",
-			"Product.metallic.sheet1.Karitplatte.png",
-			"Product.neutrino.NeutrinoModul.png",
-			"Product.plasma1.InstabilesPlasma.png",
-			"Product.sacvenom.Beutelgift.png",
-			"Product.shielding1.Schildsplitter.png",
-			"Product.shielding2.Schildplatte.png",
-			"Product.shielding3.Schildblech.png",
-			"Product.vortexcube.Wirbelwuerfel.png",
-			"Product.vykeendagger.png",
-			"Product.warpcell.png",
-			"Pulse_spitter.png",
-			"Pulse_spitter_upgrade.png",
-			"Render.binoculars.png",
-			"Render.cell.Lebenserhaltung.png",
-			"Render.grenade.PlasmaGranate.png",
-			"Render.grenademod.Plasmagranate.png",
-			"Render.helmet.png",
-			"Render.hyperdrive.png",
-			"Render.jetpack.png",
-			"Render.jetpackmod.png",
-			"Render.landinggear.png",
-			"Render.laser1.MiningLaser.png",
-			"Render.projectile1.Blitzwerfer.png",
-			"Render.projectile1mod.Blitzwerfer.grau.png",
-			"Render.protectcold.png",
-			"Render.protectgeneric.Gefahrenschutz.png",
-			"Render.protectheat.png",
-			"Render.protectrads.png",
-			"Render.protecttoxic.png",
-			"Render.pulsedrive.Impulsantrieb.png",
-			"Render.ricochet.Blitzwerfer.Querschlaeger.png",
-			"Render.scan.png",
-			"Render.shield.Schiff.png",
-			"Render.shieldmod.png",
-			"Render.shipprojectile1.Photonenkanone.png",
-			"Render.shipprojectile1mod.Photonenkanone.grau.png",
-			"Render.shotgun1.Blitzwerfer.Streuschuss.png",
-			"Sbramble.Sternendorn.png",
-			"Stamina.booster.Lebenserhaltungsmodul.png",
-			"Substance.commodity.common1.Eisen.png",
-			"Substance.commodity.rare1.Titan.png",
-			"Substance.commodity.uncommon1.Zink.png",
-			"Substance.exotic.rare1.Cymatygen.png",
-			"Substance.fuel.common1.Kohlenstoff.png",
-			"Substance.fuel.rare1.Plutonium.png",
-			"Substance.fuel.uncommon1.Thamium9.png",
-			"Substance.neutral.common1.Kupfer.png",
-			"Substance.neutral.common2.Nickel.png",
-			"Substance.neutral.common3.Iridium.png",
-			"Substance.neutral.rare1.Emeril.png",
-			"Substance.neutral.rare10.Viridium.png",
-			"Substance.neutral.rare11.Pilzschimmel.png",
-			"Substance.neutral.rare12.Rubeum.png",
-			"Substance.neutral.rare13.Frostkristall.png",
-			"Substance.neutral.rare14.Coprit.png",
-			"Substance.neutral.rare15.Mordit.png",
-			"Substance.neutral.rare3.Kürbisknolle.png",
-			"Substance.neutral.rare4.Kaktusfleisch.png",
-			"Substance.neutral.rare5.Pugneum.png",
-			"Substance.neutral.rare6.Tropheum.png",
-			"Substance.neutral.rare7.Solanium.png",
-			"Substance.neutral.rare8.Gammawurzel.png",
-			"Substance.neutral.rare9.Kelpbeutel.png",
-			"Substance.neutral.uncommon1.Aluminium.png",
-			"Substance.neutral.uncommon2.Gold.png",
-			"Substance.precious.rare1.Omegon.png",
-			"Substance.precious.rare2.Radnox.png",
-			"Substance.precious.rare3.Murrine.png",
-			"Substance.precious.rare4.Kalium.png",
-			"Substance.tech.common1.Heridium.png",
-			"Substance.tech.rare1.Chrysonit.png",
-			"Substance.tech.uncommon1.Platin.png",
-			"TECH.POWERGLOVE.Schutzhandschuh.png"
-	};
-	
-	public static HashMap<String,BufferedImage> images = new HashMap<String,BufferedImage>();
-	
-	public static BufferedImage[] getImages(boolean sorted) {
+
+	public BufferedImage[] getImages(boolean sorted) {
 		if (!sorted)
 			return images.values().toArray(new BufferedImage[0]);
 		
@@ -276,28 +133,10 @@ public class Images {
 		return array;
 	}
 
-	public static void readImages() {
-		long start = System.currentTimeMillis();
-		System.out.println("Read image resources ...");
-		
-		images.clear();
-		for (int i=0; i<imagesNames.length; ++i) {
-			InputStream stream = images.getClass().getResourceAsStream("/icons/"+imagesNames[i]);
-			BufferedImage image = null;
-			if (stream!=null)
-				try { image = ImageIO.read(stream); }
-				catch (IOException e) {}
-			if (image!=null)
-				images.put(imagesNames[i], image);
-		}
-		
-		System.out.println("done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-
-	public static BufferedImage getImage(String imageFileName, Integer imageBackground, int width, int height) {
+	public BufferedImage getImage(String imageFileName, Integer imageBackground, int width, int height) {
 		BufferedImage baseImage = null;
 		if (imageFileName!=null)
-			baseImage = Images.images.get(imageFileName);
+			baseImage = images.get(imageFileName);
 		
 		if (imageBackground!=null || (baseImage!=null && (width!=baseImage.getWidth() || height!=baseImage.getHeight()))) {
 			if (width <0) width  = (baseImage==null)?256:baseImage.getWidth();
@@ -325,5 +164,244 @@ public class Images {
 			return combinedImage;
 		} else
 			return baseImage;
+	}
+
+	public static class NamedColor {
+	
+		public final int value;
+		public final String name;
+		public final Color color;
+	
+		public NamedColor(int value, String name) {
+			this.value = value;
+			this.color = new Color(value);
+			this.name = name;
+		}
+	}
+
+	public static class IdImageDialog extends StandardDialog {
+		private static final long serialVersionUID = -4493777651637626630L;
+		
+		private JLabel imageField;
+		private JTextArea textarea;
+		
+		private GameInfos.GeneralizedID id;
+		private boolean hasDataChanged;
+	
+		public IdImageDialog(Window parent, GameInfos.GeneralizedID id) {
+			super(parent, String.format("Set Image and Background for %s",id.getName()), ModalityType.APPLICATION_MODAL);
+			
+			this.id = new GameInfos.GeneralizedID(id);
+			this.hasDataChanged = false;
+			
+			textarea = new JTextArea();
+			textarea.setEditable(false);
+			JScrollPane textareaScrollPane = new JScrollPane(textarea);
+			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
+			
+			Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
+			images.insertElementAt("",0);
+			JComboBox<String> cmbbxImages = new JComboBox<String>(images);
+			cmbbxImages.setSelectedItem(id.getImageFileName());
+			cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
+			
+			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
+			colors.insertElementAt(null,0);
+			JComboBox<NamedColor> cmbbxColors = new JComboBox<NamedColor>(colors);
+			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
+			cmbbxColors.setSelectedItem(SaveViewer.images.getColor(id.getImageBG()));
+			cmbbxColors.addActionListener(e->setImageBGColor((NamedColor)cmbbxColors.getSelectedItem()));
+			
+			JPanel buttonPanel = new JPanel(new GridLayout(1,0,3,3));
+			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
+			buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
+			
+			JPanel cmbbxPanel = new JPanel(new GridLayout(0,1,3,3));
+			cmbbxPanel.add(GUI.createRightAlignedPanel(createButton("select ...",e->showImageList(cmbbxImages)), cmbbxImages));
+			cmbbxPanel.add(cmbbxColors);
+			
+			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
+			inputPanel.add(cmbbxPanel, BorderLayout.CENTER);
+			inputPanel.add(buttonPanel, BorderLayout.SOUTH);
+			
+			JPanel centerPanel = new JPanel(new BorderLayout(3,3));
+			centerPanel.add(textareaScrollPane, BorderLayout.CENTER);
+			centerPanel.add(inputPanel, BorderLayout.SOUTH);
+			
+			imageField = new JLabel();
+			imageField.setBorder(BorderFactory.createEtchedBorder());
+			imageField.setPreferredSize(new Dimension(256,256));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(centerPanel,BorderLayout.WEST);
+			contentPane.add(imageField,BorderLayout.CENTER);
+			
+			showValues();
+			this.createGUI(contentPane);
+		}
+	
+		private void showImageList(JComboBox<String> cmbbxImages) {
+			ImageGridDialog dlg = new ImageGridDialog(this,id.getImageFileName());
+			dlg.showDialog();
+			if (dlg.hasChoosen()) {
+				String result = dlg.getImageFileName();
+				setImageFileName(result);
+				cmbbxImages.setSelectedItem(result);
+			}
+		}
+	
+		private JButton createButton(String title, ActionListener l) {
+			JButton button = new JButton(title);
+			button.addActionListener(l);
+			return button;
+		}
+	
+		private void setImageBGColor(NamedColor namedColor) {
+			id.setImageBG(namedColor==null?null:namedColor.value);
+			hasDataChanged = true;
+			showValues();
+		}
+	
+		private void setImageFileName(String filename) {
+			id.setImageFileName(filename);
+			hasDataChanged = true;
+			showValues();
+		}
+	
+		private void showValues() {
+			textarea.setText("");
+			
+			textarea.append("ID     : "+id.id+"\r\n");
+			if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
+			textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
+			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
+			
+			BufferedImage image = id.getImage();
+			if (image==null) {
+				imageField.setIcon(null);
+			} else {
+				imageField.setIcon(new ImageIcon(image));
+				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+			}
+		}
+	
+		public boolean hasDataChanged() { return hasDataChanged; }
+		public Integer getImageBG() { return id.getImageBG(); }
+		public String getImageFileName() { return id.getImageFileName(); }
+	}
+
+	public static class ImageGridDialog extends StandardDialog {
+		private static final long serialVersionUID = -3724853350437145460L;
+		private static Color COLOR_BACKGRIOUND = null;
+		private static Color COLOR_BACKGRIOUND_SELECTED = null;
+		private static Color COLOR_BACKGRIOUND_PRESELECTED = null;
+		private static Color COLOR_FOREGRIOUND = null;
+		private static Color COLOR_FOREGRIOUND_SELECTED = null;
+		
+		private String selected;
+	
+		public ImageGridDialog(Window parent, String initialValue) {
+			super(parent,"Select Image",ModalityType.APPLICATION_MODAL);
+			
+			selected = null;
+			
+			ImageLabel.defaultFont = new JLabel().getFont();
+			JTextArea dummy = new JTextArea();
+			COLOR_BACKGRIOUND = dummy.getBackground();
+			COLOR_FOREGRIOUND = dummy.getForeground();
+			COLOR_BACKGRIOUND_SELECTED = dummy.getSelectionColor();
+			COLOR_FOREGRIOUND_SELECTED = dummy.getSelectedTextColor();
+			COLOR_BACKGRIOUND_PRESELECTED = brighter(COLOR_BACKGRIOUND_SELECTED,0.7f);
+			
+			
+			JPanel imagePanel = new JPanel(new GridLayout(0,6,0,0));
+			imagePanel.setBorder(BorderFactory.createEtchedBorder());
+			imagePanel.setBackground(COLOR_BACKGRIOUND);
+			
+			JScrollPane imageScrollPane = new JScrollPane(imagePanel);
+			imageScrollPane.setPreferredSize(new Dimension(700,600));
+			
+			for (int i=0; i<SaveViewer.images.imagesNames.length; ++i) {
+				String name = SaveViewer.images.imagesNames[i];
+				BufferedImage image = SaveViewer.images.getImage(name,null,64,64);
+				if (image!=null)
+					imagePanel.add(new ImageLabel(this,name,image,name.equals(initialValue)));
+			}
+			
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
+			buttonPanel.add(SaveViewer.createButton("Cancel",e->closeDialog()));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(imageScrollPane,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
+			
+			this.createGUI(contentPane);
+		}
+	
+		private Color brighter(Color color, float fraction) {
+			int r = color.getRed();
+			int g = color.getGreen();
+			int b = color.getBlue();
+			r = Math.min(255, Math.round(255-(255-r)*(1-fraction)));
+			g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
+			b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
+			return new Color(r,g,b);
+		}
+	
+		private void setResult(String name) {
+			selected = name;
+			closeDialog();
+		}
+	
+		public String getImageFileName() {
+			return selected;
+		}
+	
+		public boolean hasChoosen() {
+			return selected != null;
+		}
+	
+		private static final class ImageLabel extends JPanel {
+			private static final long serialVersionUID = 4629632101041946456L;
+			public static Font defaultFont;
+	
+			public ImageLabel(ImageGridDialog parent, String name, BufferedImage image, boolean isPreSelected) {
+				super(new BorderLayout(3,3));
+				setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+				
+				JTextArea textArea = new JTextArea(name);
+				textArea.setPreferredSize(new Dimension(100,60));
+				textArea.setLineWrap(true);
+				textArea.setWrapStyleWord(false);
+				textArea.setEditable(false);
+				textArea.setFont(defaultFont);
+				textArea.setBackground(null);
+				MouseListener[] mouseListeners = textArea.getMouseListeners();
+				MouseMotionListener[] mouseMotionListeners = textArea.getMouseMotionListeners();
+				for (MouseListener l:mouseListeners) textArea.removeMouseListener(l);
+				for (MouseMotionListener l:mouseMotionListeners) textArea.removeMouseMotionListener(l);
+				
+				
+				add(new JLabel(new ImageIcon(image)),BorderLayout.NORTH);
+				add(textArea,BorderLayout.CENTER);
+				
+				MouseInputAdapter m = new MouseInputAdapter() {
+					@Override public void mouseClicked(MouseEvent e) { parent.setResult(name); }
+					@Override public void mouseEntered(MouseEvent e) { setBackground(COLOR_BACKGRIOUND_SELECTED); textArea.setForeground(COLOR_FOREGRIOUND_SELECTED); }
+					@Override public void mouseExited (MouseEvent e) { setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND); textArea.setForeground(COLOR_FOREGRIOUND); }
+				};
+				
+				setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND);
+				addMouseListener(m);
+				addMouseMotionListener(m);
+				textArea.addMouseListener(m);
+				textArea.addMouseMotionListener(m);
+			}
+		
+		}
+	
 	}
 }

@@ -5,11 +5,12 @@ import java.awt.BorderLayout;
 import javax.swing.JScrollPane;
 import javax.swing.table.TableCellEditor;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
@@ -87,8 +88,8 @@ class SimplePanels {
 				if (columnID == BlueprintsColumnID.Label) {
 					blueprints[rowIndex].label = aValue==null?"":aValue.toString();
 					switch(type) {
-					case KnownProductBlueprints: SaveViewer.saveProductIDsToFile(); break;
-					case KnownTechBlueprints   : SaveViewer.saveTechIDsToFile(); break;
+					case KnownProductBlueprints: GameInfos.saveProductIDsToFile(); break;
+					case KnownTechBlueprints   : GameInfos.saveTechIDsToFile(); break;
 					}
 				}
 			}

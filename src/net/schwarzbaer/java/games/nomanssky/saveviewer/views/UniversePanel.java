@@ -45,6 +45,7 @@ import javax.swing.tree.TreePath;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
@@ -340,7 +341,7 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 							try { system.distanceToCenter = Double.parseDouble(valueStr); }
 							catch (NumberFormatException e1) {}
 						}
-						SaveViewer.saveUniverseObjectDataToFile(data.universe);
+						GameInfos.saveUniverseObjectDataToFile(data.universe);
 					}
 				}
 				break;
@@ -350,7 +351,7 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 					((UniversePanel.SolarSystemNode)clickedNode).value.race = ((UniversePanel.EnumCheckBoxMenuItem_Race)source).key;
 					treeModel.nodeChanged(clickedNode);
 					if (selectedNode==clickedNode) selectionChanged();
-					SaveViewer.saveUniverseObjectDataToFile(data.universe);
+					GameInfos.saveUniverseObjectDataToFile(data.universe);
 				}
 				break;
 			case SetStarClass:
@@ -358,7 +359,7 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 					((UniversePanel.SolarSystemNode)clickedNode).value.starClass = ((UniversePanel.EnumCheckBoxMenuItem_StarClass)source).key;
 					treeModel.nodeChanged(clickedNode);
 					if (selectedNode==clickedNode) selectionChanged();
-					SaveViewer.saveUniverseObjectDataToFile(data.universe);
+					GameInfos.saveUniverseObjectDataToFile(data.universe);
 				}
 				break;
 				
@@ -757,14 +758,14 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 						data[rowIndex].label = (String)aValue;
 						for (     ExtraInfo  ei:data[rowIndex].sourceEIs ) ei.shortLabel = (String)aValue;
 						for (UniverseObject obj:data[rowIndex].sourceObjs) changedObj.add(obj);
-						SaveViewer.saveUniverseObjectDataToFile(universe);
+						GameInfos.saveUniverseObjectDataToFile(universe);
 						break;
 						
 					case Info    :
 						data[rowIndex].info = (String)aValue;
 						for (     ExtraInfo  ei:data[rowIndex].sourceEIs ) ei.info = (String)aValue;
 						for (UniverseObject obj:data[rowIndex].sourceObjs) changedObj.add(obj);
-						SaveViewer.saveUniverseObjectDataToFile(universe);
+						GameInfos.saveUniverseObjectDataToFile(universe);
 						break;
 					}
 				}
@@ -856,7 +857,7 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 					}
 				treeModel.nodeChanged(selectedNode);
 				if (isPlanet) treeModel.nodeChanged(selectedNode.parent);
-				SaveViewer.saveUniverseObjectDataToFile(data.universe);
+				GameInfos.saveUniverseObjectDataToFile(data.universe);
 			}
 		}
 		
