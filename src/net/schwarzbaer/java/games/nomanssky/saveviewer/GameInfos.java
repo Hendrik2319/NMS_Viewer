@@ -354,9 +354,10 @@ public class GameInfos {
 		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
-	public static final GameInfos.IDMap productIDs   = new IDMap();
-	public static final GameInfos.IDMap techIDs      = new IDMap();
-	public static final GameInfos.IDMap substanceIDs = new IDMap();
+	public static final IDMap productIDs   = new IDMap();
+	public static final IDMap techIDs      = new IDMap();
+	public static final IDMap substanceIDs = new IDMap();
+
 	public static class IDMap {
 		private HashMap<String, GameInfos.GeneralizedID> map;
 		

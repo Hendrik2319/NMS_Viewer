@@ -43,7 +43,8 @@ public class SaveGameData {
 	public final DiscoveryData discoveryData;
 	public Inventories inventories;
 	public KnownBlueprints knownBlueprints;
-	public BaseBuildingObject[] baseBuildingObjects;
+	public UnboundBuildingObject[] baseBuildingObjects;
+	public PersistentPlayerBase[] persistentPlayerBases;
 	
 	public SaveGameData(JSON_Object json_data, String filename) {
 		error = Error.NoError;
@@ -59,24 +60,7 @@ public class SaveGameData {
 		this.discoveryData = new DiscoveryData(this);
 		this.inventories = null;
 		this.baseBuildingObjects = null;
-	}
-	
-	public SaveGameData parse() {
-		general.parse();
-		parseStats();
-		parseKnownBlueprints();
-		parseKnownWords();
-		parseDiscoveryData();
-		parseInventories();
-		parseBaseBuildingObjects();
-		universe.sort();
-		//universe.writeToConsole();
-		
-		GameInfos.readUniverseObjectDataFromDataPool(universe);
-		GameInfos.saveProductIDsToFile();
-		GameInfos.saveTechIDsToFile();
-		GameInfos.saveSubstanceIDsToFile();
-		return this;
+		this.persistentPlayerBases = null;
 	}
 	
 	public static String timestampToString(long timestamp) {
@@ -150,13 +134,13 @@ public class SaveGameData {
 	}
 	
 	public static class Coordinates {
-
+	
 		public double x;
 		public double y;
 		public double z;
 		public double w1;
 		public int length;
-
+	
 		public Coordinates() {
 			this.x = 0;
 			this.y = 0;
@@ -164,7 +148,7 @@ public class SaveGameData {
 			this.w1 = 0;
 			this.length = 0; 
 		}
-
+	
 		public void set(int i, double value) {
 			switch(i) {
 			case 0: x = value; break;
@@ -174,12 +158,12 @@ public class SaveGameData {
 			}
 			length = Math.max(i+1, length);
 		}
-
+	
 		@Override
 		public String toString() {
 			return toString("%s");
 		}
-
+	
 		public String toString(String valueformat) {
 			String vf = valueformat;
 			switch(length) {
@@ -195,55 +179,198 @@ public class SaveGameData {
 		
 	}
 
-	private void parseBaseBuildingObjects() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","BaseBuildingObjects");
+	private Owner parseOwnwerField(JSON_Object parentObj, String valueName) {
+		JSON_Object objectValue = getObjectValue(parentObj, valueName);
+		if (objectValue==null) return null;
+		
+		Owner owner = new Owner();
+		owner.LID = getStringValue(objectValue, "LID");
+		owner.UID = getStringValue(objectValue, "UID");
+		owner.USN = getStringValue(objectValue, "USN");
+		owner.TS  = getIntegerValue(objectValue, "TS");
+		
+		return owner;
+	}
+
+	public static class Owner {
+		public String LID;
+		public String UID;
+		public String USN;
+		public Long   TS ;
+	}
+
+	public SaveGameData parse() {
+		general.parse();
+		parseStats();
+		parseKnownBlueprints();
+		parseKnownWords();
+		parseDiscoveryData();
+		parseInventories();
+		parseBaseBuildingObjects();
+		parsePersistentPlayerBases();
+		universe.sort();
+		//universe.writeToConsole();
+		
+		GameInfos.readUniverseObjectDataFromDataPool(universe);
+		GameInfos.saveProductIDsToFile();
+		GameInfos.saveTechIDsToFile();
+		GameInfos.saveSubstanceIDsToFile();
+		return this;
+	}
+
+	private void parsePersistentPlayerBases() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","PersistentPlayerBases");
 		if (arrayValue==null) return;
 		JSON_Array notParsableObjects = new JSON_Array();
 		
-		Vector<BaseBuildingObject> vector = new Vector<BaseBuildingObject>();
+		Vector<PersistentPlayerBase> vector = new Vector<PersistentPlayerBase>();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			JSON_Object objectValue = Value.getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			
+			PersistentPlayerBase pb = new PersistentPlayerBase();
+			pb.baseVersion     = getIntegerValue (objectValue, "BaseVersion");
+			pb.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
+			pb.position        = parseCoordinates(objectValue, "Position");
+			pb.forward         = parseCoordinates(objectValue, "Forward");
+			pb.userData        = getIntegerValue (objectValue, "UserData");
+			pb.rid             = getStringValue  (objectValue, "RID");
+			pb.owner           = parseOwnwerField(objectValue, "Owner");
+			pb.name            = getStringValue  (objectValue, "Name");
+			
+			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", i);
+			
+			vector.add(pb);
+		}
+		persistentPlayerBases = vector.toArray(new PersistentPlayerBase[0]);
+		
+		if (!notParsableObjects.isEmpty())
+			System.out.println("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+	}
+	
+	private BuildingObject[] parsePersistentPlayerBasesObjects(JSON_Object parentObj, String valueName, int baseIndex) {
+		JSON_Array arrayValue = getArrayValue(parentObj,valueName);
+		if (arrayValue==null) return null;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		Vector<BuildingObject> vector = new Vector<BuildingObject>();
 		for (Value value:arrayValue) {
 			JSON_Object objectValue = Value.getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
 				continue;
 			}
-			BaseBuildingObject bbObj = new BaseBuildingObject();
-			bbObj.timestamp       = getIntegerValue (objectValue, "Timestamp");
-			bbObj.objectID        = getStringValue  (objectValue, "ObjectID");
-			bbObj.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
-			bbObj.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
-			bbObj.userData        = getIntegerValue (objectValue, "UserData");
-			bbObj.position        = parseCoordinates(objectValue, "Position");
-			bbObj.up              = parseCoordinates(objectValue, "Up");
-			bbObj.at              = parseCoordinates(objectValue, "At");
-			vector.add(bbObj);
+			
+			BuildingObject bbo = new BuildingObject();
+			bbo.timestamp       = getIntegerValue (objectValue, "Timestamp");
+			bbo.objectID        = getStringValue  (objectValue, "ObjectID");
+			bbo.userData        = getIntegerValue (objectValue, "UserData");
+			bbo.position        = parseCoordinates(objectValue, "Position");
+			bbo.up              = parseCoordinates(objectValue, "Up");
+			bbo.at              = parseCoordinates(objectValue, "At");
+			
+			vector.add(bbo);
 		}
-		baseBuildingObjects = vector.toArray(new BaseBuildingObject[0]);
+		
+		if (!notParsableObjects.isEmpty())
+			System.out.println("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
+		
+		return vector.toArray(new BuildingObject[0]);
+	}
+
+	public static class PersistentPlayerBase {
+
+		public UniverseAddress galacticAddress;
+		public String name;
+		public Owner owner;
+		public Long baseVersion;
+		public String rid;
+		public Long userData;
+		public Coordinates forward;
+		public Coordinates position;
+		public BuildingObject[] objects;
+		
+		public PersistentPlayerBase() {
+			this.galacticAddress = null;
+			this.name = null;
+			this.owner = null;
+			this.baseVersion = null;
+			this.rid = null;
+			this.userData = null;
+			this.forward = null;
+			this.position = null;
+			this.objects = null;
+		}
+		
+	}
+
+	private void parseBaseBuildingObjects() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","BaseBuildingObjects");
+		if (arrayValue==null) return;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		Vector<UnboundBuildingObject> vector = new Vector<UnboundBuildingObject>();
+		for (Value value:arrayValue) {
+			JSON_Object objectValue = Value.getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			UnboundBuildingObject bbo = new UnboundBuildingObject();
+			bbo.timestamp       = getIntegerValue (objectValue, "Timestamp");
+			bbo.objectID        = getStringValue  (objectValue, "ObjectID");
+			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
+			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
+			bbo.userData        = getIntegerValue (objectValue, "UserData");
+			bbo.position        = parseCoordinates(objectValue, "Position");
+			bbo.up              = parseCoordinates(objectValue, "Up");
+			bbo.at              = parseCoordinates(objectValue, "At");
+			vector.add(bbo);
+		}
+		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
 		
 		if (!notParsableObjects.isEmpty())
 			System.out.println("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
 	}
 
-	public static final class BaseBuildingObject {
+	public static class UnboundBuildingObject extends BuildingObject {
+		public UniverseAddress galacticAddress;
+		public Long regionSeed;
+		
+		UnboundBuildingObject() {
+			super();
+			this.galacticAddress = null;
+			this.regionSeed = null;
+		}
+	}
+
+	public static class BuildingObject {
 
 		public Long timestamp;
 		public String objectID;
-		public UniverseAddress galacticAddress;
-		public Long regionSeed;
 		public Long userData;
 		public Coordinates position;
 		public Coordinates up;
 		public Coordinates at;
 		
-		public BaseBuildingObject() {
+		BuildingObject() {
 			this.timestamp = null;
 			this.objectID = null;
-			this.galacticAddress = null;
-			this.regionSeed = null;
 			this.userData = null;
 			this.position = null;
 			this.up = null;
 			this.at = null;
+		}
+
+		public String getNameOfObjectID() {
+			if (objectID==null) return "";
+			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			if (id==null) return objectID;
+			return id.getName();
 		}
 	}
 	
@@ -637,13 +764,14 @@ public class SaveGameData {
 					//    UID  String
 					//    USN  String
 					//    TS   Long
-					JSON_Object owsObj = data.getObjectValue(object,"OWS");
-					if (owsObj!=null) {
-						stData.OWS_LID = data.getStringValue(owsObj,"LID");
-						stData.OWS_UID = data.getStringValue(owsObj,"UID");
-						stData.OWS_USN = data.getStringValue(owsObj,"USN");
-						stData.OWS_TS  = data.getIntegerValue(owsObj,"TS");
-					}
+					stData.OWS = data.parseOwnwerField(object, "OWS");
+//					JSON_Object owsObj = data.getObjectValue(object,"OWS");
+//					if (owsObj!=null) {
+//						stData.OWS_LID = data.getStringValue(owsObj,"LID");
+//						stData.OWS_UID = data.getStringValue(owsObj,"UID");
+//						stData.OWS_USN = data.getStringValue(owsObj,"USN");
+//						stData.OWS_TS  = data.getIntegerValue(owsObj,"TS");
+//					}
 					
 					// RID  String (evtl.)
 					stData.RID = data.getStringValue_silent(object,"RID");
@@ -794,11 +922,11 @@ public class SaveGameData {
 				if ((obj = getDiscNameObj(data.DD))!=null) {
 					obj.foundInDiscStore = true;
 					
-					if (data.OWS_USN!=null) {
+					if (data.OWS.USN!=null) {
 						if (obj.hasDiscoverer())
-							obj.setDiscoverer(obj.getDiscoverer()+" | "+data.OWS_USN);
+							obj.setDiscoverer(obj.getDiscoverer()+" | "+data.OWS.USN);
 						else
-							obj.setDiscoverer(data.OWS_USN);
+							obj.setDiscoverer(data.OWS.USN);
 					}
 					if (data.DM_CN!=null) {
 						if (obj.hasUploadedName())
@@ -844,10 +972,7 @@ public class SaveGameData {
 			public DDblock DD;
 			public String DM;
 			public String DM_CN;
-			public String OWS_LID;
-			public String OWS_UID;
-			public String OWS_USN;
-			public Long   OWS_TS;
+			public Owner OWS;
 			public String RID;
 			byte[] RID_bytes;
 			
@@ -855,10 +980,7 @@ public class SaveGameData {
 				DD = new DDblock();
 				DM = null;
 				DM_CN = null;
-				OWS_LID = null;
-				OWS_UID = null;
-				OWS_USN = null;
-				OWS_TS = null;
+				OWS = null;
 				RID = null;
 				RID_bytes = null;
 			}

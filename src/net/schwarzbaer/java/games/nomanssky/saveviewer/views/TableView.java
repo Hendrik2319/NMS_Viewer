@@ -121,6 +121,7 @@ public class TableView {
 		private static final long serialVersionUID = 6963749333892762675L;
 		private boolean useRowSorter;
 		private String name;
+		private DebugTableContextMenu contextMenu;
 		
 		SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super();
@@ -128,9 +129,15 @@ public class TableView {
 			this.useRowSorter = useRowSorter;
 			if (disableAutoResize)
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-			if (installDebugContextMenu)
-				new ContextMenuInvoker(this, new DebugTableContextMenu(this));
+			if (installDebugContextMenu) {
+				contextMenu = new DebugTableContextMenu(this);
+				new ContextMenuInvoker(this, contextMenu);
+			} else contextMenu=null;
 			//setAutoCreateRowSorter(useRowSorter);
+		}
+		
+		public DebugTableContextMenu getDebugTableContextMenu() {
+			return contextMenu;
 		}
 		
 		public SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
@@ -365,6 +372,10 @@ public class TableView {
 			for (TableModelListener tml:tableModelListeners)
 				tml.tableChanged(e);
 		}
+		protected void fireTableColumnUpdate(int columnIndex) {
+			if (getRowCount()>0)
+				fireTableModelEvent(new TableModelEvent(this, 0, getRowCount()-1, columnIndex, TableModelEvent.UPDATE));
+		}
 		protected void fireTableCellUpdate(int rowIndex, int columnIndex) {
 			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, columnIndex, TableModelEvent.UPDATE));
 		}
@@ -376,6 +387,11 @@ public class TableView {
 		}
 		protected void fireTableStructureUpdate() {
 			fireTableModelEvent(new TableModelEvent(this,TableModelEvent.HEADER_ROW));
+		}
+		
+		public void initiateColumnUpdate(ColumnID columnID) {
+			int columnIndex = getColumn( columnID );
+			if (columnIndex>=0) fireTableColumnUpdate(columnIndex);
 		}
 
 		@Override public abstract int getRowCount();

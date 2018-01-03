@@ -2,6 +2,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -69,12 +70,19 @@ public class SaveGameView extends JPanel {
 		if (data.stats      !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
 		if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
 		
-		tabbedPane.addTab("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
-		tabbedPane.addTab("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
-		tabbedPane.addTab("DiscoveryData (Avail.)",new SimplePanels.DiscoveredDataAvailablePanel(data));
-		tabbedPane.addTab("DiscoveryData (Store)",new SimplePanels.DiscoveredDataStoredPanel(data));
-		tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data));
-		tabbedPane.addTab("Player Bases",new SimplePanels.PersistentPlayerBasesPanel(data));
+		if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases",new SimplePanels.PersistentPlayerBasesPanel(data));
+		if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data));
+		
+		SaveGameViewTabGroupingPanel discoveredDataPanel = new SaveGameViewTabGroupingPanel(data);
+		discoveredDataPanel.addPanel("Available", new SimplePanels.DiscoveredDataAvailablePanel(data));
+		discoveredDataPanel.addPanel("Stored", new SimplePanels.DiscoveredDataStoredPanel(data));
+		
+		SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
+		blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
+		blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
+		
+		tabbedPane.addTab("Blueprints",blueprintsPanel);
+		tabbedPane.addTab("DiscoveryData",discoveredDataPanel);
 		
 //		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
 		
@@ -104,6 +112,62 @@ public class SaveGameView extends JPanel {
 	
 	static interface SaveGameViewTab {
 		public void updateContent();
+	}
+	
+	static class SaveGameViewTabGroupingPanel extends SaveGameViewGroupingPanel {
+		private static final long serialVersionUID = -2509156613648169308L;
+		private JTabbedPane tabbedPane_;
+
+		public SaveGameViewTabGroupingPanel(SaveGameData data) {
+			super(data);
+			tabbedPane_ = new JTabbedPane();
+			add(tabbedPane_,BorderLayout.CENTER);
+		}
+		
+		@Override protected void addPanelToGUI(String title, SaveGameViewTabPanel panel) {
+			tabbedPane_.addTab(title, panel);
+		}
+	}
+	
+	static class SaveGameViewPanelGroupingPanel extends SaveGameViewGroupingPanel {
+		private static final long serialVersionUID = 3371660682332165241L;
+		private JPanel gridPanel;
+
+		public SaveGameViewPanelGroupingPanel(SaveGameData data) {
+			super(data);
+			gridPanel = new JPanel(new GridLayout(1,0,3,3));
+			add(gridPanel,BorderLayout.CENTER);
+		}
+		
+		@Override
+		protected void addPanelToGUI(String title, SaveGameViewTabPanel panel) {
+			JPanel borderPanel = new JPanel(new BorderLayout());
+			borderPanel.setBorder(BorderFactory.createTitledBorder(title));
+			borderPanel.add(panel,BorderLayout.CENTER);
+			gridPanel.add(borderPanel);
+		}
+	}
+	
+	static abstract class SaveGameViewGroupingPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 997641800196495231L;
+		private Vector<SaveGameViewTabPanel> panels;
+
+		public SaveGameViewGroupingPanel(SaveGameData data) {
+			super(data);
+			panels = new Vector<SaveGameViewTabPanel>();
+		}
+		
+		public void addPanel(String title, SaveGameViewTabPanel panel) {
+			panels.add(panel);
+			addPanelToGUI(title,panel);
+		}
+
+		protected abstract void addPanelToGUI(String title, SaveGameViewTabPanel panel);
+
+		@Override
+		public void updateContent() {
+			for (SaveGameViewTabPanel p:panels) p.updateContent();
+		}
 	}
 	
 	static class SaveGameViewTabPanel extends JPanel implements SaveGameViewTab {
