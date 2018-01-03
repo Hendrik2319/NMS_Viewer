@@ -69,9 +69,9 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			appendValue("Player Shield    ", data.general.getPlayerShield() );
 			appendValue("Ship Health      ", data.general.getShipHealth() );
 			appendValue("Ship Shield      ", data.general.getShipShield() );
-			appendValue("Time Alive       ", data.general.getTimeAlive() );
-			appendValue("Total PlayTime   ", data.general.getTotalPlayTime() );
-			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive() );
+			appendValue("Time Alive       ", data.general.getTimeAlive_TStr() );
+			appendValue("Total PlayTime   ", data.general.getTotalPlayTime_TStr() );
+			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive_TStr() );
 			
 			appendEmptyLine();
 			UniverseAddress currentUA = data.general.getCurrentUniverseAddress();
@@ -175,7 +175,6 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 		private void appendValue(String label, Long    value) { if (value==null) showError(label); else appendStatement(label, ""+value); }
 		@SuppressWarnings("unused")
 		private void appendValue(String label, Double  value) { if (value==null) showError(label); else appendStatement(label, ""+value); }
-		@SuppressWarnings("unused")
 		private void appendValue(String label, String  value) { if (value==null) showError(label); else appendStatement(label,    value); }
 		
 		@SuppressWarnings("unused")

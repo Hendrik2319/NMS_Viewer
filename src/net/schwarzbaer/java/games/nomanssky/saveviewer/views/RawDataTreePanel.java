@@ -1,6 +1,7 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -8,23 +9,38 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
+import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
-class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, ActionListener {
+public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implements MouseListener, ActionListener {
 	private static final long serialVersionUID = -50409207801775293L;
 	
 	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName }
+	
+	enum RawDataTreeIcons { Object, Array, String, Number, Bool }
+	static IconSource<RawDataTreeIcons> rawDataTreeIS = null;
+	public static void prepareIconSource() {
+		rawDataTreeIS = new IconSource<RawDataTreeIcons>(16,16){
+			@Override protected int getIconIndexInImage(RawDataTreeIcons key) {
+				if (key!=null) return key.ordinal();
+			 	throw new IllegalArgumentException("Unknown icon key: "+key);
+			}
+		};
+		rawDataTreeIS.readIconsFromResource("/images/RawTreeIcons.png");
+		rawDataTreeIS.cacheIcons(RawDataTreeIcons.values());
+	}
 
 	private JTree tree;
 	private JPopupMenu contextMenu;
@@ -36,7 +52,32 @@ class RawDataTreePanel extends SaveGameViewTabPanel implements MouseListener, Ac
 		SaveViewer.log("Create tree from file \"%s\" ...",file.getPath());
 		tree = new JTree(new DefaultTreeModel(new JsonTreeNode(data.json_data)));
 		tree.addMouseListener(this);
-		//tree.setCellRenderer(new DefaultTreeCellRenderer());
+		tree.setCellRenderer(new DefaultTreeCellRenderer(){
+			private static final long serialVersionUID = 7697237514743853958L;
+
+			@Override public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+				Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+				
+				JLabel label = null;
+				if (component instanceof JLabel) label = (JLabel)component;
+				
+				RawDataTreeIcons icon = null;
+				if (value instanceof JsonTreeNode) 
+					switch (((JsonTreeNode)value).data.type) {
+					case Array  : icon = RawDataTreeIcons.Array ; break;
+					case Bool   : icon = RawDataTreeIcons.Bool  ; break;
+					case Float  : icon = RawDataTreeIcons.Number; break;
+					case Integer: icon = RawDataTreeIcons.Number; break;
+					case Object : icon = RawDataTreeIcons.Object; break;
+					case String : icon = RawDataTreeIcons.String; break;
+					}
+				
+				if (label != null)
+					label.setIcon(icon==null?null:rawDataTreeIS.getCachedIcon(icon));
+				
+				return component;
+			}
+		});
 		JScrollPane treeScrollPane = new JScrollPane(tree);
 		treeScrollPane.setPreferredSize(new Dimension(600, 500));
 		SaveViewer.log_ln(" done");

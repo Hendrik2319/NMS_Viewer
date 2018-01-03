@@ -5,6 +5,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -42,6 +43,7 @@ public class SaveGameData {
 	public final DiscoveryData discoveryData;
 	public Inventories inventories;
 	public KnownBlueprints knownBlueprints;
+	public BaseBuildingObject[] baseBuildingObjects;
 	
 	public SaveGameData(JSON_Object json_data, String filename) {
 		error = Error.NoError;
@@ -56,6 +58,7 @@ public class SaveGameData {
 		this.knownWords = null;
 		this.discoveryData = new DiscoveryData(this);
 		this.inventories = null;
+		this.baseBuildingObjects = null;
 	}
 	
 	public SaveGameData parse() {
@@ -65,6 +68,7 @@ public class SaveGameData {
 		parseKnownWords();
 		parseDiscoveryData();
 		parseInventories();
+		parseBaseBuildingObjects();
 		universe.sort();
 		//universe.writeToConsole();
 		
@@ -73,6 +77,203 @@ public class SaveGameData {
 		GameInfos.saveTechIDsToFile();
 		GameInfos.saveSubstanceIDsToFile();
 		return this;
+	}
+	
+	public static String timestampToString(long timestamp) {
+		long s = timestamp%60;
+		timestamp = (timestamp-s)/60;
+		long m = timestamp%60;
+		long h = (timestamp-m)/60;
+		return String.format("%3d:%02d:%02d", h,m,s);
+	}
+	
+	private static Long parseHexFormatedNumber(JSON_Object obj, String valueName) {
+		Value addressValue = obj.getValue(valueName);
+		if (addressValue==null) return null;
+		
+		switch(addressValue.type) {
+		case String:
+			if (addressValue instanceof StringValue) {
+				String addressStr = ((StringValue)addressValue).value;
+				if (addressStr.startsWith("0x")) addressStr = addressStr.substring(2);
+				try { return Long.parseUnsignedLong(addressStr, 16); }
+				catch (NumberFormatException e) {}
+			}
+			break;
+			
+		case Integer:
+			if (addressValue instanceof IntegerValue)
+				return ((IntegerValue)addressValue).value;
+			break;
+			
+		default:
+			break;
+		}
+		return null;
+	}
+
+	private static UniverseAddress parseUniverseAddressField(JSON_Object obj, String valueName) {
+		Value addressValue = obj.getValue(valueName);
+		if (addressValue==null) return null;
+		
+		switch(addressValue.type) {
+		case String:
+			if (addressValue instanceof StringValue) {
+				String addressStr = ((StringValue)addressValue).value;
+				if (isPlanetAddressOK(addressStr))
+					return new UniverseAddress( Long.parseLong(addressStr.substring(2), 16) );
+			}
+			break;
+			
+		case Integer:
+			if (addressValue instanceof IntegerValue)
+				return new UniverseAddress( ((IntegerValue)addressValue).value );
+			break;
+			
+		default:
+			break;
+		}
+		return null;
+	}
+
+	private Coordinates parseCoordinates(JSON_Object obj, String valueName) {
+		JSON_Array arrayValue = getArrayValue(obj, valueName);
+		if (arrayValue==null) return null;
+		
+		Coordinates coords = new Coordinates();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Double d = Value.getFloat(arrayValue.get(i));
+			if (d!=null) coords.set(i,d);
+		}
+		
+		return coords;
+	}
+	
+	public static class Coordinates {
+
+		public double x;
+		public double y;
+		public double z;
+		public double w1;
+		public int length;
+
+		public Coordinates() {
+			this.x = 0;
+			this.y = 0;
+			this.z = 0;
+			this.w1 = 0;
+			this.length = 0; 
+		}
+
+		public void set(int i, double value) {
+			switch(i) {
+			case 0: x = value; break;
+			case 1: y = value; break;
+			case 2: z = value; break;
+			case 3: w1 = value; break;
+			}
+			length = Math.max(i+1, length);
+		}
+
+		@Override
+		public String toString() {
+			return toString("%s");
+		}
+
+		public String toString(String valueformat) {
+			String vf = valueformat;
+			switch(length) {
+			case 0 : return String.format(Locale.ENGLISH, "()"                               );
+			case 1 : return String.format(Locale.ENGLISH, "("+vf+")"                         , x);
+			case 2 : return String.format(Locale.ENGLISH, "("+vf+","+vf+")"                  , x, y);
+			case 3 : return String.format(Locale.ENGLISH, "("+vf+","+vf+","+vf+")"           , x, y, z);
+			case 4 : return String.format(Locale.ENGLISH, "("+vf+","+vf+","+vf+","+vf+")"    , x, y, z, w1);
+			default: return String.format(Locale.ENGLISH, "("+vf+","+vf+","+vf+","+vf+",...)", x, y, z, w1);
+			}
+		}
+		
+		
+	}
+
+	private void parseBaseBuildingObjects() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","BaseBuildingObjects");
+		if (arrayValue==null) return;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		Vector<BaseBuildingObject> vector = new Vector<BaseBuildingObject>();
+		for (Value value:arrayValue) {
+			JSON_Object objectValue = Value.getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			BaseBuildingObject bbObj = new BaseBuildingObject();
+			bbObj.timestamp       = getIntegerValue (objectValue, "Timestamp");
+			bbObj.objectID        = getStringValue  (objectValue, "ObjectID");
+			bbObj.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
+			bbObj.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
+			bbObj.userData        = getIntegerValue (objectValue, "UserData");
+			bbObj.position        = parseCoordinates(objectValue, "Position");
+			bbObj.up              = parseCoordinates(objectValue, "Up");
+			bbObj.at              = parseCoordinates(objectValue, "At");
+			vector.add(bbObj);
+		}
+		baseBuildingObjects = vector.toArray(new BaseBuildingObject[0]);
+		
+		if (!notParsableObjects.isEmpty())
+			System.out.println("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
+	}
+
+	public static final class BaseBuildingObject {
+
+		public Long timestamp;
+		public String objectID;
+		public UniverseAddress galacticAddress;
+		public Long regionSeed;
+		public Long userData;
+		public Coordinates position;
+		public Coordinates up;
+		public Coordinates at;
+		
+		public BaseBuildingObject() {
+			this.timestamp = null;
+			this.objectID = null;
+			this.galacticAddress = null;
+			this.regionSeed = null;
+			this.userData = null;
+			this.position = null;
+			this.up = null;
+			this.at = null;
+		}
+	}
+	
+	private void parseKnownBlueprints() {
+		knownBlueprints = new KnownBlueprints();
+		knownBlueprints.technologies = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownTech"    ), GameInfos.techIDs   );
+		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), GameInfos.productIDs);
+	}
+
+	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, IDMap map) {
+		if (arrayValue==null) return new GeneralizedID[0];
+		
+		GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			String id = Value.getString(value );
+			if (id!=null) {
+				knownBlueprints[i] = map.get(id);// addGeneralizedID(map, id);
+				knownBlueprints[i].getUsage(this).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
+			}
+		}
+		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
+		return knownBlueprints;
+	}
+
+	public static final class KnownBlueprints {
+
+		public GeneralizedID[] products;
+		public GeneralizedID[] technologies;
+	
 	}
 
 	private void parseInventories() {
@@ -123,71 +324,6 @@ public class SaveGameData {
 				}
 			}
 		}		
-	}
-
-	private void parseStats() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
-		if (arrayValue==null)
-			stats = null;
-		else {
-			stats = new Stats(this).parse(arrayValue);
-			if (!stats.notParsedStats.isEmpty())
-				System.out.println("Found "+stats.notParsedStats.size()+" not parseable Stats.");
-		}
-	}
-
-	private void parseKnownBlueprints() {
-		knownBlueprints = new KnownBlueprints();
-		knownBlueprints.technologies = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownTech"    ), GameInfos.techIDs   );
-		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), GameInfos.productIDs);
-	}
-
-	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, IDMap map) {
-		if (arrayValue==null) return new GeneralizedID[0];
-		
-		GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
-			String id = Value.getString(value );
-			if (id!=null) {
-				knownBlueprints[i] = map.get(id);// addGeneralizedID(map, id);
-				knownBlueprints[i].getUsage(this).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
-			}
-		}
-		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
-		return knownBlueprints;
-	}
-
-	private void parseKnownWords() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","KnownWords");
-		if (arrayValue==null)
-			knownWords = null;
-		else {
-			knownWords = new KnownWords(this).parse(arrayValue);
-			if (!knownWords.notParsedKnownWords.isEmpty())
-				System.out.println("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
-		}
-	}
-
-	private void parseDiscoveryData() {
-		JSON_Array arrayValue_Store = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
-		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
-		
-		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
-		discoveryData.findPlanetsAndSolarSystems();
-		discoveryData.findAdditionalPlanetsAndSolarSystems();
-		
-		if (!discoveryData.notParsedStoreData.isEmpty())
-			System.out.println("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
-		if (!discoveryData.notParsedAvailableData.isEmpty())
-			System.out.println("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
-	}
-
-	public static final class KnownBlueprints {
-
-		public GeneralizedID[] products;
-		public GeneralizedID[] technologies;
-	
 	}
 
 	public static final class Inventories {
@@ -435,6 +571,20 @@ public class SaveGameData {
 		}
 	}
 
+	private void parseDiscoveryData() {
+		JSON_Array arrayValue_Store = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
+		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
+		
+		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
+		discoveryData.findPlanetsAndSolarSystems();
+		discoveryData.findAdditionalPlanetsAndSolarSystems();
+		
+		if (!discoveryData.notParsedStoreData.isEmpty())
+			System.out.println("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+		if (!discoveryData.notParsedAvailableData.isEmpty())
+			System.out.println("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+	}
+
 	public final static class DiscoveryData {
 		
 		enum SourceArray { AvailableData, StoreData }
@@ -537,26 +687,7 @@ public class SaveGameData {
 			if (ddObj==null) return;
 				
 			// DD.UA  UniverseAddress
-			Value addressValue = ddObj.getValue("UA");
-			if (addressValue!=null) {
-				switch(addressValue.type) {
-				case String:
-					if (addressValue instanceof StringValue) {
-						String addressStr = ((StringValue)addressValue).value;
-						if (isPlanetAddressOK(addressStr))
-							dd.UA = new UniverseAddress( Long.parseLong(addressStr.substring(2), 16) );
-					}
-					break;
-					
-				case Integer:
-					if (addressValue instanceof IntegerValue)
-						dd.UA = new UniverseAddress( ((IntegerValue)addressValue).value );
-					break;
-					
-				default:
-					break;
-				}
-			}
+			dd.UA = parseUniverseAddressField(ddObj, "UA");
 			
 			// DD.DT  String
 			dd.DT = data.getStringValue(ddObj,"DT");
@@ -830,6 +961,10 @@ public class SaveGameData {
 		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
 		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
 		public Long getKnownGlyphsMaks() { return data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes"); }
+		
+		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return timestampToString(v); }
+		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return timestampToString(v); }
+		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return timestampToString(v); }
 		
 		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
 		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
@@ -1386,6 +1521,17 @@ public class SaveGameData {
 		}
 	}
 
+	private void parseKnownWords() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","KnownWords");
+		if (arrayValue==null)
+			knownWords = null;
+		else {
+			knownWords = new KnownWords(this).parse(arrayValue);
+			if (!knownWords.notParsedKnownWords.isEmpty())
+				System.out.println("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
+		}
+	}
+
 	public static final class KnownWords {
 
 		private final SaveGameData data;
@@ -1453,6 +1599,17 @@ public class SaveGameData {
 		}
 	}
 	
+	private void parseStats() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
+		if (arrayValue==null)
+			stats = null;
+		else {
+			stats = new Stats(this).parse(arrayValue);
+			if (!stats.notParsedStats.isEmpty())
+				System.out.println("Found "+stats.notParsedStats.size()+" not parseable Stats.");
+		}
+	}
+
 	public final static class Stats {
 		
 		public Vector<StatValue> globalStats;

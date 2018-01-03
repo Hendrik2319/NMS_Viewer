@@ -8,6 +8,7 @@ import javax.swing.table.TableCellEditor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BaseBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
@@ -21,9 +22,64 @@ class SimplePanels {
 
 		public BaseBuildingObjectsPanel(SaveGameData data) {
 			super(data);
-			// TODO Auto-generated constructor stub
+			
+			if (data.baseBuildingObjects!=null) {
+				BBOTableModel tableModel = new BBOTableModel();
+				SimplifiedTable table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
+				JScrollPane tableScrollPane = new JScrollPane(table);
+				
+				add(tableScrollPane,BorderLayout.CENTER);
+			}
 		}
 
+		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
+			// [62, 130, 160, 130, 80, 190, 150, 150]
+			Timestamp       ("Timestamp"       , String.class, 35,-1, 70, 70),
+			ObjectID        ("ObjectID"        , String.class, 65,-1,130,130),
+			GalacticAddress ("GalacticAddress" , String.class, 80,-1,160,160),
+			RegionSeed      ("RegionSeed"      , String.class, 65,-1,130,130),
+			UserData        ("UserData"        , String.class, 40,-1, 80, 80),
+			Position        ("Position"        , String.class, 95,-1,190,190),
+			Up              ("Up"              , String.class, 75,-1,150,150),
+			At              ("At"              , String.class, 75,-1,150,150);
+			
+			private TableView.SimplifiedColumnConfig columnConfig;
+			
+			BBOColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class BBOTableModel extends TableView.SimplifiedTableModel<BBOColumnID> {
+	
+			protected BBOTableModel() {
+				super(BBOColumnID.values());
+			}
+	
+			@Override
+			public int getRowCount() {
+				return data.baseBuildingObjects.length;
+			}
+	
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, BBOColumnID columnID) {
+				BaseBuildingObject bbo = data.baseBuildingObjects[rowIndex];
+				if (bbo==null) return null;
+				switch(columnID) {
+				case Timestamp      : if (bbo.timestamp      ==null) return ""; else return SaveGameData.timestampToString(bbo.timestamp);
+				case ObjectID       : if (bbo.objectID       ==null) return ""; else return bbo.objectID;
+				case GalacticAddress: if (bbo.galacticAddress==null) return ""; else return bbo.galacticAddress.getCoordinates();
+				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; else return String.format("0x%016X", bbo.regionSeed);
+				case UserData       : if (bbo.userData       ==null) return ""; else return String.format("0x%08X" , bbo.userData  );
+				case Position       : if (bbo.position       ==null) return ""; else return bbo.position.toString("%1.2f");
+				case Up             : if (bbo.up             ==null) return ""; else return bbo.up      .toString("%1.4f");
+				case At             : if (bbo.at             ==null) return ""; else return bbo.at      .toString("%1.4f");
+				
+				}
+				return null;
+			}
+		}
 	}
 	
 	static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {

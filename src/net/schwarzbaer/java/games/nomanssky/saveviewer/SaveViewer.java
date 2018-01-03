@@ -63,6 +63,7 @@ import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.RawDataTreePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
@@ -94,6 +95,7 @@ public class SaveViewer implements ActionListener {
 		images.init();
 		
 		UniversePanel.prepareIconSources();
+		RawDataTreePanel.prepareIconSource();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
 			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }
@@ -120,6 +122,16 @@ public class SaveViewer implements ActionListener {
 		GameInfos.loadTechIDsFromFile();
 		GameInfos.loadSubstanceIDsFromFile();
 		GameInfos.loadUniverseObjectDataFromFile();
+
+		
+//		String str;
+//		long value;
+//		str = "C989299D5EB253EB";
+//		value = Long.parseUnsignedLong(str,16);
+//		System.out.printf("Hex:%X\r\nStr:%s\r\n",value,str);
+//		value = Long.parseLong("C989299D5EB253EB",16);
+//		System.out.printf("Hex:%X\r\nStr:%s\r\n",value,str);
+
 		
 //		long address = 4623450600164292L;
 //		System.out.printf("0x%015X\r\n",address);
