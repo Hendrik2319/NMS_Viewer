@@ -177,7 +177,7 @@ public class SaveViewer implements ActionListener {
 		updateWindowTitle();
 	}
 	
-	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, TestClipboardReading }
+	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, RefreshExtraImages }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -260,10 +260,8 @@ public class SaveViewer implements ActionListener {
 			new ComputeCoordinatesDialog(mainWindow).showDialog(Position.PARENT_CENTER);
 			break;
 			
-		case TestClipboardReading:
-			System.out.println("Read from Clipboard:");
-			System.out.println("-> \""+pasteFromClipBoard()+"\"");
-			System.out.println("done");
+		case RefreshExtraImages:
+			images.reloadImageList();
 			break;
 		}
 	}
@@ -455,7 +453,7 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
-			toolBar.add(createButton("Test Clipboard Reading", ToolbarIcons.Reload, ActionCommand.TestClipboardReading,true));
+			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {

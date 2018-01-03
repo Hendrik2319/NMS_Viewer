@@ -630,6 +630,11 @@ public class TableView {
 			values[values.length-1] = newValue;
 		}
 
+		public void setValues(T[] newValues) {
+			stopCellEditing();
+			values = newValues;
+		}
+
 		public void setRenderer(ListCellRenderer<? super T> renderer) {
 			this.renderer = renderer;
 		}

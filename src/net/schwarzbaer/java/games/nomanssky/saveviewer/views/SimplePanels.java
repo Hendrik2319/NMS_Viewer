@@ -16,6 +16,26 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 
 class SimplePanels {
 	
+	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 6246130206148705495L;
+
+		public BaseBuildingObjectsPanel(SaveGameData data) {
+			super(data);
+			// TODO Auto-generated constructor stub
+		}
+
+	}
+	
+	static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = -632703090899520348L;
+
+		public PersistentPlayerBasesPanel(SaveGameData data) {
+			super(data);
+			// TODO Auto-generated constructor stub
+		}
+
+	}
+	
 	static class BlueprintsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -3032632553321731912L;
 		enum BlueprintType { KnownProductBlueprints, KnownTechBlueprints }

@@ -743,7 +743,15 @@ public class GameInfos {
 		private void prepareTable() {
 			Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
 			images.insertElementAt("",0);
-			setCellEditor(GeneralizedIDColumnID.Image, new TableView.ComboboxCellEditor<String>(images.toArray(new String[0])));
+			ComboboxCellEditor<String> imageCellEditor = new TableView.ComboboxCellEditor<String>(images.toArray(new String[0]));
+			SaveViewer.images.addImageListListender(new Images.ImageListListender() {
+				@Override public void imageListChanged() {
+					Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
+					images.insertElementAt("",0);
+					imageCellEditor.setValues(images.toArray(new String[0]));
+				}
+			});
+			setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
 			colors.insertElementAt(null,0);
@@ -790,9 +798,10 @@ public class GameInfos {
 			}
 			
 			textarea.append("ID     : "+id.id+"\r\n");
-			if (!id.label.isEmpty()) textarea.append("Label  : "+id.label+"\r\n");
-			if (id.hasImage  ()    ) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
-			if (id.hasImageBG()    ) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
+			if (!id.label.isEmpty() ) textarea.append("Label  : "+id.label+"\r\n");
+			if (!id.symbol.isEmpty()) textarea.append("Symbol : "+id.symbol+"\r\n");
+			if (id.hasImage  ()     ) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
+			if (id.hasImageBG()     ) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
 			
 			BufferedImage image = id.getImage();
 			if (image==null) {

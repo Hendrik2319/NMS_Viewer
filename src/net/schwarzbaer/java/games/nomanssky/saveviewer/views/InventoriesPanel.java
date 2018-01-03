@@ -267,10 +267,12 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					textarea.append("   is invalid\r\n");
 				} else
 				if (slot.isEmpty) {
-					textarea.append("   is valid, but empty\r\n");
+					textarea.append("   is empty\r\n");
 				} else {
-					if (slot.id!=null && !slot.id.label.isEmpty())
-					textarea.append("   Label : "+slot.id.label+"\r\n");
+					if (slot.id!=null) {
+						if (!slot.id.label.isEmpty())  textarea.append("   Label : "+slot.id.label +"\r\n");
+						if (!slot.id.symbol.isEmpty()) textarea.append("   Symbol: "+slot.id.symbol+"\r\n");
+					}
 					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):("["+slot.id.id+"]"))+"\r\n");
 					textarea.append("   Type  : "+(slot.type==null?slot.typeStr:slot.type)+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
@@ -397,31 +399,44 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 									
 									g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
 									
+									int amount    = -1;
+									int maxAmount = -1;
 									if (slot.amount!=null && slot.maxAmount!=null) {
-										int amount    = (int)(long)slot.amount;
-										int maxAmount = (int)(long)slot.maxAmount;
+										amount    = (int)(long)slot.amount;
+										maxAmount = (int)(long)slot.maxAmount;
+									}
 										
-										if (amount>=0 && maxAmount>1) {
-											int gaugeBorder = 3;
-											int gaugeWidth  = imageSize-2*gaugeBorder;
-											int gaugeHeight = 8;
-											int gaugeXOffset = innerOffsetX+imageBorder+gaugeBorder;
-											int gaugeYOffset = innerOffsetY+innerHeight-imageBorder-gaugeBorder-gaugeHeight;
-											int full = (amount*gaugeWidth)/maxAmount;
-											int empty = gaugeWidth-full;
-											
-											if (full>0) {
-												g2.setPaint(Color.WHITE);
-												g2.fillRect(x+gaugeXOffset,y+gaugeYOffset,full,gaugeHeight);
-											}
-											if (empty>0) {
-												g2.setPaint(new Color(255,255,255,128));
-												g2.fillRect(x+gaugeXOffset+full,y+gaugeYOffset,empty,gaugeHeight);
-											}
+									if (amount>=0 && maxAmount>1) {
+										int gaugeBorder = 3;
+										int gaugeWidth  = imageSize-2*gaugeBorder;
+										int gaugeHeight = 5;
+										int gaugeXOffset = innerOffsetX+imageBorder+gaugeBorder;
+										int gaugeYOffset = innerOffsetY+innerHeight-imageBorder-gaugeBorder-gaugeHeight;
+										int full = (amount*gaugeWidth)/maxAmount;
+										int empty = gaugeWidth-full;
+										
+										if (full>0) {
 											g2.setPaint(Color.WHITE);
-											g2.drawString(String.format("%d/%d",amount,maxAmount), x+gaugeXOffset, y+gaugeYOffset-4);
+											g2.fillRect(x+gaugeXOffset,y+gaugeYOffset,full,gaugeHeight);
+										}
+										if (empty>0) {
+											g2.setPaint(new Color(255,255,255,128));
+											g2.fillRect(x+gaugeXOffset+full,y+gaugeYOffset,empty,gaugeHeight);
+										}
+										String str = String.format("%d/%d",amount,maxAmount);
+										int textWidth = g2.getFontMetrics().stringWidth(str);
+										g2.setPaint(Color.WHITE);
+										g2.drawString(str, x+gaugeXOffset+full+empty-textWidth, y+gaugeYOffset-4);
+										
+										if (slot.id.symbol!=null && !slot.id.symbol.isEmpty())
+											g2.drawString(slot.id.symbol, x+gaugeXOffset, y+gaugeYOffset-4);
+									} else {
+										if (slot.id.symbol!=null && !slot.id.symbol.isEmpty()) {
+											g2.setPaint(Color.WHITE);
+											g2.drawString(slot.id.symbol, x+innerOffsetX+2*imageBorder,y+innerOffsetY+innerHeight-2*imageBorder );
 										}
 									}
+									
 									
 									g2.setFont( standardFont );
 								} else {

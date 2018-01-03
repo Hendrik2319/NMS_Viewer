@@ -59,18 +59,21 @@ public class Images {
 	private static final String FILE_COLORS = "NMS_Viewer.Colors.txt";
 	
 	public NamedColor[] colorValues;
-	private HashMap<Integer,NamedColor> colorMap; 
+	private final HashMap<Integer,NamedColor> colorMap; 
 	private final Vector<ColorListListender> colorListListenders;
 	
 	public String[] imagesNames;
-	public final HashMap<String,BufferedImage> images;
+	private final HashMap<String,BufferedImage> images;
+	private final Vector<ImageListListender> imageListListenders;
+
 	
 	public Images() {
 		colorValues = null;
-		colorMap = null;
+		colorMap = new HashMap<>();
 		colorListListenders = new Vector<>();
 		imagesNames = null;
 		images = new HashMap<String,BufferedImage>();
+		imageListListenders = new Vector<>();
 	}
 	
 	public void init() {
@@ -80,7 +83,7 @@ public class Images {
 	
 	private void prepareColors() {
 		
-		colorMap = new HashMap<>();
+		colorMap.clear();
 		Vector<NamedColor> colorValuesVec = new Vector<>(); 
 		
 		addColor(colorValuesVec, 0xBB392C, "Isotop" );
@@ -310,6 +313,24 @@ public class Images {
 		}
 		
 	}
+	
+	public static interface ImageListListender {
+		public void imageListChanged();
+	}
+	
+	public void addImageListListender(ImageListListender ill) {
+		imageListListenders.add(ill);
+	}
+	
+	public void removeImageListListender(ImageListListender ill) {
+		imageListListenders.remove(ill);
+	}
+
+	public void reloadImageList() {
+		readImages();
+		for (ImageListListender ill:imageListListenders)
+			ill.imageListChanged();
+	}
 
 	private void readImages() {
 		long start = System.currentTimeMillis();
@@ -418,6 +439,7 @@ public class Images {
 		private boolean hasDataChanged;
 
 		private ColorListListender colorListListender;
+		private ImageListListender imageListListender;
 	
 		public EditIdDialog(Window parent, GameInfos.GeneralizedID id) {
 			super(parent, getDlgTitle(id), ModalityType.APPLICATION_MODAL, false);
@@ -430,11 +452,20 @@ public class Images {
 			JScrollPane textareaScrollPane = new JScrollPane(textarea);
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
 			
-			Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
-			images.insertElementAt("",0);
+			Vector<String> images = new Vector<>();
+			images.add(""); images.addAll(Arrays.asList(SaveViewer.images.imagesNames));
 			JComboBox<String> cmbbxImages = new JComboBox<String>(images);
 			cmbbxImages.setSelectedItem(this.id.getImageFileName());
 			cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
+			
+			imageListListender = new ImageListListender() {
+				@Override public void imageListChanged() {
+					Vector<String> images = new Vector<>();
+					images.add(""); images.addAll(Arrays.asList(SaveViewer.images.imagesNames));
+					cmbbxImages.setModel(new DefaultComboBoxModel<>(images));
+					cmbbxImages.setSelectedItem(EditIdDialog.this.id.getImageFileName());
+				}
+			};
 			
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
 			colors.insertElementAt(null,0);
@@ -506,8 +537,14 @@ public class Images {
 			panel.add(comp);
 		}
 		
-		@Override public void windowOpened(WindowEvent e) { SaveViewer.images.addColorListListender   (colorListListender); }
-		@Override public void windowClosed(WindowEvent e) { SaveViewer.images.removeColorListListender(colorListListender); }
+		@Override public void windowOpened(WindowEvent e) {
+			SaveViewer.images.addColorListListender(colorListListender);
+			SaveViewer.images.addImageListListender(imageListListender);
+		}
+		@Override public void windowClosed(WindowEvent e) {
+			SaveViewer.images.removeColorListListender(colorListListender);
+			SaveViewer.images.removeImageListListender(imageListListender);
+		}
 
 		private void showImageList(JComboBox<String> cmbbxImages) {
 			ImageGridDialog dlg = new ImageGridDialog(this,id.getImageFileName());
