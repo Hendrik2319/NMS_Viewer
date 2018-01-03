@@ -41,7 +41,6 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ColorListListender;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -417,15 +416,22 @@ public class GameInfos {
 				String idStr = str.substring(0, pos);
 				String value = str.substring(pos+1);
 				
-				if (idStr.endsWith(".image")) {
+				if (idStr.endsWith(".symbol")) {
+					idStr = idStr.substring(0, idStr.length()-".symbol".length());
+					GameInfos.GeneralizedID id = map.get(idStr);
+					id.symbol = value;
+					
+				} else if (idStr.endsWith(".image")) {
 					idStr = idStr.substring(0, idStr.length()-".image".length());
 					GameInfos.GeneralizedID id = map.get(idStr);
 					id.setImageFileName(value);
+					
 				} else if (idStr.endsWith(".imageBG")) {
 					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
 					GameInfos.GeneralizedID id = map.get(idStr);
 					try { id.setImageBG(Integer.parseInt(value,16)); }
 					catch (NumberFormatException e) {}
+					
 				} else {
 					GameInfos.GeneralizedID id = map.get(idStr);
 					id.label = value;
@@ -453,6 +459,7 @@ public class GameInfos {
 			for (String idStr:map.getSortedKeys()) {
 				GameInfos.GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.label);
+				if (id.hasSymbol ()) out.printf("%s.symbol=%s\r\n"   ,idStr,id.symbol);
 				if (id.hasImage  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
 				if (id.hasImageBG()) out.printf("%s.imageBG=%06X\r\n",idStr,id.getImageBG());
 			}
@@ -466,6 +473,7 @@ public class GameInfos {
 		
 		public final String id;
 		public String label;
+		public String symbol;
 		private String imageFileName;
 		private Integer imageBackground;
 		final HashMap<SaveGameData,Usage> usage;
@@ -474,10 +482,14 @@ public class GameInfos {
 		private GeneralizedID(String id, String label) {
 			this.id = id;
 			this.label = label;
+			this.symbol = "";
 			this.usage = new HashMap<>();
 			this.imageFileName = null;
 			this.imageBackground = null;
 			this.cachedImage = null;
+		}
+		public boolean hasSymbol() {
+			return symbol!=null && !symbol.isEmpty();
 		}
 		public GeneralizedID(String id) {
 			this(id,"");
@@ -485,6 +497,7 @@ public class GameInfos {
 		public GeneralizedID(GameInfos.GeneralizedID other) {
 			this.id = other.id;
 			this.label = other.label;
+			this.symbol = other.symbol;
 			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
 			this.imageFileName = other.imageFileName;
 			this.imageBackground = other.imageBackground;
@@ -592,16 +605,20 @@ public class GameInfos {
 			DebugTableContextMenu contextMenuStd     = new DebugTableContextMenu(table);
 			DebugTableContextMenu contextMenuImage   = new DebugTableContextMenu(table);
 			DebugTableContextMenu contextMenuImageBG = new DebugTableContextMenu(table);
+			
 			contextMenuStd.addSeparator();
-			contextMenuStd.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
+			contextMenuStd.add(createMenuItem("Edit ID",ActionCommand.EditID));
+			
 			contextMenuImage.addSeparator();
-			contextMenuImage.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
+			contextMenuImage.add(createMenuItem("Edit ID",ActionCommand.EditID));
 			contextMenuImage.addSeparator();
+			contextMenuImage.add(createMenuItem("Select ImageFile",ActionCommand.SelectImage));
 			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage));
 			contextMenuImage.add(createMenuItem("Copy ImageFile",ActionCommand.CopyImage));
 			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage));
+			
 			contextMenuImageBG.addSeparator();
-			contextMenuImageBG.add(createMenuItem("Change Image",ActionCommand.ChangeImage));
+			contextMenuImageBG.add(createMenuItem("Edit ID",ActionCommand.EditID));
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground));
 			contextMenuImageBG.add(createMenuItem("Copy Background",ActionCommand.CopyBackground));
@@ -656,7 +673,7 @@ public class GameInfos {
 			return menuItem;
 		}
 	
-		enum ActionCommand { ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, ChangeImage, AddBackgroundColor }
+		enum ActionCommand { EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor }
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -667,16 +684,27 @@ public class GameInfos {
 			boolean idChanged = false;
 			String cbValue;
 			switch(actionCommand) {
-			case ChangeImage:
-				Images.IdImageDialog dlg = new Images.IdImageDialog(mainwindow,clickedID);
+			case EditID: {
+				Images.EditIdDialog dlg = new Images.EditIdDialog(mainwindow,clickedID);
 				dlg.showDialog();
 				if (dlg.hasDataChanged()) {
+					clickedID.label = dlg.getLabel();
 					clickedID.setImageBG(dlg.getImageBG());
 					clickedID.setImageFileName(dlg.getImageFileName());
 					idChanged = true;
 				}
-				break;
+			} break;
 			
+			case SelectImage: {
+				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow,clickedID.getImageFileName());
+				dlg.showDialog();
+				if (dlg.hasChoosen()) {
+					String result = dlg.getImageFileName();
+					clickedID.setImageFileName(result);
+					idChanged = true;
+				}
+			} break;
+				
 			case ClearImage     : clickedID.setImageFileName(""); break;
 			case ClearBackground: clickedID.setImageBG(null); break;
 				
@@ -720,7 +748,7 @@ public class GameInfos {
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
 			colors.insertElementAt(null,0);
 			ComboboxCellEditor<NamedColor> colorCellEditor = new TableView.ComboboxCellEditor<NamedColor>(colors.toArray(new NamedColor[0]));
-			SaveViewer.images.addColorListListender(new ColorListListender() {
+			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					colorCellEditor.addValue(color);
 				}
@@ -811,6 +839,7 @@ public class GameInfos {
 	
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
 			ID    ("ID"        ,     String.class,  80,-1,120,120),
+			Symbol("##"        ,     String.class,  10,-1, 30, 30),
 			Label ("Label"     ,     String.class, 150,-1,200,200),
 			Image ("Image"     ,     String.class, 150,-1,250,250),
 			ImgBG ("Background", NamedColor.class, 150,-1,200,200),
@@ -837,7 +866,7 @@ public class GameInfos {
 			private GameInfos.GeneralizedIDPanel panel;
 	
 			protected GeneralizedIDTableModel(GameInfos.GeneralizedIDPanel panel, GameInfos.IDMap sourceIdMap) {
-				super(new GeneralizedIDPanel.GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Label, GeneralizedIDColumnID.Image, GeneralizedIDColumnID.ImgBG });
+				super(new GeneralizedIDPanel.GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Symbol, GeneralizedIDColumnID.Label, GeneralizedIDColumnID.Image, GeneralizedIDColumnID.ImgBG });
 				this.panel = panel;
 				
 				this.usageKeys = new Vector<>();
@@ -904,6 +933,7 @@ public class GameInfos {
 				if (rowIndex<EXTRA_ROWS) return false;
 				switch(columnID) {
 				case ID   : return false;
+				case Symbol:
 				case Label:
 				case Image: return true;
 				case ImgBG: return true;
@@ -921,22 +951,24 @@ public class GameInfos {
 			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDPanel.GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) {
 					switch(columnID) {
-					case ID   : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
-					case Label: return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
-					case Image: return "";
-					case ImgBG: return "";
-					case Usage: return "";
+					case ID    : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
+					case Symbol: return "";
+					case Label : return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
+					case Image : return "";
+					case ImgBG : return "";
+					case Usage : return "";
 					}
 					return null;
 				}
 				GameInfos.GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
 				if (id==null) return null;
 				switch(columnID) {
-				case ID   : return id.id;
-				case Label: return id.label;
-				case Image: return id.getImageFileName();
-				case ImgBG: return SaveViewer.images.getColor( id.getImageBG() );
-				case Usage:
+				case ID    : return id.id;
+				case Symbol: return id.symbol;
+				case Label : return id.label;
+				case Image : return id.getImageFileName();
+				case ImgBG : return SaveViewer.images.getColor( id.getImageBG() );
+				case Usage :
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";
 					if (usage.isEmpty()) return "";
@@ -956,11 +988,12 @@ public class GameInfos {
 				if (id==null) return;
 				
 				switch(columnID) {
-				case ID   : return;
-				case Label: id.label = aValue==null?"":aValue.toString(); break;
-				case Image: id.setImageFileName(aValue); break;
-				case ImgBG: id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
-				case Usage: return;
+				case ID    : return;
+				case Symbol: id.symbol = aValue==null?"":aValue.toString(); break;
+				case Label : id.label  = aValue==null?"":aValue.toString(); break;
+				case Image : id.setImageFileName(aValue); break;
+				case ImgBG : id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
+				case Usage : return;
 				}
 				updateAfterCellChange(id);
 			}

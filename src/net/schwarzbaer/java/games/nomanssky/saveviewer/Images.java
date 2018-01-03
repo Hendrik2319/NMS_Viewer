@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionListener;
@@ -51,7 +52,6 @@ import javax.swing.JTextField;
 import javax.swing.event.MouseInputAdapter;
 
 import net.schwarzbaer.gui.Canvas;
-import net.schwarzbaer.gui.GUI;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
@@ -408,7 +408,7 @@ public class Images {
 		}
 	}
 
-	public static class IdImageDialog extends StandardDialog {
+	public static class EditIdDialog extends StandardDialog {
 		private static final long serialVersionUID = -4493777651637626630L;
 		
 		private JLabel imageField;
@@ -419,8 +419,8 @@ public class Images {
 
 		private ColorListListender colorListListender;
 	
-		public IdImageDialog(Window parent, GameInfos.GeneralizedID id) {
-			super(parent, String.format("Set Image and Background for %s",id.getName()), ModalityType.APPLICATION_MODAL, false);
+		public EditIdDialog(Window parent, GameInfos.GeneralizedID id) {
+			super(parent, getDlgTitle(id), ModalityType.APPLICATION_MODAL, false);
 			
 			this.id = new GameInfos.GeneralizedID(id);
 			this.hasDataChanged = false;
@@ -433,14 +433,14 @@ public class Images {
 			Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
 			images.insertElementAt("",0);
 			JComboBox<String> cmbbxImages = new JComboBox<String>(images);
-			cmbbxImages.setSelectedItem(id.getImageFileName());
+			cmbbxImages.setSelectedItem(this.id.getImageFileName());
 			cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
 			
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
 			colors.insertElementAt(null,0);
 			JComboBox<NamedColor> cmbbxColors = new JComboBox<NamedColor>(new DefaultComboBoxModel<NamedColor>(colors));
 			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
-			cmbbxColors.setSelectedItem(SaveViewer.images.getColor(id.getImageBG()));
+			cmbbxColors.setSelectedItem(SaveViewer.images.getColor(this.id.getImageBG()));
 			cmbbxColors.addActionListener(e->setImageBGColor((NamedColor)cmbbxColors.getSelectedItem()));
 			
 			colorListListender = new ColorListListender() {
@@ -450,21 +450,33 @@ public class Images {
 				}
 			};
 			
-			JPanel buttonPanel = new JPanel(new GridLayout(1,0,3,3));
+			JTextField labelTextField = new JTextField();
+			labelTextField.setText(this.id.label);
+			labelTextField.addActionListener(e->setLabel(labelTextField.getText()));
+			labelTextField.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) { setLabel(labelTextField.getText()); }
+			});
+			
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,5,5));
 			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
 			buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
 			
-			JPanel cmbbxPanel = new JPanel(new GridLayout(0,1,3,3));
-			cmbbxPanel.add(GUI.createRightAlignedPanel(createButton("select ...",e->showImageList(cmbbxImages)), cmbbxImages));
-			cmbbxPanel.add(GUI.createRightAlignedPanel(createButton("Add Color",e->SaveViewer.images.showAddColorDialog(IdImageDialog.this,"Add Color")), cmbbxColors));
+			GridBagConstraints c = new GridBagConstraints();
+			GridBagLayout cmbbxPanelLayout = new GridBagLayout();
+			JPanel cmbbxPanel = new JPanel();
+			cmbbxPanel.setLayout(cmbbxPanelLayout);
+			c.insets = new Insets(1, 0, 1, 0);
 			
-			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
-			inputPanel.add(cmbbxPanel, BorderLayout.CENTER);
-			inputPanel.add(buttonPanel, BorderLayout.SOUTH);
-			
-			JPanel centerPanel = new JPanel(new BorderLayout(3,3));
-			centerPanel.add(textareaScrollPane, BorderLayout.CENTER);
-			centerPanel.add(inputPanel, BorderLayout.SOUTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,textareaScrollPane,1,1,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Label : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,labelTextField,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Image File : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxImages,1,0,1,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,createButton("Select Image",e->showImageList(cmbbxImages)),0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Background : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxColors,1,0,1,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,createButton("Add Color",e->SaveViewer.images.showAddColorDialog(EditIdDialog.this,"Add Color")),0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			imageField = new JLabel();
 			imageField.setBorder(BorderFactory.createEtchedBorder());
@@ -472,11 +484,26 @@ public class Images {
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-			contentPane.add(centerPanel,BorderLayout.WEST);
+			contentPane.add(cmbbxPanel,BorderLayout.WEST);
 			contentPane.add(imageField,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
 			
 			showValues();
 			this.createGUI(contentPane);
+		}
+
+		private static String getDlgTitle(GameInfos.GeneralizedID id) {
+			return String.format("Set values of ID \"%s\"",id.getName());
+		}
+		
+		private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+			c.weightx=weightx;
+			c.weighty=weighty;
+			c.gridwidth=gridwidth;
+			c.gridheight=gridheight;
+			c.fill = fill;
+			layout.setConstraints(comp, c);
+			panel.add(comp);
 		}
 		
 		@Override public void windowOpened(WindowEvent e) { SaveViewer.images.addColorListListender   (colorListListender); }
@@ -503,9 +530,16 @@ public class Images {
 			hasDataChanged = true;
 			showValues();
 		}
-	
+		
 		private void setImageFileName(String filename) {
 			id.setImageFileName(filename);
+			hasDataChanged = true;
+			showValues();
+		}
+		
+		private void setLabel(String label) {
+			id.label = label;
+			setTitle(getDlgTitle(id));
 			hasDataChanged = true;
 			showValues();
 		}
@@ -530,6 +564,7 @@ public class Images {
 		public boolean hasDataChanged() { return hasDataChanged; }
 		public Integer getImageBG() { return id.getImageBG(); }
 		public String getImageFileName() { return id.getImageFileName(); }
+		public String getLabel() { return id.label; }
 	}
 
 	public static class ImageGridDialog extends StandardDialog {

@@ -24,7 +24,6 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -137,8 +136,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			showValues();
 			
 			contextMenu = new JPopupMenu();
-			contextMenu.add(SaveViewer.createMenuItem("Set Label", this, ActionCommand.SetLabel ));
-			contextMenu.add(SaveViewer.createMenuItem("Set Image", this, ActionCommand.SetImage ));
+			contextMenu.add(SaveViewer.createMenuItem("Edit ID", this, ActionCommand.EditID ));
 			contextMenu.addSeparator();;
 			contextMenu.add(SaveViewer.createMenuItem("Select Image File", this, ActionCommand.SelectImageFile ));
 			contextMenu.add(SaveViewer.createMenuItem("Copy Image File", this, ActionCommand.CopyImageFile ));
@@ -156,7 +154,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				inventoryLabel = null;
 		}
 		
-		private enum ActionCommand { SetLabel, SetImage, SelectImageFile, CopyImageFile, PasteImageFile, RemoveImageFile, CopyBGColor, PasteBGColor, RemoveBGColor }
+		private enum ActionCommand { EditID, SelectImageFile, CopyImageFile, PasteImageFile, RemoveImageFile, CopyBGColor, PasteBGColor, RemoveBGColor }
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -165,17 +163,11 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			String cbValue;
 			switch(ActionCommand.valueOf(e.getActionCommand())) {
-			case SetLabel:
-				String name = JOptionPane.showInputDialog(this, String.format("New name for %s ID \"%s\"", clickedSlot.type, clickedSlot.id.id), clickedSlot.id.label);
-				if (name!=null) {
-					clickedSlot.id.label = name;
-					updateAfterChangedIDdata();
-				}
-				break;
-			case SetImage: {
-				Images.IdImageDialog dlg = new Images.IdImageDialog(mainwindow,clickedSlot.id);
+			case EditID: {
+				Images.EditIdDialog dlg = new Images.EditIdDialog(mainwindow,clickedSlot.id);
 				dlg.showDialog();
 				if (dlg.hasDataChanged()) {
+					clickedSlot.id.label = dlg.getLabel();
 					clickedSlot.id.setImageBG(dlg.getImageBG());
 					clickedSlot.id.setImageFileName(dlg.getImageFileName());
 					updateAfterChangedIDdata();
@@ -381,7 +373,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 								
 								int imageBorder = 3;
 								int imageSize = innerWidth-2*imageBorder;
-								BufferedImage image = slot.id==null?null:slot.id.getImage(imageSize,imageSize);
+								BufferedImage image = slot.id==null?null:slot.id.getCachedImage(imageSize,imageSize);
 								
 								int strOffsetX = innerOffsetX+4;
 								int strOffsetY = innerOffsetY+12;
