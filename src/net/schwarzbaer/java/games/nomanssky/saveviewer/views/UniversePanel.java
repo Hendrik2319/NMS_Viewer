@@ -510,7 +510,7 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 				if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
 				if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
 				
-				distance_reg = ua.getDistToOther_inRegionUnits(data.general.getCurrentUniverseAddress());
+				distance_reg = ua.getDistToOther_inRegionUnits(data.general.currentUniverseAddress);
 				textArea.append("\r\n");
 				textArea.append(                                 "Distance to current position:\r\n");
 				textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));

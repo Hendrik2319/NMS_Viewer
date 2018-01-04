@@ -90,7 +90,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			int preselectedGalaxy = 0;
 			Long knownGlyphs = data.general.getKnownGlyphsMaks();
 			//knownGlyphs = 0b110111100L;
-			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.getCurrentUniverseAddress(),knownGlyphs);
+			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.currentUniverseAddress,knownGlyphs);
 			
 			
 			JCheckBoxMenuItem chkbxUsePreparedBitmap = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);

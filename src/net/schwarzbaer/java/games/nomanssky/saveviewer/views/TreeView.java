@@ -2,6 +2,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Vector;
@@ -14,7 +15,6 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
@@ -234,35 +234,52 @@ public class TreeView {
 
 	static class JsonTreeNode extends AbstractDataTreeNode<JsonTreeNode> {
 
-		public JsonTreeNode(JSON_Object data) {
-			this(null,null,new ObjectValue(data));
-		}
+//		public JsonTreeNode(JSON_Object data) {
+//			this(null,null,new ObjectValue(data));
+//		}
+//
+//		public JsonTreeNode(JSON_Array data) {
+//			this(null,null,new ArrayValue(data));
+//		}
 
-		public JsonTreeNode(JSON_Array data) {
-			this(null,null,new ArrayValue(data));
-		}
+		private boolean hideProcessedNodes;
 
-		private JsonTreeNode(JsonTreeNode parent, String name, Value value) {
+		private JsonTreeNode(JsonTreeNode parent, String name, Value value, boolean hideProcessedNodes) {
 			super(parent,name,value);
+			this.hideProcessedNodes = hideProcessedNodes;
+		}
+
+		public JsonTreeNode(JSON_Object data, boolean hideProcessedNodes) {
+			this(null,null,new ObjectValue(data), hideProcessedNodes);
 		}
 
 		@Override
 		void createChildren() {
 			switch (data.type) {
-			case Object: {
-				ObjectValue objectValue = (ObjectValue)data;
-				children = new JsonTreeNode[objectValue.value.size()];
-				int i=0;
-				for (NamedValue namedvalue : objectValue.value)
-					children[i++] = new JsonTreeNode(this,namedvalue.name,namedvalue.value);
-			} break;
-			case Array: {
-				ArrayValue arrayValue = (ArrayValue)data;
-				children = new JsonTreeNode[arrayValue.value.size()];
-				int i=0;
-				for (Value value : arrayValue.value)
-					children[i++] = new JsonTreeNode(this,null,value);
-			} break;
+			case Object:
+				if (data instanceof ObjectValue) {
+					ObjectValue objectValue = (ObjectValue)data;
+					children = new JsonTreeNode[objectValue.value.size()];
+					int i=0;
+					for (NamedValue namedvalue : objectValue.value)
+						if (!hideProcessedNodes || !namedvalue.value.wasProcessed || namedvalue.value.hasUnprocessedChildren())
+							children[i++] = new JsonTreeNode(this,namedvalue.name,namedvalue.value, hideProcessedNodes);
+					children = Arrays.copyOf(children, i);
+				} else
+					throw new IllegalStateException("Found a Value with type==Object, but not instance of ObjectValue");
+				break;
+			case Array:
+				if (data instanceof ArrayValue) {
+					ArrayValue arrayValue = (ArrayValue)data;
+					children = new JsonTreeNode[arrayValue.value.size()];
+					int i=0;
+					for (Value value : arrayValue.value)
+						if (!hideProcessedNodes || !value.wasProcessed || value.hasUnprocessedChildren())
+							children[i++] = new JsonTreeNode(this,null,value, hideProcessedNodes);
+					children = Arrays.copyOf(children, i);
+				} else
+					throw new IllegalStateException("Found a Value with type==Array, but not instance of ArrayValue");
+				break;
 			default:
 				children = new JsonTreeNode[0];
 				break;

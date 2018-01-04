@@ -13,6 +13,7 @@ import javax.swing.JTextArea;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
@@ -41,7 +42,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			
 			JPanel buttonPanel = new JPanel();
 			buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-			buttonPanel.add(SaveViewer.createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.getCurrentUniverseAddress())));
+			buttonPanel.add(SaveViewer.createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.currentUniverseAddress)));
 			
 			add(treeScrollPane,BorderLayout.CENTER);
 			add(buttonPanel,BorderLayout.SOUTH);
@@ -73,9 +74,9 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			appendValue("Total PlayTime   ", data.general.getTotalPlayTime_TStr() );
 			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive_TStr() );
 			
-			appendEmptyLine();
-			UniverseAddress currentUA = data.general.getCurrentUniverseAddress();
+			UniverseAddress currentUA = data.general.currentUniverseAddress;
 			if (currentUA!=null) {
+				appendEmptyLine();
 				appendLine("Current Location in Universe:");
 				if (currentUA.isPlanet     ()) {
 					Planet planet = data.universe.findPlanet(currentUA);
@@ -94,6 +95,26 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				appendLine("    "+currentUA.getCoordinates());
 				appendLine("    "+currentUA.getExtendedSigBoostCode());
 				appendLine(String.format(Locale.ENGLISH, "    Distance to Center of Galaxy: %1.1f regions", currentUA.getDistToCenter_inRegionUnits()));
+			}
+			
+			UniverseAddress graveUA = data.general.graveUA;
+			Position gravePos = data.general.gravePos;
+			if (graveUA!=null || gravePos!=null) {
+				appendEmptyLine();
+				appendLine("Grave Position:");
+				if (graveUA!=null) {
+					appendLine("    Location in Universe:");
+					appendLine("        "+graveUA.getCoordinates());
+					appendLine("        "+graveUA.getExtendedSigBoostCode());
+				}
+				if (gravePos!=null) {
+					appendLine("    Position:");
+					if (gravePos.pos!=null) appendLine("        pos: "+gravePos.pos.toString("%1.2f"));
+					if (gravePos.at !=null) appendLine("        at:  "+gravePos.at .toString("%1.4f"));
+					if (gravePos.up !=null) appendLine("        up:  "+gravePos.up .toString("%1.4f"));
+					if (gravePos.pos==null && gravePos.at==null && gravePos.up==null)
+						appendLine("        <no data>");
+				}
 			}
 			
 			Long knownGlyphs = data.general.getKnownGlyphsMaks();

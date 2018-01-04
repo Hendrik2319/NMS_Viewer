@@ -82,9 +82,9 @@ class SimplePanels {
 				case GalacticAddress: if (bbo.galacticAddress==null) return ""; else return bbo.galacticAddress.getCoordinates();
 				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; else return String.format("0x%016X", bbo.regionSeed);
 				case UserData       : if (bbo.userData       ==null) return ""; else return String.format("0x%08X" , bbo.userData  );
-				case Position       : if (bbo.position       ==null) return ""; else return bbo.position.toString("%1.2f");
-				case Up             : if (bbo.up             ==null) return ""; else return bbo.up      .toString("%1.4f");
-				case At             : if (bbo.at             ==null) return ""; else return bbo.at      .toString("%1.4f");
+				case Position       : if (bbo.position==null || bbo.position.pos==null) return ""; else return bbo.position.pos.toString("%1.2f");
+				case Up             : if (bbo.position==null || bbo.position.up ==null) return ""; else return bbo.position.up .toString("%1.4f");
+				case At             : if (bbo.position==null || bbo.position.at ==null) return ""; else return bbo.position.at .toString("%1.4f");
 				
 				}
 				return null;
@@ -201,10 +201,9 @@ class SimplePanels {
 					case Timestamp      : if (obj.timestamp      ==null) return ""; return SaveGameData.timestampToString(obj.timestamp);
 					case ObjectID       : if (obj.objectID       ==null) return ""; return obj.getNameOfObjectID();
 					case UserData       : if (obj.userData       ==null) return ""; return String.format("0x%08X" , obj.userData  );
-					case Position       : if (obj.position       ==null) return ""; return obj.position.toString("%1.2f");
-					case Up             : if (obj.up             ==null) return ""; return obj.up      .toString("%1.4f");
-					case At             : if (obj.at             ==null) return ""; return obj.at      .toString("%1.4f");
-					
+					case Position       : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString("%1.2f");
+					case Up             : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString("%1.4f");
+					case At             : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString("%1.4f");
 					}
 					return null;
 				}
@@ -306,11 +305,10 @@ class SimplePanels {
 		}
 	
 		private enum DDAColumnID implements TableView.SimplifiedColumnIDInterface {
-			TSrec ("TSrec" ,   Long.class, 50,-1, 80, 80), //[81, 161, 91, 135, 139]
-			DD_UA ("DD_UA" , String.class, 50,-1,160,160),
-			DD_DT ("DD_DT" , String.class, 50,-1, 90, 90),
-			DD_VP0("DD_VP0", String.class, 50,-1,130,130),
-			DD_VP1("DD_VP1", String.class, 50,-1,130,130);
+			TSrec("TSrec",   Long.class, 50,-1, 80, 80), //[81, 161, 91, 135, 139]
+			DD_UA("DD_UA", String.class, 50,-1,160,160),
+			DD_DT("DD_DT", String.class, 50,-1, 90, 90),
+			DD_VP("DD_VP", String.class, 50,-1,300,300);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -336,15 +334,24 @@ class SimplePanels {
 				AvailableData availableData = data.discoveryData.availableData.get(rowIndex);
 				if (availableData==null) return null;
 				switch(columnID) {
-				case TSrec : if (availableData.TSrec ==null) return -1; else return availableData.TSrec;
-				case DD_UA : if (availableData.DD.UA ==null) return ""; else return availableData.DD.UA.getExtendedSigBoostCode();
-				case DD_DT : if (availableData.DD.DT ==null) return ""; else return availableData.DD.DT;
-				case DD_VP0: if (availableData.DD.VP0==null) return ""; else return availableData.DD.VP0;
-				case DD_VP1: if (availableData.DD.VP1==null) return ""; else return availableData.DD.VP1;
+				case TSrec: if (availableData.TSrec==null) return -1; else return availableData.TSrec;
+				case DD_UA: if (availableData.DD.UA==null) return ""; else return availableData.DD.UA.getExtendedSigBoostCode();
+				case DD_DT: if (availableData.DD.DT==null) return ""; else return availableData.DD.DT;
+				case DD_VP: if (availableData.DD.VP==null) return ""; else return toHexArray(availableData.DD.VP);
 				}
 				return null;
 			}
 		}
+	}
+	
+	private static String toHexArray(Long[] arr) {
+		String str = "";
+		for (Long n:arr) {
+			if (!str.isEmpty()) str+=",";
+			if (n==null) str+="<null>";
+			else str+="0x"+Long.toHexString(n).toUpperCase();
+		}
+		return "["+str+"]";
 	}
 
 	static class DiscoveredDataStoredPanel extends SaveGameViewTabPanel {
@@ -361,17 +368,17 @@ class SimplePanels {
 		}
 	
 		private enum DDSColumnID implements TableView.SimplifiedColumnIDInterface {
-			DD_UA ("DD_UA" , String.class, 50,-1,160,160),
-			DD_DT ("DD_DT" , String.class, 50,-1, 90, 90),
-			DD_VP0("DD_VP0", String.class, 50,-1,130,130),
-			DD_VP1("DD_VP1", String.class, 50,-1,130,130),
+			DD_UA  ("DD_UA"  , String.class, 50,-1,160,160),
+			DD_DT  ("DD_DT"  , String.class, 50,-1, 90, 90),
+			DD_VP  ("DD_VP"  , String.class, 50,-1,300,300),
 			DM     ("DM"     , String.class, 20,-1, 40, 40),
 			DM_CN  ("DM_CN"  , String.class, 50,-1, 80, 80),
 			OWS_LID("OWS_LID", String.class, 50,-1,120,120),
 			OWS_UID("OWS_UID", String.class, 50,-1,120,120),
 			OWS_USN("OWS_USN", String.class, 50,-1, 80, 80),
 			OWS_TS ("OWS_TS" ,   Long.class, 50,-1, 80, 80),
-			RID    ("RID"    , String.class, 50,-1,350,350);
+			RID    ("RID"    , String.class, 50,-1,350,350),
+			PTK    ("PTK"    , String.class, 20,-1, 40, 40);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -399,8 +406,7 @@ class SimplePanels {
 				switch(columnID) {
 				case DD_UA  : if (storeData.DD.UA  ==null) return ""; else return storeData.DD.UA.getExtendedSigBoostCode();
 				case DD_DT  : if (storeData.DD.DT  ==null) return ""; else return storeData.DD.DT;
-				case DD_VP0 : if (storeData.DD.VP0 ==null) return ""; else return storeData.DD.VP0;
-				case DD_VP1 : if (storeData.DD.VP1 ==null) return ""; else return storeData.DD.VP1;
+				case DD_VP  : if (storeData.DD.VP  ==null) return ""; else return toHexArray(storeData.DD.VP);
 				case DM     : if (storeData.DM     ==null) return ""; else return storeData.DM     ;
 				case DM_CN  : if (storeData.DM_CN  ==null) return ""; else return storeData.DM_CN  ;
 				case OWS_LID: if (storeData.OWS!=null && storeData.OWS.LID==null) return ""; else return storeData.OWS.LID;
@@ -408,6 +414,7 @@ class SimplePanels {
 				case OWS_USN: if (storeData.OWS!=null && storeData.OWS.USN==null) return ""; else return storeData.OWS.USN;
 				case OWS_TS : if (storeData.OWS!=null && storeData.OWS.TS ==null) return -1; else return storeData.OWS.TS ;
 				case RID    : if (storeData.RID    ==null) return ""; else return storeData.RID    ;
+				case PTK    : if (storeData.PTK    ==null) return ""; else return storeData.PTK    ;
 				}
 				return null;
 			}

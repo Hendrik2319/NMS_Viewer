@@ -64,7 +64,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		addTab(data.inventories.freighterTech);
 		addTab(data.inventories.ship_old     );
 		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships,data.inventories.ships_Tech));
-		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
+		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles,data.inventories.vehicles_Tech));
 		tabbedPane.addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
 		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2));
 

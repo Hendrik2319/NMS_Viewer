@@ -72,22 +72,29 @@ public class SaveGameData {
 	}
 	
 	private static Long parseHexFormatedNumber(JSON_Object obj, String valueName) {
-		Value addressValue = obj.getValue(valueName);
-		if (addressValue==null) return null;
-		
-		switch(addressValue.type) {
+		return parseHexFormatedNumber(obj.getValue(valueName));
+	}
+
+	private static Long parseHexFormatedNumber(Value value) {
+		if (value==null) return null;
+		switch(value.type) {
 		case String:
-			if (addressValue instanceof StringValue) {
-				String addressStr = ((StringValue)addressValue).value;
+			if (value instanceof StringValue) {
+				String addressStr = ((StringValue)value).value;
 				if (addressStr.startsWith("0x")) addressStr = addressStr.substring(2);
-				try { return Long.parseUnsignedLong(addressStr, 16); }
-				catch (NumberFormatException e) {}
+				try {
+					long l = Long.parseUnsignedLong(addressStr, 16);
+					value.wasProcessed=true;
+					return l;
+				} catch (NumberFormatException e) {}
 			}
 			break;
 			
 		case Integer:
-			if (addressValue instanceof IntegerValue)
-				return ((IntegerValue)addressValue).value;
+			if (value instanceof IntegerValue) {
+				value.wasProcessed=true;
+				return ((IntegerValue)value).value;
+			}
 			break;
 			
 		default:
@@ -104,14 +111,18 @@ public class SaveGameData {
 		case String:
 			if (addressValue instanceof StringValue) {
 				String addressStr = ((StringValue)addressValue).value;
-				if (isPlanetAddressOK(addressStr))
+				if (isPlanetAddressOK(addressStr)) {
+					addressValue.wasProcessed=true;
 					return new UniverseAddress( Long.parseLong(addressStr.substring(2), 16) );
+				}
 			}
 			break;
 			
 		case Integer:
-			if (addressValue instanceof IntegerValue)
+			if (addressValue instanceof IntegerValue) {
+				addressValue.wasProcessed=true;
 				return new UniverseAddress( ((IntegerValue)addressValue).value );
+			}
 			break;
 			
 		default:
@@ -120,19 +131,74 @@ public class SaveGameData {
 		return null;
 	}
 
+	private UniverseAddress parseUniverseAddressStructure(JSON_Object data, Object... path) {
+		JSON_Object universeAddressObj = getObjectValue(data, path);
+		if (universeAddressObj==null) return null;
+		
+		Long galaxyIndexLong = getIntegerValue(universeAddressObj,"RealityIndex");
+		if (galaxyIndexLong==null) return null;
+		int galaxyIndex = (int)(long)galaxyIndexLong;
+		
+		JSON_Object galacticAddressObj = getObjectValue(universeAddressObj,"GalacticAddress");
+		if (galacticAddressObj==null) return null;
+		
+		Long voxelXLong = getIntegerValue(galacticAddressObj,"VoxelX");
+		Long voxelYLong = getIntegerValue(galacticAddressObj,"VoxelY");
+		Long voxelZLong = getIntegerValue(galacticAddressObj,"VoxelZ");
+		if (voxelXLong==null) return null;
+		if (voxelYLong==null) return null;
+		if (voxelZLong==null) return null;
+		int voxelX = (int)(long)voxelXLong;
+		int voxelY = (int)(long)voxelYLong;
+		int voxelZ = (int)(long)voxelZLong;
+		
+		Long solarSystemIndexLong = getIntegerValue(galacticAddressObj,"SolarSystemIndex");
+		if (solarSystemIndexLong==null) return null;
+		int solarSystemIndex = (int)(long)solarSystemIndexLong;
+		
+		Long planetIndexLong = getIntegerValue(galacticAddressObj,"PlanetIndex");
+		if (planetIndexLong==null) return null;
+		int planetIndex = (int)(long)planetIndexLong;
+		
+		return new UniverseAddress(galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
+	}
+
+	private Position parsePosition(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
+		Position position = new Position();
+		position.pos = parseCoordinates(obj, valueName_Pos);
+		position.at  = parseCoordinates(obj, valueName_At);
+		position.up  = parseCoordinates(obj, valueName_Up);
+		return position;
+	}
+
+	public static class Position {
+		public Coordinates pos;
+		public Coordinates at;
+		public Coordinates up;
+		public Position() {
+			this.pos = null;
+			this.at = null;
+			this.up = null;
+		}
+	}
+
 	private Coordinates parseCoordinates(JSON_Object obj, String valueName) {
 		JSON_Array arrayValue = getArrayValue(obj, valueName);
 		if (arrayValue==null) return null;
 		
 		Coordinates coords = new Coordinates();
 		for (int i=0; i<arrayValue.size(); ++i) {
-			Double d = Value.getFloat(arrayValue.get(i));
-			if (d!=null) coords.set(i,d);
+			Value value = arrayValue.get(i);
+			Double d = getFloat(value);
+			if (d!=null) {
+				value.wasProcessed=true;
+				coords.set(i,d);
+			}
 		}
 		
 		return coords;
 	}
-	
+
 	public static class Coordinates {
 	
 		public double x;
@@ -226,7 +292,7 @@ public class SaveGameData {
 		Vector<PersistentPlayerBase> vector = new Vector<PersistentPlayerBase>();
 		for (int i=0; i<arrayValue.size(); ++i) {
 			Value value = arrayValue.get(i);
-			JSON_Object objectValue = Value.getObject(value);
+			JSON_Object objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
 				continue;
@@ -259,19 +325,14 @@ public class SaveGameData {
 		
 		Vector<BuildingObject> vector = new Vector<BuildingObject>();
 		for (Value value:arrayValue) {
-			JSON_Object objectValue = Value.getObject(value);
+			JSON_Object objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
 				continue;
 			}
 			
 			BuildingObject bbo = new BuildingObject();
-			bbo.timestamp       = getIntegerValue (objectValue, "Timestamp");
-			bbo.objectID        = getStringValue  (objectValue, "ObjectID");
-			bbo.userData        = getIntegerValue (objectValue, "UserData");
-			bbo.position        = parseCoordinates(objectValue, "Position");
-			bbo.up              = parseCoordinates(objectValue, "Up");
-			bbo.at              = parseCoordinates(objectValue, "At");
+			parseBuildingObject(objectValue, bbo);
 			
 			vector.add(bbo);
 		}
@@ -280,6 +341,13 @@ public class SaveGameData {
 			System.out.println("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
 		
 		return vector.toArray(new BuildingObject[0]);
+	}
+
+	private void parseBuildingObject(JSON_Object objectValue, BuildingObject bbo) {
+		bbo.timestamp       = getIntegerValue (objectValue, "Timestamp");
+		bbo.objectID        = getStringValue  (objectValue, "ObjectID");
+		bbo.userData        = getIntegerValue (objectValue, "UserData");
+		bbo.position        = parsePosition   (objectValue, "Position", "Up", "At");
 	}
 
 	public static class PersistentPlayerBase {
@@ -315,20 +383,15 @@ public class SaveGameData {
 		
 		Vector<UnboundBuildingObject> vector = new Vector<UnboundBuildingObject>();
 		for (Value value:arrayValue) {
-			JSON_Object objectValue = Value.getObject(value);
+			JSON_Object objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
 				continue;
 			}
 			UnboundBuildingObject bbo = new UnboundBuildingObject();
-			bbo.timestamp       = getIntegerValue (objectValue, "Timestamp");
-			bbo.objectID        = getStringValue  (objectValue, "ObjectID");
 			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
-			bbo.userData        = getIntegerValue (objectValue, "UserData");
-			bbo.position        = parseCoordinates(objectValue, "Position");
-			bbo.up              = parseCoordinates(objectValue, "Up");
-			bbo.at              = parseCoordinates(objectValue, "At");
+			parseBuildingObject(objectValue, bbo);
 			vector.add(bbo);
 		}
 		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
@@ -353,17 +416,13 @@ public class SaveGameData {
 		public Long timestamp;
 		public String objectID;
 		public Long userData;
-		public Coordinates position;
-		public Coordinates up;
-		public Coordinates at;
+		public Position position;
 		
 		BuildingObject() {
 			this.timestamp = null;
 			this.objectID = null;
 			this.userData = null;
 			this.position = null;
-			this.up = null;
-			this.at = null;
 		}
 
 		public String getNameOfObjectID() {
@@ -386,7 +445,7 @@ public class SaveGameData {
 		GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
 		for (int i=0; i<arrayValue.size(); ++i) {
 			Value value = arrayValue.get(i);
-			String id = Value.getString(value );
+			String id = getString(value);
 			if (id!=null) {
 				knownBlueprints[i] = map.get(id);// addGeneralizedID(map, id);
 				knownBlueprints[i].getUsage(this).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
@@ -405,48 +464,51 @@ public class SaveGameData {
 
 	private void parseInventories() {
 		inventories = null;
-		JSON_Object playerStateData = getObjectValue(json_data, "PlayerStateData");
-		if (playerStateData==null) return;
 		inventories = new Inventories();
-		inventories.player        = Inventories.parse(this,getObjectValue(playerStateData, "Inventory"                  ), "Player"          , "Inventory"         );
-		inventories.playerTech    = Inventories.parse(this,getObjectValue(playerStateData, "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
-		inventories.playerCargo   = Inventories.parse(this,getObjectValue(playerStateData, "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
-		inventories.ship_old      = Inventories.parse(this,getObjectValue(playerStateData, "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
-		inventories.multitool     = Inventories.parse(this,getObjectValue(playerStateData, "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
-		inventories.grave         = Inventories.parse(this,getObjectValue(playerStateData, "GraveInventory"             ), "Grave"           , "GraveInventory"    );
-		inventories.freighter     = Inventories.parse(this,getObjectValue(playerStateData, "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
-		inventories.freighterTech = Inventories.parse(this,getObjectValue(playerStateData, "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+		inventories.player        = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
+		inventories.playerTech    = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
+		inventories.playerCargo   = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
+		inventories.ship_old      = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
+		inventories.multitool     = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
+		inventories.grave         = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
+		inventories.freighter     = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
+		inventories.freighterTech = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
 		
 		inventories.chests = new Inventory[10];
 		for (int i=0; i<inventories.chests.length; ++i)
-			inventories.chests[i] = Inventories.parse(this,getObjectValue(playerStateData, "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-		inventories.magicChest  = Inventories.parse(this,getObjectValue(playerStateData, "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
-		inventories.magicChest2 = Inventories.parse(this,getObjectValue(playerStateData, "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+			inventories.chests[i] = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
+		inventories.magicChest  = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+		inventories.magicChest2 = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
 		
 		inventories.vehicles = null;
-		JSON_Array vehicles = getArrayValue(playerStateData,"VehicleOwnership");
+		inventories.vehicles_Tech = null;
+		JSON_Array vehicles = getArrayValue(json_data, "PlayerStateData","VehicleOwnership");
 		if (vehicles!=null) {
 			inventories.vehicles = new Inventory[vehicles.size()];
+			inventories.vehicles_Tech = new Inventory[vehicles.size()];
 			for (int i=0; i<vehicles.size(); ++i) {
-				JSON_Object vehicleData = Value.getObject(vehicles.get(i));
+				JSON_Object vehicleData = getObject(vehicles.get(i));
 				inventories.vehicles[i] = null;
-				if (vehicleData != null)
-					inventories.vehicles[i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory"),"Vehicle "+(i+1), "VehicleOwnership["+i+"].Inventory");
+				inventories.vehicles_Tech[i] = null;
+				if (vehicleData != null) {
+					inventories.vehicles     [i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory"         ),"Vehicle "    +(i+1), "VehicleOwnership["+i+"].Inventory");
+					inventories.vehicles_Tech[i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle Tech"+(i+1), "VehicleOwnership["+i+"].Inventory_TechOnly");
+				}
 			}
 		}
 		
 		inventories.ships = null;
 		inventories.ships_Tech = null;
-		JSON_Array ships = getArrayValue(playerStateData,"ShipOwnership");
+		JSON_Array ships = getArrayValue(json_data, "PlayerStateData","ShipOwnership");
 		if (ships!=null) {
 			inventories.ships = new Inventory[ships.size()];
 			inventories.ships_Tech = new Inventory[ships.size()];
 			for (int i=0; i<ships.size(); ++i) {
-				JSON_Object shipData = Value.getObject(ships.get(i));
+				JSON_Object shipData = getObject(ships.get(i));
 				inventories.ships     [i] = null;
 				inventories.ships_Tech[i] = null;
 				if (shipData != null) {
-					inventories.ships     [i] = Inventories.parse(this,getObjectValue(shipData,"Inventory"         ), "Ship "+(i+1)     , "ShipOwnership["+i+"].Inventory");
+					inventories.ships     [i] = Inventories.parse(this,getObjectValue(shipData,"Inventory"         ), "Ship "     +(i+1), "ShipOwnership["+i+"].Inventory");
 					inventories.ships_Tech[i] = Inventories.parse(this,getObjectValue(shipData,"Inventory_TechOnly"), "Ship Tech "+(i+1), "ShipOwnership["+i+"].Inventory_TechOnly");
 				}
 			}
@@ -467,6 +529,7 @@ public class SaveGameData {
 			inventory.version = base.getIntegerValue(inventoryData, "Version");
 			
 			inventory.inventoryClass = base.getStringValue(inventoryData, "Class","InventoryClass");
+
 			if (inventory.inventoryClass==null) {
 				JSON_Object classObj = base.getObjectValue(inventoryData, "Class");
 				if (classObj==null) inventory.inventoryClass = "<no \"Class\" value>";
@@ -504,7 +567,7 @@ public class SaveGameData {
 			int redundantSlots = 0;
 			JSON_Array wrongValidSlotIndices = new JSON_Array();
 			for (Value value:arrValidSlotIndices) {
-				JSON_Object indexObj = Value.getObject(value);
+				JSON_Object indexObj = base.getObject(value);
 				if (indexObj==null) continue;
 				Long indexX = base.getIntegerValue(indexObj, "X");
 				Long indexY = base.getIntegerValue(indexObj, "Y");
@@ -524,7 +587,7 @@ public class SaveGameData {
 			int notValidSlots = 0;
 			JSON_Array wrongSlots = new JSON_Array();
 			for (Value value:arrSlots) {
-				JSON_Object slotObj = Value.getObject(value);
+				JSON_Object slotObj = base.getObject(value);
 				if (slotObj==null) { wrongSlots.add(value); continue; }
 				Slot slot = new Slot(false);
 				slot.typeStr      = base.getStringValue (slotObj, "Type","InventoryType");
@@ -576,7 +639,7 @@ public class SaveGameData {
 			
 			BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
 			for (int i=0; i<valueArray.size(); ++i) {
-				JSON_Object obj = Value.getObject(valueArray.get(i));
+				JSON_Object obj = base.getObject(valueArray.get(i));
 				if (obj==null) { baseStatValues[i]=null; continue; }
 				baseStatValues[i] = new BaseStatValue(base.getStringValue(obj,"BaseStatID"),base.getFloatValue(obj,"Value"));
 			}
@@ -596,6 +659,7 @@ public class SaveGameData {
 		public Inventory[] ships;
 		public Inventory[] ships_Tech;
 		public Inventory[] vehicles;
+		public Inventory[] vehicles_Tech;
 		public Inventory[] chests;
 		public Inventory magicChest2;
 		public Inventory magicChest;
@@ -609,6 +673,7 @@ public class SaveGameData {
 			this.ships_Tech = null;
 			this.ships = null;
 			this.vehicles = null;
+			this.vehicles_Tech = null;
 			this.magicChest2 = null;
 			this.magicChest = null;
 			this.chests = null;
@@ -741,15 +806,14 @@ public class SaveGameData {
 		public void parseJsonArrays(JSON_Array arrStore, JSON_Array arrAvailable) {
 			if (arrStore!=null) {
 				for (Value objValue:arrStore) {
-					JSON_Object object = Value.getObject(objValue);
+					JSON_Object object = data.getObject(objValue);
 					if (object==null) { notParsedAvailableData.add(objValue); continue; }
 					
 					StoreData stData = new StoreData();
 					
 					// DD.UA  UniverseAddress
 					// DD.DT  String
-					// DD.VP[0]  String
-					// DD.VP[1]  String | long
+					// DD.VP  array of (hex formated Long or direct Long)
 					parseDD(data.getObjectValue(object,"DD"), stData.DD);
 					
 					// DM  empty object
@@ -765,13 +829,6 @@ public class SaveGameData {
 					//    USN  String
 					//    TS   Long
 					stData.OWS = data.parseOwnwerField(object, "OWS");
-//					JSON_Object owsObj = data.getObjectValue(object,"OWS");
-//					if (owsObj!=null) {
-//						stData.OWS_LID = data.getStringValue(owsObj,"LID");
-//						stData.OWS_UID = data.getStringValue(owsObj,"UID");
-//						stData.OWS_USN = data.getStringValue(owsObj,"USN");
-//						stData.OWS_TS  = data.getIntegerValue(owsObj,"TS");
-//					}
 					
 					// RID  String (evtl.)
 					stData.RID = data.getStringValue_silent(object,"RID");
@@ -784,7 +841,8 @@ public class SaveGameData {
 						catch (IllegalArgumentException e) {}
 					}
 					
-					
+					// PTK  String (evtl.)
+					stData.PTK = data.getStringValue_silent(object,"PTK");
 					
 					storeData.add(stData);
 				}
@@ -792,7 +850,7 @@ public class SaveGameData {
 			
 			if (arrAvailable!=null) {
 				for (Value objValue:arrAvailable) {
-					JSON_Object object = Value.getObject(objValue);
+					JSON_Object object = data.getObject(objValue);
 					if (object==null) { notParsedAvailableData.add(objValue); continue; }
 					
 					AvailableData availData = new AvailableData();
@@ -802,8 +860,7 @@ public class SaveGameData {
 					
 					// DD.UA  UniverseAddress
 					// DD.DT  String
-					// DD.VP[0]  String
-					// DD.VP[1]  String | long
+					// DD.VP  array of (hex formated Long or direct Long)
 					parseDD(data.getObjectValue(object,"DD"), availData.DD);
 					
 					availableData.add(availData);
@@ -823,28 +880,9 @@ public class SaveGameData {
 			// DD.VP
 			JSON_Array vpArr = data.getArrayValue(ddObj,"VP");
 			if (vpArr!=null) {
-				
-				// DD.VP[0]  String
-				if (vpArr.size()>0) {
-					Value value = vpArr.get(0);
-					switch (value.type) {
-					case Integer: dd.VP0 = ""+((IntegerValue)value).value; break;
-					case String : dd.VP0 = ((StringValue)value).value; break;
-					default:
-						break;
-					}
-				}
-				
-				// DD.VP[1]  String | long
-				if (vpArr.size()>1) {
-					Value value = vpArr.get(1);
-					switch (value.type) {
-					case Integer: dd.VP1 = ""+((IntegerValue)value).value; break;
-					case String : dd.VP1 = ((StringValue)value).value; break;
-					default:
-						break;
-					}
-				}
+				dd.VP = new Long[vpArr.size()];
+				for (int i=0; i<vpArr.size(); ++i)
+					dd.VP[i] = parseHexFormatedNumber(vpArr.get(i));
 			}
 		}
 
@@ -975,6 +1013,7 @@ public class SaveGameData {
 			public Owner OWS;
 			public String RID;
 			byte[] RID_bytes;
+			public String PTK;
 			
 			public StoreData() {
 				DD = new DDblock();
@@ -983,6 +1022,7 @@ public class SaveGameData {
 				OWS = null;
 				RID = null;
 				RID_bytes = null;
+				PTK = null;
 			}
 		}
 		
@@ -1005,14 +1045,12 @@ public class SaveGameData {
 		public static class DDblock {
 			public UniverseAddress UA;
 			public String DT;
-			public String VP0;
-			public String VP1;
+			public Long[] VP;
 			
 			DDblock() {
 				UA = null;
 				DT = null;
-				VP0 = null;
-				VP1 = null;
+				VP = null;
 			}
 		}
 	}
@@ -1020,17 +1058,17 @@ public class SaveGameData {
 	public final static class General {
 		
 		private SaveGameData data;
-		private UniverseAddress currentUniverseAddress;
+		public UniverseAddress currentUniverseAddress;
+		public UniverseAddress graveUA;
+		public Position gravePos;
 		
 		public General(SaveGameData data) {
 			this.data = data;
 		}
 		
 		public void parse() {
-			currentUniverseAddress =
-					parseUniverseAddress(
-							data.getObjectValue(data.json_data,"PlayerStateData","UniverseAddress")
-							);
+			;
+			currentUniverseAddress = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
 			if(currentUniverseAddress.isPlanet()) {
 				Planet planet = data.universe.getOrCreatePlanet(currentUniverseAddress);
 				planet.isCurrPos = true;
@@ -1039,40 +1077,10 @@ public class SaveGameData {
 				SolarSystem system = data.universe.getOrCreateSolarSystem(currentUniverseAddress);
 				system.isCurrPos = true;
 			}
+			graveUA = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
+			gravePos = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			
 		}
-
-		private UniverseAddress parseUniverseAddress(JSON_Object universeAddressObj) {
-			if (universeAddressObj==null) return null;
-			
-			Long galaxyIndexLong = data.getIntegerValue(universeAddressObj,"RealityIndex");
-			if (galaxyIndexLong==null) return null;
-			int galaxyIndex = (int)(long)galaxyIndexLong;
-			
-			JSON_Object galacticAddressObj = data.getObjectValue(universeAddressObj,"GalacticAddress");
-			if (galacticAddressObj==null) return null;
-			
-			Long voxelXLong = data.getIntegerValue(galacticAddressObj,"VoxelX");
-			Long voxelYLong = data.getIntegerValue(galacticAddressObj,"VoxelY");
-			Long voxelZLong = data.getIntegerValue(galacticAddressObj,"VoxelZ");
-			if (voxelXLong==null) return null;
-			if (voxelYLong==null) return null;
-			if (voxelZLong==null) return null;
-			int voxelX = (int)(long)voxelXLong;
-			int voxelY = (int)(long)voxelYLong;
-			int voxelZ = (int)(long)voxelZLong;
-			
-			Long solarSystemIndexLong = data.getIntegerValue(galacticAddressObj,"SolarSystemIndex");
-			if (solarSystemIndexLong==null) return null;
-			int solarSystemIndex = (int)(long)solarSystemIndexLong;
-			
-			Long planetIndexLong = data.getIntegerValue(galacticAddressObj,"PlanetIndex");
-			if (planetIndexLong==null) return null;
-			int planetIndex = (int)(long)planetIndexLong;
-			
-			return new UniverseAddress(galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
-		}
-
-		public UniverseAddress getCurrentUniverseAddress() { return currentUniverseAddress; }
 		
 		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
 		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
@@ -1257,7 +1265,6 @@ public class SaveGameData {
 			return "Universe";
 		}
 
-
 		public void sort() {
 			galaxies.sort(Comparator.comparing(g -> g.galacticIndex));
 			for (Galaxy g:galaxies) {
@@ -1270,7 +1277,6 @@ public class SaveGameData {
 				}
 			}
 		}
-
 
 		public void writeToConsole() {
 			System.out.println("Universe:");
@@ -1286,7 +1292,6 @@ public class SaveGameData {
 				}
 			}
 		}
-
 
 		public Planet findPlanet(UniverseAddress ua) {
 			SolarSystem solarSystem = findSolarSystem(ua);
@@ -1670,7 +1675,7 @@ public class SaveGameData {
 	
 		public KnownWords parse(JSON_Array knownWordsArray) {
 			for (Value knownWordValue : knownWordsArray) {
-				JSON_Object knownWordObj = Value.getObject(knownWordValue);
+				JSON_Object knownWordObj = data.getObject(knownWordValue);
 				if (knownWordObj==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				
 				KnownWord knownWord = new KnownWord();
@@ -1684,7 +1689,7 @@ public class SaveGameData {
 				
 				boolean errorOccured = false;
 				for (int i=0; i<knownWord.races.length; ++i) {
-					Boolean race = Value.getBool(races.get(i));
+					Boolean race = data.getBool(races.get(i));
 					if (race==null) { errorOccured=true; break; }
 					knownWord.races[i] = race;
 				}
@@ -1749,7 +1754,7 @@ public class SaveGameData {
 
 		public Stats parse(JSON_Array statList) {
 			for (Value groupValue : statList) {
-				JSON_Object group = Value.getObject(groupValue);
+				JSON_Object group = data.getObject(groupValue);
 				if (group==null) { notParsedStats.add(groupValue); continue; }
 				
 				String groupID = data.getStringValue(group,"GroupId");
@@ -1762,6 +1767,7 @@ public class SaveGameData {
 				case "^GLOBAL_STATS":
 					if (globalStats!=null) { notParsedStats.add(groupValue); continue; }
 					
+					data.getIntegerValue(group,"Address"); // -> wasProcessed
 					globalStats = new Vector<>();
 					fillInto(groupStats,globalStats);
 					
@@ -1777,10 +1783,12 @@ public class SaveGameData {
 						if (!(addressValue instanceof StringValue)) { notParsedStats.add(groupValue); continue; }
 						String addressStr = ((StringValue)addressValue).value;
 						if (!isPlanetAddressOK(addressStr)) { notParsedStats.add(groupValue); continue; }
+						addressValue.wasProcessed=true;
 						addressLong = Long.parseLong(addressStr.substring(2), 16);
 						break;
 					case Integer:
 						if (!(addressValue instanceof IntegerValue)) { notParsedStats.add(groupValue); continue; }
+						addressValue.wasProcessed=true;
 						addressLong = ((IntegerValue)addressValue).value;
 						break;
 					default:
@@ -1810,7 +1818,7 @@ public class SaveGameData {
 		private void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {
 			StatValue.KnownID[] knownIDs = StatValue.KnownID.values();
 			for (Value value : stats) {
-				JSON_Object statObject = Value.getObject(value);
+				JSON_Object statObject = data.getObject(value);
 				if (statObject==null) continue;
 				
 				StatValue stat = new StatValue();
@@ -1961,12 +1969,20 @@ public class SaveGameData {
 
 	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
 
+//	private JSON_Array getArray(Value val)   { if (val==null || !(val instanceof ArrayValue  ) || val.type!=Type.Array  ) return null; val.wasProcessed=true; return ((ArrayValue  )val).value;}
+	private JSON_Object getObject(Value val) { if (val==null || !(val instanceof ObjectValue ) || val.type!=Type.Object ) return null; val.wasProcessed=true; return ((ObjectValue )val).value;}
+	private String getString(Value val)      { if (val==null || !(val instanceof StringValue ) || val.type!=Type.String ) return null; val.wasProcessed=true; return ((StringValue )val).value;}
+	private Boolean getBool(Value val)       { if (val==null || !(val instanceof BoolValue   ) || val.type!=Type.Bool   ) return null; val.wasProcessed=true; return ((BoolValue   )val).value;}
+//	private Long getInteger(Value val)       { if (val==null || !(val instanceof IntegerValue) || val.type!=Type.Integer) return null; val.wasProcessed=true; return ((IntegerValue)val).value;}
+	private Double getFloat(Value val)       { if (val==null || !(val instanceof FloatValue  ) || val.type!=Type.Float  ) return null; val.wasProcessed=true; return ((FloatValue  )val).value;}
+
 	private void enableStackTrace(boolean isStackTraceEnabled) {
 		this.isStackTraceEnabled = isStackTraceEnabled;
 	}
 
 	private Value getValue(JSON_Object data, Object... path) {
 		Value value = null;
+		if (path.length==0) throw new IllegalStateException("Calling getValue(JSON_Object data, Object... path) is not allowed with zero length path");
 		try {
 			value = JSON_Data.getSubNode(data,path);
 			error = Error.NoError;
@@ -1990,6 +2006,7 @@ public class SaveGameData {
 			BoolValue realValue = (BoolValue)value;
 			error = Error.NoError;
 			errorMessage = "";
+			value.wasProcessed = true;
 			return realValue.value;
 		} else {
 			error = Error.UnexpectedType;
@@ -2005,6 +2022,7 @@ public class SaveGameData {
 			IntegerValue realValue = (IntegerValue)value;
 			error = Error.NoError;
 			errorMessage = "";
+			value.wasProcessed = true;
 			return realValue.value;
 		} else {
 			error = Error.UnexpectedType;
@@ -2020,6 +2038,7 @@ public class SaveGameData {
 			FloatValue realValue = (FloatValue)value;
 			error = Error.NoError;
 			errorMessage = "";
+			value.wasProcessed = true;
 			return realValue.value;
 		} else {
 			error = Error.UnexpectedType;
@@ -2042,6 +2061,7 @@ public class SaveGameData {
 			StringValue realValue = (StringValue)value;
 			error = Error.NoError;
 			errorMessage = "";
+			value.wasProcessed = true;
 			return realValue.value;
 		} else {
 			error = Error.UnexpectedType;
@@ -2057,6 +2077,7 @@ public class SaveGameData {
 			ArrayValue realValue = (ArrayValue)value;
 			error = Error.NoError;
 			errorMessage = "";
+			value.wasProcessed = true;
 			return realValue.value;
 		} else {
 			error = Error.UnexpectedType;
@@ -2072,6 +2093,7 @@ public class SaveGameData {
 			ObjectValue realValue = (ObjectValue)value;
 			error = Error.NoError;
 			errorMessage = "";
+			value.wasProcessed = true;
 			return realValue.value;
 		} else {
 			error = Error.UnexpectedType;
