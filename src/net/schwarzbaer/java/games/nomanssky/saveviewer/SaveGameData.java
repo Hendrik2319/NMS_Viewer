@@ -1107,9 +1107,9 @@ public class SaveGameData {
 	public static final class UniverseAddress implements Comparable<UniverseAddress> {
 
 		final int galaxyIndex;
-		public  final int voxelX;
-		private final int voxelY;
-		public  final int voxelZ;
+		public final int voxelX;
+		final int voxelY;
+		public final int voxelZ;
 		final int solarSystemIndex;
 		final int planetIndex;
 		private final long address;

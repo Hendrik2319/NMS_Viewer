@@ -122,11 +122,13 @@ public class TableView {
 		private boolean useRowSorter;
 		private String name;
 		private DebugTableContextMenu contextMenu;
+		private TableCellRenderer overallCellRenderer;
 		
 		SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super();
 			this.name = name;
 			this.useRowSorter = useRowSorter;
+			this.overallCellRenderer = null;
 			if (disableAutoResize)
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			if (installDebugContextMenu) {
@@ -150,6 +152,16 @@ public class TableView {
 			dataModel.setColumnWidths(this);
 			if (useRowSorter)
 				setRowSorter(new SimplifiedRowSorter(name,dataModel));
+			if (overallCellRenderer!=null)
+				setCellRendererForAllColumns(overallCellRenderer, false);
+		}
+
+		public void setCellRendererForAllColumns(TableCellRenderer renderer, boolean resetAfterModelChange) {
+			if (resetAfterModelChange)
+				this.overallCellRenderer = renderer;
+			TableColumnModel tableColumnModel = getColumnModel();
+			for (int i=0; i<tableColumnModel.getColumnCount(); ++i)
+				tableColumnModel.getColumn(i).setCellRenderer(renderer);
 		}
 	}
 	

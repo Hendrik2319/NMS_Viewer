@@ -1,6 +1,8 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Window;
@@ -16,7 +18,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
 import net.schwarzbaer.gui.StandardDialog;
@@ -86,24 +90,55 @@ class SimplePanels {
 
 	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6246130206148705495L;
+		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
 		private Window mainWindow;
+		private Long addressToHighlight;
+		private SimplifiedTable table;
 
 		public BaseBuildingObjectsPanel(SaveGameData data, Window mainWindow) {
 			super(data);
 			this.mainWindow = mainWindow;
+			this.addressToHighlight = null;
 			
 			BBOTableModel tableModel = new BBOTableModel();
-			SimplifiedTable table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
+			table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
+			table.setCellRendererForAllColumns(new DefaultTableCellRenderer(){
+				private static final long serialVersionUID = -8578657095051025534L;
+				@Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+					Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+					if (!isSelected) {
+						Color background = table.getBackground();
+						if (addressToHighlight!=null) {
+							UnboundBuildingObject ubo = data.baseBuildingObjects[table.convertRowIndexToModel(row)];
+							if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==addressToHighlight)
+								background = COLOR_HIGHLIGHT;
+						}
+						component.setBackground(background);
+					}
+					return component;
+				}
+				
+			},true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 			contextMenu.addSeparator();
+			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
 			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BBOColumnID.ObjectID)));
 			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML()));
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 		
+		private void highlightSpecificAddress() {
+			SaveViewer.CoordinatesDialog dlg = new SaveViewer.CoordinatesDialog(mainWindow,true,"Select Coordinates");
+			dlg.showDialog();
+			if (dlg.hasResult()) {
+				addressToHighlight = dlg.getResult();
+			}
+			table.repaint();
+		}
+
 		private static class NamedAddress {
 
 			private String name;

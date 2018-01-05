@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -50,6 +51,7 @@ import javax.swing.JTree;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -59,7 +61,6 @@ import javax.swing.tree.TreeModel;
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.StandardDialog.Position;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
@@ -189,7 +190,7 @@ public class SaveViewer implements ActionListener {
 		updateWindowTitle();
 	}
 	
-	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, RefreshExtraImages }
+	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, RefreshExtraImages, SelectCoordinates }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -269,8 +270,16 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case ComputeCoordinates:
-			new ComputeCoordinatesDialog(mainWindow).showDialog(Position.PARENT_CENTER);
+			new CoordinatesDialog(mainWindow).showDialog();
 			break;
+			
+		case SelectCoordinates: {
+			CoordinatesDialog dlg = new CoordinatesDialog(mainWindow,true,"Select Coordinates");
+			dlg.showDialog();
+			if (dlg.hasResult()) {
+				dlg.getResult();
+			}
+		} break;
 			
 		case RefreshExtraImages:
 			images.reloadImageList();
@@ -465,6 +474,7 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
+			toolBar.add(createButton("Select Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
 		}
 
@@ -543,45 +553,60 @@ public class SaveViewer implements ActionListener {
 	
 	}
 	
-	private static class ComputeCoordinatesDialog extends StandardDialog {
+	public static class CoordinatesDialog extends StandardDialog {
 		private static final long serialVersionUID = -2899608237998750242L;
 		
 		private JLabel[] glyphLabels;
-		private JTextArea statusField;
+		private JTextArea outputField;
+		
+		private boolean usedAsInputDialog;
+		private UniverseAddress shownUA;
+		private UniverseAddress resultUA;
+		private AbstractInputPanel[] inputPanels;
 		
 		private static abstract class AbstractInputPanel extends JPanel {
 			private static final long serialVersionUID = -2301492858089122177L;
 			
-			protected ComputeCoordinatesDialog parent;
+			protected CoordinatesDialog parent;
 		
-			AbstractInputPanel(ComputeCoordinatesDialog parent) {
+			AbstractInputPanel(CoordinatesDialog parent) {
 				this.parent = parent;
 				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
 			}
 			
-			JPanel createButtonPanel() {
+			JPanel createButtonPanel(String btnTitle, ActionListener aL) {
 				JPanel panel = new JPanel();
 				panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
-				JButton btnCompute = new JButton("Compute");
-				btnCompute.addActionListener(e->computeUniverseAddress());
+				JButton btnCompute = new JButton(btnTitle);
+				//ActionListener aL = e->computeUniverseAddress();
+				btnCompute.addActionListener(aL);
 				panel.add(btnCompute);
 				return panel;
 			}
 		
-			protected abstract void computeUniverseAddress();
+			abstract UniverseAddress computeUniverseAddress();
+			abstract void setAddress(UniverseAddress ua);
 		}
 		
-		ComputeCoordinatesDialog(Window parent) {
-			super(parent,"Compute Coordinates",ModalityType.APPLICATION_MODAL);
+		public CoordinatesDialog(Window parent) {
+			this(parent,false,"Compute Coordinates");
+		}
+		
+		public CoordinatesDialog(Window parent, boolean usedAsInputDialog, String title) {
+			super(parent,title,ModalityType.APPLICATION_MODAL);
+			this.usedAsInputDialog = usedAsInputDialog;
+			this.shownUA = null;
+			this.resultUA = null;
 			
+			inputPanels = new AbstractInputPanel[4];
 			GridBagLayout layout = new GridBagLayout();
 			JPanel inputPanels = new JPanel(layout);
-			addInputPanel(inputPanels, layout, new InputAsCoords(this));
-			addInputPanel(inputPanels, layout, new InputAsSigBoostCode(this));
-			addInputPanel(inputPanels, layout, new InputAsPortalGlyphCode(this));
-			addInputPanel(inputPanels, layout, new InputAsAddress(this));
+			addInputPanel(inputPanels, layout, this.inputPanels[0] = new InputAsCoords(this));
+			addInputPanel(inputPanels, layout, this.inputPanels[1] = new InputAsSigBoostCode(this));
+			addInputPanel(inputPanels, layout, this.inputPanels[2] = new InputAsPortalGlyphCode(this));
+			addInputPanel(inputPanels, layout, this.inputPanels[3] = new InputAsAddress(this));
 			
-			JPanel portalGlyphPanel = new JPanel(new GridLayout(1, 12, 3,3));
+			JPanel portalGlyphPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,3,3));
 			portalGlyphPanel.setBorder(BorderFactory.createEtchedBorder());
 			glyphLabels = new JLabel[12];
 			Dimension preferredSize = new Dimension(50,50);
@@ -591,18 +616,30 @@ public class SaveViewer implements ActionListener {
 				portalGlyphPanel.add(glyphLabels[i]);
 			}
 			
-			statusField = new JTextArea();
-			statusField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),BorderFactory.createEmptyBorder(3,3,3,3)));
-			statusField.setPreferredSize(new Dimension(300,20));
-			statusField.setEditable(false);
+			outputField = new JTextArea();
+			Border outsideBorder;
+			if (this.usedAsInputDialog) outsideBorder = BorderFactory.createTitledBorder("Selected Address");
+			else                        outsideBorder = BorderFactory.createEtchedBorder();
+			outputField.setBorder(BorderFactory.createCompoundBorder(outsideBorder,BorderFactory.createEmptyBorder(3,3,3,3)));
+			outputField.setPreferredSize(new Dimension(300,20));
+			outputField.setEditable(false);
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 			contentPane.add(inputPanels,BorderLayout.WEST);
-			contentPane.add(statusField,BorderLayout.CENTER);
+			contentPane.add(outputField,BorderLayout.CENTER);
 			contentPane.add(portalGlyphPanel,BorderLayout.SOUTH);
+
+			JPanel dialogPanel = new JPanel(new BorderLayout(3,3));
+			dialogPanel.add(contentPane,BorderLayout.CENTER);
+			if (this.usedAsInputDialog) {
+				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
+				buttonPanel.add(createButton("Ok", e->{resultUA = shownUA; closeDialog();}));
+				buttonPanel.add(createButton("Cancel", e->closeDialog()));
+				dialogPanel.add(buttonPanel,BorderLayout.SOUTH);
+			}
 			
-			super.createGUI( contentPane );
+			super.createGUI( dialogPanel );
 			super.setSizeAsMinSize();
 //			super.setResizable(false);
 		}
@@ -616,7 +653,18 @@ public class SaveViewer implements ActionListener {
 			layout.setConstraints(inputPanel, c);
 			inputPanels.add(inputPanel);
 			
-			JPanel buttonPanel = inputPanel.createButtonPanel();
+			String btnTitle = this.usedAsInputDialog ? "Select" : "Compute";
+			ActionListener aL = e->{
+				UniverseAddress ua = inputPanel.computeUniverseAddress();
+				if (ua!=null) {
+					showAddress(ua);
+					if (usedAsInputDialog)
+						for (AbstractInputPanel panel:this.inputPanels)
+							panel.setAddress(ua);
+				}
+			};
+			
+			JPanel buttonPanel = inputPanel.createButtonPanel(btnTitle,aL);
 			c.weightx=0;
 			c.gridwidth=GridBagConstraints.REMAINDER;
 			c.fill = GridBagConstraints.BOTH;
@@ -624,7 +672,9 @@ public class SaveViewer implements ActionListener {
 			inputPanels.add(buttonPanel);
 		}
 
-		private void showUniverseAddress(UniverseAddress ua) {
+		private void showAddress(UniverseAddress ua) {
+			shownUA = ua;
+			
 			long portalGlyphCode = ua.getPortalGlyphCode();
 			
 			for (int i=11; i>=0; --i) {
@@ -635,16 +685,27 @@ public class SaveViewer implements ActionListener {
 				glyphLabels[i].setIcon(icon);
 			}
 			
-			statusField.setText(ua.getCoordinates());
-			statusField.append("\r\n"+ua.getExtendedSigBoostCode());
-			statusField.append("\r\n"+ua.getPortalGlyphCodeStr());
-			statusField.append("\r\n"+ua.getAddressStr());
+			outputField.setText(ua.getCoordinates());
+			outputField.append("\r\n"+ua.getExtendedSigBoostCode());
+			outputField.append("\r\n"+ua.getPortalGlyphCodeStr());
+			outputField.append("\r\n"+ua.getAddressStr());
+			outputField.append("\r\n    = "+ua.getAddress());
 		}
 
 		private void showError(String message) {
-			statusField.setText(message);
+			outputField.setText(message);
 		}
 		
+		public boolean hasResult() {
+			if (!usedAsInputDialog) throw new UnsupportedOperationException("This is not an input dialog. Calling \"hasResult()\" is not allowed.");
+			return resultUA!=null;
+		}
+
+		public long getResult() {
+			if (!usedAsInputDialog) throw new UnsupportedOperationException("This is not an input dialog. Calling \"getResult()\" is not allowed.");
+			return resultUA.getAddress();
+		}
+
 		private static class InputField extends JTextField {
 			private static final long serialVersionUID = -4256186100798813519L;
 			
@@ -718,7 +779,7 @@ public class SaveViewer implements ActionListener {
 			private InputField galaxyIndex;
 			private InputField portalGlyphCode;
 
-			InputAsPortalGlyphCode(ComputeCoordinatesDialog parent) {
+			InputAsPortalGlyphCode(CoordinatesDialog parent) {
 				super(parent);
 				add(new JLabel("Galaxy:"));
 				add(galaxyIndex = new InputField(35,20));
@@ -726,8 +787,12 @@ public class SaveViewer implements ActionListener {
 				add(portalGlyphCode = new InputField(200,20));
 			}
 
-			@Override
-			protected void computeUniverseAddress() {
+			@Override void setAddress(UniverseAddress ua) {
+				galaxyIndex.setText(""+ua.galaxyIndex);
+				portalGlyphCode.setText(""+ua.getPortalGlyphCodeStr());
+			}
+
+			@Override UniverseAddress computeUniverseAddress() {
 				TextFieldValueInt  galaxyIndexValue     = galaxyIndex    .getIntValue();
 				TextFieldValueLong portalGlyphCodeValue = portalGlyphCode.getLongHexValue();
 				boolean error = false;
@@ -735,12 +800,11 @@ public class SaveViewer implements ActionListener {
 				if (portalGlyphCodeValue.parseError) { portalGlyphCode.setError(); error = true; }
 				if (error) {
 					parent.showError("Wrong Input");
-				} else {
-					long region = portalGlyphCodeValue.value & 0xFFFFFFFFL;
-					long plnsys = (portalGlyphCodeValue.value>>32) & 0xFFFF;
-					UniverseAddress ua = new UniverseAddress( (plnsys<<40) | (((long)galaxyIndexValue.value&0xFF)<<32) | region);
-					parent.showUniverseAddress(ua);
+					return null;
 				}
+				long region = portalGlyphCodeValue.value & 0xFFFFFFFFL;
+				long plnsys = (portalGlyphCodeValue.value>>32) & 0xFFFF;
+				return new UniverseAddress( (plnsys<<40) | (((long)galaxyIndexValue.value&0xFF)<<32) | region);
 			}
 		}
 
@@ -748,18 +812,20 @@ public class SaveViewer implements ActionListener {
 			private static final long serialVersionUID = 5365096410288633609L;
 			private InputField universeAddress;
 
-			InputAsAddress(ComputeCoordinatesDialog parent) {
+			InputAsAddress(CoordinatesDialog parent) {
 				super(parent);
 				add(new JLabel("Universe Address:"));
 				add(universeAddress = new InputField(200,20));
 			}
 
-			@Override
-			protected void computeUniverseAddress() {
+			@Override void setAddress(UniverseAddress ua) {
+				universeAddress.setText(ua.getAddressStr());
+			}
+
+			@Override UniverseAddress computeUniverseAddress() {
 				TextFieldValueLong universeAddressValue = universeAddress.getLongValue();
-				if (universeAddressValue.parseError) { universeAddress.setError(); parent.showError("Wrong Input"); return; }
-				UniverseAddress ua = new UniverseAddress(universeAddressValue.value);
-				parent.showUniverseAddress(ua);
+				if (universeAddressValue.parseError) { universeAddress.setError(); parent.showError("Wrong Input"); return null; }
+				return new UniverseAddress(universeAddressValue.value);
 			}
 		}
 
@@ -769,7 +835,7 @@ public class SaveViewer implements ActionListener {
 			private InputField sigBoostCode;
 			private InputField planetIndex;
 
-			InputAsSigBoostCode(ComputeCoordinatesDialog parent) {
+			InputAsSigBoostCode(CoordinatesDialog parent) {
 				super(parent);
 				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 				add(new JLabel("Galaxy:"));
@@ -780,8 +846,13 @@ public class SaveViewer implements ActionListener {
 				add(planetIndex = new InputField(35,20));
 			}
 
-			@Override
-			protected void computeUniverseAddress() {
+			@Override void setAddress(UniverseAddress ua) {
+				galaxyIndex.setText(""+ua.galaxyIndex);
+				sigBoostCode.setText(ua.getSigBoostCode());
+				planetIndex.setText(""+ua.planetIndex);
+			}
+
+			@Override UniverseAddress computeUniverseAddress() {
 				TextFieldValueInt galaxyIndexValue = galaxyIndex .getIntValue();
 				String            sigBoostCodeStr  = sigBoostCode.getText();
 				TextFieldValueInt planetIndexValue = planetIndex .getIntValue();
@@ -811,15 +882,15 @@ public class SaveViewer implements ActionListener {
 				
 				if (error || sigBoostCodeError) {
 					parent.showError("Wrong Input");
-				} else {
-					int voxelX = (int) (values[0]-2047);
-					int voxelY = (int) (values[1]-127);
-					int voxelZ = (int) (values[2]-2047);
-					int solarSystemIndex = (int) values[3];
-					
-					UniverseAddress ua = new UniverseAddress(galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndexValue.value);
-					parent.showUniverseAddress(ua);
+					return null;
 				}
+				
+				int voxelX = (int) (values[0]-2047);
+				int voxelY = (int) (values[1]-127);
+				int voxelZ = (int) (values[2]-2047);
+				int solarSystemIndex = (int) values[3];
+				
+				return new UniverseAddress(galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndexValue.value);
 			}
 		}
 
@@ -833,7 +904,7 @@ public class SaveViewer implements ActionListener {
 			private InputField solarSystemIndex;
 			private InputField planetIndex;
 			
-			InputAsCoords(ComputeCoordinatesDialog parent) {
+			InputAsCoords(CoordinatesDialog parent) {
 				super(parent);
 				//setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 				add(new JLabel("Galaxy:"));
@@ -848,8 +919,16 @@ public class SaveViewer implements ActionListener {
 				add(planetIndex = new InputField(35,20));
 			}
 		
-			@Override
-			protected void computeUniverseAddress() {
+			@Override void setAddress(UniverseAddress ua) {
+				galaxyIndex.setText(""+ua.galaxyIndex);
+				regionVoxelX.setText(""+ua.voxelX);
+				regionVoxelY.setText(""+ua.voxelY);
+				regionVoxelZ.setText(""+ua.voxelZ);
+				solarSystemIndex.setText(""+ua.solarSystemIndex);
+				planetIndex.setText(""+ua.planetIndex);
+			}
+
+			@Override UniverseAddress computeUniverseAddress() {
 				TextFieldValueInt planetIndexValue      = planetIndex     .getIntValue();
 				TextFieldValueInt solarSystemIndexValue = solarSystemIndex.getIntValue();
 				TextFieldValueInt regionVoxelXValue     = regionVoxelX    .getIntValue();
@@ -867,17 +946,17 @@ public class SaveViewer implements ActionListener {
 				
 				if (error) {
 					parent.showError("Wrong Input");
-				} else {
-					int voxelX = regionVoxelXValue.value;
-					int voxelY = regionVoxelYValue.value;
-					int voxelZ = regionVoxelZValue.value;
-					if (regionVoxelXValue.valueWasHex) { if (voxelX>0x7FF) voxelX |= 0xFFFFF000; }
-					if (regionVoxelYValue.valueWasHex) { if (voxelY> 0x7F) voxelY |= 0xFFFFFF00; }
-					if (regionVoxelZValue.valueWasHex) { if (voxelZ>0x7FF) voxelZ |= 0xFFFFF000; }
-					
-					UniverseAddress ua = new UniverseAddress(galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndexValue.value, planetIndexValue.value);
-					parent.showUniverseAddress(ua);
+					return null;
 				}
+				
+				int voxelX = regionVoxelXValue.value;
+				int voxelY = regionVoxelYValue.value;
+				int voxelZ = regionVoxelZValue.value;
+				if (regionVoxelXValue.valueWasHex) { if (voxelX>0x7FF) voxelX |= 0xFFFFF000; }
+				if (regionVoxelYValue.valueWasHex) { if (voxelY> 0x7F) voxelY |= 0xFFFFFF00; }
+				if (regionVoxelZValue.valueWasHex) { if (voxelZ>0x7FF) voxelZ |= 0xFFFFF000; }
+				
+				return new UniverseAddress(galaxyIndexValue.value, voxelX, voxelY, voxelZ, solarSystemIndexValue.value, planetIndexValue.value);
 			}
 		}
 	}
