@@ -302,9 +302,9 @@ public class FileExport {
 			vrml.println("");
 			
 			Point3D origin = new Point3D(0,0,0);
-			for (Point3D p:arrPos) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f pos %1.2f %1.2f %1.2f color 1 1 1 } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
-			for (Point3D p:arrUp ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f pos %1.2f %1.2f %1.2f color 1 0 0 } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
-			for (Point3D p:arrAt ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f pos %1.2f %1.2f %1.2f color 0 1 0 } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (Point3D p:arrPos) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 1 1 pos %1.2f %1.2f %1.2f } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (Point3D p:arrUp ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 0 0 pos %1.2f %1.2f %1.2f } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (Point3D p:arrAt ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 0 1 0 pos %1.2f %1.2f %1.2f } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
