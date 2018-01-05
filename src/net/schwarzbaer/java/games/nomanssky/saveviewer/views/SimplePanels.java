@@ -2,15 +2,25 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Window;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.table.TableCellEditor;
 
+import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
@@ -19,6 +29,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryDat
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
@@ -26,20 +37,130 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 
 class SimplePanels {
 	
+	public static class ComboBoxDialog<T> extends StandardDialog {
+		private static final long serialVersionUID = 2109107550076395513L;
+		
+		private boolean hasResult;
+		private T[] options;
+		private JComboBox<T> comboBox;
+
+		public ComboBoxDialog(Window mainWindow, String message, String title, T[] options, T initialValue) {
+			super(mainWindow,title,ModalityType.APPLICATION_MODAL);
+			this.options = options;
+			hasResult = false;
+			
+			comboBox = new JComboBox<T>(options);
+			comboBox.setSelectedItem(initialValue);
+			
+			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
+			inputPanel.add(new JLabel(message),BorderLayout.CENTER);
+			inputPanel.add(comboBox,BorderLayout.SOUTH);
+			
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
+			buttonPanel.add(SaveViewer.createButton("Ok", e->{hasResult=true; closeDialog();}));
+			buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+			contentPane.add(inputPanel,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
+			
+			createGUI(contentPane);
+		}
+
+		public boolean hasResult() {
+			return hasResult;
+		}
+
+		public T getResult() {
+			int index = comboBox.getSelectedIndex();
+			if (index<0) return null;
+			return options[index];
+		}
+
+		public int getResultIndex() {
+			return comboBox.getSelectedIndex();
+		}
+
+	}
+
 	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6246130206148705495L;
+		private Window mainWindow;
 
-		public BaseBuildingObjectsPanel(SaveGameData data) {
+		public BaseBuildingObjectsPanel(SaveGameData data, Window mainWindow) {
 			super(data);
+			this.mainWindow = mainWindow;
 			
 			BBOTableModel tableModel = new BBOTableModel();
 			SimplifiedTable table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
 			DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
+			contextMenu.addSeparator();
 			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BBOColumnID.ObjectID)));
+			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML()));
 			
 			add(tableScrollPane,BorderLayout.CENTER);
+		}
+		
+		private static class NamedAddress {
+
+			private String name;
+			private long addr;
+
+			public NamedAddress(String name, long addr) {
+				this.name = name;
+				this.addr = addr;
+			}
+
+			@Override public String toString() { return name; }
+		}
+
+		private void writePosToVRML() {
+			System.out.println("data.baseBuildingObjects.length: "+data.baseBuildingObjects.length);
+			
+			HashMap<Long,Integer> foundAddresses = new HashMap<>();
+			for (UnboundBuildingObject ubo:data.baseBuildingObjects) {
+				long address = ubo.galacticAddress.getAddress();
+				System.out.printf("  address: %016X\r\n",address);
+				Integer amount = foundAddresses.get(address);
+				if (amount==null) amount=0;
+				foundAddresses.put(address,amount+1);
+			}
+			System.out.println("foundAddresses.size(): "+foundAddresses.size());
+			
+			Vector<NamedAddress> names = new Vector<>();
+			for (long addr:foundAddresses.keySet()) {
+				Integer amount = foundAddresses.get(addr);
+				String str = new UniverseAddress(addr).getVerboseName(data.universe);
+				names.add(new NamedAddress("["+amount+"] "+str,addr));
+			}
+			names.sort(Comparator.comparing(na->na.name));
+			System.out.println("names.size(): "+names.size());
+			
+			ComboBoxDialog<NamedAddress> dlg = new ComboBoxDialog<>(mainWindow,"message", "title", names.toArray(new NamedAddress[0]), names.firstElement());
+			dlg.showDialog();
+			if (!dlg.hasResult()) return;
+			
+			int index = dlg.getResultIndex();
+			if (index<0) return;
+			
+			NamedAddress selected = names.get(index);
+			long selectedAddress = selected.addr;
+			System.out.printf("selectedAddress: %016X\r\n",selectedAddress);
+			System.out.printf("selectedName   : %s\r\n",selected.name);
+			
+			Vector<BuildingObject> objects = new Vector<>();
+			for (UnboundBuildingObject ubo:data.baseBuildingObjects) {
+				long address = ubo.galacticAddress.getAddress();
+				System.out.printf("  address: %016X %s\r\n",address,(address==selectedAddress?"####":""));
+				if (address==selectedAddress)
+					objects.add(ubo);
+			}
+			System.out.println("objects.size(): "+objects.size());
+			
+			FileExport.writePosToVRML(objects,this);
 		}
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
@@ -91,7 +212,7 @@ class SimplePanels {
 			}
 		}
 	}
-	
+
 	static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -632703090899520348L;
 
@@ -126,7 +247,9 @@ class SimplePanels {
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
 				DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
+				contextMenu.addSeparator();
 				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->FileExport.writePosToVRML(new Vector<>(Arrays.asList(playerbase.objects)),PlayerBasePanel.this)));
 				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);

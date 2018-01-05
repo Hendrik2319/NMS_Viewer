@@ -71,7 +71,7 @@ public class SaveGameView extends JPanel {
 		if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
 		
 		if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases",new SimplePanels.PersistentPlayerBasesPanel(data));
-		if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data));
+		if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
 		
 		SaveGameViewTabGroupingPanel discoveredDataPanel = new SaveGameViewTabGroupingPanel(data);
 		discoveredDataPanel.addPanel("Available", new SimplePanels.DiscoveredDataAvailablePanel(data));

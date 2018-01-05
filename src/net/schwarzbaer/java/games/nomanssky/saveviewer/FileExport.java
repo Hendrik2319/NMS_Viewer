@@ -1,12 +1,21 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.Component;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.Vector;
 
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
@@ -180,4 +189,126 @@ public class FileExport {
 		if ( value instanceof ArrayValue   ) writeToHTML_arr(out, ((ArrayValue )value).value, ID+"_"+i);
 	}
 
+	private static class Point3D {
+		double x,y,z;
+
+		public Point3D(double x, double y, double z) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+		}
+
+		public Point3D(Coordinates pos) {
+			this.x = pos.x;
+			this.y = pos.y;
+			this.z = pos.z;
+		}
+
+		public Point3D(Point3D pos) {
+			this.x = pos.x;
+			this.y = pos.y;
+			this.z = pos.z;
+		}
+
+		public void min(Point3D pos) {
+			x = Math.min(x, pos.x);
+			y = Math.min(y, pos.y);
+			z = Math.min(z, pos.z);
+		}
+
+		public void max(Point3D pos) {
+			x = Math.max(x, pos.x);
+			y = Math.max(y, pos.y);
+			z = Math.max(z, pos.z);
+		}
+
+		public Point3D add(Point3D vec) {
+			return new Point3D(x+vec.x, y+vec.y, z+vec.z);
+		}
+
+		public Point3D mul(double size) {
+			return new Point3D(x*size, y*size, z*size);
+		}
+
+		public double distTo(Point3D p) {
+			return Math.sqrt((x-p.x)*(x-p.x) + (y-p.y)*(y-p.y) + (z-p.z)*(z-p.z));
+		}
+	}
+	
+	public static void writePosToVRML(Vector<BuildingObject> objects, Component parent) {
+		System.out.println("Write positions of "+objects.size()+" BuildingObjects to VRML file ...");
+		
+		JFileChooser fc = new JFileChooser("./");
+		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fc.setMultiSelectionEnabled(false);
+		fc.addChoosableFileFilter(new FileNameExtensionFilter("VRML-File (*.wrl)","wrl"));;
+		
+		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
+		File file = fc.getSelectedFile();
+		
+		Point3D min = null;
+		Point3D max = null;
+		
+		Vector<Point3D> arrPos = new Vector<>();
+		
+		for (BuildingObject obj:objects) {
+			if (obj.position==null) continue;
+			if (obj.position.pos==null) continue;
+			Point3D pos = new Point3D(obj.position.pos); arrPos.add(pos);
+			if (min==null) min = new Point3D(pos); else min.min(pos);
+			if (max==null) max = new Point3D(pos); else max.max(pos);
+		}
+		double size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
+		
+//		for (int i1=0; i1<arrPos.size(); ++i1) {
+//			Point3D p1 = arrPos.get(i1);
+//			for (int i2=0; i2<i1; ++i2) {
+//				Point3D p2 = arrPos.get(i2);
+//				size = Math.min(size,p1.distTo(p2));
+//			}
+//		}
+		
+		Vector<Point3D> arrUp = new Vector<>();
+		Vector<Point3D> arrAt = new Vector<>();
+		for (BuildingObject obj:objects) {
+			if (obj.position==null) continue;
+			if (obj.position.pos==null) continue;
+			Point3D pos = new Point3D(obj.position.pos);
+			if (obj.position.up!=null) arrUp.add(pos.add(new Point3D(obj.position.up).mul(size)));
+			if (obj.position.at!=null) arrAt.add(pos.add(new Point3D(obj.position.at).mul(size)));
+		}
+		
+		try (PrintWriter vrml = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8))) {
+			
+			vrml.println("#VRML V2.0 utf8");
+			vrml.println("");
+			vrml.println("Background { skyColor 0.6 0.7 0.8 }");
+			vrml.println("");
+			vrml.println("PROTO ColoredSphere [");
+			vrml.println("	field SFFloat radius 1000 # in m");
+			vrml.println("	field SFVec3f pos 0 0 0");
+			vrml.println("	field SFColor color 0.2 0.2 0.2");
+			vrml.println("] {");
+			vrml.println("	Transform {");
+			vrml.println("		translation IS pos");
+			vrml.println("		children [");
+			vrml.println("			Shape {");
+			vrml.println("				appearance Appearance { material Material { diffuseColor IS color } }");
+			vrml.println("				geometry Sphere { radius IS radius }");
+			vrml.println("			}");
+			vrml.println("		]");
+			vrml.println("	}");
+			vrml.println("}");
+			vrml.println("");
+			
+			Point3D origin = new Point3D(0,0,0);
+			for (Point3D p:arrPos) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f pos %1.2f %1.2f %1.2f color 1 1 1 } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (Point3D p:arrUp ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f pos %1.2f %1.2f %1.2f color 1 0 0 } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (Point3D p:arrAt ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f pos %1.2f %1.2f %1.2f color 0 1 0 } # r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		System.out.println("done");
+	}
 }

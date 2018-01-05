@@ -1204,6 +1204,25 @@ public class SaveGameData {
 			return planetIndex==0 && solarSystemIndex==0;
 		}
 
+		public String getVerboseName(Universe universe) {
+			
+			if (isRegion())
+				return "Region \""+getRegionCoordinates()+"\"";
+			
+			if (isSolarSystem()) {
+				SolarSystem sys = universe.findSolarSystem(this);
+				return "SolarSystem \""+getRegionCoordinates()+" | "+sys.toString()+"\"";
+			}
+			
+			if (isPlanet()) {
+				SolarSystem sys = universe.findSolarSystem(this);
+				Planet pln = universe.findPlanet(this);
+				return "Planet \""+getRegionCoordinates()+" | "+sys.toString(true,true,false,false)+" | "+pln.toString()+"\"";
+			}
+			
+			return getCoordinates();
+		}
+
 		public String getCoordinates() {
 			return String.format("%d | %d,%d,%d | %d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
 		}
@@ -1559,6 +1578,10 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
+				return toString(true,true,true,true);
+			}
+
+			public String toString(boolean withName, boolean withExtraInfo, boolean withDataName, boolean withRace) {
 				String strName;
 				if (hasOriginalName()) strName = String.format("Sys%03X %s", solarSystemIndex, getOriginalName());
 				else                   strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
