@@ -73,6 +73,8 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
 
+	private static final String IMAGES_TOOLBAR_PNG = "/images/Toolbar.png";
+	private static final String IMAGES_TAB_HEADER_PNG = "/images/TabHeader.png";
 	public static final boolean DEBUG = true;
 	private StandardMainWindow mainWindow;
 
@@ -101,7 +103,7 @@ public class SaveViewer implements ActionListener {
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
 			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }
 		};
-		tabheaderIS.readIconsFromResource("/images/TabHeader.png");
+		tabheaderIS.readIconsFromResource(IMAGES_TAB_HEADER_PNG);
 		
 		toolbarIS = new IconSource<ToolbarIcons>(16,16){
 			@Override protected int getIconIndexInImage(ToolbarIcons key) {
@@ -116,7 +118,7 @@ public class SaveViewer implements ActionListener {
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
-		toolbarIS.readIconsFromResource("/images/Toolbar.png");
+		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
 		
 		GameInfos.loadKnownStatIDsFromFile();
 		GameInfos.loadProductIDsFromFile();

@@ -195,7 +195,7 @@ class SimplePanels {
 			}
 			System.out.println("objects.size(): "+objects.size());
 			
-			FileExport.writePosToVRML(objects,this);
+			FileExport.writePosToVRML_simple(objects,this);
 		}
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
@@ -284,7 +284,8 @@ class SimplePanels {
 				DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
-				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->FileExport.writePosToVRML(new Vector<>(Arrays.asList(playerbase.objects)),PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (simple)",e->FileExport.writePosToVRML_simple(new Vector<>(Arrays.asList(playerbase.objects)),PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (Models)",e->FileExport.writePosToVRML_models(new Vector<>(Arrays.asList(playerbase.objects)),PlayerBasePanel.this)));
 				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
