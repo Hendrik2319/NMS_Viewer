@@ -85,6 +85,7 @@ public class SaveViewer implements ActionListener {
 		
 		UniversePanel.prepareIconSources();
 		RawDataTreePanel.prepareIconSource();
+		FileExport.prepareModels();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
 			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }

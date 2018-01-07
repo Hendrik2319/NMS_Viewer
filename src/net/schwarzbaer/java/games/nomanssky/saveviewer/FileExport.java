@@ -13,6 +13,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Vector;
 
@@ -37,6 +38,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 public class FileExport {
 	
 	private static final String VRML_TEMPLATE_MODELS_WRL = "/vrml/template.models.wrl";
+	private static HashMap<String, String> mapObjectID2Model = null;
 
 	static void writeToJSON(JSON_Object json_Object, File copyfile) {
 		PrintWriter out;
@@ -331,6 +333,34 @@ public class FileExport {
 		}
 		System.out.println("done");
 	}
+	
+	public static void prepareModels() {
+		mapObjectID2Model = new HashMap<String,String>();
+		addModels("BIOROOM",		"^BIOROOM");
+		addModels("MAINROOM",		"^MAINROOM");
+		addModels("MAINROOMCUBE",	"^MAINROOMCUBE");
+		
+		addModels("CUBESTAIRS", 	"^CUBESTAIRS");
+		addModels("BUILDDOOR",		"^BUILDDOOR");
+		
+		addModels("CUBEROOM",		"^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4","^CONTAINER5",
+									"^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9","^CUBEROOM","^CUBEGLASS");
+		
+		addModels("CORRIDOR",   	"^CORRIDOR","^GLASSCORRIDOR");
+		addModels("CORRIDORX",		"^CORRIDORX");
+		
+		addModels("PLANT",			"^LUSHPLANT","^BARRENPLANT","^CREATUREPLANT","^PEARLPLANT","^SCORCHEDPLANT",
+									"^SNOWPLANT","^RADIOPLANT","^TOXICPLANT","^POOPPLANT","^SACVENOMPLANT","^NIPPLANT");
+		
+		addModels("PLANTER",		"^PLANTER");
+		addModels("PLANTERMEGA",	"^PLANTERMEGA");
+		addModels("CARBONPLANTER",	"^CARBONPLANTER");
+	}
+	
+	private static void addModels(String modelName, String... objectIDs) {
+		for (String objectID:objectIDs)
+			mapObjectID2Model.put(objectID, modelName);
+	}
 
 	private static void writeModel(PrintWriter vrml, String objectID, String label, Coordinates pos, Coordinates at, Coordinates up, double size) {
 		vrml.print("MyOrientation {");
@@ -339,51 +369,16 @@ public class FileExport {
 		vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
 		
 		vrml.print (" children");
-		switch (objectID) {
+		String modelName = mapObjectID2Model.get(objectID);
 		
-		case "^CONTAINER0": case "^CONTAINER1": case "^CONTAINER2": case "^CONTAINER3": case "^CONTAINER4":
-		case "^CONTAINER5": case "^CONTAINER6": case "^CONTAINER7": case "^CONTAINER8": case "^CONTAINER9":
-		case "^CUBEROOM":
-			vrml.printf(" CUBEROOM { string \"%s\" }", label);
-			break;
-			
-		case "^CORRIDOR": case "^GLASSCORRIDOR":
-			vrml.printf(" CORRIDOR { string \"%s\" }", label);
-			break;
-			
-		case "^BIOROOM":
-			vrml.printf(" BIOROOM { string \"%s\" }", label);
-			break;
-			
-		case "^LUSHPLANT": case "^BARRENPLANT": case "^CREATUREPLANT": case "^PEARLPLANT": case "^SCORCHEDPLANT":
-		case "^SNOWPLANT": case "^RADIOPLANT": case "^TOXICPLANT": case "^POOPPLANT":
-			vrml.printf(" PLANT { string \"%s\" }", label);
-			break;
-			
-		case "^MAINROOM":
-			vrml.printf(" MAINROOM { string \"%s\" }", label);
-			break;
-			
-		case "^MAINROOMCUBE":
-			vrml.printf(" MAINROOMCUBE { string \"%s\" }", label);
-			break;
-			
-		case "^CORRIDORX":
-			vrml.printf(" CORRIDORX { string \"%s\" }", label);
-			break;
-			
-		case "^CARBONPLANTER":
-			vrml.printf(" CARBONPLANTER { string \"%s\" }", label);
-			break;
-			
-		case "^BUILDDOOR":
-			vrml.printf(" BUILDDOOR { string \"%s\" }", label);
-			break;
-			
-		default:
-			vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", size/2, size/2, size/2, objectID);
-			break;
-		}
+		if (modelName!=null)
+			vrml.printf(" %s { string \"%s\" }", modelName, label);
+		else
+			switch (objectID) {
+			default:
+				vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", size/2, size/2, size/2, objectID);
+				break;
+			}
 		vrml.println(" }");
 	}
 

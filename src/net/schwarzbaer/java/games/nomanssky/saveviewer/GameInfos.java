@@ -484,7 +484,7 @@ public class GameInfos {
 				out.printf("%s=%s\r\n",idStr,id.label);
 				if (id.type!=null  ) out.printf("%s.type=%s\r\n"     ,idStr,id.type);
 				if (id.hasSymbol ()) out.printf("%s.symbol=%s\r\n"   ,idStr,id.symbol);
-				if (id.hasImage  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
+				if (id.hasImageFileName  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
 				if (id.hasImageBG()) out.printf("%s.imageBG=%06X\r\n",idStr,id.getImageBG());
 			}
 		}
@@ -496,10 +496,6 @@ public class GameInfos {
 	public static class GeneralizedID {
 		
 		public enum Type {
-			ShipWeapon               ("Schiffswaffe"),
-			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade"),
-			ShipExtension            ("Schiffs-Erweiterung"),        
-			ShipExtensionUpgrade     ("Schiffs-Erw.-Upgrade"),
 			MultitoolWeapon          ("Multitool-Waffe"),
 			MultitoolWeaponUpgrade   ("Multitool-Waffen-Upgrade"),
 			MultitoolExtension       ("Multitool-Erweiterung"),
@@ -510,14 +506,23 @@ public class GameInfos {
 			ExocraftWeaponUpgrade    ("Exo-Fahrzeug-Waffen-Upgrade"),
 			ExocraftExtension        ("Exo-Fahrzeug-Erweiterung"),
 			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erw.-Upgrade"),
+			ShipWeapon               ("Schiffswaffe"),
+			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade"),
+			ShipExtension            ("Schiffs-Erweiterung"),
+			ShipExtensionUpgrade     ("Schiffs-Erw.-Upgrade"),
+			FreighterExtension       ("Frachter-Erweiterung"),
+			FreighterExtensionUpgrade("Frachter-Erw.-Upgrade"),
 			BaseComponent            ("Basis-Komponente"),
 			BaseDekoration           ("Basis-Dekoration"),
 			BaseExternal             ("Basis-Außenanlage"),
-			Plant                    ("Pflanze"),
-			Alloy                    ("Legierung"),
-			Energy                   ("Energie-Produkt"),
 			Resource                 ("Rohstoff"),
-			PlantProduct             ("Frucht");
+			Alloy                    ("Legierung"),
+			AtlasSeed                ("Atlas-Samen"),
+			Product                  ("Allgemeines Produkt"),
+			Energy                   ("Energie-Produkt"),
+			Plant                    ("Pflanze"),
+			PlantProduct             ("Frucht"),
+			RaceGift                 ("Völker-Geschenk");
 			
 			private String label;
 			Type(String label) { this.label = label; }
@@ -573,7 +578,7 @@ public class GameInfos {
 			return "("+symbol+") "+label+" ["+id+"]";
 		}
 		
-		public boolean hasImage() { return imageFileName!=null; }
+		public boolean hasImageFileName() { return imageFileName!=null; }
 		public String getImageFileName() { return imageFileName==null?"":imageFileName; }
 		public void setImageFileName(String fileName) {
 			if (fileName!=null && fileName.isEmpty()) fileName = null;
@@ -873,9 +878,7 @@ public class GameInfos {
 				EditIdDialog dlg = new EditIdDialog(mainwindow,clickedID);
 				dlg.showDialog();
 				if (dlg.hasDataChanged()) {
-					clickedID.label = dlg.getLabel();
-					clickedID.setImageBG(dlg.getImageBG());
-					clickedID.setImageFileName(dlg.getImageFileName());
+					dlg.transferChangesTo(clickedID);
 					idChanged = true;
 				}
 			} break;
@@ -1051,7 +1054,7 @@ public class GameInfos {
 			if (id.type!=null  ) textarea.append("Type   : "+id.type.label+"\r\n");
 			if (id.hasLabel  ()) textarea.append("Label  : "+id.label+"\r\n");
 			if (id.hasSymbol ()) textarea.append("Symbol : "+id.symbol+"\r\n");
-			if (id.hasImage  ()) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
+			if (id.hasImageFileName  ()) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
 			if (id.hasImageBG()) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
 			
 			BufferedImage image = id.getImage();
@@ -1480,7 +1483,7 @@ public class GameInfos {
 			textarea.append("Label  : "+id.label+"\r\n");
 			textarea.append("Symbol : "+id.symbol+"\r\n");
 			textarea.append("Type   : "+(id.type==null?"":id.type.label)+"\r\n");
-			textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
+			textarea.append("Image  : "+(id.hasImageFileName  ()?id.getImageFileName():"<none>")+"\r\n");
 			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
 			
 			BufferedImage image = id.getImage();
@@ -1493,9 +1496,17 @@ public class GameInfos {
 		}
 	
 		public boolean hasDataChanged() { return hasDataChanged; }
-		public Integer getImageBG() { return id.getImageBG(); }
-		public String getImageFileName() { return id.getImageFileName(); }
-		public String getLabel() { return id.label; }
+		public void transferChangesTo(GeneralizedID id) {
+			id.label = this.id.label;
+			id.symbol = this.id.symbol;
+			id.type = this.id.type;
+			id.imageFileName = this.id.imageFileName;
+			id.imageBackground = this.id.imageBackground;
+		}
+
+//		public Integer getImageBG() { return id.getImageBG(); }
+//		public String getImageFileName() { return id.getImageFileName(); }
+//		public String getLabel() { return id.label; }
 	}
 	
 }

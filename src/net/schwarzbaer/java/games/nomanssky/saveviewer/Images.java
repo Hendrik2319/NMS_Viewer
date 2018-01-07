@@ -33,11 +33,13 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
@@ -48,6 +50,7 @@ import javax.swing.event.MouseInputAdapter;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 
 public class Images {
 	private static final String FILE_COLORS = "NMS_Viewer.Colors.txt";
@@ -103,6 +106,12 @@ public class Images {
 		addColor(colorValuesVec, 0x495746, "Waffe Minenlaser" );
 		addColor(colorValuesVec, 0x5B9352, "Waffe Minenlaser Upgrade" );
 		addColor(colorValuesVec, 0x0D81A8, "Waffe Blitzwerfer Upgrade" );		
+		addColor(colorValuesVec, 0x903031, "Waffe Glutspeer" );
+		addColor(colorValuesVec, 0xE84E4C, "Waffe Glutspeer Upgrade" );
+		addColor(colorValuesVec, 0x937030, "Waffe Streublaster" );
+		addColor(colorValuesVec, 0xFFBF37, "Waffe Streublaster Upgrade" );
+		addColor(colorValuesVec, 0x2E999F, "Waffe Plasmawerfer" );
+		addColor(colorValuesVec, 0x7D4665, "Waffe Zyklotron-B. Upgrade" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
@@ -130,11 +139,11 @@ public class Images {
 				NamedColor existingColor = colorMap.putIfAbsent(newColor.value, newColor);
 				if (existingColor!=null) {
 					if (!existingColor.name.equals(newColor.name)) {
-						System.out.printf("   change name of %s into %s\r\n", existingColor, newColor.name);
+						System.out.printf("   changed name of %s into %s\r\n", existingColor, newColor.name);
 						existingColor.name = newColor.name;
 					}
 				} else {
-					System.out.printf("   %s added\r\n", newColor);
+					System.out.printf("   added %s\r\n", newColor);
 					colorValuesVec.add(newColor);
 				}
 			}
@@ -439,34 +448,38 @@ public class Images {
 
 	public static class ImageGridDialog extends StandardDialog {
 		private static final long serialVersionUID = -3724853350437145460L;
-		private static Color COLOR_BACKGRIOUND = null;
-		private static Color COLOR_BACKGRIOUND_SELECTED = null;
-		private static Color COLOR_BACKGRIOUND_PRESELECTED = null;
-		private static Color COLOR_FOREGRIOUND = null;
-		private static Color COLOR_FOREGRIOUND_SELECTED = null;
+		private static Color COLOR_BACKGROUND = null;
+		private static Color COLOR_BACKGROUND_SELECTED = null;
+		private static Color COLOR_BACKGROUND_PRESELECTED = null;
+		private static Color COLOR_BACKGROUND_MARKED = null;
+		private static Color COLOR_FOREGROUND = null;
+		private static Color COLOR_FOREGROUND_SELECTED = null;
 		
 		private String selected;
 		private int cols;
 		private int preselectedIndex;
 		private JScrollPane imageScrollPane;
+		private Vector<ImageLabel> imageLabels;
 	
 		public ImageGridDialog(Window parent, String title, String initialValue) {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
 			
 			selected = null;
+			imageLabels = new Vector<ImageLabel>();
 			
 			ImageLabel.defaultFont = new JLabel().getFont();
 			JTextArea dummy = new JTextArea();
-			COLOR_BACKGRIOUND = dummy.getBackground();
-			COLOR_FOREGRIOUND = dummy.getForeground();
-			COLOR_BACKGRIOUND_SELECTED = dummy.getSelectionColor();
-			COLOR_FOREGRIOUND_SELECTED = dummy.getSelectedTextColor();
-			COLOR_BACKGRIOUND_PRESELECTED = brighter(COLOR_BACKGRIOUND_SELECTED,0.7f);
+			COLOR_BACKGROUND = dummy.getBackground();
+			COLOR_FOREGROUND = dummy.getForeground();
+			COLOR_BACKGROUND_SELECTED = dummy.getSelectionColor();
+			COLOR_FOREGROUND_SELECTED = dummy.getSelectedTextColor();
+			COLOR_BACKGROUND_PRESELECTED = brighter(COLOR_BACKGROUND_SELECTED,0.7f);
+			COLOR_BACKGROUND_MARKED = Color.LIGHT_GRAY;
 			
 			cols = 6;
 			JPanel imagePanel = new JPanel(new GridLayout(0,cols,0,0));
 			imagePanel.setBorder(BorderFactory.createEtchedBorder());
-			imagePanel.setBackground(COLOR_BACKGRIOUND);
+			imagePanel.setBackground(COLOR_BACKGROUND);
 			
 			preselectedIndex = -1;
 			for (int i=0; i<SaveViewer.images.imagesNames.length; ++i) {
@@ -474,7 +487,9 @@ public class Images {
 				BufferedImage image = SaveViewer.images.getImage(name,null,64,64);
 				if (image!=null) {
 					boolean isPreSelected = name.equals(initialValue);
-					imagePanel.add(new ImageLabel(this,name,image,isPreSelected));
+					ImageLabel imageLabel = new ImageLabel(this,name,image,isPreSelected);
+					imageLabels.add(imageLabel);
+					imagePanel.add(imageLabel);
 					if (isPreSelected) preselectedIndex=i;
 				}
 			}
@@ -482,9 +497,12 @@ public class Images {
 			imageScrollPane = new JScrollPane(imagePanel);
 			imageScrollPane.setPreferredSize(new Dimension(700,600));
 			
+			JCheckBox chkbxMarkUsedImages;
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, false));
 			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
 			buttonPanel.add(SaveViewer.createButton("Cancel",e->closeDialog()));
+			chkbxMarkUsedImages.addActionListener(e->markUsedImages(chkbxMarkUsedImages.isSelected()));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
@@ -494,6 +512,20 @@ public class Images {
 			this.createGUI(contentPane);
 		}
 	
+		private void markUsedImages(boolean markUsedImages) {
+			HashSet<String> usedImages = new HashSet<String>();
+			if (markUsedImages) {
+				for (GeneralizedID id:GameInfos.techIDs.getValues())
+					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+				for (GeneralizedID id:GameInfos.productIDs.getValues())
+					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+				for (GeneralizedID id:GameInfos.substanceIDs.getValues())
+					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+			}
+			for (ImageLabel il:imageLabels)
+				il.setMark( markUsedImages && usedImages.contains(il.getImageFileName()) );
+		}
+
 		private Color brighter(Color color, float fraction) {
 			int r = color.getRed();
 			int g = color.getGreen();
@@ -546,12 +578,20 @@ public class Images {
 		private static final class ImageLabel extends JPanel {
 			private static final long serialVersionUID = 4629632101041946456L;
 			public static Font defaultFont;
+			private JTextArea textArea;
+			private final boolean isPreSelected;
+			private boolean isMarked;
+			private final String name;
 	
 			public ImageLabel(ImageGridDialog parent, String name, BufferedImage image, boolean isPreSelected) {
 				super(new BorderLayout(3,3));
 				setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 				
-				JTextArea textArea = new JTextArea(name);
+				this.name = name;
+				this.isPreSelected = isPreSelected;
+				this.isMarked = false;
+				
+				textArea = new JTextArea(name);
 				textArea.setPreferredSize(new Dimension(100,60));
 				textArea.setLineWrap(true);
 				textArea.setWrapStyleWord(false);
@@ -569,15 +609,34 @@ public class Images {
 				
 				MouseInputAdapter m = new MouseInputAdapter() {
 					@Override public void mouseClicked(MouseEvent e) { parent.setResult(name); }
-					@Override public void mouseEntered(MouseEvent e) { setBackground(COLOR_BACKGRIOUND_SELECTED); textArea.setForeground(COLOR_FOREGRIOUND_SELECTED); }
-					@Override public void mouseExited (MouseEvent e) { setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND); textArea.setForeground(COLOR_FOREGRIOUND); }
+					@Override public void mouseEntered(MouseEvent e) { setColors(true); }
+					@Override public void mouseExited (MouseEvent e) { setColors(false); }
 				};
 				
-				setBackground(isPreSelected?COLOR_BACKGRIOUND_PRESELECTED:COLOR_BACKGRIOUND);
+				setColors(false);
 				addMouseListener(m);
 				addMouseMotionListener(m);
 				textArea.addMouseListener(m);
 				textArea.addMouseMotionListener(m);
+			}
+			
+			public void setMark(boolean isMarked) {
+				this.isMarked = isMarked;
+				setColors(false);
+				repaint();
+			}
+
+			public String getImageFileName() {
+				return name;
+			}
+
+			private void setColors(boolean hasFocus) {
+				if      (hasFocus     ) setBackground(COLOR_BACKGROUND_SELECTED);
+				else if (isPreSelected) setBackground(COLOR_BACKGROUND_PRESELECTED);
+				else if (isMarked     ) setBackground(COLOR_BACKGROUND_MARKED);
+				else                    setBackground(COLOR_BACKGROUND);
+				if (hasFocus) textArea.setForeground(COLOR_FOREGROUND_SELECTED);
+				else          textArea.setForeground(COLOR_FOREGROUND);
 			}
 		
 		}

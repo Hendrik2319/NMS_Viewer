@@ -47,19 +47,19 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 
 		private Window mainWindow;
 		
-		private GalaxyMapPanel.GalaxyMap galaxyMap;
+		private GalaxyMap galaxyMap;
 		private JScrollBar scrollBarHoriz;
 		private JScrollBar scrollBarVert;
 
-		private JComboBox<GalaxyMapPanel.ZoomStep> zoomField;
+		private JComboBox<ZoomStep> zoomField;
 		private JLabel statusField;
 		
 		private static class ZoomStep {
 			private double value;
 			private ZoomStep(double value) { this.value = value; }
 			@Override public String toString() { return String.format(Locale.ENGLISH, "%1.1f%%", value*100); }
-			public static GalaxyMapPanel.ZoomStep[] create(double[] zoomSteps) {
-				GalaxyMapPanel.ZoomStep[] arr = new GalaxyMapPanel.ZoomStep[zoomSteps.length];
+			public static ZoomStep[] create(double[] zoomSteps) {
+				ZoomStep[] arr = new ZoomStep[zoomSteps.length];
 				for (int i=0; i<zoomSteps.length; ++i) arr[i] = new ZoomStep(zoomSteps[i]);
 				return arr;
 			}
@@ -74,8 +74,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				default: return String.format("Glyphs 0..%d", value-1);
 				}
 			}
-			public static GalaxyMapPanel.GlyphNumber[] create() {
-				GalaxyMapPanel.GlyphNumber[] arr = new GalaxyMapPanel.GlyphNumber[17];
+			public static GlyphNumber[] create() {
+				GlyphNumber[] arr = new GlyphNumber[17];
 				for (int i=0; i<arr.length; ++i) arr[i] = new GlyphNumber(i+1);
 				return arr;
 			}
@@ -117,16 +117,16 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
 			cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy((Galaxy)cmbbxGalaxies.getSelectedItem()));
 			
-			zoomField = new JComboBox<GalaxyMapPanel.ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
+			zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
 			zoomField.addActionListener( e->{
-				GalaxyMapPanel.ZoomStep zoomStep = (GalaxyMapPanel.ZoomStep)zoomField.getSelectedItem();
+				ZoomStep zoomStep = (ZoomStep)zoomField.getSelectedItem();
 				if (zoomStep!=null) { galaxyMap.setZoom(zoomStep.value); showStatus(-1,-1); }
 			});
 			
 			statusField = new JLabel("");
 			
 			JCheckBox chkbxShowGlyphRegions = new JCheckBox("Show region reachable by known glyphs", false);
-			JComboBox<GalaxyMapPanel.GlyphNumber> cmbbxKnownGlyphs = new JComboBox<>(GlyphNumber.create());
+			JComboBox<GlyphNumber> cmbbxKnownGlyphs = new JComboBox<>(GlyphNumber.create());
 			cmbbxKnownGlyphs.setSelectedItem(null);
 			cmbbxKnownGlyphs.setEnabled(false);
 
@@ -189,11 +189,11 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		}
 
 		private void showGlyphOverlay(int numberOfKnownGlyphs) {
-			GalaxyMapPanel.Worker worker = galaxyMap.showGlyphOverlay(numberOfKnownGlyphs);
+			Worker worker = galaxyMap.showGlyphOverlay(numberOfKnownGlyphs);
 			if (worker==null) return;
 			
 			ProgressDialog pd = new ProgressDialog(mainWindow,"Create Glyph Overlay");
-			GalaxyMapPanel.ProgressDialogWorker pdWorker = new ProgressDialogWorker(pd,worker);
+			ProgressDialogWorker pdWorker = new ProgressDialogWorker(pd,worker);
 			
 			pd.addCancelListener(pdWorker);
 			
@@ -216,8 +216,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		}
 		
 		private static class ProgressDialogWorker implements CancelListener, Runnable {
-			private GalaxyMapPanel.Worker worker;
-			public ProgressDialogWorker(ProgressDialog pd, GalaxyMapPanel.Worker worker) {
+			private Worker worker;
+			public ProgressDialogWorker(ProgressDialog pd, Worker worker) {
 				this.worker = worker;
 				this.worker.pd = pd;
 			}
@@ -423,7 +423,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			public int getViewWidth () { return width; }
 			public int getViewHeight() { return height; }
 
-			public GalaxyMapPanel.Worker showGlyphOverlay(int numberOfKnownGlyphs) {
+			public Worker showGlyphOverlay(int numberOfKnownGlyphs) {
 				if (numberOfKnownGlyphs==0 || (numberOfKnownGlyphs==17 && knownGlyphs==null)) {
 					setOverlayImage(null);
 					//mapImage = mapBaseImage;
@@ -661,7 +661,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 						
 						g2.setColor(COLOR_KNOWN_REGION);
 						for (Region region:galaxy.regions)
-							if (region.voxelX!=currentPos.voxelX && region.voxelZ!=currentPos.voxelZ)
+							if (region.voxelX!=currentPos.voxelX || region.voxelZ!=currentPos.voxelZ)
 								fillBox(g2, maxX, maxY,region.voxelX,region.voxelZ);
 						
 						g2.setColor(COLOR_CURRENT_POS);
@@ -721,7 +721,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 					g2.setColor(COLOR_KNOWN_REGION);
 					int markerSize = 5;
 					for (Region region:galaxy.regions)
-						if (region.voxelX!=currentPos.voxelX && region.voxelZ!=currentPos.voxelZ)
+						if (region.voxelX!=currentPos.voxelX || region.voxelZ!=currentPos.voxelZ)
 							drawMarker(g2, region.voxelX, region.voxelZ, markerSize);
 					
 					g2.setColor(COLOR_CURRENT_POS);

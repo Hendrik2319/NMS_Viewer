@@ -28,7 +28,11 @@
 ^FUELUNCOMMON1.symbol=Th
 ^FUELUNCOMMON1.image=Substance.fuel.uncommon1.Thamium9.png
 ^FUELUNCOMMON1.imageBG=BB392C
-^GAS2=
+^GAS2=Radon
+^GAS2.type=Resource
+^GAS2.symbol=Rn
+^GAS2.image=GAS.2.Radon.png
+^GAS2.imageBG=5A6F36
 ^SPACEGUNK3=Verrostetes Metall
 ^SPACEGUNK3.symbol=Sr
 ^SPACEGUNK3.image=Rustedmetalicon.png
@@ -110,6 +114,11 @@
 ^TRADEABLE1.symbol=Ir
 ^TRADEABLE1.image=Substance.neutral.common3.Iridium.png
 ^TRADEABLE1.imageBG=5DCD93
+^TRADEABLE2=Kupfer
+^TRADEABLE2.type=Resource
+^TRADEABLE2.symbol=Cu
+^TRADEABLE2.image=Substance.neutral.common1.Kupfer.png
+^TRADEABLE2.imageBG=5DCD93
 ^TRADEABLE3=Nickel
 ^TRADEABLE3.type=Resource
 ^TRADEABLE3.symbol=Ni

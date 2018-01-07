@@ -166,9 +166,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				GameInfos.EditIdDialog dlg = new GameInfos.EditIdDialog(mainwindow,clickedSlot.id);
 				dlg.showDialog();
 				if (dlg.hasDataChanged()) {
-					clickedSlot.id.label = dlg.getLabel();
-					clickedSlot.id.setImageBG(dlg.getImageBG());
-					clickedSlot.id.setImageFileName(dlg.getImageFileName());
+					dlg.transferChangesTo(clickedSlot.id);
 					updateAfterChangedIDdata();
 				}
 			} break;
