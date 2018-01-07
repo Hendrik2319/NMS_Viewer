@@ -1,13 +1,21 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,19 +36,28 @@ import java.util.Locale;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu.ExternFunction;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.NamedColorListMenu;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -55,6 +72,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.ComboboxCellEditor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.NonStringRenderer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
 public class GameInfos {
@@ -64,9 +82,9 @@ public class GameInfos {
 	private static final String FILE_SUBSTANCE_ID  = "NMS_Viewer.SubstanceIDs.txt";
 	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 	
-	private static HashMap<Long,GameInfos.UniverseObjectData> universeObjectDataArr;
+	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	
-	private static class UniverseObjectData implements Comparable<GameInfos.UniverseObjectData>{
+	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
 		enum Type { SolarSystem,Planet }
 		
 		final UniverseAddress universeAddress;
@@ -110,7 +128,7 @@ public class GameInfos {
 		}
 	
 		@Override
-		public int compareTo(GameInfos.UniverseObjectData other) {
+		public int compareTo(UniverseObjectData other) {
 			if (other==null) return -1;
 			return universeAddress.compareTo(other.universeAddress);
 		}
@@ -131,7 +149,7 @@ public class GameInfos {
 		
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			String str;
-			GameInfos.UniverseObjectData uoData = null;
+			UniverseObjectData uoData = null;
 			
 			String nextShortLabel = null;
 			boolean showInParent = false;
@@ -212,7 +230,7 @@ public class GameInfos {
 		UniverseObject uniObj = null;
 		String uniObjName = null;
 		for (Long address:universeObjectDataArr.keySet()) {
-			GameInfos.UniverseObjectData uoData = universeObjectDataArr.get(address);
+			UniverseObjectData uoData = universeObjectDataArr.get(address);
 			UniverseAddress ua = new UniverseAddress(address);
 			
 			system = null;
@@ -270,14 +288,14 @@ public class GameInfos {
 		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		
 		start = System.currentTimeMillis();
-		Vector<GameInfos.UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
+		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
 		Collections.sort(values);
 		
 		System.out.print("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		boolean isFirst = true;
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (GameInfos.UniverseObjectData uoData:values) {
+			for (UniverseObjectData uoData:values) {
 				if (!uoData.hasData()) continue;
 				
 				if (!isFirst) out.println();
@@ -359,20 +377,20 @@ public class GameInfos {
 	public static final IDMap substanceIDs = new IDMap();
 
 	public static class IDMap {
-		private HashMap<String, GameInfos.GeneralizedID> map;
+		private HashMap<String, GeneralizedID> map;
 		
 		public IDMap() {
 			map = new HashMap<>();
 		}
 	
-		public Iterable<GameInfos.GeneralizedID> getValues() {
-			return new Iterable<GameInfos.GeneralizedID>() {
-				@Override public Iterator<GameInfos.GeneralizedID> iterator() { return map.values().iterator(); }
+		public Iterable<GeneralizedID> getValues() {
+			return new Iterable<GeneralizedID>() {
+				@Override public Iterator<GeneralizedID> iterator() { return map.values().iterator(); }
 			}; 
 		}
 	
-		public Vector<GameInfos.GeneralizedID> getSortedValues() {
-			Vector<GameInfos.GeneralizedID> vector = new Vector<GameInfos.GeneralizedID>(map.values());
+		public Vector<GeneralizedID> getSortedValues() {
+			Vector<GeneralizedID> vector = new Vector<GeneralizedID>(map.values());
 			vector.sort(Comparator.comparing(id->id.id));
 			return vector;
 		}
@@ -385,13 +403,13 @@ public class GameInfos {
 			}; 
 		}
 	
-		public void set(String id, GameInfos.GeneralizedID generalizedID) {
+		public void set(String id, GeneralizedID generalizedID) {
 			map.put(id, generalizedID);
 		}
 	
-		public GameInfos.GeneralizedID get(String id) {
-			GameInfos.GeneralizedID newID = new GeneralizedID(id);
-			GameInfos.GeneralizedID existingID = map.putIfAbsent(id, newID);
+		public GeneralizedID get(String id) {
+			GeneralizedID newID = new GeneralizedID(id);
+			GeneralizedID existingID = map.putIfAbsent(id, newID);
 			return existingID==null?newID:existingID;
 		}
 	}
@@ -402,7 +420,7 @@ public class GameInfos {
 
 	public static void loadSubstanceIDsFromFile() { loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); }
 
-	private static void loadIDsFromFile(String filePath, GameInfos.IDMap map, String idLabel) {
+	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
 		File file = new File(filePath);
 		if (!file.isFile()) return;
 		
@@ -417,24 +435,29 @@ public class GameInfos {
 				String idStr = str.substring(0, pos);
 				String value = str.substring(pos+1);
 				
-				if (idStr.endsWith(".symbol")) {
+				if (idStr.endsWith(".type")) {
+					idStr = idStr.substring(0, idStr.length()-".type".length());
+					GeneralizedID id = map.get(idStr);
+					id.type = GeneralizedID.Type.getType(value);
+				}
+				else if (idStr.endsWith(".symbol")) {
 					idStr = idStr.substring(0, idStr.length()-".symbol".length());
-					GameInfos.GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get(idStr);
 					id.symbol = value;
-					
-				} else if (idStr.endsWith(".image")) {
+				}
+				else if (idStr.endsWith(".image")) {
 					idStr = idStr.substring(0, idStr.length()-".image".length());
-					GameInfos.GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get(idStr);
 					id.setImageFileName(value);
-					
-				} else if (idStr.endsWith(".imageBG")) {
+				}
+				else if (idStr.endsWith(".imageBG")) {
 					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
-					GameInfos.GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get(idStr);
 					try { id.setImageBG(Integer.parseInt(value,16)); }
 					catch (NumberFormatException e) {}
-					
-				} else {
-					GameInfos.GeneralizedID id = map.get(idStr);
+				}
+				else {
+					GeneralizedID id = map.get(idStr);
 					id.label = value;
 				}
 			}
@@ -451,15 +474,16 @@ public class GameInfos {
 
 	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
 
-	public static void saveIDsToFile(String filePath, GameInfos.IDMap map, String idLabel) {
+	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
 		long start = System.currentTimeMillis();
 		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
 		
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (String idStr:map.getSortedKeys()) {
-				GameInfos.GeneralizedID id = map.get(idStr);
+				GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.label);
+				if (id.type!=null  ) out.printf("%s.type=%s\r\n"     ,idStr,id.type);
 				if (id.hasSymbol ()) out.printf("%s.symbol=%s\r\n"   ,idStr,id.symbol);
 				if (id.hasImage  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
 				if (id.hasImageBG()) out.printf("%s.imageBG=%06X\r\n",idStr,id.getImageBG());
@@ -472,9 +496,37 @@ public class GameInfos {
 
 	public static class GeneralizedID {
 		
+		enum Type {
+			ShipWeapon               ("Schiffswaffe"),
+			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade"),
+			ShipExtension            ("Schiffs-Erweiterung"),        
+			ShipExtensionUpgrade     ("Schiffs-Erweiterungs-Upgrade"),
+			MultitoolWeapon          ("Multitool-Waffe"),
+			MultitoolWeaponUpgrade   ("Multitool-Waffen-Upgrade"),
+			MultitoolExtension       ("Multitool-Erweiterung"),
+			MultitoolExtensionUpgrade("Multitool-Erweiterungs-Upgrade"),
+			ExosuitExtension         ("Exo-Anzug-Erweiterung"),
+			ExosuitExtensionUpgrade  ("Exo-Anzug-Erweiterungs-Upgrade"),
+			ExocraftWeapon           ("Exo-Fahrzeug-Waffe"),
+			ExocraftWeaponUpgrade    ("Exo-Fahrzeug-Waffen-Upgrade"),
+			ExocraftExtension        ("Exo-Fahrzeug-Erweiterung"),
+			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erweiterungs-Upgrade"),
+			BaseComponent            ("Basis-Komponente"),
+			Plant                    ("Pflanze");
+			
+			private String label;
+			Type(String label) { this.label = label; }
+			public String getLabel() { return label; }
+			public static Type getType(String str) {
+				try { return valueOf(str); }
+				catch (Exception e) { return null; }
+			}
+		}
+		
 		public final String id;
 		public String label;
 		public String symbol;
+		public Type type;
 		private String imageFileName;
 		private Integer imageBackground;
 		final HashMap<SaveGameData,Usage> usage;
@@ -484,30 +536,36 @@ public class GameInfos {
 			this.id = id;
 			this.label = label;
 			this.symbol = "";
+			this.type = null;
 			this.usage = new HashMap<>();
 			this.imageFileName = null;
 			this.imageBackground = null;
 			this.cachedImage = null;
 		}
-		public boolean hasSymbol() {
-			return symbol!=null && !symbol.isEmpty();
-		}
 		public GeneralizedID(String id) {
 			this(id,"");
 		}
-		public GeneralizedID(GameInfos.GeneralizedID other) {
+		public GeneralizedID(GeneralizedID other) {
 			this.id = other.id;
 			this.label = other.label;
 			this.symbol = other.symbol;
+			this.type = other.type;
 			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
 			this.imageFileName = other.imageFileName;
 			this.imageBackground = other.imageBackground;
 			this.cachedImage = other.cachedImage;
 		}
 		
+		public boolean hasLabel() {
+			return label!=null && !label.isEmpty();
+		}
+		public boolean hasSymbol() {
+			return symbol!=null && !symbol.isEmpty();
+		}
 		public String getName() {
-			if (label.isEmpty()) return "["+id+"]";
-			return label+" ["+id+"]";
+			if (!hasLabel ()) return "["+id+"]";
+			if (!hasSymbol()) return label+" ["+id+"]";
+			return "("+symbol+") "+label+" ["+id+"]";
 		}
 		
 		public boolean hasImage() { return imageFileName!=null; }
@@ -582,14 +640,14 @@ public class GameInfos {
 		private Window mainwindow;
 	
 		private SimplifiedTable table;
-		private GeneralizedIDPanel.GeneralizedIDTableModel tableModel;
-		private GameInfos.GeneralizedID clickedID;
+		private GeneralizedIDTableModel tableModel;
+		private GeneralizedID clickedID;
 		private Point clickedCell;
 	
 		private JTextArea textarea;
 		private JLabel imageField;
-	
-		public GeneralizedIDPanel(Window mainwindow, GameInfos.IDMap idMap, String tableLabel) {
+
+		public GeneralizedIDPanel(Window mainwindow, IDMap idMap, String tableLabel) {
 			super(new BorderLayout(3, 3));
 			setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 			
@@ -599,34 +657,120 @@ public class GameInfos {
 			clickedCell = null;
 			tableModel = new GeneralizedIDTableModel(this,idMap);
 			table = new SimplifiedTable(tableLabel,tableModel,true,false,true);
-			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			table.getSelectionModel().addListSelectionListener(e->showID(tableModel.getValue(table.getRowSorter().convertRowIndexToModel(table.getSelectedRow()))));
+			table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			table.getSelectionModel().addListSelectionListener(e->{
+				if (table.getSelectedRowCount()==1)
+					showID(tableModel.getValue(table.convertRowIndexToModel(table.getSelectedRow())));
+				else
+					showID(null);
+			});
 			prepareTable();
+			
+			GeneralizedID.Type[] types = addNull(GeneralizedID.Type.values());
+			ExternFunction<GeneralizedID.Type> setType_Group = new ExternFunction<GeneralizedID.Type>() {
+				@Override public void setResult(GeneralizedID.Type value) {
+					int[] rows = table.getSelectedRows();
+					for (int row:rows) {
+						GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
+						if (id!=null) id.type = value; 
+					}
+					updateAfterContextMenuAction(true);
+				}
+				@Override public String toString(GeneralizedID.Type value) { if (value==null) return "<none>"; return value.getLabel(); }
+			};
+			ExternFunction<GeneralizedID.Type> setType_Single = new ExternFunction<GeneralizedID.Type>() {
+				@Override public void setResult(GeneralizedID.Type value) {
+					if (clickedID!=null) clickedID.type = value;
+					updateAfterContextMenuAction(clickedID!=null);
+				}
+				@Override public String toString(GeneralizedID.Type value) { if (value==null) return "<none>"; return value.getLabel(); }
+			};
+			ListMenu<GeneralizedID.Type> typeListMenu_Std     = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
+			ListMenu<GeneralizedID.Type> typeListMenu_Image   = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
+			ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
+			ListMenu<GeneralizedID.Type> typeListMenu_Group   = new ListMenu<GeneralizedID.Type>("Type of all", types, null, setType_Group);
+			
+			
+			NamedColor[] colors = addNull(SaveViewer.images.colorValues);
+			ExternFunction<NamedColor> setColor_Group = new ExternFunction<NamedColor>() {
+				@Override public void setResult(NamedColor value) {
+					int[] rows = table.getSelectedRows();
+					for (int row:rows) {
+						GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
+						if (id!=null) id.setImageBG(value==null?null:value.value); 
+					}
+					updateAfterContextMenuAction(true);
+				}
+				@Override public boolean isEqual(NamedColor v1, NamedColor v2) {
+					if (v1==null && v2==null) return true;
+					if (v1==null || v2==null) return false;
+					return v1.value==v2.value;
+				}
+				@Override public String toString(NamedColor value) { if (value==null) return "<none>"; return value.name; }
+			};
+			ExternFunction<NamedColor> setColor_Single = new ExternFunction<NamedColor>() {
+				@Override public void setResult(NamedColor value) {
+					if (clickedID!=null) clickedID.setImageBG(value==null?null:value.value);
+					updateAfterContextMenuAction(clickedID!=null);
+				}
+				@Override public boolean isEqual(NamedColor v1, NamedColor v2) {
+					if (v1==null && v2==null) return true;
+					if (v1==null || v2==null) return false;
+					return v1.value==v2.value;
+				}
+				@Override public String toString(NamedColor value) { if (value==null) return "<none>"; return value.name; }
+			};
+			NamedColorListMenu colorListMenu_Std     = new NamedColorListMenu("Background", colors, null, setColor_Single);
+			NamedColorListMenu colorListMenu_Image   = new NamedColorListMenu("Background", colors, null, setColor_Single);
+			NamedColorListMenu colorListMenu_ImageBG = new NamedColorListMenu("Background", colors, null, setColor_Single);
+			NamedColorListMenu colorListMenu_Group   = new NamedColorListMenu("Background of all", colors, null, setColor_Group);
+			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
+				@Override public void colorAdded(NamedColor color) {
+					NamedColor[] colors = addNull(SaveViewer.images.colorValues);
+					colorListMenu_Std    .updateValues(colors);
+					colorListMenu_Image  .updateValues(colors);
+					colorListMenu_ImageBG.updateValues(colors);
+					colorListMenu_Group  .updateValues(colors);
+				}
+			});
 			
 			DebugTableContextMenu contextMenuStd     = new DebugTableContextMenu(table);
 			DebugTableContextMenu contextMenuImage   = new DebugTableContextMenu(table);
 			DebugTableContextMenu contextMenuImageBG = new DebugTableContextMenu(table);
+			DebugTableContextMenu contextMenuGroup   = new DebugTableContextMenu(table);
+			
+			contextMenuGroup.addSeparator();
+			contextMenuGroup.add(typeListMenu_Group);
+			contextMenuGroup.add(colorListMenu_Group);
+			contextMenuGroup.add(createMenuItem("ImageFile of all ...",ActionCommand.SelectImage4AllSelected));
 			
 			contextMenuStd.addSeparator();
 			contextMenuStd.add(createMenuItem("Edit ID",ActionCommand.EditID));
+			contextMenuStd.add(typeListMenu_Std);
+			contextMenuStd.add(colorListMenu_Std);
+			contextMenuStd.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
 			
 			contextMenuImage.addSeparator();
 			contextMenuImage.add(createMenuItem("Edit ID",ActionCommand.EditID));
+			contextMenuImage.add(typeListMenu_Image);
+			contextMenuImage.add(colorListMenu_Image);
+			contextMenuImage.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
 			contextMenuImage.addSeparator();
-			contextMenuImage.add(createMenuItem("Select ImageFile",ActionCommand.SelectImage));
 			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage));
 			contextMenuImage.add(createMenuItem("Copy ImageFile",ActionCommand.CopyImage));
 			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage));
 			
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Edit ID",ActionCommand.EditID));
+			contextMenuImageBG.add(typeListMenu_ImageBG);
+			contextMenuImageBG.add(colorListMenu_ImageBG);
+			contextMenuImageBG.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground));
 			contextMenuImageBG.add(createMenuItem("Copy Background",ActionCommand.CopyBackground));
 			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground));
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
-			
 			
 			table.addMouseListener(new MouseAdapter() {
 				@Override public void mouseClicked(MouseEvent e) {
@@ -637,10 +781,35 @@ public class GameInfos {
 						clickedCell = new Point(colM,rowM);
 						clickedID = tableModel.getValue(rowM);
 						
-						switch (tableModel.getColumnID(colM)) {
-						case Image: contextMenuImage  .show(table, e.getX(), e.getY()); break;
-						case ImgBG: contextMenuImageBG.show(table, e.getX(), e.getY()); break;
-						default   : contextMenuStd    .show(table, e.getX(), e.getY()); break;
+						if (table.getSelectedRowCount()>1) {
+							typeListMenu_Group.clearSelection();
+							contextMenuGroup.show(table, e.getX(), e.getY());
+						} else {
+							DebugTableContextMenu contextMenu;
+							ListMenu<GeneralizedID.Type> typeListMenu;
+							NamedColorListMenu colorListMenu;
+							switch (tableModel.getColumnID(colM)) {
+							case Image:
+								typeListMenu = typeListMenu_Image;
+								colorListMenu = colorListMenu_Image;
+								contextMenu = contextMenuImage;
+								break;
+							case ImgBG:
+								typeListMenu = typeListMenu_ImageBG;
+								colorListMenu = colorListMenu_ImageBG;
+								contextMenu = contextMenuImageBG;
+								break;
+							default:
+								typeListMenu = typeListMenu_Std;
+								colorListMenu = colorListMenu_Std;
+								contextMenu = contextMenuStd;
+								break;
+							}
+							if (clickedID!=null) {
+								typeListMenu.setValue(clickedID.type);
+								colorListMenu.setValue(SaveViewer.images.getColor(clickedID.getImageBG()));
+							}
+							contextMenu.show(table, e.getX(), e.getY());
 						}
 					}
 				}
@@ -662,23 +831,22 @@ public class GameInfos {
 			eastPanel.add(imageField, BorderLayout.NORTH);
 			eastPanel.add(textareaScrollPane, BorderLayout.CENTER);
 			
-			
 			add(eastPanel, BorderLayout.EAST);
 			
 		}
 		
-		private JMenuItem createMenuItem(String label, GeneralizedIDPanel.ActionCommand actionCommand) {
+		private JMenuItem createMenuItem(String label, ActionCommand actionCommand) {
 			JMenuItem menuItem = new JMenuItem(label);
 			menuItem.addActionListener(this);
 			menuItem.setActionCommand(actionCommand.toString());
 			return menuItem;
 		}
 	
-		enum ActionCommand { EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor }
+		enum ActionCommand { EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor, SelectImage4AllSelected, SetBackground4All }
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			GeneralizedIDPanel.ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
+			ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
 			//if (clickedID!=null) System.out.printf("%s(%s)\r\n",actionCommand,clickedID.id);
 			if (clickedID==null) return;
 			
@@ -686,7 +854,8 @@ public class GameInfos {
 			String cbValue;
 			switch(actionCommand) {
 			case EditID: {
-				Images.EditIdDialog dlg = new Images.EditIdDialog(mainwindow,clickedID);
+				table.stopCellEditing();
+				EditIdDialog dlg = new EditIdDialog(mainwindow,clickedID);
 				dlg.showDialog();
 				if (dlg.hasDataChanged()) {
 					clickedID.label = dlg.getLabel();
@@ -729,7 +898,40 @@ public class GameInfos {
 			case AddBackgroundColor:
 				SaveViewer.images.showAddColorDialog(mainwindow,"Add Color");
 				break;
+				
+			case SetBackground4All: {
+				NamedColor[] colors = addNull(SaveViewer.images.colorValues);
+				Gui.ComboBoxDialog<NamedColor> dlg = new Gui.ComboBoxDialog<>(mainwindow,"Select color for all selected rows", "Select color", colors, null);
+				dlg.showDialog();
+				if (dlg.hasResult()) {
+					NamedColor color = dlg.getResult();
+					int[] rows = table.getSelectedRows();
+					for (int row:rows) {
+						GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
+						id.setImageBG(color==null?null:color.value); 
+					}
+					idChanged=true;
+				}
+			} break;
+				
+			case SelectImage4AllSelected: {
+				ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow, null);
+				dlg.showDialog();
+				if (dlg.hasChoosen()) {
+					String image = dlg.getImageFileName();
+					int[] rows = table.getSelectedRows();
+					for (int row:rows) {
+						GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
+						id.setImageFileName(image); 
+					}
+					idChanged=true;
+				}
+			} break;
 			}
+			updateAfterContextMenuAction(idChanged);
+		}
+
+		private void updateAfterContextMenuAction(boolean idChanged) {
 			if (idChanged) {
 				if (clickedCell!=null) tableModel.updateTableCell(clickedCell.x,clickedCell.y);
 				tableModel.updateAfterCellChange(clickedID);
@@ -737,26 +939,38 @@ public class GameInfos {
 					int row = table.convertRowIndexToView(clickedCell.y);
 					table.setRowSelectionInterval(row,row);
 				}
+				table.repaint();
 			}
 			clickedID = null;
 		}
-	
+		
+		private <T> T[] addNull(T[] arr) {
+			Vector<T> vec = new Vector<>(Arrays.asList(arr));
+			vec.insertElementAt(null,0);
+			return vec.toArray(Arrays.copyOf(arr,0));
+		}
+
 		private void prepareTable() {
-			Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
-			images.insertElementAt("",0);
-			ComboboxCellEditor<String> imageCellEditor = new TableView.ComboboxCellEditor<String>(images.toArray(new String[0]));
+			
+			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
+					new TableView.ComboboxCellEditor<GeneralizedID.Type>(addNull(GeneralizedID.Type.values()));
+			NonStringRenderer<GeneralizedID.Type> typeRenderer =
+					new TableView.NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; });
+			typeCellEditor.setRenderer(typeRenderer);
+			setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
+			setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
+			
+			ComboboxCellEditor<String> imageCellEditor =
+					new TableView.ComboboxCellEditor<String>(addNull(SaveViewer.images.imagesNames));
 			SaveViewer.images.addImageListListender(new Images.ImageListListender() {
 				@Override public void imageListChanged() {
-					Vector<String> images = new Vector<>(Arrays.asList(SaveViewer.images.imagesNames));
-					images.insertElementAt("",0);
-					imageCellEditor.setValues(images.toArray(new String[0]));
+					imageCellEditor.setValues(addNull(SaveViewer.images.imagesNames));
 				}
 			});
 			setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
-			Vector<NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
-			colors.insertElementAt(null,0);
-			ComboboxCellEditor<NamedColor> colorCellEditor = new TableView.ComboboxCellEditor<NamedColor>(colors.toArray(new NamedColor[0]));
+			ComboboxCellEditor<NamedColor> colorCellEditor =
+					new TableView.ComboboxCellEditor<NamedColor>(addNull(SaveViewer.images.colorValues));
 			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					colorCellEditor.addValue(color);
@@ -769,19 +983,19 @@ public class GameInfos {
 			setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
 		}
 	
-		private void setCellRenderer(GeneralizedIDPanel.GeneralizedIDColumnID columnID, TableCellRenderer cellRenderer) {
+		private void setCellRenderer(GeneralizedIDColumnID columnID, TableCellRenderer cellRenderer) {
 			TableColumn column = getColumn(columnID);
 			if (column==null) return;
 			column.setCellRenderer(cellRenderer);
 		}
 	
-		private void setCellEditor(GeneralizedIDPanel.GeneralizedIDColumnID columnID, TableCellEditor cellEditor) {
+		private void setCellEditor(GeneralizedIDColumnID columnID, TableCellEditor cellEditor) {
 			TableColumn column = getColumn(columnID);
 			if (column==null) return;
 			column.setCellEditor(cellEditor);
 		}
 	
-		private TableColumn getColumn(GeneralizedIDPanel.GeneralizedIDColumnID columnID) {
+		private TableColumn getColumn(GeneralizedIDColumnID columnID) {
 			TableColumnModel columnModel = table.getColumnModel();
 			if (columnModel==null) return null;
 			
@@ -791,7 +1005,7 @@ public class GameInfos {
 			return columnModel.getColumn(columnIndex);
 		}
 	
-		private void showID(GameInfos.GeneralizedID id) {
+		private void showID(GeneralizedID id) {
 			textarea.setText("");
 			if (id==null) {
 				imageField.setIcon(null);
@@ -799,10 +1013,11 @@ public class GameInfos {
 			}
 			
 			textarea.append("ID     : "+id.id+"\r\n");
-			if (!id.label.isEmpty() ) textarea.append("Label  : "+id.label+"\r\n");
-			if (!id.symbol.isEmpty()) textarea.append("Symbol : "+id.symbol+"\r\n");
-			if (id.hasImage  ()     ) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
-			if (id.hasImageBG()     ) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
+			if (id.type!=null  ) textarea.append("Type   : "+id.type.label+"\r\n");
+			if (id.hasLabel  ()) textarea.append("Label  : "+id.label+"\r\n");
+			if (id.hasSymbol ()) textarea.append("Symbol : "+id.symbol+"\r\n");
+			if (id.hasImage  ()) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
+			if (id.hasImageBG()) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
 			
 			BufferedImage image = id.getImage();
 			if (image==null) {
@@ -848,12 +1063,13 @@ public class GameInfos {
 		}
 	
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
-			ID    ("ID"        ,     String.class,  80,-1,120,120),
-			Symbol("##"        ,     String.class,  10,-1, 30, 30),
-			Label ("Label"     ,     String.class, 150,-1,200,200),
-			Image ("Image"     ,     String.class, 150,-1,250,250),
-			ImgBG ("Background", NamedColor.class, 150,-1,200,200),
-			Usage (""          ,     String.class,  50,-1, 80, 80);
+			ID    ("ID"        ,            String.class,  80,-1,120,120),
+			Type  ("Type"      ,GeneralizedID.Type.class, 100,-1,140,140),
+			Symbol("Sym."      ,            String.class,  10,-1, 30, 30),
+			Label ("Label"     ,            String.class, 150,-1,200,200),
+			Image ("Image"     ,            String.class, 150,-1,250,250),
+			ImgBG ("Background",        NamedColor.class, 150,-1,200,200),
+			Usage (""          ,            String.class,  50,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -863,20 +1079,29 @@ public class GameInfos {
 			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private static class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDPanel.GeneralizedIDColumnID> {
+		private static class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
 	
+			private static final GeneralizedIDColumnID[] COLUMNS = new GeneralizedIDColumnID[]{
+					GeneralizedIDColumnID.ID,
+					GeneralizedIDColumnID.Type,
+					GeneralizedIDColumnID.Symbol,
+					GeneralizedIDColumnID.Label,
+					GeneralizedIDColumnID.Image,
+					GeneralizedIDColumnID.ImgBG
+				};
+
 			private static final int EXTRA_ROWS = 1;
 			
 			private int numberOfLabledIDs;
-			private GameInfos.IDMap sourceIdMap;
+			private IDMap sourceIdMap;
 	
-			private Vector<GameInfos.GeneralizedID> IDs;
+			private Vector<GeneralizedID> IDs;
 			private Vector<SaveGameView> usageKeys;
 	
-			private GameInfos.GeneralizedIDPanel panel;
+			private GeneralizedIDPanel panel;
 	
-			protected GeneralizedIDTableModel(GameInfos.GeneralizedIDPanel panel, GameInfos.IDMap sourceIdMap) {
-				super(new GeneralizedIDPanel.GeneralizedIDColumnID[]{ GeneralizedIDColumnID.ID, GeneralizedIDColumnID.Symbol, GeneralizedIDColumnID.Label, GeneralizedIDColumnID.Image, GeneralizedIDColumnID.ImgBG });
+			protected GeneralizedIDTableModel(GeneralizedIDPanel panel, IDMap sourceIdMap) {
+				super(COLUMNS);
 				this.panel = panel;
 				
 				this.usageKeys = new Vector<>();
@@ -913,14 +1138,14 @@ public class GameInfos {
 	
 			private void updateNumberOfLabledIDs() {
 				numberOfLabledIDs = 0;
-				for (GameInfos.GeneralizedID id:IDs) {
+				for (GeneralizedID id:IDs) {
 					if (!id.label.isEmpty())
 						++numberOfLabledIDs;
 				}
 			}
 	
 			@Override
-			protected GeneralizedIDPanel.GeneralizedIDColumnID getColumnID(int columnIndex) {
+			protected GeneralizedIDColumnID getColumnID(int columnIndex) {
 				if (columnIndex>=columns.length) return GeneralizedIDColumnID.Usage;
 				return super.getColumnID(columnIndex);
 			}
@@ -939,29 +1164,31 @@ public class GameInfos {
 			@Override public int getUnsortedRowsCount() { return EXTRA_ROWS; }
 			
 			@Override
-			protected boolean isCellEditable(int rowIndex, int columnIndex, GeneralizedIDPanel.GeneralizedIDColumnID columnID) {
+			protected boolean isCellEditable(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) return false;
 				switch(columnID) {
-				case ID   : return false;
+				case ID    : return false;
+				case Type  :
 				case Symbol:
-				case Label:
-				case Image: return true;
-				case ImgBG: return true;
-				case Usage: return false;
+				case Label :
+				case Image :
+				case ImgBG : return true;
+				case Usage : return false;
 				}
 				return false;
 			}
 	
-			public GameInfos.GeneralizedID getValue(int rowIndex) {
+			public GeneralizedID getValue(int rowIndex) {
 				if (rowIndex<EXTRA_ROWS) return null;
 				return IDs.get(rowIndex-EXTRA_ROWS);
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDPanel.GeneralizedIDColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) {
 					switch(columnID) {
 					case ID    : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
+					case Type  : return null;
 					case Symbol: return "";
 					case Label : return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
 					case Image : return "";
@@ -970,13 +1197,14 @@ public class GameInfos {
 					}
 					return null;
 				}
-				GameInfos.GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
+				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
 				if (id==null) return null;
 				switch(columnID) {
 				case ID    : return id.id;
+				case Type  : return id.type;
 				case Symbol: return id.symbol;
 				case Label : return id.label;
-				case Image : return id.getImageFileName();
+				case Image : return id.imageFileName;
 				case ImgBG : return SaveViewer.images.getColor( id.getImageBG() );
 				case Usage :
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
@@ -991,14 +1219,15 @@ public class GameInfos {
 			}
 	
 			@Override
-			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, GeneralizedIDPanel.GeneralizedIDColumnID columnID) {
+			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) return;
 				
-				GameInfos.GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
+				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
 				if (id==null) return;
 				
 				switch(columnID) {
 				case ID    : return;
+				case Type  : id.type   = (aValue instanceof GeneralizedID.Type)?(GeneralizedID.Type)aValue:null; break;
 				case Symbol: id.symbol = aValue==null?"":aValue.toString(); break;
 				case Label : id.label  = aValue==null?"":aValue.toString(); break;
 				case Image : id.setImageFileName(aValue); break;
@@ -1008,7 +1237,7 @@ public class GameInfos {
 				updateAfterCellChange(id);
 			}
 	
-			public void updateAfterCellChange(GameInfos.GeneralizedID id) {
+			public void updateAfterCellChange(GeneralizedID id) {
 				panel.showID(id);
 				
 				if (sourceIdMap==techIDs     ) saveTechIDsToFile();
@@ -1016,6 +1245,222 @@ public class GameInfos {
 				if (sourceIdMap==substanceIDs) saveSubstanceIDsToFile();
 			}
 		}
+	}
+
+	public static class EditIdDialog extends StandardDialog {
+		private static final long serialVersionUID = -4493777651637626630L;
+		
+		private JLabel imageField;
+		private JTextArea textarea;
+		
+		private GeneralizedID id;
+		private boolean hasDataChanged;
+	
+		private Images.ColorListListender colorListListender;
+		private Images.ImageListListender imageListListender;
+	
+		public EditIdDialog(Window parent, GeneralizedID id) {
+			super(parent, getDlgTitle(id), ModalityType.APPLICATION_MODAL, false);
+			
+			this.id = new GeneralizedID(id);
+			this.hasDataChanged = false;
+			
+			textarea = new JTextArea();
+			textarea.setEditable(false);
+			JScrollPane textareaScrollPane = new JScrollPane(textarea);
+			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
+			
+			JTextField labelTextField = new JTextField();
+			labelTextField.setText(this.id.label);
+			labelTextField.addActionListener(e->setLabel(labelTextField.getText()));
+			labelTextField.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) { setLabel(labelTextField.getText()); }
+			});
+			
+			JTextField symbolTextField = new JTextField();
+			symbolTextField.setPreferredSize(new Dimension(50,16));
+			symbolTextField.setText(this.id.symbol);
+			symbolTextField.addActionListener(e->setSymbol(symbolTextField.getText()));
+			symbolTextField.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) { setSymbol(symbolTextField.getText()); }
+			});
+			
+			Vector<GeneralizedID.Type> types = new Vector<>();
+			types.add(null); types.addAll(Arrays.asList(GeneralizedID.Type.values()));
+			JComboBox<GeneralizedID.Type> cmbbxTypes = new JComboBox<GeneralizedID.Type>(types);
+			cmbbxTypes.setSelectedItem(this.id.type);
+			cmbbxTypes.addActionListener(e->setType((GeneralizedID.Type)cmbbxTypes.getSelectedItem()));
+			cmbbxTypes.setRenderer(new TableView.NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; }));
+			
+			Vector<String> images = new Vector<>();
+			images.add(""); images.addAll(Arrays.asList(SaveViewer.images.imagesNames));
+			JComboBox<String> cmbbxImages = new JComboBox<String>(images);
+			cmbbxImages.setSelectedItem(this.id.getImageFileName());
+			cmbbxImages.addActionListener(e->setImageFileName((String)cmbbxImages.getSelectedItem()));
+			
+			imageListListender = new Images.ImageListListender() {
+				@Override public void imageListChanged() {
+					Vector<String> images = new Vector<>();
+					images.add(""); images.addAll(Arrays.asList(SaveViewer.images.imagesNames));
+					cmbbxImages.setModel(new DefaultComboBoxModel<>(images));
+					cmbbxImages.setSelectedItem(EditIdDialog.this.id.getImageFileName());
+				}
+			};
+			
+			Vector<Images.NamedColor> colors = new Vector<>(Arrays.asList(SaveViewer.images.colorValues));
+			colors.insertElementAt(null,0);
+			JComboBox<Images.NamedColor> cmbbxColors = new JComboBox<Images.NamedColor>(new DefaultComboBoxModel<Images.NamedColor>(colors));
+			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
+			cmbbxColors.setSelectedItem(SaveViewer.images.getColor(this.id.getImageBG()));
+			cmbbxColors.addActionListener(e->setImageBGColor((Images.NamedColor)cmbbxColors.getSelectedItem()));
+			
+			colorListListender = new Images.ColorListListender() {
+				@Override public void colorAdded(Images.NamedColor color) {
+					cmbbxColors.addItem(color);
+					cmbbxColors.revalidate();
+				}
+			};
+			
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,5,5));
+			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
+			buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
+			
+			GridBagConstraints c = new GridBagConstraints();
+			GridBagLayout cmbbxPanelLayout = new GridBagLayout();
+			JPanel cmbbxPanel = new JPanel();
+			cmbbxPanel.setLayout(cmbbxPanelLayout);
+			c.insets = new Insets(1, 0, 1, 0);
+			
+			JButton selectImageButton = createButton("Select Image",e->showImageList(cmbbxImages));
+			JButton    addColorButton = createButton("Add Color"   ,e->SaveViewer.images.showAddColorDialog(EditIdDialog.this,"Add Color"));
+			
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,textareaScrollPane,1,1,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Sym./Label : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,symbolTextField,0,0,1,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,labelTextField ,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Type : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxTypes       ,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Image File : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxImages      ,1,0,2,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,selectImageButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Background : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxColors   ,1,0,2,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,addColorButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			
+			imageField = new JLabel();
+			imageField.setBorder(BorderFactory.createEtchedBorder());
+			imageField.setPreferredSize(new Dimension(256,256));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(cmbbxPanel,BorderLayout.WEST);
+			contentPane.add(imageField,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
+			
+			showValues();
+			this.createGUI(contentPane);
+		}
+	
+		private static String getDlgTitle(GeneralizedID id) {
+			return String.format("Set values of ID \"%s\"",id.getName());
+		}
+		
+		private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+			c.weightx=weightx;
+			c.weighty=weighty;
+			c.gridwidth=gridwidth;
+			c.gridheight=gridheight;
+			c.fill = fill;
+			layout.setConstraints(comp, c);
+			panel.add(comp);
+		}
+		
+		@Override public void windowOpened(WindowEvent e) {
+			SaveViewer.images.addColorListListender(colorListListender);
+			SaveViewer.images.addImageListListender(imageListListender);
+		}
+		@Override public void windowClosed(WindowEvent e) {
+			SaveViewer.images.removeColorListListender(colorListListender);
+			SaveViewer.images.removeImageListListender(imageListListender);
+		}
+	
+		private void showImageList(JComboBox<String> cmbbxImages) {
+			Images.ImageGridDialog dlg = new Images.ImageGridDialog(this,id.getImageFileName());
+			dlg.showDialog();
+			if (dlg.hasChoosen()) {
+				String result = dlg.getImageFileName();
+				setImageFileName(result);
+				cmbbxImages.setSelectedItem(result);
+			}
+		}
+	
+		private JButton createButton(String title, ActionListener l) {
+			JButton button = new JButton(title);
+			button.addActionListener(l);
+			return button;
+		}
+	
+		private void setLabel(String label) {
+			id.label = label;
+			setTitle(getDlgTitle(id));
+			hasDataChanged = true;
+			showValues();
+		}
+
+		private void setSymbol(String symbol) {
+			id.symbol = symbol;
+			setTitle(getDlgTitle(id));
+			hasDataChanged = true;
+			showValues();
+		}
+
+		private void setType(GeneralizedID.Type type) {
+			id.type = type;
+			hasDataChanged = true;
+			showValues();
+		}
+
+		private void setImageFileName(String filename) {
+			id.setImageFileName(filename);
+			hasDataChanged = true;
+			showValues();
+		}
+
+		private void setImageBGColor(Images.NamedColor namedColor) {
+			id.setImageBG(namedColor==null?null:namedColor.value);
+			hasDataChanged = true;
+			showValues();
+		}
+		
+		private void showValues() {
+			textarea.setText("");
+			
+			textarea.append("ID     : "+id.id+"\r\n");
+			textarea.append("Label  : "+id.label+"\r\n");
+			textarea.append("Symbol : "+id.symbol+"\r\n");
+			textarea.append("Type   : "+(id.type==null?"":id.type.label)+"\r\n");
+			textarea.append("Image  : "+(id.hasImage  ()?id.getImageFileName():"<none>")+"\r\n");
+			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
+			
+			BufferedImage image = id.getImage();
+			if (image==null) {
+				imageField.setIcon(null);
+			} else {
+				imageField.setIcon(new ImageIcon(image));
+				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+			}
+		}
+	
+		public boolean hasDataChanged() { return hasDataChanged; }
+		public Integer getImageBG() { return id.getImageBG(); }
+		public String getImageFileName() { return id.getImageFileName(); }
+		public String getLabel() { return id.label; }
 	}
 	
 }

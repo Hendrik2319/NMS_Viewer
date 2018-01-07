@@ -34,7 +34,6 @@ import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
@@ -164,7 +163,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			String cbValue;
 			switch(ActionCommand.valueOf(e.getActionCommand())) {
 			case EditID: {
-				Images.EditIdDialog dlg = new Images.EditIdDialog(mainwindow,clickedSlot.id);
+				GameInfos.EditIdDialog dlg = new GameInfos.EditIdDialog(mainwindow,clickedSlot.id);
 				dlg.showDialog();
 				if (dlg.hasDataChanged()) {
 					clickedSlot.id.label = dlg.getLabel();

@@ -9,7 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -163,6 +162,11 @@ public class TableView {
 			for (int i=0; i<tableColumnModel.getColumnCount(); ++i)
 				tableColumnModel.getColumn(i).setCellRenderer(renderer);
 		}
+
+		public void stopCellEditing() {
+			TableCellEditor tableCellEditor = getCellEditor();
+			if (tableCellEditor!=null) tableCellEditor.stopCellEditing();
+		}
 	}
 	
 	static class SimplifiedRowSorter extends RowSorter<SimplifiedTableModel<?>> {
@@ -260,14 +264,14 @@ public class TableView {
 		private <U extends Comparable<? super U>> Comparator<Integer> setComparator(Comparator<Integer> comp, SortOrder sortOrder, Function<? super Integer,? extends U> keyExtractor) {
 			if (sortOrder==SortOrder.DESCENDING) {
 				if (comp==null) {
-					Comparator<Integer> comparator = Comparator.comparing(keyExtractor);
+					Comparator<Integer> comparator = Comparator.comparing(keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
 					return comparator.reversed();
 				}
-				Comparator<Integer> comparator = comp.reversed().thenComparing(keyExtractor);
+				Comparator<Integer> comparator = comp.reversed().thenComparing(keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
 				return comparator.reversed();
 			} else {
-				if (comp==null) return Comparator.comparing(keyExtractor);
-				return comp.thenComparing(keyExtractor);
+				if (comp==null) return Comparator.comparing(keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
+				return comp.thenComparing(keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
 			}
 		}
 		
@@ -485,6 +489,48 @@ public class TableView {
 		}
 	}
 	
+	public static class NonStringRenderer<T> implements ListCellRenderer<T>, TableCellRenderer {
+		
+		private RendererComponent comp;
+		private Function<Object, String> converter;
+		
+		public NonStringRenderer(Function<Object,String> converter) {
+			this.converter = converter;
+			this.comp = new RendererComponent();
+			comp.setPreferredSize(new Dimension(1,16));
+		}
+		
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			Color bgColor   = isSelected ? table.getSelectionBackground() : table.getBackground();
+			Color textColor = isSelected ? table.getSelectionForeground() : table.getForeground();
+			comp.set(converter.apply(value),bgColor,textColor);
+			return comp;
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<? extends T> list, T value, int index, boolean isSelected, boolean cellHasFocus) {
+			Color bgColor   = isSelected ? list.getSelectionBackground() : list.getBackground();
+			Color textColor = isSelected ? list.getSelectionForeground() : list.getForeground();
+			comp.set(converter.apply(value),bgColor,textColor);
+			return comp;
+		}
+
+		public static class RendererComponent extends LabelRendererComponent {
+			private static final long serialVersionUID = 1870151775725517505L;
+
+			private RendererComponent() {
+				setOpaque(true);
+			}
+
+			public void set(String value, Color bgColor, Color textColor) {
+				setBackground(bgColor);
+				setForeground(textColor);
+				setText(value==null?"":value);
+			}
+		}
+	}
+	
 	public static class NamedColorRenderer implements ListCellRenderer<NamedColor>, TableCellRenderer {
 		
 		private RendererComponent comp;
@@ -510,7 +556,7 @@ public class TableView {
 			return comp;
 		}
 
-		public static class RendererComponent extends JLabel {
+		public static class RendererComponent extends LabelRendererComponent {
 			private static final long serialVersionUID = -5382894277961357430L;
 			
 			private HashMap<Integer,Icon> iconCache;
@@ -535,36 +581,36 @@ public class TableView {
 			private Icon getCachedIcon(NamedColor value) {
 				Icon icon = iconCache.get(value.value);
 				if (icon==null) {
-					BufferedImage image = new BufferedImage(20, 13, BufferedImage.TYPE_INT_ARGB);
-					Graphics g = image.getGraphics();
-					g.setColor(value.color);
-					g.fillRect(0,0,20,13);
-					icon = new ImageIcon(image);
+					icon = new ImageIcon(NamedColor.createImage(value,20,13));
 					iconCache.put(value.value,icon);
 				}
 				return icon;
 			}
-
-			@Override public void revalidate() {}
-			@Override public void invalidate() {}
-			@Override public void validate() {}
-			@Override public void repaint(long tm, int x, int y, int width, int height) {}
-			@Override public void repaint(Rectangle r) {}
-			@Override public void repaint() {}
-			@Override public void repaint(long tm) {}
-			@Override public void repaint(int x, int y, int width, int height) {}
-	
-			@Override public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
-			@Override public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
-			@Override public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
-			@Override protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {}
-			@Override public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
-			@Override public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
-			@Override public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
-			@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
-			@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
 		}
 		
+	}
+
+	private static class LabelRendererComponent extends JLabel {
+		private static final long serialVersionUID = -695854080940136137L;
+		
+		@Override public void revalidate() {}
+		@Override public void invalidate() {}
+		@Override public void validate() {}
+		@Override public void repaint(long tm, int x, int y, int width, int height) {}
+		@Override public void repaint(Rectangle r) {}
+		@Override public void repaint() {}
+		@Override public void repaint(long tm) {}
+		@Override public void repaint(int x, int y, int width, int height) {}
+
+		@Override public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
+		@Override public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
+		@Override public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
+		@Override protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {}
+		@Override public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
+		@Override public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
+		@Override public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
+		@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
+		@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
 	}
 	
 	public static class SimpleColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {

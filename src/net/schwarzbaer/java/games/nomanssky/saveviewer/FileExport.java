@@ -22,6 +22,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
@@ -249,10 +250,20 @@ public class FileExport {
 		private double length() {
 			return distTo(new Point3D(0,0,0));
 		}
+
+		public Coordinates toCoordinates() {
+			Coordinates coords = new Coordinates();
+			coords.x = x;
+			coords.y = y;
+			coords.z = z;
+			return coords;
+		}
 	}
 	
-	public static void writePosToVRML_models(Vector<BuildingObject> objects, Component parent) {
-		System.out.println("Write positions of "+objects.size()+" BuildingObjects to VRML file ...");
+	public static void writePosToVRML_models(BuildingObject[] objects, PersistentPlayerBase playerbase, Component parent) {
+		if (objects==null && playerbase!=null) objects = playerbase.objects;
+		if (objects==null) return;
+		System.out.println("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
 		JFileChooser fc = new JFileChooser("./");
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -288,65 +299,31 @@ public class FileExport {
 			vrml.println("");
 			
 			//writeBioroomCoords(vrml);
-			writeMainroomCoords(vrml);
+			//writeMainroomCoords(vrml);
+			
+			if (playerbase!=null) {
+				String name = playerbase.name;
+				if (name==null || name.isEmpty()) name = "PlayerBase";
+				if (playerbase.position!=null && playerbase.forward!=null) {
+					Coordinates pos = new Coordinates();
+					Coordinates at = new Point3D(playerbase.position).normalize().toCoordinates();
+					Coordinates up = playerbase.forward;
+					writeModel(vrml, "^MAINROOM", name, pos, at, up, size);
+				}
+			}
 			
 			for (BuildingObject obj:objects) {
 				if (obj.position==null) continue;
 				if (obj.position.pos==null) continue;
 				if (obj.position.up==null) continue;
 				if (obj.position.at==null) continue;
-				Coordinates pos = obj.position.pos;
-				Coordinates up  = obj.position.up;
-				Coordinates at  = obj.position.at;
-				vrml.print("MyOrientation {");
-				vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
-				vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
-				vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
-				vrml.print (" children");
-				switch (obj.objectID) {
-				case "^CONTAINER0": case "^CONTAINER1": case "^CONTAINER2": case "^CONTAINER3": case "^CONTAINER4":
-				case "^CONTAINER5": case "^CONTAINER6": case "^CONTAINER7": case "^CONTAINER8": case "^CONTAINER9":
-				case "^CUBEROOM":
-					vrml.printf(" CUBEROOM { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				case "^CORRIDOR": case "^GLASSCORRIDOR":
-					vrml.printf(" CORRIDOR { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				case "^BIOROOM":
-					vrml.printf(" BIOROOM { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				case "^LUSHPLANT":
-				case "^BARRENPLANT":
-				case "^CREATUREPLANT":
-				case "^PEARLPLANT":
-				case "^SCORCHEDPLANT":
-				case "^SNOWPLANT":
-				case "^RADIOPLANT":
-				case "^TOXICPLANT":
-				case "^POOPPLANT":
-					vrml.printf(" PLANT { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				case "^MAINROOM":
-					vrml.printf(" MAINROOM { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				case "^MAINROOMCUBE":
-					vrml.printf(" MAINROOMCUBE { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				case "^CORRIDORX":
-					vrml.printf(" CORRIDORX { string \"%s\" }", getLabel(obj.objectID));
-					break;
-					
-				default:
-					vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", size/2, size/2, size/2, obj.objectID);
-					break;
-				}
-				vrml.println(" }");
+				
+				String objectID = obj.objectID;
+				GeneralizedID id = GameInfos.productIDs.get(objectID);
+				String label = objectID;
+				if (id!=null && !id.label.isEmpty()) label = id.label;
+				
+				writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, size);
 			}
 			
 		} catch (FileNotFoundException e) {
@@ -355,13 +332,62 @@ public class FileExport {
 		System.out.println("done");
 	}
 
-	private static String getLabel(String objectID) {
-		GeneralizedID id = GameInfos.productIDs.get(objectID);
-		if (id==null) return objectID;
-		if (id.label.isEmpty()) return objectID;
-		return id.label;
+	private static void writeModel(PrintWriter vrml, String objectID, String label, Coordinates pos, Coordinates at, Coordinates up, double size) {
+		vrml.print("MyOrientation {");
+		vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
+		vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
+		vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
+		
+		vrml.print (" children");
+		switch (objectID) {
+		
+		case "^CONTAINER0": case "^CONTAINER1": case "^CONTAINER2": case "^CONTAINER3": case "^CONTAINER4":
+		case "^CONTAINER5": case "^CONTAINER6": case "^CONTAINER7": case "^CONTAINER8": case "^CONTAINER9":
+		case "^CUBEROOM":
+			vrml.printf(" CUBEROOM { string \"%s\" }", label);
+			break;
+			
+		case "^CORRIDOR": case "^GLASSCORRIDOR":
+			vrml.printf(" CORRIDOR { string \"%s\" }", label);
+			break;
+			
+		case "^BIOROOM":
+			vrml.printf(" BIOROOM { string \"%s\" }", label);
+			break;
+			
+		case "^LUSHPLANT": case "^BARRENPLANT": case "^CREATUREPLANT": case "^PEARLPLANT": case "^SCORCHEDPLANT":
+		case "^SNOWPLANT": case "^RADIOPLANT": case "^TOXICPLANT": case "^POOPPLANT":
+			vrml.printf(" PLANT { string \"%s\" }", label);
+			break;
+			
+		case "^MAINROOM":
+			vrml.printf(" MAINROOM { string \"%s\" }", label);
+			break;
+			
+		case "^MAINROOMCUBE":
+			vrml.printf(" MAINROOMCUBE { string \"%s\" }", label);
+			break;
+			
+		case "^CORRIDORX":
+			vrml.printf(" CORRIDORX { string \"%s\" }", label);
+			break;
+			
+		case "^CARBONPLANTER":
+			vrml.printf(" CARBONPLANTER { string \"%s\" }", label);
+			break;
+			
+		case "^BUILDDOOR":
+			vrml.printf(" BUILDDOOR { string \"%s\" }", label);
+			break;
+			
+		default:
+			vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", size/2, size/2, size/2, objectID);
+			break;
+		}
+		vrml.println(" }");
 	}
 
+	@SuppressWarnings("unused")
 	private static void writeMainroomCoords(PrintWriter vrml) {
 		int segI=16;
 		double radius = 1.5*4;
@@ -424,8 +450,8 @@ public class FileExport {
 		vrml.println("]");
 	}
 
-	public static void writePosToVRML_simple(Vector<BuildingObject> objects, Component parent) {
-		System.out.println("Write positions of "+objects.size()+" BuildingObjects to VRML file ...");
+	public static void writePosToVRML_simple(BuildingObject[] objects, Component parent) {
+		System.out.println("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
 		JFileChooser fc = new JFileChooser("./");
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);

@@ -4,17 +4,13 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Window;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -23,10 +19,10 @@ import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
-import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
@@ -39,55 +35,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGa
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
-class SimplePanels {
+public class SimplePanels {
 	
-	public static class ComboBoxDialog<T> extends StandardDialog {
-		private static final long serialVersionUID = 2109107550076395513L;
-		
-		private boolean hasResult;
-		private T[] options;
-		private JComboBox<T> comboBox;
-
-		public ComboBoxDialog(Window mainWindow, String message, String title, T[] options, T initialValue) {
-			super(mainWindow,title,ModalityType.APPLICATION_MODAL);
-			this.options = options;
-			hasResult = false;
-			
-			comboBox = new JComboBox<T>(options);
-			comboBox.setSelectedItem(initialValue);
-			
-			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
-			inputPanel.add(new JLabel(message),BorderLayout.CENTER);
-			inputPanel.add(comboBox,BorderLayout.SOUTH);
-			
-			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
-			buttonPanel.add(SaveViewer.createButton("Ok", e->{hasResult=true; closeDialog();}));
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
-			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-			contentPane.add(inputPanel,BorderLayout.CENTER);
-			contentPane.add(buttonPanel,BorderLayout.SOUTH);
-			
-			createGUI(contentPane);
-		}
-
-		public boolean hasResult() {
-			return hasResult;
-		}
-
-		public T getResult() {
-			int index = comboBox.getSelectedIndex();
-			if (index<0) return null;
-			return options[index];
-		}
-
-		public int getResultIndex() {
-			return comboBox.getSelectedIndex();
-		}
-
-	}
-
 	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6246130206148705495L;
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
@@ -131,7 +80,7 @@ class SimplePanels {
 		}
 		
 		private void highlightSpecificAddress() {
-			SaveViewer.CoordinatesDialog dlg = new SaveViewer.CoordinatesDialog(mainWindow,true,"Select Coordinates");
+			Gui.CoordinatesDialog dlg = new Gui.CoordinatesDialog(mainWindow,true,"Select Coordinates");
 			dlg.showDialog();
 			if (dlg.hasResult()) {
 				addressToHighlight = dlg.getResult();
@@ -174,7 +123,7 @@ class SimplePanels {
 			names.sort(Comparator.comparing(na->na.name));
 			System.out.println("names.size(): "+names.size());
 			
-			ComboBoxDialog<NamedAddress> dlg = new ComboBoxDialog<>(mainWindow,"message", "title", names.toArray(new NamedAddress[0]), names.firstElement());
+			Gui.ComboBoxDialog<NamedAddress> dlg = new Gui.ComboBoxDialog<>(mainWindow,"message", "title", names.toArray(new NamedAddress[0]), names.firstElement());
 			dlg.showDialog();
 			if (!dlg.hasResult()) return;
 			
@@ -195,7 +144,7 @@ class SimplePanels {
 			}
 			System.out.println("objects.size(): "+objects.size());
 			
-			FileExport.writePosToVRML_simple(objects,this);
+			FileExport.writePosToVRML_simple(objects.toArray(new BuildingObject[0]),this);
 		}
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
@@ -284,8 +233,8 @@ class SimplePanels {
 				DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
-				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (simple)",e->FileExport.writePosToVRML_simple(new Vector<>(Arrays.asList(playerbase.objects)),PlayerBasePanel.this)));
-				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (Models)",e->FileExport.writePosToVRML_models(new Vector<>(Arrays.asList(playerbase.objects)),PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this)));
 				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
@@ -317,8 +266,8 @@ class SimplePanels {
 				
 				if (playerbase.position!=null || playerbase.position!=null) {
 					textArea.append("\r\nPosition :\r\n");
-					if (playerbase.position!=null) textArea.append("   ## "+playerbase.position.toString("%1.2f")+"\r\n");
-					if (playerbase.forward !=null) textArea.append("   -> "+playerbase.forward .toString("%1.4f")+"\r\n");
+					if (playerbase.position!=null) textArea.append("   position:"+playerbase.position.toString("%1.2f")+"\r\n");
+					if (playerbase.forward !=null) textArea.append("   forward :"+playerbase.forward .toString("%1.4f")+"\r\n");
 				}
 			}
 

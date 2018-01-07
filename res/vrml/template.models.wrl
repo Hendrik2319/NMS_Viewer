@@ -55,15 +55,65 @@ PROTO AxisCross [
 	}
 }
 
+PROTO BUILDDOOR [
+	field MFString string []
+] {
+	Transform { translation 0 -0.4 0.125 scale 0.5 0.5 0.5 rotation 1 0 0 -1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "FIRST" "END" ] family "SANSSERIF"} }
+		}
+	}
+	Shape {
+		appearance Appearance { material Material { diffuseColor 0 0 0 } }
+		geometry IndexedLineSet {
+			coord Coordinate { point [
+				0    0.2  0.9,
+				0    0.2 -0.9,
+				0   -0.2 -0.9,
+				0   -0.2  0.9,
+				2.8  0.2  0.9,
+				2.8  0.2 -0.9,
+				2.8 -0.2 -0.9,
+				2.8 -0.2  0.9 ] }
+			coordIndex [ 0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7 ]
+		}
+	}
+}
+
+PROTO CARBONPLANTER [
+	field MFString string []
+] {
+	Transform { translation 0 -0.4 0.125 scale 0.5 0.5 0.5 rotation 1 0 0 -1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "FIRST" "END" ] family "SANSSERIF"} }
+		}
+	}
+	Shape {
+		appearance Appearance { material Material { diffuseColor 0 0 0 } }
+		geometry IndexedLineSet {
+			coord Coordinate { point [
+				0    0.4  0.9,
+				0    0.4 -0.9,
+				0   -0.4 -0.9,
+				0   -0.4  0.9,
+				2.8 -0.2  0.9,
+				2.8 -0.2 -0.9,
+				2.8 -0.4 -0.9,
+				2.8 -0.4  0.9 ] }
+			coordIndex [ 0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7 ]
+		}
+	}
+}
+
 PROTO CUBEROOM [
 	field MFString string []
 ] {
-	Transform { translation 2 0 0 scale 0.5 0.5 0.5 children
-		Billboard { axisOfRotation 0 0 0
-			children Shape {
-				appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
-				geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-			}
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 		}
 	}
 	Shape {
@@ -78,12 +128,10 @@ PROTO CUBEROOM [
 PROTO CORRIDOR [
 	field MFString string []
 ] {
-	Transform { translation 2 0 0 scale 0.5 0.5 0.5 children
-		Billboard { axisOfRotation 0 0 0
-			children Shape {
-				appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
-				geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-			}
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 		}
 	}
 	Shape {
@@ -98,12 +146,10 @@ PROTO CORRIDOR [
 PROTO CORRIDORX [
 	field MFString string []
 ] {
-	Transform { translation 2 0 0 scale 0.5 0.5 0.5 children
-		Billboard { axisOfRotation 0 0 0
-			children Shape {
-				appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
-				geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-			}
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 		}
 	}
 	Shape {
@@ -118,12 +164,10 @@ PROTO CORRIDORX [
 PROTO BIOROOM [
 	field MFString string []
 ] {
-	Transform { translation 2 0 0 scale 0.5 0.5 0.5 children
-		Billboard { axisOfRotation 0 0 0
-			children Shape {
-				appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
-				geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-			}
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 		}
 	}
 	Shape {
@@ -158,12 +202,10 @@ PROTO PLANT [
 PROTO MAINROOM [
 	field MFString string []
 ] {
-	Transform { translation 2 0 0 scale 0.5 0.5 0.5 children
-		Billboard { axisOfRotation 0 0 0
-			children Shape {
-				appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
-				geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-			}
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 		}
 	}
 	Shape {
@@ -178,12 +220,10 @@ PROTO MAINROOM [
 PROTO MAINROOMCUBE [
 	field MFString string []
 ] {
-	Transform { translation 2 0 0 scale 0.5 0.5 0.5 children
-		Billboard { axisOfRotation 0 0 0
-			children Shape {
-				appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
-				geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-			}
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor 0 0 0.5 } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 		}
 	}
 	Shape {
