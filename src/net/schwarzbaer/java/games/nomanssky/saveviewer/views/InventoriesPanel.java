@@ -268,12 +268,12 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				if (slot.isEmpty) {
 					textarea.append("   is empty\r\n");
 				} else {
-					if (slot.id!=null) {
-						if (!slot.id.label.isEmpty())  textarea.append("   Label : "+slot.id.label +"\r\n");
-						if (!slot.id.symbol.isEmpty()) textarea.append("   Symbol: "+slot.id.symbol+"\r\n");
-					}
+					textarea.append("   Label : "+((slot.id!=null && slot.id.hasLabel ())?slot.id.label :"") +"\r\n");
+					textarea.append("   Symbol: "+((slot.id!=null && slot.id.hasSymbol())?slot.id.symbol:"")+"\r\n");
 					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):("["+slot.id.id+"]"))+"\r\n");
 					textarea.append("   Type  : "+(slot.type==null?slot.typeStr:slot.type)+"\r\n");
+					if (slot.id!=null && slot.id.type!=null)
+						textarea.append("           "+slot.id.type.getLabel()+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
 					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
 				}

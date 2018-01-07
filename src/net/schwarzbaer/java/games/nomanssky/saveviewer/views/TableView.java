@@ -70,14 +70,15 @@ public class TableView {
 		private static final long serialVersionUID = 13123780239483223L;
 		
 		private JTable table;
-		private enum TableContextMenuActionCommand { ShowWidths, CopyTableContent }
+		private enum TableContextMenuActionCommand { ShowWidths, CopyTable, CopySelectedRows }
 		
 		public DebugTableContextMenu(JTable table) {
 			super("DebugTableContextMenu");
 			this.table = table;
 			
 			add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths));
-			add(createMenuItem("Copy Table Content",TableContextMenuActionCommand.CopyTableContent));
+			add(createMenuItem("Copy Selected Rows",TableContextMenuActionCommand.CopySelectedRows));
+			add(createMenuItem("Copy Table",TableContextMenuActionCommand.CopyTable));
 		}
 	
 		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand) {
@@ -91,17 +92,32 @@ public class TableView {
 		public void actionPerformed(ActionEvent e) {
 			TableContextMenuActionCommand actionCommand = TableContextMenuActionCommand.valueOf(e.getActionCommand());
 			switch(actionCommand) {
-			case CopyTableContent: {
+			case CopyTable: {
 				TableModel model = table.getModel();
 				StringBuilder sb = new StringBuilder();
-				for (int row=0; row<model.getRowCount(); ++row) {
-					for (int col=0; col<model.getColumnCount(); ++col) {
+				for (int row=0; row<table.getRowCount(); ++row) {
+					for (int col=0; col<table.getColumnCount(); ++col) {
 						if (col>0) sb.append("\t");
-						sb.append(model.getValueAt(row, col));
+						int rowM = table.convertRowIndexToModel(row);
+						int colM = table.convertColumnIndexToModel(col);
+						sb.append(model.getValueAt(rowM,colM));
 					}
 					sb.append("\r\n");
 				}
-				
+				SaveViewer.copyToClipBoard(sb.toString());
+			} break;
+			case CopySelectedRows: {
+				TableModel model = table.getModel();
+				StringBuilder sb = new StringBuilder();
+				for (int row:table.getSelectedRows()) {
+					for (int col=0; col<model.getColumnCount(); ++col) {
+						if (col>0) sb.append("\t");
+						int rowM = table.convertRowIndexToModel(row);
+						int colM = table.convertColumnIndexToModel(col);
+						sb.append(model.getValueAt(rowM,colM));
+					}
+					sb.append("\r\n");
+				}
 				SaveViewer.copyToClipBoard(sb.toString());
 			} break;
 			case ShowWidths: {

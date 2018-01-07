@@ -261,6 +261,7 @@ public class SimplePanels {
 					textArea.append("   "+playerbase.galacticAddress.getCoordinates()+"\r\n");
 					textArea.append("   "+playerbase.galacticAddress.getExtendedSigBoostCode()+"\r\n");
 					textArea.append("   "+playerbase.galacticAddress.getPortalGlyphCodeStr()+"\r\n");
+					textArea.append("   "+playerbase.galacticAddress.getAddressStr()+"\r\n");
 					textArea.append("   "+String.format(Locale.ENGLISH, "%1.1f", playerbase.galacticAddress.getDistToCenter_inRegionUnits())+" regions to center of galaxy\r\n");
 				}
 				

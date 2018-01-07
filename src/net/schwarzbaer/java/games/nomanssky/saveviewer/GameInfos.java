@@ -57,7 +57,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.U
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu.ExternFunction;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.NamedColorListMenu;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -496,21 +495,21 @@ public class GameInfos {
 
 	public static class GeneralizedID {
 		
-		enum Type {
+		public enum Type {
 			ShipWeapon               ("Schiffswaffe"),
 			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade"),
 			ShipExtension            ("Schiffs-Erweiterung"),        
-			ShipExtensionUpgrade     ("Schiffs-Erweiterungs-Upgrade"),
+			ShipExtensionUpgrade     ("Schiffs-Erw.-Upgrade"),
 			MultitoolWeapon          ("Multitool-Waffe"),
 			MultitoolWeaponUpgrade   ("Multitool-Waffen-Upgrade"),
 			MultitoolExtension       ("Multitool-Erweiterung"),
-			MultitoolExtensionUpgrade("Multitool-Erweiterungs-Upgrade"),
+			MultitoolExtensionUpgrade("Multitool-Erw.-Upgrade"),
 			ExosuitExtension         ("Exo-Anzug-Erweiterung"),
-			ExosuitExtensionUpgrade  ("Exo-Anzug-Erweiterungs-Upgrade"),
+			ExosuitExtensionUpgrade  ("Exo-Anzug-Erw.-Upgrade"),
 			ExocraftWeapon           ("Exo-Fahrzeug-Waffe"),
 			ExocraftWeaponUpgrade    ("Exo-Fahrzeug-Waffen-Upgrade"),
 			ExocraftExtension        ("Exo-Fahrzeug-Erweiterung"),
-			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erweiterungs-Upgrade"),
+			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erw.-Upgrade"),
 			BaseComponent            ("Basis-Komponente"),
 			Plant                    ("Pflanze");
 			
@@ -688,7 +687,7 @@ public class GameInfos {
 			ListMenu<GeneralizedID.Type> typeListMenu_Std     = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
 			ListMenu<GeneralizedID.Type> typeListMenu_Image   = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
 			ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
-			ListMenu<GeneralizedID.Type> typeListMenu_Group   = new ListMenu<GeneralizedID.Type>("Type of all", types, null, setType_Group);
+			ListMenu<GeneralizedID.Type> typeListMenu_Group   = new ListMenu<GeneralizedID.Type>("Type of selected", types, null, setType_Group);
 			
 			
 			NamedColor[] colors = addNull(SaveViewer.images.colorValues);
@@ -723,7 +722,7 @@ public class GameInfos {
 			NamedColorListMenu colorListMenu_Std     = new NamedColorListMenu("Background", colors, null, setColor_Single);
 			NamedColorListMenu colorListMenu_Image   = new NamedColorListMenu("Background", colors, null, setColor_Single);
 			NamedColorListMenu colorListMenu_ImageBG = new NamedColorListMenu("Background", colors, null, setColor_Single);
-			NamedColorListMenu colorListMenu_Group   = new NamedColorListMenu("Background of all", colors, null, setColor_Group);
+			NamedColorListMenu colorListMenu_Group   = new NamedColorListMenu("Background of selected", colors, null, setColor_Group);
 			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					NamedColor[] colors = addNull(SaveViewer.images.colorValues);
@@ -742,7 +741,15 @@ public class GameInfos {
 			contextMenuGroup.addSeparator();
 			contextMenuGroup.add(typeListMenu_Group);
 			contextMenuGroup.add(colorListMenu_Group);
-			contextMenuGroup.add(createMenuItem("ImageFile of all ...",ActionCommand.SelectImage4AllSelected));
+			contextMenuGroup.add(createMenuItem("ImageFile of selected ...",ActionCommand.SelectImage4AllSelected));
+			contextMenuGroup.addSeparator();
+			contextMenuGroup.add(createMenuItem("Clear ImageFile of selected",ActionCommand.ClearImage));
+			contextMenuGroup.add(createMenuItem("Paste ImageFile of selected",ActionCommand.PasteImage));
+			contextMenuGroup.addSeparator();
+			contextMenuGroup.add(createMenuItem("Clear Background of selected",ActionCommand.ClearBackground));
+			contextMenuGroup.add(createMenuItem("Paste Background of selected",ActionCommand.PasteBackground));
+			contextMenuGroup.addSeparator();
+			contextMenuGroup.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
 			
 			contextMenuStd.addSeparator();
 			contextMenuStd.add(createMenuItem("Edit ID",ActionCommand.EditID));
@@ -785,6 +792,7 @@ public class GameInfos {
 							typeListMenu_Group.clearSelection();
 							contextMenuGroup.show(table, e.getX(), e.getY());
 						} else {
+							table.clearSelection();
 							DebugTableContextMenu contextMenu;
 							ListMenu<GeneralizedID.Type> typeListMenu;
 							NamedColorListMenu colorListMenu;
@@ -842,7 +850,7 @@ public class GameInfos {
 			return menuItem;
 		}
 	
-		enum ActionCommand { EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor, SelectImage4AllSelected, SetBackground4All }
+		enum ActionCommand { EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor, SelectImage4AllSelected }
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -851,7 +859,7 @@ public class GameInfos {
 			if (clickedID==null) return;
 			
 			boolean idChanged = false;
-			String cbValue;
+			String clipboardValue;
 			switch(actionCommand) {
 			case EditID: {
 				table.stopCellEditing();
@@ -874,48 +882,8 @@ public class GameInfos {
 					idChanged = true;
 				}
 			} break;
-				
-			case ClearImage     : clickedID.setImageFileName(""); break;
-			case ClearBackground: clickedID.setImageBG(null); break;
-				
-			case CopyImage      : SaveViewer.copyToClipBoard(clickedID.getImageFileName()); break;
-			case CopyBackground : if (clickedID.hasImageBG()) { SaveViewer.copyToClipBoard(String.format("%06X", clickedID.getImageBG())); } break;
-			
-			case PasteImage:
-				cbValue = SaveViewer.pasteFromClipBoard();
-				if (cbValue!=null) {
-					clickedID.setImageFileName(cbValue);
-					idChanged = true;
-				}
-				break;
-			case PasteBackground:
-				cbValue = SaveViewer.pasteFromClipBoard();
-				if (cbValue!=null)
-					try { clickedID.setImageBG(Integer.parseInt(cbValue, 16)); idChanged = true; }
-					catch (NumberFormatException e1) {}
-				break;
-				
-			case AddBackgroundColor:
-				SaveViewer.images.showAddColorDialog(mainwindow,"Add Color");
-				break;
-				
-			case SetBackground4All: {
-				NamedColor[] colors = addNull(SaveViewer.images.colorValues);
-				Gui.ComboBoxDialog<NamedColor> dlg = new Gui.ComboBoxDialog<>(mainwindow,"Select color for all selected rows", "Select color", colors, null);
-				dlg.showDialog();
-				if (dlg.hasResult()) {
-					NamedColor color = dlg.getResult();
-					int[] rows = table.getSelectedRows();
-					for (int row:rows) {
-						GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
-						id.setImageBG(color==null?null:color.value); 
-					}
-					idChanged=true;
-				}
-			} break;
-				
 			case SelectImage4AllSelected: {
-				ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow, null);
+				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow, null);
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					String image = dlg.getImageFileName();
@@ -927,8 +895,61 @@ public class GameInfos {
 					idChanged=true;
 				}
 			} break;
+				
+			case ClearImage     : idChanged = setImageFileName(null); break;
+			case ClearBackground: idChanged = setImageBG(null); break;
+				
+			case CopyImage      : SaveViewer.copyToClipBoard(clickedID.getImageFileName()); break;
+			case CopyBackground : if (clickedID.hasImageBG()) { SaveViewer.copyToClipBoard(String.format("%06X", clickedID.getImageBG())); } break;
+			
+			case PasteImage:
+				clipboardValue = SaveViewer.pasteFromClipBoard();
+				if (clipboardValue!=null) idChanged = setImageFileName(clipboardValue);
+				break;
+			case PasteBackground:
+				clipboardValue = SaveViewer.pasteFromClipBoard();
+				if (clipboardValue!=null)
+					try { idChanged = setImageBG(Integer.parseInt(clipboardValue, 16)); }
+					catch (NumberFormatException e1) {}
+				break;
+				
+			case AddBackgroundColor:
+				SaveViewer.images.showAddColorDialog(mainwindow,"Add Color");
+				break;
 			}
 			updateAfterContextMenuAction(idChanged);
+		}
+
+		private boolean setImageBG(Integer bgColor) {
+			int[] rows = table.getSelectedRows();
+			if (rows.length>1) {
+				for (int row:rows) {
+					GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
+					id.setImageBG(bgColor); 
+				}
+				return true;
+			}
+			if (clickedID!=null) {
+				clickedID.setImageBG(bgColor);
+				return true;
+			}
+			return false;
+		}
+
+		private boolean setImageFileName(String imageFileName) {
+			int[] rows = table.getSelectedRows();
+			if (rows.length>1) {
+				for (int row:rows) {
+					GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
+					id.setImageFileName(imageFileName); 
+				}
+				return true;
+			}
+			if (clickedID!=null) {
+				clickedID.setImageFileName(imageFileName);
+				return true;
+			}
+			return false;
 		}
 
 		private void updateAfterContextMenuAction(boolean idChanged) {
