@@ -174,7 +174,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			} break;
 				
 			case SelectImageFile: {
-				ImageGridDialog dlg = new ImageGridDialog(mainwindow,clickedSlot.id.getImageFileName());
+				ImageGridDialog dlg = new ImageGridDialog(mainwindow,"Select image of "+clickedSlot.id.getName(),clickedSlot.id.getImageFileName());
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					String result = dlg.getImageFileName();

@@ -450,8 +450,8 @@ public class Images {
 		private int preselectedIndex;
 		private JScrollPane imageScrollPane;
 	
-		public ImageGridDialog(Window parent, String initialValue) {
-			super(parent,"Select Image",ModalityType.APPLICATION_MODAL);
+		public ImageGridDialog(Window parent, String title, String initialValue) {
+			super(parent,title,ModalityType.APPLICATION_MODAL);
 			
 			selected = null;
 			

@@ -511,7 +511,13 @@ public class GameInfos {
 			ExocraftExtension        ("Exo-Fahrzeug-Erweiterung"),
 			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erw.-Upgrade"),
 			BaseComponent            ("Basis-Komponente"),
-			Plant                    ("Pflanze");
+			BaseDekoration           ("Basis-Dekoration"),
+			BaseExternal             ("Basis-Außenanlage"),
+			Plant                    ("Pflanze"),
+			Alloy                    ("Legierung"),
+			Energy                   ("Energie-Produkt"),
+			Resource                 ("Rohstoff"),
+			PlantProduct             ("Frucht");
 			
 			private String label;
 			Type(String label) { this.label = label; }
@@ -788,6 +794,7 @@ public class GameInfos {
 						clickedCell = new Point(colM,rowM);
 						clickedID = tableModel.getValue(rowM);
 						
+						table.stopCellEditing();
 						if (table.getSelectedRowCount()>1) {
 							typeListMenu_Group.clearSelection();
 							contextMenuGroup.show(table, e.getX(), e.getY());
@@ -874,18 +881,20 @@ public class GameInfos {
 			} break;
 			
 			case SelectImage: {
-				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow,clickedID.getImageFileName());
+				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow,"Select image of "+clickedID.getName(),clickedID.getImageFileName());
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
+					table.stopCellEditing();
 					String result = dlg.getImageFileName();
 					clickedID.setImageFileName(result);
 					idChanged = true;
 				}
 			} break;
 			case SelectImage4AllSelected: {
-				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow, null);
+				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow, "Select image of seleted IDs", null);
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
+					table.stopCellEditing();
 					String image = dlg.getImageFileName();
 					int[] rows = table.getSelectedRows();
 					for (int row:rows) {
@@ -914,6 +923,7 @@ public class GameInfos {
 				break;
 				
 			case AddBackgroundColor:
+				table.stopCellEditing();
 				SaveViewer.images.showAddColorDialog(mainwindow,"Add Color");
 				break;
 			}
@@ -923,6 +933,7 @@ public class GameInfos {
 		private boolean setImageBG(Integer bgColor) {
 			int[] rows = table.getSelectedRows();
 			if (rows.length>1) {
+				table.stopCellEditing();
 				for (int row:rows) {
 					GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
 					id.setImageBG(bgColor); 
@@ -930,6 +941,7 @@ public class GameInfos {
 				return true;
 			}
 			if (clickedID!=null) {
+				table.stopCellEditing();
 				clickedID.setImageBG(bgColor);
 				return true;
 			}
@@ -939,6 +951,7 @@ public class GameInfos {
 		private boolean setImageFileName(String imageFileName) {
 			int[] rows = table.getSelectedRows();
 			if (rows.length>1) {
+				table.stopCellEditing();
 				for (int row:rows) {
 					GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
 					id.setImageFileName(imageFileName); 
@@ -946,6 +959,7 @@ public class GameInfos {
 				return true;
 			}
 			if (clickedID!=null) {
+				table.stopCellEditing();
 				clickedID.setImageFileName(imageFileName);
 				return true;
 			}
@@ -1412,7 +1426,7 @@ public class GameInfos {
 		}
 	
 		private void showImageList(JComboBox<String> cmbbxImages) {
-			Images.ImageGridDialog dlg = new Images.ImageGridDialog(this,id.getImageFileName());
+			Images.ImageGridDialog dlg = new Images.ImageGridDialog(this,"Select image of "+id.getName(),id.getImageFileName());
 			dlg.showDialog();
 			if (dlg.hasChoosen()) {
 				String result = dlg.getImageFileName();
