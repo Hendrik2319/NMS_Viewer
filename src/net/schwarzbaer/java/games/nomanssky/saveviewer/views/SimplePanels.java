@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -32,7 +33,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuild
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
 public class SimplePanels {
@@ -70,7 +70,7 @@ public class SimplePanels {
 			},true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			
-			DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
+			TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 			contextMenu.addSeparator();
 			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
 			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BBOColumnID.ObjectID)));
@@ -208,7 +208,7 @@ public class SimplePanels {
 			for (PersistentPlayerBase pb:this.data.persistentPlayerBases) {
 				String title = String.format("Base %d", ++i);
 				if (pb.name!=null && !pb.name.isEmpty()) title = String.format("Base \"%s\"", pb.name);
-				tabbedPane.addTab(title, new PlayerBasePanel(pb));
+				tabbedPane.addTab(title, new PlayerBasePanel(this.data,pb));
 			}
 			
 			add(tabbedPane,BorderLayout.CENTER);
@@ -216,31 +216,70 @@ public class SimplePanels {
 		
 		static class PlayerBasePanel extends JPanel {
 			private static final long serialVersionUID = 6070388468452658705L;
+			
+			private SaveGameData data;
+			private PersistentPlayerBase playerbase;
+			private JTextArea textArea;
 
-			public PlayerBasePanel(PersistentPlayerBase playerbase) {
+			public PlayerBasePanel(SaveGameData data, PersistentPlayerBase playerbase) {
 				super(new BorderLayout(3, 3));
 				setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
-				JTextArea textArea = new JTextArea();
+				this.data = data;
+				this.playerbase = playerbase;
+				
+				textArea = new JTextArea();
 				JScrollPane textAreaScrollPane = new JScrollPane(textArea);
 				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
-				showValues(playerbase,textArea);
 				
 				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(playerbase.objects);
 				SimplifiedTable table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
-				DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
+				TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
 				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,PlayerBasePanel.this)));
 				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this)));
 				
+//				JPopupMenu textAreaContextMenu = new JPopupMenu();
+//				textAreaContextMenu.add(SaveViewer.createMenuItem("Show other objects on this planet",e->showOtherObjectsOnThisPlanet()));
+//				new TableView.ContextMenuInvoker(textArea, textAreaContextMenu);
+				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
+				
+				showValues();
+				showOtherObjectsOnThisPlanet();
 			}
 
-			private void showValues(PersistentPlayerBase playerbase, JTextArea textArea) {
+			private void showOtherObjectsOnThisPlanet() {
+				if (playerbase.galacticAddress==null) return;
+				long pbAddress =  playerbase.galacticAddress.getAddress();
+				
+				Vector<UnboundBuildingObject> nearObj = new Vector<UnboundBuildingObject>();
+				for(UnboundBuildingObject ubo:data.baseBuildingObjects)
+					if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==pbAddress)
+						nearObj.add(ubo);
+				
+				if (nearObj.isEmpty()) {
+					textArea.append("\r\nNo other objects on same planet.\r\n");
+				} else {
+					textArea.append("\r\nOther objects on same planet :\r\n");
+					for(UnboundBuildingObject ubo:nearObj) {
+						textArea.append("   ");
+						if (ubo.position!=null && ubo.position.pos!=null) {
+							textArea.append(ubo.position.pos.toString("%8.1f"));
+							if (playerbase.position!=null)
+								textArea.append(String.format(Locale.ENGLISH," (-> %9.2f u)", playerbase.position.distTo(ubo.position.pos)));
+							textArea.append("   ");
+						}
+						textArea.append(ubo.getNameOfObjectID()+"\r\n");
+					}
+				}
+			}
+
+			private void showValues() {
 				textArea.setText("");
 				
 				if (playerbase.name           !=null) textArea.append("Name        : "+playerbase.name           +"\r\n");
@@ -250,10 +289,10 @@ public class SimplePanels {
 				
 				if (playerbase.owner!=null) {
 					textArea.append("\r\nOwner :\r\n");
-					textArea.append("   LID: "+(playerbase.owner.LID==null?"":playerbase.owner.LID)+"\r\n");
-					textArea.append("   UID: "+(playerbase.owner.UID==null?"":playerbase.owner.UID)+"\r\n");
-					textArea.append("   USN: "+(playerbase.owner.USN==null?"":playerbase.owner.USN)+"\r\n");
-					textArea.append("   TS : "+(playerbase.owner.TS ==null?"":playerbase.owner.TS )+"\r\n");
+					textArea.append("   LID : "+(playerbase.owner.LID==null?"":playerbase.owner.LID)+"\r\n");
+					textArea.append("   UID : "+(playerbase.owner.UID==null?"":playerbase.owner.UID)+"\r\n");
+					textArea.append("   USN : "+(playerbase.owner.USN==null?"":playerbase.owner.USN)+"\r\n");
+					textArea.append("   TS  : "+(playerbase.owner.TS ==null?"":playerbase.owner.TS )+"\r\n");
 				}
 				
 				if (playerbase.galacticAddress!=null) {
@@ -265,10 +304,10 @@ public class SimplePanels {
 					textArea.append("   "+String.format(Locale.ENGLISH, "%1.1f", playerbase.galacticAddress.getDistToCenter_inRegionUnits())+" regions to center of galaxy\r\n");
 				}
 				
-				if (playerbase.position!=null || playerbase.position!=null) {
+				if (playerbase.position!=null || playerbase.forward!=null) {
 					textArea.append("\r\nPosition :\r\n");
-					if (playerbase.position!=null) textArea.append("   position:"+playerbase.position.toString("%1.2f")+"\r\n");
-					if (playerbase.forward !=null) textArea.append("   forward :"+playerbase.forward .toString("%1.4f")+"\r\n");
+					if (playerbase.position!=null) textArea.append("   position : "+playerbase.position.toString("%1.2f")+"\r\n");
+					if (playerbase.forward !=null) textArea.append("   forward  : "+playerbase.forward .toString("%1.4f")+"\r\n");
 				}
 			}
 

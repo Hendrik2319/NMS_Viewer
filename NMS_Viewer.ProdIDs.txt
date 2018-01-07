@@ -251,6 +251,7 @@
 ^CURIO3=Korvax-Gehäuse
 ^CURIO3.image=Product.korvaxcasing.png
 ^CURIO3.imageBG=10805C
+^CURIO5=
 ^CURIO6=Faszinierende Perle
 ^CURIO6.image=Product.fasbead.FaszinierendePerle.png
 ^CURIO6.imageBG=10805C

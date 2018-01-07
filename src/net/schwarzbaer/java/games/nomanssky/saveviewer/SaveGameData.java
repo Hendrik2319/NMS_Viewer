@@ -199,18 +199,13 @@ public class SaveGameData {
 		return coords;
 	}
 
-	public static class Coordinates {
+	public static class Coordinates extends Point3D {
 	
-		public double x;
-		public double y;
-		public double z;
 		public double w1;
 		public int length;
 	
 		public Coordinates() {
-			this.x = 0;
-			this.y = 0;
-			this.z = 0;
+			super(0,0,0);
 			this.w1 = 0;
 			this.length = 0; 
 		}
@@ -243,6 +238,60 @@ public class SaveGameData {
 		}
 		
 		
+	}
+
+	public static class Point3D {
+		public double x,y,z;
+	
+		public Point3D(double x, double y, double z) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+		}
+	
+		public Point3D(Coordinates pos) {
+			this.x = pos.x;
+			this.y = pos.y;
+			this.z = pos.z;
+		}
+	
+		public Point3D(Point3D pos) {
+			this.x = pos.x;
+			this.y = pos.y;
+			this.z = pos.z;
+		}
+	
+		public void min(Point3D pos) {
+			x = Math.min(x, pos.x);
+			y = Math.min(y, pos.y);
+			z = Math.min(z, pos.z);
+		}
+	
+		public void max(Point3D pos) {
+			x = Math.max(x, pos.x);
+			y = Math.max(y, pos.y);
+			z = Math.max(z, pos.z);
+		}
+	
+		public Point3D add(Point3D vec) {
+			return new Point3D(x+vec.x, y+vec.y, z+vec.z);
+		}
+	
+		public Point3D mul(double size) {
+			return new Point3D(x*size, y*size, z*size);
+		}
+	
+		public double distTo(Point3D p) {
+			return Math.sqrt((x-p.x)*(x-p.x) + (y-p.y)*(y-p.y) + (z-p.z)*(z-p.z));
+		}
+	
+		public Point3D normalize() {
+			return mul(1/length());
+		}
+	
+		private double length() {
+			return distTo(new Point3D(0,0,0));
+		}
 	}
 
 	private Owner parseOwnwerField(JSON_Object parentObj, String valueName) {

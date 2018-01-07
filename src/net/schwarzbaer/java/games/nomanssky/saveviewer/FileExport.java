@@ -22,8 +22,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
@@ -200,69 +199,7 @@ public class FileExport {
 		if ( value instanceof ArrayValue   ) writeToHTML_arr(out, ((ArrayValue )value).value, ID+"_"+i);
 	}
 
-	private static class Point3D {
-		double x,y,z;
-
-		public Point3D(double x, double y, double z) {
-			this.x = x;
-			this.y = y;
-			this.z = z;
-		}
-
-		public Point3D(Coordinates pos) {
-			this.x = pos.x;
-			this.y = pos.y;
-			this.z = pos.z;
-		}
-
-		public Point3D(Point3D pos) {
-			this.x = pos.x;
-			this.y = pos.y;
-			this.z = pos.z;
-		}
-
-		public void min(Point3D pos) {
-			x = Math.min(x, pos.x);
-			y = Math.min(y, pos.y);
-			z = Math.min(z, pos.z);
-		}
-
-		public void max(Point3D pos) {
-			x = Math.max(x, pos.x);
-			y = Math.max(y, pos.y);
-			z = Math.max(z, pos.z);
-		}
-
-		public Point3D add(Point3D vec) {
-			return new Point3D(x+vec.x, y+vec.y, z+vec.z);
-		}
-
-		public Point3D mul(double size) {
-			return new Point3D(x*size, y*size, z*size);
-		}
-
-		public double distTo(Point3D p) {
-			return Math.sqrt((x-p.x)*(x-p.x) + (y-p.y)*(y-p.y) + (z-p.z)*(z-p.z));
-		}
-
-		public Point3D normalize() {
-			return mul(1/length());
-		}
-
-		private double length() {
-			return distTo(new Point3D(0,0,0));
-		}
-
-		public Coordinates toCoordinates() {
-			Coordinates coords = new Coordinates();
-			coords.x = x;
-			coords.y = y;
-			coords.z = z;
-			return coords;
-		}
-	}
-	
-	public static void writePosToVRML_models(BuildingObject[] objects, PersistentPlayerBase playerbase, Component parent) {
+	public static void writePosToVRML_models(BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent) {
 		if (objects==null && playerbase!=null) objects = playerbase.objects;
 		if (objects==null) return;
 		System.out.println("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
@@ -275,15 +212,15 @@ public class FileExport {
 		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
 		File file = fc.getSelectedFile();
 		
-		Point3D min = null;
-		Point3D max = null;
+		SaveGameData.Point3D min = null;
+		SaveGameData.Point3D max = null;
 		
 		for (BuildingObject obj:objects) {
 			if (obj.position==null) continue;
 			if (obj.position.pos==null) continue;
-			Point3D pos = new Point3D(obj.position.pos);
-			if (min==null) min = new Point3D(pos); else min.min(pos);
-			if (max==null) max = new Point3D(pos); else max.max(pos);
+			SaveGameData.Point3D pos = new SaveGameData.Point3D(obj.position.pos);
+			if (min==null) min = new SaveGameData.Point3D(pos); else min.min(pos);
+			if (max==null) max = new SaveGameData.Point3D(pos); else max.max(pos);
 		}
 		double size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
 		
@@ -307,9 +244,9 @@ public class FileExport {
 				String name = playerbase.name;
 				if (name==null || name.isEmpty()) name = "PlayerBase";
 				if (playerbase.position!=null && playerbase.forward!=null) {
-					Coordinates pos = new Coordinates();
-					Coordinates at = new Point3D(playerbase.position).normalize().toCoordinates();
-					Coordinates up = playerbase.forward;
+					Point3D pos = new Point3D(0,0,0);
+					Point3D at = new SaveGameData.Point3D(playerbase.position).normalize();
+					Point3D up = playerbase.forward;
 					writeModel(vrml, "^MAINROOM", name, pos, at, up, size);
 				}
 			}
@@ -362,7 +299,7 @@ public class FileExport {
 			mapObjectID2Model.put(objectID, modelName);
 	}
 
-	private static void writeModel(PrintWriter vrml, String objectID, String label, Coordinates pos, Coordinates at, Coordinates up, double size) {
+	private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double size) {
 		vrml.print("MyOrientation {");
 		vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
 		vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
@@ -456,28 +393,28 @@ public class FileExport {
 		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
 		File file = fc.getSelectedFile();
 		
-		Point3D min = null;
-		Point3D max = null;
+		SaveGameData.Point3D min = null;
+		SaveGameData.Point3D max = null;
 		
-		Vector<Point3D> arrPos = new Vector<>();
+		Vector<SaveGameData.Point3D> arrPos = new Vector<>();
 		
 		for (BuildingObject obj:objects) {
 			if (obj.position==null) continue;
 			if (obj.position.pos==null) continue;
-			Point3D pos = new Point3D(obj.position.pos); arrPos.add(pos);
-			if (min==null) min = new Point3D(pos); else min.min(pos);
-			if (max==null) max = new Point3D(pos); else max.max(pos);
+			SaveGameData.Point3D pos = new SaveGameData.Point3D(obj.position.pos); arrPos.add(pos);
+			if (min==null) min = new SaveGameData.Point3D(pos); else min.min(pos);
+			if (max==null) max = new SaveGameData.Point3D(pos); else max.max(pos);
 		}
 		double size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
 		
-		Vector<Point3D> arrUp = new Vector<>();
-		Vector<Point3D> arrAt = new Vector<>();
+		Vector<SaveGameData.Point3D> arrUp = new Vector<>();
+		Vector<SaveGameData.Point3D> arrAt = new Vector<>();
 		for (BuildingObject obj:objects) {
 			if (obj.position==null) continue;
 			if (obj.position.pos==null) continue;
-			Point3D pos = new Point3D(obj.position.pos);
-			if (obj.position.up!=null) arrUp.add(pos.add(new Point3D(obj.position.up).normalize().mul(size)));
-			if (obj.position.at!=null) arrAt.add(pos.add(new Point3D(obj.position.at).normalize().mul(size)));
+			SaveGameData.Point3D pos = new SaveGameData.Point3D(obj.position.pos);
+			if (obj.position.up!=null) arrUp.add(pos.add(new SaveGameData.Point3D(obj.position.up).normalize().mul(size)));
+			if (obj.position.at!=null) arrAt.add(pos.add(new SaveGameData.Point3D(obj.position.at).normalize().mul(size)));
 		}
 		
 		try (PrintWriter vrml = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8))) {
@@ -503,10 +440,10 @@ public class FileExport {
 			vrml.println("}");
 			vrml.println("");
 			
-			Point3D origin = new Point3D(0,0,0);
-			for (Point3D p:arrPos) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 1 1 pos %1.2f %1.2f %1.2f } # Pos r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
-			for (Point3D p:arrAt ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 0 0 pos %1.2f %1.2f %1.2f } # At  r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
-			for (Point3D p:arrUp ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 0 1 0 pos %1.2f %1.2f %1.2f } # Up  r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			SaveGameData.Point3D origin = new SaveGameData.Point3D(0,0,0);
+			for (SaveGameData.Point3D p:arrPos) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 1 1 pos %1.2f %1.2f %1.2f } # Pos r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (SaveGameData.Point3D p:arrAt ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 0 0 pos %1.2f %1.2f %1.2f } # At  r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			for (SaveGameData.Point3D p:arrUp ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 0 1 0 pos %1.2f %1.2f %1.2f } # Up  r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

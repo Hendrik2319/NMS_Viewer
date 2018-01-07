@@ -134,6 +134,16 @@ name=Omoriyamama
 [Pln51EA00FAA8CBC4]
 name=Rudoindain-Tuzl VS533
 
+[Sys000100F8FF8FF8]
+race=Vykeen
+class=Green
+
+[Pln100100F8FF8FF8]
+name=Kudamagano Towa
+
+[Pln300100F8FF8FF8]
+name=Azyvaius OX857
+
 [Sys00010008FF8FF8]
 name=Detadfal
 race=Korvax
@@ -154,7 +164,6 @@ race=Gek
 class=Red
 
 [Pln100100F8008FF8]
-name=???
 short.P=Ru
 info=Rubeum (Große Kegel)
 
@@ -205,6 +214,14 @@ short=ExtRad
 info=Extrem verstrahlter Planet
 short.P=Ka
 info=Kalium (Kugeln)
+
+[Sys000100F8008008]
+name=Tumise-Rekv
+race=Vykeen
+class=Red
+
+[Pln100100F8008008]
+name=Sagayamatsuy-5
 
 [Sys00010000444444]
 name=Idewij-Hizdr
