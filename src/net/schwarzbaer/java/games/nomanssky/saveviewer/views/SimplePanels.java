@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -101,7 +102,7 @@ public class SimplePanels {
 		}
 
 		private void writePosToVRML() {
-			System.out.println("data.baseBuildingObjects.length: "+data.baseBuildingObjects.length);
+			//System.out.println("data.baseBuildingObjects.length: "+data.baseBuildingObjects.length);
 			
 			HashMap<Long,Integer> foundAddresses = new HashMap<>();
 			for (UnboundBuildingObject ubo:data.baseBuildingObjects) {
@@ -111,18 +112,18 @@ public class SimplePanels {
 				if (amount==null) amount=0;
 				foundAddresses.put(address,amount+1);
 			}
-			System.out.println("foundAddresses.size(): "+foundAddresses.size());
+			//System.out.println("foundAddresses.size(): "+foundAddresses.size());
 			
 			Vector<NamedAddress> names = new Vector<>();
 			for (long addr:foundAddresses.keySet()) {
 				Integer amount = foundAddresses.get(addr);
 				String str = new UniverseAddress(addr).getVerboseName(data.universe);
-				names.add(new NamedAddress("["+amount+"] "+str,addr));
+				names.add(new NamedAddress(String.format("[%2d] %s",amount,str),addr));
 			}
-			names.sort(Comparator.comparing(na->na.name));
-			System.out.println("names.size(): "+names.size());
+			names.sort(Comparator.comparing((NamedAddress na)->na.name).reversed());
+			//System.out.println("names.size(): "+names.size());
 			
-			Gui.ComboBoxDialog<NamedAddress> dlg = new Gui.ComboBoxDialog<>(mainWindow,"message", "title", names.toArray(new NamedAddress[0]), names.firstElement());
+			Gui.ListBoxDialog<NamedAddress> dlg = new Gui.ListBoxDialog<>(mainWindow,"Select Planet :", "Select Planet", names.toArray(new NamedAddress[0]), names.firstElement(), 600,200);
 			dlg.showDialog();
 			if (!dlg.hasResult()) return;
 			
@@ -131,19 +132,25 @@ public class SimplePanels {
 			
 			NamedAddress selected = names.get(index);
 			long selectedAddress = selected.addr;
-			System.out.printf("selectedAddress: %016X\r\n",selectedAddress);
-			System.out.printf("selectedName   : %s\r\n",selected.name);
+			//System.out.printf("selectedAddress: %016X\r\n",selectedAddress);
+			//System.out.printf("selectedName   : %s\r\n",selected.name);
 			
+			Double radius = null;
 			Vector<BuildingObject> objects = new Vector<>();
 			for (UnboundBuildingObject ubo:data.baseBuildingObjects) {
 				long address = ubo.galacticAddress.getAddress();
-				System.out.printf("  address: %016X %s\r\n",address,(address==selectedAddress?"####":""));
-				if (address==selectedAddress)
+				//System.out.printf("  address: %016X %s\r\n",address,(address==selectedAddress?"####":""));
+				if (address==selectedAddress) {
 					objects.add(ubo);
+					if (ubo.position!=null && ubo.position.pos!=null) {
+						if (radius==null) radius = ubo.position.pos.length();
+						else radius = Math.min(radius,ubo.position.pos.length());
+					}
+				}
 			}
-			System.out.println("objects.size(): "+objects.size());
+			//System.out.println("objects.size(): "+objects.size());
 			
-			FileExport.writePosToVRML_simple(objects.toArray(new BuildingObject[0]),this);
+			FileExport.writePosToVRML_simple(objects.toArray(new BuildingObject[0]), radius, this);
 		}
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
@@ -153,7 +160,7 @@ public class SimplePanels {
 			GalacticAddress ("GalacticAddress" , String.class, 80,-1,160,160),
 			RegionSeed      ("RegionSeed"      , String.class, 65,-1,130,130),
 			UserData        ("UserData"        , String.class, 40,-1, 80, 80),
-			Position        ("Position"        , String.class, 95,-1,190,190),
+			Position        ("Position"        , String.class, 95,-1,250,250),
 			Up              ("Up"              , String.class, 75,-1,150,150),
 			At              ("At"              , String.class, 75,-1,150,150);
 			
@@ -186,7 +193,7 @@ public class SimplePanels {
 				case GalacticAddress: if (bbo.galacticAddress==null) return ""; else return bbo.galacticAddress.getCoordinates();
 				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; else return String.format("0x%016X", bbo.regionSeed);
 				case UserData       : if (bbo.userData       ==null) return ""; else return String.format("0x%08X" , bbo.userData  );
-				case Position       : if (bbo.position==null || bbo.position.pos==null) return ""; else return bbo.position.pos.toString("%1.2f");
+				case Position       : if (bbo.position==null || bbo.position.pos==null) return ""; else return bbo.position.pos.toString("%1.2f")+String.format(Locale.ENGLISH," [R:%1.1f]",bbo.position.pos.length());
 				case Up             : if (bbo.position==null || bbo.position.up ==null) return ""; else return bbo.position.up .toString("%1.4f");
 				case At             : if (bbo.position==null || bbo.position.at ==null) return ""; else return bbo.position.at .toString("%1.4f");
 				
@@ -203,14 +210,22 @@ public class SimplePanels {
 			super(data);
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
+			
+			if (this.data.persistentPlayerBases.planetBase      !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.planetBase      , "Base on Planet");
+			if (this.data.persistentPlayerBases.freighterBase   !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.freighterBase   , "Base on Freighter");
+			if (this.data.persistentPlayerBases.otherPlayersBase!=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.otherPlayersBase, "Base of another Player");
+			
 			int i=0;
-			for (PersistentPlayerBase pb:this.data.persistentPlayerBases) {
-				String title = String.format("Base %d", ++i);
-				if (pb.name!=null && !pb.name.isEmpty()) title = String.format("Base \"%s\"", pb.name);
-				tabbedPane.addTab(title, new PlayerBasePanel(this.data,pb));
-			}
+			for (PersistentPlayerBase pb:this.data.persistentPlayerBases.additionalBases)
+				addBaseTab(tabbedPane, pb, String.format("Additional Base %d", ++i));
 			
 			add(tabbedPane,BorderLayout.CENTER);
+		}
+
+		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title) {
+			//String title = String.format("Base %d", ++i);
+			//if (pb.name!=null && !pb.name.isEmpty()) title = String.format("Base \"%s\"", pb.name);
+			tabbedPane.addTab(title, new PlayerBasePanel(this.data,pb));
 		}
 		
 		static class PlayerBasePanel extends JPanel {
@@ -231,19 +246,18 @@ public class SimplePanels {
 				JScrollPane textAreaScrollPane = new JScrollPane(textArea);
 				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
 				
-				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(playerbase.objects);
+				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(this.playerbase.objects);
 				SimplifiedTable table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
 				TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
-				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,PlayerBasePanel.this)));
-				contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this)));
+				addVRMLtasks(contextMenu);
 				
-//				JPopupMenu textAreaContextMenu = new JPopupMenu();
-//				textAreaContextMenu.add(SaveViewer.createMenuItem("Show other objects on this planet",e->showOtherObjectsOnThisPlanet()));
-//				new TableView.ContextMenuInvoker(textArea, textAreaContextMenu);
+				JPopupMenu textAreaContextMenu = new JPopupMenu();
+				addVRMLtasks(textAreaContextMenu);
+				new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
 				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
@@ -252,39 +266,64 @@ public class SimplePanels {
 				showOtherObjectsOnThisPlanet();
 			}
 
+			private void addVRMLtasks(JPopupMenu contextMenu) {
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,null, PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
+					Vector<BuildingObject> nearObj = getNearObjects();
+					nearObj.add(BuildingObject.createFromBase(playerbase));
+					
+					Double radius = null;
+					for (BuildingObject obj:nearObj)
+						if (obj.position!=null && obj.position.pos!=null) {
+							if (radius==null) radius = obj.position.pos.length();
+							else radius = Math.min(radius, obj.position.pos.length());
+						}
+					
+					FileExport.writePosToVRML_simple(nearObj.toArray(new BuildingObject[0]),radius,this);
+				},!playerbase.isFreighterBase));
+			}
+
 			private void showOtherObjectsOnThisPlanet() {
-				if (playerbase.galacticAddress==null) return;
-				long pbAddress =  playerbase.galacticAddress.getAddress();
-				
-				Vector<UnboundBuildingObject> nearObj = new Vector<UnboundBuildingObject>();
-				for(UnboundBuildingObject ubo:data.baseBuildingObjects)
-					if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==pbAddress)
-						nearObj.add(ubo);
+				Vector<BuildingObject> nearObj = getNearObjects();
 				
 				if (nearObj.isEmpty()) {
 					textArea.append("\r\nNo other objects on same planet.\r\n");
 				} else {
 					textArea.append("\r\nOther objects on same planet :\r\n");
-					for(UnboundBuildingObject ubo:nearObj) {
+					for(BuildingObject obj:nearObj) {
 						textArea.append("   ");
-						if (ubo.position!=null && ubo.position.pos!=null) {
-							textArea.append(ubo.position.pos.toString("%8.1f"));
+						if (obj.position!=null && obj.position.pos!=null) {
+							textArea.append(obj.position.pos.toString("%8.1f"));
 							if (playerbase.position!=null)
-								textArea.append(String.format(Locale.ENGLISH," (-> %9.2f u)", playerbase.position.distTo(ubo.position.pos)));
+								textArea.append(String.format(Locale.ENGLISH," (-> %9.2f u)", playerbase.position.distTo(obj.position.pos)));
 							textArea.append("   ");
 						}
-						textArea.append(ubo.getNameOfObjectID()+"\r\n");
+						textArea.append(obj.getNameOfObjectID()+"\r\n");
 					}
 				}
+			}
+
+			private Vector<BuildingObject> getNearObjects() {
+				Vector<BuildingObject> nearObj = new Vector<BuildingObject>();
+				
+				if (playerbase.galacticAddress==null) return nearObj;
+				long pbAddress =  playerbase.galacticAddress.getAddress();
+				
+				for(UnboundBuildingObject ubo:data.baseBuildingObjects)
+					if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==pbAddress)
+						nearObj.add(ubo);
+				
+				return nearObj;
 			}
 
 			private void showValues() {
 				textArea.setText("");
 				
-				if (playerbase.name           !=null) textArea.append("Name        : "+playerbase.name           +"\r\n");
-				if (playerbase.baseVersion    !=null) textArea.append("Base Version: "+playerbase.baseVersion    +"\r\n");
-				if (playerbase.userData       !=null) textArea.append("User Data   : "+String.format("%08X", playerbase.userData)+"\r\n");
-				if (playerbase.rid            !=null) textArea.append("RID         : "+playerbase.rid            +"\r\n");
+				textArea.append("Name        : "+(playerbase.name       ==null?"":playerbase.name       )+"\r\n");
+				textArea.append("Base Version: "+(playerbase.baseVersion==null?"":playerbase.baseVersion)+"\r\n");
+				textArea.append("User Data   : "+(playerbase.userData   ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
+				textArea.append("RID         : "+(playerbase.rid        ==null?"":playerbase.rid        )+"\r\n");
 				
 				if (playerbase.owner!=null) {
 					textArea.append("\r\nOwner :\r\n");

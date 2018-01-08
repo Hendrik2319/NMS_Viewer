@@ -9,7 +9,7 @@
 ^COMRARE1.image=Substance.commodity.rare1.Titan.png
 ^COMRARE1.imageBG=FFC456
 ^COMUNCOMMON1=Zink
-^COMUNCOMMON1.type=Resource
+^COMUNCOMMON1.type=Alloy
 ^COMUNCOMMON1.symbol=Zn
 ^COMUNCOMMON1.image=Substance.commodity.uncommon1.Zink.png
 ^COMUNCOMMON1.imageBG=FFC456

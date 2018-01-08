@@ -11,6 +11,8 @@ import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.Enumeration;
 
@@ -22,8 +24,11 @@ import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -36,6 +41,55 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
 
+	public static class ListBoxDialog<T> extends StandardDialog {
+		private static final long serialVersionUID = -317119785847294385L;
+		
+		private boolean hasResult;
+		private T[] options;
+		private JList<T> listBox;
+	
+		public ListBoxDialog(Window mainWindow, String message, String title, T[] options, T initialValue, int width, int height) {
+			super(mainWindow,title,ModalityType.APPLICATION_MODAL);
+			this.options = options;
+			hasResult = false;
+			
+			listBox = new JList<T>(options);
+			listBox.setSelectedValue(initialValue, true);;
+			
+			JScrollPane scrollPane = new JScrollPane(listBox);
+			scrollPane.setPreferredSize(new Dimension(width,height));
+			
+			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
+			inputPanel.add(new JLabel(message),BorderLayout.CENTER);
+			inputPanel.add(scrollPane,BorderLayout.SOUTH);
+			
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
+			buttonPanel.add(SaveViewer.createButton("Ok", e->{hasResult=true; closeDialog();}));
+			buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+			contentPane.add(inputPanel,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
+			
+			createGUI(contentPane);
+		}
+	
+		public boolean hasResult() {
+			return hasResult;
+		}
+	
+		public T getResult() {
+			int index = listBox.getSelectedIndex();
+			if (index<0) return null;
+			return options[index];
+		}
+	
+		public int getResultIndex() {
+			return listBox.getSelectedIndex();
+		}
+	}
+	
 	public static class ComboBoxDialog<T> extends StandardDialog {
 		private static final long serialVersionUID = 2109107550076395513L;
 		
@@ -581,5 +635,27 @@ public class Gui {
 			public boolean isEqual(T v1, T v2) { return v1==v2; }
 		}
 		
+	}
+
+	public static class ContextMenuInvoker implements MouseListener {
+		
+		private Component invoker;
+		private JPopupMenu contextMenu;
+		
+		public ContextMenuInvoker(Component invoker, JPopupMenu contextMenu) {
+			this.invoker = invoker;
+			this.contextMenu = contextMenu;
+			invoker.addMouseListener(this);
+		}
+		
+		@Override public void mousePressed(MouseEvent e) {}
+		@Override public void mouseReleased(MouseEvent e) {}
+		@Override public void mouseEntered(MouseEvent e) {}
+		@Override public void mouseExited(MouseEvent e) {}
+		@Override public void mouseClicked(MouseEvent e) {
+			if (e.getButton()==MouseEvent.BUTTON3) {
+				contextMenu.show(invoker, e.getX(), e.getY());
+			}
+		}
 	}
 }

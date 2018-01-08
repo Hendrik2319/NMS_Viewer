@@ -23,6 +23,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
@@ -212,17 +213,20 @@ public class FileExport {
 		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
 		File file = fc.getSelectedFile();
 		
-		SaveGameData.Point3D min = null;
-		SaveGameData.Point3D max = null;
+		Point3D min = null;
+		Point3D max = null;
 		
 		for (BuildingObject obj:objects) {
 			if (obj.position==null) continue;
 			if (obj.position.pos==null) continue;
-			SaveGameData.Point3D pos = new SaveGameData.Point3D(obj.position.pos);
-			if (min==null) min = new SaveGameData.Point3D(pos); else min.min(pos);
-			if (max==null) max = new SaveGameData.Point3D(pos); else max.max(pos);
+			Point3D pos = new Point3D(obj.position.pos);
+			if (min==null) min = new Point3D(pos); else min.min(pos);
+			if (max==null) max = new Point3D(pos); else max.max(pos);
 		}
-		double size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
+		double size = 0;
+		if (max!=null && min!=null)
+			size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
+		size = Math.max(size, 0.25);
 		
 		StringBuilder templateSB = new StringBuilder();
 		InputStream is = templateSB.getClass().getResourceAsStream(VRML_TEMPLATE_MODELS_WRL);
@@ -240,35 +244,52 @@ public class FileExport {
 			//writeBioroomCoords(vrml);
 			//writeMainroomCoords(vrml);
 			
-			if (playerbase!=null) {
+			if (playerbase!=null && !playerbase.isFreighterBase) {
 				String name = playerbase.name;
 				if (name==null || name.isEmpty()) name = "PlayerBase";
 				if (playerbase.position!=null && playerbase.forward!=null) {
 					Point3D pos = new Point3D(0,0,0);
-					Point3D at = new SaveGameData.Point3D(playerbase.position).normalize();
-					Point3D up = playerbase.forward;
+					Point3D at = playerbase.position.isZero()?null:playerbase.position.normalize();
+					Point3D up = playerbase.forward .isZero()?null:playerbase.forward .normalize();
 					writeModel(vrml, "^MAINROOM", name, pos, at, up, size);
 				}
 			}
 			
-			for (BuildingObject obj:objects) {
-				if (obj.position==null) continue;
-				if (obj.position.pos==null) continue;
-				if (obj.position.up==null) continue;
-				if (obj.position.at==null) continue;
-				
-				String objectID = obj.objectID;
-				GeneralizedID id = GameInfos.productIDs.get(objectID);
-				String label = objectID;
-				if (id!=null && !id.label.isEmpty()) label = id.label;
-				
-				writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, size);
-			}
+			CubeCombine cubeCombine = new CubeCombine();
+			
+			for (BuildingObject obj:objects)
+				if (!cubeCombine.add(obj))
+					writeModel(vrml, obj, size);
+			
+			cubeCombine.writeModel(vrml);
+			
+			BuildingObject[] remainingObjects = cubeCombine.getRemainingObjects();
+			for (BuildingObject obj:remainingObjects)
+				writeModel(vrml, obj, size);
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 		System.out.println("done");
+	}
+
+	private static class CubeCombine {
+
+		public boolean add(BuildingObject obj) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		public BuildingObject[] getRemainingObjects() {
+			// TODO Auto-generated method stub
+			return new BuildingObject[0];
+		}
+
+		public void writeModel(PrintWriter vrml) {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	}
 	
 	public static void prepareModels() {
@@ -299,11 +320,25 @@ public class FileExport {
 			mapObjectID2Model.put(objectID, modelName);
 	}
 
+	private static void writeModel(PrintWriter vrml, BuildingObject obj, double size) {
+		if (obj.position==null) return;
+		if (obj.position.pos==null) return;
+		if (obj.position.up==null) return;
+		if (obj.position.at==null) return;
+		
+		String objectID = obj.objectID;
+		GeneralizedID id = GameInfos.productIDs.get(objectID);
+		String label = objectID;
+		if (id!=null && !id.label.isEmpty()) label = id.label;
+		
+		writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, size);
+	}
+
 	private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double size) {
 		vrml.print("MyOrientation {");
 		vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
-		vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
-		vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
+		if (at!=null) vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
+		if (up!=null) vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
 		
 		vrml.print (" children");
 		String modelName = mapObjectID2Model.get(objectID);
@@ -382,8 +417,10 @@ public class FileExport {
 		vrml.println("]");
 	}
 
-	public static void writePosToVRML_simple(BuildingObject[] objects, Component parent) {
+	public static void writePosToVRML_simple(BuildingObject[] objects, Double radius, Component parent) {
 		System.out.println("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
+		
+		if (radius!=null && radius<=0) radius=null;
 		
 		JFileChooser fc = new JFileChooser("./");
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -393,29 +430,23 @@ public class FileExport {
 		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
 		File file = fc.getSelectedFile();
 		
-		SaveGameData.Point3D min = null;
-		SaveGameData.Point3D max = null;
+		Point3D min = null;
+		Point3D max = null;
 		
-		Vector<SaveGameData.Point3D> arrPos = new Vector<>();
+		if (radius!=null) {
+			min = new Point3D(-radius,-radius,-radius);
+			max = new Point3D( radius, radius, radius);
+		}
 		
 		for (BuildingObject obj:objects) {
 			if (obj.position==null) continue;
 			if (obj.position.pos==null) continue;
-			SaveGameData.Point3D pos = new SaveGameData.Point3D(obj.position.pos); arrPos.add(pos);
-			if (min==null) min = new SaveGameData.Point3D(pos); else min.min(pos);
-			if (max==null) max = new SaveGameData.Point3D(pos); else max.max(pos);
+			if (min==null) min = new Point3D(obj.position.pos); else min.min(obj.position.pos);
+			if (max==null) max = new Point3D(obj.position.pos); else max.max(obj.position.pos);
 		}
-		double size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
-		
-		Vector<SaveGameData.Point3D> arrUp = new Vector<>();
-		Vector<SaveGameData.Point3D> arrAt = new Vector<>();
-		for (BuildingObject obj:objects) {
-			if (obj.position==null) continue;
-			if (obj.position.pos==null) continue;
-			SaveGameData.Point3D pos = new SaveGameData.Point3D(obj.position.pos);
-			if (obj.position.up!=null) arrUp.add(pos.add(new SaveGameData.Point3D(obj.position.up).normalize().mul(size)));
-			if (obj.position.at!=null) arrAt.add(pos.add(new SaveGameData.Point3D(obj.position.at).normalize().mul(size)));
-		}
+		double size = 0;;
+		if (max!=null && min!=null)
+			size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
 		
 		try (PrintWriter vrml = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8))) {
 			
@@ -423,31 +454,111 @@ public class FileExport {
 			vrml.println("");
 			vrml.println("Background { skyColor 0.6 0.7 0.8 }");
 			vrml.println("");
-			vrml.println("PROTO ColoredSphere [");
-			vrml.println("	field SFFloat radius 1000 # in m");
+			vrml.println("PROTO Axis [");
+			vrml.println("	field SFVec3f scale 1 1 1");
 			vrml.println("	field SFVec3f pos 0 0 0");
-			vrml.println("	field SFColor color 0.2 0.2 0.2");
+			vrml.println("	field SFVec3f at  1 0 0");
+			vrml.println("	field SFVec3f up  0 1 0");
+			vrml.println("	field MFString string []");
 			vrml.println("] {");
-			vrml.println("	Transform {");
-			vrml.println("		translation IS pos");
+			vrml.println("	Transform { translation IS pos");
 			vrml.println("		children [");
-			vrml.println("			Shape {");
-			vrml.println("				appearance Appearance { material Material { diffuseColor IS color } }");
-			vrml.println("				geometry Sphere { radius IS radius }");
-			vrml.println("			}");
+			vrml.println("			Transform { scale IS scale children [");
+			vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 1 1 1 } } geometry DEF sphere Sphere { radius 0.5 } }");
+			vrml.println("				Billboard { axisOfRotation 0 0 0");
+			vrml.println("					children [");
+			vrml.println("						Transform { translation 0 1 0 scale 1 1 1 children [");
+			vrml.println("							Shape {");
+			vrml.println("								appearance Appearance { material Material { diffuseColor 1 1 0 } }");
+			vrml.println("								geometry Text { string IS string fontStyle FontStyle { justify [ \"MIDDLE\" \"END\" ] family \"SANSSERIF\"} }");
+			vrml.println("							}");
+			vrml.println("						]}");
+			vrml.println("					]");
+			vrml.println("				}");
+			vrml.println("			] }");
+			vrml.println("			Transform { translation IS at scale IS scale children [");
+			vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 1 0 0 } } geometry USE sphere }");
+			vrml.println("			] }");
+			vrml.println("			Transform { translation IS up scale IS scale children [");
+			vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 0 1 0 } } geometry USE sphere }");
+			vrml.println("			] }");
 			vrml.println("		]");
 			vrml.println("	}");
 			vrml.println("}");
 			vrml.println("");
 			
-			SaveGameData.Point3D origin = new SaveGameData.Point3D(0,0,0);
-			for (SaveGameData.Point3D p:arrPos) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 1 1 pos %1.2f %1.2f %1.2f } # Pos r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
-			for (SaveGameData.Point3D p:arrAt ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 1 0 0 pos %1.2f %1.2f %1.2f } # At  r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
-			for (SaveGameData.Point3D p:arrUp ) vrml.printf(Locale.ENGLISH,"ColoredSphere { radius %1.2f color 0 1 0 pos %1.2f %1.2f %1.2f } # Up  r:%f\r\n", size/2, p.x, p.y, p.z, p.distTo(origin));
+			if (radius!=null)
+				writeSphere(vrml,radius, new Point3D(0,0,0), java.awt.Color.GRAY);
+			
+			for (BuildingObject obj:objects) {
+				if (obj.position==null) continue;
+				if (obj.position.pos==null) continue;
+				Position p = obj.position;
+				vrml.printf(               "Axis {");
+				if (size>0) vrml.printf(Locale.ENGLISH," scale %1.2f %1.2f %1.2f", size, size, size);
+				vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", p.pos.x, p.pos.y, p.pos.z);
+				if (p.up!=null && !p.up.isZero()) vrml.printf(" up %s", p.up.normalize().mul(size).toString("%1.3f",false));
+				if (p.at!=null && !p.at.isZero()) vrml.printf(" at %s", p.at.normalize().mul(size).toString("%1.3f",false));
+				vrml.printf(               " string \"%s\"", obj.getNameOfObjectID().replace('\"','_'));
+				vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
+			}
 			
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 		System.out.println("done");
+	}
+
+	private static void writeSphere(PrintWriter vrml, double radius, Point3D center, java.awt.Color color) {
+		
+		int segLon = 32;
+		int segLat = 16;
+		if (color==null)
+			color = java.awt.Color.BLACK;
+		
+		StringBuilder coordIndexes = new StringBuilder();
+		Vector<Point3D> coordPoints = new Vector<>();
+		Vector<StringBuilder> coordIndexesLon = new Vector<>();
+		
+		for (int iLon=0; iLon<segLon; ++iLon)
+			coordIndexesLon.add(new StringBuilder());
+		
+		for (int iLat=1; iLat<segLat; ++iLat) {
+			double wLat = iLat*Math.PI/segLat-Math.PI/2;
+			double y = radius*Math.sin(wLat)+center.y;
+			double radLat = radius*Math.cos(wLat);
+			
+			StringBuilder coordIndexesLat = new StringBuilder();
+			String firstIndex = coordPoints.size()+" ";
+			
+			for (int iLon=0; iLon<segLon; ++iLon) {
+				double wLon = iLon*2*Math.PI/segLon;
+				double x = radLat*Math.sin(wLon)+center.x;
+				double z = radLat*Math.cos(wLon)+center.z;
+				
+				String coordsIndex = coordPoints.size()+" ";
+				coordIndexesLat.append(coordsIndex);
+				coordIndexesLon.get(iLon).append(coordsIndex);
+				coordPoints.add(new Point3D(x,y,z));
+			}
+			coordIndexes.append(coordIndexesLat.append(firstIndex+"-1 ").toString());
+		}
+		
+		for (int iLon=0; iLon<segLon; ++iLon)
+			coordIndexes.append(coordIndexesLon.get(iLon).append("-1 ").toString());
+		
+		StringBuilder coordPointsStr = new StringBuilder();
+		for (Point3D p:coordPoints)
+			coordPointsStr.append((coordPointsStr.length()>0?", ":"")+String.format(Locale.ENGLISH, "%1.2f %1.2f %1.2f", p.x, p.y, p.z));
+		
+		vrml.println("Shape {");
+		vrml.print  ("	appearance Appearance { material Material { ");
+		vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
+		vrml.println(" } }");
+		vrml.println("	geometry IndexedLineSet {");
+		vrml.printf ("		coord Coordinate { point [ %s ] }\r\n",coordPointsStr.toString());
+		vrml.printf ("		coordIndex [ %s ]\r\n",coordIndexes.toString());
+		vrml.println("	}");
+		vrml.println("}");
 	}
 }

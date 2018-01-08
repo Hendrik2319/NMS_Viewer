@@ -44,7 +44,7 @@ public class SaveGameData {
 	public Inventories inventories;
 	public KnownBlueprints knownBlueprints;
 	public UnboundBuildingObject[] baseBuildingObjects;
-	public PersistentPlayerBase[] persistentPlayerBases;
+	public PersistentPlayerBases persistentPlayerBases;
 	
 	public SaveGameData(JSON_Object json_data, String filename) {
 		error = Error.NoError;
@@ -202,7 +202,7 @@ public class SaveGameData {
 	public static class Coordinates extends Point3D {
 	
 		public double w1;
-		public int length;
+		private int length;
 	
 		public Coordinates() {
 			super(0,0,0);
@@ -210,6 +210,12 @@ public class SaveGameData {
 			this.length = 0; 
 		}
 	
+		public Coordinates(Point3D p) {
+			super(p);
+			this.w1 = 0;
+			this.length = 0; 
+		}
+
 		public void set(int i, double value) {
 			switch(i) {
 			case 0: x = value; break;
@@ -236,8 +242,6 @@ public class SaveGameData {
 			default: return String.format(Locale.ENGLISH, "("+vf+","+vf+","+vf+","+vf+",...)", x, y, z, w1);
 			}
 		}
-		
-		
 	}
 
 	public static class Point3D {
@@ -247,12 +251,6 @@ public class SaveGameData {
 			this.x = x;
 			this.y = y;
 			this.z = z;
-		}
-	
-		public Point3D(Coordinates pos) {
-			this.x = pos.x;
-			this.y = pos.y;
-			this.z = pos.z;
 		}
 	
 		public Point3D(Point3D pos) {
@@ -289,8 +287,19 @@ public class SaveGameData {
 			return mul(1/length());
 		}
 	
-		private double length() {
+		public double length() {
 			return distTo(new Point3D(0,0,0));
+		}
+
+		public boolean isZero() {
+			return x==0 && y==0 && z==0;
+		}
+		
+		public String toString(String valueformat, boolean withComma) {
+			String vf = valueformat;
+			String sp = " ";
+			if (withComma) sp = ",";
+			return String.format(Locale.ENGLISH, vf+sp+vf+sp+vf, x, y, z);
 		}
 	}
 
@@ -338,7 +347,7 @@ public class SaveGameData {
 		if (arrayValue==null) return;
 		JSON_Array notParsableObjects = new JSON_Array();
 		
-		Vector<PersistentPlayerBase> vector = new Vector<PersistentPlayerBase>();
+		persistentPlayerBases = new PersistentPlayerBases();
 		for (int i=0; i<arrayValue.size(); ++i) {
 			Value value = arrayValue.get(i);
 			JSON_Object objectValue = getObject(value);
@@ -359,9 +368,8 @@ public class SaveGameData {
 			
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", i);
 			
-			vector.add(pb);
+			persistentPlayerBases.set(i,pb);
 		}
-		persistentPlayerBases = vector.toArray(new PersistentPlayerBase[0]);
 		
 		if (!notParsableObjects.isEmpty())
 			System.out.println("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
@@ -393,10 +401,31 @@ public class SaveGameData {
 	}
 
 	private void parseBuildingObject(JSON_Object objectValue, BuildingObject bbo) {
-		bbo.timestamp       = getIntegerValue (objectValue, "Timestamp");
-		bbo.objectID        = getStringValue  (objectValue, "ObjectID");
-		bbo.userData        = getIntegerValue (objectValue, "UserData");
-		bbo.position        = parsePosition   (objectValue, "Position", "Up", "At");
+		bbo.timestamp = getIntegerValue (objectValue, "Timestamp");
+		bbo.objectID  = getStringValue  (objectValue, "ObjectID");
+		bbo.userData  = getIntegerValue (objectValue, "UserData");
+		bbo.position  = parsePosition   (objectValue, "Position", "Up", "At");
+	}
+
+	public static class PersistentPlayerBases {
+		public PersistentPlayerBase planetBase;
+		public PersistentPlayerBase freighterBase;
+		public PersistentPlayerBase otherPlayersBase;
+		public Vector<PersistentPlayerBase> additionalBases;
+		private PersistentPlayerBases() {
+			this.planetBase       = null;
+			this.freighterBase    = null;
+			this.otherPlayersBase = null;
+			this.additionalBases = new Vector<>();
+		}
+		public void set(int i, PersistentPlayerBase pb) {
+			switch(i) {
+			case 0: planetBase       = pb; break;
+			case 1: freighterBase    = pb; pb.isFreighterBase=true; break;
+			case 2: otherPlayersBase = pb; break;
+			default: additionalBases.add(pb); break;
+			}
+		}
 	}
 
 	public static class PersistentPlayerBase {
@@ -410,6 +439,7 @@ public class SaveGameData {
 		public Coordinates forward;
 		public Coordinates position;
 		public BuildingObject[] objects;
+		public boolean isFreighterBase;
 		
 		public PersistentPlayerBase() {
 			this.galacticAddress = null;
@@ -421,8 +451,8 @@ public class SaveGameData {
 			this.forward = null;
 			this.position = null;
 			this.objects = null;
+			this.isFreighterBase = false;
 		}
-		
 	}
 
 	private void parseBaseBuildingObjects() {
@@ -479,6 +509,17 @@ public class SaveGameData {
 			GeneralizedID id = GameInfos.productIDs.get(objectID);
 			if (id==null) return objectID;
 			return id.getName();
+		}
+
+		public static BuildingObject createFromBase(PersistentPlayerBase playerbase) {
+			BuildingObject obj = new BuildingObject();
+			obj.position = new Position();
+			obj.position.pos = playerbase.position;
+			if (playerbase.position!=null && !playerbase.position.isZero())
+				obj.position.at = new Coordinates(playerbase.position.normalize());
+			obj.position.up = playerbase.forward;
+			obj.objectID = playerbase.name;
+			return obj;
 		}
 	}
 	

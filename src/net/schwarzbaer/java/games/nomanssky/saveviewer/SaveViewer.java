@@ -629,10 +629,15 @@ public class SaveViewer implements ActionListener {
 		return button;
 	}
 
-	public static JMenuItem createMenuItem(String title, ActionListener l) {
+	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
 		JMenuItem menuItem = new JMenuItem(title);
+		menuItem.setEnabled(enabled);
 		if (l!=null) menuItem.addActionListener(l);
 		return menuItem;
+	}
+
+	public static JMenuItem createMenuItem(String title, ActionListener l) {
+		return createMenuItem(title, l, true);
 	}
 
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {

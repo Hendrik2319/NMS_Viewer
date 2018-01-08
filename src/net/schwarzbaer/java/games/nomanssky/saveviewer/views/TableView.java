@@ -7,8 +7,6 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -39,33 +37,12 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
 public class TableView {
 
-	public static class ContextMenuInvoker implements MouseListener {
-		
-		private Component invoker;
-		private JPopupMenu contextMenu;
-		
-		ContextMenuInvoker(Component invoker, JPopupMenu contextMenu) {
-			this.invoker = invoker;
-			this.contextMenu = contextMenu;
-			invoker.addMouseListener(this);
-		}
-		
-		@Override public void mousePressed(MouseEvent e) {}
-		@Override public void mouseReleased(MouseEvent e) {}
-		@Override public void mouseEntered(MouseEvent e) {}
-		@Override public void mouseExited(MouseEvent e) {}
-		@Override public void mouseClicked(MouseEvent e) {
-			if (e.getButton()==MouseEvent.BUTTON3) {
-				contextMenu.show(invoker, e.getX(), e.getY());
-			}
-		}
-	}
-	
 	public static class DebugTableContextMenu extends JPopupMenu implements ActionListener {
 		private static final long serialVersionUID = 13123780239483223L;
 		
@@ -148,7 +125,7 @@ public class TableView {
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			if (installDebugContextMenu) {
 				contextMenu = new DebugTableContextMenu(this);
-				new ContextMenuInvoker(this, contextMenu);
+				new Gui.ContextMenuInvoker(this, contextMenu);
 			} else contextMenu=null;
 			//setAutoCreateRowSorter(useRowSorter);
 		}
