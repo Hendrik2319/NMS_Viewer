@@ -33,6 +33,10 @@
 ^GAS2.symbol=Rn
 ^GAS2.image=GAS.2.Radon.png
 ^GAS2.imageBG=5A6F36
+^SPACEGUNK1=Restsubstanz
+^SPACEGUNK1.symbol=Sr
+^SPACEGUNK1.image=Residualgoopicon.SchleimigeUeberreste.png
+^SPACEGUNK1.imageBG=5A6F36
 ^SPACEGUNK3=Verrostetes Metall
 ^SPACEGUNK3.symbol=Sr
 ^SPACEGUNK3.image=Rustedmetalicon.png

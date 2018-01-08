@@ -185,9 +185,6 @@ class=Blue
 [Pln10010008008FF8]
 name=Lutieneralat
 
-[Pln20010008008FF8]
-name=LmaoIBrokeIt
-
 [Pln30010008008FF8]
 name=Perthymeng Avndas
 
@@ -214,6 +211,10 @@ short=ExtRad
 info=Extrem verstrahlter Planet
 short.P=Ka
 info=Kalium (Kugeln)
+
+[Sys00010008FF8008]
+race=Korvax
+class=Green
 
 [Sys000100F8008008]
 name=Tumise-Rekv
