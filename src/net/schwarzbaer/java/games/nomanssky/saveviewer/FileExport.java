@@ -13,8 +13,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Stack;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
@@ -255,7 +257,7 @@ public class FileExport {
 				}
 			}
 			
-			CubeCombine cubeCombine = new CubeCombine();
+			CubeCombine cubeCombine = new CubeCombine_Dummy(); // new CubeCombine();
 			
 			for (BuildingObject obj:objects)
 				if (!cubeCombine.add(obj))
@@ -273,23 +275,172 @@ public class FileExport {
 		System.out.println("done");
 	}
 
-	private static class CubeCombine {
+	private static class CubeCombine_Dummy extends CubeCombine {
+		@Override public boolean add(BuildingObject obj) { return false; }
+		@Override public BuildingObject[] getRemainingObjects() { return new BuildingObject[0]; }
+		@Override public void writeModel(PrintWriter vrml) {}
+	}
 
+	private static class CubeCombine {
+		
+		Stack<BuildingObject> freeObj;
+		Stack<BuildingObject> remainingObj;
+		
+		public CubeCombine() {
+			freeObj = new Stack<>();
+			remainingObj = new Stack<>();
+			
+//			HashMap<Index3D, Integer> blocks = new HashMap<>();
+//			Integer prev;
+//			prev = blocks.put(new Index3D(0,1,2), 3); System.out.println("blocks.put(new Index3D(0,1,2), 3) -> "+prev);
+//			prev = blocks.put(new Index3D(0,1,2), 4); System.out.println("blocks.put(new Index3D(0,1,2), 4) -> "+prev);
+//			prev = blocks.get(new Index3D(0,1,2));    System.out.println("blocks.get(new Index3D(0,1,2))    -> "+prev);
+//			
+//			System.out.println("new Index3D(0,1,2) == new Index3D(0,1,2)       -> "+( new Index3D(0,1,2) == new Index3D(0,1,2) ));
+//			System.out.println("new Index3D(0,1,2).equals(new Index3D(0,1,2))  -> "+( new Index3D(0,1,2).equals(new Index3D(0,1,2)) ));
+		}
+		
 		public boolean add(BuildingObject obj) {
-			// TODO Auto-generated method stub
-			return false;
+			if (obj==null) return false;
+			switch (obj.objectID) {
+			case "^CUBEROOM": case "^CUBEGLASS":
+				freeObj.add(obj);
+				return true;
+			default:
+				return false;
+			}
 		}
 
 		public BuildingObject[] getRemainingObjects() {
-			// TODO Auto-generated method stub
-			return new BuildingObject[0];
+			remainingObj.addAll(freeObj);
+			freeObj.clear();
+			return remainingObj.toArray(new BuildingObject[0]);
 		}
 
 		public void writeModel(PrintWriter vrml) {
-			// TODO Auto-generated method stub
+			while (!freeObj.isEmpty()) {
+				BuildingObject obj = freeObj.pop();
+				Neighborhood neighborhood = new Neighborhood(obj);
+				neighborhood.addNeighbors(freeObj);
+				if (neighborhood.hasOnlyStartObj())
+					remainingObj.push(obj);
+				else
+					neighborhood.writeModel(vrml);
+			}
+		}
+		
+		private static class Neighborhood {
+
+			private Block block;
+			private Point3D anchorPos;
+			private Point3D anchorXat;
+			private Point3D anchorYup;
+			private Point3D anchorZ;
+
+			public Neighborhood(BuildingObject firstObj) {
+				anchorPos = null;
+				anchorXat = null;
+				anchorYup = null;
+				anchorZ   = null;
+				if (firstObj.position!=null) {
+					anchorPos = firstObj.position.pos;
+					anchorXat = Point3D.normalizeOrNull(firstObj.position.at);
+					anchorYup = Point3D.normalizeOrNull(firstObj.position.up);
+					if (anchorXat!=null && anchorYup!=null) anchorZ = anchorXat.crossProd(anchorYup).normalize();
+				}
+				block = new Block(new Index3D(0,0,0),firstObj);
+			}
+
+			public boolean hasOnlyStartObj() {
+				return block.getNumberUsedBlocks()==1;
+			}
+
+			private boolean isNeighbor(BuildingObject obj, Index3D neighborIndex) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+
+			public void addNeighbors(Stack<BuildingObject> freeObj) {
+				ArrayDeque<Index3D> searchPositions = new ArrayDeque<>();
+				searchPositions.add(new Index3D(0,0,0));
+				while (!searchPositions.isEmpty()) {
+					Index3D index = searchPositions.removeFirst();
+					for (NeighborIndex ni:NeighborIndex.values()) {
+						Index3D neighborIndex = index.add(ni);
+						if (block.isFree(neighborIndex))
+							for (BuildingObject obj:freeObj)
+								if (isNeighbor(obj,neighborIndex)) {
+									block.set(neighborIndex,obj);
+									searchPositions.addLast(neighborIndex);
+									break;
+								}
+					}
+				}
+			}
+
+			public void writeModel(PrintWriter vrml) {
+				// TODO Auto-generated method stub
+				
+			}
 			
 		}
 		
+		private enum NeighborIndex {
+			NegX(-1,0,0), NegY(0,-1,0), NegZ(0,0,-1),
+			PosX( 1,0,0), PosY(0, 1,0), PosZ(0,0, 1);
+			
+			int incX,incY,incZ;
+			NeighborIndex(int incX, int incY, int incZ) {
+				this.incX = incX; this.incY = incY; this.incZ = incZ;
+			}
+		}
+		
+		private static class Index3D {
+			int iX,iY,iZ;
+			
+			public Index3D(int iX, int iY, int iZ) {
+				this.iX = iX; this.iY = iY; this.iZ = iZ;
+			}
+
+			public Index3D add(NeighborIndex ni) {
+				return new Index3D(iX+ni.incX, iY+ni.incY, iZ+ni.incZ);
+			}
+
+			@Override
+			public int hashCode() {
+				return (iX&0xFFF)<<(5*4) | (iY&0xFF)<<(3*4) | (iZ&0xFFF)<<(0*4);
+			}
+
+			@Override
+			public boolean equals(Object obj) {
+				if (!(obj instanceof Index3D)) return false;
+				Index3D other = (Index3D)obj;
+				return iX==other.iX && iY==other.iY && iZ==other.iZ;
+			}
+		}
+		
+		private static class Block {
+
+			private HashMap<Index3D, BuildingObject> blocks;
+
+			public Block(Index3D index, BuildingObject firstObj) {
+				blocks = new HashMap<Index3D,BuildingObject>();
+				blocks.put(index, firstObj);
+			}
+
+			public void set(Index3D index, BuildingObject obj) {
+				blocks.put(index, obj);
+			}
+
+			public boolean isFree(Index3D index) {
+				return blocks.containsKey(index);
+			}
+
+			public int getNumberUsedBlocks() {
+				return blocks.size();
+			}
+			
+		}
 	}
 	
 	public static void prepareModels() {

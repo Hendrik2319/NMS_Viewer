@@ -283,10 +283,19 @@ public class SaveGameData {
 			return Math.sqrt((x-p.x)*(x-p.x) + (y-p.y)*(y-p.y) + (z-p.z)*(z-p.z));
 		}
 	
+		public Point3D crossProd(Point3D p) {
+			return new Point3D( y*p.z-z*p.y, z*p.x-x*p.z, x*p.y-y*p.x );
+		}
+
 		public Point3D normalize() {
 			return mul(1/length());
 		}
 	
+		public static Point3D normalizeOrNull(Point3D vec) {
+			if (vec==null || vec.isZero()) return null;
+			return vec.normalize();
+		}
+
 		public double length() {
 			return distTo(new Point3D(0,0,0));
 		}
