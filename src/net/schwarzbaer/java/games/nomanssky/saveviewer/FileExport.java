@@ -566,15 +566,15 @@ public class FileExport {
 			
 		}
 		
-		private enum NeighborIndex {
-			NegX(-1,0,0), NegY(0,-1,0), NegZ(0,0,-1),
-			PosX( 1,0,0), PosY(0, 1,0), PosZ(0,0, 1);
-			
-			int incX,incY,incZ;
-			NeighborIndex(int incX, int incY, int incZ) {
-				this.incX = incX; this.incY = incY; this.incZ = incZ;
-			}
-		}
+//		private enum NeighborIndex {
+//			NegX(-1,0,0), NegY(0,-1,0), NegZ(0,0,-1),
+//			PosX( 1,0,0), PosY(0, 1,0), PosZ(0,0, 1);
+//			
+//			int incX,incY,incZ;
+//			NeighborIndex(int incX, int incY, int incZ) {
+//				this.incX = incX; this.incY = incY; this.incZ = incZ;
+//			}
+//		}
 		
 		private static class Line<T> {
 			T p1,p2;
@@ -613,10 +613,10 @@ public class FileExport {
 				return new Index3D(iX+i.iX, iY+i.iY, iZ+i.iZ);
 			}
 
-			@SuppressWarnings("unused")
-			public Index3D add(NeighborIndex ni) {
-				return new Index3D(iX+ni.incX, iY+ni.incY, iZ+ni.incZ);
-			}
+//			@SuppressWarnings("unused")
+//			public Index3D add(NeighborIndex ni) {
+//				return new Index3D(iX+ni.incX, iY+ni.incY, iZ+ni.incZ);
+//			}
 
 			public void min(Index3D index) {
 				iX = Math.min(iX, index.iX);
