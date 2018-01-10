@@ -294,6 +294,11 @@ public class FileExport {
 			freeObj = new Stack<>();
 			remainingObj = new Stack<>();
 			
+//			Vector<Line> lines = new Vector<>();
+//			lines.add(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
+//			boolean wasFound = lines.remove(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
+//			System.out.println("#########\r\nVector.remove "+(wasFound?"":"DOESN'T ")+"found specified line.\r\n#########");
+			
 //			HashMap<Index3D, Integer> blocks = new HashMap<>();
 //			Integer prev;
 //			prev = blocks.put(new Index3D(0,1,2), 3); System.out.println("blocks.put(new Index3D(0,1,2), 3) -> "+prev);
@@ -338,6 +343,15 @@ public class FileExport {
 			private static final double ANGLE_TOLERANCE = 0.0001;
 			private static final double CUBESIZE = 4.0;
 			private static final double POS_TOLERANCE = 0.01;
+			
+			private static final Index3D ind111 = new Index3D(1,1,1);
+			private static final Index3D ind110 = new Index3D(1,1,0);
+			private static final Index3D ind101 = new Index3D(1,0,1);
+			private static final Index3D ind100 = new Index3D(1,0,0);
+			private static final Index3D ind011 = new Index3D(0,1,1);
+			private static final Index3D ind010 = new Index3D(0,1,0);
+			private static final Index3D ind001 = new Index3D(0,0,1);
+			private static final Index3D ind000 = new Index3D(0,0,0);
 			
 			private Block block;
 			private Point3D anchorPos;
@@ -407,83 +421,74 @@ public class FileExport {
 				}
 			}
 
+			@SuppressWarnings("unused")
+			public void writeModel_simple(PrintWriter vrml) {
+				Point3D color = new Point3D(1,0,0);
+				int i=0;
+				for (BuildingObject obj:block)
+					FileExport.writeModel(vrml, obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), obj.position.pos, obj.position.at, obj.position.up, 0.5, color);
+			}
+
 			public void writeModel(PrintWriter vrml) {
 				Index3D minCorner = new Index3D(0,0,0);
 				Index3D size = new Index3D(0,0,0);
 				BuildingObject[][][] mat = block.toMatrix(minCorner,size);
 				
-				Index3D ind111 = new Index3D(1,1,1);
-				Index3D ind110 = new Index3D(1,1,0);
-				Index3D ind101 = new Index3D(1,0,1);
-				Index3D ind100 = new Index3D(1,0,0);
-				Index3D ind011 = new Index3D(0,1,1);
-				Index3D ind010 = new Index3D(0,1,0);
-				Index3D ind001 = new Index3D(0,0,1);
-				Index3D ind000 = new Index3D(0,0,0);
+				Vector<Line> lines = createLines(size, mat);
+				optimize(lines);
 				
-				// create lines
-				Vector<Line<Index3D>> lines = new Vector<>();
-				Index3D i = new Index3D(0,0,0);
+				writeBaseModel(vrml, minCorner, size, lines);
+				addWindows(vrml, minCorner, size, mat);
+			}
+
+			private Vector<Line> createLines(Index3D size, BuildingObject[][][] mat) {
+				Vector<Line> lines = new Vector<>();
+				Index3D i1 = new Index3D(0,0,0);
 				for (int x=0; x<size.iX; ++x)
 					for (int y=0; y<size.iY; ++y)
 						for (int z=0; z<size.iZ; ++z)
 							if (get(mat,x,y,z)!=null) {
-								i.set(x,y,z);
-								if (get(mat,x+1,y,z)==null) lines.add(createLine(i, ind111, ind110));
-								if (get(mat,x,y+1,z)==null) lines.add(createLine(i, ind011, ind010));
-								if (get(mat,x-1,y,z)==null) lines.add(createLine(i, ind001, ind000));
-								if (get(mat,x,y-1,z)==null) lines.add(createLine(i, ind101, ind100));
+								i1.set(x,y,z);
+								if (get(mat,x+1,y,z)==null) lines.add(new Line(i1.add(ind111), i1.add(ind110)));
+								if (get(mat,x,y+1,z)==null) lines.add(new Line(i1.add(ind011), i1.add(ind010)));
+								if (get(mat,x-1,y,z)==null) lines.add(new Line(i1.add(ind001), i1.add(ind000)));
+								if (get(mat,x,y-1,z)==null) lines.add(new Line(i1.add(ind101), i1.add(ind100)));
 								
-								if (get(mat,x+1,y,z)==null) lines.add(createLine(i, ind110, ind100));
-								if (get(mat,x,y,z+1)==null) lines.add(createLine(i, ind111, ind101));
-								if (get(mat,x-1,y,z)==null) lines.add(createLine(i, ind011, ind001));
-								if (get(mat,x,y,z-1)==null) lines.add(createLine(i, ind010, ind000));
+								if (get(mat,x+1,y,z)==null) lines.add(new Line(i1.add(ind110), i1.add(ind100)));
+								if (get(mat,x,y,z+1)==null) lines.add(new Line(i1.add(ind111), i1.add(ind101)));
+								if (get(mat,x-1,y,z)==null) lines.add(new Line(i1.add(ind011), i1.add(ind001)));
+								if (get(mat,x,y,z-1)==null) lines.add(new Line(i1.add(ind010), i1.add(ind000)));
 								
-								if (get(mat,x,y+1,z)==null) lines.add(createLine(i, ind111, ind011));
-								if (get(mat,x,y,z+1)==null) lines.add(createLine(i, ind101, ind001));
-								if (get(mat,x,y-1,z)==null) lines.add(createLine(i, ind100, ind000));
-								if (get(mat,x,y,z-1)==null) lines.add(createLine(i, ind110, ind010));
+								if (get(mat,x,y+1,z)==null) lines.add(new Line(i1.add(ind111), i1.add(ind011)));
+								if (get(mat,x,y,z+1)==null) lines.add(new Line(i1.add(ind101), i1.add(ind001)));
+								if (get(mat,x,y-1,z)==null) lines.add(new Line(i1.add(ind100), i1.add(ind000)));
+								if (get(mat,x,y,z-1)==null) lines.add(new Line(i1.add(ind110), i1.add(ind010)));
 							}
+				return lines;
+			}
+
+			private BuildingObject get(BuildingObject[][][] mat, int x, int y, int z) {
+				if (x<0) return null;
+				if (y<0) return null;
+				if (z<0) return null;
+				if (x>=mat.length) return null;
+				if (y>=mat[x].length) return null;
+				if (z>=mat[x][y].length) return null;
+				return mat[x][y][z];
+			}
+
+			private void optimize(Vector<Line> lines) {
+				Vector<Line> optimizedLines = new Vector<>();
 				
-				int[][][] coordIndexes = new int[size.iX+1][size.iY+1][size.iZ+1];
-				for (int x=0; x<=size.iX; ++x)
-					for (int y=0; y<=size.iY; ++y)
-						Arrays.fill(coordIndexes[x][y],-1);
-				
-				// convert lines to points and indexes
-				StringBuilder coordPointsStr = new StringBuilder();
-				StringBuilder coordIndexesStr = new StringBuilder();
-				int coordPointsCounter = 0;
-				for (Line<Index3D> line:lines) {
-					coordPointsCounter = addPoint(minCorner, coordIndexes, coordPointsStr, coordPointsCounter, line.p1);
-					coordPointsCounter = addPoint(minCorner, coordIndexes, coordPointsStr, coordPointsCounter, line.p2);
-					int i1 = coordIndexes[line.p1.iX][line.p1.iY][line.p1.iZ];
-					int i2 = coordIndexes[line.p2.iX][line.p2.iY][line.p2.iZ];
-					coordIndexesStr.append(i1+" "+i2+" -1 ");
+				while (!lines.isEmpty()) {
+					Line line = lines.remove(lines.size()-1);
+					Index3D vec12 = line.p2.sub(line.p1);
+					while (lines.remove(new Line(line.p2,line.p2.add(vec12)))) line.p2 = line.p2.add(vec12);
+					while (lines.remove(new Line(line.p1,line.p1.sub(vec12)))) line.p1 = line.p1.sub(vec12);
+					optimizedLines.add(line);
 				}
-				writeIndexedLineSet(vrml, coordPointsStr, coordIndexesStr, Color.BLACK);
 				
-				//  Add windows of CUBEGLASS
-				coordPointsStr = new StringBuilder();
-				coordIndexesStr = new StringBuilder();
-				coordPointsCounter = 0;
-				for (int x=0; x<size.iX; ++x)
-					for (int y=0; y<size.iY; ++y)
-						for (int z=0; z<size.iZ; ++z) {
-							BuildingObject obj = get(mat,x,y,z);
-							if (obj==null) continue;
-							if (!"^CUBEGLASS".equals(obj.objectID)) continue;
-							i.set(x,y,z);
-							i.set(minCorner.add(i));
-							if (get(mat,x+1,y,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind111, ind110, ind100, ind101);
-							if (get(mat,x,y+1,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind111, ind110, ind010, ind011);
-							if (get(mat,x,y,z+1)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind111, ind101, ind001, ind011);
-							// (get(mat,x-1,y,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind011, ind010, ind000, ind001);
-							if (get(mat,x,y-1,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind101, ind100, ind000, ind001);
-							if (get(mat,x,y,z-1)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind110, ind100, ind000, ind010);
-						}
-				
-				writeIndexedLineSet(vrml, coordPointsStr, coordIndexesStr, Color.BLUE);
+				lines.addAll(optimizedLines);
 			}
 
 			private void writeIndexedLineSet(PrintWriter vrml, StringBuilder coordPointsStr, StringBuilder coordIndexesStr, Color color) {
@@ -496,6 +501,52 @@ public class FileExport {
 				vrml.printf ("		coordIndex [ %s ]\r\n",coordIndexesStr.toString());
 				vrml.println("	}");
 				vrml.println("}");
+			}
+
+			private void writeBaseModel(PrintWriter vrml, Index3D minCorner, Index3D size, Vector<Line> lines) {
+				int[][][] coordIndexes = new int[size.iX+1][size.iY+1][size.iZ+1];
+				for (int x=0; x<=size.iX; ++x)
+					for (int y=0; y<=size.iY; ++y)
+						Arrays.fill(coordIndexes[x][y],-1);
+				
+				// convert lines to points and indexes
+				StringBuilder coordPointsStr = new StringBuilder();
+				StringBuilder coordIndexesStr = new StringBuilder();
+				int coordPointsCounter = 0;
+				for (Line line:lines) {
+					coordPointsCounter = addPoint(minCorner, coordIndexes, coordPointsStr, coordPointsCounter, line.p1);
+					coordPointsCounter = addPoint(minCorner, coordIndexes, coordPointsStr, coordPointsCounter, line.p2);
+					int ip1 = coordIndexes[line.p1.iX][line.p1.iY][line.p1.iZ];
+					int ip2 = coordIndexes[line.p2.iX][line.p2.iY][line.p2.iZ];
+					coordIndexesStr.append(ip1+" "+ip2+" -1 ");
+				}
+				if (coordPointsStr.length()>0 || coordIndexesStr.length()>0)
+					writeIndexedLineSet(vrml, coordPointsStr, coordIndexesStr, Color.BLACK);
+			}
+
+			private void addWindows(PrintWriter vrml, Index3D minCorner, Index3D size, BuildingObject[][][] mat) {
+				StringBuilder coordPointsStr2 = new StringBuilder();
+				StringBuilder coordIndexesStr2 = new StringBuilder();
+				int coordPointsCounter2 = 0;
+				Index3D i2 = new Index3D(0,0,0);
+				for (int x=0; x<size.iX; ++x)
+					for (int y=0; y<size.iY; ++y)
+						for (int z=0; z<size.iZ; ++z) {
+							BuildingObject obj = get(mat,x,y,z);
+							if (obj==null) continue;
+							if (!"^CUBEGLASS".equals(obj.objectID)) continue;
+							i2.set(x,y,z);
+							i2.set(minCorner.add(i2));
+							if (get(mat,x+1,y,z)==null) coordPointsCounter2 = addWindow(coordPointsStr2, coordPointsCounter2, coordIndexesStr2, i2, ind111, ind110, ind100, ind101);
+							if (get(mat,x,y+1,z)==null) coordPointsCounter2 = addWindow(coordPointsStr2, coordPointsCounter2, coordIndexesStr2, i2, ind111, ind110, ind010, ind011);
+							if (get(mat,x,y,z+1)==null) coordPointsCounter2 = addWindow(coordPointsStr2, coordPointsCounter2, coordIndexesStr2, i2, ind111, ind101, ind001, ind011);
+							// (get(mat,x-1,y,z)==null) coordPointsCounter2 = addWindow(coordPointsStr2, coordPointsCounter2, coordIndexesStr2, i2, ind011, ind010, ind000, ind001);
+							if (get(mat,x,y-1,z)==null) coordPointsCounter2 = addWindow(coordPointsStr2, coordPointsCounter2, coordIndexesStr2, i2, ind101, ind100, ind000, ind001);
+							if (get(mat,x,y,z-1)==null) coordPointsCounter2 = addWindow(coordPointsStr2, coordPointsCounter2, coordIndexesStr2, i2, ind110, ind100, ind000, ind010);
+						}
+				
+				if (coordPointsStr2.length()>0 || coordIndexesStr2.length()>0)
+					writeIndexedLineSet(vrml, coordPointsStr2, coordIndexesStr2, Color.BLUE);
 			}
 
 			private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D iXYZ, Index3D i1, Index3D i2, Index3D i3, Index3D i4) {
@@ -541,28 +592,6 @@ public class FileExport {
 						.add(anchorYup.mul((y-0.5)*CUBESIZE))
 						.add(anchorZ  .mul((z-0.5)*CUBESIZE));
 			}
-
-			private Line<Index3D> createLine(Index3D iXYZ, Index3D i1, Index3D i2) {
-				return new Line<Index3D>(iXYZ.add(i1), iXYZ.add(i2));
-			}
-
-			private BuildingObject get(BuildingObject[][][] mat, int x, int y, int z) {
-				if (x<0) return null;
-				if (y<0) return null;
-				if (z<0) return null;
-				if (x>=mat.length) return null;
-				if (y>=mat[x].length) return null;
-				if (z>=mat[x][y].length) return null;
-				return mat[x][y][z];
-			}
-
-			@SuppressWarnings("unused")
-			public void writeModel_simple(PrintWriter vrml) {
-				Point3D color = new Point3D(1,0,0);
-				int i=0;
-				for (BuildingObject obj:block)
-					FileExport.writeModel(vrml, obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), obj.position.pos, obj.position.at, obj.position.up, 0.5, color);
-			}
 			
 		}
 		
@@ -576,12 +605,25 @@ public class FileExport {
 //			}
 //		}
 		
-		private static class Line<T> {
-			T p1,p2;
-			Line(T p1,T p2) {
+		private static class Line {
+			Index3D p1,p2;
+			Line(Index3D p1,Index3D p2) {
 				this.p1 = p1;
 				this.p2 = p2;
 			}
+			@Override
+			public boolean equals(Object obj) {
+				if (!(obj instanceof Line)) return false;
+				Line line = (Line)obj;
+				if (line.p1.equals(p1) && line.p2.equals(p2)) return true;
+				if (line.p2.equals(p1) && line.p1.equals(p2)) return true;
+				return false;
+			}
+			@Override
+			public int hashCode() {
+				return p1.hashCode() ^ p2.hashCode();
+			}
+			
 		}
 		
 		private static class Index3D {
@@ -611,6 +653,10 @@ public class FileExport {
 
 			public Index3D add(Index3D i) {
 				return new Index3D(iX+i.iX, iY+i.iY, iZ+i.iZ);
+			}
+
+			public Index3D sub(Index3D i) {
+				return new Index3D(iX-i.iX, iY-i.iY, iZ-i.iZ);
 			}
 
 //			@SuppressWarnings("unused")
