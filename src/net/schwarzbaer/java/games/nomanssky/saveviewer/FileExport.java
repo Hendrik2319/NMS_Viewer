@@ -1,5 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -13,8 +14,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Stack;
 import java.util.Vector;
@@ -253,11 +255,11 @@ public class FileExport {
 					Point3D pos = new Point3D(0,0,0);
 					Point3D at = playerbase.position.isZero()?null:playerbase.position.normalize();
 					Point3D up = playerbase.forward .isZero()?null:playerbase.forward .normalize();
-					writeModel(vrml, "^MAINROOM", name, pos, at, up, size);
+					writeModel(vrml, "^MAINROOM", name, pos, at, up, size, null);
 				}
 			}
 			
-			CubeCombine cubeCombine = new CubeCombine_Dummy(); // new CubeCombine();
+			CubeCombine cubeCombine = /*new CubeCombine_Dummy();*/ new CubeCombine();
 			
 			for (BuildingObject obj:objects)
 				if (!cubeCombine.add(obj))
@@ -275,7 +277,9 @@ public class FileExport {
 		System.out.println("done");
 	}
 
+	@SuppressWarnings("unused")
 	private static class CubeCombine_Dummy extends CubeCombine {
+		CubeCombine_Dummy() { System.out.println("\r\n\r\n##############################\r\nCubeCombine_Dummy\r\n##############################\r\n\r\n\r\n"); }
 		@Override public boolean add(BuildingObject obj) { return false; }
 		@Override public BuildingObject[] getRemainingObjects() { return new BuildingObject[0]; }
 		@Override public void writeModel(PrintWriter vrml) {}
@@ -318,9 +322,10 @@ public class FileExport {
 		}
 
 		public void writeModel(PrintWriter vrml) {
+			int i=0;
 			while (!freeObj.isEmpty()) {
 				BuildingObject obj = freeObj.pop();
-				Neighborhood neighborhood = new Neighborhood(obj);
+				Neighborhood neighborhood = new Neighborhood(obj,++i);
 				neighborhood.addNeighbors(freeObj);
 				if (neighborhood.hasOnlyStartObj())
 					remainingObj.push(obj);
@@ -330,14 +335,19 @@ public class FileExport {
 		}
 		
 		private static class Neighborhood {
-
+			private static final double ANGLE_TOLERANCE = 0.0001;
+			private static final double CUBESIZE = 4.0;
+			private static final double POS_TOLERANCE = 0.01;
+			
 			private Block block;
 			private Point3D anchorPos;
 			private Point3D anchorXat;
 			private Point3D anchorYup;
 			private Point3D anchorZ;
+			private int neighborhoodIndex;
 
-			public Neighborhood(BuildingObject firstObj) {
+			public Neighborhood(BuildingObject firstObj, int neighborhoodIndex) {
+				this.neighborhoodIndex = neighborhoodIndex;
 				anchorPos = null;
 				anchorXat = null;
 				anchorYup = null;
@@ -354,33 +364,204 @@ public class FileExport {
 			public boolean hasOnlyStartObj() {
 				return block.getNumberUsedBlocks()==1;
 			}
-
-			private boolean isNeighbor(BuildingObject obj, Index3D neighborIndex) {
-				// TODO Auto-generated method stub
-				return false;
+			
+			private Index3D getNeighborRelation(Position position) {
+				if (position==null) return null;
+				if (position.pos==null) return null;
+				if (position.at==null || position.at.isZero()) return null;
+				if (position.up==null || position.up.isZero()) return null;
+				Point3D at = position.at.normalize();
+				Point3D up = position.up.normalize();
+				
+				double valAt = anchorXat.scalarProd(at);
+				if (Math.abs(valAt-1.0)>ANGLE_TOLERANCE) return null;
+				
+				double valUp = anchorYup.scalarProd(up);
+				if (Math.abs(valUp)>ANGLE_TOLERANCE && Math.abs(valUp-1)>ANGLE_TOLERANCE && Math.abs(valUp+1)>ANGLE_TOLERANCE) return null;
+				
+				Point3D indexVec = position.pos.add(anchorPos.mul(-1));
+				double iX_d=anchorXat.scalarProd(indexVec)/CUBESIZE; int iX=(int)Math.round(iX_d); double deltaX=Math.abs(iX_d-iX);
+				double iY_d=anchorYup.scalarProd(indexVec)/CUBESIZE; int iY=(int)Math.round(iY_d); double deltaY=Math.abs(iY_d-iY);
+				double iZ_d=anchorZ  .scalarProd(indexVec)/CUBESIZE; int iZ=(int)Math.round(iZ_d); double deltaZ=Math.abs(iZ_d-iZ);
+				
+				//System.out.printf(Locale.ENGLISH,"Neighborhood %d:   At:%1.8f   Up:%11.8f   iX:%1.8f   iY:%1.8f   iZ:%1.8f\r\n", neighborhoodIndex, valAt, valUp, deltaX, deltaY, deltaZ);
+				
+				if (deltaX>POS_TOLERANCE) return null;
+				if (deltaY>POS_TOLERANCE) return null;
+				if (deltaZ>POS_TOLERANCE) return null;
+				
+				return new Index3D(iX,iY,iZ);
 			}
 
 			public void addNeighbors(Stack<BuildingObject> freeObj) {
-				ArrayDeque<Index3D> searchPositions = new ArrayDeque<>();
-				searchPositions.add(new Index3D(0,0,0));
-				while (!searchPositions.isEmpty()) {
-					Index3D index = searchPositions.removeFirst();
-					for (NeighborIndex ni:NeighborIndex.values()) {
-						Index3D neighborIndex = index.add(ni);
-						if (block.isFree(neighborIndex))
-							for (BuildingObject obj:freeObj)
-								if (isNeighbor(obj,neighborIndex)) {
-									block.set(neighborIndex,obj);
-									searchPositions.addLast(neighborIndex);
-									break;
-								}
-					}
+				if (anchorPos==null) return;
+				if (anchorXat==null) return;
+				if (anchorYup==null) return;
+				if (anchorZ  ==null) return;
+				
+				for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
+					Index3D index = getNeighborRelation(obj.position);
+					if (index==null) continue;
+					block.set(index,obj);
+					freeObj.remove(obj);
 				}
 			}
 
 			public void writeModel(PrintWriter vrml) {
-				// TODO Auto-generated method stub
+				Index3D minCorner = new Index3D(0,0,0);
+				Index3D size = new Index3D(0,0,0);
+				BuildingObject[][][] mat = block.toMatrix(minCorner,size);
 				
+				Index3D ind111 = new Index3D(1,1,1);
+				Index3D ind110 = new Index3D(1,1,0);
+				Index3D ind101 = new Index3D(1,0,1);
+				Index3D ind100 = new Index3D(1,0,0);
+				Index3D ind011 = new Index3D(0,1,1);
+				Index3D ind010 = new Index3D(0,1,0);
+				Index3D ind001 = new Index3D(0,0,1);
+				Index3D ind000 = new Index3D(0,0,0);
+				
+				// create lines
+				Vector<Line<Index3D>> lines = new Vector<>();
+				Index3D i = new Index3D(0,0,0);
+				for (int x=0; x<size.iX; ++x)
+					for (int y=0; y<size.iY; ++y)
+						for (int z=0; z<size.iZ; ++z)
+							if (get(mat,x,y,z)!=null) {
+								i.set(x,y,z);
+								if (get(mat,x+1,y,z)==null) lines.add(createLine(i, ind111, ind110));
+								if (get(mat,x,y+1,z)==null) lines.add(createLine(i, ind011, ind010));
+								if (get(mat,x-1,y,z)==null) lines.add(createLine(i, ind001, ind000));
+								if (get(mat,x,y-1,z)==null) lines.add(createLine(i, ind101, ind100));
+								
+								if (get(mat,x+1,y,z)==null) lines.add(createLine(i, ind110, ind100));
+								if (get(mat,x,y,z+1)==null) lines.add(createLine(i, ind111, ind101));
+								if (get(mat,x-1,y,z)==null) lines.add(createLine(i, ind011, ind001));
+								if (get(mat,x,y,z-1)==null) lines.add(createLine(i, ind010, ind000));
+								
+								if (get(mat,x,y+1,z)==null) lines.add(createLine(i, ind111, ind011));
+								if (get(mat,x,y,z+1)==null) lines.add(createLine(i, ind101, ind001));
+								if (get(mat,x,y-1,z)==null) lines.add(createLine(i, ind100, ind000));
+								if (get(mat,x,y,z-1)==null) lines.add(createLine(i, ind110, ind010));
+							}
+				
+				int[][][] coordIndexes = new int[size.iX+1][size.iY+1][size.iZ+1];
+				for (int x=0; x<=size.iX; ++x)
+					for (int y=0; y<=size.iY; ++y)
+						Arrays.fill(coordIndexes[x][y],-1);
+				
+				// convert lines to points and indexes
+				StringBuilder coordPointsStr = new StringBuilder();
+				StringBuilder coordIndexesStr = new StringBuilder();
+				int coordPointsCounter = 0;
+				for (Line<Index3D> line:lines) {
+					coordPointsCounter = addPoint(minCorner, coordIndexes, coordPointsStr, coordPointsCounter, line.p1);
+					coordPointsCounter = addPoint(minCorner, coordIndexes, coordPointsStr, coordPointsCounter, line.p2);
+					int i1 = coordIndexes[line.p1.iX][line.p1.iY][line.p1.iZ];
+					int i2 = coordIndexes[line.p2.iX][line.p2.iY][line.p2.iZ];
+					coordIndexesStr.append(i1+" "+i2+" -1 ");
+				}
+				writeIndexedLineSet(vrml, coordPointsStr, coordIndexesStr, Color.BLACK);
+				
+				//  Add windows of CUBEGLASS
+				coordPointsStr = new StringBuilder();
+				coordIndexesStr = new StringBuilder();
+				coordPointsCounter = 0;
+				for (int x=0; x<size.iX; ++x)
+					for (int y=0; y<size.iY; ++y)
+						for (int z=0; z<size.iZ; ++z) {
+							BuildingObject obj = get(mat,x,y,z);
+							if (obj==null) continue;
+							if (!"^CUBEGLASS".equals(obj.objectID)) continue;
+							i.set(x,y,z);
+							i.set(minCorner.add(i));
+							if (get(mat,x+1,y,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind111, ind110, ind100, ind101);
+							if (get(mat,x,y+1,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind111, ind110, ind010, ind011);
+							if (get(mat,x,y,z+1)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind111, ind101, ind001, ind011);
+							// (get(mat,x-1,y,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind011, ind010, ind000, ind001);
+							if (get(mat,x,y-1,z)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind101, ind100, ind000, ind001);
+							if (get(mat,x,y,z-1)==null) coordPointsCounter = addWindow(coordPointsStr, coordPointsCounter, coordIndexesStr, i, ind110, ind100, ind000, ind010);
+						}
+				
+				writeIndexedLineSet(vrml, coordPointsStr, coordIndexesStr, Color.BLUE);
+			}
+
+			private void writeIndexedLineSet(PrintWriter vrml, StringBuilder coordPointsStr, StringBuilder coordIndexesStr, Color color) {
+				vrml.println("Shape {");
+				vrml.print  ("	appearance Appearance { material Material { ");
+				vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
+				vrml.println(" } }");
+				vrml.println("	geometry IndexedLineSet {");
+				vrml.printf ("		coord Coordinate { point [ %s ] }\r\n",coordPointsStr.toString());
+				vrml.printf ("		coordIndex [ %s ]\r\n",coordIndexesStr.toString());
+				vrml.println("	}");
+				vrml.println("}");
+			}
+
+			private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D iXYZ, Index3D i1, Index3D i2, Index3D i3, Index3D i4) {
+				Point3D i1_p = iXYZ.toPoint3D().add(i1.toPoint3D());
+				Point3D i2_p = iXYZ.toPoint3D().add(i2.toPoint3D());
+				Point3D i3_p = iXYZ.toPoint3D().add(i3.toPoint3D());
+				Point3D i4_p = iXYZ.toPoint3D().add(i4.toPoint3D());
+				
+				addPoint(pointsStr, computePoint( i1_p.mul(0.9).add(i3_p.mul(0.1)) )); int iw1=counter++;
+				addPoint(pointsStr, computePoint( i2_p.mul(0.9).add(i4_p.mul(0.1)) )); int iw2=counter++;
+				addPoint(pointsStr, computePoint( i3_p.mul(0.9).add(i1_p.mul(0.1)) )); int iw3=counter++;
+				addPoint(pointsStr, computePoint( i4_p.mul(0.9).add(i2_p.mul(0.1)) )); int iw4=counter++;
+				
+				indexesStr.append(iw1+" "+iw2+" "+iw3+" "+iw4+" "+iw1+" -1 ");
+				
+				return counter;
+			}
+
+			private int addPoint(Index3D minCorner, int[][][] indexes, StringBuilder pointsStr, int counter, Index3D i) {
+				if (indexes[i.iX][i.iY][i.iZ]==-1) {
+					indexes[i.iX][i.iY][i.iZ] = counter++;
+					Point3D p = computePoint(minCorner.add(i));
+					addPoint(pointsStr, p);
+				}
+				return counter;
+			}
+
+			private void addPoint(StringBuilder pointsStr, Point3D p) {
+				pointsStr.append((pointsStr.length()==0?"":", ")+p.toString("%1.2f",false));
+			}
+
+			private Point3D computePoint(Index3D i) {
+				return computePoint(i.iX,i.iY,i.iZ);
+			}
+
+			private Point3D computePoint(Point3D i) {
+				return computePoint(i.x,i.y,i.z);
+			}
+
+			private Point3D computePoint(double x, double y, double z) {
+				return anchorPos
+						.add(anchorXat.mul((x    )*CUBESIZE))
+						.add(anchorYup.mul((y-0.5)*CUBESIZE))
+						.add(anchorZ  .mul((z-0.5)*CUBESIZE));
+			}
+
+			private Line<Index3D> createLine(Index3D iXYZ, Index3D i1, Index3D i2) {
+				return new Line<Index3D>(iXYZ.add(i1), iXYZ.add(i2));
+			}
+
+			private BuildingObject get(BuildingObject[][][] mat, int x, int y, int z) {
+				if (x<0) return null;
+				if (y<0) return null;
+				if (z<0) return null;
+				if (x>=mat.length) return null;
+				if (y>=mat[x].length) return null;
+				if (z>=mat[x][y].length) return null;
+				return mat[x][y][z];
+			}
+
+			@SuppressWarnings("unused")
+			public void writeModel_simple(PrintWriter vrml) {
+				Point3D color = new Point3D(1,0,0);
+				int i=0;
+				for (BuildingObject obj:block)
+					FileExport.writeModel(vrml, obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), obj.position.pos, obj.position.at, obj.position.up, 0.5, color);
 			}
 			
 		}
@@ -395,6 +576,14 @@ public class FileExport {
 			}
 		}
 		
+		private static class Line<T> {
+			T p1,p2;
+			Line(T p1,T p2) {
+				this.p1 = p1;
+				this.p2 = p2;
+			}
+		}
+		
 		private static class Index3D {
 			int iX,iY,iZ;
 			
@@ -402,8 +591,43 @@ public class FileExport {
 				this.iX = iX; this.iY = iY; this.iZ = iZ;
 			}
 
+			public Index3D(Index3D i) {
+				this(i.iX,i.iY,i.iZ);
+			}
+
+			public Point3D toPoint3D() {
+				return new Point3D(iX,iY,iZ);
+			}
+
+			public void set(int iX, int iY, int iZ) {
+				this.iX = iX; this.iY = iY; this.iZ = iZ;
+			}
+
+			public void set(Index3D index) {
+				this.iX = index.iX;
+				this.iY = index.iY;
+				this.iZ = index.iZ;
+			}
+
+			public Index3D add(Index3D i) {
+				return new Index3D(iX+i.iX, iY+i.iY, iZ+i.iZ);
+			}
+
+			@SuppressWarnings("unused")
 			public Index3D add(NeighborIndex ni) {
 				return new Index3D(iX+ni.incX, iY+ni.incY, iZ+ni.incZ);
+			}
+
+			public void min(Index3D index) {
+				iX = Math.min(iX, index.iX);
+				iY = Math.min(iY, index.iY);
+				iZ = Math.min(iZ, index.iZ);
+			}
+
+			public void max(Index3D index) {
+				iX = Math.max(iX, index.iX);
+				iY = Math.max(iY, index.iY);
+				iZ = Math.max(iZ, index.iZ);
 			}
 
 			@Override
@@ -419,7 +643,7 @@ public class FileExport {
 			}
 		}
 		
-		private static class Block {
+		private static class Block implements Iterable<BuildingObject>{
 
 			private HashMap<Index3D, BuildingObject> blocks;
 
@@ -428,16 +652,46 @@ public class FileExport {
 				blocks.put(index, firstObj);
 			}
 
+			public BuildingObject[][][] toMatrix(Index3D minCorner, Index3D size) {
+				Index3D min=null;
+				Index3D max=null;
+				for (Index3D index:blocks.keySet()) {
+					if (min==null) min=new Index3D(index); else min.min(index);
+					if (max==null) max=new Index3D(index); else max.max(index);
+				}
+				
+				minCorner.set(min);
+				size.iX = max.iX-min.iX+1;
+				size.iY = max.iY-min.iY+1;
+				size.iZ = max.iZ-min.iZ+1;
+				
+				BuildingObject[][][] mat = new BuildingObject[size.iX][size.iY][size.iZ];
+				for (int x=0; x<size.iX; ++x)
+					for (int y=0; y<size.iY; ++y)
+						Arrays.fill(mat[x][y],null);
+				
+				for (Index3D index:blocks.keySet())
+					mat[index.iX-min.iX][index.iY-min.iY][index.iZ-min.iZ] = blocks.get(index);
+				
+				return mat;
+			}
+
 			public void set(Index3D index, BuildingObject obj) {
 				blocks.put(index, obj);
 			}
 
+			@SuppressWarnings("unused")
 			public boolean isFree(Index3D index) {
 				return blocks.containsKey(index);
 			}
 
 			public int getNumberUsedBlocks() {
 				return blocks.size();
+			}
+
+			@Override
+			public Iterator<BuildingObject> iterator() {
+				return blocks.values().iterator();
 			}
 			
 		}
@@ -482,10 +736,10 @@ public class FileExport {
 		String label = objectID;
 		if (id!=null && !id.label.isEmpty()) label = id.label;
 		
-		writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, size);
+		writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, size, null);
 	}
 
-	private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double size) {
+	private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double size, Point3D color) {
 		vrml.print("MyOrientation {");
 		vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
 		if (at!=null) vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
@@ -495,7 +749,7 @@ public class FileExport {
 		String modelName = mapObjectID2Model.get(objectID);
 		
 		if (modelName!=null)
-			vrml.printf(" %s { string \"%s\" }", modelName, label);
+			vrml.printf(" %s { string \"%s\"%s }", modelName, label, (color==null?"":(" lineColor "+color.toString("%1.2f",false))));
 		else
 			switch (objectID) {
 			default:

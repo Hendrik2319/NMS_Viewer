@@ -308,7 +308,7 @@ PROTO BIOROOM [
 PROTO PLANT [
 	field MFString string []
 	field SFColor textColor 0.3 0.6 0.3
-	field SFColor lineColor 0 0.8 0
+	field SFColor lineColor 0.3 0.6 0.3
 ] {
 	Transform { translation 1 0 0 scale 0.5 0.5 0.5 children
 		Billboard { axisOfRotation 0 0 0

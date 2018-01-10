@@ -228,7 +228,7 @@ public class SaveGameData {
 	
 		@Override
 		public String toString() {
-			return toString("%s");
+			return toString("%f");
 		}
 	
 		public String toString(String valueformat) {
@@ -270,9 +270,13 @@ public class SaveGameData {
 			y = Math.max(y, pos.y);
 			z = Math.max(z, pos.z);
 		}
-	
+		
 		public Point3D add(Point3D vec) {
 			return new Point3D(x+vec.x, y+vec.y, z+vec.z);
+		}
+		
+		public Point3D sub(Point3D vec) {
+			return new Point3D(x-vec.x, y-vec.y, z-vec.z);
 		}
 	
 		public Point3D mul(double size) {
@@ -285,6 +289,10 @@ public class SaveGameData {
 	
 		public Point3D crossProd(Point3D p) {
 			return new Point3D( y*p.z-z*p.y, z*p.x-x*p.z, x*p.y-y*p.x );
+		}
+
+		public double scalarProd(Point3D p) {
+			return x*p.x+y*p.y+z*p.z;
 		}
 
 		public Point3D normalize() {
