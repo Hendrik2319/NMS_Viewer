@@ -249,6 +249,11 @@ public class FileExport {
 			//writeBioroomCoords(vrml);
 			//writeMainroomCoords(vrml);
 			
+			//vrml.println("# race initiator"); writeExocraftPodCoords(vrml, 8,6,16,4, 4,1,16,4, Math.PI/4);
+			//vrml.println("# Koloss"); writeExocraftPodCoords(vrml, 7.00,5.0,18,3, 3.5,1.5,18,3, Math.PI/2);
+			//vrml.println("# Roamer"); writeExocraftPodCoords(vrml, 5.25,3.5,18,3, 2.5,1.0,18,3, Math.PI/2);
+			//vrml.println("# Nomad" ); writeExocraftPodCoords(vrml, 4.75,3.0,18,3, 2.0,1.0,18,3, Math.PI/2);
+			
 			if (playerbase!=null && !playerbase.isFreighterBase) {
 				String name = playerbase.name;
 				if (name==null || name.isEmpty()) name = "PlayerBase";
@@ -1039,6 +1044,11 @@ public class FileExport {
 		addModels("PLANTER",		"^PLANTER");
 		addModels("PLANTERMEGA",	"^PLANTERMEGA");
 		addModels("CARBONPLANTER",	"^CARBONPLANTER");
+		
+		addModels("RACE_START",	    "^RACE_START");
+		addModels("GARAGE_L",	    "^GARAGE_L");
+		addModels("GARAGE_M",	    "^GARAGE_M");
+		addModels("GARAGE_S",	    "^GARAGE_S");
 	}
 	
 	private static void addModels(String modelName, String... objectIDs) {
@@ -1078,6 +1088,64 @@ public class FileExport {
 				break;
 			}
 		vrml.println(" }");
+	}
+
+	@SuppressWarnings("unused")
+	private static void writeExocraftPodCoords(PrintWriter vrml, double baseRadius, double topRadius, int segI, int modI, double outerRadius, double innerRadius, int segD, int modD, double wDelta) {
+		double height = 1;
+		
+		vrml.print("# coord Coordinate { point [ ");
+		
+		for (int i=0; i<segI; ++i) {
+			double wI = i*Math.PI*2/segI;
+			double xBase = 0;
+			double yBase = baseRadius*Math.sin(wI);
+			double zBase = baseRadius*Math.cos(wI);
+			double xTop = height;
+			double yTop = topRadius*Math.sin(wI);
+			double zTop = topRadius*Math.cos(wI);
+			vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xBase,yBase,zBase);
+			vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xTop,yTop,zTop);
+		}
+		
+		for (int i=0; i<segD; ++i) {
+			double wI = i*Math.PI*2/segD + wDelta;
+			double xOuter = height;
+			double yOuter = outerRadius*Math.sin(wI);
+			double zOuter = outerRadius*Math.cos(wI);
+			double xInner = height;
+			double yInner = innerRadius*Math.sin(wI);
+			double zInner = innerRadius*Math.cos(wI);
+			vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xOuter,yOuter,zOuter);
+			vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xInner,yInner,zInner);
+		}
+		
+		vrml.println(" ] }");
+		
+		String strRing1, strRing2;
+		vrml.print("# coordIndex [ ");
+		
+		strRing1 = ""; strRing2 = "";
+		for (int i=0; i<segI; ++i) {
+			if ((i%modI)==0) vrml.printf("%d %d -1 ", i*2, i*2+1);
+			strRing1 += (i*2  )+" ";
+			strRing2 += (i*2+1)+" ";
+		}
+		strRing1 += "0 -1 ";
+		strRing2 += "1 -1 ";
+		vrml.print(strRing1+strRing2);
+		
+		strRing1 = ""; strRing2 = "";
+		for (int i=0; i<segD; ++i) {
+			if ((i%modD)==0) vrml.printf("%d %d -1 ", i*2+2*segI, i*2+1+2*segI);
+			strRing1 += (i*2  +2*segI)+" ";
+			strRing2 += (i*2+1+2*segI)+" ";
+		}
+		strRing1 += (0+2*segI)+" -1 ";
+		strRing2 += (1+2*segI)+" -1 ";
+		vrml.print(strRing1+strRing2);
+		
+		vrml.println("]\r\n");
 	}
 
 	@SuppressWarnings("unused")
