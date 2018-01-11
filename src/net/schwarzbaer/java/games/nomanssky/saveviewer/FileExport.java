@@ -539,7 +539,7 @@ public class FileExport {
 							i.set(x,y,z);
 							
 							setVertCenterLine(nb,i,lines,mat);
-							setVertSideLines(nb, i, lines);
+							setVertSideLines (nb,i,lines);
 						}
 			}
 
