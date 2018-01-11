@@ -480,7 +480,7 @@ public class FileExport {
 				Neighbor[][][] mat = block.toMatrix(minCorner,size);
 				
 				HashSet<Line> lines = createLines(size, mat);
-				modLinesForCurvedRooms(minCorner, size, lines, mat);
+				CurvedCubeGeometry.modLines(minCorner, size, lines, mat);
 				optimizeLines(lines);
 				
 				StringBuilder pointsStrBase = new StringBuilder();
@@ -529,61 +529,104 @@ public class FileExport {
 				return lines;
 			}
 
-			private void modLinesForCurvedRooms(Index3D minCorner, Index3D size, HashSet<Line> lines, Neighbor[][][] mat) {
-				Index3D i = new Index3D(0,0,0);
-				for (int x=0; x<size.iX; ++x)
-					for (int y=0; y<size.iY; ++y)
-						for (int z=0; z<size.iZ; ++z) {
-							Neighbor nb = get(mat,x,y,z);
-							if (!isCurvedCube(nb)) continue;
-							i.set(x,y,z);
-							
-							setVertCenterLine(nb,i,lines,mat);
-							setVertSideLines (nb,i,lines);
-						}
+			private static boolean isNoCubeOrCurvedCube(Index3D i, Neighbor[][][] mat, Orientation... orientationsAllowed) {
+				return isNoCubeOrCurvedCube(get(mat,i.iX,i.iY,i.iZ));
 			}
 
-			private void setVertSideLines(Neighbor nb, Index3D i, HashSet<Line> lines) {
-				switch(nb.o) {
-				case NegY:break;
-				case PosY:
-					lines.add(new Line(i.add(ind111), i.add(ind011)));
-					lines.add(new Line(i.add(ind100), i.add(ind000)));
-					break;
-				case NegZ:
-				case PosZ:
-					lines.add(new Line(i.add(ind110), i.add(ind010)));
-					lines.add(new Line(i.add(ind101), i.add(ind001)));
-					break;
+			private static boolean isNoCubeOrCurvedCube(Neighbor nb1, Orientation... orientationsAllowed) {
+				if (isCube(nb1)) return false;
+				if (isCurvedCube(nb1)) {
+					for (Orientation o:orientationsAllowed)
+						if (nb1.o==o) return true;
+					return false;
 				}
+				return true;
 			}
 			
-			private void setVertCenterLine(Neighbor nb, Index3D i, HashSet<Line> lines, Neighbor[][][] mat) {
-				Index3D i1 = i;
-				Orientation nextO = nb.o;
-				
-				boolean setCenterLine = false;
-				for (i1=nextO.addTo(i1), nextO=nextO.next_neg(); nextO!=nb.o; i1=nextO.addTo(i1), nextO=nextO.next_neg()) {
-					Neighbor nb1 = get(mat,i1.iX,i1.iY,i1.iZ);
-					if (!isCube(nb1) && (!isCurvedCube(nb1) || nb1.o!=nextO)) {
-						setCenterLine = true;
+			private static class CurvedCubeGeometry {
+
+				private static void modLines(Index3D minCorner, Index3D size, HashSet<Line> lines, Neighbor[][][] mat) {
+					Index3D i = new Index3D(0,0,0);
+					for (int x=0; x<size.iX; ++x)
+						for (int y=0; y<size.iY; ++y)
+							for (int z=0; z<size.iZ; ++z) {
+								Neighbor nb = get(mat,x,y,z);
+								if (!isCurvedCube(nb)) continue;
+								i.set(x,y,z);
+								setVertCenterLine(nb.o      ,i,mat,lines);
+								setVertSideLines (nb.o      ,i,    lines);
+								setHorizLines    (nb.o      ,i,mat,lines);
+								setHorizLines    (nb.o.neg(),i,mat,lines);
+							}
+				}
+
+				private static void setHorizLines(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
+					Index3D iNb = baseO.addTo(i);
+					boolean upper = false, lower = false;
+					if (          isNoCubeOrCurvedCube(iNb            , mat, baseO      , baseO.pos())) { upper = true; lower = true; }
+					if (!upper && isNoCubeOrCurvedCube(iNb.add( 1,0,0), mat, baseO      , baseO.pos())) upper = true;
+					if (!lower && isNoCubeOrCurvedCube(iNb.add(-1,0,0), mat, baseO      , baseO.pos())) lower = true;
+					if (!upper && isNoCubeOrCurvedCube(i  .add( 1,0,0), mat, baseO.neg(), baseO.opp())) upper = true;
+					if (!lower && isNoCubeOrCurvedCube(i  .add(-1,0,0), mat, baseO.neg(), baseO.opp())) lower = true;
+					
+					Line lowerLine=null;
+					Line upperLine=null;
+					switch(baseO) {
+					case PosY: lowerLine=new Line(i.add(ind011), i.add(ind010)); upperLine=new Line(i.add(ind111), i.add(ind110)); break;
+					case PosZ: lowerLine=new Line(i.add(ind001), i.add(ind011)); upperLine=new Line(i.add(ind101), i.add(ind111)); break;
+					case NegY: lowerLine=new Line(i.add(ind000), i.add(ind001)); upperLine=new Line(i.add(ind100), i.add(ind101)); break;
+					case NegZ: lowerLine=new Line(i.add(ind010), i.add(ind000)); upperLine=new Line(i.add(ind110), i.add(ind100)); break;
+					}
+					
+					if (lower) lines.add(lowerLine);
+					else lines.remove(lowerLine);
+					
+					if (upper) lines.add(upperLine);
+					else lines.remove(upperLine);
+				}
+
+				private static void setVertSideLines(Orientation baseO, Index3D i, HashSet<Line> lines) {
+					switch(baseO) {
+					case NegY:break;
+					case PosY:
+						lines.add(new Line(i.add(ind111), i.add(ind011)));
+						lines.add(new Line(i.add(ind100), i.add(ind000)));
+						break;
+					case NegZ:
+					case PosZ:
+						lines.add(new Line(i.add(ind110), i.add(ind010)));
+						lines.add(new Line(i.add(ind101), i.add(ind001)));
 						break;
 					}
 				}
-				
-				Line centerLine=null;
-				switch(nb.o) {
-				case NegY: centerLine=new Line(i.add(ind101), i.add(ind001)); break;
-				case NegZ: centerLine=new Line(i.add(ind100), i.add(ind000)); break;
-				case PosY: centerLine=new Line(i.add(ind110), i.add(ind010)); break;
-				case PosZ: centerLine=new Line(i.add(ind111), i.add(ind011)); break;
+
+				private static void setVertCenterLine(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
+					Index3D i1 = i;
+					Orientation nextO = baseO;
+					
+					boolean setCenterLine = false;
+					for (i1=nextO.addTo(i1), nextO=nextO.neg(); nextO!=baseO; i1=nextO.addTo(i1), nextO=nextO.neg()) {
+						Neighbor nb1 = get(mat,i1.iX,i1.iY,i1.iZ);
+						if (isNoCubeOrCurvedCube(nb1,nextO.pos(),nextO.opp(),nextO.neg())) {
+							setCenterLine = true;
+							break;
+						}
+					}
+					
+					Line centerLine=null;
+					switch(baseO) {
+					case NegY: centerLine=new Line(i.add(ind101), i.add(ind001)); break;
+					case NegZ: centerLine=new Line(i.add(ind100), i.add(ind000)); break;
+					case PosY: centerLine=new Line(i.add(ind110), i.add(ind010)); break;
+					case PosZ: centerLine=new Line(i.add(ind111), i.add(ind011)); break;
+					}
+					
+					if (setCenterLine) lines.add(centerLine);
+					else lines.remove(centerLine);
 				}
 				
-				if (setCenterLine) lines.add(centerLine);
-				else lines.remove(centerLine);
 			}
-
-			private Neighbor get(Neighbor[][][] mat, int x, int y, int z) {
+			private static Neighbor get(Neighbor[][][] mat, int x, int y, int z) {
 				if (x<0) return null;
 				if (y<0) return null;
 				if (z<0) return null;
@@ -704,25 +747,15 @@ public class FileExport {
 							if (!isCubeGlass(nb)) continue;
 							i.set(x,y,z);
 							i.set(minCorner.add(i));
-							if (isFreeForWindow(get(mat,x+1,y,z)                                  )) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
-							if (isFreeForWindow(get(mat,x,y+1,z),Orientation.PosY,Orientation.PosZ)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
-							if (isFreeForWindow(get(mat,x,y,z+1),Orientation.PosZ,Orientation.NegY)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
-							if (isFreeForWindow(get(mat,x,y-1,z),Orientation.NegY,Orientation.NegZ)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
-							if (isFreeForWindow(get(mat,x,y,z-1),Orientation.NegZ,Orientation.PosY)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind110, ind100, ind000, ind010);
+							if (isNoCubeOrCurvedCube(get(mat,x+1,y,z)                                  )) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
+							if (isNoCubeOrCurvedCube(get(mat,x,y+1,z),Orientation.PosY,Orientation.PosZ)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
+							if (isNoCubeOrCurvedCube(get(mat,x,y,z+1),Orientation.PosZ,Orientation.NegY)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
+							if (isNoCubeOrCurvedCube(get(mat,x,y-1,z),Orientation.NegY,Orientation.NegZ)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
+							if (isNoCubeOrCurvedCube(get(mat,x,y,z-1),Orientation.NegZ,Orientation.PosY)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind110, ind100, ind000, ind010);
 						}
 				return pointCounter;
 			}
 			
-			private boolean isFreeForWindow(Neighbor nb1, Orientation... orientations) {
-				if (isCube(nb1)) return false;
-				if (isCurvedCube(nb1)) {
-					for (Orientation o:orientations)
-						if (nb1.o==o) return true;
-					return false;
-				}
-				return true;
-			}
-
 			private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D iXYZ, Index3D i1, Index3D i2, Index3D i3, Index3D i4) {
 				Point3D i1_p = iXYZ.toPoint3D().add(i1.toPoint3D());
 				Point3D i2_p = iXYZ.toPoint3D().add(i2.toPoint3D());
@@ -819,7 +852,17 @@ public class FileExport {
 				return null;
 			}
 
-			public Orientation next_neg() {
+			public Orientation opp() {
+				switch(this) {
+				case NegY: return Orientation.PosY;
+				case NegZ: return Orientation.PosZ;
+				case PosY: return Orientation.NegY;
+				case PosZ: return Orientation.NegZ;
+				}
+				return null;
+			}
+
+			public Orientation neg() {
 				switch(this) {
 				case NegY: return Orientation.PosZ;
 				case NegZ: return Orientation.NegY;
@@ -829,8 +872,7 @@ public class FileExport {
 				return null;
 			}
 	
-			@SuppressWarnings("unused")
-			public Orientation next_pos() {
+			public Orientation pos() {
 				switch(this) {
 				case NegY: return Orientation.NegZ;
 				case NegZ: return Orientation.PosY;
