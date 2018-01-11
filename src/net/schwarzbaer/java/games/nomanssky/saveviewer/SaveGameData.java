@@ -175,10 +175,16 @@ public class SaveGameData {
 		public Coordinates pos;
 		public Coordinates at;
 		public Coordinates up;
+		
 		public Position() {
 			this.pos = null;
 			this.at = null;
 			this.up = null;
+		}
+		public Position(Position position) {
+			this.pos = position.pos==null?null:new Coordinates(position.pos);
+			this.at  = position.at ==null?null:new Coordinates(position.at );
+			this.up  = position.up ==null?null:new Coordinates(position.up );
 		}
 	}
 
@@ -209,7 +215,13 @@ public class SaveGameData {
 			this.w1 = 0;
 			this.length = 0; 
 		}
-	
+		
+		public Coordinates(Coordinates p) {
+			super(p);
+			this.w1 = p.w1;
+			this.length = p.length; 
+		}
+		
 		public Coordinates(Point3D p) {
 			super(p);
 			this.w1 = 0;
@@ -254,6 +266,12 @@ public class SaveGameData {
 		}
 	
 		public Point3D(Point3D pos) {
+			this.x = pos.x;
+			this.y = pos.y;
+			this.z = pos.z;
+		}
+
+		public void set(Point3D pos) {
 			this.x = pos.x;
 			this.y = pos.y;
 			this.z = pos.z;
@@ -519,6 +537,13 @@ public class SaveGameData {
 			this.objectID = null;
 			this.userData = null;
 			this.position = null;
+		}
+
+		public BuildingObject(BuildingObject obj) {
+			this.timestamp = obj.timestamp;
+			this.objectID  = obj.objectID;
+			this.userData  = obj.userData;
+			this.position  = obj.position==null?null:new Position(obj.position);
 		}
 
 		public String getNameOfObjectID() {
