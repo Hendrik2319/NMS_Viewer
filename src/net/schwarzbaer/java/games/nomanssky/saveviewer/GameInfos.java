@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Vector;
@@ -402,14 +403,20 @@ public class GameInfos {
 			}; 
 		}
 	
-		public void set(String id, GeneralizedID generalizedID) {
-			map.put(id, generalizedID);
+//		public void set(String id, GeneralizedID generalizedID) {
+//			map.put(id, generalizedID);
+//		}
+		
+		public GeneralizedID get(String id, SaveGameData source, Usage.Type usageType) {
+			GeneralizedID generalizedID = get_(id);
+			generalizedID.setUsage(source,usageType);
+			return generalizedID;
 		}
 	
-		public GeneralizedID get(String id) {
+		private GeneralizedID get_(String id) {
 			GeneralizedID newID = new GeneralizedID(id);
 			GeneralizedID existingID = map.putIfAbsent(id, newID);
-			return existingID==null?newID:existingID;
+			return existingID==null ? newID : existingID;
 		}
 	}
 
@@ -436,27 +443,27 @@ public class GameInfos {
 				
 				if (idStr.endsWith(".type")) {
 					idStr = idStr.substring(0, idStr.length()-".type".length());
-					GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get_(idStr);
 					id.type = GeneralizedID.Type.getType(value);
 				}
 				else if (idStr.endsWith(".symbol")) {
 					idStr = idStr.substring(0, idStr.length()-".symbol".length());
-					GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get_(idStr);
 					id.symbol = value;
 				}
 				else if (idStr.endsWith(".image")) {
 					idStr = idStr.substring(0, idStr.length()-".image".length());
-					GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get_(idStr);
 					id.setImageFileName(value);
 				}
 				else if (idStr.endsWith(".imageBG")) {
 					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
-					GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get_(idStr);
 					try { id.setImageBG(Integer.parseInt(value,16)); }
 					catch (NumberFormatException e) {}
 				}
 				else {
-					GeneralizedID id = map.get(idStr);
+					GeneralizedID id = map.get_(idStr);
 					id.label = value;
 				}
 			}
@@ -480,7 +487,7 @@ public class GameInfos {
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (String idStr:map.getSortedKeys()) {
-				GeneralizedID id = map.get(idStr);
+				GeneralizedID id = map.get_(idStr);
 				out.printf("%s=%s\r\n",idStr,id.label);
 				if (id.type!=null  ) out.printf("%s.type=%s\r\n"     ,idStr,id.type);
 				if (id.hasSymbol ()) out.printf("%s.symbol=%s\r\n"   ,idStr,id.symbol);
@@ -614,18 +621,29 @@ public class GameInfos {
 			return SaveViewer.images.getImage(imageFileName,imageBackground,width,height);
 		}
 		
-		public Usage getUsage(SaveGameData base) {
+		public void setUsage(SaveGameData source, Usage.Type usageType) {
+			getUsage(source).generalUsages.add(usageType);
+		}
+		public Usage getUsage(SaveGameData source) {
 			Usage newUsage = new Usage();
-			Usage oldUsage = usage.putIfAbsent(base, newUsage);
+			Usage oldUsage = usage.putIfAbsent(source, newUsage);
 			return oldUsage==null?newUsage:oldUsage;
 		}
 	
-		public class Usage {
+		public static class Usage {
+			public enum Type {
+				BuildingObject("Bo"), Blueprint("Bl"), InventorySlot("In");
+				
+				private final String keyChar;
+				Type(String keyChar) { this.keyChar = keyChar; }
+			}
 			
+			public final HashSet<Type>  generalUsages;
 			public final Vector<String> inventoryUsages;
 			public final Vector<String> blueprintUsages;
 			
 			public Usage() {
+				generalUsages = new HashSet<>();
 				inventoryUsages = new Vector<>();
 				blueprintUsages = new Vector<>();
 			}
@@ -639,7 +657,13 @@ public class GameInfos {
 			}
 	
 			public boolean isEmpty() {
-				return inventoryUsages.isEmpty() && blueprintUsages.isEmpty();
+				return inventoryUsages.isEmpty() && blueprintUsages.isEmpty() && generalUsages.isEmpty();
+			}
+
+			public String generalUsagesToString() {
+				String str = "";
+				for (Type type:generalUsages) str += type.keyChar;
+				return str;
 			}
 		}
 	}
@@ -1249,8 +1273,10 @@ public class GameInfos {
 					if (usage==null) return "";
 					if (usage.isEmpty()) return "";
 					String str = "";;
-					if (!usage.inventoryUsages.isEmpty()) str += usage.inventoryUsages.size()+"xI";
+					if (!usage.inventoryUsages.isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.inventoryUsages.size()+"xI"; }
 					if (!usage.blueprintUsages.isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.blueprintUsages.size()+"xB"; }
+					if (!usage.generalUsages  .isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.generalUsagesToString(); }
+					
 					return str;
 				}
 				return null;

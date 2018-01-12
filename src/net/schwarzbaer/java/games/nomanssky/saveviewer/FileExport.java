@@ -1063,7 +1063,7 @@ public class FileExport {
 		if (obj.position.at==null) return;
 		
 		String objectID = obj.objectID;
-		GeneralizedID id = GameInfos.productIDs.get(objectID);
+		GeneralizedID id = GameInfos.productIDs.get(objectID,obj.source,GeneralizedID.Usage.Type.BuildingObject);
 		String label = objectID;
 		if (id!=null && !id.label.isEmpty()) label = id.label;
 		

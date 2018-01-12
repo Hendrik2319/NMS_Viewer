@@ -391,7 +391,7 @@ public class SaveGameData {
 				continue;
 			}
 			
-			PersistentPlayerBase pb = new PersistentPlayerBase();
+			PersistentPlayerBase pb = new PersistentPlayerBase(this);
 			pb.baseVersion     = getIntegerValue (objectValue, "BaseVersion");
 			pb.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			pb.position        = parseCoordinates(objectValue, "Position");
@@ -423,7 +423,7 @@ public class SaveGameData {
 				continue;
 			}
 			
-			BuildingObject bbo = new BuildingObject();
+			BuildingObject bbo = new BuildingObject(this);
 			parseBuildingObject(objectValue, bbo);
 			
 			vector.add(bbo);
@@ -440,6 +440,9 @@ public class SaveGameData {
 		bbo.objectID  = getStringValue  (objectValue, "ObjectID");
 		bbo.userData  = getIntegerValue (objectValue, "UserData");
 		bbo.position  = parsePosition   (objectValue, "Position", "Up", "At");
+		if (bbo.objectID!=null) {
+			bbo.objectID1 = GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
+		}
 	}
 
 	public static class PersistentPlayerBases {
@@ -475,8 +478,10 @@ public class SaveGameData {
 		public Coordinates position;
 		public BuildingObject[] objects;
 		public boolean isFreighterBase;
+		public final SaveGameData source;
 		
-		public PersistentPlayerBase() {
+		public PersistentPlayerBase(SaveGameData source) {
+			this.source = source;
 			this.galacticAddress = null;
 			this.name = null;
 			this.owner = null;
@@ -502,7 +507,7 @@ public class SaveGameData {
 				notParsableObjects.add(value);
 				continue;
 			}
-			UnboundBuildingObject bbo = new UnboundBuildingObject();
+			UnboundBuildingObject bbo = new UnboundBuildingObject(this);
 			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
 			parseBuildingObject(objectValue, bbo);
@@ -518,8 +523,8 @@ public class SaveGameData {
 		public UniverseAddress galacticAddress;
 		public Long regionSeed;
 		
-		UnboundBuildingObject() {
-			super();
+		UnboundBuildingObject(SaveGameData source) {
+			super(source);
 			this.galacticAddress = null;
 			this.regionSeed = null;
 		}
@@ -527,40 +532,55 @@ public class SaveGameData {
 
 	public static class BuildingObject {
 
+		public GeneralizedID objectID1;
+		public String specialName;
+		
 		public Long timestamp;
 		public String objectID;
 		public Long userData;
 		public Position position;
+		public final SaveGameData source;
 		
-		BuildingObject() {
+		BuildingObject(SaveGameData source) {
+			this.source = source;
 			this.timestamp = null;
 			this.objectID = null;
 			this.userData = null;
 			this.position = null;
+			
+			this.specialName = null;
+			this.objectID1 = null;
 		}
 
 		public BuildingObject(BuildingObject obj) {
+			this.source = obj.source;
 			this.timestamp = obj.timestamp;
 			this.objectID  = obj.objectID;
 			this.userData  = obj.userData;
 			this.position  = obj.position==null?null:new Position(obj.position);
+			this.specialName = obj.specialName;
+			this.objectID1   = obj.objectID1;
 		}
 
 		public String getNameOfObjectID() {
-			if (objectID==null) return "";
-			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			if (objectID==null) {
+				if (specialName!=null) return specialName;
+				return "";
+			}
+			GeneralizedID id = GameInfos.productIDs.get(objectID,source,GeneralizedID.Usage.Type.BuildingObject);
 			if (id==null) return objectID;
 			return id.getName();
 		}
 
 		public static BuildingObject createFromBase(PersistentPlayerBase playerbase) {
-			BuildingObject obj = new BuildingObject();
+			BuildingObject obj = new BuildingObject(playerbase.source);
 			obj.position = new Position();
 			obj.position.pos = playerbase.position;
 			if (playerbase.position!=null && !playerbase.position.isZero())
 				obj.position.at = new Coordinates(playerbase.position.normalize());
 			obj.position.up = playerbase.forward;
-			obj.objectID = playerbase.name;
+			obj.objectID = null;
+			obj.specialName = playerbase.name;
 			return obj;
 		}
 	}
@@ -579,7 +599,7 @@ public class SaveGameData {
 			Value value = arrayValue.get(i);
 			String id = getString(value);
 			if (id!=null) {
-				knownBlueprints[i] = map.get(id);// addGeneralizedID(map, id);
+				knownBlueprints[i] = map.get(id,this,GeneralizedID.Usage.Type.Blueprint);// addGeneralizedID(map, id);
 				knownBlueprints[i].getUsage(this).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
 			}
 		}
@@ -754,7 +774,7 @@ public class SaveGameData {
 					case Substance : map = GameInfos.substanceIDs; break;
 					}
 					if (map!=null) {
-						slot.id = map.get(slot.idStr); // addGeneralizedID(map, slot.idStr);
+						slot.id = map.get(slot.idStr,base,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
 						slot.id.getUsage(base).addInventoryUsage(inventoryLabel,x,y);
 					}
 				}

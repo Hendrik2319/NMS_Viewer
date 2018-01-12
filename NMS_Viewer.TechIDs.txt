@@ -499,6 +499,7 @@
 ^VEHICLE_LASER.imageBG=085C78
 ^VEHICLE_LASER1=Exo-Fahrzeug-Minenlaser-Upgrade Sigma
 ^VEHICLE_LASER1.type=ExocraftWeaponUpgrade
+^VEHICLE_LASER1.image=screenshot.exocraft.laser2.png
 ^VEHICLE_LASER1.imageBG=085C78
 ^VEHICLE_SCAN=Exo-Fahrzeug-Signalbooster
 ^VEHICLE_SCAN.type=ExocraftExtension
