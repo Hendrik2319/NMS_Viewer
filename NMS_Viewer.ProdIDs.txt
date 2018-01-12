@@ -8,7 +8,7 @@
 ^ACCESS3.image=Product.atlaspass.png
 ^ACCESS3.imageBG=0063B6
 ^ALBUMENPEARL=Eiweißperle
-^ALBUMENPEARL.type=Plant
+^ALBUMENPEARL.type=PlantProduct
 ^ALBUMENPEARL.image=Product.abumenpearl.Eiweissperle.png
 ^ALBUMENPEARL.imageBG=10805C
 ^ALLOY1=

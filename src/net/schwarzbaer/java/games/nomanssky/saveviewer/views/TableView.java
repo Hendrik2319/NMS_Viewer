@@ -77,7 +77,8 @@ public class TableView {
 						if (col>0) sb.append("\t");
 						int rowM = table.convertRowIndexToModel(row);
 						int colM = table.convertColumnIndexToModel(col);
-						sb.append(model.getValueAt(rowM,colM));
+						Object value = model.getValueAt(rowM,colM);
+						sb.append(value==null?"":value);
 					}
 					sb.append("\r\n");
 				}

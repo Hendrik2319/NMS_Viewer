@@ -340,7 +340,7 @@ public class FileExport {
 		public boolean add(BuildingObject obj) {
 			if (obj==null) return false;
 			switch (obj.objectID) {
-			case "^CUBEROOM": case "^CUBEGLASS": case "^CUBEROOMCURVED":
+			case "^CUBEROOM": case "^CUBEGLASS": case "^CUBEROOMCURVED":// case "^CURVEDCUBEROOF":
 				obj = fixUpsideDown(obj);
 				freeObj.add(obj);
 				return true;
@@ -374,27 +374,39 @@ public class FileExport {
 
 		private static boolean isCube(Neighbor nb) {
 			if (nb==null) return false;
-			switch (nb.obj.objectID) {
-			case "^CUBEROOM":
-			case "^CUBEGLASS": return true;
-			default: return false;
-			}
+			if (nb.type==Neighbor.Type.Cube) return true;
+			if (nb.type==Neighbor.Type.GlassCube) return true;
+			return false;
 		}
 
-		private static boolean isCubeGlass(Neighbor nb) {
+		private static boolean isCurvedCube(Neighbor nb, Orientation... allowedOrientations) {
 			if (nb==null) return false;
-			switch (nb.obj.objectID) {
-			case "^CUBEGLASS": return true;
-			default: return false;
-			}
+			if (nb.type!=Neighbor.Type.CurvedCube) return false;
+			for (Orientation o:allowedOrientations)
+				if (nb.o==o) return true;
+			return false;
 		}
 
-		private static boolean isCurvedCube(Neighbor nb) {
+		private static boolean isCurvedRoof(Neighbor nb, Orientation... allowedOrientations) {
 			if (nb==null) return false;
-			switch (nb.obj.objectID) {
-			case "^CUBEROOMCURVED": return true;
-			default: return false;
-			}
+			if (nb.type!=Neighbor.Type.CurvedRoof) return false;
+			for (Orientation o:allowedOrientations)
+				if (nb.o==o) return true;
+			return false;
+		}
+
+		private static Neighbor get(Index3D i, Neighbor[][][] mat) {
+			return get(mat, i.iX, i.iY, i.iZ);
+		}
+
+		private static Neighbor get(Neighbor[][][] mat, int x, int y, int z) {
+			if (x<0) return null;
+			if (y<0) return null;
+			if (z<0) return null;
+			if (x>=mat.length) return null;
+			if (y>=mat[x].length) return null;
+			if (z>=mat[x][y].length) return null;
+			return mat[x][y][z];
 		}
 
 		public BuildingObject[] getRemainingObjects() {
@@ -416,10 +428,35 @@ public class FileExport {
 			}
 		}
 		
+		private static class Neighbor {
+			enum Type { Cube, GlassCube, CurvedCube, CurvedRoof }
+			final Index3D i;
+			final Orientation o;
+			final BuildingObject obj;
+			final Type type;
+		
+			public Neighbor(Index3D i, Orientation o, BuildingObject obj) {
+				this.i = i;
+				this.o = o;
+				this.obj = obj;
+				if (obj==null) type=null;
+				else
+					switch(obj.objectID) {
+					case "^CUBEROOM"      : type=Type.Cube; break;
+					case "^CUBEGLASS"     : type=Type.GlassCube; break;
+					case "^CUBEROOMCURVED": type=Type.CurvedCube; break;
+					case "^CURVEDCUBEROOF": type=Type.CurvedRoof; break;
+					default: type=null;
+					}
+			}
+		}
+
 		private static class Neighborhood {
 			private static final double ANGLE_TOLERANCE = 0.0001;
 			private static final double CUBESIZE = 4.0;
 			private static final double POS_TOLERANCE = 0.01;
+			
+			private static final Orientation[] OArrAll = Orientation.values();
 			
 			private static final Index3D ind111 = new Index3D(1,1,1);
 			private static final Index3D ind110 = new Index3D(1,1,0);
@@ -440,6 +477,8 @@ public class FileExport {
 			private CubeGeometry cubeGeometry;
 			private GlassCubeGeometry glassCubeGeometry;
 			private CurvedCubeGeometry curvedCubeGeometry;
+			private CurvedRoofGeometry curvedRoofGeometry;
+			
 			public Neighborhood(BuildingObject firstObj, int neighborhoodIndex) {
 				this.neighborhoodIndex = neighborhoodIndex;
 				anchorPos = null;
@@ -457,9 +496,10 @@ public class FileExport {
 				cubeGeometry = new CubeGeometry();
 				glassCubeGeometry = new GlassCubeGeometry();
 				curvedCubeGeometry = new CurvedCubeGeometry();
+				curvedRoofGeometry = new CurvedRoofGeometry();
 			}
 			
-			private Neighbor getNeighborRelation(Position position) {
+			private Neighbor getNeighborRelation(Position position, BuildingObject obj) {
 				if (position==null) return null;
 				if (position.pos==null) return null;
 				if (position.at==null || position.at.isZero()) return null;
@@ -482,7 +522,7 @@ public class FileExport {
 				if (deltaY>POS_TOLERANCE) return null;
 				if (deltaZ>POS_TOLERANCE) return null;
 				
-				return new Neighbor(new Index3D(iX,iY,iZ), orientation, (BuildingObject)null);
+				return new Neighbor(new Index3D(iX,iY,iZ), orientation, obj);
 			}
 
 			private Orientation getOrientation(Position position) {
@@ -504,9 +544,8 @@ public class FileExport {
 				if (anchorZ  ==null) return;
 				
 				for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
-					Neighbor neighbor = getNeighborRelation(obj.position);
+					Neighbor neighbor = getNeighborRelation(obj.position,obj);
 					if (neighbor==null) continue;
-					neighbor.obj = obj;
 					block.set(neighbor.i,neighbor);
 					freeObj.remove(obj);
 				}
@@ -529,6 +568,7 @@ public class FileExport {
 				Vector<PolyLine> extraLines = new Vector<>();
 				cubeGeometry      .createLines(size, mat, lines);
 				curvedCubeGeometry.modifyLines(size, mat, lines, extraLines);
+				curvedRoofGeometry.modifyLines(size, mat, lines, extraLines);
 				optimizeLines(lines);
 				
 				StringBuilder pointsStrBase = new StringBuilder();
@@ -544,7 +584,7 @@ public class FileExport {
 				int pointCounterW = 0;
 				pointCounterW = glassCubeGeometry.createWindows(pointsStrW, pointCounterW, indexesStrW, minCorner, size, mat);
 				if (pointsStrW.length()>0 || indexesStrW.length()>0)
-					writeIndexedLineSet(vrml, pointsStrW, indexesStrW, Color.BLUE);
+					writeIndexedLineSet(vrml, pointsStrW, indexesStrW, new Color(0.3f, 0.5f, 1.0f));
 			}
 			
 			private void optimizeLines(HashSet<Line> lines) {
@@ -626,7 +666,8 @@ public class FileExport {
 									if (!isCube(get(mat,x,y-1,z))) lines.add(new Line(i.add(ind100), i.add(ind000)));
 									if (!isCube(get(mat,x,y,z-1))) lines.add(new Line(i.add(ind110), i.add(ind010)));
 									
-									if (isNoCubeOrCurvedCube(get(mat,x-1,y,z))) {
+									Neighbor nb = get(mat,x-1,y,z);
+									if (!isCube(nb) && !isCurvedCube(nb,OArrAll) && !isCurvedRoof(nb)) {
 										lines.add(new Line(i.add(ind001), i.add(ind010)));
 										lines.add(new Line(i.add(ind000), i.add(ind011)));
 									}
@@ -643,14 +684,16 @@ public class FileExport {
 						for (int y=0; y<size.iY; ++y)
 							for (int z=0; z<size.iZ; ++z) {
 								Neighbor nb = get(mat,x,y,z);
-								if (!isCubeGlass(nb)) continue;
+								if (nb==null) continue;
+								if (nb.type!=Neighbor.Type.GlassCube) continue;
 								i.set(x,y,z);
 								i.set(minCorner.add(i));
-								if (isNoCubeOrCurvedCube(get(mat,x+1,y,z)                                  )) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
-								if (isNoCubeOrCurvedCube(get(mat,x,y+1,z),Orientation.PosY,Orientation.PosZ)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
-								if (isNoCubeOrCurvedCube(get(mat,x,y,z+1),Orientation.PosZ,Orientation.NegY)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
-								if (isNoCubeOrCurvedCube(get(mat,x,y-1,z),Orientation.NegY,Orientation.NegZ)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
-								if (isNoCubeOrCurvedCube(get(mat,x,y,z-1),Orientation.NegZ,Orientation.PosY)) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind110, ind100, ind000, ind010);
+								Neighbor nb1;
+								nb1 = get(mat,x+1,y,z); if (!isCube(nb1) && !isCurvedCube(nb1, OArrAll                          ) && !isCurvedRoof(nb1, OArrAll         ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
+								nb1 = get(mat,x,y+1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegY,Orientation.NegZ) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
+								nb1 = get(mat,x,y,z+1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegZ,Orientation.PosY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegY) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
+								nb1 = get(mat,x,y-1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosY,Orientation.PosZ) && !isCurvedRoof(nb1, Orientation.PosZ, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
+								nb1 = get(mat,x,y,z-1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosZ,Orientation.NegY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind110, ind100, ind000, ind010);
 							}
 					return pointCounter;
 				}
@@ -673,6 +716,12 @@ public class FileExport {
 				
 			}
 
+			private class CurvedRoofGeometry {
+				private void modifyLines(Index3D size, Neighbor[][][] mat, HashSet<Line> lines, Vector<PolyLine> extraLines) {
+					// TODO
+				}
+			}
+
 			private class CurvedCubeGeometry {
 
 				private void modifyLines(Index3D size, Neighbor[][][] mat, HashSet<Line> lines, Vector<PolyLine> extraLines) {
@@ -681,7 +730,8 @@ public class FileExport {
 						for (int y=0; y<size.iY; ++y)
 							for (int z=0; z<size.iZ; ++z) {
 								Neighbor nb = get(mat,x,y,z);
-								if (!isCurvedCube(nb)) continue;
+								if (nb==null) continue;
+								if (nb.type!=Neighbor.Type.CurvedCube) continue;
 								i.set(x,y,z);
 								setVertCenterLine(nb.o      ,i,mat,lines);
 								setVertSideLines (nb.o      ,i,    lines);
@@ -690,10 +740,10 @@ public class FileExport {
 								
 								extraLines.add(createCurvedRoomEdge(i,nb.o));
 								Neighbor nbBelow = get(mat,x-1,y,z);
-								if (!isCurvedCube(nbBelow) || nbBelow.o!=nb.o)
+								if (nbBelow==null || nbBelow.type!=Neighbor.Type.CurvedCube || nbBelow.o!=nb.o)
 									extraLines.add(createCurvedRoomEdge(i.add(-1,0,0),nb.o));
 								
-								if (isNoCubeOrCurvedCube(nbBelow)) {
+								if (!isCube(nbBelow) && !isCurvedCube(nbBelow,OArrAll) && !isCurvedRoof(nbBelow)) {
 									setBottom(nb.o, i, lines);
 								}
 							}
@@ -734,11 +784,16 @@ public class FileExport {
 				private void setHorizLines(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
 					Index3D iNb = baseO.addTo(i);
 					boolean upper = false, lower = false;
-					if (          isNoCubeOrCurvedCube(iNb            , mat, baseO      , baseO.pos())) { upper = true; lower = true; }
-					if (!upper && isNoCubeOrCurvedCube(iNb.add( 1,0,0), mat, baseO      , baseO.pos())) upper = true;
-					if (!lower && isNoCubeOrCurvedCube(iNb.add(-1,0,0), mat, baseO      , baseO.pos())) lower = true;
-					if (!upper && isNoCubeOrCurvedCube(i  .add( 1,0,0), mat, baseO.neg(), baseO.opp())) upper = true;
-					if (!lower && isNoCubeOrCurvedCube(i  .add(-1,0,0), mat, baseO.neg(), baseO.opp())) lower = true;
+					Neighbor nb;
+					nb = get(iNb            , mat);
+					if (!isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg())) {
+						lower = !isCurvedRoof(nb,baseO,baseO.pos(),baseO.neg());
+						upper = true;
+					}
+					nb = get(iNb.add( 1,0,0), mat); if (!upper && !isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg()) && !isCurvedRoof(nb,baseO,baseO.pos(),baseO.neg()      )) upper = true;
+					nb = get(iNb.add(-1,0,0), mat); if (!lower && !isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg()) && !isCurvedRoof(nb                                    )) lower = true;
+					nb = get(i  .add( 1,0,0), mat); if (!upper && !isCube(nb) && !isCurvedCube(nb,baseO.pos(),baseO      ) && !isCurvedRoof(nb,baseO.opp(),baseO.pos(),baseO.neg())) upper = true;
+					nb = get(i  .add(-1,0,0), mat); if (!lower && !isCube(nb) && !isCurvedCube(nb,baseO.pos(),baseO      ) && !isCurvedRoof(nb,OArrAll                            )) lower = true;
 					
 					Line lowerLine=null;
 					Line upperLine=null;
@@ -772,13 +827,13 @@ public class FileExport {
 				}
 
 				private void setVertCenterLine(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
-					Index3D i1 = i;
-					Orientation nextO = baseO;
+					Index3D i1;
+					Orientation nextO;
 					
 					boolean setCenterLine = false;
-					for (i1=nextO.addTo(i1), nextO=nextO.neg(); nextO!=baseO; i1=nextO.addTo(i1), nextO=nextO.neg()) {
+					for (i1=baseO.addTo(i), nextO=baseO.neg(); nextO!=baseO; i1=nextO.addTo(i1), nextO=nextO.neg()) {
 						Neighbor nb1 = get(mat,i1.iX,i1.iY,i1.iZ);
-						if (isNoCubeOrCurvedCube(nb1,nextO.pos(),nextO.opp(),nextO.neg())) {
+						if (!isCube(nb1) && !isCurvedCube(nb1, nextO) && !isCurvedRoof(nb1, nextO.pos(),nextO.opp()) ) {
 							setCenterLine = true;
 							break;
 						}
@@ -797,30 +852,6 @@ public class FileExport {
 				}
 				
 			}
-			private static boolean isNoCubeOrCurvedCube(Index3D i, Neighbor[][][] mat, Orientation... orientationsAllowed) {
-				return isNoCubeOrCurvedCube(get(mat,i.iX,i.iY,i.iZ));
-			}
-
-			private static boolean isNoCubeOrCurvedCube(Neighbor nb1, Orientation... orientationsAllowed) {
-				if (isCube(nb1)) return false;
-				if (isCurvedCube(nb1)) {
-					for (Orientation o:orientationsAllowed)
-						if (nb1.o==o) return true;
-					return false;
-				}
-				return true;
-			}
-
-			private static Neighbor get(Neighbor[][][] mat, int x, int y, int z) {
-				if (x<0) return null;
-				if (y<0) return null;
-				if (z<0) return null;
-				if (x>=mat.length) return null;
-				if (y>=mat[x].length) return null;
-				if (z>=mat[x][y].length) return null;
-				return mat[x][y][z];
-			}
-
 			private Line getLine(HashSet<Line> lines) {
 				Iterator<Line> it = lines.iterator();
 				if (it.hasNext()) return it.next();
@@ -881,19 +912,6 @@ public class FileExport {
 			}
 		}
 		
-		private static class Neighbor {
-			
-			private Index3D i;
-			private Orientation o;
-			private BuildingObject obj;
-
-			public Neighbor(Index3D i, Orientation o, BuildingObject obj) {
-				this.i = i;
-				this.o = o;
-				this.obj = obj;
-			}
-		}
-
 		private enum Orientation {
 			PosY, NegY, PosZ, NegZ;
 
