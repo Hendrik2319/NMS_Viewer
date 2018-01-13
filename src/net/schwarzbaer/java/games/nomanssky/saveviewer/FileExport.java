@@ -1249,13 +1249,13 @@ public class FileExport {
 		addModels("MAINROOM",		"^MAINROOM");
 		addModels("MAINROOMCUBE",	"^MAINROOMCUBE");
 		
-		addModels("CUBESTAIRS", 	"^CUBESTAIRS");
+		addModels("CUBESTAIRS",		"^CUBESTAIRS");
 		addModels("BUILDDOOR",		"^BUILDDOOR");
 		
 		addModels("CUBEROOM",		"^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4","^CONTAINER5",
 									"^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9","^CUBEROOM","^CUBEGLASS");
 		
-		addModels("CORRIDOR",   	"^CORRIDOR","^GLASSCORRIDOR");
+		addModels("CORRIDOR",		"^CORRIDOR","^GLASSCORRIDOR");
 		addModels("CORRIDORX",		"^CORRIDORX");
 		
 		addModels("PLANT",			"^LUSHPLANT","^BARRENPLANT","^CREATUREPLANT","^PEARLPLANT","^SCORCHEDPLANT",
@@ -1265,10 +1265,12 @@ public class FileExport {
 		addModels("PLANTERMEGA",	"^PLANTERMEGA");
 		addModels("CARBONPLANTER",	"^CARBONPLANTER");
 		
-		addModels("RACE_START",	    "^RACE_START");
-		addModels("GARAGE_L",	    "^GARAGE_L");
-		addModels("GARAGE_M",	    "^GARAGE_M");
-		addModels("GARAGE_S",	    "^GARAGE_S");
+		addModels("RACE_START",		"^RACE_START");
+		addModels("GARAGE_L",		"^GARAGE_L");
+		addModels("GARAGE_M",		"^GARAGE_M");
+		addModels("GARAGE_S",		"^GARAGE_S");
+		
+		addModels("NPCTERMINAL",	"^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 	}
 	
 	private static void addModels(String modelName, String... objectIDs) {
