@@ -25,7 +25,6 @@ import java.util.Vector;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
@@ -461,28 +460,12 @@ public class FileExport {
 			private static final double CUBESIZE = 4.0;
 			private static final double POS_TOLERANCE = 0.01;
 			
-			private static final Orientation[] OArrAll = Orientation.values();
-			
-			private static final Index3D ind111 = new Index3D(1,1,1);
-			private static final Index3D ind110 = new Index3D(1,1,0);
-			private static final Index3D ind101 = new Index3D(1,0,1);
-			private static final Index3D ind100 = new Index3D(1,0,0);
-			private static final Index3D ind011 = new Index3D(0,1,1);
-			private static final Index3D ind010 = new Index3D(0,1,0);
-			private static final Index3D ind001 = new Index3D(0,0,1);
-			private static final Index3D ind000 = new Index3D(0,0,0);
-			
-			private Block block;
+			private HashMap<Index3D, Neighbor> blocks;
 			private Point3D anchorPos;
 			private Point3D anchorXat;
 			private Point3D anchorYup;
 			private Point3D anchorZ;
 			private int neighborhoodIndex;
-			
-			private CubeGeometry cubeGeometry;
-			private GlassCubeGeometry glassCubeGeometry;
-			private CurvedCubeGeometry curvedCubeGeometry;
-			private CurvedRoofGeometry curvedRoofGeometry;
 			
 			public Neighborhood(BuildingObject firstObj, int neighborhoodIndex) {
 				this.neighborhoodIndex = neighborhoodIndex;
@@ -496,12 +479,9 @@ public class FileExport {
 					anchorYup = Point3D.normalizeOrNull(firstObj.position.up);
 					if (anchorXat!=null && anchorYup!=null) anchorZ = anchorXat.crossProd(anchorYup).normalize();
 				}
-				block = new Block(new Index3D(0,0,0),new Neighbor(new Index3D(0,0,0), Orientation.PosY, firstObj));
-				
-				cubeGeometry = new CubeGeometry();
-				glassCubeGeometry = new GlassCubeGeometry();
-				curvedCubeGeometry = new CurvedCubeGeometry();
-				curvedRoofGeometry = new CurvedRoofGeometry();
+				Index3D origin = new Index3D(0,0,0);
+				blocks = new HashMap<Index3D,Neighbor>();
+				blocks.put(origin, new Neighbor(origin, Orientation.PosY, firstObj));
 			}
 			
 			private Neighbor getNeighborRelation(Position position, BuildingObject obj) {
@@ -551,53 +531,144 @@ public class FileExport {
 				for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
 					Neighbor neighbor = getNeighborRelation(obj.position,obj);
 					if (neighbor==null) continue;
-					block.set(neighbor.i,neighbor);
+					blocks.put(neighbor.i,neighbor);
 					freeObj.remove(obj);
 				}
+			}
+			
+			public Neighbor[][][] toMatrix(Index3D minCorner, Index3D size) {
+				Index3D min=null;
+				Index3D max=null;
+				for (Index3D index:blocks.keySet()) {
+					if (min==null) min=new Index3D(index); else min.min(index);
+					if (max==null) max=new Index3D(index); else max.max(index);
+				}
+				
+				minCorner.set(min);
+				size.iX = max.iX-min.iX+1;
+				size.iY = max.iY-min.iY+1;
+				size.iZ = max.iZ-min.iZ+1;
+				
+				Neighbor[][][] mat = new Neighbor[size.iX][size.iY][size.iZ];
+				for (int x=0; x<size.iX; ++x)
+					for (int y=0; y<size.iY; ++y)
+						Arrays.fill(mat[x][y],null);
+				
+				for (Index3D index:blocks.keySet())
+					mat[index.iX-min.iX][index.iY-min.iY][index.iZ-min.iZ] = blocks.get(index);
+				
+				return mat;
 			}
 
 			@SuppressWarnings("unused")
 			public void writeModel_simple(PrintWriter vrml) {
 				Point3D color = new Point3D(1,0,0);
 				int i=0;
-				for (Neighbor n:block)
+				for (Neighbor n:blocks.values())
 					FileExport.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), n.obj.position.pos, n.obj.position.at, n.obj.position.up, 0.5, color);
 			}
 
 			public void writeModel(PrintWriter vrml) {
 				Index3D minCorner = new Index3D(0,0,0);
 				Index3D size = new Index3D(0,0,0);
-				Neighbor[][][] mat = block.toMatrix(minCorner,size);
+				Neighbor[][][] mat = toMatrix(minCorner,size);
+				new Geometry(this,minCorner,size,mat).writeModel(vrml);
+			}
+
+			private Point3D computePoint(double iX, double iY, double iZ) {
+				return anchorPos
+						.add(anchorXat.mul((iX    )*CUBESIZE))
+						.add(anchorYup.mul((iY-0.5)*CUBESIZE))
+						.add(anchorZ  .mul((iZ-0.5)*CUBESIZE));
+			}
+			
+		}
+
+		private static class Geometry {
+			
+			private static final Orientation[] OArrAll = Orientation.values();
+			
+			private static final Index3D ind111 = new Index3D(1,1,1);
+			private static final Index3D ind110 = new Index3D(1,1,0);
+			private static final Index3D ind101 = new Index3D(1,0,1);
+			private static final Index3D ind100 = new Index3D(1,0,0);
+			private static final Index3D ind011 = new Index3D(0,1,1);
+			private static final Index3D ind010 = new Index3D(0,1,0);
+			private static final Index3D ind001 = new Index3D(0,0,1);
+			private static final Index3D ind000 = new Index3D(0,0,0);
+			
+			private Neighborhood neighborhood;
+			private Index3D minCorner;
+			private Index3D size;
+			private Neighbor[][][] mat;
+			
+			private HashSet<Line> lines;
+			private Vector<PolyLine> extraLines;
+		
+			private CubeGeometry cubeGeometry;
+			private GlassCubeGeometry glassCubeGeometry;
+			private CurvedCubeGeometry curvedCubeGeometry;
+			private CurvedRoofGeometry curvedRoofGeometry;
+		
+			public Geometry(Neighborhood neighborhood, Index3D minCorner, Index3D size, Neighbor[][][] mat) {
+				this.neighborhood = neighborhood;
+				this.minCorner = minCorner;
+				this.size = size;
+				this.mat = mat;
+				this.lines = new HashSet<>();
+				this.extraLines = new Vector<>();
 				
-				HashSet<Line> lines = new HashSet<>();
-				Vector<PolyLine> extraLines = new Vector<>();
-				cubeGeometry      .createLines(size, mat, lines);
-				curvedCubeGeometry.modifyLines(size, mat, lines, extraLines);
-				curvedRoofGeometry.modifyLines(size, mat, lines, extraLines);
-				optimizeLines(lines);
+				cubeGeometry = new CubeGeometry();
+				glassCubeGeometry = new GlassCubeGeometry();
+				curvedCubeGeometry = new CurvedCubeGeometry();
+				curvedRoofGeometry = new CurvedRoofGeometry();
+			}
+		
+			public void writeModel(PrintWriter vrml) {
+				createLines();
+				optimizeLines();
 				
-				StringBuilder pointsStrBase = new StringBuilder();
-				StringBuilder indexesStrBase = new StringBuilder();
-				int pointCounterBase = 0;
-				pointCounterBase = createBaseModel(pointsStrBase, pointCounterBase, indexesStrBase, minCorner, size, lines, extraLines);
+				StringBuilder pointsStrBase, indexesStrBase;
+				createBaseModel(pointsStrBase = new StringBuilder(), 0, indexesStrBase = new StringBuilder());
 				if (pointsStrBase.length()>0 || indexesStrBase.length()>0)
 					writeIndexedLineSet(vrml, pointsStrBase, indexesStrBase, Color.BLACK);
 				
-				
-				StringBuilder pointsStrW = new StringBuilder();
-				StringBuilder indexesStrW = new StringBuilder();
-				int pointCounterW = 0;
-				pointCounterW = glassCubeGeometry .createWindows(pointsStrW, pointCounterW, indexesStrW, minCorner, size, mat);
-				pointCounterW = curvedRoofGeometry.createWindows(pointsStrW, pointCounterW, indexesStrW, minCorner, size, mat);
+				StringBuilder pointsStrW, indexesStrW;
+				createWindows(pointsStrW = new StringBuilder(), 0, indexesStrW = new StringBuilder());
 				if (pointsStrW.length()>0 || indexesStrW.length()>0)
 					writeIndexedLineSet(vrml, pointsStrW, indexesStrW, new Color(0.3f, 0.5f, 1.0f));
 			}
-			
-			private void optimizeLines(HashSet<Line> lines) {
+		
+			private void setLine(boolean set, Line line) {
+				if (line!=null) {
+					if (set) lines.add(line);
+					else     lines.remove(line);
+				}
+			}
+		
+			private Line popLine() {
+				Line line = getLine();
+				lines.remove(line);
+				return line;
+			}
+		
+			private Line getLine() {
+				Iterator<Line> it = lines.iterator();
+				if (it.hasNext()) return it.next();
+				return null;
+			}
+		
+			private void createLines() {
+				cubeGeometry      .createLines();
+				curvedCubeGeometry.modifyLines();
+				curvedRoofGeometry.modifyLines();
+			}
+		
+			private void optimizeLines() {
 				Vector<Line> optimizedLines = new Vector<>();
 				
 				while (!lines.isEmpty()) {
-					Line line = getLine(lines); lines.remove(line);
+					Line line = popLine();
 					Index3D vec12 = line.p2.sub(line.p1);
 					while (lines.remove(new Line(line.p2,line.p2.add(vec12)))) line.p2 = line.p2.add(vec12);
 					while (lines.remove(new Line(line.p1,line.p1.sub(vec12)))) line.p1 = line.p1.sub(vec12);
@@ -606,22 +677,52 @@ public class FileExport {
 				
 				lines.addAll(optimizedLines);
 			}
-
-			private int createBaseModel(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr, Index3D minCorner, Index3D size, HashSet<Line> lines, Vector<PolyLine> extraLines) {
+		
+			private Point3D computePoint(Index3D i) { return neighborhood.computePoint(i.iX,i.iY,i.iZ); }
+			private Point3D computePoint(Point3D i) { return neighborhood.computePoint(i.x,i.y,i.z); }
+		
+			private int addPoint(StringBuilder pointsStr, int counter, int[][][] indexes, Index3D i) {
+				if (indexes[i.iX][i.iY][i.iZ]==-1) {
+					indexes[i.iX][i.iY][i.iZ] = counter++;
+					Point3D p = computePoint(minCorner.add(i));
+					addPoint(pointsStr, p);
+				}
+				return counter;
+			}
+		
+			private void addPoint(StringBuilder pointsStr, Point3D p) {
+				pointsStr.append((pointsStr.length()==0?"":", ")+p.toString("%1.2f",false));
+			}
+		
+			private void writeIndexedLineSet(PrintWriter vrml, StringBuilder pointsStr, StringBuilder indexesStr, Color color) {
+				vrml.println("Shape {");
+				vrml.print  ("	appearance Appearance { material Material { ");
+				vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
+				vrml.println(" } }");
+				vrml.println("	geometry IndexedLineSet {");
+				vrml.printf ("		coord Coordinate { point [ %s ] }\r\n",pointsStr.toString());
+				vrml.printf ("		coordIndex [ %s ]\r\n",indexesStr.toString());
+				vrml.println("	}");
+				vrml.println("}");
+			}
+		
+			private int createBaseModel(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
 				int[][][] indexes = new int[size.iX+1][size.iY+1][size.iZ+1];
 				for (int x=0; x<=size.iX; ++x)
 					for (int y=0; y<=size.iY; ++y)
 						Arrays.fill(indexes[x][y],-1);
+				
 				for (Line line:lines) {
-					pointCounter = addPoint(pointsStr, pointCounter, indexes, minCorner, line.p1);
-					pointCounter = addPoint(pointsStr, pointCounter, indexes, minCorner, line.p2);
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, line.p1);
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, line.p2);
 					int ip1 = indexes[line.p1.iX][line.p1.iY][line.p1.iZ];
 					int ip2 = indexes[line.p2.iX][line.p2.iY][line.p2.iZ];
 					indexesStr.append(ip1+" "+ip2+" -1 ");
 				}
+				
 				for (PolyLine pline:extraLines) {
-					pointCounter = addPoint(pointsStr, pointCounter, indexes, minCorner, pline.pStart);
-					pointCounter = addPoint(pointsStr, pointCounter, indexes, minCorner, pline.pEnd);
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, pline.pStart);
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, pline.pEnd);
 					int ipStart = indexes[pline.pStart.iX][pline.pStart.iY][pline.pStart.iZ];
 					int ipEnd   = indexes[pline.pEnd.iX][pline.pEnd.iY][pline.pEnd.iZ];
 					
@@ -635,22 +736,15 @@ public class FileExport {
 				
 				return pointCounter;
 			}
-
-			private void writeIndexedLineSet(PrintWriter vrml, StringBuilder pointsStr, StringBuilder indexesStr, Color color) {
-				vrml.println("Shape {");
-				vrml.print  ("	appearance Appearance { material Material { ");
-				vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
-				vrml.println(" } }");
-				vrml.println("	geometry IndexedLineSet {");
-				vrml.printf ("		coord Coordinate { point [ %s ] }\r\n",pointsStr.toString());
-				vrml.printf ("		coordIndex [ %s ]\r\n",indexesStr.toString());
-				vrml.println("	}");
-				vrml.println("}");
+		
+			private void createWindows(StringBuilder pointsStrW, int pointCounterW, StringBuilder indexesStrW) {
+				pointCounterW = glassCubeGeometry .createWindows(pointsStrW, pointCounterW, indexesStrW);
+				pointCounterW = curvedRoofGeometry.createWindows(pointsStrW, pointCounterW, indexesStrW);
 			}
-
+		
 			private class CubeGeometry {
-
-				private void createLines(Index3D size, Neighbor[][][] mat, HashSet<Line> lines) {
+		
+				private void createLines() {
 					Index3D i = new Index3D(0,0,0);
 					for (int x=0; x<size.iX; ++x)
 						for (int y=0; y<size.iY; ++y)
@@ -684,7 +778,7 @@ public class FileExport {
 			
 			private class GlassCubeGeometry {
 			
-				private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr, Index3D minCorner, Index3D size, Neighbor[][][] mat) {
+				private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
 					Index3D i = new Index3D(0,0,0);
 					for (int x=0; x<size.iX; ++x)
 						for (int y=0; y<size.iY; ++y)
@@ -695,7 +789,7 @@ public class FileExport {
 								i.set(x,y,z);
 								i.set(minCorner.add(i));
 								Neighbor nb1;
-								nb1 = get(mat,x+1,y,z); if (!isCube(nb1) && !isCurvedCube(nb1, OArrAll                          ) && !isCurvedRoof(nb1, OArrAll         ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
+								nb1 = get(mat,x+1,y,z); if (!isCube(nb1) && !isCurvedCube(nb1, OArrAll                          ) && !isCurvedRoof(nb1, OArrAll                                             ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
 								nb1 = get(mat,x,y+1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegY,Orientation.NegZ) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
 								nb1 = get(mat,x,y,z+1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegZ,Orientation.PosY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegY) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
 								nb1 = get(mat,x,y-1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosY,Orientation.PosZ) && !isCurvedRoof(nb1, Orientation.PosZ, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
@@ -721,9 +815,9 @@ public class FileExport {
 				}
 				
 			}
-
+		
 			private class CurvedRoofGeometry {
-				private void modifyLines(Index3D size, Neighbor[][][] mat, HashSet<Line> lines, Vector<PolyLine> extraLines) {
+				private void modifyLines() {
 					Index3D i = new Index3D(0,0,0);
 					for (int x=0; x<size.iX; ++x)
 						for (int y=0; y<size.iY; ++y)
@@ -732,9 +826,9 @@ public class FileExport {
 								if (nb==null) continue;
 								if (nb.type!=Neighbor.Type.CurvedRoof) continue;
 								i.set(x,y,z);
-								setVertSideLines(nb.o,i,mat,lines);
-								setBottomLines  (nb.o,i,mat,lines);
-								setTopLine      (nb.o,i,    lines);
+								setVertSideLines(nb.o,i);
+								setBottomLines  (nb.o,i);
+								setTopLine      (nb.o,i);
 								
 								extraLines.add(createRightCurvedRoofEdge(i,nb.o));
 								Index3D iLeft = nb.o.pos().addTo(i);
@@ -743,8 +837,8 @@ public class FileExport {
 									extraLines.add(createRightCurvedRoofEdge(iLeft,nb.o));
 							}
 				}
-
-				private void setTopLine(Orientation baseO, Index3D i, HashSet<Line> lines) {
+		
+				private void setTopLine(Orientation baseO, Index3D i) {
 					switch(baseO) {
 					case PosY: lines.add(new Line(i.add(ind101), i.add(ind100))); break;
 					case PosZ: lines.add(new Line(i.add(ind100), i.add(ind110))); break;
@@ -752,8 +846,8 @@ public class FileExport {
 					case NegZ: lines.add(new Line(i.add(ind111), i.add(ind101))); break;
 					}
 				}
-
-				private void setBottomLines(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
+		
+				private void setBottomLines(Orientation baseO, Index3D i) {
 					boolean base = true, neg = false, pos = false, opp = false, bottom = false;
 					Neighbor nb;
 					Index3D iBot = i.add(-1, 0, 0);
@@ -792,13 +886,13 @@ public class FileExport {
 						lines.add(new Line(i.add(ind011), i.add(ind000)));
 						lines.add(new Line(i.add(ind001), i.add(ind010)));
 					}
-					setLine(base, baseLine, lines);
-					setLine(pos, posLine, lines);
-					setLine(opp, oppLine, lines);
-					setLine(neg, negLine, lines);
+					setLine(base, baseLine);
+					setLine(pos, posLine);
+					setLine(opp, oppLine);
+					setLine(neg, negLine);
 				}
-
-				private void setVertSideLines(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
+		
+				private void setVertSideLines(Orientation baseO, Index3D i) {
 					boolean oppNeg = false, oppPos = false;
 					Neighbor nb;
 					Index3D iOpp = i.add(baseO.opp());
@@ -821,10 +915,10 @@ public class FileExport {
 					case NegZ: oppNegLine = new Line(i.add(ind101), i.add(ind001)); oppPosLine = new Line(i.add(ind111), i.add(ind011)); break;
 					}
 					
-					setLine(oppNeg, oppNegLine, lines);
-					setLine(oppPos, oppPosLine, lines);
+					setLine(oppNeg, oppNegLine);
+					setLine(oppPos, oppPosLine);
 				}
-
+		
 				private PolyLine createRightCurvedRoofEdge(Index3D i, Orientation o) {
 					PolyLine pline = null;
 					switch (o) {
@@ -849,8 +943,8 @@ public class FileExport {
 					
 					return pline;
 				}
-
-				private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr, Index3D minCorner, Index3D size, Neighbor[][][] mat) {
+		
+				private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
 					Index3D i = new Index3D(0,0,0);
 					for (int x=0; x<size.iX; ++x)
 						for (int y=0; y<size.iY; ++y)
@@ -891,10 +985,10 @@ public class FileExport {
 					return counter;
 				}
 			}
-
+		
 			private class CurvedCubeGeometry {
-
-				private void modifyLines(Index3D size, Neighbor[][][] mat, HashSet<Line> lines, Vector<PolyLine> extraLines) {
+		
+				private void modifyLines() {
 					Index3D i = new Index3D(0,0,0);
 					for (int x=0; x<size.iX; ++x)
 						for (int y=0; y<size.iY; ++y)
@@ -903,10 +997,10 @@ public class FileExport {
 								if (nb==null) continue;
 								if (nb.type!=Neighbor.Type.CurvedCube) continue;
 								i.set(x,y,z);
-								setVertCenterLine(nb.o      ,i,mat,lines);
-								setVertSideLines (nb.o      ,i,    lines);
-								setHorizLines    (nb.o      ,i,mat,lines);
-								setHorizLines    (nb.o.neg(),i,mat,lines);
+								setVertCenterLine(nb.o      ,i);
+								setVertSideLines (nb.o      ,i);
+								setHorizLines    (nb.o      ,i);
+								setHorizLines    (nb.o.neg(),i);
 								
 								extraLines.add(createCurvedCubeEdge(i,nb.o));
 								Neighbor nbBelow = get(mat,x-1,y,z);
@@ -914,12 +1008,12 @@ public class FileExport {
 									extraLines.add(createCurvedCubeEdge(i.add(-1,0,0),nb.o));
 								
 								if (!isCube(nbBelow) && !isCurvedCube(nbBelow,OArrAll) && !isCurvedRoof(nbBelow)) {
-									setBottom(nb.o, i, lines);
+									setBottom(nb.o, i);
 								}
 							}
 				}
-
-				private void setBottom(Orientation baseO, Index3D i, HashSet<Line> lines) {
+		
+				private void setBottom(Orientation baseO, Index3D i) {
 					switch(baseO) {
 					case NegY: 
 					case PosY: lines.add(new Line(i.add(ind011), i.add(ind000))); break;
@@ -927,7 +1021,7 @@ public class FileExport {
 					case PosZ: lines.add(new Line(i.add(ind001), i.add(ind010))); break;
 					}
 				}
-
+		
 				private PolyLine createCurvedCubeEdge(Index3D i, Orientation o) {
 					PolyLine pline = null;
 					switch (o) {
@@ -952,8 +1046,8 @@ public class FileExport {
 					
 					return pline;
 				}
-
-				private void setHorizLines(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
+		
+				private void setHorizLines(Orientation baseO, Index3D i) {
 					Index3D iNb = i.add(baseO);
 					boolean upper = false, lower = false;
 					Neighbor nb;
@@ -976,11 +1070,11 @@ public class FileExport {
 					case NegZ: lowerLine=new Line(i.add(ind010), i.add(ind000)); upperLine=new Line(i.add(ind110), i.add(ind100)); break;
 					}
 					
-					setLine(lower, lowerLine, lines);
-					setLine(upper, upperLine, lines);
+					setLine(lower, lowerLine);
+					setLine(upper, upperLine);
 				}
-
-				private void setVertSideLines(Orientation baseO, Index3D i, HashSet<Line> lines) {
+		
+				private void setVertSideLines(Orientation baseO, Index3D i) {
 					switch(baseO) {
 					case NegY:
 					case PosY:
@@ -994,8 +1088,8 @@ public class FileExport {
 						break;
 					}
 				}
-
-				private void setVertCenterLine(Orientation baseO, Index3D i, Neighbor[][][] mat, HashSet<Line> lines) {
+		
+				private void setVertCenterLine(Orientation baseO, Index3D i) {
 					Index3D i1;
 					Orientation nextO;
 					
@@ -1015,48 +1109,12 @@ public class FileExport {
 					case NegY: centerLine=new Line(i.add(ind101), i.add(ind001)); break;
 					case NegZ: centerLine=new Line(i.add(ind100), i.add(ind000)); break;
 					}
-					setLine(setCenterLine, centerLine, lines);
+					setLine(setCenterLine, centerLine);
 				}
 				
 			}
-			
-			private void setLine(boolean set, Line line, HashSet<Line> lines) {
-				if (line!=null) {
-					if (set) lines.add(line);
-					else     lines.remove(line);
-				}
-			}
-			
-			private Line getLine(HashSet<Line> lines) {
-				Iterator<Line> it = lines.iterator();
-				if (it.hasNext()) return it.next();
-				return null;
-			}
-
-			private int addPoint(StringBuilder pointsStr, int counter, int[][][] indexes, Index3D minCorner, Index3D i) {
-				if (indexes[i.iX][i.iY][i.iZ]==-1) {
-					indexes[i.iX][i.iY][i.iZ] = counter++;
-					Point3D p = computePoint(minCorner.add(i));
-					addPoint(pointsStr, p);
-				}
-				return counter;
-			}
-
-			private void addPoint(StringBuilder pointsStr, Point3D p) {
-				pointsStr.append((pointsStr.length()==0?"":", ")+p.toString("%1.2f",false));
-			}
-
-			private Point3D computePoint(Index3D i) { return computePoint(i.iX,i.iY,i.iZ); }
-			private Point3D computePoint(Point3D i) { return computePoint(i.x,i.y,i.z); }
-			private Point3D computePoint(double iX, double iY, double iZ) {
-				return anchorPos
-						.add(anchorXat.mul((iX    )*CUBESIZE))
-						.add(anchorYup.mul((iY-0.5)*CUBESIZE))
-						.add(anchorZ  .mul((iZ-0.5)*CUBESIZE));
-			}
-			
 		}
-		
+
 		private static class PolyLine {
 			Index3D pStart,pEnd;
 			Vector<Point3D> points;
@@ -1183,50 +1241,6 @@ public class FileExport {
 				return "Index3D("+iX+","+iY+","+iZ+")";
 			}
 		}
-		
-		private static class Block implements Iterable<Neighbor>{
-
-			private HashMap<Index3D, Neighbor> blocks;
-
-			public Block(Index3D index, Neighbor firstObj) {
-				blocks = new HashMap<Index3D,Neighbor>();
-				blocks.put(index, firstObj);
-			}
-
-			public Neighbor[][][] toMatrix(Index3D minCorner, Index3D size) {
-				Index3D min=null;
-				Index3D max=null;
-				for (Index3D index:blocks.keySet()) {
-					if (min==null) min=new Index3D(index); else min.min(index);
-					if (max==null) max=new Index3D(index); else max.max(index);
-				}
-				
-				minCorner.set(min);
-				size.iX = max.iX-min.iX+1;
-				size.iY = max.iY-min.iY+1;
-				size.iZ = max.iZ-min.iZ+1;
-				
-				Neighbor[][][] mat = new Neighbor[size.iX][size.iY][size.iZ];
-				for (int x=0; x<size.iX; ++x)
-					for (int y=0; y<size.iY; ++y)
-						Arrays.fill(mat[x][y],null);
-				
-				for (Index3D index:blocks.keySet())
-					mat[index.iX-min.iX][index.iY-min.iY][index.iZ-min.iZ] = blocks.get(index);
-				
-				return mat;
-			}
-
-			public void set(Index3D index, Neighbor obj) {
-				blocks.put(index, obj);
-			}
-
-			@Override
-			public Iterator<Neighbor> iterator() {
-				return blocks.values().iterator();
-			}
-			
-		}
 	}
 	
 	public static void prepareModels() {
@@ -1269,7 +1283,7 @@ public class FileExport {
 		if (obj.position.at==null) return;
 		
 		String objectID = obj.objectID;
-		GeneralizedID id = GameInfos.productIDs.get(objectID,obj.source,GeneralizedID.Usage.Type.BuildingObject);
+		GameInfos.GeneralizedID id = GameInfos.productIDs.get(objectID,obj.source,GameInfos.GeneralizedID.Usage.Type.BuildingObject);
 		String label = objectID;
 		if (id!=null && !id.label.isEmpty()) label = id.label;
 		
