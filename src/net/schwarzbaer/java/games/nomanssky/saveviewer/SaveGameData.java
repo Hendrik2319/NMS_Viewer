@@ -330,6 +330,11 @@ public class SaveGameData {
 			return x==0 && y==0 && z==0;
 		}
 		
+		@Override
+		public String toString() {
+			return "Point3D("+toString("%1.3f",true)+")";
+		}
+
 		public String toString(String valueformat, boolean withComma) {
 			String vf = valueformat;
 			String sp = " ";
@@ -582,6 +587,11 @@ public class SaveGameData {
 			obj.objectID = null;
 			obj.specialName = playerbase.name;
 			return obj;
+		}
+
+		@Override
+		public String toString() {
+			return "BuildingObject("+objectID+")";
 		}
 	}
 	
