@@ -14,6 +14,13 @@
 ^ALLOY1=
 ^ALLOY1.type=Alloy
 ^ALLOY1.imageBG=F0A92B
+^ALLOY3=Herox
+^ALLOY3.type=Alloy
+^ALLOY3.image=Product.metallic.3.Herox.png
+^ALLOY3.imageBG=F0A92B
+^ALLOY4=
+^ALLOY4.type=Alloy
+^ALLOY4.imageBG=F0A92B
 ^ALLOY6=
 ^ALLOY6.type=Alloy
 ^ALLOY6.imageBG=F0A92B
@@ -145,7 +152,10 @@
 ^COMMODITY3=Suspensionsflüssigkeit
 ^COMMODITY3.image=Product.element.base1.Suspensionsfluessigkeit.png
 ^COMMODITY3.imageBG=F0A92B
-^COMMODITY4=
+^COMMODITY4=Mikrodichtes Gewebe
+^COMMODITY4.type=Product
+^COMMODITY4.image=Product.fabric1.MikrodichtesGewebe.png
+^COMMODITY4.imageBG=F0A92B
 ^COMMODITY5=Elektronendampf
 ^COMMODITY5.image=Product.element.gel2.Elektronendampf.png
 ^COMMODITY5.imageBG=F0A92B
@@ -306,7 +316,10 @@
 ^FARMPROD4.type=Product
 ^FARMPROD4.image=NmsTech_Heat_Capacitor_Icon_13.png
 ^FARMPROD4.imageBG=F0A92B
-^FARMPROD5=
+^FARMPROD5=Polyfaser
+^FARMPROD5.type=Product
+^FARMPROD5.image=NmsTech_Poly_Fibre_Icon_13.png
+^FARMPROD5.imageBG=F0A92B
 ^FARMPROD6=Instabiles Gel
 ^FARMPROD6.type=Product
 ^FARMPROD6.image=NmsTech_Unstable_Gel_Icon_13.png

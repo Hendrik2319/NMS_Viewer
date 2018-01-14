@@ -33,6 +33,11 @@
 ^GAS2.symbol=Rn
 ^GAS2.image=GAS.2.Radon.png
 ^GAS2.imageBG=5A6F36
+^GAS3=Stickstoff
+^GAS3.type=Resource
+^GAS3.symbol=N
+^GAS3.image=GAS.3.Stickstoff.png
+^GAS3.imageBG=5A6F36
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.symbol=Sr
 ^SPACEGUNK1.image=Residualgoopicon.SchleimigeUeberreste.png
@@ -80,6 +85,10 @@
 ^SUBSCORCHED.symbol=So
 ^SUBSCORCHED.image=Substance.neutral.rare7.Solanium.png
 ^SUBSCORCHED.imageBG=B74418
+^SUBSHIP=Tropheum
+^SUBSHIP.symbol=Tr
+^SUBSHIP.image=Substance.neutral.rare6.Tropheum.png
+^SUBSHIP.imageBG=4B2A57
 ^SUBSNOW=Frostkristall
 ^SUBSNOW.type=PlantProduct
 ^SUBSNOW.symbol=Fk

@@ -1,3 +1,39 @@
+[Sys000A00FAA8CBC4]
+name=Lograt
+race=Vykeen
+
+[Sys001300FAA8CBC4]
+name=Ankovsky XV
+race=Korvax
+
+[Sys002700FAA8CBC4]
+name=Odvins-Unnan
+
+[Sys003000FAA8CBC4]
+name=Zuhcher X
+race=Korvax
+class=Yellow
+
+[Sys004000FAA8CBC4]
+name=Azrants VIII
+race=Gek
+class=Yellow
+
+[Pln404000FAA8CBC4]
+name=Midakasahik
+
+[Sys004600FAA8CBC4]
+name=Tusevoz-Kiku
+race=Gek
+
+[Sys004700FAA8CBC4]
+name=Izberes-Ort
+race=Korvax
+
+[Sys005700FAA8CBC4]
+name=Atnino
+race=Vykeen
+
 [Sys006D00FAA8CBC4]
 name=Naibolsk
 race=Vykeen
