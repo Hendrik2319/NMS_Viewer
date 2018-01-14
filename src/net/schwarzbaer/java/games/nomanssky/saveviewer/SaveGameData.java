@@ -289,6 +289,10 @@ public class SaveGameData {
 			z = Math.max(z, pos.z);
 		}
 		
+		public Point3D add(double x, double y, double z) {
+			return new Point3D(x+this.x, y+this.y, z+this.z);
+		}
+
 		public Point3D add(Point3D vec) {
 			return new Point3D(x+vec.x, y+vec.y, z+vec.z);
 		}

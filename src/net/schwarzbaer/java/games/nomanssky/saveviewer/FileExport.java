@@ -253,6 +253,9 @@ public class FileExport {
 			//vrml.println("# Roamer"); writeExocraftPodCoords(vrml, 5.25,3.5,18,3, 2.5,1.0,18,3, Math.PI/2);
 			//vrml.println("# Nomad" ); writeExocraftPodCoords(vrml, 4.75,3.0,18,3, 2.0,1.0,18,3, Math.PI/2);
 			
+			//vrml.println("# Container" );
+			//writeContainer(vrml);
+			
 			if (playerbase!=null && !playerbase.isFreighterBase) {
 				String name = playerbase.name;
 				if (name==null || name.isEmpty()) name = "PlayerBase";
@@ -692,18 +695,6 @@ public class FileExport {
 		
 			private void addPoint(StringBuilder pointsStr, Point3D p) {
 				pointsStr.append((pointsStr.length()==0?"":", ")+p.toString("%1.2f",false));
-			}
-		
-			private void writeIndexedLineSet(PrintWriter vrml, StringBuilder pointsStr, StringBuilder indexesStr, Color color) {
-				vrml.println("Shape {");
-				vrml.print  ("	appearance Appearance { material Material { ");
-				vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
-				vrml.println(" } }");
-				vrml.println("	geometry IndexedLineSet {");
-				vrml.printf ("		coord Coordinate { point [ %s ] }\r\n",pointsStr.toString());
-				vrml.printf ("		coordIndex [ %s ]\r\n",indexesStr.toString());
-				vrml.println("	}");
-				vrml.println("}");
 			}
 		
 			private int createBaseModel(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
@@ -1252,8 +1243,10 @@ public class FileExport {
 		addModels("CUBESTAIRS",		"^CUBESTAIRS");
 		addModels("BUILDDOOR",		"^BUILDDOOR");
 		
-		addModels("CUBEROOM",		"^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4","^CONTAINER5",
-									"^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9","^CUBEROOM","^CUBEGLASS");
+		addModels("CONTAINER",		"^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
+									"^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
+		
+		addModels("CUBEROOM",		"^CUBEROOM","^CUBEGLASS");
 		
 		addModels("CORRIDOR",		"^CORRIDOR","^GLASSCORRIDOR");
 		addModels("CORRIDORX",		"^CORRIDORX");
@@ -1310,6 +1303,146 @@ public class FileExport {
 				break;
 			}
 		vrml.println(" }");
+	}
+
+	private static void writeIndexedLineSet(PrintWriter vrml, StringBuilder pointsStr, StringBuilder indexesStr, Color color) {
+		vrml.println("Shape {");
+		vrml.print  ("	appearance Appearance { material Material { ");
+		vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
+		vrml.println(" } }");
+		vrml.println("	geometry IndexedLineSet {");
+		vrml.printf ("		coord Coordinate { point [ %s ] }\r\n",pointsStr.toString());
+		vrml.printf ("		coordIndex [ %s ]\r\n",indexesStr.toString());
+		vrml.println("	}");
+		vrml.println("}");
+	}
+
+	@SuppressWarnings("unused")
+	private static void writeContainer(PrintWriter vrml) {
+		StringBuilder pointsStr = new StringBuilder();
+		StringBuilder indexesStr = new StringBuilder();
+		int pointsCounter = 0;
+		
+		double cubeSize = 3.9;
+		Point3D cubeCenter = new Point3D(2,0,0);
+		pointsCounter = writeCube(pointsStr, pointsCounter, indexesStr, cubeCenter, new Point3D(cubeSize,cubeSize,cubeSize) );
+		
+		double rT = 0.9;
+		
+		double r1 = 1;
+		double r2 = 0.8;
+		double r4 = 0.2;
+		double r5 = 0.18;
+		double w2 = Math.acos(r2/rT);
+		double w4 = Math.acos(r4/rT);
+		double w3 = (w2+w4)/2;
+		double r3 = Math.cos(w3)*rT;
+		
+		double y1 = cubeSize/2;
+		double y2 = cubeSize/2-(1-Math.sin(w2))*rT;
+		double y3 = cubeSize/2-(1-Math.sin(w3))*rT;
+		double y4 = cubeSize/2-(1-Math.sin(w4))*rT;
+		double y5 = cubeSize/2-0.05;
+		
+		
+		pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 20, r1, cubeCenter.add(0.0,y1,0.0), AxisPlain.XZ);
+		pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 20, r2, cubeCenter.add(0.0,y2,0.0), AxisPlain.XZ);
+		pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 16, r3, cubeCenter.add(0.0,y3,0.0), AxisPlain.XZ);
+		pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 12, r4, cubeCenter.add(0.0,y4,0.0), AxisPlain.XZ);
+		pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 12, r5, cubeCenter.add(0.0,y5,0.0), AxisPlain.XZ);
+		
+		pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), Math.PI/2-w2, Math.PI/2-w4, AxisPlain.YZ);
+		pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), w2-Math.PI/2, w4-Math.PI/2, AxisPlain.YZ);
+		pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), w2, w4, AxisPlain.XY);
+		pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), Math.PI-w2, Math.PI-w4, AxisPlain.XY);
+		
+		
+		writeIndexedLineSet(vrml, pointsStr, indexesStr, Color.BLUE);
+	}
+
+	private static int writeCube(StringBuilder pointsStr, int pointsCounter, StringBuilder indexesStr, Point3D center, Point3D size ) {
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y-size.y/2,center.z-size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y-size.y/2,center.z-size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y-size.y/2,center.z+size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y-size.y/2,center.z+size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y+size.y/2,center.z-size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y+size.y/2,center.z-size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y+size.y/2,center.z+size.z/2));
+		pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y+size.y/2,center.z+size.z/2));
+		int p = pointsCounter;
+		indexesStr.append((p+0)+" "+(p+1)+" "+(p+2)+" "+(p+3)+" "+(p+0)+" "+(p+4)+" "+(p+5)+" "+(p+6)+" "+(p+7)+" "+(p+4)+" "+"-1 ");
+		indexesStr.append((p+1)+" "+(p+5)+" -1 "+(p+2)+" "+(p+6)+" -1 "+(p+3)+" "+(p+7)+" -1 ");
+		
+		pointsCounter+=8;
+		return pointsCounter;
+	}
+	
+	private enum AxisPlain { XY, XZ, YZ }
+	
+	private static int writeCircle(StringBuilder pointsStr, int pointsCounter, StringBuilder indexesStr, int segI, double radius, Point3D center, AxisPlain axisPlain) {
+		double x,y,z;
+		for (int i=0; i<segI; ++i) {
+			double wI = i*Math.PI*2/segI;
+			switch (axisPlain) {
+			case XY:
+				x = center.x + radius*Math.cos(wI);
+				y = center.y + radius*Math.sin(wI);
+				z = center.z;
+				break;
+			case XZ:
+				x = center.x + radius*Math.cos(wI);
+				y = center.y;
+				z = center.z + radius*Math.sin(wI);
+				break;
+			case YZ:
+				x = center.x;
+				y = center.y + radius*Math.cos(wI);
+				z = center.z + radius*Math.sin(wI);
+				break;
+			default:
+				x = center.x;
+				y = center.y;
+				z = center.z;
+			}
+			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", x,y,z));
+			indexesStr.append((pointsCounter+i)+" ");
+		}
+		indexesStr.append(pointsCounter+" -1 ");
+		pointsCounter += segI;
+		return pointsCounter;
+	}
+
+	private static int writeArc(StringBuilder pointsStr, int pointsCounter, StringBuilder indexesStr, int segI, double radius, Point3D center, double w1, double w2, AxisPlain axisPlain) {
+		double x,y,z;
+		for (int i=0; i<=segI; ++i) {
+			double wI = i*(w2-w1)/segI;
+			switch (axisPlain) {
+			case XY:
+				x = center.x + radius*Math.cos(wI+w1);
+				y = center.y + radius*Math.sin(wI+w1);
+				z = center.z;
+				break;
+			case XZ:
+				x = center.x + radius*Math.cos(wI+w1);
+				y = center.y;
+				z = center.z + radius*Math.sin(wI+w1);
+				break;
+			case YZ:
+				x = center.x;
+				y = center.y + radius*Math.cos(wI+w1);
+				z = center.z + radius*Math.sin(wI+w1);
+				break;
+			default:
+				x = center.x;
+				y = center.y;
+				z = center.z;
+			}
+			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", x,y,z));
+			indexesStr.append((pointsCounter+i)+" ");
+		}
+		indexesStr.append("-1 ");
+		pointsCounter += segI+1;
+		return pointsCounter;
 	}
 
 	@SuppressWarnings("unused")
