@@ -1,17 +1,21 @@
 [Sys000A00FAA8CBC4]
 name=Lograt
 race=Vykeen
+class=Yellow
 
 [Sys001300FAA8CBC4]
 name=Ankovsky XV
 race=Korvax
+class=Yellow
 
 [Sys002600FAA8CBC4]
 name=Aiushva
 race=Vykeen
+class=Yellow
 
 [Sys002700FAA8CBC4]
 name=Odvins-Unnan
+class=Yellow
 
 [Sys003000FAA8CBC4]
 name=Zuhcher X
@@ -29,14 +33,17 @@ name=Midakasahik
 [Sys004600FAA8CBC4]
 name=Tusevoz-Kiku
 race=Gek
+class=Yellow
 
 [Sys004700FAA8CBC4]
 name=Izberes-Ort
 race=Korvax
+class=Yellow
 
 [Sys005700FAA8CBC4]
 name=Atnino
 race=Vykeen
+class=Yellow
 
 [Sys006D00FAA8CBC4]
 name=Naibolsk
@@ -110,10 +117,15 @@ name=Gautumis Hobar
 [Sys013200FAA8CBC4]
 name=Rakaspo XVII
 race=Vykeen
+class=Yellow
+
+[Pln113200FAA8CBC4]
+name=Dotukullia BZ895
 
 [Sys014B00FAA8CBC4]
 name=Zeyang XIII
 race=Korvax
+class=Yellow
 
 [Sys016F00FAA8CBC4]
 name=Esvets
@@ -168,7 +180,7 @@ name=Uagetuhuals
 name=Belevskom SX986
 short.P=Ra
 info=Radnox
-short=ExtTemp
+short=ExtCold
 info=Extrem kalter Planet
 
 [Pln31EA00FAA8CBC4]
@@ -301,3 +313,13 @@ name=Urabkausop Pretho
 
 [Pln301B00FC4AD502]
 name=Lichouvalil-4
+
+[Sys007200FEB7F529]
+name=Imsenl IV
+race=Korvax
+class=Yellow
+
+[Pln107200FEB7F529]
+name=Naarhurdorcan
+short=ExtHot
+info=Extrem heißer Planet

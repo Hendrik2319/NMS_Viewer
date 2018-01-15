@@ -6,6 +6,9 @@
 ^ARMOUR2.type=ExosuitExtensionUpgrade
 ^ARMOUR2.image=Stamina.booster.Lebenserhaltungsmodul.png
 ^ARMOUR2.imageBG=085C78
+^ATLASSUIT=Erinnerung
+^ATLASSUIT.image=Product.atlasstone.Remembrance.png
+^ATLASSUIT.imageBG=085C78
 ^BOLT=Blitzwerfer
 ^BOLT.type=MultitoolWeapon
 ^BOLT.image=Render.projectile1.Blitzwerfer.png
@@ -512,6 +515,10 @@
 ^TOX2.type=MultitoolExtension
 ^TOX2.image=Render.protecttoxic.png
 ^TOX2.imageBG=085C78
+^TOX3=Toxindämpfer Theta
+^TOX3.type=MultitoolExtension
+^TOX3.image=Render.protecttoxic.png
+^TOX3.imageBG=085C78
 ^UNW1=Belüftungsmembran Sigma
 ^UNW1.type=ExosuitExtension
 ^UNW1.image=Render.helmet.png
