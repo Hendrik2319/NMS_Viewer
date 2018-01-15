@@ -6,6 +6,10 @@ race=Vykeen
 name=Ankovsky XV
 race=Korvax
 
+[Sys002600FAA8CBC4]
+name=Aiushva
+race=Vykeen
+
 [Sys002700FAA8CBC4]
 name=Odvins-Unnan
 
@@ -102,6 +106,14 @@ name=Kipatjil Kagog
 
 [Pln607A00FAA8CBC4]
 name=Gautumis Hobar
+
+[Sys013200FAA8CBC4]
+name=Rakaspo XVII
+race=Vykeen
+
+[Sys014B00FAA8CBC4]
+name=Zeyang XIII
+race=Korvax
 
 [Sys016F00FAA8CBC4]
 name=Esvets

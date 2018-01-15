@@ -35,7 +35,6 @@ import javax.swing.SwingUtilities;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.ProgressDialog;
-import net.schwarzbaer.gui.ProgressDialog.CancelListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
@@ -192,38 +191,37 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			Worker worker = galaxyMap.showGlyphOverlay(numberOfKnownGlyphs);
 			if (worker==null) return;
 			
-			ProgressDialog pd = new ProgressDialog(mainWindow,"Create Glyph Overlay");
-			ProgressDialogWorker pdWorker = new ProgressDialogWorker(pd,worker);
-			
-			pd.addCancelListener(pdWorker);
-			
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override public void run() {
-					new Thread(pdWorker).start();
-					pd.showDialog();
+					ProgressDialog pd = new ProgressDialog(mainWindow,"Create Glyph Overlay");
+					worker.setProgressDialog(pd);
+					pd.addCancelListener(worker);
+					new Thread(worker).start();
+					boolean error;
+					int errorcount = 0;
+					do {
+						error = false;
+						try { pd.showDialog(); }
+						catch (Exception e) { error=true; System.out.println("pd.showDialog() -> error["+(++errorcount)+"]"); }
+					} while(error);
 				}
 			});
 		}
 		
-		private static abstract class Worker implements Runnable {
+		private static abstract class Worker implements ProgressDialog.CancelListener, Runnable {
 			boolean stopNow;
 			private ProgressDialog pd;
+			
 			Worker() { stopNow = false; pd = null; }
+			void setProgressDialog(ProgressDialog pd) { this.pd = pd; }
 			
 			protected void setProgress(int value         ) { if (pd!=null) pd.setValue(value    ); }
 			protected void setProgress(int value, int max) { if (pd!=null) pd.setValue(value,max); }
 			protected void setTaskTitle(String title) { if (pd!=null) pd.setTaskTitle(title); }
-		}
-		
-		private static class ProgressDialogWorker implements CancelListener, Runnable {
-			private Worker worker;
-			public ProgressDialogWorker(ProgressDialog pd, Worker worker) {
-				this.worker = worker;
-				this.worker.pd = pd;
-			}
-
-			@Override public void cancelTask() { worker.stopNow = true; worker.pd.closeDialog(); }
-			@Override public void run() { worker.run(); worker.pd.closeDialog(); }
+			
+			@Override public void cancelTask() { stopNow = true; pd.closeDialog(); }
+			@Override public void run() { compute(); pd.closeDialog(); }
+			protected abstract void compute();
 		}
 
 		private void showStatus(int x, int y) {
@@ -433,7 +431,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				}
 				
 				return new Worker() {
-					@Override public void run() {
+					@Override protected void compute() {
 						setTaskTitle("Create portal glyph overlay");
 						
 						BufferedImage newOverlayImage = createEmptyMap();
