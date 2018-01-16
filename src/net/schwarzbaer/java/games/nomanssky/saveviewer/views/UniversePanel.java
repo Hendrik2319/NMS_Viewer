@@ -15,16 +15,17 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -46,6 +47,8 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.IndexOnlyIconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenuItems;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
@@ -58,7 +61,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Uni
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.EnumCheckBoxMenuItem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedColumnConfig;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
@@ -67,7 +69,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.AbstractTr
 public class UniversePanel extends SaveGameViewTabPanel implements ActionListener {
 		private static final long serialVersionUID = -4594889224613582352L;
 		
-		enum UniverseTreeActionCommand { SetName, SetDistance, SetRace, SetStarClass, ExpandAll, CollapseRemainingTree, FindObject }
+		enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject }
 		
 		public static final IndexOnlyIconSource PortalGlyphsIS  = new IconSource.IndexOnlyIconSource( 50,45,4);
 		
@@ -135,7 +137,9 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 			}
 		}
 		
-		private static UniversePanel.UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons = null;
+		private static HashMap<Race,Icon> RaceIcons = null;
+		private static HashMap<StarClass,Icon> StarClassIcons = null;
+		private static UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons = null;
 
 		public static void prepareIconSources() {
 			PortalGlyphsIS.readIconsFromResource("/images/PortalGlyphs.50.45.png");
@@ -162,6 +166,25 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 			
 			UniverseTreeSolarSystemIcons = new UniverseTreeSolarSystemIconsMap();
 			UniverseTreeSolarSystemIcons.createValues();
+			
+			RaceIcons = new HashMap<>();
+			Race[] races = Race.values();
+			for (Race race:races) {
+				Icon cachedIcon = null;
+				switch(race) {
+				case Gek   : cachedIcon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys   ); break;
+				case Korvax: cachedIcon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys); break;
+				case Vykeen: cachedIcon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys); break;
+				}
+				RaceIcons.put(race, IconSource.cutIcon(cachedIcon,10,0,20,20)); 
+			}
+			
+			StarClassIcons = new HashMap<>();
+			StarClass[] starClasses = StarClass.values();
+			for (StarClass starClass:starClasses) {
+				Icon cachedIcon = UniverseTreeSolarSystemIcons.get(null, starClass);
+				StarClassIcons.put(starClass, IconSource.cutIcon(cachedIcon,0,0,20,20)); 
+			}
 		}
 
 		private JTree tree;
@@ -182,10 +205,8 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 		private JPopupMenu contextMenu_Planet;
 		private JMenuItem miSetName_SolarSystem;
 		private JMenuItem miSetName_Planet;
-		private UniversePanel.EnumCheckBoxMenuItem_StarClass[] miSetStarClassArr;
-		private UniversePanel.EnumCheckBoxMenuItem_Race[] miSetRaceArr;
-		private ButtonGroup bgSetStarClass;
-		private ButtonGroup bgSetRace;
+		private ListMenuItems<StarClass> miSetStarClass;
+		private ListMenuItems<Race> miSetRace;
 		
 		private Window mainWindow;
 		
@@ -217,24 +238,52 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 			contextMenu_SolarSystem.add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
 			
 			contextMenu_SolarSystem.addSeparator();
-			bgSetRace = new ButtonGroup();
-			Race[] races = Universe.SolarSystem.Race.values();
-			miSetRaceArr = new UniversePanel.EnumCheckBoxMenuItem_Race[races.length];
-			for (int i=0; i<races.length; ++i) {
-				miSetRaceArr[i] = new EnumCheckBoxMenuItem_Race(races[i].fullName,UniverseTreeActionCommand.SetRace,races[i],false,this);
-				contextMenu_SolarSystem.add(miSetRaceArr[i]);
-				bgSetRace.add(miSetRaceArr[i]);
-			}
+			miSetRace = new Gui.ListMenuItems<Universe.SolarSystem.Race>(Universe.SolarSystem.Race.values(),null,
+				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.Race>() {
+					@Override public void setResult(Race value) {
+						if (clickedNode instanceof UniversePanel.SolarSystemNode) {
+							((UniversePanel.SolarSystemNode)clickedNode).value.race = value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Race value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(RaceIcons.get(value));
+							menuItem.setText(value.fullName);
+						}
+					}
+				}
+			);
+			miSetRace.addTo(contextMenu_SolarSystem);
 			
 			contextMenu_SolarSystem.addSeparator();
-			bgSetStarClass = new ButtonGroup();
-			StarClass[] starClasses = Universe.SolarSystem.StarClass.values();
-			miSetStarClassArr = new UniversePanel.EnumCheckBoxMenuItem_StarClass[starClasses.length];
-			for (int i=0; i<starClasses.length; ++i) {
-				miSetStarClassArr[i] = new EnumCheckBoxMenuItem_StarClass(starClasses[i].toString()+" Class",UniverseTreeActionCommand.SetStarClass,starClasses[i],false,this);
-				contextMenu_SolarSystem.add(miSetStarClassArr[i]);
-				bgSetStarClass.add(miSetStarClassArr[i]);
-			}
+			miSetStarClass = new Gui.ListMenuItems<Universe.SolarSystem.StarClass>(Universe.SolarSystem.StarClass.values(),null,
+				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.StarClass>() {
+					@Override public void setResult(StarClass value) {
+						if (clickedNode instanceof UniversePanel.SolarSystemNode) {
+							((UniversePanel.SolarSystemNode)clickedNode).value.starClass = value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, StarClass value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(StarClassIcons.get(value));
+							menuItem.setText(value.toString()+" Class");
+						}
+					}
+				}
+			);
+			miSetStarClass.addTo(contextMenu_SolarSystem);
 			
 			contextMenu_SolarSystem.addSeparator();
 			contextMenu_SolarSystem.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
@@ -283,20 +332,6 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 			return menuItem;
 		}
 		
-		private static class EnumCheckBoxMenuItem_Race extends EnumCheckBoxMenuItem<Race,UniversePanel.UniverseTreeActionCommand> {
-			private static final long serialVersionUID = 8764557520719990435L;
-			public EnumCheckBoxMenuItem_Race(String label, UniversePanel.UniverseTreeActionCommand actionCommand, Race key, boolean selected, ActionListener actionListener) {
-				super(label, actionCommand, key, selected, actionListener);
-			}
-		}
-		
-		private static class EnumCheckBoxMenuItem_StarClass extends EnumCheckBoxMenuItem<StarClass,UniversePanel.UniverseTreeActionCommand> {
-			private static final long serialVersionUID = -3616686445304535043L;
-			public EnumCheckBoxMenuItem_StarClass(String label, UniversePanel.UniverseTreeActionCommand actionCommand, StarClass key, boolean selected, ActionListener actionListener) {
-				super(label, actionCommand, key, selected, actionListener);
-			}
-		}
-		
 		@Override
 		public void updateContent() {
 			for (int i=0; i<tree.getRowCount(); ++i) {
@@ -311,7 +346,6 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			UniversePanel.UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
-			Object source = e.getSource();
 			switch(actionCommand) {
 			case SetName:
 				if (clickedNode!=null) {
@@ -343,23 +377,6 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 						}
 						GameInfos.saveUniverseObjectDataToFile(data.universe);
 					}
-				}
-				break;
-				
-			case SetRace:
-				if (source instanceof UniversePanel.EnumCheckBoxMenuItem_Race && clickedNode instanceof UniversePanel.SolarSystemNode) {
-					((UniversePanel.SolarSystemNode)clickedNode).value.race = ((UniversePanel.EnumCheckBoxMenuItem_Race)source).key;
-					treeModel.nodeChanged(clickedNode);
-					if (selectedNode==clickedNode) selectionChanged();
-					GameInfos.saveUniverseObjectDataToFile(data.universe);
-				}
-				break;
-			case SetStarClass:
-				if (source instanceof UniversePanel.EnumCheckBoxMenuItem_StarClass && clickedNode instanceof UniversePanel.SolarSystemNode) {
-					((UniversePanel.SolarSystemNode)clickedNode).value.starClass = ((UniversePanel.EnumCheckBoxMenuItem_StarClass)source).key;
-					treeModel.nodeChanged(clickedNode);
-					if (selectedNode==clickedNode) selectionChanged();
-					GameInfos.saveUniverseObjectDataToFile(data.universe);
 				}
 				break;
 				
@@ -450,8 +467,8 @@ public class UniversePanel extends SaveGameViewTabPanel implements ActionListene
 			case SolarSystem:
 				SolarSystem system = ((UniversePanel.SolarSystemNode)clickedNode).value;
 				miSetName_SolarSystem.setText(system.hasOriginalName()?"Change name":"Set name");
-				EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetRaceArr     , system.race     , Race     .values(), bgSetRace     );
-				EnumCheckBoxMenuItem.setCheckBoxMenuItems(miSetStarClassArr, system.starClass, StarClass.values(), bgSetStarClass);
+				miSetRace.setValue(system.race);
+				miSetStarClass.setValue(system.starClass);
 				return contextMenu_SolarSystem;
 				
 			case Planet:

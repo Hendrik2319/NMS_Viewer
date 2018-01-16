@@ -40,6 +40,7 @@ import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -54,10 +55,8 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Type;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu.ExternFunction;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.NamedColorListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -701,7 +700,7 @@ public class GameInfos {
 			prepareTable();
 			
 			GeneralizedID.Type[] types = addNull(GeneralizedID.Type.values());
-			ExternFunction<GeneralizedID.Type> setType_Group = new ExternFunction<GeneralizedID.Type>() {
+			Gui.ListMenuItems.ExternFunction<GeneralizedID.Type> setType_Group = new Gui.ListMenuItems.ExternFunction<GeneralizedID.Type>() {
 				@Override public void setResult(GeneralizedID.Type value) {
 					int[] rows = table.getSelectedRows();
 					for (int row:rows) {
@@ -710,23 +709,27 @@ public class GameInfos {
 					}
 					updateAfterContextMenuAction(true);
 				}
-				@Override public String toString(GeneralizedID.Type value) { if (value==null) return "<none>"; return value.getLabel(); }
+				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Type value) {
+					menuItem.setText(value==null?"<none>":value.getLabel());
+				}
 			};
-			ExternFunction<GeneralizedID.Type> setType_Single = new ExternFunction<GeneralizedID.Type>() {
+			Gui.ListMenuItems.ExternFunction<GeneralizedID.Type> setType_Single = new Gui.ListMenuItems.ExternFunction<GeneralizedID.Type>() {
 				@Override public void setResult(GeneralizedID.Type value) {
 					if (clickedID!=null) clickedID.type = value;
 					updateAfterContextMenuAction(clickedID!=null);
 				}
-				@Override public String toString(GeneralizedID.Type value) { if (value==null) return "<none>"; return value.getLabel(); }
+				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Type value) {
+					menuItem.setText(value==null?"<none>":value.getLabel());
+				}
 			};
-			ListMenu<GeneralizedID.Type> typeListMenu_Std     = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
-			ListMenu<GeneralizedID.Type> typeListMenu_Image   = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
-			ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
-			ListMenu<GeneralizedID.Type> typeListMenu_Group   = new ListMenu<GeneralizedID.Type>("Type of selected", types, null, setType_Group);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Std     = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Image   = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType_Single);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Group   = new Gui.ListMenu<GeneralizedID.Type>("Type of selected", types, null, setType_Group);
 			
 			
 			NamedColor[] colors = addNull(SaveViewer.images.colorValues);
-			ExternFunction<NamedColor> setColor_Group = new ExternFunction<NamedColor>() {
+			Gui.NamedColorListMenu.ExternFunction setColor_Group = new Gui.NamedColorListMenu.ExternFunction() {
 				@Override public void setResult(NamedColor value) {
 					int[] rows = table.getSelectedRows();
 					for (int row:rows) {
@@ -735,29 +738,17 @@ public class GameInfos {
 					}
 					updateAfterContextMenuAction(true);
 				}
-				@Override public boolean isEqual(NamedColor v1, NamedColor v2) {
-					if (v1==null && v2==null) return true;
-					if (v1==null || v2==null) return false;
-					return v1.value==v2.value;
-				}
-				@Override public String toString(NamedColor value) { if (value==null) return "<none>"; return value.name; }
 			};
-			ExternFunction<NamedColor> setColor_Single = new ExternFunction<NamedColor>() {
+			Gui.NamedColorListMenu.ExternFunction setColor_Single = new Gui.NamedColorListMenu.ExternFunction() {
 				@Override public void setResult(NamedColor value) {
 					if (clickedID!=null) clickedID.setImageBG(value==null?null:value.value);
 					updateAfterContextMenuAction(clickedID!=null);
 				}
-				@Override public boolean isEqual(NamedColor v1, NamedColor v2) {
-					if (v1==null && v2==null) return true;
-					if (v1==null || v2==null) return false;
-					return v1.value==v2.value;
-				}
-				@Override public String toString(NamedColor value) { if (value==null) return "<none>"; return value.name; }
 			};
-			NamedColorListMenu colorListMenu_Std     = new NamedColorListMenu("Background", colors, null, setColor_Single);
-			NamedColorListMenu colorListMenu_Image   = new NamedColorListMenu("Background", colors, null, setColor_Single);
-			NamedColorListMenu colorListMenu_ImageBG = new NamedColorListMenu("Background", colors, null, setColor_Single);
-			NamedColorListMenu colorListMenu_Group   = new NamedColorListMenu("Background of selected", colors, null, setColor_Group);
+			Gui.NamedColorListMenu colorListMenu_Std     = new Gui.NamedColorListMenu("Background", colors, null, setColor_Single);
+			Gui.NamedColorListMenu colorListMenu_Image   = new Gui.NamedColorListMenu("Background", colors, null, setColor_Single);
+			Gui.NamedColorListMenu colorListMenu_ImageBG = new Gui.NamedColorListMenu("Background", colors, null, setColor_Single);
+			Gui.NamedColorListMenu colorListMenu_Group   = new Gui.NamedColorListMenu("Background of selected", colors, null, setColor_Group);
 			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					NamedColor[] colors = addNull(SaveViewer.images.colorValues);
@@ -778,11 +769,11 @@ public class GameInfos {
 			contextMenuGroup.add(colorListMenu_Group);
 			contextMenuGroup.add(createMenuItem("ImageFile of selected ...",ActionCommand.SelectImage4AllSelected));
 			contextMenuGroup.addSeparator();
-			contextMenuGroup.add(createMenuItem("Clear ImageFile of selected",ActionCommand.ClearImage));
-			contextMenuGroup.add(createMenuItem("Paste ImageFile of selected",ActionCommand.PasteImage));
+			contextMenuGroup.add(createMenuItem("Clear ImageFile of selected",ActionCommand.ClearImage,SaveViewer.ToolbarIcons.Delete));
+			contextMenuGroup.add(createMenuItem("Paste ImageFile of selected",ActionCommand.PasteImage,SaveViewer.ToolbarIcons.Paste));
 			contextMenuGroup.addSeparator();
-			contextMenuGroup.add(createMenuItem("Clear Background of selected",ActionCommand.ClearBackground));
-			contextMenuGroup.add(createMenuItem("Paste Background of selected",ActionCommand.PasteBackground));
+			contextMenuGroup.add(createMenuItem("Clear Background of selected",ActionCommand.ClearBackground,SaveViewer.ToolbarIcons.Delete));
+			contextMenuGroup.add(createMenuItem("Paste Background of selected",ActionCommand.PasteBackground,SaveViewer.ToolbarIcons.Paste));
 			contextMenuGroup.addSeparator();
 			contextMenuGroup.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
 			
@@ -798,9 +789,9 @@ public class GameInfos {
 			contextMenuImage.add(colorListMenu_Image);
 			contextMenuImage.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
 			contextMenuImage.addSeparator();
-			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage));
-			contextMenuImage.add(createMenuItem("Copy ImageFile",ActionCommand.CopyImage));
-			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage));
+			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage,SaveViewer.ToolbarIcons.Delete));
+			contextMenuImage.add(createMenuItem("Copy ImageFile" ,ActionCommand.CopyImage ,SaveViewer.ToolbarIcons.Copy  ));
+			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage,SaveViewer.ToolbarIcons.Paste ));
 			
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Edit ID",ActionCommand.EditID));
@@ -808,9 +799,9 @@ public class GameInfos {
 			contextMenuImageBG.add(colorListMenu_ImageBG);
 			contextMenuImageBG.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
 			contextMenuImageBG.addSeparator();
-			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground));
-			contextMenuImageBG.add(createMenuItem("Copy Background",ActionCommand.CopyBackground));
-			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground));
+			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground,SaveViewer.ToolbarIcons.Delete));
+			contextMenuImageBG.add(createMenuItem("Copy Background" ,ActionCommand.CopyBackground ,SaveViewer.ToolbarIcons.Copy  ));
+			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground,SaveViewer.ToolbarIcons.Paste ));
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
 			
@@ -830,8 +821,8 @@ public class GameInfos {
 						} else {
 							table.clearSelection();
 							DebugTableContextMenu contextMenu;
-							ListMenu<GeneralizedID.Type> typeListMenu;
-							NamedColorListMenu colorListMenu;
+							Gui.ListMenu<GeneralizedID.Type> typeListMenu;
+							Gui.NamedColorListMenu colorListMenu;
 							switch (tableModel.getColumnID(colM)) {
 							case Image:
 								typeListMenu = typeListMenu_Image;
@@ -883,6 +874,12 @@ public class GameInfos {
 			JMenuItem menuItem = new JMenuItem(label);
 			menuItem.addActionListener(this);
 			menuItem.setActionCommand(actionCommand.toString());
+			return menuItem;
+		}
+		
+		private JMenuItem createMenuItem(String label, ActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
+			JMenuItem menuItem = createMenuItem(label,actionCommand);
+			menuItem.setIcon(SaveViewer.toolbarIS.getIcon(icon));
 			return menuItem;
 		}
 	

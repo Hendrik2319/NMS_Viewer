@@ -65,7 +65,7 @@ public class SaveViewer implements ActionListener {
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
-	static IconSource<ToolbarIcons> toolbarIS;
+	public static IconSource<ToolbarIcons> toolbarIS;
 	static IconSource<TabHeaderIcons> tabheaderIS;
 	public static Images images;
 	
@@ -102,6 +102,10 @@ public class SaveViewer implements ActionListener {
 				case Close       : return 5;
 				case Reload      : return 4;
 				case ComputePortalGlyphs: return 6;
+				case Cut   : return 7;
+				case Copy  : return 8;
+				case Paste : return 9;
+				case Delete: return 10;
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
@@ -482,7 +486,7 @@ public class SaveViewer implements ActionListener {
 		
 	}
 
-	enum ToolbarIcons { SwitchFolder, Open, SaveAs, Close, Reload, Compare, ComputePortalGlyphs }
+	public enum ToolbarIcons { SwitchFolder, Open, SaveAs, Close, Reload, Compare, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
 
 	private class ComparePanel extends JPanel {
 		private static final long serialVersionUID = -876150147630145750L;

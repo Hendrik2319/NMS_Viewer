@@ -23,6 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -548,55 +549,83 @@ public class Gui {
 	public static class NamedColorListMenu extends ListMenu<Images.NamedColor> {
 		private static final long serialVersionUID = -7848156677924768189L;
 
-		public NamedColorListMenu(String title, NamedColor[] values, NamedColor initialValue, ExternFunction<NamedColor> externFunctionality) {
-			super(title, values, initialValue, externFunctionality);
+		public NamedColorListMenu(String title, NamedColor[] values, NamedColor initialValue, ExternFunction externFunctionality) {
+			super(title,new ListMenuItems<Images.NamedColor>(values, initialValue, externFunctionality) {
+			});
 		}
-
-		@Override
-		protected void configureMenuItem(JCheckBoxMenuItem menuItem, NamedColor value) {
-			if (value!=null)
-				menuItem.setIcon(new ImageIcon(NamedColor.createImage(value,20,13)));
+		
+		public static abstract class ExternFunction extends ListMenuItems.ExternFunction<NamedColor> {
+			@Override public boolean isEqual(NamedColor v1, NamedColor v2) {
+				if (v1==null && v2==null) return true;
+				if (v1==null || v2==null) return false;
+				return v1.value==v2.value;
+			}
+			@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, NamedColor value) {
+				if (value!=null) {
+					menuItem.setText(value.name);
+					menuItem.setIcon(new ImageIcon(NamedColor.createImage(value,20,13)));
+				} else {
+					menuItem.setText("<none>");
+					menuItem.setIcon(null);
+				}
+			}
 		}
 	}
 
 	public static class ListMenu<ValueType> extends JMenu {
 		private static final long serialVersionUID = 1243718139539544213L;
+		protected ListMenuItems<ValueType> listMenuItems;
+		
+		public ListMenu(String title, ValueType[] values, ValueType initialValue, ListMenuItems.ExternFunction<ValueType> externFunctionality) {
+			super(title);
+			this.listMenuItems = new ListMenuItems<ValueType>(values, initialValue, externFunctionality);
+			this.listMenuItems.addTo(this);
+		}
+		public ListMenu(String title, ListMenuItems<ValueType> listMenuItems) {
+			super(title);
+			this.listMenuItems = listMenuItems;
+			this.listMenuItems.addTo(this);
+		}
+
+		public void updateValues(ValueType[] values) {
+			removeAll();
+			listMenuItems.values = values;
+			listMenuItems.addTo(this);
+		}
+		public void setValue(ValueType value) {
+			listMenuItems.setValue(value);
+		}
+		public void clearSelection() {
+			listMenuItems.clearSelection();
+		}
+	}
+
+	public static class ListMenuItems<ValueType> {
 		private ExternFunction<ValueType> externFunctionality;
 		private ButtonGroup buttonGroup;
 		private ValueType selectedValue;
+		private ValueType[] values;
 
-		public ListMenu(String title, ValueType[] values, ValueType initialValue, ExternFunction<ValueType> externFunctionality) {
-			super(title);
-			this.selectedValue = null;
+		public ListMenuItems(ValueType[] values, ValueType initialValue, ExternFunction<ValueType> externFunctionality) {
+			this.values = values;
+			this.selectedValue = initialValue;
 			this.externFunctionality = externFunctionality;
-			createMenuItems(values,initialValue);
 		}
-
-		private void createMenuItems(ValueType[] values, ValueType initialValue) {
+		
+		public void addTo(JComponent parentMenu) {
 			buttonGroup = new ButtonGroup();
 			for (ValueType value:values) {
 				
-				boolean isChecked = externFunctionality.isEqual(initialValue,value);
-				if (isChecked) selectedValue = value;
-				
-				String str = externFunctionality.toString(value);
-				JCheckBoxMenuItem menuItem = new ValueMenuItem<ValueType>(value,str,isChecked);
-				configureMenuItem(menuItem,value);
+				JCheckBoxMenuItem menuItem = new ValueMenuItem<ValueType>(value,externFunctionality.isEqual(selectedValue,value));
+				externFunctionality.configureMenuItem(menuItem,value);
 				menuItem.addActionListener(e->{
 					selectedValue = value;
 					externFunctionality.setResult(value);
 				});
 				
 				buttonGroup.add(menuItem);
-				add(menuItem);
+				parentMenu.add(menuItem);
 			}
-		}
-
-		protected void configureMenuItem(JCheckBoxMenuItem menuItem, ValueType value) {}
-
-		public void updateValues(ValueType[] values) {
-			removeAll();
-			createMenuItems(values,selectedValue);
 		}
 		
 		public void clearSelection() {
@@ -622,8 +651,8 @@ public class Gui {
 			private static final long serialVersionUID = 6905578523280731223L;
 			private T value;
 
-			public ValueMenuItem(T value, String str, boolean isChecked) {
-				super(str, isChecked);
+			public ValueMenuItem(T value, boolean isChecked) {
+				super("",isChecked);
 				this.value = value;
 			}
 			
@@ -631,8 +660,8 @@ public class Gui {
 
 		public static abstract class ExternFunction<T> {
 			public abstract void setResult(T value);
-			public String toString(T value) { return value==null?"":value.toString(); }
 			public boolean isEqual(T v1, T v2) { return v1==v2; }
+			public void configureMenuItem(JCheckBoxMenuItem menuItem, T value) { menuItem.setText(value==null?"<none>":value.toString()); }
 		}
 		
 	}

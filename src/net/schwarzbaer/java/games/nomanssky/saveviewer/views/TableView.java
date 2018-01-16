@@ -53,15 +53,16 @@ public class TableView {
 			super("DebugTableContextMenu");
 			this.table = table;
 			
-			add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths));
-			add(createMenuItem("Copy Selected Rows",TableContextMenuActionCommand.CopySelectedRows));
-			add(createMenuItem("Copy Table",TableContextMenuActionCommand.CopyTable));
+			add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths,null));
+			add(createMenuItem("Copy Selected Rows",TableContextMenuActionCommand.CopySelectedRows,SaveViewer.ToolbarIcons.Copy));
+			add(createMenuItem("Copy Table",TableContextMenuActionCommand.CopyTable,SaveViewer.ToolbarIcons.Copy));
 		}
 	
-		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand) {
+		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
 			JMenuItem menuItem = new JMenuItem(label);
 			menuItem.addActionListener(this);
 			menuItem.setActionCommand(actionCommand.toString());
+			if (icon!=null) menuItem.setIcon(SaveViewer.toolbarIS.getIcon(icon));
 			return menuItem;
 		}
 	
