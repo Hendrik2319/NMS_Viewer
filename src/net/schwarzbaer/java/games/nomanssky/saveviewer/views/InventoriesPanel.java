@@ -138,13 +138,13 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			contextMenu.add(SaveViewer.createMenuItem("Edit ID", this, ActionCommand.EditID ));
 			contextMenu.addSeparator();;
 			contextMenu.add(SaveViewer.createMenuItem("Select Image File", this, ActionCommand.SelectImageFile ));
-			contextMenu.add(SaveViewer.createMenuItem("Copy Image File", this, ActionCommand.CopyImageFile ));
-			contextMenu.add(SaveViewer.createMenuItem("Paste Image File", this, ActionCommand.PasteImageFile ));
-			contextMenu.add(SaveViewer.createMenuItem("Remove Image File", this, ActionCommand.RemoveImageFile ));
+			contextMenu.add(SaveViewer.createMenuItem("Copy Image File"  , this, ActionCommand.CopyImageFile  , SaveViewer.ToolbarIcons.Copy  ));
+			contextMenu.add(SaveViewer.createMenuItem("Paste Image File" , this, ActionCommand.PasteImageFile , SaveViewer.ToolbarIcons.Paste ));
+			contextMenu.add(SaveViewer.createMenuItem("Remove Image File", this, ActionCommand.RemoveImageFile, SaveViewer.ToolbarIcons.Delete));
 			contextMenu.addSeparator();;
-			contextMenu.add(SaveViewer.createMenuItem("Copy Background Color", this, ActionCommand.CopyBGColor ));
-			contextMenu.add(SaveViewer.createMenuItem("Paste Background Color", this, ActionCommand.PasteBGColor ));
-			contextMenu.add(SaveViewer.createMenuItem("Remove Background Color", this, ActionCommand.RemoveBGColor ));
+			contextMenu.add(SaveViewer.createMenuItem("Copy Background Color"  , this, ActionCommand.CopyBGColor  , SaveViewer.ToolbarIcons.Copy  ));
+			contextMenu.add(SaveViewer.createMenuItem("Paste Background Color" , this, ActionCommand.PasteBGColor , SaveViewer.ToolbarIcons.Paste ));
+			contextMenu.add(SaveViewer.createMenuItem("Remove Background Color", this, ActionCommand.RemoveBGColor, SaveViewer.ToolbarIcons.Delete));
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				inventoryLabel = new InventoryDisplay(this,(int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots);
@@ -283,15 +283,24 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			private static final Color COLOR__SLOT_HOVERED       = new Color(0xFFD800);
 			private static final Color COLOR__SLOT_HOVERED_FIXED = Color.GREEN;
-			private static final Color COLOR__SLOT_EDGE = Color.BLACK;
+			private static final Color COLOR__SLOT_EDGE          = Color.BLACK;
 			
-			private static final Paint COLOR__SLOT_TEXT_LABEL = Color.RED;
-			private static final Color COLOR__SLOT_TEXT = Color.BLUE;
-			private static final Color COLOR__SLOT_TEXT_PRODUCT = new Color(0x4040FF);
-			private static final Color COLOR__SLOT_TEXT_SUBSTANCE = new Color(0xFF6900);
-			private static final Color COLOR__SLOT_TEXT_TECH = new Color(0xAD00AD);
+			private static final Color COLOR__SLOT_TITLE        = Color.BLACK;
+			private static final Paint COLOR__SLOT_TITLE_IDONLY = Color.RED;
+			private static final Color COLOR__SLOT_GAUGE        = Color.WHITE;
+			private static final Color COLOR__SLOT_GAUGE_EMPTY  = new Color(255,255,255,128);
 
-			private static final Color COLOR__SLOT_BG = Color.WHITE;
+			private static final Paint COLOR__SLOT_TEXT_AMOUNT  = Color.WHITE;
+			private static final Paint COLOR__SLOT_TEXT_SYMBOL  = Color.WHITE;
+			
+			private static final Paint COLOR__SLOT_TEXT_LABEL     = Color.RED;
+			
+			private static final Color COLOR__SLOT_TEXT           = Color.BLUE;
+			private static final Color COLOR__SLOT_TEXT_PRODUCT   = new Color(0x4040FF);
+			private static final Color COLOR__SLOT_TEXT_SUBSTANCE = new Color(0xFF6900);
+			private static final Color COLOR__SLOT_TEXT_TECH      = new Color(0xAD00AD);
+
+			private static final Color COLOR__SLOT_BG      = Color.WHITE;
 			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
 			
 			private static final Stroke STROKE__SLOT_HOVERED = new BasicStroke(6.0f,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL);
@@ -381,18 +390,15 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 								if (image!=null) {
 									g2.setFont( standardFont.deriveFont(Font.BOLD) );
 									
-									String title = "";
-//									switch (slot.type) {
-//									case Product   : title += "P:"; break;
-//									case Substance : title += "S:"; break;
-//									case Technology: title += "T:"; break;
-//									}
-									if (slot.id.label.isEmpty()) title += slot.id.id;
-									else title += slot.id.label;
+									if (slot.id.hasLabel()) {
+										g2.setPaint(COLOR__SLOT_TITLE);
+										g2.drawString(slot.id.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+									} else {
+										g2.setPaint(COLOR__SLOT_TITLE_IDONLY);
+										g2.drawString(slot.id.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+									}
 									
 									//g2.setPaint(getSlotTextColor(slot.type));
-									g2.setPaint(Color.BLACK);
-									g2.drawString(title, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
 									
 									g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
 									
@@ -413,23 +419,23 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 										int empty = gaugeWidth-full;
 										
 										if (full>0) {
-											g2.setPaint(Color.WHITE);
+											g2.setPaint(COLOR__SLOT_GAUGE);
 											g2.fillRect(x+gaugeXOffset,y+gaugeYOffset,full,gaugeHeight);
 										}
 										if (empty>0) {
-											g2.setPaint(new Color(255,255,255,128));
+											g2.setPaint(COLOR__SLOT_GAUGE_EMPTY);
 											g2.fillRect(x+gaugeXOffset+full,y+gaugeYOffset,empty,gaugeHeight);
 										}
 										String str = String.format("%d/%d",amount,maxAmount);
 										int textWidth = g2.getFontMetrics().stringWidth(str);
-										g2.setPaint(Color.WHITE);
+										g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
 										g2.drawString(str, x+gaugeXOffset+full+empty-textWidth, y+gaugeYOffset-4);
 										
 										if (slot.id.symbol!=null && !slot.id.symbol.isEmpty())
 											g2.drawString(slot.id.symbol, x+gaugeXOffset, y+gaugeYOffset-4);
 									} else {
 										if (slot.id.symbol!=null && !slot.id.symbol.isEmpty()) {
-											g2.setPaint(Color.WHITE);
+											g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
 											g2.drawString(slot.id.symbol, x+innerOffsetX+2*imageBorder,y+innerOffsetY+innerHeight-2*imageBorder );
 										}
 									}

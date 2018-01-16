@@ -30,17 +30,13 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 	private static final long serialVersionUID = -50409207801775293L;
 	
 	enum RawDataTreeIcons { Object, Array, String, Number, Bool }
-	static IconSource<RawDataTreeIcons> rawDataTreeIS = null;
+	static IconSource.CachedIcons<RawDataTreeIcons> rawDataTreeIS = null;
 	public static void prepareIconSource() {
-		rawDataTreeIS = new IconSource<RawDataTreeIcons>(16,16){
-			@Override protected int getIconIndexInImage(RawDataTreeIcons key) {
-				if (key!=null) return key.ordinal();
-			 	throw new IllegalArgumentException("Unknown icon key: "+key);
-			}
-		};
-		rawDataTreeIS.readIconsFromResource("/images/RawTreeIcons.png");
-		rawDataTreeIS.cacheIcons(RawDataTreeIcons.values());
+		IconSource<RawDataTreeIcons> source = new IconSource<RawDataTreeIcons>(16,16);
+		source.readIconsFromResource("/images/RawTreeIcons.png");
+		rawDataTreeIS = source.cacheIcons(RawDataTreeIcons.values());
 	}
+	
 	private DefaultTreeModel treeModel;
 	private boolean hideProcessedNodes;
 
@@ -71,15 +67,15 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		SaveViewer.log_ln(" done");
 		
 		contextMenu_tree = new JPopupMenu("Contextmenu");
-		contextMenu_tree.add(miHideShowProcessedNodes_tree = createMenuItem("Hide Processed Nodes",RawDataTreeActionCommand.HideShowProcessedNodes));
+		contextMenu_tree.add(miHideShowProcessedNodes_tree = createMenuItem("Hide Processed Nodes",RawDataTreeActionCommand.HideShowProcessedNodes,null));
 		
 		contextMenu_node = new JPopupMenu("Contextmenu");
-		contextMenu_node.add(createMenuItem("Show Path",RawDataTreeActionCommand.ShowPath));
-		contextMenu_node.add(createMenuItem("Copy Path",RawDataTreeActionCommand.CopyPath));
-		contextMenu_node.add(createMenuItem("Copy Value Name",RawDataTreeActionCommand.CopyValueName));		
-		contextMenu_node.add(createMenuItem("Copy Value",RawDataTreeActionCommand.CopyValue));
+		contextMenu_node.add(createMenuItem("Show Path",RawDataTreeActionCommand.ShowPath,null));
+		contextMenu_node.add(createMenuItem("Copy Path",RawDataTreeActionCommand.CopyPath,SaveViewer.ToolbarIcons.Copy));
+		contextMenu_node.add(createMenuItem("Copy Value Name",RawDataTreeActionCommand.CopyValueName,SaveViewer.ToolbarIcons.Copy));		
+		contextMenu_node.add(createMenuItem("Copy Value",RawDataTreeActionCommand.CopyValue,SaveViewer.ToolbarIcons.Copy));
 		contextMenu_node.addSeparator();
-		contextMenu_node.add(miHideShowProcessedNodes_node = createMenuItem("Hide Processed Nodes",RawDataTreeActionCommand.HideShowProcessedNodes));
+		contextMenu_node.add(miHideShowProcessedNodes_node = createMenuItem("Hide Processed Nodes",RawDataTreeActionCommand.HideShowProcessedNodes,null));
 		
 		updateMenuItems();
 		
@@ -96,10 +92,11 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		}
 	}
 
-	private JMenuItem createMenuItem(String label, RawDataTreePanel.RawDataTreeActionCommand actionCommand) {
+	private JMenuItem createMenuItem(String label, RawDataTreePanel.RawDataTreeActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(label);
 		menuItem.addActionListener(this);
 		menuItem.setActionCommand(actionCommand.toString());
+		if (icon!=null) menuItem.setIcon(SaveViewer.toolbarIS.getIcon(icon));
 		return menuItem;
 	}
 

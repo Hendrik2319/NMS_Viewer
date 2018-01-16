@@ -74,7 +74,7 @@ public class SimplePanels {
 			contextMenu.addSeparator();
 			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
 			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BBOColumnID.ObjectID)));
-			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML()));
+			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML(),null,SaveViewer.ToolbarIcons.SaveAs));
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
@@ -267,8 +267,8 @@ public class SimplePanels {
 			}
 
 			private void addVRMLtasks(JPopupMenu contextMenu) {
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,null, PlayerBasePanel.this)));
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this)));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,null, PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
 				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
@@ -281,7 +281,7 @@ public class SimplePanels {
 						}
 					
 					FileExport.writePosToVRML_simple(nearObj.toArray(new BuildingObject[0]),radius,this);
-				},!playerbase.isFreighterBase));
+				}, null, !playerbase.isFreighterBase, SaveViewer.ToolbarIcons.SaveAs));
 			}
 
 			private void showOtherObjectsOnThisPlanet() {

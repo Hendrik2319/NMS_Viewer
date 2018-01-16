@@ -65,8 +65,8 @@ public class SaveViewer implements ActionListener {
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
-	public static IconSource<ToolbarIcons> toolbarIS;
 	static IconSource<TabHeaderIcons> tabheaderIS;
+	public static IconSource<ToolbarIcons> toolbarIS;
 	public static Images images;
 	
 	private JFileChooser inputFileChooser;
@@ -634,19 +634,27 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
-		JMenuItem menuItem = new JMenuItem(title);
-		menuItem.setEnabled(enabled);
-		if (l!=null) menuItem.addActionListener(l);
-		return menuItem;
+		return createMenuItem(title, l, null, enabled, null);
 	}
 
 	public static JMenuItem createMenuItem(String title, ActionListener l) {
-		return createMenuItem(title, l, true);
+		return createMenuItem(title, l, null);
 	}
 
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
-		JMenuItem menuItem = createMenuItem(title,l);
-		menuItem.setActionCommand(actionCommand.toString());
+		return createMenuItem(title, l, actionCommand, null);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
+		return createMenuItem(title, l, actionCommand, true, icon);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, boolean enabled, ToolbarIcons icon) {
+		JMenuItem menuItem = new JMenuItem(title);
+		menuItem.setEnabled(enabled);
+		if (l!=null) menuItem.addActionListener(l);
+		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
+		if (icon!=null) menuItem.setIcon(toolbarIS.getIcon(icon));
 		return menuItem;
 	}
 
