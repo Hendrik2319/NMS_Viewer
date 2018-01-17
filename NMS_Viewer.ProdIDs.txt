@@ -14,6 +14,10 @@
 ^ALLOY1=
 ^ALLOY1.type=Alloy
 ^ALLOY1.imageBG=F0A92B
+^ALLOY2=Strassenköterbronze
+^ALLOY2.type=Alloy
+^ALLOY2.image=Product.metallic.2.StrassenkoeterBronze.png
+^ALLOY2.imageBG=F0A92B
 ^ALLOY3=Herox
 ^ALLOY3.type=Alloy
 ^ALLOY3.image=Product.metallic.3.Herox.png
@@ -268,6 +272,10 @@
 ^CURIO1.type=RaceGift
 ^CURIO1.image=Product.gekstatue.png
 ^CURIO1.imageBG=10805C
+^CURIO2=Vy'keen-Bildnis
+^CURIO2.type=RaceGift
+^CURIO2.image=Product.effigy.VykeenBildnis.png
+^CURIO2.imageBG=10805C
 ^CURIO3=Korvax-Gehäuse
 ^CURIO3.type=RaceGift
 ^CURIO3.image=Product.korvaxcasing.png
@@ -483,6 +491,7 @@
 ^RADIOPLANT=Gammagras
 ^RADIOPLANT.type=Plant
 ^RADIOPLANT.image=NmsFarming_Dicotyl_Icon.Gammagras.png
+^REACTION1=
 ^REACTION2=
 ^REACTION3=
 ^ROOFMONITOR=
@@ -534,9 +543,16 @@
 ^TOXICPLANT=Pilzgeflecht
 ^TOXICPLANT.type=Plant
 ^TOXICPLANT.image=NmsPlant_Puffball_Icon.Pilzgeflecht.jpg
+^TRA_EXOTICS1=Nicht mehr duftende Pheromonflasche
+^TRA_EXOTICS1.imageBG=F0A92B
+^TRA_EXOTICS2=Neutronenmikroskop
+^TRA_EXOTICS2.imageBG=F0A92B
+^TRA_EXOTICS4=Organische Rohre
+^TRA_EXOTICS4.imageBG=F0A92B
 ^ULTRAPROD1=Fusionszünder
 ^ULTRAPROD1.type=Product
 ^ULTRAPROD1.image=NmsProduct_FusionIgnitor_Icon.png
+^ULTRAPROD2=
 ^VIEWSPHERE=Aussichtskuppel
 ^VIEWSPHERE.type=BaseComponent
 ^WALL=

@@ -45,6 +45,20 @@ name=Atnino
 race=Vykeen
 class=Yellow
 
+[Sys005D00FAA8CBC4]
+name=Tionovk-Exand
+race=Korvax
+class=Yellow
+
+[Pln105D00FAA8CBC4]
+name=Miyama Opogaets
+
+[Pln205D00FAA8CBC4]
+name=Nozelensk Sano
+
+[Pln305D00FAA8CBC4]
+name=Kiwalhontr-Menes Egor
+
 [Sys006D00FAA8CBC4]
 name=Naibolsk
 race=Vykeen
@@ -323,3 +337,5 @@ class=Yellow
 name=Naarhurdorcan
 short=ExtHot
 info=Extrem heißer Planet
+short=Grav??
+info=Gravitinio-Balls ???
