@@ -473,7 +473,7 @@ public class Images {
 			COLOR_FOREGROUND = dummy.getForeground();
 			COLOR_BACKGROUND_SELECTED = dummy.getSelectionColor();
 			COLOR_FOREGROUND_SELECTED = dummy.getSelectedTextColor();
-			COLOR_BACKGROUND_PRESELECTED = brighter(COLOR_BACKGROUND_SELECTED,0.7f);
+			COLOR_BACKGROUND_PRESELECTED = Gui.brighter(COLOR_BACKGROUND_SELECTED,0.7f);
 			COLOR_BACKGROUND_MARKED = Color.LIGHT_GRAY;
 			
 			cols = 6;
@@ -524,16 +524,6 @@ public class Images {
 			}
 			for (ImageLabel il:imageLabels)
 				il.setMark( markUsedImages && usedImages.contains(il.getImageFileName()) );
-		}
-
-		private Color brighter(Color color, float fraction) {
-			int r = color.getRed();
-			int g = color.getGreen();
-			int b = color.getBlue();
-			r = Math.min(255, Math.round(255-(255-r)*(1-fraction)));
-			g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
-			b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
-			return new Color(r,g,b);
 		}
 	
 		@Override

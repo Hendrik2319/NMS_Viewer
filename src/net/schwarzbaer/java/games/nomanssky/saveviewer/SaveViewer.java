@@ -112,9 +112,7 @@ public class SaveViewer implements ActionListener {
 		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
 		
 		GameInfos.loadKnownStatIDsFromFile();
-		GameInfos.loadProductIDsFromFile();
-		GameInfos.loadTechIDsFromFile();
-		GameInfos.loadSubstanceIDsFromFile();
+		GameInfos.loadAllIDsFromFiles();
 		GameInfos.loadUniverseObjectDataFromFile();
 
 		

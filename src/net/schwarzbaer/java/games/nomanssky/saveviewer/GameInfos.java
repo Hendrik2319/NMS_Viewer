@@ -370,7 +370,7 @@ public class GameInfos {
 		}
 		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
-
+	
 	public static final IDMap productIDs   = new IDMap();
 	public static final IDMap techIDs      = new IDMap();
 	public static final IDMap substanceIDs = new IDMap();
@@ -407,24 +407,68 @@ public class GameInfos {
 //		}
 		
 		public GeneralizedID get(String id, SaveGameData source, Usage.Type usageType) {
-			GeneralizedID generalizedID = get_(id);
+			GeneralizedID generalizedID = get(id);
 			generalizedID.setUsage(source,usageType);
 			return generalizedID;
 		}
 	
-		private GeneralizedID get_(String id) {
+		private GeneralizedID get(String id) {
 			GeneralizedID newID = new GeneralizedID(id);
 			GeneralizedID existingID = map.putIfAbsent(id, newID);
 			return existingID==null ? newID : existingID;
 		}
+
+		public HashMap<String, Vector<GeneralizedID>> getIDBaseGroups() {
+			HashMap<String, Vector<GeneralizedID>> groups = new HashMap<>();
+			for (GeneralizedID id:map.values()) {
+				Vector<GeneralizedID> group = groups.get(id.idBase);
+				if (group==null) groups.put(id.idBase,group = new Vector<GeneralizedID>());
+				group.add(id);
+			}
+			return groups;
+		}
+
+		public Vector<GeneralizedID> getIDBaseGroup(String idBase) {
+			Vector<GeneralizedID> group = new Vector<>();
+			for (GeneralizedID id:map.values())
+				if (id.idBase.equals(idBase))
+					group.add(id);
+			return group;
+		}
 	}
 
-	public static void loadProductIDsFromFile  () { loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   ); }
+	public static void updateUpgrades() {
+		updateUpgrades(productIDs  );
+		updateUpgrades(techIDs     );
+		updateUpgrades(substanceIDs);
+	}
 
-	public static void loadTechIDsFromFile     () { loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology"); }
+	public static void updateUpgrades(IDMap map) {
+		HashMap<String,Vector<GeneralizedID>> groups = map.getIDBaseGroups();
+		for (String idBase:groups.keySet())
+			updateUpgrades(groups.get(idBase));
+	}
 
-	public static void loadSubstanceIDsFromFile() { loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); }
+	public static void updateUpgrades(IDMap map, GeneralizedID id) {
+		updateUpgrades(map.getIDBaseGroup(id.idBase));
+	}
 
+	public static void updateUpgrades(Vector<GeneralizedID> group) {
+		group.sort(Comparator.comparing((GeneralizedID id)->id.idIndex,Comparator.nullsFirst(Comparator.naturalOrder())));
+		for (int i=0; i<group.size(); ++i) {
+			GeneralizedID id = group.get(i);
+			Vector<GeneralizedID> vec = id.betterUpgrades;
+			vec.clear();
+			//if (id.type!=null && id.type.isUpgrade)
+			vec.addAll( group.subList(i+1,group.size()) );
+		}
+	}
+
+	public static void loadAllIDsFromFiles() {
+		loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   ); updateUpgrades(productIDs  );
+		loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology"); updateUpgrades(techIDs     );
+		loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); updateUpgrades(substanceIDs);
+	}
 	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
 		File file = new File(filePath);
 		if (!file.isFile()) return;
@@ -442,27 +486,27 @@ public class GameInfos {
 				
 				if (idStr.endsWith(".type")) {
 					idStr = idStr.substring(0, idStr.length()-".type".length());
-					GeneralizedID id = map.get_(idStr);
+					GeneralizedID id = map.get(idStr);
 					id.type = GeneralizedID.Type.getType(value);
 				}
 				else if (idStr.endsWith(".symbol")) {
 					idStr = idStr.substring(0, idStr.length()-".symbol".length());
-					GeneralizedID id = map.get_(idStr);
+					GeneralizedID id = map.get(idStr);
 					id.symbol = value;
 				}
 				else if (idStr.endsWith(".image")) {
 					idStr = idStr.substring(0, idStr.length()-".image".length());
-					GeneralizedID id = map.get_(idStr);
+					GeneralizedID id = map.get(idStr);
 					id.setImageFileName(value);
 				}
 				else if (idStr.endsWith(".imageBG")) {
 					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
-					GeneralizedID id = map.get_(idStr);
+					GeneralizedID id = map.get(idStr);
 					try { id.setImageBG(Integer.parseInt(value,16)); }
 					catch (NumberFormatException e) {}
 				}
 				else {
-					GeneralizedID id = map.get_(idStr);
+					GeneralizedID id = map.get(idStr);
 					id.label = value;
 				}
 			}
@@ -486,7 +530,7 @@ public class GameInfos {
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (String idStr:map.getSortedKeys()) {
-				GeneralizedID id = map.get_(idStr);
+				GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.label);
 				if (id.type!=null  ) out.printf("%s.type=%s\r\n"     ,idStr,id.type);
 				if (id.hasSymbol ()) out.printf("%s.symbol=%s\r\n"   ,idStr,id.symbol);
@@ -503,21 +547,21 @@ public class GameInfos {
 		
 		public enum Type {
 			MultitoolWeapon          ("Multitool-Waffe"),
-			MultitoolWeaponUpgrade   ("Multitool-Waffen-Upgrade"),
+			MultitoolWeaponUpgrade   ("Multitool-Waffen-Upgrade",true),
 			MultitoolExtension       ("Multitool-Erweiterung"),
-			MultitoolExtensionUpgrade("Multitool-Erw.-Upgrade"),
+			MultitoolExtensionUpgrade("Multitool-Erw.-Upgrade",true),
 			ExosuitExtension         ("Exo-Anzug-Erweiterung"),
-			ExosuitExtensionUpgrade  ("Exo-Anzug-Erw.-Upgrade"),
+			ExosuitExtensionUpgrade  ("Exo-Anzug-Erw.-Upgrade",true),
 			ExocraftWeapon           ("Exo-Fahrzeug-Waffe"),
-			ExocraftWeaponUpgrade    ("Exo-Fahrzeug-Waffen-Upgrade"),
+			ExocraftWeaponUpgrade    ("Exo-Fahrzeug-Waffen-Upgrade",true),
 			ExocraftExtension        ("Exo-Fahrzeug-Erweiterung"),
-			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erw.-Upgrade"),
+			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erw.-Upgrade",true),
 			ShipWeapon               ("Schiffswaffe"),
-			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade"),
+			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade",true),
 			ShipExtension            ("Schiffs-Erweiterung"),
-			ShipExtensionUpgrade     ("Schiffs-Erw.-Upgrade"),
+			ShipExtensionUpgrade     ("Schiffs-Erw.-Upgrade",true),
 			FreighterExtension       ("Frachter-Erweiterung"),
-			FreighterExtensionUpgrade("Frachter-Erw.-Upgrade"),
+			FreighterExtensionUpgrade("Frachter-Erw.-Upgrade",true),
 			BaseComponent            ("Basis-Komponente"),
 			BaseDekoration           ("Basis-Dekoration"),
 			BaseExternal             ("Basis-Außenanlage"),
@@ -531,7 +575,11 @@ public class GameInfos {
 			RaceGift                 ("Völker-Geschenk");
 			
 			private String label;
-			Type(String label) { this.label = label; }
+			public boolean isUpgrade;
+			
+			Type(String label) { this(label,false); }
+			Type(String label, boolean isUpgrade) { this.label = label; this.isUpgrade = isUpgrade; }
+			
 			public String getLabel() { return label; }
 			public static Type getType(String str) {
 				try { return valueOf(str); }
@@ -548,6 +596,10 @@ public class GameInfos {
 		final HashMap<SaveGameData,Usage> usage;
 		private BufferedImage cachedImage;
 		
+		private String idBase;
+		private Integer idIndex;
+		public Vector<GeneralizedID> betterUpgrades;
+		
 		private GeneralizedID(String id, String label) {
 			this.id = id;
 			this.label = label;
@@ -557,6 +609,8 @@ public class GameInfos {
 			this.imageFileName = null;
 			this.imageBackground = null;
 			this.cachedImage = null;
+			splitID();
+			this.betterUpgrades = new Vector<>();
 		}
 		public GeneralizedID(String id) {
 			this(id,"");
@@ -570,6 +624,23 @@ public class GameInfos {
 			this.imageFileName = other.imageFileName;
 			this.imageBackground = other.imageBackground;
 			this.cachedImage = other.cachedImage;
+			splitID();
+		}
+		
+		private void splitID() {
+			int i;
+			for (i = id.length(); i>0; --i) {
+				char ch = id.charAt(i-1);
+				if (ch<'0'||'9'<ch) break;
+			}
+			
+			idBase = id.substring(0,i);
+			
+			idIndex = null;
+			String indexStr = id.substring(i);
+			if (!indexStr.isEmpty()) 
+				try { idIndex = Integer.parseInt(indexStr); }
+				catch (NumberFormatException e) {}
 		}
 		
 		public boolean hasLabel() {

@@ -21,6 +21,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -34,12 +35,14 @@ import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot.Type;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
@@ -274,8 +277,24 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						textarea.append("           "+slot.id.type.getLabel()+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
 					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
+					
+					if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade) {
+						Vector<GeneralizedID> upgrades = getUpgrades(slot);
+						if (!upgrades.isEmpty())        textarea.append("   Upgrades:\r\n");
+						for (GeneralizedID id:upgrades) textarea.append("      "+(id.hasLabel()?id.label:id.id)+"\r\n");
+					}
 				}
 			}
+		}
+
+		private static Vector<GeneralizedID> getUpgrades(Slot slot) {
+			Vector<GeneralizedID> upgrades = new Vector<>();
+			for (GeneralizedID id:slot.id.betterUpgrades) {
+				Usage usage = id.getUsage(slot.getSource());
+				if (usage!=null && !usage.blueprintUsages.isEmpty() && usage.inventoryUsages.isEmpty())
+					upgrades.add(id);
+			}
+			return upgrades;
 		}
 
 		private static class InventoryDisplay extends Canvas implements MouseListener, MouseMotionListener {
@@ -287,6 +306,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			private static final Color COLOR__SLOT_TITLE        = Color.BLACK;
 			private static final Paint COLOR__SLOT_TITLE_IDONLY = Color.RED;
+			@SuppressWarnings("unused")
+			private static final Paint COLOR__SLOT_TITLE_MARKER = Color.GREEN;
+
 			private static final Color COLOR__SLOT_GAUGE        = Color.WHITE;
 			private static final Color COLOR__SLOT_GAUGE_EMPTY  = new Color(255,255,255,128);
 
@@ -300,7 +322,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_TEXT_SUBSTANCE = new Color(0xFF6900);
 			private static final Color COLOR__SLOT_TEXT_TECH      = new Color(0xAD00AD);
 
-			private static final Color COLOR__SLOT_BG      = Color.WHITE;
+			private static final Color COLOR__SLOT_BG            = Color.WHITE;
+			private static final Paint COLOR__SLOT_BG_UPGRADABLE = Gui.brighter(Color.MAGENTA,0.5f);
+
 			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
 			
 			private static final Stroke STROKE__SLOT_HOVERED = new BasicStroke(6.0f,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL);
@@ -366,7 +390,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 							int x=indexX*SLOT_RASTER_X+SLOT_BORDER;
 							int y=indexY*SLOT_RASTER_Y+SLOT_BORDER;
 							if (!slot.isEmpty) {
-								g2.setPaint(COLOR__SLOT_BG);
+								if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade && !getUpgrades(slot).isEmpty())
+									g2.setPaint(COLOR__SLOT_BG_UPGRADABLE);
+								else
+									g2.setPaint(COLOR__SLOT_BG);
 								g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
 							}
 							g2.setPaint(COLOR__SLOT_EDGE);
@@ -390,12 +417,22 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 								if (image!=null) {
 									g2.setFont( standardFont.deriveFont(Font.BOLD) );
 									
+									int markerWidth = 0;
+									//if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade){
+									//	if (!getUpgrades(slot).isEmpty()) {
+									//		g2.setPaint(COLOR__SLOT_TITLE_MARKER);
+									//		String marker = "[U]";
+									//		g2.drawString(marker, x+strOffsetX, y+strOffsetY);
+									//		markerWidth = 2+g2.getFontMetrics().stringWidth(marker);
+									//	}
+									//}
+									
 									if (slot.id.hasLabel()) {
 										g2.setPaint(COLOR__SLOT_TITLE);
-										g2.drawString(slot.id.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+										g2.drawString(slot.id.label, x+strOffsetX+markerWidth, y+strOffsetY);
 									} else {
 										g2.setPaint(COLOR__SLOT_TITLE_IDONLY);
-										g2.drawString(slot.id.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+										g2.drawString(slot.id.id, x+strOffsetX+markerWidth, y+strOffsetY);
 									}
 									
 									//g2.setPaint(getSlotTextColor(slot.type));
@@ -464,7 +501,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					}
 			}
 
-			private Color getSlotTextColor(Type type) {
+			private Color getSlotTextColor(SaveGameData.SlotType type) {
 				switch(type) {
 				case Product: return COLOR__SLOT_TEXT_PRODUCT;
 				case Substance: return COLOR__SLOT_TEXT_SUBSTANCE;

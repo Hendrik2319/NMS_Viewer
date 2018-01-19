@@ -10,8 +10,6 @@ import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
@@ -383,6 +381,7 @@ public class SaveGameData {
 		GameInfos.saveProductIDsToFile();
 		GameInfos.saveTechIDsToFile();
 		GameInfos.saveSubstanceIDsToFile();
+		GameInfos.updateUpgrades();
 		return this;
 	}
 
@@ -631,20 +630,20 @@ public class SaveGameData {
 	private void parseInventories() {
 		inventories = null;
 		inventories = new Inventories();
-		inventories.player        = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
-		inventories.playerTech    = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
-		inventories.playerCargo   = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
-		inventories.ship_old      = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
-		inventories.multitool     = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
-		inventories.grave         = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
-		inventories.freighter     = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
-		inventories.freighterTech = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+		inventories.player        = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
+		inventories.playerTech    = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
+		inventories.playerCargo   = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
+		inventories.ship_old      = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
+		inventories.multitool     = inventories.parse(getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
+		inventories.grave         = inventories.parse(getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
+		inventories.freighter     = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
+		inventories.freighterTech = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
 		
 		inventories.chests = new Inventory[10];
 		for (int i=0; i<inventories.chests.length; ++i)
-			inventories.chests[i] = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-		inventories.magicChest  = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
-		inventories.magicChest2 = Inventories.parse(this,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+			inventories.chests[i] = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
+		inventories.magicChest  = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+		inventories.magicChest2 = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
 		
 		inventories.vehicles = null;
 		inventories.vehicles_Tech = null;
@@ -657,8 +656,8 @@ public class SaveGameData {
 				inventories.vehicles[i] = null;
 				inventories.vehicles_Tech[i] = null;
 				if (vehicleData != null) {
-					inventories.vehicles     [i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory"         ),"Vehicle "    +(i+1), "VehicleOwnership["+i+"].Inventory");
-					inventories.vehicles_Tech[i] = Inventories.parse(this,getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle Tech"+(i+1), "VehicleOwnership["+i+"].Inventory_TechOnly");
+					inventories.vehicles     [i] = inventories.parse(getObjectValue(vehicleData,"Inventory"         ),"Vehicle "    +(i+1), "VehicleOwnership["+i+"].Inventory");
+					inventories.vehicles_Tech[i] = inventories.parse(getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle Tech"+(i+1), "VehicleOwnership["+i+"].Inventory_TechOnly");
 				}
 			}
 		}
@@ -674,30 +673,30 @@ public class SaveGameData {
 				inventories.ships     [i] = null;
 				inventories.ships_Tech[i] = null;
 				if (shipData != null) {
-					inventories.ships     [i] = Inventories.parse(this,getObjectValue(shipData,"Inventory"         ), "Ship "     +(i+1), "ShipOwnership["+i+"].Inventory");
-					inventories.ships_Tech[i] = Inventories.parse(this,getObjectValue(shipData,"Inventory_TechOnly"), "Ship Tech "+(i+1), "ShipOwnership["+i+"].Inventory_TechOnly");
+					inventories.ships     [i] = inventories.parse(getObjectValue(shipData,"Inventory"         ), "Ship "     +(i+1), "ShipOwnership["+i+"].Inventory");
+					inventories.ships_Tech[i] = inventories.parse(getObjectValue(shipData,"Inventory_TechOnly"), "Ship Tech "+(i+1), "ShipOwnership["+i+"].Inventory_TechOnly");
 				}
 			}
 		}		
 	}
 
-	public static final class Inventories {
+	public final class Inventories {
 
-		private static Inventory parse(SaveGameData base, JSON_Object inventoryData, String inventoryLabel, String inventorySourcePath) {
+		private Inventory parse(JSON_Object inventoryData, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
 			
 			Inventory inventory = new Inventory(inventoryLabel);
-			inventory.substanceMaxStorageMultiplier = base.getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
-			inventory.productMaxStorageMultiplier   = base.getIntegerValue(inventoryData, "ProductMaxStorageMultiplier");
-			inventory.width   = base.getIntegerValue(inventoryData, "Width");
-			inventory.height  = base.getIntegerValue(inventoryData, "Height");
-			inventory.isCool  = base.getBoolValue   (inventoryData, "IsCool");
-			inventory.version = base.getIntegerValue(inventoryData, "Version");
+			inventory.substanceMaxStorageMultiplier = getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
+			inventory.productMaxStorageMultiplier   = getIntegerValue(inventoryData, "ProductMaxStorageMultiplier");
+			inventory.width   = getIntegerValue(inventoryData, "Width");
+			inventory.height  = getIntegerValue(inventoryData, "Height");
+			inventory.isCool  = getBoolValue   (inventoryData, "IsCool");
+			inventory.version = getIntegerValue(inventoryData, "Version");
 			
-			inventory.inventoryClass = base.getStringValue(inventoryData, "Class","InventoryClass");
+			inventory.inventoryClass = getStringValue(inventoryData, "Class","InventoryClass");
 
 			if (inventory.inventoryClass==null) {
-				JSON_Object classObj = base.getObjectValue(inventoryData, "Class");
+				JSON_Object classObj = getObjectValue(inventoryData, "Class");
 				if (classObj==null) inventory.inventoryClass = "<no \"Class\" value>";
 				else {
 					Value value = classObj.getValue("InventoryClass");
@@ -707,117 +706,14 @@ public class SaveGameData {
 			}
 			
 			if (inventory.width!=null && inventory.height!=null && inventory.width>0 && inventory.height>0) {
-				inventory.slots = parseSlots(base, (int)(long)inventory.width, (int)(long)inventory.height, base.getArrayValue(inventoryData,"Slots"),base.getArrayValue(inventoryData,"ValidSlotIndices"), inventoryLabel, inventorySourcePath);
+				inventory.slots = inventory.parseSlots((int)(long)inventory.width, (int)(long)inventory.height, getArrayValue(inventoryData,"Slots"),getArrayValue(inventoryData,"ValidSlotIndices"), inventoryLabel, inventorySourcePath);
 			}
-			inventory.baseStatValues = parseBaseStatValues(base, base.getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
-			inventory.specialSlots   = parseSpecialSlots  (base, base.getArrayValue(inventoryData,"SpecialSlots"  ), inventoryLabel, inventorySourcePath);
+			inventory.baseStatValues = inventory.parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
+			inventory.specialSlots   = inventory.parseSpecialSlots  (getArrayValue(inventoryData,"SpecialSlots"  ), inventoryLabel, inventorySourcePath);
 			
 			return inventory;
 		}
 		
-		private static Slot[][] parseSlots(SaveGameData base, int width, int height, JSON_Array arrSlots, JSON_Array arrValidSlotIndices, String inventoryLabel, String inventorySourcePath) {
-			Slot[][] slots = new Slot[width][height];
-			for (Slot[] row:slots)
-				Arrays.fill(row, null);
-			
-			if (arrSlots==null) {
-				System.err.println(inventorySourcePath+": Inventory has no slots.");
-				return slots;
-			}
-			
-			if (arrValidSlotIndices==null) {
-				System.err.println(inventorySourcePath+": Inventory has no valid slot indices.");
-				return slots;
-			}
-			
-			int redundantSlots = 0;
-			JSON_Array wrongValidSlotIndices = new JSON_Array();
-			for (Value value:arrValidSlotIndices) {
-				JSON_Object indexObj = base.getObject(value);
-				if (indexObj==null) continue;
-				Long indexX = base.getIntegerValue(indexObj, "X");
-				Long indexY = base.getIntegerValue(indexObj, "Y");
-				if (indexX==null || indexX<0 || indexX>=width ) { wrongValidSlotIndices.add(value); continue; }
-				if (indexY==null || indexY<0 || indexY>=height) { wrongValidSlotIndices.add(value); continue; }
-				if (slots[(int)(long)indexX][(int)(long)indexY]==null) {
-					slots[(int)(long)indexX][(int)(long)indexY] = new Slot(true,indexX,indexY);
-				} else
-					++redundantSlots;
-			}
-			if (!wrongValidSlotIndices.isEmpty())
-				System.err.println(inventorySourcePath+": Found "+wrongValidSlotIndices.size()+" wrong \"valid\" slot indices.");
-			if (redundantSlots>0)
-				System.err.println(inventorySourcePath+": Found "+redundantSlots+" redundant \"valid\" slot indices.");
-			
-			redundantSlots = 0;
-			int notValidSlots = 0;
-			JSON_Array wrongSlots = new JSON_Array();
-			for (Value value:arrSlots) {
-				JSON_Object slotObj = base.getObject(value);
-				if (slotObj==null) { wrongSlots.add(value); continue; }
-				Slot slot = new Slot(false);
-				slot.typeStr      = base.getStringValue (slotObj, "Type","InventoryType");
-				slot.idStr        = base.getStringValue (slotObj, "Id");
-				slot.amount       = base.getIntegerValue(slotObj, "Amount");
-				slot.maxAmount    = base.getIntegerValue(slotObj, "MaxAmount");
-				slot.damageFactor = base.getFloatValue  (slotObj, "DamageFactor");
-				slot.indexX       = base.getIntegerValue(slotObj, "Index","X");
-				slot.indexY       = base.getIntegerValue(slotObj, "Index","Y");
-				
-				if (slot.typeStr!=null) {
-					switch(slot.typeStr) {
-					case "Product"   : slot.type = Slot.Type.Product; break;
-					case "Technology": slot.type = Slot.Type.Technology; break;
-					case "Substance" : slot.type = Slot.Type.Substance; break;
-					}
-				}
-				if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
-				if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
-				int x = (int)(long)slot.indexX;
-				int y = (int)(long)slot.indexY;
-				if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
-				if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantSlots; continue; }
-				
-				slots[x][y] = slot;
-				
-				if (slot.type!=null && slot.idStr!=null) {
-					IDMap map = null;
-					switch(slot.type) {
-					case Product   : map = GameInfos.productIDs;   break;
-					case Technology: map = GameInfos.techIDs;      break;
-					case Substance : map = GameInfos.substanceIDs; break;
-					}
-					if (map!=null) {
-						slot.id = map.get(slot.idStr,base,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
-						slot.id.getUsage(base).addInventoryUsage(inventoryLabel,x,y);
-					}
-				}
-			}
-			if (!wrongSlots.isEmpty()) System.err.println(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
-			if (redundantSlots>0     ) System.err.println(inventorySourcePath+": Found "+redundantSlots+" redundant slots.");
-			if (notValidSlots>0      ) System.err.println(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
-
-			return slots;
-		}
-
-		private static BaseStatValue[] parseBaseStatValues(SaveGameData base, JSON_Array valueArray, String inventoryLabel, String inventorySourcePath) {
-			if (valueArray==null) return null;
-			
-			BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
-			for (int i=0; i<valueArray.size(); ++i) {
-				JSON_Object obj = base.getObject(valueArray.get(i));
-				if (obj==null) { baseStatValues[i]=null; continue; }
-				baseStatValues[i] = new BaseStatValue(base.getStringValue(obj,"BaseStatID"),base.getFloatValue(obj,"Value"));
-			}
-			return baseStatValues;
-		}
-
-		private static String parseSpecialSlots(SaveGameData base, JSON_Array specialSlots, String inventoryLabel, String inventorySourcePath) {
-			if (specialSlots==null) return null;
-			int n = specialSlots.size();
-			return (n>0?"no":(n+"")) +" special slot"+ (n==1?"":"s");
-		}
-
 		public Inventory player;
 		public Inventory playerTech;
 		public Inventory playerCargo;
@@ -854,7 +750,110 @@ public class SaveGameData {
 	
 	}
 
-	public static final class Inventory {
+	public final class Inventory {
+
+		private Slot[][] parseSlots(int width, int height, JSON_Array arrSlots, JSON_Array arrValidSlotIndices, String inventoryLabel, String inventorySourcePath) {
+			Slot[][] slots = new Slot[width][height];
+			for (Slot[] row:slots)
+				Arrays.fill(row, null);
+			
+			if (arrSlots==null) {
+				System.err.println(inventorySourcePath+": Inventory has no slots.");
+				return slots;
+			}
+			
+			if (arrValidSlotIndices==null) {
+				System.err.println(inventorySourcePath+": Inventory has no valid slot indices.");
+				return slots;
+			}
+			
+			int redundantSlots = 0;
+			JSON_Array wrongValidSlotIndices = new JSON_Array();
+			for (Value value:arrValidSlotIndices) {
+				JSON_Object indexObj = getObject(value);
+				if (indexObj==null) continue;
+				Long indexX = getIntegerValue(indexObj, "X");
+				Long indexY = getIntegerValue(indexObj, "Y");
+				if (indexX==null || indexX<0 || indexX>=width ) { wrongValidSlotIndices.add(value); continue; }
+				if (indexY==null || indexY<0 || indexY>=height) { wrongValidSlotIndices.add(value); continue; }
+				if (slots[(int)(long)indexX][(int)(long)indexY]==null) {
+					slots[(int)(long)indexX][(int)(long)indexY] = new Slot(true,indexX,indexY);
+				} else
+					++redundantSlots;
+			}
+			if (!wrongValidSlotIndices.isEmpty())
+				System.err.println(inventorySourcePath+": Found "+wrongValidSlotIndices.size()+" wrong \"valid\" slot indices.");
+			if (redundantSlots>0)
+				System.err.println(inventorySourcePath+": Found "+redundantSlots+" redundant \"valid\" slot indices.");
+			
+			redundantSlots = 0;
+			int notValidSlots = 0;
+			JSON_Array wrongSlots = new JSON_Array();
+			for (Value value:arrSlots) {
+				JSON_Object slotObj = getObject(value);
+				if (slotObj==null) { wrongSlots.add(value); continue; }
+				Slot slot = new Slot(false);
+				slot.typeStr      = getStringValue (slotObj, "Type","InventoryType");
+				slot.idStr        = getStringValue (slotObj, "Id");
+				slot.amount       = getIntegerValue(slotObj, "Amount");
+				slot.maxAmount    = getIntegerValue(slotObj, "MaxAmount");
+				slot.damageFactor = getFloatValue  (slotObj, "DamageFactor");
+				slot.indexX       = getIntegerValue(slotObj, "Index","X");
+				slot.indexY       = getIntegerValue(slotObj, "Index","Y");
+				
+				if (slot.typeStr!=null) {
+					switch(slot.typeStr) {
+					case "Product"   : slot.type = SlotType.Product; break;
+					case "Technology": slot.type = SlotType.Technology; break;
+					case "Substance" : slot.type = SlotType.Substance; break;
+					}
+				}
+				if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
+				if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
+				int x = (int)(long)slot.indexX;
+				int y = (int)(long)slot.indexY;
+				if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
+				if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantSlots; continue; }
+				
+				slots[x][y] = slot;
+				
+				if (slot.type!=null && slot.idStr!=null) {
+					IDMap map = null;
+					switch(slot.type) {
+					case Product   : map = GameInfos.productIDs;   break;
+					case Technology: map = GameInfos.techIDs;      break;
+					case Substance : map = GameInfos.substanceIDs; break;
+					}
+					if (map!=null) {
+						slot.id = map.get(slot.idStr,SaveGameData.this,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
+						slot.id.getUsage(SaveGameData.this).addInventoryUsage(inventoryLabel,x,y);
+					}
+				}
+			}
+			if (!wrongSlots.isEmpty()) System.err.println(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
+			if (redundantSlots>0     ) System.err.println(inventorySourcePath+": Found "+redundantSlots+" redundant slots.");
+			if (notValidSlots>0      ) System.err.println(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
+		
+			return slots;
+		}
+
+		private BaseStatValue[] parseBaseStatValues(JSON_Array valueArray, String inventoryLabel, String inventorySourcePath) {
+			if (valueArray==null) return null;
+			
+			BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
+			for (int i=0; i<valueArray.size(); ++i) {
+				JSON_Object obj = getObject(valueArray.get(i));
+				if (obj==null) { baseStatValues[i]=null; continue; }
+				baseStatValues[i] = new BaseStatValue(getStringValue(obj,"BaseStatID"),getFloatValue(obj,"Value"));
+			}
+			return baseStatValues;
+		}
+
+		private String parseSpecialSlots(JSON_Array specialSlots, String inventoryLabel, String inventorySourcePath) {
+			if (specialSlots==null) return null;
+			int n = specialSlots.size();
+			return (n>0?"no":(n+"")) +" special slot"+ (n==1?"":"s");
+		}
 
 		public final String label;
 		public Long width;
@@ -882,15 +881,17 @@ public class SaveGameData {
 			this.specialSlots = null;
 		}
 
-		public static final class Slot {
-			public enum Type { Product, Technology, Substance }
-			
+		public SaveGameData getSource() {
+			return SaveGameData.this;
+		}
+
+		public final class Slot {
 			public Long indexX;
 			public Long indexY;
 			public String idStr;
 			public GeneralizedID id;
 			public String typeStr;
-			public Type type;
+			public SlotType type;
 			public Long amount;
 			public Long maxAmount;
 			public Double damageFactor;
@@ -910,16 +911,19 @@ public class SaveGameData {
 				this.isEmpty = isEmpty;
 			}
 
-
 			public Slot(boolean isEmpty, Long indexX, Long indexY) {
 				this(isEmpty);
 				this.indexX = indexX;
 				this.indexY = indexY;
 			}
+
+			public SaveGameData getSource() {
+				return SaveGameData.this;
+			}
 		
 		}
 
-		public static final class BaseStatValue {
+		public final class BaseStatValue {
 			public final String baseStatID;
 			public final Double value;
 			private BaseStatValue(String baseStatID, Double value) {
@@ -928,6 +932,8 @@ public class SaveGameData {
 			}
 		}
 	}
+
+	public enum SlotType { Product, Technology, Substance }
 
 	private void parseDiscoveryData() {
 		JSON_Array arrayValue_Store = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");

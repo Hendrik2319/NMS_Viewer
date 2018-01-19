@@ -42,6 +42,18 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
 
+	public static Color brighter(Color color, float fraction) {
+		// fraction==0.0:  same color
+		// fraction==1.0:  WHITE
+		int r = color.getRed();
+		int g = color.getGreen();
+		int b = color.getBlue();
+		r = Math.min(255, Math.round(255-(255-r)*(1-fraction)));
+		g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
+		b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
+		return new Color(r,g,b);
+	}
+
 	public static class ListBoxDialog<T> extends StandardDialog {
 		private static final long serialVersionUID = -317119785847294385L;
 		
