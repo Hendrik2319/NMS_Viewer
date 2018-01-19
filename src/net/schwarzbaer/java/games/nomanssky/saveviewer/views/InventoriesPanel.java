@@ -468,10 +468,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 										g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
 										g2.drawString(str, x+gaugeXOffset+full+empty-textWidth, y+gaugeYOffset-4);
 										
-										if (slot.id.symbol!=null && !slot.id.symbol.isEmpty())
+										if (slot.id.hasSymbol())
 											g2.drawString(slot.id.symbol, x+gaugeXOffset, y+gaugeYOffset-4);
 									} else {
-										if (slot.id.symbol!=null && !slot.id.symbol.isEmpty()) {
+										if (slot.id.hasSymbol()) {
 											g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
 											g2.drawString(slot.id.symbol, x+innerOffsetX+2*imageBorder,y+innerOffsetY+innerHeight-2*imageBorder );
 										}
@@ -484,7 +484,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 									
 									g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
 									
-									if (slot.id!=null && !slot.id.label.isEmpty()) {
+									if (slot.id!=null && slot.id.hasLabel()) {
 										g2.setPaint(COLOR__SLOT_TEXT_LABEL);
 										g2.drawString(slot.id.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
 										g2.setPaint(getSlotTextColor(slot.type));

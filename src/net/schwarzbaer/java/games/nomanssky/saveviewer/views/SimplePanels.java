@@ -467,7 +467,7 @@ public class SimplePanels {
 			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, BlueprintsColumnID columnID) { return columnID == BlueprintsColumnID.Label; }
 			@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, BlueprintsColumnID columnID) {
 				if (columnID == BlueprintsColumnID.Label) {
-					blueprints[rowIndex].label = aValue==null?"":aValue.toString();
+					blueprints[rowIndex].setLabel(aValue==null?"":aValue.toString());
 					switch(type) {
 					case KnownProductBlueprints: GameInfos.saveProductIDsToFile(); break;
 					case KnownTechBlueprints   : GameInfos.saveTechIDsToFile(); break;

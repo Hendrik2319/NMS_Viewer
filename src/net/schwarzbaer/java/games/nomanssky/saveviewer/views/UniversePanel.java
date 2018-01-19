@@ -577,7 +577,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private void showDiscNameObj(Universe.UniverseObject obj) {
 		textArea.append("\r\n");
 		
-		textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
+		//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
 		
 		if (obj.hasOriginalName()) textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName()));
 		if (obj.hasUploadedName()) textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));

@@ -1280,7 +1280,7 @@ public class FileExport {
 		String objectID = obj.objectID;
 		GameInfos.GeneralizedID id = GameInfos.productIDs.get(objectID,obj.source,GameInfos.GeneralizedID.Usage.Type.BuildingObject);
 		String label = objectID;
-		if (id!=null && !id.label.isEmpty()) label = id.label;
+		if (id!=null && id.hasLabel()) label = id.label;
 		
 		writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, size, null);
 	}

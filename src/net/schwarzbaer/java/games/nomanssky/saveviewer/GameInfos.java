@@ -492,7 +492,7 @@ public class GameInfos {
 				else if (idStr.endsWith(".symbol")) {
 					idStr = idStr.substring(0, idStr.length()-".symbol".length());
 					GeneralizedID id = map.get(idStr);
-					id.symbol = value;
+					id.setSymbol(value);
 				}
 				else if (idStr.endsWith(".image")) {
 					idStr = idStr.substring(0, idStr.length()-".image".length());
@@ -507,7 +507,7 @@ public class GameInfos {
 				}
 				else {
 					GeneralizedID id = map.get(idStr);
-					id.label = value;
+					id.setLabel(value);
 				}
 			}
 		}
@@ -531,7 +531,7 @@ public class GameInfos {
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (String idStr:map.getSortedKeys()) {
 				GeneralizedID id = map.get(idStr);
-				out.printf("%s=%s\r\n",idStr,id.label);
+				out.printf("%s=%s\r\n",idStr,id.getLabel());
 				if (id.type!=null  ) out.printf("%s.type=%s\r\n"     ,idStr,id.type);
 				if (id.hasSymbol ()) out.printf("%s.symbol=%s\r\n"   ,idStr,id.symbol);
 				if (id.hasImageFileName  ()) out.printf("%s.image=%s\r\n"    ,idStr,id.getImageFileName());
@@ -603,7 +603,7 @@ public class GameInfos {
 		private GeneralizedID(String id, String label) {
 			this.id = id;
 			this.label = label;
-			this.symbol = "";
+			this.symbol = null;
 			this.type = null;
 			this.usage = new HashMap<>();
 			this.imageFileName = null;
@@ -643,12 +643,14 @@ public class GameInfos {
 				catch (NumberFormatException e) {}
 		}
 		
-		public boolean hasLabel() {
-			return label!=null && !label.isEmpty();
-		}
-		public boolean hasSymbol() {
-			return symbol!=null && !symbol.isEmpty();
-		}
+		public boolean hasLabel () { return label !=null && !label .isEmpty(); }
+		public boolean hasSymbol() { return symbol!=null && !symbol.isEmpty(); }
+		public void setLabel (String label ) { this.label  = (label ==null||label .isEmpty())?null:label ; }
+		public void setSymbol(String symbol) { this.symbol = (symbol==null||symbol.isEmpty())?null:symbol; }
+		public String getLabel () { return label ==null?"":label ; }
+		public String getSymbol() { return symbol==null?"":symbol; }
+		
+		
 		public String getName() {
 			if (!hasLabel ()) return "["+id+"]";
 			if (!hasSymbol()) return label+" ["+id+"]";
@@ -1142,6 +1144,14 @@ public class GameInfos {
 				return;
 			}
 			
+			BufferedImage image = id.getImage();
+			if (image==null) {
+				imageField.setIcon(null);
+			} else {
+				imageField.setIcon(new ImageIcon(image));
+				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+			}
+			
 			textarea.append("ID     : "+id.id+"\r\n");
 			if (id.type!=null  ) textarea.append("Type   : "+id.type.label+"\r\n");
 			if (id.hasLabel  ()) textarea.append("Label  : "+id.label+"\r\n");
@@ -1149,12 +1159,11 @@ public class GameInfos {
 			if (id.hasImageFileName  ()) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
 			if (id.hasImageBG()) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
 			
-			BufferedImage image = id.getImage();
-			if (image==null) {
-				imageField.setIcon(null);
-			} else {
-				imageField.setIcon(new ImageIcon(image));
-				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+			if (id.type!=null && id.type.isUpgrade) {
+				if (!id.betterUpgrades.isEmpty())
+					textarea.append("Upgrades:\r\n");
+				for (GeneralizedID upg:id.betterUpgrades)
+					textarea.append("   "+(upg.hasLabel()?upg.label:upg.id)+"\r\n");
 			}
 			
 			for (SaveGameData key:id.usage.keySet()) {
@@ -1269,7 +1278,7 @@ public class GameInfos {
 			private void updateNumberOfLabledIDs() {
 				numberOfLabledIDs = 0;
 				for (GeneralizedID id:IDs) {
-					if (!id.label.isEmpty())
+					if (id.hasLabel())
 						++numberOfLabledIDs;
 				}
 			}
@@ -1360,8 +1369,8 @@ public class GameInfos {
 				switch(columnID) {
 				case ID    : return;
 				case Type  : id.type   = (aValue instanceof GeneralizedID.Type)?(GeneralizedID.Type)aValue:null; break;
-				case Symbol: id.symbol = aValue==null?"":aValue.toString(); break;
-				case Label : id.label  = aValue==null?"":aValue.toString(); break;
+				case Symbol: id.setSymbol(aValue==null?"":aValue.toString()); break;
+				case Label : id.setLabel (aValue==null?"":aValue.toString()); break;
 				case Image : id.setImageFileName(aValue); break;
 				case ImgBG : id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
 				case Usage : return;
@@ -1403,7 +1412,7 @@ public class GameInfos {
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
 			
 			JTextField labelTextField = new JTextField();
-			labelTextField.setText(this.id.label);
+			labelTextField.setText(this.id.getLabel());
 			labelTextField.addActionListener(e->setLabel(labelTextField.getText()));
 			labelTextField.addFocusListener(new FocusListener() {
 				@Override public void focusGained(FocusEvent e) {}
@@ -1412,7 +1421,7 @@ public class GameInfos {
 			
 			JTextField symbolTextField = new JTextField();
 			symbolTextField.setPreferredSize(new Dimension(50,16));
-			symbolTextField.setText(this.id.symbol);
+			symbolTextField.setText(this.id.getSymbol());
 			symbolTextField.addActionListener(e->setSymbol(symbolTextField.getText()));
 			symbolTextField.addFocusListener(new FocusListener() {
 				@Override public void focusGained(FocusEvent e) {}
@@ -1539,14 +1548,14 @@ public class GameInfos {
 		}
 	
 		private void setLabel(String label) {
-			id.label = label;
+			id.setLabel(label);
 			setTitle(getDlgTitle(id));
 			hasDataChanged = true;
 			showValues();
 		}
 
 		private void setSymbol(String symbol) {
-			id.symbol = symbol;
+			id.setSymbol(symbol);
 			setTitle(getDlgTitle(id));
 			hasDataChanged = true;
 			showValues();
@@ -1591,10 +1600,10 @@ public class GameInfos {
 	
 		public boolean hasDataChanged() { return hasDataChanged; }
 		public void transferChangesTo(GeneralizedID id) {
-			id.label = this.id.label;
+			id.label  = this.id.label;
 			id.symbol = this.id.symbol;
-			id.type = this.id.type;
-			id.imageFileName = this.id.imageFileName;
+			id.type   = this.id.type;
+			id.imageFileName   = this.id.imageFileName;
 			id.imageBackground = this.id.imageBackground;
 		}
 
