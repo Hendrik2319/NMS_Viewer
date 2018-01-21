@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.FocusEvent;
@@ -49,6 +50,7 @@ import javax.swing.JTextField;
 import javax.swing.event.MouseInputAdapter;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 
@@ -76,6 +78,7 @@ public class Images {
 	public void init() {
 		prepareColors();
 		readImages();
+		UpgradeCategoryImages.init();
 	}
 	
 	private void prepareColors() {
@@ -418,6 +421,82 @@ public class Images {
 			return combinedImage;
 		} else
 			return baseImage;
+	}
+	
+	public enum UpgradeCategory {
+		Generic, Mine, Damage, Speed, Time, Clip, Accuracy, Armour, Protection, Scan, Energy, Jetpack;
+
+		public String getLabel() {
+			return toString();
+		}
+
+		public static UpgradeCategory getValue(String str) {
+			try { return valueOf(str); }
+			catch (Exception e) { return null; }
+		}
+	}
+	
+	public static class UpgradeCategoryImages {
+		private static final String IMAGES_UPGRADECAT_PNG = "/images/Upgradecat.png";
+		private static final IconSource<UpgradeCategory> UpgradeCategoryImageIS = new IconSource<UpgradeCategory>(64,64);
+		private static final HashMap<ImageKey,Image> images = new HashMap<>();
+
+		public static void init() {
+			UpgradeCategoryImageIS.readIconsFromResource(IMAGES_UPGRADECAT_PNG);
+		}
+		
+		public static Image getCachedImage(UpgradeCategory cat, int width, int height) {
+			Image image = images.get(new ImageKey(cat,width,height));
+			if (image==null) images.put(new ImageKey(cat,width,height),image = createImage(cat,width,height));
+			return image;
+		}
+		
+		public static Image createImage(UpgradeCategory cat, int width, int height) {
+			BufferedImage image = UpgradeCategoryImageIS.getImage(cat);
+			return image.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH);
+		}
+
+		public static Image createImage(UpgradeCategory cat, int width, int height, Color color) {
+			BufferedImage image = UpgradeCategoryImageIS.getImage(cat);
+			if (color==null)
+				return image.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH);
+			
+			BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			Graphics g = result.getGraphics();
+			g.setColor(color);
+			g.fillRect(0, 0, width, height);
+			g.drawImage(image.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH), 0, 0, null);
+			return result;
+		}
+
+		private static class ImageKey {
+			private final UpgradeCategory cat;
+			private final int width;
+			private final int height;
+
+			public ImageKey(UpgradeCategory cat, int width, int height) {
+				this.cat = cat;
+				this.width = width;
+				this.height = height;
+			}
+
+			@Override public int hashCode() { return ((cat.ordinal()&0xF)<<16) | ((width&0xFF)<<8) | (height&0xFF); }
+
+			@Override
+			public boolean equals(Object obj) {
+				if (!(obj instanceof ImageKey)) return false;
+				ImageKey other = (ImageKey)obj;
+				if (this.cat   !=other.cat   ) return false;
+				if (this.width !=other.width ) return false;
+				if (this.height!=other.height) return false;
+				return true;
+			}
+
+			@Override
+			public String toString() {
+				return "ImageKey [cat=" + cat + ", width=" + width + ", height=" + height + "]";
+			}
+		}
 	}
 
 	public static class NamedColor {

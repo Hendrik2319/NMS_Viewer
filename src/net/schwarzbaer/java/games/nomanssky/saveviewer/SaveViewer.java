@@ -87,9 +87,7 @@ public class SaveViewer implements ActionListener {
 		RawDataTreePanel.prepareIconSource();
 		FileExport.prepareModels();
 		
-		tabheaderIS = new IconSource<TabHeaderIcons>(10,10){
-			@Override protected int getIconIndexInImage(TabHeaderIcons key) { return key.ordinal(); }
-		};
+		tabheaderIS = new IconSource<TabHeaderIcons>(10,10);
 		tabheaderIS.readIconsFromResource(IMAGES_TAB_HEADER_PNG);
 		
 		toolbarIS = new IconSource<ToolbarIcons>(16,16){
@@ -115,6 +113,11 @@ public class SaveViewer implements ActionListener {
 		GameInfos.loadAllIDsFromFiles();
 		GameInfos.loadUniverseObjectDataFromFile();
 
+//		HashMap<Dimension,Integer> map = new HashMap<>();
+//		Integer prev;
+//		prev = map.put(new Dimension(12,15), 1); System.out.println("map.put(new Dimension(12,15), 1) -> "+prev);
+//		prev = map.put(new Dimension(12,15), 2); System.out.println("map.put(new Dimension(12,15), 2) -> "+prev);
+//		prev = map.put(new Dimension(12,15), 3); System.out.println("map.put(new Dimension(12,15), 3) -> "+prev);
 		
 //		String str;
 //		long value;
@@ -398,7 +401,7 @@ public class SaveViewer implements ActionListener {
 			
 			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
-			tabbedPane.setPreferredSize(new Dimension(1500, 800));
+			tabbedPane.setPreferredSize(new Dimension(1600, 800));
 			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.techIDs     , "TechnologyIDsTable"));
 			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.productIDs  , "ProductIDsTable"));
 			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.substanceIDs, "SubstanceIDsTable"));

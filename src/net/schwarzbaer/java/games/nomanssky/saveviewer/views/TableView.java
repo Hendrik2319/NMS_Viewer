@@ -38,7 +38,9 @@ import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.UpgradeCategory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
 public class TableView {
@@ -526,63 +528,93 @@ public class TableView {
 		}
 	}
 	
-	public static class NamedColorRenderer implements ListCellRenderer<NamedColor>, TableCellRenderer {
+	public static class UpgradeCategoryRenderer extends IconTextRenderer<Images.UpgradeCategory,Images.UpgradeCategory> {
+		
+		public UpgradeCategoryRenderer() { super(50,16); }
+		
+		@Override protected UpgradeCategory cast(Object obj) {
+			if (obj instanceof Images.UpgradeCategory) return (Images.UpgradeCategory)obj;
+			return null;
+		}
+
+		@Override protected Icon createIcon(UpgradeCategory value) {
+			return new ImageIcon(Images.UpgradeCategoryImages.createImage(value, 16,16, Color.BLACK));
+		}
+
+		@Override protected UpgradeCategory getIconKey(UpgradeCategory value) { return value; }
+		@Override protected String          getLabel  (UpgradeCategory value) { return value.getLabel(); }
+	}
+	
+	public static class NamedColorRenderer extends IconTextRenderer<NamedColor,Integer> {
+		
+		public NamedColorRenderer() { super(50,16); }
+		
+		@Override protected NamedColor cast(Object obj) {
+			if (obj instanceof NamedColor) return (NamedColor)obj;
+			return null;
+		}
+
+		@Override protected Icon createIcon(NamedColor value) {
+			return new ImageIcon(NamedColor.createImage(value,20,13));
+		}
+
+		@Override protected Integer getIconKey(NamedColor value) { return value.value; }
+		@Override protected String  getLabel  (NamedColor value) { return value.name;  }
+	}
+	
+	public static abstract class IconTextRenderer<ValueType,IconKey> implements ListCellRenderer<ValueType>, TableCellRenderer {
 		
 		private RendererComponent comp;
 		
-		public NamedColorRenderer() {
+		public IconTextRenderer(int prefWidth, int prefHeight) {
 			comp = new RendererComponent();
-			comp.setPreferredSize(new Dimension(50,16));
+			comp.setPreferredSize(new Dimension(prefWidth,prefHeight));
 		}
 		
+		protected abstract ValueType cast(Object obj);
+		protected abstract Icon    createIcon(ValueType value);
+		protected abstract IconKey getIconKey(ValueType value);
+		protected abstract String  getLabel  (ValueType value);
+		
 		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			NamedColor colorValue = null;
-			if (value instanceof NamedColor) colorValue = (NamedColor)value;
-			if (isSelected) comp.set(colorValue,table.getSelectionBackground(),table.getSelectionForeground());
-			else            comp.set(colorValue,table.getBackground(),table.getForeground());
+		public Component getTableCellRendererComponent(JTable table, Object obj, boolean isSelected, boolean hasFocus, int row, int column) {
+			ValueType value = cast(obj);
+			if (isSelected) comp.set(value,table.getSelectionBackground(),table.getSelectionForeground());
+			else            comp.set(value,table.getBackground(),table.getForeground());
 			return comp;
 		}
 
 		@Override
-		public Component getListCellRendererComponent(JList<? extends NamedColor> list, NamedColor value, int index, boolean isSelected, boolean cellHasFocus) {
+		public Component getListCellRendererComponent(JList<? extends ValueType> list, ValueType value, int index, boolean isSelected, boolean cellHasFocus) {
 			if (isSelected) comp.set(value,list.getSelectionBackground(),list.getSelectionForeground());
 			else            comp.set(value,list.getBackground(),list.getForeground());
 			return comp;
 		}
 
-		public static class RendererComponent extends LabelRendererComponent {
-			private static final long serialVersionUID = -5382894277961357430L;
+		public class RendererComponent extends LabelRendererComponent {
+			private static final long serialVersionUID = -6729772313931767140L;
 			
-			private HashMap<Integer,Icon> iconCache;
+			private HashMap<IconKey,Icon> iconCache;
 			
 			private RendererComponent() {
 				iconCache = new HashMap<>();
 				setOpaque(true);
 			}
 			
-			public void set(NamedColor value, Color bgColor, Color textColor) {
+			public void set(ValueType value, Color bgColor, Color textColor) {
 				setBackground(bgColor);
 				setForeground(textColor);
 				if (value==null) {
 					setIcon(null);
 					setText("");
 				} else {
-					setIcon(getCachedIcon(value));
-					setText(value.name);
+					Icon icon = iconCache.get(getIconKey(value));
+					if (icon==null) iconCache.put(getIconKey(value),icon = createIcon(value));
+					setIcon(icon);
+					setText(getLabel(value));
 				}
-			}
-			
-			private Icon getCachedIcon(NamedColor value) {
-				Icon icon = iconCache.get(value.value);
-				if (icon==null) {
-					icon = new ImageIcon(NamedColor.createImage(value,20,13));
-					iconCache.put(value.value,icon);
-				}
-				return icon;
 			}
 		}
-		
 	}
 
 	private static class LabelRendererComponent extends JLabel {
