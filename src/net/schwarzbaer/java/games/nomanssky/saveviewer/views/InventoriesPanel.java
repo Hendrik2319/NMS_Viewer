@@ -9,6 +9,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -36,6 +37,7 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
@@ -335,6 +337,19 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final int SLOT_HEIGHT = SLOT_WIDTH+13;
 			private static final int SLOT_RASTER_X = SLOT_WIDTH +2*SLOT_BORDER;
 			private static final int SLOT_RASTER_Y = SLOT_HEIGHT+2*SLOT_BORDER;
+			
+			private static final int UPGRCAT_WIDTH  = Math.round(SLOT_WIDTH*0.4f);
+			private static final int UPGRCAT_HEIGHT = UPGRCAT_WIDTH;
+			private static final int UPGRCAT_BORDER = 4;
+			private static final int UPGRCAT_CORNER_RADIUS = 7;
+
+			private static final int UPGRCAT_IMG_SIZE = 20;
+			private static final int UPGRCAT_IMG_OFFSET_X = 3;
+			private static final int UPGRCAT_IMG_OFFSET_Y = 3;
+			
+			private static final float UPGRCAT_STR_FONT_SCALE = 1.3f;
+			private static final int UPGRCAT_STR_OFFSET_X = 4;
+			private static final int UPGRCAT_STR_OFFSET_Y = 6;
 
 			private int inventoryWidth;
 			private int inventoryHeight;
@@ -415,7 +430,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 								int incrementY = 13;
 								
 								if (image!=null) {
-									g2.setFont( standardFont.deriveFont(Font.BOLD) );
+									Font stdBoldFont = standardFont.deriveFont(Font.BOLD);
+									g2.setFont( stdBoldFont );
 									
 									int markerWidth = 0;
 									//if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade){
@@ -438,6 +454,27 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 									//g2.setPaint(getSlotTextColor(slot.type));
 									
 									g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
+									
+									if (slot.id.upgradeCat!=null || slot.id.upgradeStr!=null) {
+										int iconX = x+innerOffsetX+imageBorder+UPGRCAT_BORDER;
+										int iconY = y+innerOffsetY+innerHeight-imageBorder-UPGRCAT_BORDER-UPGRCAT_HEIGHT;
+										g2.setPaint(Color.BLACK);
+										g2.fillRoundRect(iconX,iconY, UPGRCAT_WIDTH, UPGRCAT_HEIGHT, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
+										g2.setPaint(Color.WHITE);
+										g2.drawRoundRect(iconX,iconY, UPGRCAT_WIDTH-1, UPGRCAT_HEIGHT-1, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
+										if (slot.id.upgradeCat!=null) {
+											Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
+											g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
+										}
+										if (slot.id.upgradeStr!=null) {
+											g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCAT_STR_FONT_SCALE) );
+											int strX = iconX+UPGRCAT_WIDTH-UPGRCAT_STR_OFFSET_X-g2.getFontMetrics().stringWidth(slot.id.upgradeStr);
+											int strY = iconY+UPGRCAT_HEIGHT-UPGRCAT_STR_OFFSET_Y;
+											g2.drawString(slot.id.upgradeStr, strX, strY);
+											g2.setFont( stdBoldFont );
+										}
+									}
+									
 									
 									int amount    = -1;
 									int maxAmount = -1;

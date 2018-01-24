@@ -743,10 +743,12 @@
 ^STAM1.type=ExosuitExtensionUpgrade
 ^STAM1.image=Render.stamina.Ausdauersteigerung.png
 ^STAM1.imageBG=085C78
+^STAM1.upgradeStr=+1
 ^STAM2=Ausdauersteigerung Tau
 ^STAM2.type=ExosuitExtensionUpgrade
 ^STAM2.image=Render.stamina.Ausdauersteigerung.png
 ^STAM2.imageBG=085C78
+^STAM2.upgradeStr=+2
 ^STRONGLASER=Fortgeschrittener Minenlaser
 ^STRONGLASER.type=MultitoolWeaponUpgrade
 ^STRONGLASER.image=AdvMiningLaserIcon.png

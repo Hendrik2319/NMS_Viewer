@@ -39,6 +39,7 @@ import java.util.Vector;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -440,9 +441,16 @@ public class Images {
 		private static final String IMAGES_UPGRADECAT_PNG = "/images/Upgradecat.png";
 		private static final IconSource<UpgradeCategory> UpgradeCategoryImageIS = new IconSource<UpgradeCategory>(64,64);
 		private static final HashMap<ImageKey,Image> images = new HashMap<>();
+		private static final HashMap<ImageKey,Icon> icons = new HashMap<>();
 
 		public static void init() {
 			UpgradeCategoryImageIS.readIconsFromResource(IMAGES_UPGRADECAT_PNG);
+		}
+		
+		public static Icon getCachedIcon(UpgradeCategory cat, int width, int height) {
+			Icon icon = icons.get(new ImageKey(cat,width,height));
+			if (icon==null) icons.put(new ImageKey(cat,width,height),icon = new ImageIcon(createImage(cat,width,height)));
+			return icon;
 		}
 		
 		public static Image getCachedImage(UpgradeCategory cat, int width, int height) {
