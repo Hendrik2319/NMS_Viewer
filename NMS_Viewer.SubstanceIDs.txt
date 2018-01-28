@@ -28,6 +28,11 @@
 ^FUELUNCOMMON1.symbol=Th
 ^FUELUNCOMMON1.image=Substance.fuel.uncommon1.Thamium9.png
 ^FUELUNCOMMON1.imageBG=BB392C
+^GAS1=Schwefelin
+^GAS1.type=Resource
+^GAS1.symbol=Sf
+^GAS1.image=GAS.1.Schwefelin.png
+^GAS1.imageBG=5A6F36
 ^GAS2=Radon
 ^GAS2.type=Resource
 ^GAS2.symbol=Rn
@@ -46,6 +51,10 @@
 ^SPACEGUNK3.symbol=Sr
 ^SPACEGUNK3.image=Rustedmetalicon.png
 ^SPACEGUNK3.imageBG=5A6F36
+^SPACEGUNK4=Lebender Schleim
+^SPACEGUNK4.symbol=Sr
+^SPACEGUNK4.image=NmsLiving_Slime_Icon.png
+^SPACEGUNK4.imageBG=5A6F36
 ^SUBBARREN=Kaktusfleisch
 ^SUBBARREN.type=PlantProduct
 ^SUBBARREN.symbol=Kf

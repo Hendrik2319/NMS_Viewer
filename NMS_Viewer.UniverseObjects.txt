@@ -141,6 +141,17 @@ name=Zeyang XIII
 race=Korvax
 class=Yellow
 
+[Sys014F00FAA8CBC4]
+name=Tolugach XV
+race=Vykeen
+class=Green
+
+[Pln114F00FAA8CBC4]
+name=Eikkeerhodov
+
+[Pln214F00FAA8CBC4]
+name=Dihruva Oband
+
 [Sys016F00FAA8CBC4]
 name=Esvets
 race=Vykeen
@@ -339,3 +350,10 @@ short=ExtHot
 info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
+
+[Sys005000FE1FA68F]
+name=Nozolwe-Afor
+race=Gek
+
+[Pln105000FE1FA68F]
+name=Ezawasahirish
