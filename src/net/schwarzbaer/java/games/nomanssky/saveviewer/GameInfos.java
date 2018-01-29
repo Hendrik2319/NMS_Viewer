@@ -1661,8 +1661,8 @@ public class GameInfos {
 			id.label  = this.id.label;
 			id.symbol = this.id.symbol;
 			id.type   = this.id.type;
-			id.imageFileName   = this.id.imageFileName;
-			id.imageBackground = this.id.imageBackground;
+			id.setImageFileName(this.id.imageFileName);
+			id.setImageBG      (this.id.imageBackground);
 			id.upgradeCat = this.id.upgradeCat;
 			id.upgradeStr = this.id.upgradeStr;
 		}
