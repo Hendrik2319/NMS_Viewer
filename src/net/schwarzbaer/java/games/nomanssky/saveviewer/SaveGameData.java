@@ -1578,6 +1578,7 @@ public class SaveGameData {
 			private final int voxelY;
 			public final int voxelZ;
 			public final Vector<SolarSystem> solarSystems;
+			public String name;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
@@ -1585,12 +1586,18 @@ public class SaveGameData {
 				this.voxelY = y;
 				this.voxelZ = z;
 				this.solarSystems = new Vector<>();
+				this.setName(null);
 			}
 
 			@Override
 			public String toString() {
-				return "Region "+voxelX+","+voxelY+","+voxelZ;
+				if (name==null) return "Region "+voxelX+","+voxelY+","+voxelZ;
+				return "Region \""+name+"\"  ("+voxelX+","+voxelY+","+voxelZ+")";
 			}
+
+			public void    setName(String name) { this.name = (name==null||name.isEmpty())?null:name; }
+			public String  getName() { return name==null?"":name; }
+			public boolean hasName() { return name!=null; }
 
 			public void addSolarSystem(SolarSystem solarSystem) {
 				solarSystems.add(solarSystem);

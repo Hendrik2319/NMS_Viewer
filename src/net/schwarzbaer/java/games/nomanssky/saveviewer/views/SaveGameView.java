@@ -192,6 +192,15 @@ public class SaveGameView extends JPanel {
 				GameInfos.saveUniverseObjectDataToFile(data.universe);
 			}
 		}
+
+		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.Region region, String objectStr) {
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), region.getName());
+			if (name!=null) {
+				if (name.isEmpty()) name=null;
+				region.setName(name);
+				GameInfos.saveUniverseObjectDataToFile(data.universe);
+			}
+		}
 	}
 
 	public static class EnumCheckBoxMenuItem<Key extends Enum<Key>, ActionCommand extends Enum<ActionCommand>> extends JCheckBoxMenuItem {

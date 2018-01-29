@@ -196,10 +196,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private SimplifiedTable extraInfoTable;
 	
 	private JPopupMenu contextMenu_Other;
+	private JPopupMenu contextMenu_Named;
 	private JPopupMenu contextMenu_SolarSystem;
-	private JPopupMenu contextMenu_Planet;
+	private JMenuItem miSetName_Named;
 	private JMenuItem miSetName_SolarSystem;
-	private JMenuItem miSetName_Planet;
 	private Gui.ListMenuItems<StarClass> miSetStarClass;
 	private Gui.ListMenuItems<Race> miSetRace;
 	
@@ -286,13 +286,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		contextMenu_SolarSystem.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 		contextMenu_SolarSystem.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 		
-		contextMenu_Planet = new JPopupMenu("Planet");
-		contextMenu_Planet.add(miSetName_Planet = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
-		contextMenu_Planet.addSeparator();
-		contextMenu_Planet.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
-		contextMenu_Planet.addSeparator();
-		contextMenu_Planet.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
-		contextMenu_Planet.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+		contextMenu_Named = new JPopupMenu("Planet");
+		contextMenu_Named.add(miSetName_Named = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+		contextMenu_Named.addSeparator();
+		contextMenu_Named.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
+		contextMenu_Named.addSeparator();
+		contextMenu_Named.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+		contextMenu_Named.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
 		
 		textArea = new JTextArea();
 		textArea.setEditable(false);
@@ -338,16 +338,23 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
+	private void executeAction(Object source, UniverseTreeActionCommand command) {
+		actionPerformed(new ActionEvent(source, ActionEvent.ACTION_FIRST, command.toString()));
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		UniverseTreeActionCommand actionCommand = UniverseTreeActionCommand.valueOf(e.getActionCommand());
 		switch(actionCommand) {
 		case SetName:
 			if (clickedNode!=null) {
-				Planet planet; SolarSystem system;
+				Planet planet;
+				SolarSystem system;
+				Region region;
 				switch(clickedNode.type) {
 				case Planet     : planet = ((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet.getUniverseAddress(),planet, "planet"      ); break;
 				case SolarSystem: system = ((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system.getUniverseAddress(),system, "solar system"); break;
+				case Region     : region = ((     RegionNode)clickedNode).value; setNameForUniverseAddress(region.getUniverseAddress(),region, "region"      ); break;
 				default:break;
 				}
 				treeModel.nodeChanged(clickedNode);
@@ -433,12 +440,54 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 	
 	private class TreeListener implements TreeSelectionListener, MouseListener {
+		private long clicktime;
+		private GenericTreeNode<?> lastDblclickedNode;
+		TreeListener() {
+			clicktime = 0;
+			lastDblclickedNode = null;
+		}
+
 		@Override public void mousePressed(MouseEvent e) {}
 		@Override public void mouseReleased(MouseEvent e) {}
 		@Override public void mouseEntered(MouseEvent e) {}
 		@Override public void mouseExited(MouseEvent e) {}
 		@Override public void mouseClicked(MouseEvent e) {
-			if (e.getButton()==MouseEvent.BUTTON3) {
+			switch (e.getButton()) {
+
+			case MouseEvent.BUTTON1:
+				TreePath dblclickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
+				GenericTreeNode<?> dblclickedNode = null;
+				if (dblclickedTreePath!=null) {
+					Object object = dblclickedTreePath.getLastPathComponent();
+					if (object instanceof GenericTreeNode<?>)
+						dblclickedNode = (GenericTreeNode<?>)object;
+				}
+				if (dblclickedNode!=null) {
+					if (lastDblclickedNode==dblclickedNode && System.currentTimeMillis()-clicktime<700) {
+						clickedTreePath = dblclickedTreePath;
+						clickedNode = dblclickedNode;
+						UniversePanel.this.mouseDblLeftClicked();
+						lastDblclickedNode = null;
+						clicktime = 0;
+					} else {
+						lastDblclickedNode = dblclickedNode;
+						clicktime = System.currentTimeMillis();
+					}
+				}
+				break;
+				
+			case MouseEvent.BUTTON2:
+				clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
+				clickedNode = null;
+				if (clickedTreePath!=null) {
+					Object object = clickedTreePath.getLastPathComponent();
+					if (object instanceof GenericTreeNode<?>)
+						clickedNode = (GenericTreeNode<?>)object;
+				}
+				UniversePanel.this.mouseMidClicked();
+				break;
+				
+			case MouseEvent.BUTTON3:
 				//System.out.println("mouseClicked( BUTTON3, "+e.getX()+", "+e.getY()+" )");
 				clickedTreePath = tree.getPathForLocation(e.getX(), e.getY());
 				clickedNode = null;
@@ -447,8 +496,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (object instanceof GenericTreeNode<?>)
 						clickedNode = (GenericTreeNode<?>)object;
 				}
-				JPopupMenu contextMenu = UniversePanel.this.mouseClicked();
+				JPopupMenu contextMenu = UniversePanel.this.mouseRightClicked();
 				contextMenu.show(tree, e.getX(), e.getY());
+				break;
 			}
 		}
 
@@ -463,7 +513,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private JPopupMenu mouseClicked() {
+	private JPopupMenu mouseRightClicked() {
 		if (clickedNode==null)
 			return contextMenu_Other;
 		
@@ -475,12 +525,42 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetStarClass.setValue(system.starClass);
 			return contextMenu_SolarSystem;
 			
+		case Region:
+			miSetName_Named.setText(((RegionNode)clickedNode).value.hasName()?"Change name":"Set name");
+			return contextMenu_Named;
+			
 		case Planet:
-			miSetName_Planet.setText(((PlanetNode)clickedNode).value.hasOriginalName()?"Change name":"Set name");
-			return contextMenu_Planet;
+			miSetName_Named.setText(((PlanetNode)clickedNode).value.hasOriginalName()?"Change name":"Set name");
+			return contextMenu_Named;
 			
 		default:
 			return contextMenu_Other;
+		}
+	}
+
+	public void mouseMidClicked() {
+		if (clickedNode==null) return;
+		
+		switch(clickedNode.type) {
+		case Region:
+		case SolarSystem:
+		case Planet:
+			executeAction(tree, UniverseTreeActionCommand.SetName);
+			break;
+		default:
+			break;
+		}
+	}
+
+	public void mouseDblLeftClicked() {
+		if (clickedNode==null) return;
+		
+		switch(clickedNode.type) {
+		case Planet:
+			executeAction(tree, UniverseTreeActionCommand.SetName);
+			break;
+		default:
+			break;
 		}
 	}
 

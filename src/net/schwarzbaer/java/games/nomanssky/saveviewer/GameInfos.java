@@ -86,7 +86,7 @@ public class GameInfos {
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	
 	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
-		enum Type { SolarSystem,Planet }
+		enum Type { Region,SolarSystem,Planet }
 		
 		final UniverseAddress universeAddress;
 		final UniverseObjectData.Type type;
@@ -109,7 +109,12 @@ public class GameInfos {
 		public boolean hasData() {
 			return name!=null || race!=null || starClass!=null || distanceToCenter!=null || !extraInfos.isEmpty();
 		}
-	
+		
+		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
+			this(universeAddress,Type.Region);
+			this.name = region.name;
+		}
+		
 		public UniverseObjectData(UniverseAddress universeAddress, SolarSystem sys) {
 			this(universeAddress,Type.SolarSystem,sys);
 			race = sys.race;
@@ -156,7 +161,7 @@ public class GameInfos {
 			boolean showInParent = false;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
-				if ((str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
+				if ((str.startsWith("[Reg") || str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
 					uoData = null;
 					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
 					long address;
@@ -166,6 +171,7 @@ public class GameInfos {
 						continue;
 					}
 					UniverseAddress ua = new UniverseAddress(address);
+					if (str.startsWith("[Reg") && ua.isRegion     ()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.Region);
 					if (str.startsWith("[Sys") && ua.isSolarSystem()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.SolarSystem);
 					if (str.startsWith("[Pln") && ua.isPlanet     ()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.Planet);
 					if (uoData != null) universeObjectDataArr.put(address, uoData);
@@ -226,46 +232,56 @@ public class GameInfos {
 		
 		boolean withOutput = false; // DEBUG;
 		
+		Region region = null;
 		SolarSystem system = null;
 		Planet planet = null;
+		
 		UniverseObject uniObj = null;
-		String uniObjName = null;
+		String objName = null;
 		for (Long address:universeObjectDataArr.keySet()) {
 			UniverseObjectData uoData = universeObjectDataArr.get(address);
 			UniverseAddress ua = new UniverseAddress(address);
 			
+			region = null;
 			system = null;
 			planet = null;
+			uniObj = null;
+			objName = null;
 			
-			if (uoData.type==UniverseObjectData.Type.SolarSystem && ua.isSolarSystem()) system = universe.findSolarSystem(ua);
-			if (uoData.type==UniverseObjectData.Type.Planet      && ua.isPlanet     ()) planet = universe.findPlanet     (ua);
-			if (system!=null) { uniObj = system; uniObjName = "solar system "+ua.getSigBoostCode();   if (withOutput) System.out.printf("Solar system %s\r\n",ua.getSigBoostCode());   }
-			if (planet!=null) { uniObj = planet; uniObjName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) System.out.printf("Planet %s\r\n",ua.getExtendedSigBoostCode()); }
+			switch(uoData.type) {
+			case Region     : if (ua.isRegion     ()) region = universe.findRegion     (ua); break;
+			case SolarSystem: if (ua.isSolarSystem()) system = universe.findSolarSystem(ua); break;
+			case Planet     : if (ua.isPlanet     ()) planet = universe.findPlanet     (ua); break;
+			}
+			if (region!=null) { uniObj = null;   objName = "region "+ua.getRegionCoordinates();    if (withOutput) System.out.printf("Region %s\r\n"      ,ua.getRegionCoordinates   ()); }
+			if (system!=null) { uniObj = system; objName = "solar system "+ua.getSigBoostCode();   if (withOutput) System.out.printf("Solar system %s\r\n",ua.getSigBoostCode        ()); }
+			if (planet!=null) { uniObj = planet; objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) System.out.printf("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
 			
-			if (uoData.name!=null && uniObj!=null) {
-				uniObj.setOriginalName(uoData.name);
-				if (withOutput) System.out.printf("   Name of %s was defined: \"%s\"\r\n",uniObjName,uoData.name);
+			if (uoData.name!=null) {
+				if (uniObj!=null) uniObj.setOriginalName(uoData.name);
+				if (region!=null) region.setName(uoData.name);
+				if (withOutput && objName!=null) System.out.printf("   Name of %s was defined: \"%s\"\r\n",objName,uoData.name);
 			}
 			
 			if (uoData.race!=null && system!=null) {
 				system.race = uoData.race;
-				if (withOutput) System.out.printf("   Race of %s was defined: %s\r\n",uniObjName,system.race);
+				if (withOutput) System.out.printf("   Race of %s was defined: %s\r\n",objName,system.race);
 			}
 			
 			if (uoData.starClass!=null && system!=null) {
 				system.starClass = uoData.starClass;
-				if (withOutput) System.out.printf("   StarClass of %s was defined: %s\r\n",uniObjName,system.starClass);
+				if (withOutput) System.out.printf("   StarClass of %s was defined: %s\r\n",objName,system.starClass);
 			}
 			
 			if (uoData.distanceToCenter!=null && system!=null) {
 				system.distanceToCenter = uoData.distanceToCenter;
-				if (withOutput) System.out.printf("   Distance to galactic center of %s was defined: %s\r\n",uniObjName,system.distanceToCenter);
+				if (withOutput) System.out.printf("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
 			}
 			
 			for (ExtraInfo ei:uoData.extraInfos) {
 				if (uniObj!=null) {
 					uniObj.extraInfos.add(ei);
-					if (withOutput) System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",uniObjName,ei.shortLabel,ei.info);
+					if (withOutput) System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",objName,ei.shortLabel,ei.info);
 				}
 			}
 			
@@ -277,15 +293,18 @@ public class GameInfos {
 		long start = System.currentTimeMillis();
 		System.out.print("Write data of universe objects to data pool ...");
 		for (Galaxy g:universe.galaxies)
-			for (Region gr:g.regions)
-				for (SolarSystem sys:gr.solarSystems) {
-					UniverseAddress ua = sys.getUniverseAddress();
+			for (Region r:g.regions) {
+				UniverseAddress ua = r.getUniverseAddress();
+				universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,r));
+				for (SolarSystem sys:r.solarSystems) {
+					ua = sys.getUniverseAddress();
 					universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,sys));
 					for (Planet p:sys.planets) {
 						ua = p.getUniverseAddress();
 						universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,p));
 					}
 				}
+			}
 		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		
 		start = System.currentTimeMillis();
@@ -303,6 +322,7 @@ public class GameInfos {
 				isFirst = false;
 				
 				switch (uoData.type) {
+				case Region     : out.printf("[Reg%014X]\r\n",uoData.universeAddress.getAddress()); break;
 				case SolarSystem: out.printf("[Sys%014X]\r\n",uoData.universeAddress.getAddress()); break;
 				case Planet     : out.printf("[Pln%014X]\r\n",uoData.universeAddress.getAddress()); break;
 				}
