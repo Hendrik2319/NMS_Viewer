@@ -315,15 +315,33 @@ name=Idewij-Hizdr
 [Pln10010000444444]
 name=Beokayas Bigase
 
+[Reg000000024F14BB]
+name=Ajjaroe-Rand
+
 [Sys003800024F14BB]
 name=Kolovki-Poh
 race=Vykeen
 class=Yellow
 
+[Pln203800024F14BB]
+name=Degenkaari-6 Enjaoa
+
 [Sys007200024F14BB]
 name=Alchukovr
 race=Gek
 class=Yellow
+
+[Pln107200024F14BB]
+name=Jiedarean Meener
+
+[Pln207200024F14BB]
+name=Hihuaiqiongdo-Oug
+
+[Pln307200024F14BB]
+name=Huvshi Ohashi
+
+[Pln407200024F14BB]
+name=Miplinga Dazaw
 
 [Sys001B00FC4AD502]
 name=Hunyaz-Elfer VIII
@@ -351,9 +369,15 @@ info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
 
+[Reg000000FE1FA68F]
+name=Dedurot-Weite
+
 [Sys005000FE1FA68F]
 name=Nozolwe-Afor
 race=Gek
 
 [Pln105000FE1FA68F]
 name=Ezawasahirish
+
+[Pln205000FE1FA68F]
+name=Itachita Irli

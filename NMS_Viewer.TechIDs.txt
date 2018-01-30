@@ -507,7 +507,7 @@
 ^SHIPJUMP3.upgradeStr=+2
 ^SHIPLAS1=Phasenstrahler
 ^SHIPLAS1.type=ShipWeapon
-^SHIPLAS1.image=Phase_beam_upgrade.png
+^SHIPLAS1.image=Phase_beam.png
 ^SHIPLAS1.imageBG=495746
 ^SHIPLASCOOL1=Phasenkühlmittel Sigma
 ^SHIPLASCOOL1.type=ShipWeaponUpgrade

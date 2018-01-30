@@ -55,6 +55,10 @@
 ^SPACEGUNK4.symbol=Sr
 ^SPACEGUNK4.image=NmsLiving_Slime_Icon.png
 ^SPACEGUNK4.imageBG=5A6F36
+^SPACEGUNK5=Zähe Flüssigkeiten
+^SPACEGUNK5.symbol=Sr
+^SPACEGUNK5.image=Viscousfluidsicon.png
+^SPACEGUNK5.imageBG=5A6F36
 ^SUBBARREN=Kaktusfleisch
 ^SUBBARREN.type=PlantProduct
 ^SUBBARREN.symbol=Kf
@@ -161,6 +165,11 @@
 ^TRADEABLE6.symbol=Em
 ^TRADEABLE6.image=Substance.neutral.rare1.Emeril.png
 ^TRADEABLE6.imageBG=5DCD93
+^TRADEABLE7=Radnox
+^TRADEABLE7.type=Resource
+^TRADEABLE7.symbol=Ra
+^TRADEABLE7.image=Substance.precious.rare2.Radnox.png
+^TRADEABLE7.imageBG=701781
 ^TRADEABLE8=Kalium
 ^TRADEABLE8.type=Resource
 ^TRADEABLE8.symbol=Ka
