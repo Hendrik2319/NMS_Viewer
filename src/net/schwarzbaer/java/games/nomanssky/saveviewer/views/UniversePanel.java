@@ -1030,6 +1030,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 				setFont(standardFont);
 				Universe.UniverseObject obj = null;
+				Region region = null;
+				if (node instanceof      RegionNode) region = ((  RegionNode)node).value;
 				if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
 				if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
 				if (obj != null) {
@@ -1046,6 +1048,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (obj.isSelected) {
 						if (!selected) setForeground(TEXTCOLOR__SELECTED);
 						setFont(boldfont);
+					}
+				}
+				if (region!=null) {
+					if (!region.hasName()) {
+						if (!selected) setForeground(TEXTCOLOR__WITHOUT_NAME);
 					}
 				}
 			}

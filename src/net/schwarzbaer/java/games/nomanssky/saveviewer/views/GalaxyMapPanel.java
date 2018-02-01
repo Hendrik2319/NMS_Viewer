@@ -230,7 +230,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				int voxelX = galaxyMap.computeVoxelX(x);
 				int voxelZ = galaxyMap.computeVoxelZ(y);
 				UniverseAddress ua = new UniverseAddress(0,voxelX,0,voxelZ,0,0);
-				str += String.format(Locale.ENGLISH, ",  Region: (%d,0,%d)", voxelX,voxelZ);
+				str += String.format(Locale.ENGLISH, ",  Region: (%d,#,%d)", voxelX,voxelZ);
 				str += String.format(Locale.ENGLISH, ",  GlyphCode: %s", ua.getPortalGlyphCodeStr());
 				str += String.format(Locale.ENGLISH, ",  Distance to Center: %1.1f regions", ua.getDistToCenter_inRegionUnits() /*Math.sqrt(voxelX*voxelX+voxelZ*voxelZ)*/);
 			}
