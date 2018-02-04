@@ -524,7 +524,9 @@
 ^RADIOPLANT.image=NmsFarming_Dicotyl_Icon.Gammagras.png
 ^REACTION1=
 ^REACTION2=
-^REACTION3=
+^REACTION3=Ammoniumsalz
+^REACTION3.image=NmsCommodity_AmmoniumSalt_icon.png
+^REACTION3.imageBG=F0A92B
 ^ROOFMONITOR=
 ^ROOFMONITOR.type=BaseDekoration
 ^ROOMFLOOR=
@@ -574,6 +576,9 @@
 ^TOXICPLANT=Pilzgeflecht
 ^TOXICPLANT.type=Plant
 ^TOXICPLANT.image=NmsPlant_Puffball_Icon.Pilzgeflecht.jpg
+^TRA_ALLOY3=Optisches Lösungsmittel
+^TRA_ALLOY3.image=NmsCommodity_Optical_Solvent_icon.png
+^TRA_ALLOY3.imageBG=F0A92B
 ^TRA_ALLOY4=Fünfdimensionaler Torus
 ^TRA_ALLOY4.image=NmsCommodity_Superconducting_Fibre_icon.png
 ^TRA_ALLOY4.imageBG=F0A92B

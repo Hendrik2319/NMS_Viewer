@@ -323,8 +323,22 @@ name=Kolovki-Poh
 race=Vykeen
 class=Yellow
 
+[Pln103800024F14BB]
+name=Iksmui Rohlinme
+
 [Pln203800024F14BB]
 name=Degenkaari-6 Enjaoa
+
+[Pln303800024F14BB]
+name=Meches Glattfi
+
+[Pln403800024F14BB]
+name=Quangseou Oomoll
+
+[Pln503800024F14BB]
+name=Nudalria-Algz Zeiten
+short.P=VC
+info=Vortex Cubes
 
 [Sys007200024F14BB]
 name=Alchukovr
