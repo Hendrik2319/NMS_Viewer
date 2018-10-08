@@ -34,13 +34,16 @@ public class SaveGameView extends JPanel {
 
 	private Window mainWindow;
 
-	public SaveGameView(Window mainWindow, File file, SaveGameData data) {
+	private boolean newFormat;
+
+	public SaveGameView(Window mainWindow, File file, SaveGameData data, boolean newFormat) {
 		super(new BorderLayout(3, 3));
 		setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		
 		this.mainWindow = mainWindow;
 		this.file = file;
 		this.data = data;
+		this.newFormat = newFormat;
 		
 		tabbedPane = new JTabbedPane();
 		//tabbedPane.setPreferredSize(new Dimension(620, 500));
@@ -62,36 +65,38 @@ public class SaveGameView extends JPanel {
 
 
 	private void addAllTabs() {
-		tabbedPane.addTab("General",new GeneralDataPanel(data));
-		tabbedPane.addTab("Known Universe",new UniversePanel(data,mainWindow));
-		tabbedPane.addTab("Galaxy Map",new GalaxyMapPanel(data,mainWindow));
-		
-		if (data.inventories!=null) tabbedPane.addTab("Inventories",new InventoriesPanel(data,mainWindow));
-		if (data.stats      !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
-		if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
-		
-		if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases",new SimplePanels.PersistentPlayerBasesPanel(data));
-		if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
-		
-		SaveGameViewTabGroupingPanel discoveredDataPanel = new SaveGameViewTabGroupingPanel(data);
-		discoveredDataPanel.addPanel("Available", new SimplePanels.DiscoveredDataAvailablePanel(data));
-		discoveredDataPanel.addPanel("Stored", new SimplePanels.DiscoveredDataStoredPanel(data));
-		
-		SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
-		blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
-		blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
-		
-		tabbedPane.addTab("Blueprints",blueprintsPanel);
-		tabbedPane.addTab("DiscoveryData",discoveredDataPanel);
-		
-//		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
-		
-		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data));
+		if (!newFormat) {
+			tabbedPane.addTab("General",new GeneralDataPanel(data));
+			tabbedPane.addTab("Known Universe",new UniversePanel(data,mainWindow));
+			tabbedPane.addTab("Galaxy Map",new GalaxyMapPanel(data,mainWindow));
+			
+			if (data.inventories!=null) tabbedPane.addTab("Inventories",new InventoriesPanel(data,mainWindow));
+			if (data.stats      !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
+			if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
+			
+			if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases",new SimplePanels.PersistentPlayerBasesPanel(data));
+			if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
+			
+			SaveGameViewTabGroupingPanel discoveredDataPanel = new SaveGameViewTabGroupingPanel(data);
+			discoveredDataPanel.addPanel("Available", new SimplePanels.DiscoveredDataAvailablePanel(data));
+			discoveredDataPanel.addPanel("Stored", new SimplePanels.DiscoveredDataStoredPanel(data));
+			
+			SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
+			blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
+			blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
+			
+			tabbedPane.addTab("Blueprints",blueprintsPanel);
+			tabbedPane.addTab("DiscoveryData",discoveredDataPanel);
+			
+//			tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
+		}
+		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data,newFormat));
 	}
 	
 	
-	public void replaceData(SaveGameData data) {
+	public void replaceData(SaveGameData data, boolean newFormat) {
 		this.data = data;
+		this.newFormat = newFormat;
 		tabbedPane.removeAll();
 		addAllTabs();
 	}

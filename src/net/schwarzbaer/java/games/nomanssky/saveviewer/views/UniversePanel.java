@@ -407,9 +407,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void show(UniverseObject[] changedObjects) {
-		System.out.println("Changed Objects:");
+		SaveViewer.log_ln("Changed Objects:");
 		for (UniverseObject obj:changedObjects) {
-			System.out.println("   "+obj.toString());
+			SaveViewer.log_ln("   "+obj.toString());
 		}
 	}
 

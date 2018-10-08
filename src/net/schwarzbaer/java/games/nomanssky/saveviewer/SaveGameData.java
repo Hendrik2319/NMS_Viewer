@@ -415,7 +415,7 @@ public class SaveGameData {
 		}
 		
 		if (!notParsableObjects.isEmpty())
-			System.out.println("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+			SaveViewer.log_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
 	}
 	
 	private BuildingObject[] parsePersistentPlayerBasesObjects(JSON_Object parentObj, String valueName, int baseIndex) {
@@ -438,7 +438,7 @@ public class SaveGameData {
 		}
 		
 		if (!notParsableObjects.isEmpty())
-			System.out.println("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
+			SaveViewer.log_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
 		
 		return vector.toArray(new BuildingObject[0]);
 	}
@@ -524,7 +524,7 @@ public class SaveGameData {
 		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
 		
 		if (!notParsableObjects.isEmpty())
-			System.out.println("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
+			SaveViewer.log_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
 	}
 
 	public static class UnboundBuildingObject extends BuildingObject {
@@ -944,9 +944,9 @@ public class SaveGameData {
 		discoveryData.findAdditionalPlanetsAndSolarSystems();
 		
 		if (!discoveryData.notParsedStoreData.isEmpty())
-			System.out.println("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+			SaveViewer.log_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
 		if (!discoveryData.notParsedAvailableData.isEmpty())
-			System.out.println("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+			SaveViewer.log_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
 	}
 
 	public final static class DiscoveryData {
@@ -1089,9 +1089,9 @@ public class SaveGameData {
 //				System.out.println("   "+type);
 			
 			if (!unknownAdresses.isEmpty()) {
-				System.out.println("Found undiscovered addresses ["+unknownAdresses.size()+"]");
+				SaveViewer.log_ln("Found undiscovered addresses ["+unknownAdresses.size()+"]");
 				for (UniverseAddress ua:unknownAdresses)
-					System.out.println("   "+ua.getCoordinates());
+					SaveViewer.log_ln("   "+ua.getCoordinates());
 			}
 		}
 		
@@ -1470,15 +1470,15 @@ public class SaveGameData {
 		}
 
 		public void writeToConsole() {
-			System.out.println("Universe:");
+			SaveViewer.log_ln("Universe:");
 			for (Galaxy g:galaxies) {
-				System.out.println("\t"+g+":");
+				SaveViewer.log_ln("\t"+g+":");
 				for (Region r:g.regions) {
-					System.out.println("\t\t"+r+":");
+					SaveViewer.log_ln("\t\t"+r+":");
 					for (SolarSystem s:r.solarSystems) {
-						System.out.println("\t\t\t"+s+":");
+						SaveViewer.log_ln("\t\t\t"+s+":");
 						for (Planet p:s.planets)
-							System.out.println("\t\t\t\tPlanet "+p);
+							SaveViewer.log_ln("\t\t\t\tPlanet "+p);
 					}
 				}
 			}
@@ -1857,7 +1857,7 @@ public class SaveGameData {
 		else {
 			knownWords = new KnownWords(this).parse(arrayValue);
 			if (!knownWords.notParsedKnownWords.isEmpty())
-				System.out.println("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
+				SaveViewer.log_ln("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
 		}
 	}
 
@@ -1935,7 +1935,7 @@ public class SaveGameData {
 		else {
 			stats = new Stats(this).parse(arrayValue);
 			if (!stats.notParsedStats.isEmpty())
-				System.out.println("Found "+stats.notParsedStats.size()+" not parseable Stats.");
+				SaveViewer.log_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
 		}
 	}
 
@@ -2180,6 +2180,15 @@ public class SaveGameData {
 
 	private void enableStackTrace(boolean isStackTraceEnabled) {
 		this.isStackTraceEnabled = isStackTraceEnabled;
+	}
+
+	static boolean hasValue(JSON_Object data, Object... path) {
+		try {
+			JSON_Data.getSubNode(data,path);
+			return true;
+		} catch (PathIsNotSolvableException e) {
+			return false;
+		}
 	}
 
 	private Value getValue(JSON_Object data, Object... path) {

@@ -106,7 +106,7 @@ public class TableView {
 				int[] widths = new int[columnModel.getColumnCount()];
 				for (int i=0; i<columnModel.getColumnCount(); ++i)
 					widths[i] = columnModel.getColumn(i).getWidth();
-				System.out.println(Arrays.toString(widths));
+				SaveViewer.log_ln(Arrays.toString(widths));
 			} break;
 			}
 		}

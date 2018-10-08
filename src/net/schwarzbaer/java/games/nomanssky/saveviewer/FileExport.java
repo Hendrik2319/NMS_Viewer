@@ -207,7 +207,7 @@ public class FileExport {
 	public static void writePosToVRML_models(BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent) {
 		if (objects==null && playerbase!=null) objects = playerbase.objects;
 		if (objects==null) return;
-		System.out.println("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
+		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
 		JFileChooser fc = new JFileChooser("./");
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -288,12 +288,12 @@ public class FileExport {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println("done");
+		SaveViewer.log_ln("done");
 	}
 
 	@SuppressWarnings("unused")
 	private static class CubeCombine_Dummy extends CubeCombine {
-		CubeCombine_Dummy() { System.out.println("\r\n\r\n##############################\r\nCubeCombine_Dummy\r\n##############################\r\n\r\n\r\n"); }
+		CubeCombine_Dummy() { SaveViewer.log_ln("\r\n\r\n##############################\r\nCubeCombine_Dummy\r\n##############################\r\n\r\n\r\n"); }
 		@Override public boolean add(BuildingObject obj) { return false; }
 		@Override public BuildingObject[] getRemainingObjects() { return new BuildingObject[0]; }
 		@Override public void writeModel(PrintWriter vrml) {}
@@ -1567,7 +1567,7 @@ public class FileExport {
 	}
 
 	public static void writePosToVRML_simple(BuildingObject[] objects, Double radius, Component parent) {
-		System.out.println("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
+		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
 		if (radius!=null && radius<=0) radius=null;
 		
@@ -1655,7 +1655,7 @@ public class FileExport {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println("done");
+		SaveViewer.log_ln("done");
 	}
 
 	private static void writeSphere(PrintWriter vrml, double radius, Point3D center, java.awt.Color color) {

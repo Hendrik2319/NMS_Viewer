@@ -243,14 +243,16 @@ public class TreeView {
 //		}
 
 		private boolean hideProcessedNodes;
+		boolean wasDeObfuscated;
 
-		private JsonTreeNode(JsonTreeNode parent, String name, Value value, boolean hideProcessedNodes) {
+		private JsonTreeNode(JsonTreeNode parent, String name, Value value, boolean wasDeObfuscated, boolean hideProcessedNodes) {
 			super(parent,name,value);
+			this.wasDeObfuscated = wasDeObfuscated;
 			this.hideProcessedNodes = hideProcessedNodes;
 		}
 
 		public JsonTreeNode(JSON_Object data, boolean hideProcessedNodes) {
-			this(null,null,new ObjectValue(data), hideProcessedNodes);
+			this(null,null,new ObjectValue(data), true, hideProcessedNodes);
 		}
 
 		@Override
@@ -263,7 +265,7 @@ public class TreeView {
 					int i=0;
 					for (NamedValue namedvalue : objectValue.value)
 						if (!hideProcessedNodes || !namedvalue.value.wasProcessed || namedvalue.value.hasUnprocessedChildren())
-							children[i++] = new JsonTreeNode(this,namedvalue.name,namedvalue.value, hideProcessedNodes);
+							children[i++] = new JsonTreeNode( this, namedvalue.name, namedvalue.value, namedvalue.wasDeObfuscated, hideProcessedNodes );
 					children = Arrays.copyOf(children, i);
 				} else
 					throw new IllegalStateException("Found a Value with type==Object, but not instance of ObjectValue");
@@ -275,7 +277,7 @@ public class TreeView {
 					int i=0;
 					for (Value value : arrayValue.value)
 						if (!hideProcessedNodes || !value.wasProcessed || value.hasUnprocessedChildren())
-							children[i++] = new JsonTreeNode(this,null,value, hideProcessedNodes);
+							children[i++] = new JsonTreeNode(this,null,value, true, hideProcessedNodes);
 					children = Arrays.copyOf(children, i);
 				} else
 					throw new IllegalStateException("Found a Value with type==Array, but not instance of ArrayValue");

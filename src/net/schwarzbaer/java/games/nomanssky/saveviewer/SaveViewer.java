@@ -12,11 +12,22 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -29,6 +40,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -54,6 +66,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.RawDataTreePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
@@ -68,6 +81,8 @@ public class SaveViewer implements ActionListener {
 	static IconSource<TabHeaderIcons> tabheaderIS;
 	public static IconSource<ToolbarIcons> toolbarIS;
 	public static Images images;
+	public static Config config;
+	private static DeObfuscator deObfuscator;
 	
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
@@ -79,6 +94,9 @@ public class SaveViewer implements ActionListener {
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
+		
+		config = Config.readFromFile();
+		deObfuscator = DeObfuscator.readFromFile();
 		
 		images = new Images();
 		images.init();
@@ -145,13 +163,13 @@ public class SaveViewer implements ActionListener {
 
 	@SuppressWarnings("unused")
 	private static void writeUIDefaults(String title, UIDefaults defaults) {
-		System.out.println(title+".keys: [");
+		SaveViewer.log_ln(title+".keys: [");
 		Set<Object> keySet = defaults.keySet();
 		TreeSet<Object> sortedSet = new TreeSet<Object>(Comparator.nullsLast((o1, o2) -> o1.toString().compareTo(o2.toString())));
 		sortedSet.addAll(keySet);
 		for (Object key:sortedSet)
-			System.out.println("\t"+key);
-		System.out.println("]");
+			SaveViewer.log_ln("\t"+key);
+		SaveViewer.log_ln("]");
 	}
 	
 	public SaveViewer() {
@@ -184,20 +202,26 @@ public class SaveViewer implements ActionListener {
 		updateWindowTitle();
 	}
 	
-	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, RefreshExtraImages, SelectCoordinates }
+	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, RefreshExtraImages, SelectCoordinates, ReloadDeObfuscator }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
 		switch (actionCommand) {
 		case save_hg:
-			openSaveGame(new File(getGameFolder().getPath()+"/st_76561198016584395/save.hg"));
+			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/save.hg"));
 			break;
 		case save2_hg:
-			openSaveGame(new File(getGameFolder().getPath()+"/st_76561198016584395/save2.hg"));
+			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/save2.hg"));
 			break;
-		case SwitchFolder: {
+		case SwitchToGameFolder: {
 			inputFileChooser.setCurrentDirectory(getGameFolder());
+			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
+			JOptionPane.showMessageDialog(mainWindow, message, "Current folder", JOptionPane.INFORMATION_MESSAGE);
+			break;
+		}
+		case SwitchToBackupFolder: {
+			inputFileChooser.setCurrentDirectory(new File("d:/Games/_game_data/__saves/No Man's Sky - AppData_Roaming_HelloGames_NMS_st_76561198016584395/savegame_PreNEXT"));
 			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
 			JOptionPane.showMessageDialog(mainWindow, message, "Current folder", JOptionPane.INFORMATION_MESSAGE);
 			break;
@@ -278,10 +302,14 @@ public class SaveViewer implements ActionListener {
 		case RefreshExtraImages:
 			images.reloadImageList();
 			break;
+		
+		case ReloadDeObfuscator:
+			deObfuscator = DeObfuscator.readFromFile();
+			break;
 		}
 	}
 
-	private File getGameFolder() {
+	private static File getGameFolder() {
 		Properties prop = System.getProperties();
 //			ArrayList<Object> keys = new ArrayList<>(prop.keySet());
 //			keys.sort(null);
@@ -293,16 +321,26 @@ public class SaveViewer implements ActionListener {
 		String path = home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
 		return new File(path);
 	}
-
+	
+	
+	
 	private void openSaveGame(File saveGameFile) {
 		log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
 		log_ln(" done");
+		
+		boolean newFormat = false;
+		if (!SaveGameData.hasValue(new_json_data, "Version")) {
+			new_json_data = deObfuscator.deObfuscate(new_json_data);
+			newFormat = true;
+		}
+		
 		if (new_json_data==null) {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
-			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName()).parse();
-			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData);
+			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName());
+			if (!newFormat) saveGameData.parse();
+			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,newFormat);
 			loadedSaveGames.add(saveGameView);
 			contentPane.addSaveGameView(saveGameView);
 			updateWindowTitle();
@@ -320,10 +358,18 @@ public class SaveViewer implements ActionListener {
 		log("Parse file \"%s\" ...",file.getPath());
 		JSON_Object new_json_data = new JSON_Parser(file).parse();
 		log_ln(" done");
+		
+		boolean newFormat = false;
+		if (!SaveGameData.hasValue(new_json_data, "Version")) {
+			new_json_data = deObfuscator.deObfuscate(new_json_data);
+			newFormat = true;
+		}
+		
 		if (new_json_data!=null) {
 			removeUsages(view.data);
-			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName()).parse();
-			view.replaceData(saveGameData);
+			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName());
+			if (!newFormat) saveGameData.parse();
+			view.replaceData(saveGameData,newFormat);
 			contentPane.updateIDPanels();
 		}
 	}
@@ -352,6 +398,130 @@ public class SaveViewer implements ActionListener {
 		else
 			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
+	}
+	
+	static class Config {
+		private static final String NMS_VIEWER_CFG = "NMS_Viewer.cfg";
+		
+		private String savegameSubFolder;
+		
+		Config() {
+			savegameSubFolder=null;
+		}
+		
+		String getSavegameSubFolder(JFrame parent) {
+			if (savegameSubFolder==null) {
+				JFileChooser fileChooser = new JFileChooser(getGameFolder());
+				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				fileChooser.setMultiSelectionEnabled(false);
+				fileChooser.setDialogTitle("Select subfolder that contains save games");
+				if (fileChooser.showOpenDialog(parent)==JFileChooser.APPROVE_OPTION) {
+					savegameSubFolder = fileChooser.getSelectedFile().getName();
+					writeToFile();
+				}
+			}
+			return savegameSubFolder;
+		}
+		
+		static Config readFromFile() {
+			Config config = new Config();
+			
+			File file = new File(NMS_VIEWER_CFG);
+			if (!file.isFile()) return config;
+			
+			log_ln("Read Config from file \""+file.getPath()+"\" ...");
+			String str;
+			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+				while ((str=in.readLine())!=null) {
+					if (str.startsWith("SavegameSubFolder=")) config.savegameSubFolder = str.substring("SavegameSubFolder=".length());
+				}
+			}
+			catch (FileNotFoundException e) { e.printStackTrace(); }
+			catch (IOException e) { e.printStackTrace(); }
+			
+			return config;
+		}
+		
+		void writeToFile() {
+			File file = new File(NMS_VIEWER_CFG);
+			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+				
+				out.printf("SavegameSubFolder=%s\r\n",savegameSubFolder);
+				
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	static class DeObfuscator {
+
+		private static final String FILE_DEOBFUSCATOR_TXT = "NMS_Viewer.DeObfuscator.txt";
+		private HashMap<String, String> replacements;
+
+		DeObfuscator() {
+			replacements = new HashMap<>();
+		}
+		
+		public JSON_Object deObfuscate(JSON_Object data) {
+			Result res = new Result();
+			JSON_Data.traverseNamedValues(data, nv->{
+				String newName = replacements.get(nv.name);
+				res.all++;
+				if (newName!=null) {
+					nv.name = newName;
+					nv.wasDeObfuscated = true;
+					res.known++;
+				} else
+					res.unkown.add(nv.name);
+			});
+			
+			SaveViewer.log_ln("DeObfuscation done");
+			SaveViewer.log_ln("   %d of %d replacements done",res.known,res.all);
+			SaveViewer.log_ln("   %d unknown names",res.unkown.size());
+			SaveViewer.log_ln("   %d known names",replacements.size());
+			
+			return data;
+		}
+		
+		private static class Result {
+			int known;
+			int all;
+			HashSet<String> unkown;
+
+			Result() {
+				known = 0;
+				all = 0;
+				unkown = new HashSet<>();
+			}
+		}
+
+		public static DeObfuscator readFromFile() {
+			DeObfuscator deObfuscator = new DeObfuscator();
+			
+			File file = new File(FILE_DEOBFUSCATOR_TXT);
+			if (file.isFile()) {
+				long start = System.currentTimeMillis();
+				log_ln("Read DeObfuscator definitions from file \""+file.getPath()+"\" ...");
+				String str;
+				try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+					while ((str=in.readLine())!=null) {
+						if (!str.isEmpty()) {
+							String key = str.substring(0,3);
+							String value = str.substring(4);
+							String oldValue = deObfuscator.replacements.put(key, value);
+							if (oldValue!=null) log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
+						}
+					}
+				}
+				catch (FileNotFoundException e) { e.printStackTrace(); }
+				catch (IOException e) { e.printStackTrace(); }
+				log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			}
+			
+			return deObfuscator;
+		}
+		
 	}
 
 	class TabHeader extends JPanel {
@@ -461,7 +631,8 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("\"save.hg\"", ToolbarIcons.Open, ActionCommand.save_hg,true));
 			toolBar.add(createButton("\"save2.hg\"", ToolbarIcons.Open, ActionCommand.save2_hg,true));
 			toolBar.addSeparator();
-			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchFolder,true));
+			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder,true));
+			toolBar.add(createButton("Switch to Backup Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
 			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
 //			toolBar.add(createButton("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
 //			toolBar.add(createButton("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
@@ -473,6 +644,7 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
+			toolBar.add(createButton("Refresh DeObfuscator", ToolbarIcons.Reload, ActionCommand.ReloadDeObfuscator,true));
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
@@ -585,7 +757,7 @@ public class SaveViewer implements ActionListener {
 			DataFlavor[] transferDataFlavors = transferable.getTransferDataFlavors();
 			if (transferDataFlavors==null || transferDataFlavors.length==0) return null;
 			
-			System.out.println("transferDataFlavors: "+toString(transferDataFlavors));
+			log_ln("transferDataFlavors: "+toString(transferDataFlavors));
 			textFlavor = DataFlavor.selectBestTextFlavor(transferDataFlavors);
 		}
 		
@@ -615,11 +787,19 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static void log_ln( String format, Object... values ) {
-		System.out.printf(format+"\r\n",values);
+		System.out.printf(Locale.ENGLISH,format+"\r\n",values);
 	}
 	
 	public static void log( String format, Object... values ) {
-		System.out.printf(format,values);
+		System.out.printf(Locale.ENGLISH,format,values);
+	}
+	
+	public static void log_error_ln( String format, Object... values ) {
+		System.err.printf(Locale.ENGLISH,format+"\r\n",values);
+	}
+	
+	public static void log_error( String format, Object... values ) {
+		System.err.printf(Locale.ENGLISH,format,values);
 	}
 
 	public static JButton createButton(String title, ActionListener l) {

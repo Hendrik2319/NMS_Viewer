@@ -126,7 +126,7 @@ public class Images {
 		if (!file.isFile()) return;
 		
 		long start = System.currentTimeMillis();
-		System.out.println("Read background colors from file \""+file.getPath()+"\"...");
+		SaveViewer.log_ln("Read background colors from file \""+file.getPath()+"\"...");
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -143,11 +143,11 @@ public class Images {
 				NamedColor existingColor = colorMap.putIfAbsent(newColor.value, newColor);
 				if (existingColor!=null) {
 					if (!existingColor.name.equals(newColor.name)) {
-						System.out.printf("   changed name of %s into %s\r\n", existingColor, newColor.name);
+						SaveViewer.log("   changed name of %s into %s\r\n", existingColor, newColor.name);
 						existingColor.name = newColor.name;
 					}
 				} else {
-					System.out.printf("   added %s\r\n", newColor);
+					SaveViewer.log("   added %s\r\n", newColor);
 					colorValuesVec.add(newColor);
 				}
 			}
@@ -155,13 +155,13 @@ public class Images {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	private void saveColorsToFile() {
 		long start = System.currentTimeMillis();
 		File file = new File(FILE_COLORS);
-		System.out.println("Write background colors to file \""+file.getPath()+"\"...");
+		SaveViewer.log_ln("Write background colors to file \""+file.getPath()+"\"...");
 		
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (NamedColor color:colorValues)
@@ -170,7 +170,7 @@ public class Images {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public NamedColor getColor(Integer value) {
@@ -348,9 +348,9 @@ public class Images {
 	private void readImages() {
 		long start = System.currentTimeMillis();
 		File folder = new File("extra/resource_icons");
-		System.out.println("Read image resources from \""+folder.getPath()+"\" ...");
+		SaveViewer.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
 		if (!folder.isDirectory()) {
-			System.out.println("   ... abort reading. Can't open folder.");
+			SaveViewer.log_ln("   ... abort reading. Can't open folder.");
 			return;
 		}
 		
@@ -377,7 +377,7 @@ public class Images {
 				images.put(imagesNames[i], image);
 		}
 		
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public BufferedImage[] getImages(boolean sorted) {

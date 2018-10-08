@@ -36,6 +36,7 @@ import javax.swing.SwingUtilities;
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
@@ -202,7 +203,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 					do {
 						error = false;
 						try { pd.showDialog(); }
-						catch (Exception e) { error=true; System.out.println("pd.showDialog() -> error["+(++errorcount)+"]"); }
+						catch (Exception e) { error=true; SaveViewer.log_ln("pd.showDialog() -> error["+(++errorcount)+"]"); }
 					} while(error);
 				}
 			});

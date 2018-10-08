@@ -45,9 +45,11 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 	private JPopupMenu contextMenu_node;
 	private JMenuItem miHideShowProcessedNodes_node;
 	private JMenuItem miHideShowProcessedNodes_tree;
+	private boolean showDeObfuscation;
 
-	public RawDataTreePanel(File file, SaveGameData data) {
+	public RawDataTreePanel(File file, SaveGameData data, boolean showDeObfuscation) {
 		super(data);
+		this.showDeObfuscation = showDeObfuscation;
 		hideProcessedNodes = false;
 		
 		SaveViewer.log("Create tree from file \"%s\" ...",file.getPath());
@@ -113,8 +115,8 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			SaveViewer.copyToClipBoard(pathToShortString(contextMenuTarget));
 			break;
 		case ShowPath:
-			System.out.println("Path: "+contextMenuTarget);
-			System.out.println("    = "+pathToShortString(contextMenuTarget));
+			SaveViewer.log_ln("Path: "+contextMenuTarget);
+			SaveViewer.log_ln("    = "+pathToShortString(contextMenuTarget));
 			break;
 		case CopyValueName:
 			if (pathComp instanceof JsonTreeNode)
@@ -163,6 +165,9 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		return sb.toString();
 	}
 
+	private static final Color COLOR_HAS_OBFUSCATED_CHILDREN = new Color(0x7F00FF);
+	private static final Color COLOR_WAS_NOT_DEOBFUSCATED    = new Color(0xFF00FF);
+	
 	private final class CellRenderer extends DefaultTreeCellRenderer {
 		private static final long serialVersionUID = 7697237514743853958L;
 	
@@ -173,10 +178,15 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			if (component instanceof JLabel) label = (JLabel)component;
 			
 			boolean wasProcessed = false;
+			boolean wasDeObfuscated = true;
+			boolean hasObfuscatedChildren = true;
 			RawDataTreeIcons icon = null;
 			if (obj instanceof JsonTreeNode) {
 				Value value = ((JsonTreeNode)obj).data;
 				wasProcessed = value.wasProcessed;
+				wasDeObfuscated = ((JsonTreeNode)obj).wasDeObfuscated;
+				hasObfuscatedChildren = value.hasObfuscatedChildren();
+				
 				switch (value.type) {
 				case Array  : icon = RawDataTreeIcons.Array ; break;
 				case Bool   : icon = RawDataTreeIcons.Bool  ; break;
@@ -190,12 +200,11 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			if (label != null)
 				label.setIcon(icon==null?null:rawDataTreeIS.getCachedIcon(icon));
 			
-			if (isSelected)
-				component.setForeground(getTextSelectionColor());
-			else if (wasProcessed)
-				component.setForeground(Color.GRAY);
-			else
-				component.setForeground(getTextNonSelectionColor());
+			if (isSelected)                                      component.setForeground(getTextSelectionColor());
+			else if (wasProcessed)                               component.setForeground(Color.GRAY);
+			else if (showDeObfuscation && hasObfuscatedChildren) component.setForeground(COLOR_HAS_OBFUSCATED_CHILDREN);
+			else if (showDeObfuscation && !wasDeObfuscated)      component.setForeground(COLOR_WAS_NOT_DEOBFUSCATED);
+			else                                                 component.setForeground(getTextNonSelectionColor());
 			
 			return component;
 		}

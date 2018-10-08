@@ -107,7 +107,7 @@ public class SimplePanels {
 			HashMap<Long,Integer> foundAddresses = new HashMap<>();
 			for (UnboundBuildingObject ubo:data.baseBuildingObjects) {
 				long address = ubo.galacticAddress.getAddress();
-				System.out.printf("  address: %016X\r\n",address);
+				//System.out.printf("  address: %016X\r\n",address);
 				Integer amount = foundAddresses.get(address);
 				if (amount==null) amount=0;
 				foundAddresses.put(address,amount+1);

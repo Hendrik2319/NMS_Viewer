@@ -144,12 +144,12 @@ public class GameInfos {
 
 	public static void loadUniverseObjectDataFromFile() {
 		long start = System.currentTimeMillis();
-		System.out.println("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\"...");
+		SaveViewer.log_ln("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\"...");
 		universeObjectDataArr = new HashMap<>();
 		
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) {
-			System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			return;
 		}
 		
@@ -223,12 +223,12 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void readUniverseObjectDataFromDataPool(Universe universe) {
 		long start = System.currentTimeMillis();
-		System.out.println("Read data of universe objects from data pool ... ");
+		SaveViewer.log_ln("Read data of universe objects from data pool ... ");
 		
 		boolean withOutput = false; // DEBUG;
 		
@@ -253,45 +253,45 @@ public class GameInfos {
 			case SolarSystem: if (ua.isSolarSystem()) system = universe.findSolarSystem(ua); break;
 			case Planet     : if (ua.isPlanet     ()) planet = universe.findPlanet     (ua); break;
 			}
-			if (region!=null) { uniObj = null;   objName = "region "+ua.getRegionCoordinates();    if (withOutput) System.out.printf("Region %s\r\n"      ,ua.getRegionCoordinates   ()); }
-			if (system!=null) { uniObj = system; objName = "solar system "+ua.getSigBoostCode();   if (withOutput) System.out.printf("Solar system %s\r\n",ua.getSigBoostCode        ()); }
-			if (planet!=null) { uniObj = planet; objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) System.out.printf("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
+			if (region!=null) { uniObj = null;   objName = "region "+ua.getRegionCoordinates();    if (withOutput) SaveViewer.log("Region %s\r\n"      ,ua.getRegionCoordinates   ()); }
+			if (system!=null) { uniObj = system; objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log("Solar system %s\r\n",ua.getSigBoostCode        ()); }
+			if (planet!=null) { uniObj = planet; objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
 			
 			if (uoData.name!=null) {
 				if (uniObj!=null) uniObj.setOriginalName(uoData.name);
 				if (region!=null) region.setName(uoData.name);
-				if (withOutput && objName!=null) System.out.printf("   Name of %s was defined: \"%s\"\r\n",objName,uoData.name);
+				if (withOutput && objName!=null) SaveViewer.log("   Name of %s was defined: \"%s\"\r\n",objName,uoData.name);
 			}
 			
 			if (uoData.race!=null && system!=null) {
 				system.race = uoData.race;
-				if (withOutput) System.out.printf("   Race of %s was defined: %s\r\n",objName,system.race);
+				if (withOutput) SaveViewer.log("   Race of %s was defined: %s\r\n",objName,system.race);
 			}
 			
 			if (uoData.starClass!=null && system!=null) {
 				system.starClass = uoData.starClass;
-				if (withOutput) System.out.printf("   StarClass of %s was defined: %s\r\n",objName,system.starClass);
+				if (withOutput) SaveViewer.log("   StarClass of %s was defined: %s\r\n",objName,system.starClass);
 			}
 			
 			if (uoData.distanceToCenter!=null && system!=null) {
 				system.distanceToCenter = uoData.distanceToCenter;
-				if (withOutput) System.out.printf("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
+				if (withOutput) SaveViewer.log("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
 			}
 			
 			for (ExtraInfo ei:uoData.extraInfos) {
 				if (uniObj!=null) {
 					uniObj.extraInfos.add(ei);
-					if (withOutput) System.out.printf("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",objName,ei.shortLabel,ei.info);
+					if (withOutput) SaveViewer.log("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",objName,ei.shortLabel,ei.info);
 				}
 			}
 			
 		}
-		if (!withOutput) System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		if (!withOutput) SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveUniverseObjectDataToFile(Universe universe) {
 		long start = System.currentTimeMillis();
-		System.out.print("Write data of universe objects to data pool ...");
+		SaveViewer.log("Write data of universe objects to data pool ...");
 		for (Galaxy g:universe.galaxies)
 			for (Region r:g.regions) {
 				UniverseAddress ua = r.getUniverseAddress();
@@ -305,13 +305,13 @@ public class GameInfos {
 					}
 				}
 			}
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		
 		start = System.currentTimeMillis();
 		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
 		Collections.sort(values);
 		
-		System.out.print("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
+		SaveViewer.log("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		boolean isFirst = true;
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
@@ -345,7 +345,7 @@ public class GameInfos {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void loadKnownStatIDsFromFile() {
@@ -353,7 +353,7 @@ public class GameInfos {
 		if (!file.isFile()) return;
 		
 		long start = System.currentTimeMillis();
-		System.out.println("Read known StatIDs from file \""+file.getPath()+"\" ...");
+		SaveViewer.log_ln("Read known StatIDs from file \""+file.getPath()+"\" ...");
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -367,20 +367,20 @@ public class GameInfos {
 				
 				String fullName = str.substring(pos+1);
 				if (!fullName.equals(knownID.fullName)) {
-					System.out.printf("Changed StatValue.KnownID.fullName found: %16s [old]\"%s\" -> [new]\"%s\"\r\n",knownID,knownID.fullName,fullName);
+					SaveViewer.log("Changed StatValue.KnownID.fullName found: %16s [old]\"%s\" -> [new]\"%s\"\r\n",knownID,knownID.fullName,fullName);
 					knownID.fullName = fullName;
 				}
 			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveKnownStatIDsToFile() {
 		File file = new File(FILE_KNOWN_STAT_ID);
 		long start = System.currentTimeMillis();
-		System.out.println("Write known StatIDs to file \""+file.getPath()+"\" ...");
+		SaveViewer.log_ln("Write known StatIDs to file \""+file.getPath()+"\" ...");
 		
 		KnownID[] knownIDs = KnownID.values();
 		
@@ -390,7 +390,7 @@ public class GameInfos {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
 	public static final IDMap productIDs   = new IDMap();
@@ -496,7 +496,7 @@ public class GameInfos {
 		if (!file.isFile()) return;
 		
 		long start = System.currentTimeMillis();
-		System.out.println("Read "+idLabel+" IDs from file \""+filePath+"\"...");
+		SaveViewer.log_ln("Read "+idLabel+" IDs from file \""+filePath+"\"...");
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -546,7 +546,7 @@ public class GameInfos {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
@@ -557,7 +557,7 @@ public class GameInfos {
 
 	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
 		long start = System.currentTimeMillis();
-		System.out.println("Write "+idLabel+" IDs to file \""+filePath+"\"...");
+		SaveViewer.log_ln("Write "+idLabel+" IDs to file \""+filePath+"\"...");
 		
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
@@ -574,7 +574,7 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		
-		System.out.println("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static class GeneralizedID {
