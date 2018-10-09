@@ -30,9 +30,11 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -3866983525686776846L;
 		
 		private JTextArea textArea;
+		private boolean isNEXT;
 	
-		public GeneralDataPanel(SaveGameData data) {
+		public GeneralDataPanel(SaveGameData data, boolean isNEXT) {
 			super(data);
+			this.isNEXT = isNEXT;
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
@@ -66,8 +68,10 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 		public void updateContent() {
 			textArea.setText("");
 			appendValue("Current Units    ", data.general.getUnits() );
+			if (isNEXT) appendValue("Current Nanites  ", data.general.getNanites() );
 			appendValue("Player Health    ", data.general.getPlayerHealth() );
 			appendValue("Player Shield    ", data.general.getPlayerShield() );
+			appendValue("Energy           ", data.general.getEnergy() );
 			appendValue("Ship Health      ", data.general.getShipHealth() );
 			appendValue("Ship Shield      ", data.general.getShipShield() );
 			appendValue("Time Alive       ", data.general.getTimeAlive_TStr() );

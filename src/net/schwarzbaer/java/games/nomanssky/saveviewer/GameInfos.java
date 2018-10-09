@@ -506,7 +506,12 @@ public class GameInfos {
 				String idStr = str.substring(0, pos);
 				String value = str.substring(pos+1);
 				
-				if (idStr.endsWith(".type")) {
+				if (idStr.endsWith(".obsolete")) {
+					idStr = idStr.substring(0, idStr.length()-".type".length());
+					GeneralizedID id = map.get(idStr);
+					id.isObsolete = true;
+				}
+				else if (idStr.endsWith(".type")) {
 					idStr = idStr.substring(0, idStr.length()-".type".length());
 					GeneralizedID id = map.get(idStr);
 					id.type = GeneralizedID.Type.getType(value);
@@ -549,10 +554,22 @@ public class GameInfos {
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
+//	public static void createFilesWithObsoleteIDs() {
+//		for (GeneralizedID id:productIDs  .getValues()) id.isObsolete=true;
+//		for (GeneralizedID id:techIDs     .getValues()) id.isObsolete=true;
+//		for (GeneralizedID id:substanceIDs.getValues()) id.isObsolete=true;
+//		
+//		saveIDsToFile(FILE_PRODUCT_ID  +".obsolete.txt",productIDs  ,"product"    );
+//		saveIDsToFile(FILE_TECH_ID     +".obsolete.txt",techIDs     ,"technologie");
+//		saveIDsToFile(FILE_SUBSTANCE_ID+".obsolete.txt",substanceIDs,"substance"  );
+//		
+//		for (GeneralizedID id:productIDs  .getValues()) id.isObsolete=false;
+//		for (GeneralizedID id:techIDs     .getValues()) id.isObsolete=false;
+//		for (GeneralizedID id:substanceIDs.getValues()) id.isObsolete=false;
+//	}
+	
 	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
-
 	public static void saveTechIDsToFile     () { saveIDsToFile(FILE_TECH_ID     ,techIDs     ,"technologie"); }
-
 	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
 
 	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
@@ -564,6 +581,7 @@ public class GameInfos {
 			for (String idStr:map.getSortedKeys()) {
 				GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.getLabel());
+				if (id.isObsolete        ) out.printf("%s.obsolete=\r\n"    ,idStr);
 				if (id.type!=null        ) out.printf("%s.type=%s\r\n"      ,idStr,id.type);
 				if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"    ,idStr,id.symbol);
 				if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"     ,idStr,id.getImageFileName());
@@ -622,6 +640,7 @@ public class GameInfos {
 		}
 		
 		public final String id;
+		public boolean isObsolete;
 		public String label;
 		public String symbol;
 		public Type type;
@@ -638,6 +657,7 @@ public class GameInfos {
 		
 		private GeneralizedID(String id, String label) {
 			this.id = id;
+			this.isObsolete = false;
 			this.label = label;
 			this.symbol = null;
 			this.type = null;

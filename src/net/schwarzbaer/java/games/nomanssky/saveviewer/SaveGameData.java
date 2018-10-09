@@ -365,15 +365,15 @@ public class SaveGameData {
 		public Long   TS ;
 	}
 
-	public SaveGameData parse() {
-		general.parse();
-		parseStats();
+	public SaveGameData parse(boolean isNEXT) {
+		general.parse(isNEXT);
+		parseStats(isNEXT);
 		parseKnownBlueprints();
 		parseKnownWords();
 		parseDiscoveryData();
-		parseInventories();
-		parseBaseBuildingObjects();
-		parsePersistentPlayerBases();
+		if (!isNEXT) parseInventories();
+		if (!isNEXT) parseBaseBuildingObjects();
+		if (!isNEXT) parsePersistentPlayerBases();
 		universe.sort();
 		//universe.writeToConsole();
 		
@@ -1238,16 +1238,18 @@ public class SaveGameData {
 			this.data = data;
 		}
 		
-		public void parse() {
+		public void parse(boolean isNEXT) {
 			;
 			currentUniverseAddress = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
-			if(currentUniverseAddress.isPlanet()) {
-				Planet planet = data.universe.getOrCreatePlanet(currentUniverseAddress);
-				planet.isCurrPos = true;
-			}
-			if(currentUniverseAddress.isSolarSystem()) {
-				SolarSystem system = data.universe.getOrCreateSolarSystem(currentUniverseAddress);
-				system.isCurrPos = true;
+			if (currentUniverseAddress!=null) {
+				if(currentUniverseAddress.isPlanet()) {
+					Planet planet = data.universe.getOrCreatePlanet(currentUniverseAddress);
+					planet.isCurrPos = true;
+				}
+				if(currentUniverseAddress.isSolarSystem()) {
+					SolarSystem system = data.universe.getOrCreateSolarSystem(currentUniverseAddress);
+					system.isCurrPos = true;
+				}
 			}
 			graveUA = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
 			gravePos = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
@@ -1255,8 +1257,10 @@ public class SaveGameData {
 		}
 		
 		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
+		public Long getNanites        () { return data.getIntegerValue( data.json_data, "PlayerStateData","Nanites (??)"    ); }
 		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
 		public Long getPlayerShield   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          ); }
+		public Long getEnergy         () { return data.getIntegerValue( data.json_data, "PlayerStateData","Energy"          ); }
 		public Long getShipHealth     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      ); }
 		public Long getShipShield     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      ); }
 		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
@@ -1928,12 +1932,12 @@ public class SaveGameData {
 		}
 	}
 	
-	private void parseStats() {
+	private void parseStats(boolean isNEXT) {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
 		if (arrayValue==null)
 			stats = null;
 		else {
-			stats = new Stats(this).parse(arrayValue);
+			stats = new Stats(this,isNEXT).parse(arrayValue);
 			if (!stats.notParsedStats.isEmpty())
 				SaveViewer.log_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
 		}
@@ -1945,13 +1949,14 @@ public class SaveGameData {
 		public Vector<PlanetStats> planetStats;
 		JSON_Array notParsedStats;
 		private final SaveGameData data;
+		private boolean isNEXT;
 
-		public Stats(SaveGameData data) {
+		public Stats(SaveGameData data, boolean isNEXT) {
 			this.data = data;
+			this.isNEXT = isNEXT;
 			globalStats = null;
 			planetStats = new Vector<>();
 			notParsedStats = new JSON_Array();
-			StatValue.KnownID.setOrderNumbers();
 		}
 
 		public Stats parse(JSON_Array statList) {
@@ -2032,19 +2037,17 @@ public class SaveGameData {
 						stat.knownID = knownIDs[i];
 				
 				JSON_Object statValue = data.getObjectValue(statObject,"Value");
-				if (statValue==null) continue;
-				
-				Long statIntValue = data.getIntegerValue(statValue,"IntValue");
-				if (statIntValue==null) continue;
-				stat.IntValue = statIntValue;
-				
-				Double statFloatValue = data.getFloatValue(statValue,"FloatValue");
-				if (statFloatValue==null) continue;
-				stat.FloatValue = statFloatValue;
-				
-				Double statDenominator = data.getFloatValue(statValue,"Denominator");
-				if (statDenominator==null) continue;
-				stat.Denominator = statDenominator;
+				if (statValue!=null) {
+					if (isNEXT) {
+						stat.IntValue    = data.getIntegerValue_silent(statValue,"IntValue");
+						stat.FloatValue  = data.getFloatValue_silent  (statValue,"FloatValue");
+						stat.Denominator = data.getFloatValue_silent  (statValue,"Denominator");
+					} else {
+						stat.IntValue    = data.getIntegerValue(statValue,"IntValue");
+						stat.FloatValue  = data.getFloatValue  (statValue,"FloatValue");
+						stat.Denominator = data.getFloatValue  (statValue,"Denominator");
+					}
+				}
 				
 				statsVector.add(stat);
 			}
@@ -2092,36 +2095,28 @@ public class SaveGameData {
 				ALL_CREATURES;
 				
 				public String fullName;
-				public int orderNumber;
 				
 				KnownID() {
-					this.fullName = ""; //toString();
-					this.orderNumber = 0; //KnownID.values().length;
+					this(""); //toString();
 				}
 				KnownID(String name) {
 					this.fullName = name;
-				}
-				
-				public static void setOrderNumbers() {
-					KnownID[] values = values();
-					for (int i=0; i<values.length; ++i)
-						values[i].orderNumber = i;
 				}
 			}
 			
 			public String ID;
 			public KnownID knownID;
-			public long IntValue;
-			public double FloatValue;
-			public double Denominator;
+			public Long IntValue;
+			public Double FloatValue;
+			public Double Denominator;
 			
 			
 			public StatValue() {
 				this.ID = null;
 				this.knownID = null;
-				this.IntValue = 0;
-				this.FloatValue = 0;
-				this.Denominator = 0;
+				this.IntValue = null;
+				this.FloatValue = null;
+				this.Denominator = null;
 			}
 
 
@@ -2134,7 +2129,7 @@ public class SaveGameData {
 				}
 				if (other.knownID==null)
 					return -1;
-				return this.knownID.orderNumber - other.knownID.orderNumber;
+				return this.knownID.ordinal() - other.knownID.ordinal();
 			}
 		}
 		
@@ -2258,13 +2253,6 @@ public class SaveGameData {
 		}
 	}
 
-	private String getStringValue_silent(JSON_Object data, Object... path) {
-		enableStackTrace(false);
-		String value = getStringValue(data, path);
-		enableStackTrace(true);
-		return value;
-	}
-
 	private String getStringValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
@@ -2311,5 +2299,26 @@ public class SaveGameData {
 			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Object, value.type, Arrays.toString(path));
 			return null;
 		}
+	}
+
+	private Long getIntegerValue_silent(JSON_Object data, Object... path) {
+		enableStackTrace(false);
+		Long value = getIntegerValue(data, path);
+		enableStackTrace(true);
+		return value;
+	}
+
+	private Double getFloatValue_silent(JSON_Object data, Object... path) {
+		enableStackTrace(false);
+		Double value = getFloatValue(data, path);
+		enableStackTrace(true);
+		return value;
+	}
+
+	private String getStringValue_silent(JSON_Object data, Object... path) {
+		enableStackTrace(false);
+		String value = getStringValue(data, path);
+		enableStackTrace(true);
+		return value;
 	}
 }

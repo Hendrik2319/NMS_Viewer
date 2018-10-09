@@ -45,6 +45,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
@@ -130,6 +131,8 @@ public class SaveViewer implements ActionListener {
 		GameInfos.loadKnownStatIDsFromFile();
 		GameInfos.loadAllIDsFromFiles();
 		GameInfos.loadUniverseObjectDataFromFile();
+		
+//		GameInfos.createFilesWithObsoleteIDs();
 
 //		HashMap<Dimension,Integer> map = new HashMap<>();
 //		Integer prev;
@@ -202,7 +205,7 @@ public class SaveViewer implements ActionListener {
 		updateWindowTitle();
 	}
 	
-	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, RefreshExtraImages, SelectCoordinates, ReloadDeObfuscator }
+	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, save_hg_backup, save2_hg_backup, RefreshExtraImages, SelectCoordinates, ReloadDeObfuscator }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -214,6 +217,12 @@ public class SaveViewer implements ActionListener {
 		case save2_hg:
 			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/save2.hg"));
 			break;
+		case save_hg_backup:
+			openSaveGame(new File(config.getBackupFolder(mainWindow)+"/save.hg"));
+			break;
+		case save2_hg_backup:
+			openSaveGame(new File(config.getBackupFolder(mainWindow)+"/save2.hg"));
+			break;
 		case SwitchToGameFolder: {
 			inputFileChooser.setCurrentDirectory(getGameFolder());
 			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
@@ -221,7 +230,7 @@ public class SaveViewer implements ActionListener {
 			break;
 		}
 		case SwitchToBackupFolder: {
-			inputFileChooser.setCurrentDirectory(new File("d:/Games/_game_data/__saves/No Man's Sky - AppData_Roaming_HelloGames_NMS_st_76561198016584395/savegame_PreNEXT"));
+			inputFileChooser.setCurrentDirectory(new File(config.getBackupFolder(mainWindow)));
 			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
 			JOptionPane.showMessageDialog(mainWindow, message, "Current folder", JOptionPane.INFORMATION_MESSAGE);
 			break;
@@ -339,7 +348,7 @@ public class SaveViewer implements ActionListener {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
 			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName());
-			if (!newFormat) saveGameData.parse();
+			saveGameData.parse(newFormat);
 			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,newFormat);
 			loadedSaveGames.add(saveGameView);
 			contentPane.addSaveGameView(saveGameView);
@@ -368,7 +377,7 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data!=null) {
 			removeUsages(view.data);
 			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName());
-			if (!newFormat) saveGameData.parse();
+			saveGameData.parse(newFormat);
 			view.replaceData(saveGameData,newFormat);
 			contentPane.updateIDPanels();
 		}
@@ -404,9 +413,11 @@ public class SaveViewer implements ActionListener {
 		private static final String NMS_VIEWER_CFG = "NMS_Viewer.cfg";
 		
 		private String savegameSubFolder;
+		private String savegameBackupFolder;
 		
 		Config() {
 			savegameSubFolder=null;
+			savegameBackupFolder=null;
 		}
 		
 		String getSavegameSubFolder(JFrame parent) {
@@ -423,6 +434,21 @@ public class SaveViewer implements ActionListener {
 			return savegameSubFolder;
 		}
 		
+		String getBackupFolder(JFrame parent) {
+			if (savegameBackupFolder==null) {
+				JFileChooser fileChooser = new JFileChooser("./");
+				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				fileChooser.setMultiSelectionEnabled(false);
+				fileChooser.setDialogTitle("Select subfolder that contains save games");
+				if (fileChooser.showOpenDialog(parent)==JFileChooser.APPROVE_OPTION) {
+					savegameBackupFolder = fileChooser.getSelectedFile().getAbsolutePath();
+					writeToFile();
+				}
+			}
+			return savegameBackupFolder;
+			//return new File("d:/Games/_game_data/__saves/No Man's Sky - AppData_Roaming_HelloGames_NMS_st_76561198016584395/savegame_PreNEXT");
+		}
+
 		static Config readFromFile() {
 			Config config = new Config();
 			
@@ -433,7 +459,8 @@ public class SaveViewer implements ActionListener {
 			String str;
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 				while ((str=in.readLine())!=null) {
-					if (str.startsWith("SavegameSubFolder=")) config.savegameSubFolder = str.substring("SavegameSubFolder=".length());
+					if (str.startsWith("SavegameSubFolder="   )) config.savegameSubFolder    = str.substring("SavegameSubFolder="   .length());
+					if (str.startsWith("SavegameBackupFolder=")) config.savegameBackupFolder = str.substring("SavegameBackupFolder=".length());
 				}
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -446,7 +473,8 @@ public class SaveViewer implements ActionListener {
 			File file = new File(NMS_VIEWER_CFG);
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 				
-				out.printf("SavegameSubFolder=%s\r\n",savegameSubFolder);
+				if (savegameSubFolder   !=null) out.printf("SavegameSubFolder=%s\r\n"   ,savegameSubFolder   );
+				if (savegameBackupFolder!=null) out.printf("SavegameBackupFolder=%s\r\n",savegameBackupFolder);
 				
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -568,6 +596,8 @@ public class SaveViewer implements ActionListener {
 			
 			JToolBar toolBar = new JToolBar("Standard");
 			addButtons(toolBar);
+			toolBar.setFloatable(false);
+			toolBar.setRollover(true);
 			
 			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
@@ -631,30 +661,61 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("\"save.hg\"", ToolbarIcons.Open, ActionCommand.save_hg,true));
 			toolBar.add(createButton("\"save2.hg\"", ToolbarIcons.Open, ActionCommand.save2_hg,true));
 			toolBar.addSeparator();
-			toolBar.add(createButton("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder,true));
-			toolBar.add(createButton("Switch to Backup Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
-			toolBar.add(createButton("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
-//			toolBar.add(createButton("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
-//			toolBar.add(createButton("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
-			toolBar.add(createButton("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
-			toolBar.addSeparator();
-			toolBar.add(createButton("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
-			toolBar.add(createButton("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
+			toolBar.add(createButton("\"save.hg\" (bak)", ToolbarIcons.Open, ActionCommand.save_hg_backup,true));
+			toolBar.add(createButton("\"save2.hg\" (bak)", ToolbarIcons.Open, ActionCommand.save2_hg_backup,true));
 			toolBar.addSeparator();
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
+			toolBar.addSeparator();
 			toolBar.add(createButton("Refresh DeObfuscator", ToolbarIcons.Reload, ActionCommand.ReloadDeObfuscator,true));
+			
+			JPopupMenu extraMenu = new JPopupMenu("Extra");
+			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder,true));
+			extraMenu.add(createMenuItem("Switch to Backup Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
+			extraMenu.add(createMenuItem("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
+//			extraMenu.add(createMenuItem("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
+//			extraMenu.add(createMenuItem("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
+			extraMenu.add(createMenuItem("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
+			extraMenu.addSeparator();
+			extraMenu.add(createMenuItem("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
+			extraMenu.add(createMenuItem("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
+
+			JButton extrabutton; 
+			toolBar.addSeparator();
+			toolBar.add(extrabutton = createButton("Extra", null, true));
+			extrabutton.addActionListener(e->{
+				//extrabutton.getX
+				extraMenu.show(extrabutton,0,extrabutton.getHeight());
+			});
+			
+			
+		}
+
+		private JButton createButton(String title, ToolbarIcons iconKey, boolean enabled) {
+			JButton button = new JButton(title);
+			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
+			button.setEnabled(enabled);
+			return button;
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
-			JButton button = new JButton(title);
-			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
+			JButton button = createButton(title, iconKey, enabled);
 			button.setActionCommand(actionCommand.toString());
 			button.addActionListener(SaveViewer.this);
-			button.setEnabled(enabled);
 			disabler.add(actionCommand, button);
 			return button;
+		}
+
+		private JMenuItem createMenuItem(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
+			JMenuItem button = new JMenuItem(title);
+			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
+			button.setEnabled(enabled);
+			button.setActionCommand(actionCommand.toString());
+			button.addActionListener(SaveViewer.this);
+			disabler.add(actionCommand, button);
+			return button;
+			
 		}
 		
 	}
