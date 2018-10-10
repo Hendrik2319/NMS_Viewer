@@ -249,6 +249,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			if (!isValidSlotHovered()) {
 				textarea.append("Width        : "+inventory.width+"\r\n");
 				textarea.append("Height       : "+inventory.height+"\r\n");
+				if (inventory.usedSlots!=null)
+					textarea.append("Used Slots   : "+inventory.usedSlots+(inventory.validSlots!=null?("/"+inventory.validSlots):"")+"\r\n");
 				textarea.append("Class        : "+inventory.inventoryClass+"\r\n");
 				textarea.append("is cool      : "+inventory.isCool+"\r\n");
 				textarea.append("Version      : "+inventory.version+"\r\n");

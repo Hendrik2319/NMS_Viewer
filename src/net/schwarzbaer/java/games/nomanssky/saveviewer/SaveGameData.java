@@ -1,8 +1,10 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -42,7 +44,8 @@ public class SaveGameData {
 	public Inventories inventories;
 	public KnownBlueprints knownBlueprints;
 	public UnboundBuildingObject[] baseBuildingObjects;
-	public PersistentPlayerBases persistentPlayerBases;
+	public Vector<PersistentPlayerBase> persistentPlayerBases;
+	public Vector<StoredInteraction> storedInteractions;
 	
 	public SaveGameData(JSON_Object json_data, String filename) {
 		error = Error.NoError;
@@ -61,11 +64,15 @@ public class SaveGameData {
 		this.persistentPlayerBases = null;
 	}
 	
-	public static String timestampToString(long timestamp) {
-		long s = timestamp%60;
-		timestamp = (timestamp-s)/60;
-		long m = timestamp%60;
-		long h = (timestamp-m)/60;
+	public static String timestampToString_DMYHMS(long timestamp_s) {
+		return DateFormat.getDateTimeInstance().format(new Date(timestamp_s*1000));
+	}
+	
+	public static String timestampToString_HMS(long timestamp_s) {
+		long s = timestamp_s%60;
+		timestamp_s = (timestamp_s-s)/60;
+		long m = timestamp_s%60;
+		long h = (timestamp_s-m)/60;
 		return String.format("%3d:%02d:%02d", h,m,s);
 	}
 	
@@ -366,14 +373,17 @@ public class SaveGameData {
 	}
 
 	public SaveGameData parse(boolean isNEXT) {
-		general.parse(isNEXT);
-		parseStats(isNEXT);
+		if (!isNEXT) return this;
+		
+		general.parse();
+		parseStats();
 		parseKnownBlueprints();
 		parseKnownWords();
 		parseDiscoveryData();
-		if (!isNEXT) parseInventories();
+		parseInventories();
 		if (!isNEXT) parseBaseBuildingObjects();
-		if (!isNEXT) parsePersistentPlayerBases();
+		parsePersistentPlayerBases();
+		parseStoredInteractions();
 		universe.sort();
 		//universe.writeToConsole();
 		
@@ -385,12 +395,67 @@ public class SaveGameData {
 		return this;
 	}
 
+	private void parseStoredInteractions() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","StoredInteractions");
+		if (arrayValue==null) return;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		storedInteractions = new Vector<StoredInteraction>();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			JSON_Object objectValue = getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			
+			JSON_Array interactions = getArrayValue(objectValue,"Interactions");
+			if (interactions==null) continue;
+			
+			for (int j=0; j<interactions.size(); ++j) {
+				Value interactionValue = interactions.get(j);
+				JSON_Object interaction = getObject(interactionValue);
+				if (interaction==null) {
+					notParsableObjects.add(interactionValue);
+					continue;
+				}
+				StoredInteraction si = new StoredInteraction();
+				si.groupIndex       = i;
+				si.interactionIndex = j;
+				si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
+				si.value            = getIntegerValue(interaction, "Value");
+				si.position         = parseCoordinates(interaction, "Position");
+				
+				storedInteractions.add(si);
+			}
+		}
+		
+		if (!notParsableObjects.isEmpty())
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+	}
+	
+	public static class StoredInteraction {
+		public int groupIndex;
+		public int interactionIndex;
+		public UniverseAddress galacticAddress;
+		public Long value;
+		public Coordinates position;
+		public StoredInteraction() {
+			this.groupIndex = -1;
+			this.interactionIndex = -1;
+			this.galacticAddress = null;
+			this.value = null;
+			this.position = null;
+		}
+	}
+
 	private void parsePersistentPlayerBases() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","PersistentPlayerBases");
 		if (arrayValue==null) return;
 		JSON_Array notParsableObjects = new JSON_Array();
 		
-		persistentPlayerBases = new PersistentPlayerBases();
+//		persistentPlayerBases = new PersistentPlayerBases();
+		persistentPlayerBases = new Vector<>();
 		for (int i=0; i<arrayValue.size(); ++i) {
 			Value value = arrayValue.get(i);
 			JSON_Object objectValue = getObject(value);
@@ -408,14 +473,17 @@ public class SaveGameData {
 			pb.rid             = getStringValue  (objectValue, "RID");
 			pb.owner           = parseOwnwerField(objectValue, "Owner");
 			pb.name            = getStringValue  (objectValue, "Name");
+			pb.type___         = getStringValue  (objectValue, "??? [peI]", "??? Type/Name [DPp]");
+			pb.value__wx7      = getIntegerValue (objectValue, "??? [wx7]");
 			
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", i);
 			
-			persistentPlayerBases.set(i,pb);
+			persistentPlayerBases.add(pb);
+//			persistentPlayerBases.set(i,pb);
 		}
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
 	}
 	
 	private BuildingObject[] parsePersistentPlayerBasesObjects(JSON_Object parentObj, String valueName, int baseIndex) {
@@ -438,7 +506,7 @@ public class SaveGameData {
 		}
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
 		
 		return vector.toArray(new BuildingObject[0]);
 	}
@@ -453,26 +521,26 @@ public class SaveGameData {
 		}
 	}
 
-	public static class PersistentPlayerBases {
-		public PersistentPlayerBase planetBase;
-		public PersistentPlayerBase freighterBase;
-		public PersistentPlayerBase otherPlayersBase;
-		public Vector<PersistentPlayerBase> additionalBases;
-		private PersistentPlayerBases() {
-			this.planetBase       = null;
-			this.freighterBase    = null;
-			this.otherPlayersBase = null;
-			this.additionalBases = new Vector<>();
-		}
-		public void set(int i, PersistentPlayerBase pb) {
-			switch(i) {
-			case 0: planetBase       = pb; break;
-			case 1: freighterBase    = pb; pb.isFreighterBase=true; break;
-			case 2: otherPlayersBase = pb; break;
-			default: additionalBases.add(pb); break;
-			}
-		}
-	}
+//	public static class PersistentPlayerBases {
+//		public PersistentPlayerBase planetBase;
+//		public PersistentPlayerBase freighterBase;
+//		public PersistentPlayerBase otherPlayersBase;
+//		public Vector<PersistentPlayerBase> additionalBases;
+//		private PersistentPlayerBases() {
+//			this.planetBase       = null;
+//			this.freighterBase    = null;
+//			this.otherPlayersBase = null;
+//			this.additionalBases = new Vector<>();
+//		}
+//		public void set(int i, PersistentPlayerBase pb) {
+//			switch(i) {
+//			case 0: planetBase       = pb; break;
+//			case 1: freighterBase    = pb; pb.isFreighterBase=true; break;
+//			case 2: otherPlayersBase = pb; break;
+//			default: additionalBases.add(pb); break;
+//			}
+//		}
+//	}
 
 	public static class PersistentPlayerBase {
 
@@ -488,6 +556,9 @@ public class SaveGameData {
 		public boolean isFreighterBase;
 		public final SaveGameData source;
 		
+		public String type___;
+		public Long value__wx7;
+		
 		public PersistentPlayerBase(SaveGameData source) {
 			this.source = source;
 			this.galacticAddress = null;
@@ -500,6 +571,8 @@ public class SaveGameData {
 			this.position = null;
 			this.objects = null;
 			this.isFreighterBase = false;
+			this.type___ = null;
+			this.value__wx7 = null;
 		}
 	}
 
@@ -524,7 +597,7 @@ public class SaveGameData {
 		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
 	}
 
 	public static class UnboundBuildingObject extends BuildingObject {
@@ -706,7 +779,12 @@ public class SaveGameData {
 			}
 			
 			if (inventory.width!=null && inventory.height!=null && inventory.width>0 && inventory.height>0) {
-				inventory.slots = inventory.parseSlots((int)(long)inventory.width, (int)(long)inventory.height, getArrayValue(inventoryData,"Slots"),getArrayValue(inventoryData,"ValidSlotIndices"), inventoryLabel, inventorySourcePath);
+				JSON_Array arrSlots            = getArrayValue(inventoryData,"Slots");
+				JSON_Array arrValidSlotIndices = getArrayValue(inventoryData,"ValidSlotIndices");
+				if (arrSlots           !=null) inventory.usedSlots  = arrSlots.size();
+				if (arrValidSlotIndices!=null) inventory.validSlots = arrValidSlotIndices.size();
+				
+				inventory.slots = inventory.parseSlots((int)(long)inventory.width, (int)(long)inventory.height, arrSlots, arrValidSlotIndices, inventoryLabel, inventorySourcePath);
 			}
 			inventory.baseStatValues = inventory.parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
 			inventory.specialSlots   = inventory.parseSpecialSlots  (getArrayValue(inventoryData,"SpecialSlots"  ), inventoryLabel, inventorySourcePath);
@@ -864,6 +942,8 @@ public class SaveGameData {
 		public Long productMaxStorageMultiplier;
 		public Long substanceMaxStorageMultiplier;
 		public Slot[][] slots;
+		public Integer usedSlots;
+		public Integer validSlots;
 		public BaseStatValue[] baseStatValues;
 		public String specialSlots;
 		
@@ -879,6 +959,8 @@ public class SaveGameData {
 			this.slots = null;
 			this.baseStatValues = null;
 			this.specialSlots = null;
+			this.usedSlots = null;
+			this.validSlots = null;
 		}
 
 		public SaveGameData getSource() {
@@ -936,7 +1018,7 @@ public class SaveGameData {
 	public enum SlotType { Product, Technology, Substance }
 
 	private void parseDiscoveryData() {
-		JSON_Array arrayValue_Store = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
+		JSON_Array arrayValue_Store     = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
 		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
 		
 		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
@@ -1231,15 +1313,17 @@ public class SaveGameData {
 		
 		private SaveGameData data;
 		public UniverseAddress currentUniverseAddress;
+		public UniverseAddress freighterUA;
 		public UniverseAddress graveUA;
+		public Position freighterPos;
 		public Position gravePos;
 		
 		public General(SaveGameData data) {
 			this.data = data;
 		}
 		
-		public void parse(boolean isNEXT) {
-			;
+		public void parse() {
+			
 			currentUniverseAddress = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
 			if (currentUniverseAddress!=null) {
 				if(currentUniverseAddress.isPlanet()) {
@@ -1251,8 +1335,10 @@ public class SaveGameData {
 					system.isCurrPos = true;
 				}
 			}
-			graveUA = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
-			gravePos = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			freighterUA = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","FreighterUniverseAddress");
+			graveUA     = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
+			freighterPos = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition(??)", "FreighterMatrixLookAt(??)", "FreighterMatrixUp(??)");
+			gravePos     = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
 		}
 		
@@ -1268,9 +1354,9 @@ public class SaveGameData {
 		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
 		public Long getKnownGlyphsMaks() { return data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes"); }
 		
-		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return timestampToString(v); }
-		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return timestampToString(v); }
-		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return timestampToString(v); }
+		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return timestampToString_HMS(v); }
+		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return timestampToString_HMS(v); }
+		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return timestampToString_HMS(v); }
 		
 		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
 		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
@@ -1932,12 +2018,12 @@ public class SaveGameData {
 		}
 	}
 	
-	private void parseStats(boolean isNEXT) {
+	private void parseStats() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
 		if (arrayValue==null)
 			stats = null;
 		else {
-			stats = new Stats(this,isNEXT).parse(arrayValue);
+			stats = new Stats(this).parse(arrayValue);
 			if (!stats.notParsedStats.isEmpty())
 				SaveViewer.log_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
 		}
@@ -1949,11 +2035,9 @@ public class SaveGameData {
 		public Vector<PlanetStats> planetStats;
 		JSON_Array notParsedStats;
 		private final SaveGameData data;
-		private boolean isNEXT;
 
-		public Stats(SaveGameData data, boolean isNEXT) {
+		public Stats(SaveGameData data) {
 			this.data = data;
-			this.isNEXT = isNEXT;
 			globalStats = null;
 			planetStats = new Vector<>();
 			notParsedStats = new JSON_Array();
@@ -2038,15 +2122,9 @@ public class SaveGameData {
 				
 				JSON_Object statValue = data.getObjectValue(statObject,"Value");
 				if (statValue!=null) {
-					if (isNEXT) {
-						stat.IntValue    = data.getIntegerValue_silent(statValue,"IntValue");
-						stat.FloatValue  = data.getFloatValue_silent  (statValue,"FloatValue");
-						stat.Denominator = data.getFloatValue_silent  (statValue,"Denominator");
-					} else {
-						stat.IntValue    = data.getIntegerValue(statValue,"IntValue");
-						stat.FloatValue  = data.getFloatValue  (statValue,"FloatValue");
-						stat.Denominator = data.getFloatValue  (statValue,"Denominator");
-					}
+					stat.IntValue    = data.getIntegerValue_silent(statValue,"IntValue");
+					stat.FloatValue  = data.getFloatValue_silent  (statValue,"FloatValue");
+					stat.Denominator = data.getFloatValue_silent  (statValue,"Denominator");
 				}
 				
 				statsVector.add(stat);

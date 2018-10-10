@@ -37,6 +37,62 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 
 public class SimplePanels {
 	
+	static class StoredInteractionsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 1017824861605442560L;
+
+		public StoredInteractionsPanel(SaveGameData data) {
+			super(data);
+			
+			StoredInteractionsTableModel tableModel = new StoredInteractionsTableModel();
+			SimplifiedTable table = new SimplifiedTable("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			add(tableScrollPane,BorderLayout.CENTER);
+		}
+		
+		private enum StoredInteractionsTableColumnID implements TableView.SimplifiedColumnIDInterface {
+			// [70, 160, 160, 130, 80, 190, 150, 150]
+			GroupIndex       ("G"               , String.class,  35,-1, 35, 35),
+			InteractionIndex ("I"               , String.class,  35,-1, 35, 35),
+			GalacticAddress  ("GalacticAddress" , String.class,  80,-1,160,160),
+			Value            ("Value"           , String.class,  65,-1,100,100),
+			Position         ("Position"        , String.class, 150,-1,250,250);
+			
+			private TableView.SimplifiedColumnConfig columnConfig;
+			
+			StoredInteractionsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class StoredInteractionsTableModel extends TableView.SimplifiedTableModel<StoredInteractionsTableColumnID> {
+			
+			public StoredInteractionsTableModel() {
+				super(StoredInteractionsTableColumnID.values());
+			}
+
+			@Override
+			public int getRowCount() {
+				return data.storedInteractions.size();
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, StoredInteractionsTableColumnID columnID) {
+				SaveGameData.StoredInteraction si = data.storedInteractions.get(rowIndex);
+				if (si==null) return null;
+				switch(columnID) {
+				case GroupIndex      : return si.groupIndex;
+				case InteractionIndex: return si.interactionIndex;
+				case GalacticAddress : if (si.galacticAddress==null) return ""; else return si.galacticAddress.getCoordinates();
+				case Value           : if (si.value   ==null) return ""; else return String.format("[0x%04X] %d", si.value, si.value);
+				case Position        : if (si.position==null) return ""; else return si.position.toString(" %1.2f ");
+				}
+				return null;
+			}
+			
+		}
+	}
+	
 	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6246130206148705495L;
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
@@ -188,7 +244,7 @@ public class SimplePanels {
 				UnboundBuildingObject bbo = data.baseBuildingObjects[rowIndex];
 				if (bbo==null) return null;
 				switch(columnID) {
-				case Timestamp      : if (bbo.timestamp      ==null) return ""; else return SaveGameData.timestampToString(bbo.timestamp);
+				case Timestamp      : if (bbo.timestamp      ==null) return ""; else return SaveGameData.timestampToString_HMS(bbo.timestamp);
 				case ObjectID       : if (bbo.objectID       ==null) return ""; else return bbo.getNameOfObjectID();
 				case GalacticAddress: if (bbo.galacticAddress==null) return ""; else return bbo.galacticAddress.getCoordinates();
 				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; else return String.format("0x%016X", bbo.regionSeed);
@@ -211,13 +267,15 @@ public class SimplePanels {
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
 			
-			if (this.data.persistentPlayerBases.planetBase      !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.planetBase      , "Base on Planet");
-			if (this.data.persistentPlayerBases.freighterBase   !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.freighterBase   , "Base on Freighter");
-			if (this.data.persistentPlayerBases.otherPlayersBase!=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.otherPlayersBase, "Base of another Player");
+//			if (this.data.persistentPlayerBases.planetBase      !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.planetBase      , "Base on Planet");
+//			if (this.data.persistentPlayerBases.freighterBase   !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.freighterBase   , "Base on Freighter");
+//			if (this.data.persistentPlayerBases.otherPlayersBase!=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.otherPlayersBase, "Base of another Player");
 			
 			int i=0;
-			for (PersistentPlayerBase pb:this.data.persistentPlayerBases.additionalBases)
-				addBaseTab(tabbedPane, pb, String.format("Additional Base %d", ++i));
+			for (PersistentPlayerBase pb:this.data.persistentPlayerBases)
+				addBaseTab(tabbedPane, pb, String.format("Base %d", ++i));
+//			for (PersistentPlayerBase pb:this.data.persistentPlayerBases.additionalBases)
+//				addBaseTab(tabbedPane, pb, String.format("Additional Base %d", ++i));
 			
 			add(tabbedPane,BorderLayout.CENTER);
 		}
@@ -310,9 +368,10 @@ public class SimplePanels {
 				if (playerbase.galacticAddress==null) return nearObj;
 				long pbAddress =  playerbase.galacticAddress.getAddress();
 				
-				for(UnboundBuildingObject ubo:data.baseBuildingObjects)
-					if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==pbAddress)
-						nearObj.add(ubo);
+				if (data.baseBuildingObjects!=null)
+					for(UnboundBuildingObject ubo:data.baseBuildingObjects)
+						if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==pbAddress)
+							nearObj.add(ubo);
 				
 				return nearObj;
 			}
@@ -320,10 +379,12 @@ public class SimplePanels {
 			private void showValues() {
 				textArea.setText("");
 				
-				textArea.append("Name        : "+(playerbase.name       ==null?"":playerbase.name       )+"\r\n");
-				textArea.append("Base Version: "+(playerbase.baseVersion==null?"":playerbase.baseVersion)+"\r\n");
-				textArea.append("User Data   : "+(playerbase.userData   ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
-				textArea.append("RID         : "+(playerbase.rid        ==null?"":playerbase.rid        )+"\r\n");
+				textArea.append("Name         : "+(playerbase.name       ==null?"":playerbase.name       )+"\r\n");
+				textArea.append("Base Version : "+(playerbase.baseVersion==null?"":playerbase.baseVersion)+"\r\n");
+				textArea.append("User Data    : "+(playerbase.userData   ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
+				textArea.append("RID          : "+(playerbase.rid        ==null?"":playerbase.rid        )+"\r\n");
+				textArea.append("Type (??)    : "+(playerbase.type___    ==null?"":playerbase.type___    )+"\r\n");
+				textArea.append("Value [wx7]  : "+(playerbase.value__wx7 ==null?"":playerbase.value__wx7 )+"\r\n");
 				
 				if (playerbase.owner!=null) {
 					textArea.append("\r\nOwner :\r\n");
@@ -350,12 +411,12 @@ public class SimplePanels {
 			}
 
 			private enum BaseObjectsColumnID implements TableView.SimplifiedColumnIDInterface {
-				Timestamp       ("Timestamp"       , String.class, 35,-1, 70, 70),
-				ObjectID        ("ObjectID"        , String.class, 65,-1,130,130),
+				Timestamp       ("Timestamp"       , String.class, 70,-1,140,140),
+				ObjectID        ("ObjectID"        , String.class,120,-1,240,240),
 				UserData        ("UserData"        , String.class, 40,-1, 80, 80),
-				Position        ("Position"        , String.class, 95,-1,190,190),
-				Up              ("Up"              , String.class, 75,-1,150,150),
-				At              ("At"              , String.class, 75,-1,150,150);
+				Position        ("Position"        , String.class, 75,-1,150,150),
+				Up              ("Up"              , String.class, 85,-1,170,170),
+				At              ("At"              , String.class, 85,-1,170,170);
 				
 				private TableView.SimplifiedColumnConfig columnConfig;
 				
@@ -384,12 +445,12 @@ public class SimplePanels {
 					BuildingObject obj = objects[rowIndex];
 					if (obj==null) return null;
 					switch(columnID) {
-					case Timestamp      : if (obj.timestamp      ==null) return ""; return SaveGameData.timestampToString(obj.timestamp);
+					case Timestamp      : if (obj.timestamp      ==null) return ""; return SaveGameData.timestampToString_DMYHMS(obj.timestamp);
 					case ObjectID       : if (obj.objectID       ==null) return ""; return obj.getNameOfObjectID();
 					case UserData       : if (obj.userData       ==null) return ""; return String.format("0x%08X" , obj.userData  );
-					case Position       : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString("%1.2f");
-					case Up             : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString("%1.4f");
-					case At             : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString("%1.4f");
+					case Position       : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
+					case Up             : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
+					case At             : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
 					}
 					return null;
 				}

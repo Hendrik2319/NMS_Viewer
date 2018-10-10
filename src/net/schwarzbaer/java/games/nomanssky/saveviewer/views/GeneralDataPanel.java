@@ -2,6 +2,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.util.Locale;
 
 import javax.swing.BoxLayout;
@@ -29,27 +30,35 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 class GeneralDataPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -3866983525686776846L;
 		
-		private JTextArea textArea;
-		private boolean isNEXT;
+		private JTextArea[] textAreas;
+		private int currentTextArea;
 	
-		public GeneralDataPanel(SaveGameData data, boolean isNEXT) {
+		public GeneralDataPanel(SaveGameData data) {
 			super(data);
-			this.isNEXT = isNEXT;
 			
-			textArea = new JTextArea();
-			textArea.setEditable(false);
-			
-			JScrollPane treeScrollPane = new JScrollPane(textArea);
-			treeScrollPane.setPreferredSize(new Dimension(600, 500));
+			JPanel textareaPanel = new JPanel(new GridLayout(1,0,3,3));
+			textAreas = new JTextArea[2];
+			textAreas[0] = createTextarea(textareaPanel,600,500);
+			textAreas[1] = createTextarea(textareaPanel,600,500);
+			currentTextArea = 0;
 			
 			JPanel buttonPanel = new JPanel();
 			buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
 			buttonPanel.add(SaveViewer.createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.currentUniverseAddress)));
 			
-			add(treeScrollPane,BorderLayout.CENTER);
+			add(textareaPanel,BorderLayout.CENTER);
 			add(buttonPanel,BorderLayout.SOUTH);
 			
 			updateContent();
+		}
+
+		private JTextArea createTextarea(JPanel textareaPanel, int width, int height) {
+			JTextArea textArea = new JTextArea();
+			textArea.setEditable(false);
+			JScrollPane scrollPane = new JScrollPane(textArea);
+			scrollPane.setPreferredSize(new Dimension(width, height));
+			textareaPanel.add(scrollPane);
+			return textArea;
 		}
 		
 		private void setNameForUniverseAddress(UniverseAddress ua) {
@@ -66,9 +75,11 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 
 		@Override
 		public void updateContent() {
-			textArea.setText("");
+			for (JTextArea t:textAreas) t.setText("");
+			
+			currentTextArea = 0;
 			appendValue("Current Units    ", data.general.getUnits() );
-			if (isNEXT) appendValue("Current Nanites  ", data.general.getNanites() );
+			appendValue("Current Nanites  ", data.general.getNanites() );
 			appendValue("Player Health    ", data.general.getPlayerHealth() );
 			appendValue("Player Shield    ", data.general.getPlayerShield() );
 			appendValue("Energy           ", data.general.getEnergy() );
@@ -78,6 +89,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			appendValue("Total PlayTime   ", data.general.getTotalPlayTime_TStr() );
 			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive_TStr() );
 			
+			currentTextArea = 1;
 			UniverseAddress currentUA = data.general.currentUniverseAddress;
 			if (currentUA!=null) {
 				appendEmptyLine();
@@ -98,33 +110,17 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				}
 				appendLine("    "+currentUA.getCoordinates());
 				appendLine("    "+currentUA.getExtendedSigBoostCode());
-				appendLine(String.format(Locale.ENGLISH, "    Distance to Center of Galaxy: %1.1f regions", currentUA.getDistToCenter_inRegionUnits()));
+				appendLine(String.format(Locale.ENGLISH, "    distance to center of galaxy: %1.1f regions", currentUA.getDistToCenter_inRegionUnits()));
 			}
 			
-			UniverseAddress graveUA = data.general.graveUA;
-			Position gravePos = data.general.gravePos;
-			if (graveUA!=null || gravePos!=null) {
-				appendEmptyLine();
-				appendLine("Grave Position:");
-				if (graveUA!=null) {
-					appendLine("    Location in Universe:");
-					appendLine("        "+graveUA.getCoordinates());
-					appendLine("        "+graveUA.getExtendedSigBoostCode());
-				}
-				if (gravePos!=null) {
-					appendLine("    Position:");
-					if (gravePos.pos!=null) appendLine("        pos: "+gravePos.pos.toString("%1.2f"));
-					if (gravePos.at !=null) appendLine("        at:  "+gravePos.at .toString("%1.4f"));
-					if (gravePos.up !=null) appendLine("        up:  "+gravePos.up .toString("%1.4f"));
-					if (gravePos.pos==null && gravePos.at==null && gravePos.up==null)
-						appendLine("        <no data>");
-				}
-			}
+			showUAddressAndPosition(data.general.freighterUA, data.general.freighterPos,"Position of Freighter");
+			showUAddressAndPosition(data.general.graveUA, data.general.gravePos,"Position of Grave");
 			
+			currentTextArea = 0;
 			Long knownGlyphs = data.general.getKnownGlyphsMaks();
 			if (knownGlyphs!=null) {
 				appendEmptyLine();
-				appendLine("Known portal glyphs:");
+				appendLine("Known Portal Glyphs:");
 				String str = "";
 				int n = (int)(long)knownGlyphs;
 				for (int i=0; i<16; ++i) {
@@ -158,9 +154,30 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 //				appendValue("Test value 6 (Integer)", Type.Integer, "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
 //			}
 		}
+
+		private void showUAddressAndPosition(UniverseAddress graveUA, Position gravePos, String title) {
+			if (graveUA!=null || gravePos!=null) {
+				appendEmptyLine();
+				//String title = "Grave Position";
+				appendLine(title+":");
+				if (graveUA!=null) {
+					appendLine("    location in universe:");
+					appendLine("        "+graveUA.getCoordinates());
+					appendLine("        "+graveUA.getExtendedSigBoostCode());
+				}
+				if (gravePos!=null) {
+					appendLine("    position in system:");
+					if (gravePos.pos!=null) appendLine("        pos: "+gravePos.pos.toString("%1.2f"));
+					if (gravePos.at !=null) appendLine("        at:  "+gravePos.at .toString("%1.4f"));
+					if (gravePos.up !=null) appendLine("        up:  "+gravePos.up .toString("%1.4f"));
+					if (gravePos.pos==null && gravePos.at==null && gravePos.up==null)
+						appendLine("        <no data>");
+				}
+			}
+		}
 		
 		private void appendEmptyLine() {
-			textArea.append("\r\n");
+			textAreas[currentTextArea].append("\r\n");
 		}
 
 		private void appendStatement(String label, String statement) {
@@ -169,9 +186,9 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 		}
 
 		private void appendLine(String line) {
-			if (!textArea.getText().isEmpty())
-				textArea.append("\r\n");
-			textArea.append(line);
+			if (!textAreas[currentTextArea].getText().isEmpty())
+				textAreas[currentTextArea].append("\r\n");
+			textAreas[currentTextArea].append(line);
 		}
 
 		private void showError(String label) {

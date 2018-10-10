@@ -507,7 +507,7 @@ public class GameInfos {
 				String value = str.substring(pos+1);
 				
 				if (idStr.endsWith(".obsolete")) {
-					idStr = idStr.substring(0, idStr.length()-".type".length());
+					idStr = idStr.substring(0, idStr.length()-".obsolete".length());
 					GeneralizedID id = map.get(idStr);
 					id.isObsolete = true;
 				}
@@ -1270,15 +1270,16 @@ public class GameInfos {
 		}
 	
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
-			ID     ("ID"           ,                String.class,  80,-1,120,120),
-			Type   ("Type"         ,    GeneralizedID.Type.class, 100,-1,140,140),
-			Symbol ("Sym."         ,                String.class,  10,-1, 30, 30),
-			Label  ("Label"        ,                String.class, 150,-1,200,200),
-			Image  ("Image"        ,                String.class, 150,-1,250,250),
-			ImgBG  ("Background"   ,            NamedColor.class, 150,-1,200,200),
-			UpgrCat("Upgrade Image",Images.UpgradeCategory.class,  80,-1,100,100),
-			UpgrStr("Upgrade Label",                String.class,  50,-1, 80, 80),
-			Usage  (""             ,                String.class,  50,-1, 80, 80);
+			Obsolete("Obs"          ,                String.class,  10,-1, 30, 30),
+			ID      ("ID"           ,                String.class,  80,-1,120,120),
+			Type    ("Type"         ,    GeneralizedID.Type.class, 100,-1,140,140),
+			Symbol  ("Sym."         ,                String.class,  10,-1, 30, 30),
+			Label   ("Label"        ,                String.class, 150,-1,200,200),
+			Image   ("Image"        ,                String.class, 150,-1,250,250),
+			ImgBG   ("Background"   ,            NamedColor.class, 150,-1,200,200),
+			UpgrCat ("Upgrade Image",Images.UpgradeCategory.class,  80,-1,100,100),
+			UpgrStr ("Upgrade Label",                String.class,  50,-1, 80, 80),
+			Usage   (""             ,                String.class,  50,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -1291,6 +1292,7 @@ public class GameInfos {
 		private static class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
 	
 			private static final GeneralizedIDColumnID[] COLUMNS = new GeneralizedIDColumnID[]{
+					GeneralizedIDColumnID.Obsolete,
 					GeneralizedIDColumnID.ID,
 					GeneralizedIDColumnID.Type,
 					GeneralizedIDColumnID.Symbol,
@@ -1378,6 +1380,7 @@ public class GameInfos {
 			protected boolean isCellEditable(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) return false;
 				switch(columnID) {
+				case Obsolete:
 				case ID    : return false;
 				case Type  :
 				case Symbol:
@@ -1400,6 +1403,7 @@ public class GameInfos {
 			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) {
 					switch(columnID) {
+					case Obsolete: return "";
 					case ID    : return String.format(Locale.ENGLISH,"total: %d", IDs.size());
 					case Type  : return null;
 					case Symbol: return "";
@@ -1415,6 +1419,7 @@ public class GameInfos {
 				GeneralizedID id = IDs.get(rowIndex-EXTRA_ROWS);
 				if (id==null) return null;
 				switch(columnID) {
+				case Obsolete: return id.isObsolete?"##":"";
 				case ID    : return id.id;
 				case Type  : return id.type;
 				case Symbol: return id.symbol;
@@ -1445,6 +1450,7 @@ public class GameInfos {
 				if (id==null) return;
 				
 				switch(columnID) {
+				case Obsolete:
 				case ID    : return;
 				case Type  : id.type   = (aValue instanceof GeneralizedID.Type)?(GeneralizedID.Type)aValue:null; break;
 				case Symbol: id.setSymbol(aValue==null?"":aValue.toString()); break;
