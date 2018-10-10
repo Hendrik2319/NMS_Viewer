@@ -559,7 +559,7 @@ public class TableView {
 		}
 
 		@Override protected Integer getIconKey(NamedColor value) { return value.value; }
-		@Override protected String  getLabel  (NamedColor value) { return value.name;  }
+		@Override protected String  getLabel  (NamedColor value) { return String.format("[%06X] %s", value.value, value.name);  }
 	}
 	
 	public static abstract class IconTextRenderer<ValueType,IconKey> implements ListCellRenderer<ValueType>, TableCellRenderer {

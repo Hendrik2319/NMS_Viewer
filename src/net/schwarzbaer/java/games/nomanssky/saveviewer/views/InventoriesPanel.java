@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Vector;
 
@@ -317,7 +318,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_GAUGE_EMPTY  = new Color(255,255,255,128);
 
 			private static final Paint COLOR__SLOT_TEXT_AMOUNT  = Color.WHITE;
-			private static final Paint COLOR__SLOT_TEXT_SYMBOL  = Color.WHITE;
+			private static final Paint COLOR__SLOT_TEXT_SYMBOL  = Color.BLACK;
+			private static final Paint COLOR__SLOT_BG_SYMBOL    = new Color(255,255,255,192);
 			
 			private static final Paint COLOR__SLOT_TEXT_LABEL     = Color.RED;
 			
@@ -506,16 +508,20 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 										int textWidth = g2.getFontMetrics().stringWidth(str);
 										g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
 										g2.drawString(str, x+gaugeXOffset+full+empty-textWidth, y+gaugeYOffset-4);
-										
-										if (slot.id.hasSymbol())
-											g2.drawString(slot.id.symbol, x+gaugeXOffset, y+gaugeYOffset-4);
-									} else {
-										if (slot.id.hasSymbol()) {
-											g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
-											g2.drawString(slot.id.symbol, x+innerOffsetX+2*imageBorder,y+innerOffsetY+innerHeight-2*imageBorder );
-										}
 									}
 									
+									if (slot.id.hasSymbol()) {
+										int bgRecW = 35;
+										int bgRecX = x+innerOffsetX+2*imageBorder;
+										int bgRecY = y+innerOffsetY+innerHeight-imageBorder-imageSize+imageBorder;
+										Rectangle2D bounds = stdBoldFont.getStringBounds(slot.id.symbol, g2.getFontRenderContext());
+										float strX = bgRecX+bgRecW/2.0f-(float)bounds.getWidth()/2;
+										float strY = bgRecY+11;
+										g2.setPaint(COLOR__SLOT_BG_SYMBOL);
+										g2.fillRoundRect( bgRecX,bgRecY, bgRecW,14, 12,12 );
+										g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
+										g2.drawString(slot.id.symbol, strX,strY );
+									}
 									
 									g2.setFont( standardFont );
 								} else {

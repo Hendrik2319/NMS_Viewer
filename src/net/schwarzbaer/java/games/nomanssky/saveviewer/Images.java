@@ -33,6 +33,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
@@ -94,6 +95,7 @@ public class Images {
 		addColor(colorValuesVec, 0x701781, "Exotisch" );
 		addColor(colorValuesVec, 0x5A6F36, "Pflanze Oliv" );
 		addColor(colorValuesVec, 0x4B2A57, "Pflanze Violet" );
+		addColor(colorValuesVec, 0x542640, "Pflanze Violet2" );
 		addColor(colorValuesVec, 0xC68C1E, "Pflanze Gelb" );
 		addColor(colorValuesVec, 0x1E4FD0, "Pflanze Blau" );
 		addColor(colorValuesVec, 0x00A64C, "Pflanze Grün" );
@@ -116,6 +118,11 @@ public class Images {
 		addColor(colorValuesVec, 0xFFBF37, "Waffe Streublaster Upgrade" );
 		addColor(colorValuesVec, 0x2E999F, "Waffe Plasmawerfer" );
 		addColor(colorValuesVec, 0x7D4665, "Waffe Zyklotron-B. Upgrade" );
+		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
+		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
+		addColor(colorValuesVec, 0xBB3830, "Rohstoff O2" );
+		addColor(colorValuesVec, 0xE88F00, "Rohstoff Cu" );
+		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
@@ -363,7 +370,7 @@ public class Images {
 				return false;
 			}
 		});
-		Arrays.sort(imagesNames);
+		Arrays.sort(imagesNames,Comparator.comparing(String::toLowerCase));
 		
 		images.clear();
 		for (int i=0; i<imagesNames.length; ++i) {

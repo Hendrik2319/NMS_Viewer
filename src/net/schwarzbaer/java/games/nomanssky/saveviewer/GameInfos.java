@@ -1572,7 +1572,7 @@ public class GameInfos {
 				}
 			};
 			
-			JComboBox<Images.UpgradeCategory> cmbbxUpgradeIcon = new JComboBox<>(Images.UpgradeCategory.values());
+			JComboBox<Images.UpgradeCategory> cmbbxUpgradeIcon = new JComboBox<>(addNull(Images.UpgradeCategory.values())	);
 			cmbbxUpgradeIcon.setRenderer(new TableView.UpgradeCategoryRenderer());
 			cmbbxUpgradeIcon.setSelectedItem(id.upgradeCat);
 			cmbbxUpgradeIcon.addActionListener(e->{id.upgradeCat=(Images.UpgradeCategory)cmbbxUpgradeIcon.getSelectedItem(); dataChanged();});
