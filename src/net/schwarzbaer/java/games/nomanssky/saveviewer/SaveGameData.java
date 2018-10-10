@@ -388,9 +388,7 @@ public class SaveGameData {
 		//universe.writeToConsole();
 		
 		GameInfos.readUniverseObjectDataFromDataPool(universe);
-		GameInfos.saveProductIDsToFile();
-		GameInfos.saveTechIDsToFile();
-		GameInfos.saveSubstanceIDsToFile();
+		GameInfos.saveAllIDsToFiles();
 		GameInfos.updateUpgrades();
 		return this;
 	}
@@ -517,7 +515,7 @@ public class SaveGameData {
 		bbo.userData  = getIntegerValue (objectValue, "UserData");
 		bbo.position  = parsePosition   (objectValue, "Position", "Up", "At");
 		if (bbo.objectID!=null) {
-			bbo.objectID1 = GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
+			/*bbo.objectID1 =*/ GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
 		}
 	}
 
@@ -613,7 +611,7 @@ public class SaveGameData {
 
 	public static class BuildingObject {
 
-		public GeneralizedID objectID1;
+		//public GeneralizedID objectID1;
 		public String specialName;
 		
 		public Long timestamp;
@@ -630,7 +628,7 @@ public class SaveGameData {
 			this.position = null;
 			
 			this.specialName = null;
-			this.objectID1 = null;
+			//this.objectID1 = null;
 		}
 
 		public BuildingObject(BuildingObject obj) {
@@ -640,7 +638,7 @@ public class SaveGameData {
 			this.userData  = obj.userData;
 			this.position  = obj.position==null?null:new Position(obj.position);
 			this.specialName = obj.specialName;
-			this.objectID1   = obj.objectID1;
+			//this.objectID1   = obj.objectID1;
 		}
 
 		public String getNameOfObjectID() {
@@ -648,7 +646,7 @@ public class SaveGameData {
 				if (specialName!=null) return specialName;
 				return "";
 			}
-			GeneralizedID id = GameInfos.productIDs.get(objectID,source,GeneralizedID.Usage.Type.BuildingObject);
+			GeneralizedID id = GameInfos.productIDs.get(objectID);
 			if (id==null) return objectID;
 			return id.getName();
 		}

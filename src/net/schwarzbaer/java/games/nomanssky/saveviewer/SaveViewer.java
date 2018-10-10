@@ -62,7 +62,6 @@ import javax.swing.tree.TreeModel;
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.RawDataTreePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
@@ -375,7 +374,7 @@ public class SaveViewer implements ActionListener {
 		}
 		
 		if (new_json_data!=null) {
-			removeUsages(view.data);
+			GameInfos.removeUsages(view.data);
 			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName());
 			saveGameData.parse(isNEXT);
 			view.replaceData(saveGameData,isNEXT);
@@ -386,19 +385,13 @@ public class SaveViewer implements ActionListener {
 	private void closeSaveGameView(SaveGameView view) {
 		loadedSaveGames.remove(view);
 		contentPane.removeSaveGameView(view);
-		removeUsages(view.data);
+		GameInfos.removeUsages(view.data);
 		updateWindowTitle();
 		
 		if (loadedSaveGames.size()<2 && compareTab!=null) {
 			contentPane.removeTab(compareTab);
 			compareTab=null;
 		}
-	}
-	
-	private void removeUsages(SaveGameData oldData) {
-		for (GeneralizedID id:GameInfos.productIDs  .getValues()) id.usage.remove(oldData);
-		for (GeneralizedID id:GameInfos.techIDs     .getValues()) id.usage.remove(oldData);
-		for (GeneralizedID id:GameInfos.substanceIDs.getValues()) id.usage.remove(oldData);
 	}
 
 	private void updateWindowTitle() {

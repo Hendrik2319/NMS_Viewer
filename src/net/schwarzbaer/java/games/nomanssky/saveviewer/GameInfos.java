@@ -396,6 +396,12 @@ public class GameInfos {
 	public static final IDMap productIDs   = new IDMap();
 	public static final IDMap techIDs      = new IDMap();
 	public static final IDMap substanceIDs = new IDMap();
+	
+	public static void removeUsages(SaveGameData oldData) {
+		for (GeneralizedID id:productIDs  .getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:techIDs     .getValues()) id.usage.remove(oldData);
+		for (GeneralizedID id:substanceIDs.getValues()) id.usage.remove(oldData);
+	}
 
 	public static class IDMap {
 		private HashMap<String, GeneralizedID> map;
@@ -431,10 +437,11 @@ public class GameInfos {
 		public GeneralizedID get(String id, SaveGameData source, Usage.Type usageType) {
 			GeneralizedID generalizedID = get(id);
 			generalizedID.setUsage(source,usageType);
+			generalizedID.isObsolete = false;
 			return generalizedID;
 		}
 	
-		private GeneralizedID get(String id) {
+		public GeneralizedID get(String id) {
 			GeneralizedID newID = new GeneralizedID(id);
 			GeneralizedID existingID = map.putIfAbsent(id, newID);
 			return existingID==null ? newID : existingID;
@@ -568,6 +575,12 @@ public class GameInfos {
 //		for (GeneralizedID id:substanceIDs.getValues()) id.isObsolete=false;
 //	}
 	
+
+	public static void saveAllIDsToFiles() {
+		saveProductIDsToFile  ();
+		saveTechIDsToFile     ();
+		saveSubstanceIDsToFile();
+	}
 	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
 	public static void saveTechIDsToFile     () { saveIDsToFile(FILE_TECH_ID     ,techIDs     ,"technologie"); }
 	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
@@ -1420,14 +1433,14 @@ public class GameInfos {
 				if (id==null) return null;
 				switch(columnID) {
 				case Obsolete: return id.isObsolete?"##":"";
-				case ID    : return id.id;
-				case Type  : return id.type;
-				case Symbol: return id.symbol;
-				case Label : return id.label;
-				case Image : return id.imageFileName;
-				case ImgBG : return SaveViewer.images.getColor( id.getImageBG() );
-				case UpgrCat: return id.upgradeCat;
-				case UpgrStr: return id.upgradeStr;
+				case ID      : return id.id;
+				case Type    : return id.type;
+				case Symbol  : return id.symbol;
+				case Label   : return id.label;
+				case Image   : return id.imageFileName;
+				case ImgBG   : return SaveViewer.images.getColor( id.getImageBG() );
+				case UpgrCat : return id.upgradeCat;
+				case UpgrStr : return id.upgradeStr;
 				case Usage :
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";

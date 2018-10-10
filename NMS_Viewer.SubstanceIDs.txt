@@ -23,7 +23,6 @@
 ^COMUNCOMMON1.imageBG=FFC456
 ^CREATURE1=
 ^FUEL1=Kohlenstoff
-^FUEL1.obsolete=
 ^FUEL1.type=Resource
 ^FUEL1.symbol=C
 ^FUEL1.image=Substance.fuel.common1.Kohlenstoff.png
