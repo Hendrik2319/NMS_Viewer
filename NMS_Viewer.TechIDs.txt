@@ -204,12 +204,12 @@
 ^F_HDRIVEBOOST1.type=FreighterExtension
 ^F_HDRIVEBOOST1.image=Freighter_Warp_Reactor_Icon.png
 ^F_HDRIVEBOOST1.upgradeStr=+1
+^F_HDRIVEBOOST2=
 ^F_HDRIVEBOOST3=Frachter Warp-Reaktor Theta
 ^F_HDRIVEBOOST3.type=FreighterExtension
 ^F_HDRIVEBOOST3.image=Freighter_Warp_Reactor_Icon.png
 ^F_HDRIVEBOOST3.upgradeStr=+3
 ^F_HYPERDRIVE=Frachter-Hyperantrieb
-^F_HYPERDRIVE.obsolete=
 ^F_HYPERDRIVE.type=FreighterExtension
 ^F_HYPERDRIVE.image=Freighter_Warp_Reactor_Icon.png
 ^GRENADE=Plasmawerfer
@@ -258,6 +258,7 @@
 ^GRENSPEED1.imageBG=2E999F
 ^GRENSPEED1.upgradeCat=Speed
 ^GRENSPEED1.upgradeStr=+1
+^GROUND_SHIELD=
 ^HDRIVEBOOST1=Cadmium-Antrieb
 ^HDRIVEBOOST1.type=ShipExtensionUpgrade
 ^HDRIVEBOOST1.image=RENDER.HYPERDRIVE.RED.png
@@ -267,7 +268,6 @@
 ^HDRIVEBOOST2.image=RENDER.HYPERDRIVE.GREEN.png
 ^HDRIVEBOOST2.imageBG=0063B6
 ^HDRIVEBOOST3=Indium-Antrieb
-^HDRIVEBOOST3.obsolete=
 ^HDRIVEBOOST3.type=ShipExtensionUpgrade
 ^HDRIVEBOOST3.image=RENDER.HYPERDRIVE.BLUE.png
 ^HDRIVEBOOST3.imageBG=0063B6
@@ -450,6 +450,7 @@
 ^SCANBINOC1.type=MultitoolExtension
 ^SCANBINOC1.image=RENDER.BINOCULARS_NEXT.png
 ^SCANBINOC1.imageBG=085C78
+^SCOPE=
 ^SHIELDBOOST1=Schildverstärkung Sigma
 ^SHIELDBOOST1.obsolete=
 ^SHIELDBOOST1.type=ExosuitExtensionUpgrade
@@ -677,6 +678,7 @@
 ^SHIPSCAN_COMBAT.type=ShipExtension
 ^SHIPSCAN_COMBAT.image=Conflict_Scanner.png
 ^SHIPSCAN_COMBAT.imageBG=0063B6
+^SHIPSCAN_ECON=
 ^SHIPSGUNCOOL1=Positronenwerfer-Kühlmittel Sigma
 ^SHIPSGUNCOOL1.obsolete=
 ^SHIPSGUNCOOL1.type=ShipWeaponUpgrade
@@ -755,6 +757,7 @@
 ^SHIPSHOTGUN.type=ShipWeapon
 ^SHIPSHOTGUN.image=Positron_ejector.png
 ^SHIPSHOTGUN.imageBG=937030
+^SHIP_TELEPORT=
 ^SHOTGUN=Streublaster
 ^SHOTGUN.type=MultitoolWeapon
 ^SHOTGUN.image=NmsWeapon_Scatter_Blaster_Icon.png
@@ -878,6 +881,7 @@
 ^TERRAINEDITOR.type=MultitoolExtension
 ^TERRAINEDITOR.image=screenshot.terraineditor.png
 ^TERRAINEDITOR.imageBG=085C78
+^TERRAIN_GREN=
 ^TOX1=Toxindämpfer Sigma
 ^TOX1.obsolete=
 ^TOX1.type=ExosuitExtensionUpgrade
@@ -908,7 +912,23 @@
 ^UNW3.type=ExosuitExtensionUpgrade
 ^UNW3.image=Render.helmet.png
 ^UNW3.imageBG=085C78
+^UT_BOLT=
 ^UT_ENERGY=
+^UT_JET=
+^UT_JUMP=
+^UT_LAUNCHER=
+^UT_PROTECT=
+^UT_RAIL=
+^UT_ROCKETS=
+^UT_SCAN=
+^UT_SHIPBLOB=
+^UT_SHIPGUN=
+^UT_SHIPLAS=
+^UT_SHIPMINI=
+^UT_SHIPSHIELD=
+^UT_SHIPSHOT=
+^UT_SHOT=
+^UT_SMG=
 ^VEHICLE_BOOST=Exo-Fahrzeug-Beschleunigungsmodul
 ^VEHICLE_BOOST.type=ExocraftExtension
 ^VEHICLE_BOOST.image=NmsTech_Exocraft_Acceleration_Module_Icon.png

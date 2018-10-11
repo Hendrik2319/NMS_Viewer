@@ -201,9 +201,9 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 				label.setIcon(icon==null?null:rawDataTreeIS.getCachedIcon(icon));
 			
 			if (isSelected)                                      component.setForeground(getTextSelectionColor());
-			else if (wasProcessed)                               component.setForeground(Color.GRAY);
 			else if (showDeObfuscation && hasObfuscatedChildren) component.setForeground(COLOR_HAS_OBFUSCATED_CHILDREN);
 			else if (showDeObfuscation && !wasDeObfuscated)      component.setForeground(COLOR_WAS_NOT_DEOBFUSCATED);
+			else if (wasProcessed)                               component.setForeground(Color.GRAY);
 			else                                                 component.setForeground(getTextNonSelectionColor());
 			
 			return component;

@@ -15,6 +15,7 @@
 ^CAVE2.symbol=Co+
 ^CAVE2.image=Substance.IonisedCobalt.NEXT.png
 ^CAVE2.imageBG=085C78
+^COLD1=
 ^COM1=Eisen
 ^COM1.obsolete=
 ^COM1.type=Resource
@@ -67,7 +68,6 @@
 ^GAS1.image=GAS.1.Schwefelin.png
 ^GAS1.imageBG=5A6F36
 ^GAS2=Radon
-^GAS2.obsolete=
 ^GAS2.type=Resource
 ^GAS2.symbol=Rn
 ^GAS2.image=GAS.2.Radon.png
@@ -83,7 +83,13 @@
 ^LAND1.symbol=Fe
 ^LAND1.image=Substance.neutral.common2.png
 ^LAND1.imageBG=8B7E75
+^LAND2=
 ^LAND3=
+^LUSH1=Paraffinium
+^LUSH1.type=Resource
+^LUSH1.symbol=Pf
+^LUSH1.image=Substance.Paraffinium.png
+^LUSH1.imageBG=4D414F
 ^OXYGEN=Sauerstoff
 ^OXYGEN.type=Resource
 ^OXYGEN.symbol=O2
@@ -216,7 +222,11 @@
 ^TECHUNCOMMON1.symbol=Pt
 ^TECHUNCOMMON1.image=Substance.tech.uncommon1.Platin.png
 ^TECHUNCOMMON1.imageBG=0249A1
-^TOXIC1=
+^TOXIC1=Ammoniak
+^TOXIC1.type=Resource
+^TOXIC1.symbol=NH3
+^TOXIC1.image=Ammonia.png
+^TOXIC1.imageBG=00A64C
 ^TRADEABLE1=Iridium
 ^TRADEABLE1.obsolete=
 ^TRADEABLE1.type=Resource

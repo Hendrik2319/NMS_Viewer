@@ -203,25 +203,40 @@ public class SaveViewer implements ActionListener {
 		mainWindow.startGUI(contentPane);
 		updateWindowTitle();
 	}
-	
-	private enum ActionCommand { Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates, save_hg, save2_hg, save_hg_backup, save2_hg_backup, RefreshExtraImages, SelectCoordinates, ReloadDeObfuscator }
+
+	private enum ActionCommand {
+		Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates,
+		  save_hg(  "save.hg","save.hg"),
+		 save2_hg( "save2.hg","..2"),
+		 save3_hg( "save3.hg","..3"),
+		 save4_hg( "save4.hg","..4"),
+		 save5_hg( "save5.hg","..5"),
+		 save6_hg( "save6.hg","..6"),
+		 save7_hg( "save7.hg","..7"),
+		 save8_hg( "save8.hg","..8"),
+		 save9_hg( "save9.hg","..9"),
+		save10_hg("save10.hg","..10"),
+		RefreshExtraImages, SelectCoordinates, ReloadDeObfuscator;
+		
+		private String filename;
+		private String label;
+		
+		private ActionCommand() { this(null,null); }
+		private ActionCommand(String filename, String label) {
+			this.filename = filename;
+			this.label = label;
+		}
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
 		switch (actionCommand) {
-		case save_hg:
-			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/save.hg"));
+		case save_hg: case save2_hg: case save3_hg: case save4_hg: case save5_hg:
+		case save6_hg: case save7_hg: case save8_hg: case save9_hg: case save10_hg:
+			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/"+actionCommand.filename));
 			break;
-		case save2_hg:
-			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/save2.hg"));
-			break;
-		case save_hg_backup:
-			openSaveGame(new File(config.getBackupFolder(mainWindow)+"/save.hg"));
-			break;
-		case save2_hg_backup:
-			openSaveGame(new File(config.getBackupFolder(mainWindow)+"/save2.hg"));
-			break;
+			
 		case SwitchToGameFolder: {
 			inputFileChooser.setCurrentDirectory(getGameFolder());
 			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
@@ -648,11 +663,16 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
-			toolBar.add(createButton("\"save.hg\"", ToolbarIcons.Open, ActionCommand.save_hg,true));
-			toolBar.add(createButton("\"save2.hg\"", ToolbarIcons.Open, ActionCommand.save2_hg,true));
-			toolBar.addSeparator();
-			toolBar.add(createButton("\"save.hg\" (bak)", ToolbarIcons.Open, ActionCommand.save_hg_backup,true));
-			toolBar.add(createButton("\"save2.hg\" (bak)", ToolbarIcons.Open, ActionCommand.save2_hg_backup,true));
+			toolBar.add(createButton("\""+ActionCommand.save_hg  .label+"\"", ToolbarIcons.Open, ActionCommand.save_hg  ,true));
+			toolBar.add(createButton("\""+ActionCommand.save2_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save2_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save3_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save3_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save4_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save4_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save5_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save5_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save6_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save6_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save7_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save7_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save8_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save8_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save9_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save9_hg ,true));
+			toolBar.add(createButton("\""+ActionCommand.save10_hg.label+"\"", ToolbarIcons.Open, ActionCommand.save10_hg,true));
 			toolBar.addSeparator();
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));

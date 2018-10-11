@@ -42,6 +42,7 @@ bEr VP
 fgt ReserveStore
 xxK ReserveManaged
 ;FZ Enqueued
+
 :No Slots
 hl? ValidSlotIndices
 B@N Class
@@ -59,9 +60,11 @@ XJ> Y
 cTY ProductMaxStorageMultiplier
 @bB BaseStatValues
 MMm SpecialSlots
+QA1 InventorySpecialSlotType
 =Tb Width
 N9> Height
 iF: IsCool
+
 QL1 BaseStatID
 >MX Value
 4ia GravePosition
@@ -102,7 +105,7 @@ cmA HoloExplorerInteraction
 wMC Position
 dcK Energy
 wGS Units
-7QL Nanites (??)
+7QL Nanites
 i8O TimeAlive
 Lg8 TotalPlayTime
 gUR Stats
@@ -227,20 +230,36 @@ SSo EventId
 24< Known... ??? [24<]
 yq: ??? [yq:]
 EQt ??? [EQt]
-jGk ??? [jGk]
 oF@ ??? [oF@]
 kN; ??? [kN;]
 cid ??? [cid]
-A1f ??? [A1f]
+
+A1f MarkerStack
+9@i Table
+FN5 Event
+TWn BuildingLocation
+iqv BuildingClass
+ADw Time
+jGk MissionID
+1JW MissionSeed
+
 i;< ??? [i;<]
 m4I ??? [m4I]
-RQA ??? [RQA]
+
+RQA MaintenanceInteractions
+=yU InventoryContainer
+wx7 LastUpdateTimestamp
+eyv ??? [eyv]
+FML ??? [FML]
+4>; DamageTimers
+XV5 Flags
+
 VhC ??? [VhC]
 VPy ??? LaserAmmo [VPy]
 :ML ??? GrenadeAmmo [:ML]
 cO> ???Ammo [cO>]
 Wu? ??? [Wu?]
-:0x ??? [:0x]
+:0x FirstAtlasStationDiscovered
 kPF ??? [kPF]
 DtI ??? [DtI]
 QNH ??? [QNH]
@@ -251,14 +270,13 @@ wc3 ??? [wc3]
 8xx ??? [8xx]
 kYq ??? [kYq]
 
-lpm FreighterPosition(??)
-9wg FreighterMatrixLookAt(??)
-fUl FreighterMatrixUp(??)
-c5s ??? [c5s]
+lpm FreighterPosition
+9wg FreighterMatrixLookAt
+fUl FreighterMatrixUp
 
+c5s ??? BaseBuildingObjects? [c5s]
 nlG ??? TeleportEndpoints? [nlG]
 
-wx7 ??? [wx7]
 peI ??? [peI]
 DPp ??? Type/Name [DPp]
 
@@ -325,3 +343,4 @@ TD8 ??? [TD8]
 <6x ??? [<6x]
 Y5p ??? [Y5p]
 WX8 ??? [WX8]
+

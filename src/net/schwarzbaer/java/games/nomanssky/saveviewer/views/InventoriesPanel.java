@@ -255,7 +255,6 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				textarea.append("Class        : "+inventory.inventoryClass+"\r\n");
 				textarea.append("is cool      : "+inventory.isCool+"\r\n");
 				textarea.append("Version      : "+inventory.version+"\r\n");
-				textarea.append("Special Slots: "+inventory.specialSlots+"\r\n");
 				textarea.append("Product MaxStorage Multiplier  : "+inventory.productMaxStorageMultiplier+"\r\n");
 				textarea.append("Substance MaxStorage Multiplier: "+inventory.substanceMaxStorageMultiplier+"\r\n");
 				if (inventory.baseStatValues==null || inventory.baseStatValues.length==0)
@@ -404,146 +403,151 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				g2.setStroke(STROKE__STANDARD);
 				for (int indexX=0; indexX<inventoryWidth; ++indexX)
 					for (int indexY=0; indexY<inventoryHeight; ++indexY) {
+						g2.setClip(baseClip);
 						Slot slot = slots[indexX][indexY];
-						if (slot!=null) {
-							int x=indexX*SLOT_RASTER_X+SLOT_BORDER;
-							int y=indexY*SLOT_RASTER_Y+SLOT_BORDER;
-							if (!slot.isEmpty) {
-								if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade && !getUpgrades(slot).isEmpty())
-									g2.setPaint(COLOR__SLOT_BG_UPGRADABLE);
-								else
-									g2.setPaint(COLOR__SLOT_BG);
-								g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
+						if (slot == null)
+							continue;
+						
+						int x=indexX*SLOT_RASTER_X+SLOT_BORDER;
+						int y=indexY*SLOT_RASTER_Y+SLOT_BORDER;
+						if (!slot.isEmpty) {
+							if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade && !getUpgrades(slot).isEmpty())
+								g2.setPaint(COLOR__SLOT_BG_UPGRADABLE);
+							else
+								g2.setPaint(COLOR__SLOT_BG);
+							g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
+						}
+						g2.setPaint(COLOR__SLOT_EDGE);
+						g2.drawRect(x, y, SLOT_WIDTH-1, SLOT_HEIGHT-1);
+						
+						final int innerWidth  = SLOT_WIDTH-2;
+						final int innerHeight = SLOT_HEIGHT-2;
+						final int innerOffsetX = 1;
+						final int innerOffsetY = 1;
+						g2.setClip(baseClip.createIntersection(new Rectangle(x+innerOffsetX, y+innerOffsetY, innerWidth, innerHeight)));
+						int imageBorder = 3;
+						int imageSize = innerWidth-2*imageBorder;
+						int strOffsetX = innerOffsetX+4;
+						int strOffsetY = innerOffsetY+12;
+						
+						if (slot.isEmpty) {
+							if (slot.specialSlotType!=null) {
+								g2.setPaint(COLOR__SLOT_TITLE);
+								g2.drawString(slot.specialSlotType, x+strOffsetX, y+strOffsetY);
 							}
-							g2.setPaint(COLOR__SLOT_EDGE);
-							g2.drawRect(x, y, SLOT_WIDTH-1, SLOT_HEIGHT-1);
+							continue;
+						}
+						
+						int incrementY = 13;
+						BufferedImage image = slot.id==null?null:slot.id.getCachedImage(imageSize,imageSize);
+						if (image!=null) {
+							Font stdBoldFont = standardFont.deriveFont(Font.BOLD);
+							g2.setFont( stdBoldFont );
 							
-							if (!slot.isEmpty) {
-								final int innerWidth  = SLOT_WIDTH-2;
-								final int innerHeight = SLOT_HEIGHT-2;
-								final int innerOffsetX = 1;
-								final int innerOffsetY = 1;
-								g2.setClip(baseClip.createIntersection(new Rectangle(x+innerOffsetX, y+innerOffsetY, innerWidth, innerHeight)));
-								
-								int imageBorder = 3;
-								int imageSize = innerWidth-2*imageBorder;
-								BufferedImage image = slot.id==null?null:slot.id.getCachedImage(imageSize,imageSize);
-								
-								int strOffsetX = innerOffsetX+4;
-								int strOffsetY = innerOffsetY+12;
-								int incrementY = 13;
-								
-								if (image!=null) {
-									Font stdBoldFont = standardFont.deriveFont(Font.BOLD);
-									g2.setFont( stdBoldFont );
-									
-									int markerWidth = 0;
-									//if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade){
-									//	if (!getUpgrades(slot).isEmpty()) {
-									//		g2.setPaint(COLOR__SLOT_TITLE_MARKER);
-									//		String marker = "[U]";
-									//		g2.drawString(marker, x+strOffsetX, y+strOffsetY);
-									//		markerWidth = 2+g2.getFontMetrics().stringWidth(marker);
-									//	}
-									//}
-									
-									if (slot.id.hasLabel()) {
-										g2.setPaint(COLOR__SLOT_TITLE);
-										g2.drawString(slot.id.label, x+strOffsetX+markerWidth, y+strOffsetY);
-									} else {
-										g2.setPaint(COLOR__SLOT_TITLE_IDONLY);
-										g2.drawString(slot.id.id, x+strOffsetX+markerWidth, y+strOffsetY);
-									}
-									
-									//g2.setPaint(getSlotTextColor(slot.type));
-									
-									g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
-									
-									if (slot.id.upgradeCat!=null || slot.id.upgradeStr!=null) {
-										int iconX = x+innerOffsetX+imageBorder+UPGRCAT_BORDER;
-										int iconY = y+innerOffsetY+innerHeight-imageBorder-UPGRCAT_BORDER-UPGRCAT_HEIGHT;
-										g2.setPaint(Color.BLACK);
-										g2.fillRoundRect(iconX,iconY, UPGRCAT_WIDTH, UPGRCAT_HEIGHT, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
-										g2.setPaint(Color.WHITE);
-										g2.drawRoundRect(iconX,iconY, UPGRCAT_WIDTH-1, UPGRCAT_HEIGHT-1, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
-										if (slot.id.upgradeCat!=null) {
-											Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
-											g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
-										}
-										if (slot.id.upgradeStr!=null) {
-											g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCAT_STR_FONT_SCALE) );
-											int strX = iconX+UPGRCAT_WIDTH-UPGRCAT_STR_OFFSET_X-g2.getFontMetrics().stringWidth(slot.id.upgradeStr);
-											int strY = iconY+UPGRCAT_HEIGHT-UPGRCAT_STR_OFFSET_Y;
-											g2.drawString(slot.id.upgradeStr, strX, strY);
-											g2.setFont( stdBoldFont );
-										}
-									}
-									
-									
-									int amount    = -1;
-									int maxAmount = -1;
-									if (slot.amount!=null && slot.maxAmount!=null) {
-										amount    = (int)(long)slot.amount;
-										maxAmount = (int)(long)slot.maxAmount;
-									}
-										
-									if (amount>=0 && maxAmount>1) {
-										int gaugeBorder = 3;
-										int gaugeWidth  = imageSize-2*gaugeBorder;
-										int gaugeHeight = 5;
-										int gaugeXOffset = innerOffsetX+imageBorder+gaugeBorder;
-										int gaugeYOffset = innerOffsetY+innerHeight-imageBorder-gaugeBorder-gaugeHeight;
-										int full = (amount*gaugeWidth)/maxAmount;
-										int empty = gaugeWidth-full;
-										
-										if (full>0) {
-											g2.setPaint(COLOR__SLOT_GAUGE);
-											g2.fillRect(x+gaugeXOffset,y+gaugeYOffset,full,gaugeHeight);
-										}
-										if (empty>0) {
-											g2.setPaint(COLOR__SLOT_GAUGE_EMPTY);
-											g2.fillRect(x+gaugeXOffset+full,y+gaugeYOffset,empty,gaugeHeight);
-										}
-										String str = String.format("%d/%d",amount,maxAmount);
-										int textWidth = g2.getFontMetrics().stringWidth(str);
-										g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
-										g2.drawString(str, x+gaugeXOffset+full+empty-textWidth, y+gaugeYOffset-4);
-									}
-									
-									if (slot.id.hasSymbol()) {
-										int bgRecW = 35;
-										int bgRecX = x+innerOffsetX+2*imageBorder;
-										int bgRecY = y+innerOffsetY+innerHeight-imageBorder-imageSize+imageBorder;
-										Rectangle2D bounds = stdBoldFont.getStringBounds(slot.id.symbol, g2.getFontRenderContext());
-										float strX = bgRecX+bgRecW/2.0f-(float)bounds.getWidth()/2;
-										float strY = bgRecY+11;
-										g2.setPaint(COLOR__SLOT_BG_SYMBOL);
-										g2.fillRoundRect( bgRecX,bgRecY, bgRecW,14, 12,12 );
-										g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
-										g2.drawString(slot.id.symbol, strX,strY );
-									}
-									
-									g2.setFont( standardFont );
-								} else {
-									g2.setPaint(getSlotTextColor(slot.type));
-									
-									g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
-									
-									if (slot.id!=null && slot.id.hasLabel()) {
-										g2.setPaint(COLOR__SLOT_TEXT_LABEL);
-										g2.drawString(slot.id.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
-										g2.setPaint(getSlotTextColor(slot.type));
-									}
-									
-									g2.drawString(slot.id==null?slot.idStr:slot.id.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
-
-									g2.drawString(String.format("%s/%s", slot.amount, slot.maxAmount), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
-								}
-								
-								g2.setClip(baseClip);
+							int markerWidth = 0;
+							//if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade){
+							//	if (!getUpgrades(slot).isEmpty()) {
+							//		g2.setPaint(COLOR__SLOT_TITLE_MARKER);
+							//		String marker = "[U]";
+							//		g2.drawString(marker, x+strOffsetX, y+strOffsetY);
+							//		markerWidth = 2+g2.getFontMetrics().stringWidth(marker);
+							//	}
+							//}
+							
+							if (slot.id.hasLabel()) {
+								g2.setPaint(COLOR__SLOT_TITLE);
+								g2.drawString(slot.id.label, x+strOffsetX+markerWidth, y+strOffsetY);
+							} else {
+								g2.setPaint(COLOR__SLOT_TITLE_IDONLY);
+								g2.drawString(slot.id.id, x+strOffsetX+markerWidth, y+strOffsetY);
 							}
+							
+							//g2.setPaint(getSlotTextColor(slot.type));
+							
+							g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
+							
+							if (slot.id.upgradeCat!=null || slot.id.upgradeStr!=null) {
+								int iconX = x+innerOffsetX+imageBorder+UPGRCAT_BORDER;
+								int iconY = y+innerOffsetY+innerHeight-imageBorder-UPGRCAT_BORDER-UPGRCAT_HEIGHT;
+								g2.setPaint(Color.BLACK);
+								g2.fillRoundRect(iconX,iconY, UPGRCAT_WIDTH, UPGRCAT_HEIGHT, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
+								g2.setPaint(Color.WHITE);
+								g2.drawRoundRect(iconX,iconY, UPGRCAT_WIDTH-1, UPGRCAT_HEIGHT-1, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
+								if (slot.id.upgradeCat!=null) {
+									Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
+									g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
+								}
+								if (slot.id.upgradeStr!=null) {
+									g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCAT_STR_FONT_SCALE) );
+									int strX = iconX+UPGRCAT_WIDTH-UPGRCAT_STR_OFFSET_X-g2.getFontMetrics().stringWidth(slot.id.upgradeStr);
+									int strY = iconY+UPGRCAT_HEIGHT-UPGRCAT_STR_OFFSET_Y;
+									g2.drawString(slot.id.upgradeStr, strX, strY);
+									g2.setFont( stdBoldFont );
+								}
+							}
+							
+							
+							int amount    = -1;
+							int maxAmount = -1;
+							if (slot.amount!=null && slot.maxAmount!=null) {
+								amount    = (int)(long)slot.amount;
+								maxAmount = (int)(long)slot.maxAmount;
+							}
+								
+							if (amount>=0 && maxAmount>1) {
+								int gaugeBorder = 3;
+								int gaugeWidth  = imageSize-2*gaugeBorder;
+								int gaugeHeight = 5;
+								int gaugeXOffset = innerOffsetX+imageBorder+gaugeBorder;
+								int gaugeYOffset = innerOffsetY+innerHeight-imageBorder-gaugeBorder-gaugeHeight;
+								int full = (amount*gaugeWidth)/maxAmount;
+								int empty = gaugeWidth-full;
+								
+								if (full>0) {
+									g2.setPaint(COLOR__SLOT_GAUGE);
+									g2.fillRect(x+gaugeXOffset,y+gaugeYOffset,full,gaugeHeight);
+								}
+								if (empty>0) {
+									g2.setPaint(COLOR__SLOT_GAUGE_EMPTY);
+									g2.fillRect(x+gaugeXOffset+full,y+gaugeYOffset,empty,gaugeHeight);
+								}
+								String str = String.format("%d/%d",amount,maxAmount);
+								int textWidth = g2.getFontMetrics().stringWidth(str);
+								g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
+								g2.drawString(str, x+gaugeXOffset+full+empty-textWidth, y+gaugeYOffset-4);
+							}
+							
+							if (slot.id.hasSymbol()) {
+								int bgRecW = 35;
+								int bgRecX = x+innerOffsetX+2*imageBorder;
+								int bgRecY = y+innerOffsetY+innerHeight-imageBorder-imageSize+imageBorder;
+								Rectangle2D bounds = stdBoldFont.getStringBounds(slot.id.symbol, g2.getFontRenderContext());
+								float strX = bgRecX+bgRecW/2.0f-(float)bounds.getWidth()/2;
+								float strY = bgRecY+11;
+								g2.setPaint(COLOR__SLOT_BG_SYMBOL);
+								g2.fillRoundRect( bgRecX,bgRecY, bgRecW,14, 12,12 );
+								g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
+								g2.drawString(slot.id.symbol, strX,strY );
+							}
+							
+							g2.setFont( standardFont );
+						} else {
+							g2.setPaint(getSlotTextColor(slot.type));
+							
+							g2.drawString(slot.type==null?slot.typeStr:slot.type.toString(), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+							
+							if (slot.id!=null && slot.id.hasLabel()) {
+								g2.setPaint(COLOR__SLOT_TEXT_LABEL);
+								g2.drawString(slot.id.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+								g2.setPaint(getSlotTextColor(slot.type));
+							}
+							
+							g2.drawString(slot.id==null?slot.idStr:slot.id.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+
+							g2.drawString(String.format("%s/%s", slot.amount, slot.maxAmount), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
 						}
 					}
+				g2.setClip(baseClip);
 			}
 
 			private Color getSlotTextColor(SaveGameData.SlotType type) {
