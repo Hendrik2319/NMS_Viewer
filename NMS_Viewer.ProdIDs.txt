@@ -496,7 +496,10 @@
 ^FREIGHTER_CORE=
 ^FRIGATE_FUEL_1=
 ^FRIGATE_FUEL_2=
-^FRIGATE_FUEL_3=
+^FRIGATE_FUEL_3=Fregattentreibstoff (200 Tonnen)
+^FRIGATE_FUEL_3.type=Energy
+^FRIGATE_FUEL_3.image=PRODUCT.FRIGFUEL200.png
+^FRIGATE_FUEL_3.imageBG=C11746
 ^FRIG_BOOST_COM=
 ^FRIG_BOOST_EXP=
 ^FRIG_BOOST_MIN=
@@ -588,7 +591,10 @@
 ^M_WALL_Q=
 ^M_WALL_Q_H=
 ^M_WALL_WINDOW=
-^NANOTUBES=
+^NANOTUBES=Kohlenstoff-Nanoröhrchen
+^NANOTUBES.type=Product
+^NANOTUBES.image=Product.nanotubes.NEXT.png
+^NANOTUBES.imageBG=F0A92B
 ^NAV_DATA=Navigationsdaten
 ^NAV_DATA.image=NmsProduct_QuantumProcessor_Icon.png
 ^NAV_DATA.imageBG=0063B6
@@ -759,7 +765,9 @@
 ^TRA_COMMODITY3.obsolete=
 ^TRA_COMMODITY3.image=NmsCommodity_Comet_Droplets_icon.png
 ^TRA_COMMODITY3.imageBG=F0A92B
-^TRA_CURIO1=
+^TRA_CURIO1=Gek-Relikt
+^TRA_CURIO1.image=Product.gekstatue.png
+^TRA_CURIO1.imageBG=10805C
 ^TRA_CURIO2=
 ^TRA_EXOTICS1=Nicht mehr duftende Pheromonflasche
 ^TRA_EXOTICS1.obsolete=
@@ -789,6 +797,10 @@
 ^ULTRAPROD2.type=Product
 ^ULTRAPROD2.image=NmsProduct_StasisDevice_Icon.png
 ^ULTRAPROD2.imageBG=F0A92B
+^U_SCANNER3=Scanner-Modul (A)
+^U_SCANNER3.type=ExosuitExtensionUpgrade
+^U_SCANNER3.image=MAINTTECH.FUEL2.NEXT.png
+^U_SCANNER3.imageBG=7C4562
 ^VIEWSPHERE=Aussichtskuppel
 ^VIEWSPHERE.type=BaseComponent
 ^WALL=
