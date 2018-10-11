@@ -477,7 +477,6 @@ public class SaveViewer implements ActionListener {
 	
 	static class DeObfuscator {
 
-		private static final String FILE_DEOBFUSCATOR_TXT = "NMS_Viewer.DeObfuscator.txt";
 		private HashMap<String, String> replacements;
 
 		DeObfuscator() {
@@ -520,25 +519,23 @@ public class SaveViewer implements ActionListener {
 		public static DeObfuscator readFromFile() {
 			DeObfuscator deObfuscator = new DeObfuscator();
 			
-			File file = new File(FILE_DEOBFUSCATOR_TXT);
-			if (file.isFile()) {
-				long start = System.currentTimeMillis();
-				log_ln("Read DeObfuscator definitions from file \""+file.getPath()+"\" ...");
-				String str;
-				try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-					while ((str=in.readLine())!=null) {
-						if (!str.isEmpty()) {
-							String key = str.substring(0,3);
-							String value = str.substring(4);
-							String oldValue = deObfuscator.replacements.put(key, value);
-							if (oldValue!=null) log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
-						}
+			String resourcePath = "/NMS_Viewer.DeObfuscator.txt";
+			long start = System.currentTimeMillis();
+			log_ln("Read DeObfuscator definitions from resource file \""+resourcePath+"\" ...");
+			String str;
+			try (BufferedReader in = new BufferedReader(new InputStreamReader(DeObfuscator.class.getResourceAsStream(resourcePath),StandardCharsets.UTF_8))) {
+				while ((str=in.readLine())!=null) {
+					if (!str.isEmpty()) {
+						String key = str.substring(0,3);
+						String value = str.substring(4);
+						String oldValue = deObfuscator.replacements.put(key, value);
+						if (oldValue!=null) log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
 					}
 				}
-				catch (FileNotFoundException e) { e.printStackTrace(); }
-				catch (IOException e) { e.printStackTrace(); }
-				log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			}
+			catch (FileNotFoundException e) { e.printStackTrace(); }
+			catch (IOException e) { e.printStackTrace(); }
+			log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			
 			return deObfuscator;
 		}

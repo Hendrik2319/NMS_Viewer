@@ -485,7 +485,7 @@
 ^HEALTHSTATION.type=BaseComponent
 ^HYPERFUEL1=Warp-Zelle
 ^HYPERFUEL1.type=Energy
-^HYPERFUEL1.image=Product.warpcell.png
+^HYPERFUEL1.image=Product.warpcell.NEXT.png
 ^HYPERFUEL1.imageBG=C11746
 ^JELLY=
 ^LARGEDESK=

@@ -1679,10 +1679,10 @@ public class GameInfos {
 		private void showValues() {
 			textarea.setText("");
 			
-			textarea.append("ID     : "+id.id+"\r\n");
-			textarea.append("Label  : "+id.label+"\r\n");
-			textarea.append("Symbol : "+id.symbol+"\r\n");
-			textarea.append("Type   : "+(id.type==null?"":id.type.label)+"\r\n");
+			textarea.append("ID     : "+(id.id    ==null?"--------":id.id    )+"\r\n");
+			textarea.append("Label  : "+(id.label ==null?"--------":id.label )+"\r\n");
+			textarea.append("Symbol : "+(id.symbol==null?"--------":id.symbol)+"\r\n");
+			textarea.append("Type   : "+(id.type  ==null?"--------":id.type.label)+"\r\n");
 			textarea.append("Image  : "+(id.hasImageFileName  ()?id.getImageFileName():"<none>")+"\r\n");
 			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
 			
