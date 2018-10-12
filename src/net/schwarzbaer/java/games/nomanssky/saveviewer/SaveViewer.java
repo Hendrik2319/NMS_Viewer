@@ -625,14 +625,17 @@ public class SaveViewer implements ActionListener {
 			String resourcePath = "/NMS_Viewer.DeObfuscator.txt";
 			long start = System.currentTimeMillis();
 			log_ln("Read DeObfuscator definitions from resource file \""+resourcePath+"\" ...");
-			String str;
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(DeObfuscator.class.getResourceAsStream(resourcePath),StandardCharsets.UTF_8))) {
+				HashSet<String> valueSet = new HashSet<>();
+				String str;
 				while ((str=in.readLine())!=null) {
 					if (!str.isEmpty()) {
 						String key = str.substring(0,3);
 						String value = str.substring(4);
 						String oldValue = deObfuscator.replacements.put(key, value);
-						if (oldValue!=null) log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
+						boolean wasUniqueValue = valueSet.add(value);
+						if (oldValue!=null)  log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
+						if (!wasUniqueValue) log_error_ln("   Replacement \"%s\" is used twice or more", value);
 					}
 				}
 			}

@@ -102,12 +102,6 @@ public class Images {
 		addColor(colorValuesVec, 0x00A64C, "Pflanze Grün" );
 		addColor(colorValuesVec, 0xB74418, "Pflanze Rot" );
 		addColor(colorValuesVec, 0x78502D, "Pflanze Braun" );
-		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
-		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk" );
-		addColor(colorValuesVec, 0xF0A92B, "Produkt" );
-		addColor(colorValuesVec, 0xC11746, "Energie" );
-		addColor(colorValuesVec, 0x085C78, "Tech 1" );
-		addColor(colorValuesVec, 0x0063B6, "Tech 2" );
 		addColor(colorValuesVec, 0x236D4C, "Waffe Impulswerfer" );
 		addColor(colorValuesVec, 0x19BC79, "Waffe Impulswerfer Upgrade" );
 		addColor(colorValuesVec, 0x495746, "Waffe Minenlaser" );
@@ -119,11 +113,24 @@ public class Images {
 		addColor(colorValuesVec, 0xFFBF37, "Waffe Streublaster Upgrade" );
 		addColor(colorValuesVec, 0x2E999F, "Waffe Plasmawerfer" );
 		addColor(colorValuesVec, 0x7D4665, "Waffe Zyklotron-B. Upgrade" );
+		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
+		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk" );
+		addColor(colorValuesVec, 0xF0A92B, "Produkt" );
+		addColor(colorValuesVec, 0xC11746, "Energie" );
+		addColor(colorValuesVec, 0x085C78, "Tech 1" );
+		addColor(colorValuesVec, 0x0063B6, "Tech 2" );
+		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
 		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
 		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
 		addColor(colorValuesVec, 0xBB3830, "Rohstoff O2" );
 		addColor(colorValuesVec, 0xE88F00, "Rohstoff Cu" );
 		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
+		addColor(colorValuesVec, 0x4D414F, "Rohstoff Pf" );
+		addColor(colorValuesVec, 0x365A7E, "Rohstoff 36" );
+		addColor(colorValuesVec, 0x005C83, "Rohstoff Co" );
+		addColor(colorValuesVec, 0x1F8B40, "Rohstoff NaCl" );
+		addColor(colorValuesVec, 0x4D3780, "Rohstoff Rn" );
+		addColor(colorValuesVec, 0x265E39, "Rohstoff Sf" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
@@ -133,8 +140,9 @@ public class Images {
 		File file = new File(FILE_COLORS);
 		if (!file.isFile()) return;
 		
+		boolean noNewColorAdded = true;
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read background colors from file \""+file.getPath()+"\"...");
+		SaveViewer.log_ln("Read newly defined background colors from file \""+file.getPath()+"\"...");
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -156,6 +164,7 @@ public class Images {
 					}
 				} else {
 					SaveViewer.log("   added %s\r\n", newColor);
+					noNewColorAdded = false;
 					colorValuesVec.add(newColor);
 				}
 			}
@@ -163,6 +172,7 @@ public class Images {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
+		if (noNewColorAdded) SaveViewer.log_ln("   All colors from file are already known. File \""+file.getPath()+"\" can be deleted.");
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
