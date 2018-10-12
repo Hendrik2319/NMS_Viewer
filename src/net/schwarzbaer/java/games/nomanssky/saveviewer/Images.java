@@ -53,6 +53,7 @@ import javax.swing.event.MouseInputAdapter;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 
@@ -79,7 +80,7 @@ public class Images {
 	
 	public void init() {
 		prepareColors();
-		readImages();
+		readImages(null);
 		UpgradeCategoryImages.init();
 	}
 	
@@ -346,13 +347,23 @@ public class Images {
 		imageListListenders.remove(ill);
 	}
 
-	public void reloadImageList() {
-		readImages();
-		for (ImageListListender ill:imageListListenders)
-			ill.imageListChanged();
+	public void reloadImageList(ProgressDialog pd) {
+		readImages(pd);
+		if (pd!=null) {
+			pd.setTaskTitle("Update GUI");
+			pd.setValue(0, imageListListenders.size());
+		}
+		for (int i=0; i<imageListListenders.size(); i++) {
+			imageListListenders.get(i).imageListChanged();
+			if (pd!=null) pd.setValue(i+1);
+		}
 	}
 
-	private void readImages() {
+	private void readImages(ProgressDialog pd) {
+		if (pd!=null) {
+			pd.setTaskTitle("Get Image List");
+			pd.setIndeterminate(true);
+		}
 		long start = System.currentTimeMillis();
 		File folder = new File("extra/resource_icons");
 		SaveViewer.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
@@ -370,18 +381,27 @@ public class Images {
 				return false;
 			}
 		});
+		if (pd!=null) pd.setTaskTitle("Sort Image List");
 		Arrays.sort(imagesNames,Comparator.comparing(String::toLowerCase));
 		
+		if (pd!=null) {
+			pd.setTaskTitle("Read Images");
+			pd.setValue(0, imagesNames.length);
+		}
 		images.clear();
 		for (int i=0; i<imagesNames.length; ++i) {
 			File file = new File(folder,imagesNames[i]);
 			//InputStream stream = images.getClass().getResourceAsStream("/icons/"+imagesNames[i]);
+			
 			BufferedImage image = null;
-			//if (file!=null)
-				try { image = ImageIO.read(file); }
-				catch (IOException e) {}
+			try { image = ImageIO.read(file); }
+			catch (IOException e) {}
+			
 			if (image!=null)
 				images.put(imagesNames[i], image);
+			
+			if (pd!=null)
+				pd.setValue(i+1);
 		}
 		
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
@@ -540,8 +560,8 @@ public class Images {
 		}
 	}
 
-	public static class ImageGridDialog extends StandardDialog {
-		private static final long serialVersionUID = -3724853350437145460L;
+	public static class ImageGridPanel extends JPanel {
+		private static final long serialVersionUID = -189481388341606323L;
 		private static Color COLOR_BACKGROUND = null;
 		private static Color COLOR_BACKGROUND_SELECTED = null;
 		private static Color COLOR_BACKGROUND_PRESELECTED = null;
@@ -549,17 +569,15 @@ public class Images {
 		private static Color COLOR_FOREGROUND = null;
 		private static Color COLOR_FOREGROUND_SELECTED = null;
 		
-		private String selected;
+		private Vector<SelectionListener> selectionListeners;
 		private int cols;
-		private int preselectedIndex;
-		private JScrollPane imageScrollPane;
-		private Vector<ImageLabel> imageLabels;
-	
-		public ImageGridDialog(Window parent, String title, String initialValue) {
-			super(parent,title,ModalityType.APPLICATION_MODAL);
-			
-			selected = null;
-			imageLabels = new Vector<ImageLabel>();
+		private int selectedIndex;
+		public Vector<ImageLabel> imageLabels;
+		
+		public ImageGridPanel(int cols, String initialValue) {
+			super(new GridLayout(0,cols,0,0));
+			this.cols = cols;
+			this.selectionListeners = new Vector<>();
 			
 			ImageLabel.defaultFont = new JLabel().getFont();
 			JTextArea dummy = new JTextArea();
@@ -570,61 +588,48 @@ public class Images {
 			COLOR_BACKGROUND_PRESELECTED = Gui.brighter(COLOR_BACKGROUND_SELECTED,0.7f);
 			COLOR_BACKGROUND_MARKED = Color.LIGHT_GRAY;
 			
-			cols = 6;
-			JPanel imagePanel = new JPanel(new GridLayout(0,cols,0,0));
-			imagePanel.setBorder(BorderFactory.createEtchedBorder());
-			imagePanel.setBackground(COLOR_BACKGROUND);
-			
-			preselectedIndex = -1;
-			for (int i=0; i<SaveViewer.images.imagesNames.length; ++i) {
-				String name = SaveViewer.images.imagesNames[i];
+			imageLabels = new Vector<ImageLabel>();
+			selectedIndex = -1;
+			int index = 0;
+			for (String name : SaveViewer.images.imagesNames) {
 				BufferedImage image = SaveViewer.images.getImage(name,null,64,64);
 				if (image!=null) {
-					boolean isPreSelected = name.equals(initialValue);
-					ImageLabel imageLabel = new ImageLabel(this,name,image,isPreSelected);
+					boolean isSelected = name.equals(initialValue);
+					ImageLabel imageLabel = new ImageLabel(this,name,index,image,isSelected);
 					imageLabels.add(imageLabel);
-					imagePanel.add(imageLabel);
-					if (isPreSelected) preselectedIndex=i;
+					add(imageLabel);
+					if (isSelected) selectedIndex=index;
+					++index;
 				}
 			}
 			
-			imageScrollPane = new JScrollPane(imagePanel);
-			imageScrollPane.setPreferredSize(new Dimension(700,600));
-			
-			JCheckBox chkbxMarkUsedImages;
-			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, false));
-			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
-			buttonPanel.add(SaveViewer.createButton("Cancel",e->closeDialog()));
-			chkbxMarkUsedImages.addActionListener(e->markUsedImages(chkbxMarkUsedImages.isSelected()));
-			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-			contentPane.add(imageScrollPane,BorderLayout.CENTER);
-			contentPane.add(buttonPanel,BorderLayout.SOUTH);
-			
-			this.createGUI(contentPane);
+			//setBorder(BorderFactory.createEtchedBorder());
+			setBackground(COLOR_BACKGROUND);
 		}
-	
-		private void markUsedImages(boolean markUsedImages) {
-			HashSet<String> usedImages = new HashSet<String>();
-			if (markUsedImages) {
-				for (GeneralizedID id:GameInfos.techIDs.getValues())
-					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
-				for (GeneralizedID id:GameInfos.productIDs.getValues())
-					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
-				for (GeneralizedID id:GameInfos.substanceIDs.getValues())
-					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
-			}
-			for (ImageLabel il:imageLabels)
-				il.setMark( markUsedImages && usedImages.contains(il.getImageFileName()) );
+		
+		public void    addSelectionListener( SelectionListener l ) { selectionListeners.   add(l); }
+		public void removeSelectionListener( SelectionListener l ) { selectionListeners.remove(l); }
+		
+		protected void setSelectedImage(String name, int index) {
+			if (selectedIndex>=0)
+				imageLabels.get(selectedIndex).isSelected = false;
+			
+			selectedIndex=index;
+			for (SelectionListener l:selectionListeners)
+				l.imageWasSelected(name);
+			
+			if (selectedIndex>=0)
+				imageLabels.get(selectedIndex).isSelected = true;
 		}
-	
-		@Override
-		public void windowOpened(WindowEvent e) {
-			if (preselectedIndex>=0) {
-				int row = preselectedIndex/cols;
-				int rowCount = Math.round((float)Math.ceil(SaveViewer.images.imagesNames.length*1.0f/cols));
+
+		public static interface SelectionListener {
+			public void imageWasSelected(String name);
+		}
+		
+		public void scrollToPreselectedImage(JScrollPane imageScrollPane) {
+			if (selectedIndex>=0) {
+				int row = selectedIndex/cols;
+				int rowCount = Math.round((float)Math.ceil(imageLabels.size()/(double)cols));
 				//System.out.printf("Row %d/%d was preselected\r\n",row,rowCount);
 				
 				JScrollBar scrollBar = imageScrollPane.getVerticalScrollBar();
@@ -646,33 +651,34 @@ public class Images {
 			}
 		}
 
-		private void setResult(String name) {
-			selected = name;
-			closeDialog();
+		public void markUsedImages(boolean markUsedImages) {
+			HashSet<String> usedImages = new HashSet<String>();
+			if (markUsedImages) {
+				for (GeneralizedID id:GameInfos.techIDs.getValues())
+					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+				for (GeneralizedID id:GameInfos.productIDs.getValues())
+					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+				for (GeneralizedID id:GameInfos.substanceIDs.getValues())
+					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+			}
+			for (ImageLabel il:imageLabels)
+				il.setMark( markUsedImages && usedImages.contains(il.name) );
 		}
-	
-		public String getImageFileName() {
-			return selected;
-		}
-	
-		public boolean hasChoosen() {
-			return selected != null;
-		}
-	
-		private static final class ImageLabel extends JPanel {
+
+		public static final class ImageLabel extends JPanel {
 			private static final long serialVersionUID = 4629632101041946456L;
 			public static Font defaultFont;
 			private JTextArea textArea;
-			private final boolean isPreSelected;
+			private boolean isSelected;
 			private boolean isMarked;
 			private final String name;
 	
-			public ImageLabel(ImageGridDialog parent, String name, BufferedImage image, boolean isPreSelected) {
+			public ImageLabel(ImageGridPanel parent, String name, int index, BufferedImage image, boolean isSelected) {
 				super(new BorderLayout(3,3));
 				setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 				
 				this.name = name;
-				this.isPreSelected = isPreSelected;
+				this.isSelected = isSelected;
 				this.isMarked = false;
 				
 				textArea = new JTextArea(name);
@@ -692,7 +698,7 @@ public class Images {
 				add(textArea,BorderLayout.CENTER);
 				
 				MouseInputAdapter m = new MouseInputAdapter() {
-					@Override public void mouseClicked(MouseEvent e) { parent.setResult(name); }
+					@Override public void mouseClicked(MouseEvent e) { parent.setSelectedImage(name,index); }
 					@Override public void mouseEntered(MouseEvent e) { setColors(true); }
 					@Override public void mouseExited (MouseEvent e) { setColors(false); }
 				};
@@ -710,20 +716,66 @@ public class Images {
 				repaint();
 			}
 
-			public String getImageFileName() {
-				return name;
-			}
-
 			private void setColors(boolean hasFocus) {
-				if      (hasFocus     ) setBackground(COLOR_BACKGROUND_SELECTED);
-				else if (isPreSelected) setBackground(COLOR_BACKGROUND_PRESELECTED);
-				else if (isMarked     ) setBackground(COLOR_BACKGROUND_MARKED);
-				else                    setBackground(COLOR_BACKGROUND);
+				if      (hasFocus  ) setBackground(COLOR_BACKGROUND_SELECTED);
+				else if (isSelected) setBackground(COLOR_BACKGROUND_PRESELECTED);
+				else if (isMarked  ) setBackground(COLOR_BACKGROUND_MARKED);
+				else                 setBackground(COLOR_BACKGROUND);
 				if (hasFocus) textArea.setForeground(COLOR_FOREGROUND_SELECTED);
 				else          textArea.setForeground(COLOR_FOREGROUND);
 			}
 		
 		}
 	
+	}
+
+	public static class ImageGridDialog extends StandardDialog {
+		private static final long serialVersionUID = -3724853350437145460L;
+		
+		private String selected;
+		private JScrollPane imageScrollPane;
+		private ImageGridPanel imageGridPanel;
+	
+		public ImageGridDialog(Window parent, String title, String initialValue) {
+			super(parent,title,ModalityType.APPLICATION_MODAL);
+			selected = null;
+			
+			imageGridPanel = new ImageGridPanel(6,initialValue);
+			imageGridPanel.addSelectionListener(this::setResult);
+			imageScrollPane = new JScrollPane(imageGridPanel);
+			imageScrollPane.setPreferredSize(new Dimension(700,600));
+			
+			JCheckBox chkbxMarkUsedImages;
+			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, false));
+			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
+			buttonPanel.add(SaveViewer.createButton("Cancel",e->closeDialog()));
+			chkbxMarkUsedImages.addActionListener(e->imageGridPanel.markUsedImages(chkbxMarkUsedImages.isSelected()));
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(imageScrollPane,BorderLayout.CENTER);
+			contentPane.add(buttonPanel,BorderLayout.SOUTH);
+			
+			this.createGUI(contentPane);
+		}
+	
+		@Override
+		public void windowOpened(WindowEvent e) {
+			imageGridPanel.scrollToPreselectedImage(imageScrollPane);
+		}
+
+		private void setResult(String name) {
+			selected = name;
+			closeDialog();
+		}
+	
+		public String getImageFileName() {
+			return selected;
+		}
+	
+		public boolean hasChoosen() {
+			return selected != null;
+		}
 	}
 }

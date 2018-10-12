@@ -64,18 +64,6 @@ public class SaveGameData {
 		this.persistentPlayerBases = null;
 	}
 	
-	public static String timestampToString_DMYHMS(long timestamp_s) {
-		return DateFormat.getDateTimeInstance().format(new Date(timestamp_s*1000));
-	}
-	
-	public static String timestampToString_HMS(long timestamp_s) {
-		long s = timestamp_s%60;
-		timestamp_s = (timestamp_s-s)/60;
-		long m = timestamp_s%60;
-		long h = (timestamp_s-m)/60;
-		return String.format("%3d:%02d:%02d", h,m,s);
-	}
-	
 	private static Long parseHexFormatedNumber(JSON_Object obj, String valueName) {
 		return parseHexFormatedNumber(obj.getValue(valueName));
 	}
@@ -352,7 +340,7 @@ public class SaveGameData {
 		}
 	}
 
-	private Owner parseOwnwerField(JSON_Object parentObj, String valueName) {
+	private Owner parseOwnerField(JSON_Object parentObj, String valueName) {
 		JSON_Object objectValue = getObjectValue(parentObj, valueName);
 		if (objectValue==null) return null;
 		
@@ -360,16 +348,58 @@ public class SaveGameData {
 		owner.LID = getStringValue(objectValue, "LID");
 		owner.UID = getStringValue(objectValue, "UID");
 		owner.USN = getStringValue(objectValue, "USN");
-		owner.TS  = getIntegerValue(objectValue, "TS");
+		owner.TS  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
 		
 		return owner;
+	}
+
+	public static class TimeStamp implements Comparable<TimeStamp>{
+		public final long value_s;
+		private TimeStamp(long value_s) {
+			this.value_s = value_s;
+		}
+		public static TimeStamp create(Long value_s) {
+			if (value_s==null) return null;
+			return new TimeStamp(value_s);
+		}
+		@Override public String toString() {
+			return DateFormat.getDateTimeInstance().format(new Date(value_s*1000));
+		}
+		@Override public int compareTo(TimeStamp other) {
+			return (int) (this.value_s-other.value_s);
+		}
+	}
+	
+
+	public static class Duration implements Comparable<Duration>{
+		public final long value_s;
+		private Duration(long value_s) {
+			this.value_s = value_s;
+		}
+		public static Duration create(Long value_s) {
+			if (value_s==null) return null;
+			return new Duration(value_s);
+		}
+		@Override public String toString() {
+			return toString(value_s);
+		}
+		@Override public int compareTo(Duration other) {
+			return (int) (this.value_s-other.value_s);
+		}
+		public static String toString(long value_s) {
+			long s = value_s%60;
+			value_s = (value_s-s)/60;
+			long m = value_s%60;
+			long h = (value_s-m)/60;
+			return String.format("%3d:%02d:%02d", h,m,s);
+		}
 	}
 
 	public static class Owner {
 		public String LID;
 		public String UID;
 		public String USN;
-		public Long   TS ;
+		public TimeStamp TS;
 	}
 
 	public SaveGameData parse(boolean isNEXT) {
@@ -468,10 +498,11 @@ public class SaveGameData {
 			pb.position        = parseCoordinates(objectValue, "Position");
 			pb.forward         = parseCoordinates(objectValue, "Forward");
 			pb.userData        = getIntegerValue (objectValue, "UserData");
+			pb.lastUpdateTS    = TimeStamp.create(getIntegerValue (objectValue, "LastUpdateTimestamp"));
 			pb.rid             = getStringValue  (objectValue, "RID");
-			pb.owner           = parseOwnwerField(objectValue, "Owner");
+			pb.owner           = parseOwnerField(objectValue, "Owner");
 			pb.name            = getStringValue  (objectValue, "Name");
-			pb.type___         = getStringValue  (objectValue, "??? [peI]", "??? Type/Name [DPp]");
+			pb.baseType        = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.value__wx7      = getIntegerValue_silent(objectValue, "??? [wx7]");
 			
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", i);
@@ -510,7 +541,7 @@ public class SaveGameData {
 	}
 
 	private void parseBuildingObject(JSON_Object objectValue, BuildingObject bbo) {
-		bbo.timestamp = getIntegerValue (objectValue, "Timestamp");
+		bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
 		bbo.objectID  = getStringValue  (objectValue, "ObjectID");
 		bbo.userData  = getIntegerValue (objectValue, "UserData");
 		bbo.position  = parsePosition   (objectValue, "Position", "Up", "At");
@@ -547,14 +578,15 @@ public class SaveGameData {
 		public Owner owner;
 		public Long baseVersion;
 		public String rid;
+		public TimeStamp lastUpdateTS;
 		public Long userData;
 		public Coordinates forward;
 		public Coordinates position;
 		public BuildingObject[] objects;
-		public boolean isFreighterBase;
+		public String baseType;
 		public final SaveGameData source;
 		
-		public String type___;
+		public boolean isFreighterBase___;
 		public Long value__wx7;
 		
 		public PersistentPlayerBase(SaveGameData source) {
@@ -568,8 +600,8 @@ public class SaveGameData {
 			this.forward = null;
 			this.position = null;
 			this.objects = null;
-			this.isFreighterBase = false;
-			this.type___ = null;
+			this.isFreighterBase___ = false;
+			this.baseType = null;
 			this.value__wx7 = null;
 		}
 	}
@@ -614,7 +646,7 @@ public class SaveGameData {
 		//public GeneralizedID objectID1;
 		public String specialName;
 		
-		public Long timestamp;
+		public TimeStamp timestamp;
 		public String objectID;
 		public Long userData;
 		public Position position;
@@ -1095,7 +1127,7 @@ public class SaveGameData {
 					//    UID  String
 					//    USN  String
 					//    TS   Long
-					stData.OWS = data.parseOwnwerField(object, "OWS");
+					stData.OWS = data.parseOwnerField(object, "OWS");
 					
 					// RID  String (evtl.)
 					stData.RID = data.getStringValue_silent(object,"RID");
@@ -1122,8 +1154,8 @@ public class SaveGameData {
 					
 					AvailableData availData = new AvailableData();
 					
-					// TSrec  long
-					availData.TSrec = data.getIntegerValue(object,"TSrec");
+					// TSrec  long --> TimeStamp
+					availData.TSrec = TimeStamp.create( data.getIntegerValue(object,"TSrec") );
 					
 					// DD.UA  UniverseAddress
 					// DD.DT  String
@@ -1300,7 +1332,7 @@ public class SaveGameData {
 			// DD.VP[0]  String
 			// DD.VP[1]  String | long
 			
-			public Long TSrec;
+			public TimeStamp TSrec;
 			public DDblock DD;
 			
 			AvailableData() {
@@ -1367,9 +1399,9 @@ public class SaveGameData {
 		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
 		public Long getKnownGlyphsMaks() { return data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes"); }
 		
-		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return timestampToString_HMS(v); }
-		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return timestampToString_HMS(v); }
-		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return timestampToString_HMS(v); }
+		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return Duration.toString(v); }
+		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return Duration.toString(v); }
+		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return Duration.toString(v); }
 		
 		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
 		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }

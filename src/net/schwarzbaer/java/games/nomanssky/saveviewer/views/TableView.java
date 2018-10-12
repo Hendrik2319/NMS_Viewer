@@ -41,6 +41,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.UpgradeCategory;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
 public class TableView {
@@ -233,12 +234,13 @@ public class TableView {
 				if (sortOrder==SortOrder.UNSORTED) continue;
 				int column = key.getColumn();
 				
-				if      (model.getColumnClass(column) == Boolean.class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Boolean)model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == String .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(String )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Long   .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Long   )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Integer.class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Integer)model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Double .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Double )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Float  .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Float  )model.getValueAt(row,column));
+				if      (model.getColumnClass(column) == Boolean  .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Boolean  )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == String   .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(String   )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Long     .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Long     )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Integer  .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Integer  )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Double   .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Double   )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Float    .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Float    )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == TimeStamp.class) comparator = setComparator(comparator,sortOrder,(Integer row)->(TimeStamp)model.getValueAt(row,column));
 				else comparator = setComparator(comparator,sortOrder,
 							(Integer row)->{
 								Object object = model.getValueAt(row,column);

@@ -275,10 +275,13 @@ lpm FreighterPosition
 fUl FreighterMatrixUp
 
 c5s ??? BaseBuildingObjects? [c5s]
-nlG ??? TeleportEndpoints? [nlG]
 
-peI ??? [peI]
-DPp ??? Type/Name [DPp]
+nlG TeleportEndpoints
+gk4 LookAt
+iAF TeleportHost
+
+peI BaseType
+DPp BaseType_
 
 cL6 ??? BufferAnchors [cL6]
 r:j ??? GalacticAddresses [r:j]

@@ -218,7 +218,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			
 			protected void setProgress(int value         ) { if (pd!=null) pd.setValue(value    ); }
 			protected void setProgress(int value, int max) { if (pd!=null) pd.setValue(value,max); }
-			protected void setTaskTitle(String title) { if (pd!=null) pd.setTaskTitle(title); }
+			protected void setTaskTitle(String title)      { if (pd!=null) pd.setTaskTitle(title); }
 			
 			@Override public void cancelTask() { stopNow = true; pd.closeDialog(); }
 			@Override public void run() { compute(); pd.closeDialog(); }

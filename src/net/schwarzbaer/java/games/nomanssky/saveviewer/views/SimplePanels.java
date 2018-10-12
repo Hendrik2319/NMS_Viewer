@@ -29,6 +29,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObje
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
@@ -211,14 +212,14 @@ public class SimplePanels {
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
-			Timestamp       ("Timestamp"       , String.class, 35,-1, 70, 70),
-			ObjectID        ("ObjectID"        , String.class, 80,-1,160,160),
-			GalacticAddress ("GalacticAddress" , String.class, 80,-1,160,160),
-			RegionSeed      ("RegionSeed"      , String.class, 65,-1,130,130),
-			UserData        ("UserData"        , String.class, 40,-1, 80, 80),
-			Position        ("Position"        , String.class, 95,-1,250,250),
-			Up              ("Up"              , String.class, 75,-1,150,150),
-			At              ("At"              , String.class, 75,-1,150,150);
+			Timestamp       ("Timestamp"       , TimeStamp.class, 35,-1,140,140),
+			ObjectID        ("ObjectID"        ,    String.class, 80,-1,160,160),
+			GalacticAddress ("GalacticAddress" ,    String.class, 80,-1,160,160),
+			RegionSeed      ("RegionSeed"      ,    String.class, 65,-1,130,130),
+			UserData        ("UserData"        ,    String.class, 40,-1, 80, 80),
+			Position        ("Position"        ,    String.class, 95,-1,250,250),
+			Up              ("Up"              ,    String.class, 75,-1,150,150),
+			At              ("At"              ,    String.class, 75,-1,150,150);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -244,7 +245,7 @@ public class SimplePanels {
 				UnboundBuildingObject bbo = data.baseBuildingObjects[rowIndex];
 				if (bbo==null) return null;
 				switch(columnID) {
-				case Timestamp      : if (bbo.timestamp      ==null) return ""; else return SaveGameData.timestampToString_HMS(bbo.timestamp);
+				case Timestamp      : return bbo.timestamp;
 				case ObjectID       : if (bbo.objectID       ==null) return ""; else return bbo.getNameOfObjectID();
 				case GalacticAddress: if (bbo.galacticAddress==null) return ""; else return bbo.galacticAddress.getCoordinates();
 				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; else return String.format("0x%016X", bbo.regionSeed);
@@ -273,7 +274,7 @@ public class SimplePanels {
 			
 			int i=0;
 			for (PersistentPlayerBase pb:this.data.persistentPlayerBases)
-				addBaseTab(tabbedPane, pb, String.format("Base %d", ++i));
+				addBaseTab(tabbedPane, pb, String.format("Base %d: %s", ++i, pb.baseType));
 //			for (PersistentPlayerBase pb:this.data.persistentPlayerBases.additionalBases)
 //				addBaseTab(tabbedPane, pb, String.format("Additional Base %d", ++i));
 			
@@ -339,7 +340,7 @@ public class SimplePanels {
 						}
 					
 					FileExport.writePosToVRML_simple(nearObj.toArray(new BuildingObject[0]),radius,this);
-				}, null, !playerbase.isFreighterBase, SaveViewer.ToolbarIcons.SaveAs));
+				}, null, SaveViewer.ToolbarIcons.SaveAs));
 			}
 
 			private void showOtherObjectsOnThisPlanet() {
@@ -379,19 +380,20 @@ public class SimplePanels {
 			private void showValues() {
 				textArea.setText("");
 				
-				textArea.append("Name         : "+(playerbase.name       ==null?"":playerbase.name       )+"\r\n");
-				textArea.append("Base Version : "+(playerbase.baseVersion==null?"":playerbase.baseVersion)+"\r\n");
-				textArea.append("User Data    : "+(playerbase.userData   ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
-				textArea.append("RID          : "+(playerbase.rid        ==null?"":playerbase.rid        )+"\r\n");
-				textArea.append("Type (??)    : "+(playerbase.type___    ==null?"":playerbase.type___    )+"\r\n");
-				textArea.append("Value [wx7]  : "+(playerbase.value__wx7 ==null?"":playerbase.value__wx7 )+"\r\n");
+				textArea.append("Name         : "+(playerbase.name        ==null?"":playerbase.name        )+"\r\n");
+				textArea.append("Base Version : "+(playerbase.baseVersion ==null?"":playerbase.baseVersion )+"\r\n");
+				textArea.append("User Data    : "+(playerbase.userData    ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
+				textArea.append("RID          : "+(playerbase.rid         ==null?"":playerbase.rid         )+"\r\n");
+				textArea.append("Type         : "+(playerbase.baseType    ==null?"":playerbase.baseType    )+"\r\n");
+				textArea.append("Last Update  : "+(playerbase.lastUpdateTS==null?"":playerbase.lastUpdateTS.toString())+"\r\n");
+				textArea.append("Value [wx7]  : "+(playerbase.value__wx7  ==null?"":playerbase.value__wx7  )+"\r\n");
 				
 				if (playerbase.owner!=null) {
 					textArea.append("\r\nOwner :\r\n");
 					textArea.append("   LID : "+(playerbase.owner.LID==null?"":playerbase.owner.LID)+"\r\n");
-					textArea.append("   UID : "+(playerbase.owner.UID==null?"":playerbase.owner.UID)+"\r\n");
-					textArea.append("   USN : "+(playerbase.owner.USN==null?"":playerbase.owner.USN)+"\r\n");
-					textArea.append("   TS  : "+(playerbase.owner.TS ==null?"":playerbase.owner.TS )+"\r\n");
+					textArea.append("   UID (User ID  ) : "+(playerbase.owner.UID==null?"":playerbase.owner.UID)+"\r\n");
+					textArea.append("   USN (User Name) : "+(playerbase.owner.USN==null?"":playerbase.owner.USN)+"\r\n");
+					textArea.append("   TS  (Timestamp) : "+(playerbase.owner.TS ==null?"":playerbase.owner.TS.toString())+"\r\n");
 				}
 				
 				if (playerbase.galacticAddress!=null) {
@@ -411,12 +413,12 @@ public class SimplePanels {
 			}
 
 			private enum BaseObjectsColumnID implements TableView.SimplifiedColumnIDInterface {
-				Timestamp       ("Timestamp"       , String.class, 70,-1,140,140),
-				ObjectID        ("ObjectID"        , String.class,120,-1,240,240),
-				UserData        ("UserData"        , String.class, 40,-1, 80, 80),
-				Position        ("Position"        , String.class, 75,-1,150,150),
-				Up              ("Up"              , String.class, 85,-1,170,170),
-				At              ("At"              , String.class, 85,-1,170,170);
+				Timestamp       ("Timestamp"       , TimeStamp.class, 70,-1,140,140),
+				ObjectID        ("ObjectID"        ,    String.class,120,-1,240,240),
+				UserData        ("UserData"        ,    String.class, 40,-1, 80, 80),
+				Position        ("Position"        ,    String.class, 75,-1,150,150),
+				Up              ("Up"              ,    String.class, 85,-1,170,170),
+				At              ("At"              ,    String.class, 85,-1,170,170);
 				
 				private TableView.SimplifiedColumnConfig columnConfig;
 				
@@ -445,12 +447,12 @@ public class SimplePanels {
 					BuildingObject obj = objects[rowIndex];
 					if (obj==null) return null;
 					switch(columnID) {
-					case Timestamp      : if (obj.timestamp      ==null) return ""; return SaveGameData.timestampToString_DMYHMS(obj.timestamp);
-					case ObjectID       : if (obj.objectID       ==null) return ""; return obj.getNameOfObjectID();
-					case UserData       : if (obj.userData       ==null) return ""; return String.format("0x%08X" , obj.userData  );
-					case Position       : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
-					case Up             : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
-					case At             : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
+					case Timestamp: return obj.timestamp;
+					case ObjectID : if (obj.objectID==null) return ""; return obj.getNameOfObjectID();
+					case UserData : if (obj.userData==null) return ""; return String.format("0x%08X" , obj.userData  );
+					case Position : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
+					case Up       : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
+					case At       : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
 					}
 					return null;
 				}
@@ -552,10 +554,10 @@ public class SimplePanels {
 		}
 	
 		private enum DDAColumnID implements TableView.SimplifiedColumnIDInterface {
-			TSrec("TSrec",   Long.class, 50,-1, 80, 80), //[81, 161, 91, 135, 139]
-			DD_UA("DD_UA", String.class, 50,-1,160,160),
-			DD_DT("DD_DT", String.class, 50,-1, 90, 90),
-			DD_VP("DD_VP", String.class, 50,-1,300,300);
+			TSrec("Timestamp"       , SaveGameData.TimeStamp.class, 50,-1,140,140), //[81, 161, 91, 135, 139]
+			DD_UA("Universe Address", String.class, 50,-1,160,160),
+			DD_DT("Data Type"       , String.class, 50,-1, 90, 90),
+			DD_VP("DD_VP"           , String.class, 50,-1,300,300);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -581,7 +583,7 @@ public class SimplePanels {
 				AvailableData availableData = data.discoveryData.availableData.get(rowIndex);
 				if (availableData==null) return null;
 				switch(columnID) {
-				case TSrec: if (availableData.TSrec==null) return -1; else return availableData.TSrec;
+				case TSrec: return availableData.TSrec;
 				case DD_UA: if (availableData.DD.UA==null) return ""; else return availableData.DD.UA.getExtendedSigBoostCode();
 				case DD_DT: if (availableData.DD.DT==null) return ""; else return availableData.DD.DT;
 				case DD_VP: if (availableData.DD.VP==null) return ""; else return toHexArray(availableData.DD.VP);
@@ -615,17 +617,17 @@ public class SimplePanels {
 		}
 	
 		private enum DDSColumnID implements TableView.SimplifiedColumnIDInterface {
-			DD_UA  ("DD_UA"  , String.class, 50,-1,160,160),
-			DD_DT  ("DD_DT"  , String.class, 50,-1, 90, 90),
-			DD_VP  ("DD_VP"  , String.class, 50,-1,300,300),
-			DM     ("DM"     , String.class, 20,-1, 40, 40),
-			DM_CN  ("DM_CN"  , String.class, 50,-1, 80, 80),
-			OWS_LID("OWS_LID", String.class, 50,-1,120,120),
-			OWS_UID("OWS_UID", String.class, 50,-1,120,120),
-			OWS_USN("OWS_USN", String.class, 50,-1, 80, 80),
-			OWS_TS ("OWS_TS" ,   Long.class, 50,-1, 80, 80),
-			RID    ("RID"    , String.class, 50,-1,350,350),
-			PTK    ("PTK"    , String.class, 20,-1, 40, 40);
+			DD_UA  ("DD_UA"  ,    String.class, 50,-1,160,160),
+			DD_DT  ("DD_DT"  ,    String.class, 50,-1, 90, 90),
+			DD_VP  ("DD_VP"  ,    String.class, 50,-1,300,300),
+			DM     ("DM"     ,    String.class, 20,-1, 40, 40),
+			DM_CN  ("DM_CN"  ,    String.class, 50,-1, 80, 80),
+			OWS_LID("OWS_LID",    String.class, 50,-1,120,120),
+			OWS_UID("OWS_UID",    String.class, 50,-1,120,120),
+			OWS_USN("OWS_USN",    String.class, 50,-1, 80, 80),
+			OWS_TS ("OWS_TS" , TimeStamp.class, 50,-1,140,140),
+			RID    ("RID"    ,    String.class, 50,-1,350,350),
+			PTK    ("PTK"    ,    String.class, 20,-1, 40, 40);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -659,7 +661,7 @@ public class SimplePanels {
 				case OWS_LID: if (storeData.OWS!=null && storeData.OWS.LID==null) return ""; else return storeData.OWS.LID;
 				case OWS_UID: if (storeData.OWS!=null && storeData.OWS.UID==null) return ""; else return storeData.OWS.UID;
 				case OWS_USN: if (storeData.OWS!=null && storeData.OWS.USN==null) return ""; else return storeData.OWS.USN;
-				case OWS_TS : if (storeData.OWS!=null && storeData.OWS.TS ==null) return -1; else return storeData.OWS.TS ;
+				case OWS_TS : if (storeData.OWS==null) return null; else return storeData.OWS.TS;
 				case RID    : if (storeData.RID    ==null) return ""; else return storeData.RID    ;
 				case PTK    : if (storeData.PTK    ==null) return ""; else return storeData.PTK    ;
 				}

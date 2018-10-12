@@ -212,10 +212,17 @@ public class FileExport {
 		JFileChooser fc = new JFileChooser("./");
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fc.setMultiSelectionEnabled(false);
-		fc.addChoosableFileFilter(new FileNameExtensionFilter("VRML-File (*.wrl)","wrl"));;
+		FileNameExtensionFilter vrmlFilter = new FileNameExtensionFilter("VRML-File (*.wrl)","wrl");
+		//fc.addChoosableFileFilter(vrmlFilter);
+		fc.setFileFilter(vrmlFilter);
 		
 		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
 		File file = fc.getSelectedFile();
+		if (fc.getFileFilter()==vrmlFilter) {
+			String name = file.getName();
+			if (!name.toLowerCase().endsWith(".wrl"))
+				file = new File(file.getParentFile(), name+".wrl");
+		}
 		
 		Point3D min = null;
 		Point3D max = null;
@@ -256,7 +263,7 @@ public class FileExport {
 			//vrml.println("# Container" );
 			//writeContainer(vrml);
 			
-			if (playerbase!=null && !playerbase.isFreighterBase) {
+			/*if (playerbase!=null && !playerbase.isFreighterBase___) {
 				String name = playerbase.name;
 				if (name==null || name.isEmpty()) name = "PlayerBase";
 				if (playerbase.position!=null && playerbase.forward!=null) {
@@ -265,7 +272,7 @@ public class FileExport {
 					Point3D up = playerbase.forward .isZero()?null:playerbase.forward .normalize();
 					writeModel(vrml, "^MAINROOM", name, pos, at, up, size, null);
 				}
-			}
+			}*/
 			
 			CubeCombine cubeCombine = /*new CubeCombine_Dummy();*/ new CubeCombine();
 			if (playerbase!=null) {

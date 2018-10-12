@@ -61,6 +61,7 @@ import javax.swing.tree.TreeModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.RawDataTreePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
@@ -195,13 +196,16 @@ public class SaveViewer implements ActionListener {
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JSON-File (*.json)","json"));;
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JavaScript-File (*.js)","js"));;
 		
-		mainWindow = new StandardMainWindow();
+		FrequentlyTask frequentlyUpdater = new FrequentlyTask(5000,true,this::checkSavegameExistence);
+		mainWindow = new StandardMainWindow("",e->frequentlyUpdater.stop(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
 		
 		compareTab = null;
 		contentPane = new ContentPane();
 		
 		mainWindow.startGUI(contentPane);
 		updateWindowTitle();
+		
+		frequentlyUpdater.start();
 	}
 
 	private enum ActionCommand {
@@ -216,8 +220,9 @@ public class SaveViewer implements ActionListener {
 		 save8_hg( "save8.hg","..8"),
 		 save9_hg( "save9.hg","..9"),
 		save10_hg("save10.hg","..10"),
-		RefreshExtraImages, SelectCoordinates, ReloadDeObfuscator;
+		RefreshExtraImages, SelectCoordinates;
 		
+		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
 		private String filename;
 		private String label;
 		
@@ -234,7 +239,7 @@ public class SaveViewer implements ActionListener {
 		switch (actionCommand) {
 		case save_hg: case save2_hg: case save3_hg: case save4_hg: case save5_hg:
 		case save6_hg: case save7_hg: case save8_hg: case save9_hg: case save10_hg:
-			openSaveGame(new File(getGameFolder().getPath()+"/"+config.getSavegameSubFolder(mainWindow)+"/"+actionCommand.filename));
+			openSaveGame(new File(getSavegameFolder()+actionCommand.filename));
 			break;
 			
 		case SwitchToGameFolder: {
@@ -323,16 +328,32 @@ public class SaveViewer implements ActionListener {
 		} break;
 			
 		case RefreshExtraImages:
-			images.reloadImageList();
-			break;
-		
-		case ReloadDeObfuscator:
-			deObfuscator = DeObfuscator.readFromFile();
+			ProgressDialog pd = new ProgressDialog(mainWindow,"Refresh Extra Images");
+			new Thread(()->{
+				pd.waitUntilDialogIsVisible();
+				images.reloadImageList(pd);
+				pd.closeDialog();
+			}).start();
+			pd.showDialog();
 			break;
 		}
 	}
 
+	private boolean isSavegameFolderKnown() {
+		return config.isSavegameSubFolderKnown();
+	}
+
+	private String getSavegameFolder() {
+		Properties prop = System.getProperties();
+		String fs = prop.get("file.separator").toString();
+		return getGameFolderStr()+fs+config.getSavegameSubFolder(mainWindow)+fs;
+	}
+
 	private static File getGameFolder() {
+		return new File(getGameFolderStr());
+	}
+
+	private static String getGameFolderStr() {
 		Properties prop = System.getProperties();
 //			ArrayList<Object> keys = new ArrayList<>(prop.keySet());
 //			keys.sort(null);
@@ -341,12 +362,17 @@ public class SaveViewer implements ActionListener {
 //			}
 		String home = prop.get("user.home").toString();
 		String fs = prop.get("file.separator").toString();
-		String path = home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
-		return new File(path);
+		return home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
 	}
 	
 	
 	
+	private void checkSavegameExistence() {
+		if (isSavegameFolderKnown())
+			for (ActionCommand ac:ActionCommand.save_commands)
+				contentPane.disabler.setEnable(ac, new File(getSavegameFolder()+ac.filename).isFile());
+	}
+
 	private void openSaveGame(File saveGameFile) {
 		log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
@@ -417,6 +443,65 @@ public class SaveViewer implements ActionListener {
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
 	}
 	
+	public static class FrequentlyTask implements Runnable {
+	
+		private final Runnable task;
+		private int interval_ms;
+		private boolean stop;
+		private boolean isRunning;
+		private boolean skipFirstWait;
+	
+		public FrequentlyTask(int interval_ms, boolean skipFirstWait, Runnable task) {
+			this.interval_ms = interval_ms;
+			this.skipFirstWait = skipFirstWait;
+			this.task = task;
+			this.stop = false;
+			this.isRunning = false;
+		}
+		
+		public boolean isRunning() {
+			return isRunning;
+		}
+	
+		public boolean start() {
+			if (isRunning) return false;
+			stop = false;
+			new Thread(this).start();
+			return true;
+		}
+	
+		public void stop() {
+			stop = true;
+			synchronized (this) { notifyAll(); }
+		}
+	
+		@Override
+		public void run() {
+			isRunning = true;
+			synchronized (this) {
+				
+				if (skipFirstWait)
+					runTask();
+				
+				while (!stop) {
+					long startTime = System.currentTimeMillis();
+					while (!stop && System.currentTimeMillis()-startTime<interval_ms)
+						try { wait(interval_ms-(System.currentTimeMillis()-startTime)); }
+						catch (InterruptedException e) {}
+					
+					if (!stop)
+						runTask();
+				}
+			}
+			isRunning = false;
+		}
+	
+		private void runTask() {
+			task.run();
+		}
+	
+	}
+
 	static class Config {
 		private static final String NMS_VIEWER_CFG = "NMS_Viewer.cfg";
 		
@@ -424,9 +509,12 @@ public class SaveViewer implements ActionListener {
 		private String savegameBackupFolder;
 		
 		Config() {
-			savegameSubFolder=null;
+			savegameSubFolder   =null;
 			savegameBackupFolder=null;
 		}
+		
+		boolean isSavegameSubFolderKnown() { return savegameSubFolder   !=null; }
+		boolean isBackupFolderKnown     () { return savegameBackupFolder!=null; }
 		
 		String getSavegameSubFolder(JFrame parent) {
 			if (savegameSubFolder==null) {
@@ -447,7 +535,7 @@ public class SaveViewer implements ActionListener {
 				JFileChooser fileChooser = new JFileChooser("./");
 				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				fileChooser.setMultiSelectionEnabled(false);
-				fileChooser.setDialogTitle("Select subfolder that contains save games");
+				fileChooser.setDialogTitle("Select folder that contains backuped save games");
 				if (fileChooser.showOpenDialog(parent)==JFileChooser.APPROVE_OPTION) {
 					savegameBackupFolder = fileChooser.getSelectedFile().getAbsolutePath();
 					writeToFile();
@@ -663,22 +751,20 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
-			toolBar.add(createButton("\""+ActionCommand.save_hg  .label+"\"", ToolbarIcons.Open, ActionCommand.save_hg  ,true));
-			toolBar.add(createButton("\""+ActionCommand.save2_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save2_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save3_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save3_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save4_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save4_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save5_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save5_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save6_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save6_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save7_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save7_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save8_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save8_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save9_hg .label+"\"", ToolbarIcons.Open, ActionCommand.save9_hg ,true));
-			toolBar.add(createButton("\""+ActionCommand.save10_hg.label+"\"", ToolbarIcons.Open, ActionCommand.save10_hg,true));
+			toolBar.add(createButton(ActionCommand.save_hg  .label, ToolbarIcons.Open, ActionCommand.save_hg  ,true));
+			toolBar.add(createButton(ActionCommand.save2_hg .label, ToolbarIcons.Open, ActionCommand.save2_hg ,true));
+			toolBar.add(createButton(ActionCommand.save3_hg .label, ToolbarIcons.Open, ActionCommand.save3_hg ,true));
+			toolBar.add(createButton(ActionCommand.save4_hg .label, ToolbarIcons.Open, ActionCommand.save4_hg ,true));
+			toolBar.add(createButton(ActionCommand.save5_hg .label, ToolbarIcons.Open, ActionCommand.save5_hg ,true));
+			toolBar.add(createButton(ActionCommand.save6_hg .label, ToolbarIcons.Open, ActionCommand.save6_hg ,true));
+			toolBar.add(createButton(ActionCommand.save7_hg .label, ToolbarIcons.Open, ActionCommand.save7_hg ,true));
+			toolBar.add(createButton(ActionCommand.save8_hg .label, ToolbarIcons.Open, ActionCommand.save8_hg ,true));
+			toolBar.add(createButton(ActionCommand.save9_hg .label, ToolbarIcons.Open, ActionCommand.save9_hg ,true));
+			toolBar.add(createButton(ActionCommand.save10_hg.label, ToolbarIcons.Open, ActionCommand.save10_hg,true));
 			toolBar.addSeparator();
 			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
-			toolBar.addSeparator();
-			toolBar.add(createButton("Refresh DeObfuscator", ToolbarIcons.Reload, ActionCommand.ReloadDeObfuscator,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
 			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder,true));
