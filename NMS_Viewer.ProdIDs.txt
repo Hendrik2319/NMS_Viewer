@@ -165,6 +165,8 @@
 ^BUILDSIDEPANEL=
 ^BUILDSIGNAL=Signalbooster
 ^BUILDSIGNAL.type=BaseExternal
+^BUILDSIGNAL.image=BUILDABLE.SIGNAL.NEXT.png
+^BUILDSIGNAL.imageBG=2C7C9F
 ^BUILDSIMPLEDESK=
 ^BUILDSOFA=
 ^BUILDSOFA2=
@@ -182,7 +184,10 @@
 ^BUILDTOWER.type=BaseComponent
 ^BUILDWINDOW=Fenster
 ^BUILDWINDOW.type=BaseComponent
-^BUILD_REFINER1=
+^BUILD_REFINER1=Tragbare Raffinerie
+^BUILD_REFINER1.type=BaseExternal
+^BUILD_REFINER1.image=Buildable.refiner1.png
+^BUILD_REFINER1.imageBG=2C7C9F
 ^BUILD_REFINER2=
 ^BUILD_REFINER3=
 ^CARBONPLANTER=Stehender Pflanzenbehälter
@@ -541,7 +546,10 @@
 ^HYPERFUEL1.type=Energy
 ^HYPERFUEL1.image=Product.warpcell.NEXT.png
 ^HYPERFUEL1.imageBG=C11746
-^JELLY=
+^JELLY=Diwasserstoffgel
+^JELLY.type=Resource
+^JELLY.image=PRODUCT.JELLY.png
+^JELLY.imageBG=C11746
 ^LANDPROD3=
 ^LARGEDESK=
 ^LARGEDESK.type=BaseDekoration
@@ -801,6 +809,10 @@
 ^U_SCANNER3.type=ExosuitExtensionUpgrade
 ^U_SCANNER3.image=MAINTTECH.FUEL2.NEXT.png
 ^U_SCANNER3.imageBG=7C4562
+^U_SHIELDBOOST3=Schildmodul (A)
+^U_SHIELDBOOST3.type=ExosuitExtensionUpgrade
+^U_SHIELDBOOST3.image=NmsProduct_QuantumProcessor_Icon.png
+^U_SHIELDBOOST3.imageBG=7C4562
 ^VIEWSPHERE=Aussichtskuppel
 ^VIEWSPHERE.type=BaseComponent
 ^WALL=

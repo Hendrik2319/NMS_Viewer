@@ -32,6 +32,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.activation.DataHandler;
 import javax.swing.BorderFactory;
@@ -196,8 +198,10 @@ public class SaveViewer implements ActionListener {
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JSON-File (*.json)","json"));;
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JavaScript-File (*.js)","js"));;
 		
-		FrequentlyTask frequentlyUpdater = new FrequentlyTask(5000,true,this::checkSavegameExistence);
-		mainWindow = new StandardMainWindow("",e->frequentlyUpdater.stop(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
+		ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+		//FrequentlyTask frequentlyUpdater = new FrequentlyTask(5000,true,this::checkSavegameExistence);
+		//mainWindow = new StandardMainWindow("",e->frequentlyUpdater.stop(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
+		mainWindow = new StandardMainWindow("",e->executor.shutdown(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
 		
 		compareTab = null;
 		contentPane = new ContentPane();
@@ -205,7 +209,8 @@ public class SaveViewer implements ActionListener {
 		mainWindow.startGUI(contentPane);
 		updateWindowTitle();
 		
-		frequentlyUpdater.start();
+		executor.scheduleAtFixedRate(this::checkSavegameExistence, 0, 5, TimeUnit.SECONDS);
+		//frequentlyUpdater.start();
 	}
 
 	private enum ActionCommand {

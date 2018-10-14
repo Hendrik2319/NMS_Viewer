@@ -673,8 +673,10 @@
 ^SHIPMINIGUN.imageBG=903031
 ^SHIPPLASMA=
 ^SHIPPLASMA.type=ShipWeapon
-^SHIPROCKETS=
+^SHIPROCKETS=Raketenwerfer
 ^SHIPROCKETS.type=ShipWeapon
+^SHIPROCKETS.image=Rocket_Launcher.NEXT.png
+^SHIPROCKETS.imageBG=7C4562
 ^SHIPSCAN_COMBAT=Konfliktscanner
 ^SHIPSCAN_COMBAT.type=ShipExtension
 ^SHIPSCAN_COMBAT.image=Conflict_Scanner.png

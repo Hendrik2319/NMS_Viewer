@@ -81,7 +81,6 @@
 ^GAS2.image=GAS.2.NEXT.png
 ^GAS2.imageBG=4D3780
 ^GAS3=Stickstoff
-^GAS3.obsolete=
 ^GAS3.type=Resource
 ^GAS3.symbol=N
 ^GAS3.image=Substance.Nitrogen.NEXT.png
@@ -126,7 +125,11 @@
 ^PLANT_SNOW=
 ^PLANT_TOXIC=
 ^PLANT_WATER=
-^RADIO1=
+^RADIO1=Uran
+^RADIO1.type=Resource
+^RADIO1.symbol=U
+^RADIO1.image=Substance.Uranium.png
+^RADIO1.imageBG=FFAD00
 ^ROBOT1=
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.obsolete=
@@ -313,8 +316,12 @@
 ^WATER1.type=Resource
 ^WATER1.symbol=NaCl
 ^WATER1.image=Substance.Salt.png
-^WATER1.imageBG=1F8B40
-^WATER2=
+^WATER1.imageBG=1F8A42
+^WATER2=Chlor
+^WATER2.type=Resource
+^WATER2.symbol=Cl
+^WATER2.image=Substances.Chlorine.png
+^WATER2.imageBG=1F8A42
 ^YELLOW2=Kupfer
 ^YELLOW2.type=Resource
 ^YELLOW2.symbol=Cu
