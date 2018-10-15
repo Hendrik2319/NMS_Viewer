@@ -56,6 +56,7 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 
 public class Images {
 	private static final String FILE_COLORS = "NMS_Viewer.Colors.txt";
@@ -572,12 +573,12 @@ public class Images {
 
 	public static class ImageGridPanel extends JPanel {
 		private static final long serialVersionUID = -189481388341606323L;
-		private static Color COLOR_BACKGROUND = null;
-		private static Color COLOR_BACKGROUND_SELECTED = null;
-		private static Color COLOR_BACKGROUND_PRESELECTED = null;
-		private static Color COLOR_BACKGROUND_MARKED = null;
-		private static Color COLOR_FOREGROUND = null;
-		private static Color COLOR_FOREGROUND_SELECTED = null;
+		private static Color   COLOR_BACKGROUND = null;
+		private static Color   COLOR_BACKGROUND_SELECTED = null;
+		private static Color   COLOR_BACKGROUND_PRESELECTED = null;
+		private static Color[] COLOR_BACKGROUND_MARKED = null;
+		private static Color   COLOR_FOREGROUND = null;
+		private static Color   COLOR_FOREGROUND_SELECTED = null;
 		
 		private Vector<SelectionListener> selectionListeners;
 		private int cols;
@@ -596,7 +597,7 @@ public class Images {
 			COLOR_BACKGROUND_SELECTED = dummy.getSelectionColor();
 			COLOR_FOREGROUND_SELECTED = dummy.getSelectedTextColor();
 			COLOR_BACKGROUND_PRESELECTED = Gui.brighter(COLOR_BACKGROUND_SELECTED,0.7f);
-			COLOR_BACKGROUND_MARKED = Color.LIGHT_GRAY;
+			COLOR_BACKGROUND_MARKED = new Color[] { Color.LIGHT_GRAY, new Color(0xDCB9F2) };
 			
 			imageLabels = new Vector<ImageLabel>();
 			selectedIndex = -1;
@@ -663,16 +664,22 @@ public class Images {
 
 		public void markUsedImages(boolean markUsedImages) {
 			HashSet<String> usedImages = new HashSet<String>();
+			HashSet<String> usedImagesObsolete = new HashSet<String>();
 			if (markUsedImages) {
-				for (GeneralizedID id:GameInfos.techIDs.getValues())
-					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
-				for (GeneralizedID id:GameInfos.productIDs.getValues())
-					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
-				for (GeneralizedID id:GameInfos.substanceIDs.getValues())
-					if (id.hasImageFileName()) usedImages.add(id.getImageFileName());
+				addImageNames(usedImages, usedImagesObsolete, GameInfos.techIDs   );
+				addImageNames(usedImages, usedImagesObsolete, GameInfos.productIDs);
+				addImageNames(usedImages, usedImagesObsolete, GameInfos.substanceIDs);
 			}
 			for (ImageLabel il:imageLabels)
-				il.setMark( markUsedImages && usedImages.contains(il.name) );
+				il.setMark( markUsedImages && usedImages.contains(il.name), markUsedImages && usedImagesObsolete.contains(il.name) );
+		}
+
+		private void addImageNames(HashSet<String> usedImages, HashSet<String> usedImagesObsolete, IDMap idMap) {
+			for (GeneralizedID id:idMap.getValues())
+				if (id.hasImageFileName()) {
+					if (id.isObsolete) usedImagesObsolete.add(id.getImageFileName());
+					else               usedImages        .add(id.getImageFileName());
+				}
 		}
 
 		public static final class ImageLabel extends JPanel {
@@ -680,7 +687,7 @@ public class Images {
 			public static Font defaultFont;
 			private JTextArea textArea;
 			private boolean isSelected;
-			private boolean isMarked;
+			private int markerIndex;
 			private final String name;
 	
 			public ImageLabel(ImageGridPanel parent, String name, int index, BufferedImage image, boolean isSelected) {
@@ -689,7 +696,7 @@ public class Images {
 				
 				this.name = name;
 				this.isSelected = isSelected;
-				this.isMarked = false;
+				this.markerIndex = 0;
 				
 				textArea = new JTextArea(name);
 				textArea.setPreferredSize(new Dimension(100,60));
@@ -720,17 +727,17 @@ public class Images {
 				textArea.addMouseMotionListener(m);
 			}
 			
-			public void setMark(boolean isMarked) {
-				this.isMarked = isMarked;
+			public void setMark(boolean isMarkedP1, boolean isMarkedP2) {
+				this.markerIndex = isMarkedP1?1:isMarkedP2?2:0;
 				setColors(false);
 				repaint();
 			}
 
 			private void setColors(boolean hasFocus) {
-				if      (hasFocus  ) setBackground(COLOR_BACKGROUND_SELECTED);
-				else if (isSelected) setBackground(COLOR_BACKGROUND_PRESELECTED);
-				else if (isMarked  ) setBackground(COLOR_BACKGROUND_MARKED);
-				else                 setBackground(COLOR_BACKGROUND);
+				if      (hasFocus     ) setBackground(COLOR_BACKGROUND_SELECTED);
+				else if (isSelected   ) setBackground(COLOR_BACKGROUND_PRESELECTED);
+				else if (markerIndex>0) setBackground(COLOR_BACKGROUND_MARKED[markerIndex-1]);
+				else                    setBackground(COLOR_BACKGROUND);
 				if (hasFocus) textArea.setForeground(COLOR_FOREGROUND_SELECTED);
 				else          textArea.setForeground(COLOR_FOREGROUND);
 			}

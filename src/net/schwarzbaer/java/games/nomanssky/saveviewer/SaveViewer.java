@@ -442,9 +442,9 @@ public class SaveViewer implements ActionListener {
 
 	private void updateWindowTitle() {
 		if (contentPane.selectedSaveGameView == null)
-			mainWindow.setTitle("No Man's Sky - Viewer");
+			mainWindow.setTitle("(New) No Man's Sky - Viewer");
 		else
-			mainWindow.setTitle("No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
+			mainWindow.setTitle("(New) No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
 	}
 	

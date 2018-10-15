@@ -274,7 +274,8 @@ lpm FreighterPosition
 9wg FreighterMatrixLookAt
 fUl FreighterMatrixUp
 
-c5s ??? BaseBuildingObjects? [c5s]
+c5s BaseBuildingObjects
+ofi RegionSeed
 
 nlG TeleportEndpoints
 gk4 LookAt

@@ -411,7 +411,7 @@ public class SaveGameData {
 		parseKnownWords();
 		parseDiscoveryData();
 		parseInventories();
-		if (!isNEXT) parseBaseBuildingObjects();
+		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
 		parseStoredInteractions();
 		universe.sort();
