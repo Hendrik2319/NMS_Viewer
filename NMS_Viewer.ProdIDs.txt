@@ -44,7 +44,10 @@
 ^ALLOY8.type=Alloy
 ^ALLOY8.image=Product.metallic.8.Iridesite.png
 ^ALLOY8.imageBG=F0A92B
-^AMMO=
+^AMMO=Projektilmunition
+^AMMO.type=Product
+^AMMO.image=PRODUCT.AMMO.png
+^AMMO.imageBG=CCCCCC
 ^AM_HOUSING=Antimaterie-Gehäuse
 ^AM_HOUSING.type=Energy
 ^AM_HOUSING.image=Product.amhousing.png
@@ -205,7 +208,9 @@
 ^CAVECUBE.type=Product
 ^CAVECUBE.image=Product.vortexcube.Wirbelwuerfel.png
 ^CAVECUBE.imageBG=10805C
-^CAVEPROD3=
+^CAVEPROD3=Tetrakobalt
+^CAVEPROD3.image=Product.metallic.8.png
+^CAVEPROD3.imageBG=085C78
 ^CEILINGLIGHT=
 ^CEILINGLIGHT.type=BaseDekoration
 ^CHEST=
@@ -482,6 +487,9 @@
 ^FARMPRODBASIC2.type=Product
 ^FARMPRODBASIC2.image=NmsTech_Voltaic_Cell_Icon_13.Galvanische Zelle.png
 ^FARMPRODBASIC2.imageBG=F0A92B
+^FIENDCORE=Larvenkern
+^FIENDCORE.image=Product.LarvalCore.png
+^FIENDCORE.imageBG=447519
 ^FLAG1=
 ^FLAG1.type=BaseDekoration
 ^FLAG2=
@@ -546,7 +554,7 @@
 ^HYPERFUEL1.type=Energy
 ^HYPERFUEL1.image=Product.warpcell.NEXT.png
 ^HYPERFUEL1.imageBG=C11746
-^JELLY=Diwasserstoffgel
+^JELLY=Diwasserstoff-Gelee
 ^JELLY.type=Resource
 ^JELLY.image=PRODUCT.JELLY.png
 ^JELLY.imageBG=C11746
@@ -599,7 +607,7 @@
 ^M_WALL_Q=
 ^M_WALL_Q_H=
 ^M_WALL_WINDOW=
-^NANOTUBES=Kohlenstoff-Nanoröhrchen
+^NANOTUBES=Kohlenstoff-Nanorohr
 ^NANOTUBES.type=Product
 ^NANOTUBES.image=Product.nanotubes.NEXT.png
 ^NANOTUBES.imageBG=F0A92B
@@ -658,7 +666,7 @@
 ^POWERCELL.type=Energy
 ^POWERCELL.image=NmsTech_Voltaic_Cell_Icon_13.png
 ^POWERCELL.imageBG=F0A92B
-^POWERCELL2=...cher Ionenakku
+^POWERCELL2=Fortschrittlicher Ionenakku
 ^POWERCELL2.type=Energy
 ^POWERCELL2.image=Product.powercell2.png
 ^POWERCELL2.imageBG=F0A92B
@@ -666,7 +674,7 @@
 ^PRODFUEL1.type=Energy
 ^PRODFUEL1.image=Product.gel1.Energiegel.png
 ^PRODFUEL1.imageBG=C11746
-^PRODFUEL2=Lebenserhaltungs-Gel
+^PRODFUEL2=Lebenserhaltungsgel
 ^PRODFUEL2.type=Energy
 ^PRODFUEL2.image=Product.oxygengel2.png
 ^PRODFUEL2.imageBG=C11746

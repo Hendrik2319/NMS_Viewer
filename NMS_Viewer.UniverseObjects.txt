@@ -309,6 +309,16 @@ class=Red
 [Pln100100F8008008]
 name=Sagayamatsuy-5
 
+[Reg000000FF9852B9]
+name=Zudden-Weite
+
+[Sys003200FF9852B9]
+name=Teinna II
+race=Vykeen
+
+[Pln103200FF9852B9]
+name=Heronito Tau
+
 [Sys00010000444444]
 name=Idewij-Hizdr
 

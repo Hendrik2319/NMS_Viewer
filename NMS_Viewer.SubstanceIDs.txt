@@ -1,5 +1,6 @@
 ^ASTEROID1=
 ^ASTEROID2=
+^ASTEROID3=
 ^CATALYST1=Natrium
 ^CATALYST1.type=Resource
 ^CATALYST1.symbol=Na
@@ -119,7 +120,11 @@
 ^PLANT_CAVE=
 ^PLANT_DUST=
 ^PLANT_HOT=
-^PLANT_LUSH=
+^PLANT_LUSH=Sternenknolle
+^PLANT_LUSH.type=PlantProduct
+^PLANT_LUSH.symbol=Sd
+^PLANT_LUSH.image=NmsResource_Star_Bulb_icon.Sternenknolle.png
+^PLANT_LUSH.imageBG=218CAC
 ^PLANT_POOP=
 ^PLANT_RADIO=
 ^PLANT_SNOW=
@@ -132,7 +137,6 @@
 ^RADIO1.imageBG=FFAD00
 ^ROBOT1=
 ^SPACEGUNK1=Restsubstanz
-^SPACEGUNK1.obsolete=
 ^SPACEGUNK1.symbol=Sr
 ^SPACEGUNK1.image=Residualgoopicon.SchleimigeUeberreste.png
 ^SPACEGUNK1.imageBG=5A6F36
