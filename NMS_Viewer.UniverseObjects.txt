@@ -69,10 +69,10 @@ distance=707016.000000
 name=Syamnonerger
 
 [Pln206D00FAA8CBC4]
-name=Magnandram Ilioc
+name=Magnandram Ilioc / Drushya II
 
 [Pln306D00FAA8CBC4]
-name=Loyarnaulic
+name=Loyarnaulic / Ebbie Primus
 
 [Sys007900FAA8CBC4]
 name=Kihgora-Agyu X

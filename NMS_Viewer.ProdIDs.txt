@@ -12,7 +12,7 @@
 ^ALBUMENPEARL.type=PlantProduct
 ^ALBUMENPEARL.image=Product.abumenpearl.Eiweissperle.png
 ^ALBUMENPEARL.imageBG=10805C
-^ALLOY1=???
+^ALLOY1=Aronium
 ^ALLOY1.type=Alloy
 ^ALLOY1.image=Product.metallic.1.Aronium.png
 ^ALLOY1.imageBG=F0A92B
@@ -440,7 +440,10 @@
 ^DRUGS1.type=RaceGift
 ^DRUGS1.image=Product.geknip.png
 ^DRUGS1.imageBG=10805C
-^EXP_CURIO1=
+^EXP_CURIO1=Korvax-Gehäuse
+^EXP_CURIO1.type=RaceGift
+^EXP_CURIO1.image=Product.korvaxcasing.png
+^EXP_CURIO1.imageBG=10805C
 ^FARMPROD1=Säure
 ^FARMPROD1.type=Product
 ^FARMPROD1.image=NmsTech_Acid_Icon_13.Saeure.png
@@ -451,7 +454,7 @@
 ^FARMPROD2.imageBG=F0A92B
 ^FARMPROD3=Glas
 ^FARMPROD3.type=Product
-^FARMPROD3.image=NmsTech_Glass_Icon_13.png
+^FARMPROD3.image=FARMPROD.3.NEXT.png
 ^FARMPROD3.imageBG=F0A92B
 ^FARMPROD4=Hitzekondensator
 ^FARMPROD4.type=Product
@@ -694,7 +697,7 @@
 ^RADIOPLANT.image=NmsFarming_Dicotyl_Icon.Gammagras.png
 ^REACTION1=
 ^REACTION2=
-^REACTION3=Ammoniumsalz
+^REACTION3=Stickstoffsalz
 ^REACTION3.image=NmsCommodity_AmmoniumSalt_icon.png
 ^REACTION3.imageBG=F0A92B
 ^ROOFMONITOR=
@@ -784,7 +787,10 @@
 ^TRA_CURIO1=Gek-Relikt
 ^TRA_CURIO1.image=Product.gekstatue.png
 ^TRA_CURIO1.imageBG=10805C
-^TRA_CURIO2=
+^TRA_CURIO2=GekNip
+^TRA_CURIO2.type=RaceGift
+^TRA_CURIO2.image=Product.geknip.png
+^TRA_CURIO2.imageBG=10805C
 ^TRA_EXOTICS1=Nicht mehr duftende Pheromonflasche
 ^TRA_EXOTICS1.obsolete=
 ^TRA_EXOTICS1.image=NmsCommodity_De-Scented_Pheromone_Bottle_icon.png
