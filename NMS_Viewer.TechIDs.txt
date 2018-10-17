@@ -205,6 +205,7 @@
 ^F_HDRIVEBOOST1.image=TECHNOLOGY.FREIGHTERSIGMA.png
 ^F_HDRIVEBOOST1.upgradeStr=+1
 ^F_HDRIVEBOOST2=Frachter Warp-Reaktor Tau
+^F_HDRIVEBOOST2.type=FreighterExtension
 ^F_HDRIVEBOOST2.image=TECHNOLOGY.FREIGHTERTAU.png
 ^F_HDRIVEBOOST3=Frachter Warp-Reaktor Theta
 ^F_HDRIVEBOOST3.type=FreighterExtension
