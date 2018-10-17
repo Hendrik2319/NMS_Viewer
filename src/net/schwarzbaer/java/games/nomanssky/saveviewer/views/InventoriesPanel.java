@@ -37,11 +37,11 @@ import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageGridDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageSelectDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
@@ -154,7 +154,13 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				inventoryLabel = new InventoryDisplay(this,(int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots);
-				add(makeInventoryScrollable?new JScrollPane(inventoryLabel):inventoryLabel, BorderLayout.CENTER);
+				if (makeInventoryScrollable) {
+					JScrollPane scrollPane = new JScrollPane(inventoryLabel);
+					scrollPane.getVerticalScrollBar  ().setUnitIncrement(10);
+					scrollPane.getHorizontalScrollBar().setUnitIncrement(10);
+					add(scrollPane, BorderLayout.CENTER);
+				} else
+					add(inventoryLabel, BorderLayout.CENTER);
 			} else
 				inventoryLabel = null;
 		}
@@ -178,7 +184,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			} break;
 				
 			case SelectImageFile: {
-				ImageGridDialog dlg = new ImageGridDialog(mainwindow,"Select image of "+clickedSlot.id.getName(),clickedSlot.id.getImageFileName());
+				ImageSelectDialog dlg = new ImageSelectDialog(mainwindow,"Select image of "+clickedSlot.id.getName(),clickedSlot.id.getImageFileName());
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					String result = dlg.getImageFileName();
@@ -603,19 +609,22 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private Window mainwindow;
 		private JPanel contentPanel;
 
-		public InventoryListPanel(Window mainwindow, int rows, int cols) {
+		private InventoryListPanel(Window mainwindow, JPanel contentPanel) {
 			super();
 			this.mainwindow = mainwindow;
-			contentPanel = new JPanel(new GridLayout(rows, cols));
-			setViewportView(contentPanel);
+			this.contentPanel = contentPanel;
+			setViewportView(this.contentPanel);
+			getVerticalScrollBar  ().setUnitIncrement(10);
+			getHorizontalScrollBar().setUnitIncrement(10);
+		}
+
+		public InventoryListPanel(Window mainwindow, int rows, int cols) {
+			this(mainwindow,new JPanel(new GridLayout(rows, cols)));
 		}
 		
 		public InventoryListPanel(Window mainwindow) {
-			super();
-			this.mainwindow = mainwindow;
-			contentPanel = new JPanel();
+			this(mainwindow,new JPanel());
 			contentPanel.setLayout(new BoxLayout(contentPanel,BoxLayout.Y_AXIS));
-			setViewportView(contentPanel);
 		}
 
 		@Override

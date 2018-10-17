@@ -34,6 +34,7 @@ class StatsPanel extends SaveGameViewTabPanel {
 		statConfigs.add("Global");
 		statConfigs.add("All Planets");
 		statConfigs.addAll(SaveGameView.convertVector(data.stats.planetStats, ps -> "Planet "+ps.planet));
+		statConfigs.addAll(SaveGameView.convertVector(data.stats.otherStats , os -> String.format("\"%s\" %014X", os.id, os.address)));
 		
 		JComboBox<String> selector = new JComboBox<>(statConfigs);
 		selector.addActionListener(e -> changeSelection( selector.getSelectedIndex() ));
@@ -49,7 +50,12 @@ class StatsPanel extends SaveGameViewTabPanel {
 		case -1: table.setModel(new DefaultTableModel()); break;
 		case  0: table.setModel(new StatsTableModel(data.stats.globalStats)); break;
 		case  1: table.setModel(new DefaultTableModel()); break;
-		default: table.setModel(new StatsTableModel(data.stats.planetStats.get(index-2).stats)); break;
+		default:
+			if (index-2<data.stats.planetStats.size())
+				table.setModel(new StatsTableModel(data.stats.planetStats.get(index-2).stats));
+			else
+				table.setModel(new StatsTableModel(data.stats.otherStats.get(index-2-data.stats.planetStats.size()).stats));
+			break;
 		}
 	}
 

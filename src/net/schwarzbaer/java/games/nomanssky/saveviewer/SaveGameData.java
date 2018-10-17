@@ -505,7 +505,7 @@ public class SaveGameData {
 			pb.baseType        = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.value__wx7      = getIntegerValue_silent(objectValue, "??? [wx7]");
 			
-			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", i);
+			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseType!=null?pb.baseType:"Base", i);
 			
 			persistentPlayerBases.add(pb);
 //			persistentPlayerBases.set(i,pb);
@@ -515,13 +515,14 @@ public class SaveGameData {
 			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
 	}
 	
-	private BuildingObject[] parsePersistentPlayerBasesObjects(JSON_Object parentObj, String valueName, int baseIndex) {
+	private BuildingObject[] parsePersistentPlayerBasesObjects(JSON_Object parentObj, String valueName, String baseType, int baseIndex) {
 		JSON_Array arrayValue = getArrayValue(parentObj,valueName);
 		if (arrayValue==null) return null;
 		JSON_Array notParsableObjects = new JSON_Array();
 		
 		Vector<BuildingObject> vector = new Vector<BuildingObject>();
-		for (Value value:arrayValue) {
+		for (int i=0; i<arrayValue.size(); i++) {
+			Value value = arrayValue.get(i);
 			JSON_Object objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
@@ -529,7 +530,7 @@ public class SaveGameData {
 			}
 			
 			BuildingObject bbo = new BuildingObject(this);
-			parseBuildingObject(objectValue, bbo);
+			parseBuildingObject(objectValue, bbo, "["+(baseIndex+1)+"]"+baseType, i);
 			
 			vector.add(bbo);
 		}
@@ -540,13 +541,14 @@ public class SaveGameData {
 		return vector.toArray(new BuildingObject[0]);
 	}
 
-	private void parseBuildingObject(JSON_Object objectValue, BuildingObject bbo) {
+	private void parseBuildingObject(JSON_Object objectValue, BuildingObject bbo, String label, int index) {
 		bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
 		bbo.objectID  = getStringValue  (objectValue, "ObjectID");
 		bbo.userData  = getIntegerValue (objectValue, "UserData");
 		bbo.position  = parsePosition   (objectValue, "Position", "Up", "At");
 		if (bbo.objectID!=null) {
-			/*bbo.objectID1 =*/ GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
+			GeneralizedID id = GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
+			id.getUsage(this).addBBOUsage(label,index);
 		}
 	}
 
@@ -612,7 +614,8 @@ public class SaveGameData {
 		JSON_Array notParsableObjects = new JSON_Array();
 		
 		Vector<UnboundBuildingObject> vector = new Vector<UnboundBuildingObject>();
-		for (Value value:arrayValue) {
+		for (int i=0; i<arrayValue.size(); i++) {
+			Value value = arrayValue.get(i);
 			JSON_Object objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
@@ -621,7 +624,7 @@ public class SaveGameData {
 			UnboundBuildingObject bbo = new UnboundBuildingObject(this);
 			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
-			parseBuildingObject(objectValue, bbo);
+			parseBuildingObject(objectValue, bbo, "BaseBuildingObjects", i);
 			vector.add(bbo);
 		}
 		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
@@ -866,12 +869,12 @@ public class SaveGameData {
 				Arrays.fill(row, null);
 			
 			if (arrSlots==null) {
-				System.err.println(inventorySourcePath+": Inventory has no slots.");
+				SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no slots.");
 				return slots;
 			}
 			
 			if (arrValidSlotIndices==null) {
-				System.err.println(inventorySourcePath+": Inventory has no valid slot indices.");
+				SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
 				return slots;
 			}
 			
@@ -890,9 +893,9 @@ public class SaveGameData {
 					++redundantIndices;
 			}
 			if (!wrongIndices.isEmpty())
-				System.err.println(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
+				SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
 			if (redundantIndices>0)
-				System.err.println(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
+				SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
 
 			redundantIndices = 0;
 			wrongIndices.clear();
@@ -911,9 +914,9 @@ public class SaveGameData {
 					++redundantIndices;
 			}
 			if (!wrongIndices.isEmpty())
-				System.err.println(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
+				SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
 			if (redundantIndices>0)
-				System.err.println(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
+				SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
 			
 			redundantIndices = 0;
 			int notValidSlots = 0;
@@ -959,9 +962,9 @@ public class SaveGameData {
 					}
 				}
 			}
-			if (!wrongSlots.isEmpty()) System.err.println(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
-			if (redundantIndices>0     ) System.err.println(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
-			if (notValidSlots>0      ) System.err.println(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
+			if (!wrongSlots.isEmpty()) SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
+			if (redundantIndices>0   ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
+			if (notValidSlots>0      ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
 		
 			return slots;
 		}
@@ -1071,9 +1074,9 @@ public class SaveGameData {
 		discoveryData.findAdditionalPlanetsAndSolarSystems();
 		
 		if (!discoveryData.notParsedStoreData.isEmpty())
-			SaveViewer.log_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+			SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
 		if (!discoveryData.notParsedAvailableData.isEmpty())
-			SaveViewer.log_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+			SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
 	}
 
 	public final static class DiscoveryData {
@@ -1216,9 +1219,9 @@ public class SaveGameData {
 //				System.out.println("   "+type);
 			
 			if (!unknownAdresses.isEmpty()) {
-				SaveViewer.log_ln("Found undiscovered addresses ["+unknownAdresses.size()+"]");
+				SaveViewer.log_error_ln("Found undiscovered addresses ["+unknownAdresses.size()+"]");
 				for (UniverseAddress ua:unknownAdresses)
-					SaveViewer.log_ln("   "+ua.getCoordinates());
+					SaveViewer.log_error_ln("   "+ua.getCoordinates());
 			}
 		}
 		
@@ -1992,7 +1995,7 @@ public class SaveGameData {
 		else {
 			knownWords = new KnownWords(this).parse(arrayValue);
 			if (!knownWords.notParsedKnownWords.isEmpty())
-				SaveViewer.log_ln("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
+				SaveViewer.log_error_ln("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
 		}
 	}
 
@@ -2065,19 +2068,18 @@ public class SaveGameData {
 	
 	private void parseStats() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","Stats");
-		if (arrayValue==null)
-			stats = null;
-		else {
-			stats = new Stats(this).parse(arrayValue);
-			if (!stats.notParsedStats.isEmpty())
-				SaveViewer.log_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
-		}
+		if (arrayValue==null) { stats = null; return; }
+		stats = new Stats(this);
+		stats.parse(arrayValue);
+		if (!stats.notParsedStats.isEmpty())
+			SaveViewer.log_error_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
 	}
 
 	public final static class Stats {
 		
 		public Vector<StatValue> globalStats;
 		public Vector<PlanetStats> planetStats;
+		public Vector<OtherStats> otherStats;
 		JSON_Array notParsedStats;
 		private final SaveGameData data;
 
@@ -2085,10 +2087,11 @@ public class SaveGameData {
 			this.data = data;
 			globalStats = null;
 			planetStats = new Vector<>();
+			otherStats = new Vector<>();
 			notParsedStats = new JSON_Array();
 		}
 
-		public Stats parse(JSON_Array statList) {
+		public void parse(JSON_Array statList) {
 			for (Value groupValue : statList) {
 				JSON_Object group = data.getObject(groupValue);
 				if (group==null) { notParsedStats.add(groupValue); continue; }
@@ -2109,7 +2112,7 @@ public class SaveGameData {
 					
 					break;
 					
-				case "^PLANET_STATS":
+				case "^PLANET_STATS": {
 					Value addressValue = group.getValue("Address");
 					if (addressValue==null) { notParsedStats.add(groupValue); continue; }
 					
@@ -2142,13 +2145,23 @@ public class SaveGameData {
 					
 					planetStats.add(ps);
 					
-					break;
+				} break;
 					
-				default:
-					{ notParsedStats.add(groupValue); continue; }
+				default: { 
+					Value addressValue = group.getValue("Address");
+					if (addressValue==null) { notParsedStats.add(groupValue); continue; }
+					
+					Long addressLong = parseHexFormatedNumber(addressValue);
+					if (addressLong==null) { notParsedStats.add(groupValue); continue; }
+					
+					OtherStats stats = new OtherStats(groupID,addressLong);
+					fillInto(groupStats,stats.stats);
+					otherStats.add(stats);
+				} break;
+					//{ notParsedStats.add(groupValue); continue; }
+				
 				}
 			}
-			return this;
 		}
 
 		private void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {
@@ -2253,6 +2266,24 @@ public class SaveGameData {
 				if (other.knownID==null)
 					return -1;
 				return this.knownID.ordinal() - other.knownID.ordinal();
+			}
+		}
+		
+		public static class OtherStats {
+			
+			public final String id;
+			public final long address;
+			public Vector<StatValue> stats;
+			
+			OtherStats(String id, long address) {
+				this.id = id;
+				this.address = address;
+				this.stats = new Vector<>();
+			}
+
+			@Override
+			public String toString() {
+				return "GeneralStats [id=" + id + ", address=" + address + ", stats=...]";
 			}
 		}
 		

@@ -436,7 +436,7 @@ public class GameInfos {
 		
 		public GeneralizedID get(String id, SaveGameData source, Usage.Type usageType) {
 			GeneralizedID generalizedID = get(id);
-			generalizedID.setUsage(source,usageType);
+			generalizedID.getUsage(source).addGeneralUsage(usageType);
 			generalizedID.isObsolete = false;
 			return generalizedID;
 		}
@@ -630,6 +630,8 @@ public class GameInfos {
 			BaseComponent            ("Basis-Komponente"),
 			BaseDekoration           ("Basis-Dekoration"),
 			BaseExternal             ("Basis-Auﬂenanlage"),
+			BaseComponentFreighter   ("Basis-Komponente (Frachter)"),
+			BaseDekorationFreighter  ("Basis-Dekoration (Frachter)"),
 			Resource                 ("Rohstoff"),
 			Alloy                    ("Legierung"),
 			AtlasSeed                ("Atlas-Samen"),
@@ -769,9 +771,6 @@ public class GameInfos {
 			return SaveViewer.images.getImage(imageFileName,imageBackground,width,height);
 		}
 		
-		public void setUsage(SaveGameData source, Usage.Type usageType) {
-			getUsage(source).generalUsages.add(usageType);
-		}
 		public Usage getUsage(SaveGameData source) {
 			Usage newUsage = new Usage();
 			Usage oldUsage = usage.putIfAbsent(source, newUsage);
@@ -789,11 +788,17 @@ public class GameInfos {
 			public final HashSet<Type>  generalUsages;
 			public final Vector<String> inventoryUsages;
 			public final Vector<String> blueprintUsages;
+			public final Vector<String> bboUsages;
 			
 			public Usage() {
-				generalUsages = new HashSet<>();
+				generalUsages   = new HashSet<>();
 				inventoryUsages = new Vector<>();
 				blueprintUsages = new Vector<>();
+				bboUsages       = new Vector<>();
+			}
+			
+			public void addGeneralUsage(Type type) {
+				generalUsages.add(type);
 			}
 			
 			public void addInventoryUsage(String label, int x, int y) {
@@ -803,15 +808,19 @@ public class GameInfos {
 			public void addBlueprintUsage(String label, int i) {
 				blueprintUsages.add(label+" Blueprint "+i);
 			}
+			
+			public void addBBOUsage(String label, int i) {
+				bboUsages.add(label+": Object "+i);
+			}
 	
 			public boolean isEmpty() {
-				return inventoryUsages.isEmpty() && blueprintUsages.isEmpty() && generalUsages.isEmpty();
+				return inventoryUsages.isEmpty() && blueprintUsages.isEmpty() && bboUsages.isEmpty() && generalUsages.isEmpty();
 			}
 
 			public String generalUsagesToString() {
 				String str = "";
-				for (Type type:generalUsages) str += type.keyChar;
-				return str;
+				for (Type type:generalUsages) str += (str.isEmpty()?"":",")+type.keyChar;
+				return "{"+str+"}";
 			}
 		}
 	}
@@ -1059,7 +1068,7 @@ public class GameInfos {
 			} break;
 			
 			case SelectImage: {
-				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow,"Select image of "+clickedID.getName(),clickedID.getImageFileName());
+				Images.ImageSelectDialog dlg = new Images.ImageSelectDialog(mainwindow,"Select image of "+clickedID.getName(),clickedID.getImageFileName());
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					table.stopCellEditing();
@@ -1069,7 +1078,7 @@ public class GameInfos {
 				}
 			} break;
 			case SelectImage4AllSelected: {
-				Images.ImageGridDialog dlg = new Images.ImageGridDialog(mainwindow, "Select image of seleted IDs", null);
+				Images.ImageSelectDialog dlg = new Images.ImageSelectDialog(mainwindow, "Select image of seleted IDs", null);
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					table.stopCellEditing();
@@ -1175,9 +1184,10 @@ public class GameInfos {
 			
 			ComboboxCellEditor<String> imageCellEditor =
 					new TableView.ComboboxCellEditor<String>(addNull(SaveViewer.images.imagesNames));
-			SaveViewer.images.addImageListListender(new Images.ImageListListender() {
+			SaveViewer.images.addImageListListener(new Images.ImageListListener() {
 				@Override public void imageListChanged() {
 					imageCellEditor.setValues(addNull(SaveViewer.images.imagesNames));
+					tableModel.updateTableColumn(GeneralizedIDColumnID.Image);
 				}
 			});
 			setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
@@ -1255,6 +1265,7 @@ public class GameInfos {
 					textarea.append("   none\r\n");
 				for (String str:usages.inventoryUsages) textarea.append("   "+str+"\r\n");
 				for (String str:usages.blueprintUsages) textarea.append("   "+str+"\r\n");
+				for (String str:usages.bboUsages      ) textarea.append("   "+str+"\r\n");
 			}
 		}
 	
@@ -1285,7 +1296,7 @@ public class GameInfos {
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
 			Obsolete("Obs"          ,                String.class,  10,-1, 30, 30),
 			ID      ("ID"           ,                String.class,  80,-1,120,120),
-			Type    ("Type"         ,    GeneralizedID.Type.class, 100,-1,140,140),
+			Type    ("Type"         ,    GeneralizedID.Type.class, 100,-1,160,160),
 			Symbol  ("Sym."         ,                String.class,  10,-1, 30, 30),
 			Label   ("Label"        ,                String.class, 150,-1,200,200),
 			Image   ("Image"        ,                String.class, 150,-1,250,250),
@@ -1338,6 +1349,10 @@ public class GameInfos {
 	
 			public void updateTableCell(int col, int row) {
 				fireTableCellUpdate(row, col);
+			}
+			
+			public void updateTableColumn(GeneralizedIDColumnID columnID) {
+				fireTableColumnUpdate(getColumn(columnID));
 			}
 	
 			public void addUsage(SaveGameView view) {
@@ -1448,6 +1463,7 @@ public class GameInfos {
 					String str = "";;
 					if (!usage.inventoryUsages.isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.inventoryUsages.size()+"xI"; }
 					if (!usage.blueprintUsages.isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.blueprintUsages.size()+"xB"; }
+					if (!usage.bboUsages      .isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.bboUsages      .size()+"xO"; }
 					if (!usage.generalUsages  .isEmpty()) { if (!str.isEmpty()) str+=" "; str += usage.generalUsagesToString(); }
 					
 					return str;
@@ -1497,7 +1513,7 @@ public class GameInfos {
 		private boolean hasDataChanged;
 	
 		private Images.ColorListListender colorListListender;
-		private Images.ImageListListender imageListListender;
+		private Images.ImageListListener imageListListender;
 	
 		private abstract static class ModifiedJTextField {
 			private JTextField textField;
@@ -1549,7 +1565,7 @@ public class GameInfos {
 			cmbbxImages.setSelectedItem(id.getImageFileName());
 			cmbbxImages.addActionListener(e->{ id.setImageFileName((String)cmbbxImages.getSelectedItem()); dataChanged(); });
 			
-			imageListListender = new Images.ImageListListender() {
+			imageListListender = new Images.ImageListListener() {
 				@Override public void imageListChanged() {
 					cmbbxImages.setModel(new DefaultComboBoxModel<>(addNull(SaveViewer.images.imagesNames)));
 					cmbbxImages.setSelectedItem(id.getImageFileName());
@@ -1647,15 +1663,15 @@ public class GameInfos {
 		
 		@Override public void windowOpened(WindowEvent e) {
 			SaveViewer.images.addColorListListender(colorListListender);
-			SaveViewer.images.addImageListListender(imageListListender);
+			SaveViewer.images.addImageListListener(imageListListender);
 		}
 		@Override public void windowClosed(WindowEvent e) {
 			SaveViewer.images.removeColorListListender(colorListListender);
-			SaveViewer.images.removeImageListListender(imageListListender);
+			SaveViewer.images.removeImageListListener(imageListListender);
 		}
 	
 		private void showImageList(JComboBox<String> cmbbxImages) {
-			Images.ImageGridDialog dlg = new Images.ImageGridDialog(this,"Select image of "+id.getName(),id.getImageFileName());
+			Images.ImageSelectDialog dlg = new Images.ImageSelectDialog(this,"Select image of "+id.getName(),id.getImageFileName());
 			dlg.showDialog();
 			if (dlg.hasChoosen()) {
 				String result = dlg.getImageFileName();

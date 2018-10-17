@@ -195,19 +195,19 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			switch (data.error) {
 			case NoError:
 				appendStatement(label,"???");
-				SaveViewer.log_ln("Value \""+label+"\" is <null>, but error is unknown: \""+data.errorMessage+"\"");
+				SaveViewer.log_error_ln("Value \""+label+"\" is <null>, but error is unknown: \""+data.errorMessage+"\"");
 				break;
 			case PathIsNotSolvable:
 				appendStatement(label,"Value not found");
-				SaveViewer.log_ln("Value \""+label+"\" not found: "+data.errorMessage);
+				SaveViewer.log_error_ln("Value \""+label+"\" not found: "+data.errorMessage);
 				break;
 			case UnexpectedType:
 				appendStatement(label,"Value has unexpected type");
-				SaveViewer.log_ln("Value \""+label+"\" has unexpected type: "+data.errorMessage);
+				SaveViewer.log_error_ln("Value \""+label+"\" has unexpected type: "+data.errorMessage);
 				break;
 			case ValueIsNull:
 				appendStatement(label,"<null>");
-				SaveViewer.log_ln("Value \""+label+"\" is <null>: "+data.errorMessage);
+				SaveViewer.log_error_ln("Value \""+label+"\" is <null>: "+data.errorMessage);
 				break;
 			}
 		}
@@ -233,11 +233,11 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				}
 			} catch (PathIsNotSolvableException e) {
 				appendStatement(label,"Value not found");
-				SaveViewer.log_ln("Value \""+label+"\" not found: "+e.getMessage());
+				SaveViewer.log_error_ln("Value \""+label+"\" not found: "+e.getMessage());
 				return;
 			}
 			appendStatement(label,"Value has unexpected type");
-			SaveViewer.log_ln("Value \""+label+"\" has unexpected type: "+(value==null?"<null>":value.getClass()));
+			SaveViewer.log_error_ln("Value \""+label+"\" has unexpected type: "+(value==null?"<null>":value.getClass()));
 		}
 
 		private boolean appendBoolValue(String label, Value value) {

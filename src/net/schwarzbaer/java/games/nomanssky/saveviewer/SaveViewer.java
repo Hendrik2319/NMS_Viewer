@@ -65,6 +65,7 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageEditDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.RawDataTreePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
@@ -225,7 +226,7 @@ public class SaveViewer implements ActionListener {
 		 save8_hg( "save8.hg","..8"),
 		 save9_hg( "save9.hg","..9"),
 		save10_hg("save10.hg","..10"),
-		RefreshExtraImages, SelectCoordinates;
+		RefreshExtraImages, ShowExtraImages, SelectCoordinates;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
 		private String filename;
@@ -265,11 +266,13 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case Close:
-			if (contentPane.selectedSaveGameView!=null) closeSaveGameView(contentPane.selectedSaveGameView);
+			if (contentPane.selectedSaveGameView!=null)
+				closeSaveGameView(contentPane.selectedSaveGameView);
 			break;
 			
 		case Reload:
-			if (contentPane.selectedSaveGameView!=null) reloadSaveGameView(contentPane.selectedSaveGameView);
+			if (contentPane.selectedSaveGameView!=null)
+				reloadSaveGameView(contentPane.selectedSaveGameView);
 			break;
 			
 		case Compare:
@@ -341,6 +344,10 @@ public class SaveViewer implements ActionListener {
 			}).start();
 			pd.showDialog();
 			break;
+			
+		case ShowExtraImages:
+			new ImageEditDialog(mainWindow,"Extra Images").showDialog();
+			break;
 		}
 	}
 
@@ -379,12 +386,24 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void openSaveGame(File saveGameFile) {
+		ProgressDialog pd = new ProgressDialog(mainWindow,"Open SaveGame");
+		new Thread(()->{
+			pd.waitUntilDialogIsVisible();
+			openSaveGame(saveGameFile,pd);
+			pd.closeDialog();
+		}).start();
+		pd.showDialog();
+	}
+
+	private void openSaveGame(File saveGameFile, ProgressDialog pd) {
+		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 4); }
 		log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
 		log_ln(" done");
 		
 		boolean isNEXT = false;
 		if (!SaveGameData.hasValue(new_json_data, "Version")) {
+			if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
 			new_json_data = deObfuscator.deObfuscate(new_json_data);
 			isNEXT = true;
 		}
@@ -393,7 +412,9 @@ public class SaveViewer implements ActionListener {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
 			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName());
+			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(2); }
 			saveGameData.parse(isNEXT);
+			if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
 			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,isNEXT);
 			loadedSaveGames.add(saveGameView);
 			contentPane.addSaveGameView(saveGameView);
@@ -407,6 +428,17 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void reloadSaveGameView(SaveGameView view) {
+		ProgressDialog pd = new ProgressDialog(mainWindow,"Reload SaveGame");
+		new Thread(()->{
+			pd.waitUntilDialogIsVisible();
+			reloadSaveGameView(view,pd);
+			pd.closeDialog();
+		}).start();
+		pd.showDialog();
+	}
+
+	private void reloadSaveGameView(SaveGameView view, ProgressDialog pd) {
+		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 5); }
 		File file = view.file;
 		log_ln("");
 		log("Parse file \"%s\" ...",file.getPath());
@@ -415,20 +447,34 @@ public class SaveViewer implements ActionListener {
 		
 		boolean isNEXT = false;
 		if (!SaveGameData.hasValue(new_json_data, "Version")) {
+			if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
 			new_json_data = deObfuscator.deObfuscate(new_json_data);
 			isNEXT = true;
 		}
 		
 		if (new_json_data!=null) {
+			if (pd!=null) { pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); }
 			GameInfos.removeUsages(view.data);
 			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName());
+			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(3); }
 			saveGameData.parse(isNEXT);
+			if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
 			view.replaceData(saveGameData,isNEXT);
 			contentPane.updateIDPanels();
 		}
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
+		ProgressDialog pd = new ProgressDialog(mainWindow,"Close SaveGame");
+		new Thread(()->{
+			pd.waitUntilDialogIsVisible();
+			closeSaveGameView(view,pd);
+			pd.closeDialog();
+		}).start();
+		pd.showDialog();
+	}
+
+	private void closeSaveGameView(SaveGameView view, ProgressDialog pd) {
 		loadedSaveGames.remove(view);
 		contentPane.removeSaveGameView(view);
 		GameInfos.removeUsages(view.data);
@@ -770,13 +816,14 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton(ActionCommand.save9_hg .label, ToolbarIcons.Open, ActionCommand.save9_hg ,true));
 			toolBar.add(createButton(ActionCommand.save10_hg.label, ToolbarIcons.Open, ActionCommand.save10_hg,true));
 			toolBar.addSeparator();
-			toolBar.add(createButton("Compute Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
-//			toolBar.add(createButton("Select Coordinates", ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
+			toolBar.add(createButton("Compute Coordinates" , ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
+//			toolBar.add(createButton("Select Coordinates"  , ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
+			toolBar.add(createButton("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
-			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder,true));
-			extraMenu.add(createMenuItem("Switch to Backup Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
+			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
+			extraMenu.add(createMenuItem("Switch to Backup Folder"      , ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
 			extraMenu.add(createMenuItem("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
 //			extraMenu.add(createMenuItem("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
 //			extraMenu.add(createMenuItem("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
