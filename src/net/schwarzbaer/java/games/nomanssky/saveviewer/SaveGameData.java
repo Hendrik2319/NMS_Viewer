@@ -34,6 +34,7 @@ public class SaveGameData {
 	private boolean isStackTraceEnabled;
 	
 	public final String filename;
+	public final int index;
 	public final JSON_Object json_data;
 	
 	public final General general;
@@ -47,12 +48,13 @@ public class SaveGameData {
 	public Vector<PersistentPlayerBase> persistentPlayerBases;
 	public Vector<StoredInteraction> storedInteractions;
 	
-	public SaveGameData(JSON_Object json_data, String filename) {
+	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
 		errorMessage = "";
 		isStackTraceEnabled = true;
 		
 		this.filename = filename;
+		this.index = index;
 		this.json_data = json_data;
 		this.general = new General(this);
 		this.universe = new Universe();
@@ -484,15 +486,15 @@ public class SaveGameData {
 		
 //		persistentPlayerBases = new PersistentPlayerBases();
 		persistentPlayerBases = new Vector<>();
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
+		for (int baseIndex=0; baseIndex<arrayValue.size(); ++baseIndex) {
+			Value value = arrayValue.get(baseIndex);
 			JSON_Object objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
 				continue;
 			}
 			
-			PersistentPlayerBase pb = new PersistentPlayerBase(this);
+			PersistentPlayerBase pb = new PersistentPlayerBase(this,baseIndex);
 			pb.baseVersion     = getIntegerValue (objectValue, "BaseVersion");
 			pb.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			pb.position        = parseCoordinates(objectValue, "Position");
@@ -505,7 +507,7 @@ public class SaveGameData {
 			pb.baseType        = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.value__wx7      = getIntegerValue_silent(objectValue, "??? [wx7]");
 			
-			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseType!=null?pb.baseType:"Base", i);
+			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseType!=null?pb.baseType:"Base", baseIndex);
 			
 			persistentPlayerBases.add(pb);
 //			persistentPlayerBases.set(i,pb);
@@ -575,6 +577,9 @@ public class SaveGameData {
 
 	public static class PersistentPlayerBase {
 
+		public final SaveGameData source;
+		public final int baseIndex;
+		
 		public UniverseAddress galacticAddress;
 		public String name;
 		public Owner owner;
@@ -586,13 +591,12 @@ public class SaveGameData {
 		public Coordinates position;
 		public BuildingObject[] objects;
 		public String baseType;
-		public final SaveGameData source;
-		
 		public boolean isFreighterBase___;
 		public Long value__wx7;
 		
-		public PersistentPlayerBase(SaveGameData source) {
+		public PersistentPlayerBase(SaveGameData source, int baseIndex) {
 			this.source = source;
+			this.baseIndex = baseIndex;
 			this.galacticAddress = null;
 			this.name = null;
 			this.owner = null;

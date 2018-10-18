@@ -66,14 +66,15 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
 	
-	enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject }
-	
-	enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue }
+	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject }
+	private enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue }
 	private static final int TreeIconHeight = 20;
-	static IconSource.CachedIcons<UniverseTreeIcons> UniverseTreeIconsIS = null;
-	
-	public static IconSource.CachedIndexedImages PortalGlyphsIS = null;
-	
+	private static IconSource.CachedIcons<UniverseTreeIcons> UniverseTreeIconsIS;
+	public  static IconSource.CachedIndexedImages PortalGlyphsIS;
+	private static HashMap<Race,Icon> RaceIcons;
+	private static HashMap<StarClass,Icon> StarClassIcons;
+	private static UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons;
+
 	private static class UniverseTreeSolarSystemIconsMap {
 		
 		private Icon[][] values;
@@ -128,12 +129,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			return values[raceIndex][starClassIndex];
 		}
 	}
-	
-	private static HashMap<Race,Icon> RaceIcons = null;
-	private static HashMap<StarClass,Icon> StarClassIcons = null;
-	private static UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons = null;
 
-	public static void prepareIconSources() {
+	//public static void prepareIconSources()
+	static {
 		
 		IconSource.IndexOnlyIconSource PortalGlyphsIS_ = new IconSource.IndexOnlyIconSource( 50,45,4);
 		PortalGlyphsIS_.readIconsFromResource("/images/PortalGlyphs.50.45.png");
@@ -142,13 +140,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		for (int i=0; i<16; ++i) {
 			BufferedImage cachedImage = PortalGlyphsIS.getCachedImage(i);
 			Graphics g = cachedImage.getGraphics();
-			if (!(g instanceof Graphics2D)) return;
-			Graphics2D g2 = (Graphics2D)g;
-			
-			g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			g2.setFont(g2.getFont().deriveFont(10.0f).deriveFont(Font.BOLD));
-			g2.setPaint(new Color(0xFFAF00));
-			g2.drawString(i+" "+labels[i], 2, 10);
+			if (g instanceof Graphics2D) {
+				Graphics2D g2 = (Graphics2D)g;
+				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+				g2.setFont(g2.getFont().deriveFont(10.0f).deriveFont(Font.BOLD));
+				g2.setPaint(new Color(0xFFAF00));
+				g2.drawString(i+" "+labels[i], 2, 10);
+			}
 		}
 		
 		IconSource<UniverseTreeIcons> UniverseTreeIcons_ = new IconSource<UniverseTreeIcons>(30,TreeIconHeight);

@@ -207,7 +207,8 @@ public class SimplePanels {
 			}
 			//System.out.println("objects.size(): "+objects.size());
 			
-			FileExport.writePosToVRML_simple(objects.toArray(new BuildingObject[0]), radius, this);
+			String suggestedFileName = String.format("BBO_%s.wrl", data.index>=0?(""+(data.index+1)):"#");
+			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, this);
 		}
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
@@ -267,21 +268,16 @@ public class SimplePanels {
 			super(data);
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
-			
-//			if (this.data.persistentPlayerBases.planetBase      !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.planetBase      , "Base on Planet");
-//			if (this.data.persistentPlayerBases.freighterBase   !=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.freighterBase   , "Base on Freighter");
-//			if (this.data.persistentPlayerBases.otherPlayersBase!=null) addBaseTab(tabbedPane, this.data.persistentPlayerBases.otherPlayersBase, "Base of another Player");
-			
-			int i=0;
-			for (PersistentPlayerBase pb:this.data.persistentPlayerBases)
-				addBaseTab(tabbedPane, pb, String.format("Base %d: %s", ++i, pb.baseType));
-//			for (PersistentPlayerBase pb:this.data.persistentPlayerBases.additionalBases)
-//				addBaseTab(tabbedPane, pb, String.format("Additional Base %d", ++i));
+			Vector<PersistentPlayerBase> bases = this.data.persistentPlayerBases;
+			for (int j = 0; j < bases.size(); j++) {
+				PersistentPlayerBase pb = bases.get(j);
+				addBaseTab(tabbedPane, pb, String.format("Base %d: %s", j, pb.baseType), j);
+			}
 			
 			add(tabbedPane,BorderLayout.CENTER);
 		}
 
-		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title) {
+		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title, int baseIndex) {
 			//String title = String.format("Base %d", ++i);
 			//if (pb.name!=null && !pb.name.isEmpty()) title = String.format("Base \"%s\"", pb.name);
 			tabbedPane.addTab(title, new PlayerBasePanel(this.data,pb));
@@ -324,10 +320,21 @@ public class SimplePanels {
 				showValues();
 				showOtherObjectsOnThisPlanet();
 			}
-
+			
+			private enum Type { Simple, Models, Planet }
+			private String suggestFileName(Type type) {
+				String prefix = String.format("Base_%s.%d", data.index>=0?(""+(data.index+1)):"#", playerbase.baseIndex+1);
+				switch (type) {
+				case Simple: return prefix+"_simple.wrl";
+				case Models: return prefix+".wrl";
+				case Planet: return prefix+"_planet.wrl";
+				}
+				return "";
+			}
+			
 			private void addVRMLtasks(JPopupMenu contextMenu) {
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(playerbase.objects,null, PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(null,playerbase,PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null, PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
 				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
@@ -339,7 +346,7 @@ public class SimplePanels {
 							else radius = Math.min(radius, obj.position.pos.length());
 						}
 					
-					FileExport.writePosToVRML_simple(nearObj.toArray(new BuildingObject[0]),radius,this);
+					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,this);
 				}, null, SaveViewer.ToolbarIcons.SaveAs));
 			}
 

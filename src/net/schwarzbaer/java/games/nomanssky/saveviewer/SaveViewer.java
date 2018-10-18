@@ -66,10 +66,8 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageEditDialog;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.RawDataTreePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
@@ -104,10 +102,6 @@ public class SaveViewer implements ActionListener {
 		
 		images = new Images();
 		images.init();
-		
-		UniversePanel.prepareIconSources();
-		RawDataTreePanel.prepareIconSource();
-		FileExport.prepareModels();
 		
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10);
 		tabheaderIS.readIconsFromResource(IMAGES_TAB_HEADER_PNG);
@@ -216,24 +210,26 @@ public class SaveViewer implements ActionListener {
 
 	private enum ActionCommand {
 		Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates,
-		  save_hg(  "save.hg","save.hg"),
-		 save2_hg( "save2.hg","..2"),
-		 save3_hg( "save3.hg","..3"),
-		 save4_hg( "save4.hg","..4"),
-		 save5_hg( "save5.hg","..5"),
-		 save6_hg( "save6.hg","..6"),
-		 save7_hg( "save7.hg","..7"),
-		 save8_hg( "save8.hg","..8"),
-		 save9_hg( "save9.hg","..9"),
-		save10_hg("save10.hg","..10"),
+		  save_hg( 0,  "save.hg","save.hg"),
+		 save2_hg( 1, "save2.hg","..2"    ),
+		 save3_hg( 2, "save3.hg","..3"    ),
+		 save4_hg( 3, "save4.hg","..4"    ),
+		 save5_hg( 4, "save5.hg","..5"    ),
+		 save6_hg( 5, "save6.hg","..6"    ),
+		 save7_hg( 6, "save7.hg","..7"    ),
+		 save8_hg( 7, "save8.hg","..8"    ),
+		 save9_hg( 8, "save9.hg","..9"    ),
+		save10_hg( 9,"save10.hg","..10"   ),
 		RefreshExtraImages, ShowExtraImages, SelectCoordinates;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
 		private String filename;
 		private String label;
+		private int index;
 		
-		private ActionCommand() { this(null,null); }
-		private ActionCommand(String filename, String label) {
+		private ActionCommand() { this(-1,null,null); }
+		private ActionCommand(int index, String filename, String label) {
+			this.index = index;
 			this.filename = filename;
 			this.label = label;
 		}
@@ -245,7 +241,7 @@ public class SaveViewer implements ActionListener {
 		switch (actionCommand) {
 		case save_hg: case save2_hg: case save3_hg: case save4_hg: case save5_hg:
 		case save6_hg: case save7_hg: case save8_hg: case save9_hg: case save10_hg:
-			openSaveGame(new File(getSavegameFolder()+actionCommand.filename));
+			openSaveGame(new File(getSavegameFolder()+actionCommand.filename),actionCommand.index);
 			break;
 			
 		case SwitchToGameFolder: {
@@ -262,7 +258,7 @@ public class SaveViewer implements ActionListener {
 		}
 		case Open:
 			if (inputFileChooser.showOpenDialog(mainWindow)==JFileChooser.APPROVE_OPTION)
-				openSaveGame(inputFileChooser.getSelectedFile());
+				openSaveGame(inputFileChooser.getSelectedFile(),-1);
 			break;
 			
 		case Close:
@@ -385,17 +381,17 @@ public class SaveViewer implements ActionListener {
 				contentPane.disabler.setEnable(ac, new File(getSavegameFolder()+ac.filename).isFile());
 	}
 
-	private void openSaveGame(File saveGameFile) {
+	private void openSaveGame(File saveGameFile, int saveGameIndex) {
 		ProgressDialog pd = new ProgressDialog(mainWindow,"Open SaveGame");
 		new Thread(()->{
 			pd.waitUntilDialogIsVisible();
-			openSaveGame(saveGameFile,pd);
+			openSaveGame(saveGameFile,saveGameIndex,pd);
 			pd.closeDialog();
 		}).start();
 		pd.showDialog();
 	}
 
-	private void openSaveGame(File saveGameFile, ProgressDialog pd) {
+	private void openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
 		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 4); }
 		log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
@@ -411,7 +407,7 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data==null) {
 			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 		} else {
-			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName());
+			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex);
 			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(2); }
 			saveGameData.parse(isNEXT);
 			if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
@@ -439,10 +435,9 @@ public class SaveViewer implements ActionListener {
 
 	private void reloadSaveGameView(SaveGameView view, ProgressDialog pd) {
 		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 5); }
-		File file = view.file;
 		log_ln("");
-		log("Parse file \"%s\" ...",file.getPath());
-		JSON_Object new_json_data = new JSON_Parser(file).parse();
+		log("Parse file \"%s\" ...",view.file.getPath());
+		JSON_Object new_json_data = new JSON_Parser(view.file).parse();
 		log_ln(" done");
 		
 		boolean isNEXT = false;
@@ -455,7 +450,7 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data!=null) {
 			if (pd!=null) { pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); }
 			GameInfos.removeUsages(view.data);
-			SaveGameData saveGameData = new SaveGameData(new_json_data,file.getName());
+			SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index);
 			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(3); }
 			saveGameData.parse(isNEXT);
 			if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }

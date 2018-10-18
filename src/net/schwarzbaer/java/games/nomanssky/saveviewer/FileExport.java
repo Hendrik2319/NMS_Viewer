@@ -42,7 +42,62 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 public class FileExport {
 	
 	private static final String VRML_TEMPLATE_MODELS_WRL = "/vrml/template.models.wrl";
-	private static HashMap<String, String> mapObjectID2Model = null;
+	private static HashMap<String, String> mapObjectID2Model;
+	private static JFileChooser vrmlFileChooser;
+	private static FileNameExtensionFilter vrmlFileFilter;
+	
+	static {
+		vrmlFileChooser = new JFileChooser("./");
+		vrmlFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		vrmlFileChooser.setMultiSelectionEnabled(false);
+		vrmlFileChooser.setFileFilter(vrmlFileFilter = new FileNameExtensionFilter("VRML-File (*.wrl)","wrl"));
+
+		// prepareModels
+		mapObjectID2Model = new HashMap<String,String>();
+		addModels("BIOROOM",		"^BIOROOM");
+		addModels("MAINROOM",		"^MAINROOM");
+		addModels("MAINROOMCUBE",	"^MAINROOMCUBE");
+		
+		addModels("CUBESTAIRS",		"^CUBESTAIRS");
+		addModels("BUILDDOOR",		"^BUILDDOOR");
+		
+		addModels("CONTAINER",		"^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
+									"^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
+		
+		addModels("CUBEROOM",		"^CUBEROOM","^CUBEGLASS");
+		
+		addModels("CORRIDOR",		"^CORRIDOR","^GLASSCORRIDOR");
+		addModels("CORRIDORX",		"^CORRIDORX");
+		
+		addModels("PLANT",			"^LUSHPLANT","^BARRENPLANT","^CREATUREPLANT","^PEARLPLANT","^SCORCHEDPLANT",
+									"^SNOWPLANT","^RADIOPLANT","^TOXICPLANT","^POOPPLANT","^SACVENOMPLANT","^NIPPLANT");
+		
+		addModels("PLANTER",		"^PLANTER");
+		addModels("PLANTERMEGA",	"^PLANTERMEGA");
+		addModels("CARBONPLANTER",	"^CARBONPLANTER");
+		
+		addModels("RACE_START",		"^RACE_START");
+		addModels("GARAGE_L",		"^GARAGE_L");
+		addModels("GARAGE_M",		"^GARAGE_M");
+		addModels("GARAGE_S",		"^GARAGE_S");
+		
+		addModels("NPCTERMINAL",	"^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
+	}
+
+	private static File getChoosenVrmlFile() {
+		File file = vrmlFileChooser.getSelectedFile();
+		if (vrmlFileChooser.getFileFilter()==vrmlFileFilter) {
+			String name = file.getName();
+			if (!name.toLowerCase().endsWith(".wrl"))
+				file = new File(file.getParentFile(), name+".wrl");
+		}
+		return file;
+	}
+	
+	private static void setPreselectedVrmlFile(String suggestedFileName) {
+		vrmlFileChooser.setSelectedFile(new File(vrmlFileChooser.getCurrentDirectory(),suggestedFileName));
+	}
+	
 
 	static void writeToJSON(JSON_Object json_Object, File copyfile) {
 		PrintWriter out;
@@ -204,25 +259,14 @@ public class FileExport {
 		if ( value instanceof ArrayValue   ) writeToHTML_arr(out, ((ArrayValue )value).value, ID+"_"+i);
 	}
 
-	public static void writePosToVRML_models(BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent) {
+	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent) {
 		if (objects==null && playerbase!=null) objects = playerbase.objects;
 		if (objects==null) return;
 		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
-		JFileChooser fc = new JFileChooser("./");
-		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		fc.setMultiSelectionEnabled(false);
-		FileNameExtensionFilter vrmlFilter = new FileNameExtensionFilter("VRML-File (*.wrl)","wrl");
-		//fc.addChoosableFileFilter(vrmlFilter);
-		fc.setFileFilter(vrmlFilter);
-		
-		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
-		File file = fc.getSelectedFile();
-		if (fc.getFileFilter()==vrmlFilter) {
-			String name = file.getName();
-			if (!name.toLowerCase().endsWith(".wrl"))
-				file = new File(file.getParentFile(), name+".wrl");
-		}
+		setPreselectedVrmlFile(suggestedFileName);
+		if (vrmlFileChooser.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
+		File file = getChoosenVrmlFile();
 		
 		Point3D min = null;
 		Point3D max = null;
@@ -1241,38 +1285,6 @@ public class FileExport {
 		}
 	}
 	
-	public static void prepareModels() {
-		mapObjectID2Model = new HashMap<String,String>();
-		addModels("BIOROOM",		"^BIOROOM");
-		addModels("MAINROOM",		"^MAINROOM");
-		addModels("MAINROOMCUBE",	"^MAINROOMCUBE");
-		
-		addModels("CUBESTAIRS",		"^CUBESTAIRS");
-		addModels("BUILDDOOR",		"^BUILDDOOR");
-		
-		addModels("CONTAINER",		"^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
-									"^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
-		
-		addModels("CUBEROOM",		"^CUBEROOM","^CUBEGLASS");
-		
-		addModels("CORRIDOR",		"^CORRIDOR","^GLASSCORRIDOR");
-		addModels("CORRIDORX",		"^CORRIDORX");
-		
-		addModels("PLANT",			"^LUSHPLANT","^BARRENPLANT","^CREATUREPLANT","^PEARLPLANT","^SCORCHEDPLANT",
-									"^SNOWPLANT","^RADIOPLANT","^TOXICPLANT","^POOPPLANT","^SACVENOMPLANT","^NIPPLANT");
-		
-		addModels("PLANTER",		"^PLANTER");
-		addModels("PLANTERMEGA",	"^PLANTERMEGA");
-		addModels("CARBONPLANTER",	"^CARBONPLANTER");
-		
-		addModels("RACE_START",		"^RACE_START");
-		addModels("GARAGE_L",		"^GARAGE_L");
-		addModels("GARAGE_M",		"^GARAGE_M");
-		addModels("GARAGE_S",		"^GARAGE_S");
-		
-		addModels("NPCTERMINAL",	"^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
-	}
-	
 	private static void addModels(String modelName, String... objectIDs) {
 		for (String objectID:objectIDs)
 			mapObjectID2Model.put(objectID, modelName);
@@ -1573,18 +1585,14 @@ public class FileExport {
 		vrml.println("]");
 	}
 
-	public static void writePosToVRML_simple(BuildingObject[] objects, Double radius, Component parent) {
+	public static void writePosToVRML_simple(String suggestedFileName, BuildingObject[] objects, Double radius, Component parent) {
 		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
 		if (radius!=null && radius<=0) radius=null;
 		
-		JFileChooser fc = new JFileChooser("./");
-		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		fc.setMultiSelectionEnabled(false);
-		fc.addChoosableFileFilter(new FileNameExtensionFilter("VRML-File (*.wrl)","wrl"));;
-		
-		if (fc.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
-		File file = fc.getSelectedFile();
+		setPreselectedVrmlFile(suggestedFileName);
+		if (vrmlFileChooser.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
+		File file = getChoosenVrmlFile();
 		
 		Point3D min = null;
 		Point3D max = null;

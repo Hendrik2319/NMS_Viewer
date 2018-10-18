@@ -30,8 +30,10 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 	private static final long serialVersionUID = -50409207801775293L;
 	
 	enum RawDataTreeIcons { Object, Array, String, Number, Bool }
-	static IconSource.CachedIcons<RawDataTreeIcons> rawDataTreeIS = null;
-	public static void prepareIconSource() {
+	static IconSource.CachedIcons<RawDataTreeIcons> rawDataTreeIS;
+	
+	static {
+	// prepare IconSource
 		IconSource<RawDataTreeIcons> source = new IconSource<RawDataTreeIcons>(16,16);
 		source.readIconsFromResource("/images/RawTreeIcons.png");
 		rawDataTreeIS = source.cacheIcons(RawDataTreeIcons.values());
