@@ -102,14 +102,15 @@ public class Images {
 		addColor(colorValuesVec, 0x0249A1, "Silikat" );
 		addColor(colorValuesVec, 0x5DCD93, "Neutral" );
 		addColor(colorValuesVec, 0x701781, "Exotisch" );
-		addColor(colorValuesVec, 0x5A6F36, "Pflanze Oliv" );
 		addColor(colorValuesVec, 0x4B2A57, "Pflanze Violet" );
 		addColor(colorValuesVec, 0x542640, "Pflanze Violet2" );
-		addColor(colorValuesVec, 0xC68C1E, "Pflanze Gelb" );
 		addColor(colorValuesVec, 0x1E4FD0, "Pflanze Blau" );
+		addColor(colorValuesVec, 0x218CAC, "Pflanze Sd" );
 		addColor(colorValuesVec, 0x00A64C, "Pflanze Grün" );
-		addColor(colorValuesVec, 0xB74418, "Pflanze Rot" );
+		addColor(colorValuesVec, 0x5A6F36, "Pflanze Oliv" );
 		addColor(colorValuesVec, 0x78502D, "Pflanze Braun" );
+		addColor(colorValuesVec, 0xC68C1E, "Pflanze Gelb" );
+		addColor(colorValuesVec, 0xB74418, "Pflanze Rot" );
 		addColor(colorValuesVec, 0x236D4C, "Waffe Impulswerfer" );
 		addColor(colorValuesVec, 0x19BC79, "Waffe Impulswerfer Upgrade" );
 		addColor(colorValuesVec, 0x495746, "Waffe Minenlaser" );
@@ -127,6 +128,7 @@ public class Images {
 		addColor(colorValuesVec, 0xC11746, "Energie" );
 		addColor(colorValuesVec, 0x085C78, "Tech 1" );
 		addColor(colorValuesVec, 0x0063B6, "Tech 2" );
+		addColor(colorValuesVec, 0x2C7C9F, "Tragbares Objekt" );
 		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
 		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
 		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
@@ -134,11 +136,17 @@ public class Images {
 		addColor(colorValuesVec, 0xE88F00, "Rohstoff Cu" );
 		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
 		addColor(colorValuesVec, 0x4D414F, "Rohstoff Pf" );
-		addColor(colorValuesVec, 0x365A7E, "Rohstoff 36" );
+		addColor(colorValuesVec, 0x365A7E, "Rohstoff H" );
 		addColor(colorValuesVec, 0x005C83, "Rohstoff Co" );
 		addColor(colorValuesVec, 0x1F8B40, "Rohstoff NaCl" );
 		addColor(colorValuesVec, 0x4D3780, "Rohstoff Rn" );
 		addColor(colorValuesVec, 0x265E39, "Rohstoff Sf" );
+		addColor(colorValuesVec, 0x1F8A42, "Rohstoff Cl" );
+		addColor(colorValuesVec, 0xFFAD00, "Rohstoff Uran" );
+		addColor(colorValuesVec, 0xA96E06, "Rohstoff Au" );
+		addColor(colorValuesVec, 0x4F7576, "Rohstoff Pt" );
+		addColor(colorValuesVec, 0xCCCCCC, "__" );
+		addColor(colorValuesVec, 0x447519, "__Larvenkern" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
