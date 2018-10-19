@@ -76,10 +76,12 @@
 ^BARRENPLANT=Echinokaktus
 ^BARRENPLANT.type=Plant
 ^BARRENPLANT.image=NmsFarming_Cucrassula_Icon.Echinokaktus.png
-^BASECAPSULE=... Basis-Archiv ...
+^BASECAPSULE=Basis-Bergungskapsel
 ^BASECAPSULE.type=BaseComponent
 ^BASE_FLAG=Basiscomputer
 ^BASE_FLAG.type=BaseComponent
+^BASE_FLAG.image=BUILDABLE.BASECOREFLAG.png
+^BASE_FLAG.imageBG=2C7C9F
 ^BIOROOM=Bio-Kuppel
 ^BIOROOM.type=BaseComponent
 ^BIOROOM.image=Bio-dome_icon.png
@@ -211,10 +213,10 @@
 ^BUILD_REFINER1.type=BaseExternal
 ^BUILD_REFINER1.image=Buildable.refiner1.png
 ^BUILD_REFINER1.imageBG=2C7C9F
-^BUILD_REFINER2=
+^BUILD_REFINER2=Mittlere Raffinerie
 ^BUILD_REFINER2.type=BaseComponent
 ^BUILD_REFINER2.image=Buildable.refiner2.NEXT.png
-^BUILD_REFINER3=
+^BUILD_REFINER3=Große Raffinerie
 ^BUILD_REFINER3.type=BaseComponent
 ^BUILD_REFINER3.image=Buildable.refiner3.NEXT.png
 ^CARBONPLANTER=Stehender Pflanzenbehälter
@@ -466,7 +468,7 @@
 ^DOOR2.type=BaseComponent
 ^DRAWS=Schubladenschrank
 ^DRAWS.type=BaseDekoration
-^DRESSING_TABLE=... Aussehensveränderung ...
+^DRESSING_TABLE=Aussehenmodifikator
 ^DRESSING_TABLE.type=BaseComponent
 ^DRUGS1=GekNip
 ^DRUGS1.obsolete=
@@ -621,7 +623,10 @@
 ^MESSAGE=
 ^MESSAGEMODULE=Nachrichtenmodul
 ^MESSAGEMODULE.type=BaseComponent
-^MICROCHIP=
+^MICROCHIP=Mikroprozessor
+^MICROCHIP.type=Product
+^MICROCHIP.image=Product.microchip.NEXT.png
+^MICROCHIP.imageBG=F0A92B
 ^MIND_ARC=Gedankenbogen
 ^MIND_ARC.type=Product
 ^MIND_ARC.image=NmsProduct_MindArc_Icon.Gedankenbogen.png

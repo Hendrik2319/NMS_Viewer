@@ -957,7 +957,9 @@
 ^VEHICLE_ENGINE.type=ExocraftExtension
 ^VEHICLE_ENGINE.image=NmsTech_Exocraft_Acceleration_Module_Icon.png
 ^VEHICLE_ENGINE.imageBG=085C78
-^VEHICLE_GRIP1=
+^VEHICLE_GRIP1=Drift-Aufhängung
+^VEHICLE_GRIP1.type=ExosuitExtension
+^VEHICLE_GRIP1.imageBG=0063B6
 ^VEHICLE_GRIP2=
 ^VEHICLE_GRIP3=
 ^VEHICLE_GUN=Exo-Fahrzeug-Bordkanone
