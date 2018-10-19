@@ -97,7 +97,7 @@
 ^GAS3.type=Resource
 ^GAS3.symbol=N
 ^GAS3.image=Substance.Nitrogen.NEXT.png
-^GAS3.imageBG=5A6F36
+^GAS3.imageBG=C68C1E
 ^LAND1=Ferritstaub
 ^LAND1.type=Resource
 ^LAND1.symbol=Fe
@@ -132,7 +132,7 @@
 ^OXYGEN.type=Resource
 ^OXYGEN.symbol=O2
 ^OXYGEN.image=Substance.Oxygen.png
-^OXYGEN.imageBG=BB3830
+^OXYGEN.imageBG=BB392C
 ^PLANT_CAVE=Kürbisknolle
 ^PLANT_CAVE.type=PlantProduct
 ^PLANT_CAVE.symbol=Kü
@@ -183,7 +183,11 @@
 ^RADIO1.symbol=U
 ^RADIO1.image=Substance.Uranium.png
 ^RADIO1.imageBG=FFAD00
-^ROBOT1=
+^ROBOT1=Pugneum
+^ROBOT1.type=Resource
+^ROBOT1.symbol=Pg
+^ROBOT1.image=Substance.neutral.rare5.Pugneum.png
+^ROBOT1.imageBG=4B2A57
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.symbol=Sr
 ^SPACEGUNK1.image=Residualgoopicon.SchleimigeUeberreste.png
