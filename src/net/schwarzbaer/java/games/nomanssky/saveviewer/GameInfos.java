@@ -628,18 +628,23 @@ public class GameInfos {
 			FreighterExtension       ("Frachter-Erweiterung"),
 			FreighterExtensionUpgrade("Frachter-Erw.-Upgrade",true),
 			BaseComponent            ("Basis-Komponente"),
+			BaseComponent_FertigTeil ("Basis-Komponente (Fertigteil)"),
 			BaseDekoration           ("Basis-Dekoration"),
 			BaseExternal             ("Basis-Außenanlage"),
 			BaseComponentFreighter   ("Basis-Komponente (Frachter)"),
 			BaseDekorationFreighter  ("Basis-Dekoration (Frachter)"),
 			Resource                 ("Rohstoff"),
+			ResourceCrystal          ("Rohstoff-Kristall"),
 			Alloy                    ("Legierung"),
 			AtlasSeed                ("Atlas-Samen"),
 			Product                  ("Allgemeines Produkt"),
+			ProductExpensive         ("Teures Produkt"),
 			Energy                   ("Energie-Produkt"),
+			Ammunition               ("Munition"),
 			Plant                    ("Pflanze"),
 			PlantProduct             ("Frucht"),
-			RaceGift                 ("Völker-Geschenk");
+			RaceGift                 ("Völker-Geschenk"),
+			Special                  ("Speziell");
 			
 			private String label;
 			public boolean isUpgrade;

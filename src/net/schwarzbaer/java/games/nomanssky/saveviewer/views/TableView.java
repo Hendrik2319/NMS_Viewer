@@ -37,6 +37,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
@@ -234,14 +235,15 @@ public class TableView {
 				if (sortOrder==SortOrder.UNSORTED) continue;
 				int column = key.getColumn();
 				
-				if      (model.getColumnClass(column) == Boolean  .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Boolean  )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == String   .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(String   )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Long     .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Long     )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Integer  .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Integer  )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Double   .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Double   )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Float    .class) comparator = setComparator(comparator,sortOrder,(Integer row)->(Float    )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == TimeStamp.class) comparator = setComparator(comparator,sortOrder,(Integer row)->(TimeStamp)model.getValueAt(row,column));
-				else comparator = setComparator(comparator,sortOrder,
+				if      (model.getColumnClass(column) == Boolean           .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Boolean           )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == String            .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(String            )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Long              .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Long              )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Integer           .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Integer           )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Double            .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Double            )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == Float             .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Float             )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == TimeStamp         .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(TimeStamp         )model.getValueAt(row,column));
+				else if (model.getColumnClass(column) == GeneralizedID.Type.class) comparator = addComparator(comparator,sortOrder,(Integer row)->(GeneralizedID.Type)model.getValueAt(row,column));
+				else comparator = addComparator(comparator,sortOrder,
 							(Integer row)->{
 								Object object = model.getValueAt(row,column);
 								if (object==null) return null;
@@ -260,17 +262,15 @@ public class TableView {
 			fireSortOrderChanged();
 		}
 		
-		private <U extends Comparable<? super U>> Comparator<Integer> setComparator(Comparator<Integer> comp, SortOrder sortOrder, Function<? super Integer,? extends U> keyExtractor) {
+		private <U extends Comparable<? super U>> Comparator<Integer> addComparator(Comparator<Integer> comp, SortOrder sortOrder, Function<? super Integer,? extends U> keyExtractor) {
 			if (sortOrder==SortOrder.DESCENDING) {
-				if (comp==null) {
-					Comparator<Integer> comparator = Comparator.comparing(keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
-					return comparator.reversed();
-				}
-				Comparator<Integer> comparator = comp.reversed().thenComparing(keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
-				return comparator.reversed();
+				if (comp==null) comp = Comparator     .comparing    (keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
+				else            comp = comp.reversed().thenComparing(keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
+				return comp.reversed();
 			} else {
-				if (comp==null) return Comparator.comparing(keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
-				return comp.thenComparing(keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
+				if (comp==null) comp = Comparator     .comparing    (keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
+				else            comp = comp           .thenComparing(keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
+				return comp;
 			}
 		}
 		
