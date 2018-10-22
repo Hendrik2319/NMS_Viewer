@@ -93,6 +93,9 @@
 ^BP_ANALYSER.type=BaseExternal
 ^BP_ANALYSER.image=BUILDABLE.BLUEPRINTAN.NEXT.png
 ^BP_ANALYSER.imageBG=2C7C9F
+^BP_SALVAGE=Weiderhergestellte Technologie
+^BP_SALVAGE.image=PRODUCT.SALVAGE.NEXT.png
+^BP_SALVAGE.imageBG=0063B6
 ^BRIDGECONNECTOR=
 ^BRIDGECONNECTOR.type=BaseComponentFreighter
 ^BUILDAMCRATE=
@@ -685,6 +688,7 @@
 ^MAINROOM.type=BaseComponent
 ^MAINROOMCUBE=Quadratischer Raum
 ^MAINROOMCUBE.type=BaseComponent
+^MAINROOMCUBEF=
 ^MAINROOMFRAME=Zylindrischer Rahmen
 ^MAINROOMFRAME.type=BaseComponent
 ^MEGAPROD1=Tragbarer Reaktor
@@ -995,6 +999,10 @@
 ^ULTRAPROD2.type=ProductExpensive
 ^ULTRAPROD2.image=NmsProduct_StasisDevice_Icon.png
 ^ULTRAPROD2.imageBG=F0A92B
+^U_BOLT4=Blitzwerfer-Modul (S)
+^U_BOLT4.type=MultitoolWeaponUpgrade
+^U_BOLT4.image=MAINTTECH.FUEL2.NEXT.png
+^U_BOLT4.imageBG=F0A92B
 ^U_SCANNER3=Scanner-Modul (A)
 ^U_SCANNER3.type=ExosuitExtensionUpgrade
 ^U_SCANNER3.image=MAINTTECH.FUEL2.NEXT.png
@@ -1004,6 +1012,9 @@
 ^U_SHIELDBOOST3.image=NmsProduct_QuantumProcessor_Icon.png
 ^U_SHIELDBOOST3.imageBG=7C4562
 ^U_SHIPLAS2=
+^U_TOX3=Giftschutz-Modul (S)
+^U_TOX3.image=NmsProduct_QuantumProcessor_Icon.png
+^U_TOX3.imageBG=F0A92B
 ^VIEWSPHERE=Aussichtskuppel
 ^VIEWSPHERE.type=BaseComponent
 ^WALL=
@@ -1042,6 +1053,7 @@
 ^WAR_CURIO1.type=RaceGift
 ^WAR_CURIO1.image=Product.effigy.VykeenBildnis.png
 ^WAR_CURIO1.imageBG=10805C
+^WAR_CURIO2=
 ^WATERPROD3=Chlor-Gitter
 ^WATERPROD3.type=ResourceCrystal
 ^WATERPROD3.image=PRODUCT.WATERPROD.png
