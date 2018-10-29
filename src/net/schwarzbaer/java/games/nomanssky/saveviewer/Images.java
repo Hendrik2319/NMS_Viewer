@@ -103,10 +103,11 @@ public class Images {
 		addColor(colorValuesVec, 0x5DCD93, "Neutral" );
 		addColor(colorValuesVec, 0x701781, "Exotisch" );
 		addColor(colorValuesVec, 0x4B2A57, "Pflanze Violet" );
-		addColor(colorValuesVec, 0x542640, "Pflanze Violet2" );
+		addColor(colorValuesVec, 0x542640, "Pflanze Violet1" );
 		addColor(colorValuesVec, 0x1E4FD0, "Pflanze Blau" );
 		addColor(colorValuesVec, 0x218CAC, "Pflanze Sd" );
 		addColor(colorValuesVec, 0x00A64C, "Pflanze Grün" );
+		addColor(colorValuesVec, 0x1EB808, "Pflanze Grün1" );
 		addColor(colorValuesVec, 0x5A6F36, "Pflanze Oliv" );
 		addColor(colorValuesVec, 0x78502D, "Pflanze Braun" );
 		addColor(colorValuesVec, 0xC68C1E, "Pflanze Gelb" );
@@ -114,7 +115,6 @@ public class Images {
 		addColor(colorValuesVec, 0x236D4C, "Waffe Impulswerfer" );
 		addColor(colorValuesVec, 0x19BC79, "Waffe Impulswerfer Upgrade" );
 		addColor(colorValuesVec, 0x495746, "Waffe Minenlaser" );
-		addColor(colorValuesVec, 0x5B9352, "Waffe Minenlaser Upgrade" );
 		addColor(colorValuesVec, 0x0D81A8, "Waffe Blitzwerfer Upgrade" );		
 		addColor(colorValuesVec, 0x903031, "Waffe Glutspeer" );
 		addColor(colorValuesVec, 0xE84E4C, "Waffe Glutspeer Upgrade" );
@@ -127,9 +127,10 @@ public class Images {
 		addColor(colorValuesVec, 0xF0A92B, "Produkt" );
 		addColor(colorValuesVec, 0xC11746, "Energie" );
 		addColor(colorValuesVec, 0x085C78, "Tech 1" );
-		addColor(colorValuesVec, 0x0063B6, "Tech 2" );
+		addColor(colorValuesVec, 0x0063B6, "Tech 2 & Upgrade B" );
 		addColor(colorValuesVec, 0x2C7C9F, "Tragbares Objekt" );
 		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
+		addColor(colorValuesVec, 0x5B9352, "Upgrade C" );
 		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
 		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
 		addColor(colorValuesVec, 0xBB3830, "Rohstoff O2" );
@@ -137,6 +138,7 @@ public class Images {
 		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
 		addColor(colorValuesVec, 0x4D414F, "Rohstoff Pf" );
 		addColor(colorValuesVec, 0x365A7E, "Rohstoff H" );
+		addColor(colorValuesVec, 0xDEDCD0, "Rohstoff H3" );
 		addColor(colorValuesVec, 0x005C83, "Rohstoff Co" );
 		addColor(colorValuesVec, 0x1F8B40, "Rohstoff NaCl" );
 		addColor(colorValuesVec, 0x4D3780, "Rohstoff Rn" );
@@ -175,7 +177,7 @@ public class Images {
 				NamedColor existingColor = colorMap.putIfAbsent(newColor.value, newColor);
 				if (existingColor!=null) {
 					if (!existingColor.name.equals(newColor.name)) {
-						SaveViewer.log("   changed name of %s into %s\r\n", existingColor, newColor.name);
+						SaveViewer.log("   changed name of %s into \"%s\"\r\n", existingColor, newColor.name);
 						existingColor.name = newColor.name;
 					}
 				} else {

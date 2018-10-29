@@ -12,11 +12,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -155,22 +155,22 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 //			}
 		}
 
-		private void showUAddressAndPosition(UniverseAddress graveUA, Position gravePos, String title) {
-			if (graveUA!=null || gravePos!=null) {
+		private void showUAddressAndPosition(UniverseAddress address, Position position, String title) {
+			if (address!=null || position!=null) {
 				appendEmptyLine();
-				//String title = "Grave Position";
 				appendLine(title+":");
-				if (graveUA!=null) {
+				if (address!=null) {
 					appendLine("    location in universe:");
-					appendLine("        "+graveUA.getCoordinates());
-					appendLine("        "+graveUA.getExtendedSigBoostCode());
+					for (String str:address.getVerboseName(data.universe)) appendLine("        "+str);
+					appendLine("        "+address.getCoordinates());
+					appendLine("        "+address.getExtendedSigBoostCode());
 				}
-				if (gravePos!=null) {
+				if (position!=null) {
 					appendLine("    position in system:");
-					if (gravePos.pos!=null) appendLine("        pos: "+gravePos.pos.toString("%1.2f"));
-					if (gravePos.at !=null) appendLine("        at:  "+gravePos.at .toString("%1.4f"));
-					if (gravePos.up !=null) appendLine("        up:  "+gravePos.up .toString("%1.4f"));
-					if (gravePos.pos==null && gravePos.at==null && gravePos.up==null)
+					if (position.pos!=null) appendLine("        pos: "+position.pos.toString("%1.2f"));
+					if (position.at !=null) appendLine("        at:  "+position.at .toString("%1.4f"));
+					if (position.up !=null) appendLine("        up:  "+position.up .toString("%1.4f"));
+					if (position.pos==null && position.at==null && position.up==null)
 						appendLine("        <no data>");
 				}
 			}

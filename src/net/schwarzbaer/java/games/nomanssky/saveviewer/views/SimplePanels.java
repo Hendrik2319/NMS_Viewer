@@ -174,7 +174,7 @@ public class SimplePanels {
 			Vector<NamedAddress> names = new Vector<>();
 			for (long addr:foundAddresses.keySet()) {
 				Integer amount = foundAddresses.get(addr);
-				String str = new UniverseAddress(addr).getVerboseName(data.universe);
+				String str = new UniverseAddress(addr).getVerboseNameInOneLine(data.universe);
 				names.add(new NamedAddress(String.format("[%2d] %s",amount,str),addr));
 			}
 			names.sort(Comparator.comparing((NamedAddress na)->na.name).reversed());
@@ -405,6 +405,7 @@ public class SimplePanels {
 				
 				if (playerbase.galacticAddress!=null) {
 					textArea.append("\r\nGalactic Address :\r\n");
+					for (String str:playerbase.galacticAddress.getVerboseName(data.universe)) textArea.append("   "+str+"\r\n");
 					textArea.append("   "+playerbase.galacticAddress.getCoordinates()+"\r\n");
 					textArea.append("   "+playerbase.galacticAddress.getExtendedSigBoostCode()+"\r\n");
 					textArea.append("   "+playerbase.galacticAddress.getPortalGlyphCodeStr()+"\r\n");

@@ -23,6 +23,7 @@ import java.util.Stack;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
@@ -84,20 +85,42 @@ public class FileExport {
 		addModels("NPCTERMINAL",	"^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 	}
 
-	private static File getChoosenVrmlFile() {
-		File file = vrmlFileChooser.getSelectedFile();
-		if (vrmlFileChooser.getFileFilter()==vrmlFileFilter) {
-			String name = file.getName();
-			if (!name.toLowerCase().endsWith(".wrl"))
-				file = new File(file.getParentFile(), name+".wrl");
-		}
-		return file;
-	}
-	
-	private static void setPreselectedVrmlFile(String suggestedFileName) {
+	private static File selectVrmlFile2Write(Component parent, String suggestedFileName) {
 		vrmlFileChooser.setSelectedFile(new File(vrmlFileChooser.getCurrentDirectory(),suggestedFileName));
+		
+		while (true) {
+			if (vrmlFileChooser.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION)
+				return null;
+			
+			boolean fileExtChanged = false;
+			File file = vrmlFileChooser.getSelectedFile();
+			if (vrmlFileChooser.getFileFilter()==vrmlFileFilter) {
+				String name = file.getName();
+				if (!name.toLowerCase().endsWith(".wrl")) {
+					file = new File(file.getParentFile(), name+".wrl");
+					fileExtChanged = true;
+				}
+			}
+			
+			if (file.isDirectory()) {
+				String message = "Selected file \""+file.getPath()+"\" is a directory. Please select an unused file name.";
+				if (fileExtChanged)
+					message = "File extension \".wrl\" was added. Resulting file \""+file.getPath()+"\" is a directory. Please select an unused file name.";
+				if (JOptionPane.OK_OPTION!=JOptionPane.showConfirmDialog(parent, message, "Selected file is a directory", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE))
+					return null;
+			} else
+			if (file.isFile()) {
+				String message = "Selected file \""+file.getPath()+"\" already exists. Do you want to overwrite this file?";
+				int result = JOptionPane.showConfirmDialog(parent, message, "Selected file is a directory", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+				switch (result) {
+				case JOptionPane.YES_OPTION: return file;
+				case JOptionPane.NO_OPTION: break;
+				default: return null; 
+				}
+			} else
+				return file;
+		}
 	}
-	
 
 	static void writeToJSON(JSON_Object json_Object, File copyfile) {
 		PrintWriter out;
@@ -264,9 +287,8 @@ public class FileExport {
 		if (objects==null) return;
 		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
-		setPreselectedVrmlFile(suggestedFileName);
-		if (vrmlFileChooser.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
-		File file = getChoosenVrmlFile();
+		File file = selectVrmlFile2Write(parent,suggestedFileName);
+		if (file==null) return;
 		
 		Point3D min = null;
 		Point3D max = null;
@@ -1590,9 +1612,8 @@ public class FileExport {
 		
 		if (radius!=null && radius<=0) radius=null;
 		
-		setPreselectedVrmlFile(suggestedFileName);
-		if (vrmlFileChooser.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION) return;
-		File file = getChoosenVrmlFile();
+		File file = selectVrmlFile2Write(parent,suggestedFileName);
+		if (file==null) return;
 		
 		Point3D min = null;
 		Point3D max = null;

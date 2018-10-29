@@ -12,7 +12,9 @@ import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
@@ -1518,7 +1520,47 @@ public class SaveGameData {
 			return planetIndex==0 && solarSystemIndex==0;
 		}
 
-		public String getVerboseName(Universe universe) {
+		public Vector<String> getVerboseName(Universe universe) {
+			Vector<String> output = new Vector<>();
+			
+			Galaxy galaxy = universe.findGalaxy(galaxyIndex);
+			if (galaxy==null)
+				galaxy = new Galaxy(universe, galaxyIndex);
+			
+			Region region = galaxy.findRegion(voxelX, voxelY, voxelZ);
+			if (region==null)
+				region = new Region(galaxy, voxelX, voxelY, voxelZ);
+			
+			if (isRegion())
+				output.add(region.toString());
+			else {
+				SolarSystem sys = region.findSolarSystem(solarSystemIndex);
+				if (sys==null)
+					sys = new SolarSystem(region, solarSystemIndex);
+				
+				if (isSolarSystem())
+					output.add(sys.toString());
+				else {
+					Planet planet = sys.findPlanet(planetIndex);
+					if (planet==null)
+						planet = new Planet(sys, planetIndex);
+					
+					if (isPlanet())
+						output.add(planet.toString());
+					else {
+						output.add(getCoordinates());
+						output.add("on "+planet.toString());
+					}
+					output.add("in "+sys.toString());
+				}
+				output.add("in "+region.toString());
+			}
+			output.add("in "+galaxy.toString());
+			
+			return output;
+		}
+
+		public String getVerboseNameInOneLine(Universe universe) {
 			
 			if (isRegion())
 				return "Region \""+getRegionCoordinates()+"\"";

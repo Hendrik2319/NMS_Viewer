@@ -61,6 +61,7 @@
 ^CREATURE1.symbol=Mo
 ^CREATURE1.image=Substance.neutral.rare15.NEXT.png
 ^CREATURE1.imageBG=542640
+^DUSTY1=
 ^FUEL1=Kohlenstoff
 ^FUEL1.type=Resource
 ^FUEL1.symbol=C
@@ -188,6 +189,11 @@
 ^ROBOT1.symbol=Pg
 ^ROBOT1.image=Substance.neutral.rare5.Pugneum.png
 ^ROBOT1.imageBG=4B2A57
+^ROCKETSUB=Tritium
+^ROCKETSUB.type=Resource
+^ROCKETSUB.symbol=H3
+^ROCKETSUB.image=SUBSTANCE.ROCKETSUB.png
+^ROCKETSUB.imageBG=DEDCD0
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.symbol=Sr
 ^SPACEGUNK1.image=Residualgoopicon.SchleimigeUeberreste.png

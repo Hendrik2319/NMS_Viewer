@@ -1,3 +1,6 @@
+[Reg000000FAA8CBC4]
+name=Gaentam-Rand
+
 [Sys000A00FAA8CBC4]
 name=Lograt
 race=Vykeen
@@ -45,6 +48,23 @@ name=Atnino
 race=Vykeen
 class=Yellow
 
+[Pln205700FAA8CBC4]
+name=(N) Hiyad Tau
+
+[Pln305700FAA8CBC4]
+name=(N) Epenniazus Totsu
+
+[Pln405700FAA8CBC4]
+name=(N) Neu: Ralottawa
+short=ExtrGiftig
+info=Biom: Sehr Giftig (2)
+short=AggrWächter
+info=Wächter: feindlich
+short=AktCu
+info=Aktiviertes Kupfer
+short.P=Grav
+info=Gravitino-Bälle
+
 [Sys005D00FAA8CBC4]
 name=Tionovk-Exand
 race=Korvax
@@ -66,13 +86,13 @@ class=Yellow
 distance=707016.000000
 
 [Pln106D00FAA8CBC4]
-name=Syamnonerger / Leuthow IV
+name=Syamnonerger / Ebbie Primus
 
 [Pln206D00FAA8CBC4]
 name=Magnandram Ilioc / Drushya II
 
 [Pln306D00FAA8CBC4]
-name=Loyarnaulic / Ebbie Primus
+name=Loyarnaulic / Leuthow IV
 
 [Sys007900FAA8CBC4]
 name=Kihgora-Agyu X
