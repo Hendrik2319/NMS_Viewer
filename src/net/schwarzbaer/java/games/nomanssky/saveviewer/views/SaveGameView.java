@@ -193,7 +193,8 @@ public class SaveGameView extends JPanel {
 		public void updateContent() {}
 
 		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.UniverseObject object, String objectStr) {
-			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), object.getOriginalName());
+			String initialValue = object.hasOriginalName()?object.getOriginalName():object.getOldOriginalName();
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), initialValue);
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
 				object.setOriginalName(name);
@@ -202,7 +203,8 @@ public class SaveGameView extends JPanel {
 		}
 
 		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.Region region, String objectStr) {
-			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), region.getName());
+			String initialValue = region.hasName()?region.getName():region.getOldName();
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), initialValue);
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
 				region.setName(name);

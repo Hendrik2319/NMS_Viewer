@@ -90,6 +90,7 @@ public class GameInfos {
 		
 		final UniverseAddress universeAddress;
 		final UniverseObjectData.Type type;
+		String oldname;
 		String name;
 		Universe.SolarSystem.Race race;
 		Universe.SolarSystem.StarClass starClass; 
@@ -99,6 +100,7 @@ public class GameInfos {
 		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type) {
 			this.universeAddress = universeAddress;
 			this.type = type;
+			this.oldname = null;
 			this.name = null;
 			this.race = null;
 			this.starClass = null;
@@ -107,11 +109,12 @@ public class GameInfos {
 		}
 	
 		public boolean hasData() {
-			return name!=null || race!=null || starClass!=null || distanceToCenter!=null || !extraInfos.isEmpty();
+			return name!=null || oldname!=null || race!=null || starClass!=null || distanceToCenter!=null || !extraInfos.isEmpty();
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
 			this(universeAddress,Type.Region);
+			this.oldname = region.oldname; // TODO
 			this.name = region.name;
 		}
 		
@@ -128,7 +131,8 @@ public class GameInfos {
 		
 		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type, UniverseObject uo) {
 			this(universeAddress,type);
-			name = uo.getOriginalName();
+			this.oldname = uo.getOldOriginalName();
+			this.   name = uo.   getOriginalName();
 			for (ExtraInfo ei:uo.extraInfos)
 				extraInfos.add(new ExtraInfo(ei));
 		}
@@ -179,6 +183,10 @@ public class GameInfos {
 				}
 				if (str.startsWith("name=")) {
 					if (uoData!=null) uoData.name = str.substring("name=".length());
+					continue;
+				}
+				if (str.startsWith("oldname=")) {
+					if (uoData!=null) uoData.oldname = str.substring("oldname=".length());
 					continue;
 				}
 				if (str.startsWith("race=")) {
@@ -263,6 +271,12 @@ public class GameInfos {
 				if (withOutput && objName!=null) SaveViewer.log("   Name of %s was defined: \"%s\"\r\n",objName,uoData.name);
 			}
 			
+			if (uoData.oldname!=null) {
+				if (uniObj!=null) uniObj.setOldOriginalName(uoData.oldname);
+				if (region!=null) region.setOldName(uoData.oldname);
+				if (withOutput && objName!=null) SaveViewer.log("   Old Name of %s was defined: \"%s\"\r\n",objName,uoData.oldname);
+			}
+			
 			if (uoData.race!=null && system!=null) {
 				system.race = uoData.race;
 				if (withOutput) SaveViewer.log("   Race of %s was defined: %s\r\n",objName,system.race);
@@ -327,7 +341,8 @@ public class GameInfos {
 				case Planet     : out.printf("[Pln%014X]\r\n",uoData.universeAddress.getAddress()); break;
 				}
 				
-				if (uoData.name!=null) out.printf("name=%s\r\n",uoData.name);
+				if (uoData.   name!=null) out.printf(   "name=%s\r\n",uoData.   name);
+				if (uoData.oldname!=null) out.printf("oldname=%s\r\n",uoData.oldname);
 				if (uoData.type==UniverseObjectData.Type.SolarSystem) {
 					if (uoData.race!=null            ) out.printf("race=%s\r\n",uoData.race);
 					if (uoData.starClass!=null       ) out.printf("class=%s\r\n",uoData.starClass);

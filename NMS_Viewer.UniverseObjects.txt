@@ -1,61 +1,71 @@
 [Reg000000FAA8CBC4]
-name=Gaentam-Rand
+oldname=Gaentam-Rand
 
 [Sys000A00FAA8CBC4]
-name=Lograt
+oldname=Lograt
 race=Vykeen
 class=Yellow
 
 [Sys001300FAA8CBC4]
-name=Ankovsky XV
+oldname=Ankovsky XV
 race=Korvax
 class=Yellow
 
 [Sys002600FAA8CBC4]
-name=Aiushva
+oldname=Aiushva
 race=Vykeen
 class=Yellow
 
 [Sys002700FAA8CBC4]
-name=Odvins-Unnan
+oldname=Odvins-Unnan
 class=Yellow
 
 [Sys003000FAA8CBC4]
-name=Zuhcher X
+oldname=Zuhcher X
 race=Korvax
 class=Yellow
 
 [Sys004000FAA8CBC4]
-name=Azrants VIII
+oldname=Azrants VIII
 race=Gek
 class=Yellow
 
 [Pln404000FAA8CBC4]
-name=Midakasahik
+oldname=Midakasahik
 
 [Sys004600FAA8CBC4]
-name=Tusevoz-Kiku
+oldname=Tusevoz-Kiku
 race=Gek
 class=Yellow
 
 [Sys004700FAA8CBC4]
-name=Izberes-Ort
+oldname=Izberes-Ort
 race=Korvax
 class=Yellow
 
 [Sys005700FAA8CBC4]
+oldname=Atnino
 name=Atnino
 race=Vykeen
 class=Yellow
 
+[Pln105700FAA8CBC4]
+name=Naeanggu VI
+short=ExtHot
+info=Extrem Heiß
+short.P=AktCu
+info=Aktiviertes Kupfer
+short=Wasser
+info=mit Tiefsee
+
 [Pln205700FAA8CBC4]
-name=(N) Hiyad Tau
+name=Hiyad Tau
 
 [Pln305700FAA8CBC4]
-name=(N) Epenniazus Totsu
+name=Epenniazus Totsu
 
 [Pln405700FAA8CBC4]
-name=(N) Neu: Ralottawa
+name=Neu: Ralottawa
 short=ExtrGiftig
 info=Biom: Sehr Giftig (2)
 short=AggrWächter
@@ -65,136 +75,147 @@ info=Aktiviertes Kupfer
 short.P=Grav
 info=Gravitino-Bälle
 
+[Pln505700FAA8CBC4]
+name=Oroz 92/B2
+short=Heiß
+info=normal heiß
+short=
+info=Na, P, Cu
+
 [Sys005D00FAA8CBC4]
-name=Tionovk-Exand
+oldname=Tionovk-Exand
 race=Korvax
 class=Yellow
 
 [Pln105D00FAA8CBC4]
-name=Miyama Opogaets
+oldname=Miyama Opogaets
 
 [Pln205D00FAA8CBC4]
-name=Nozelensk Sano
+oldname=Nozelensk Sano
 
 [Pln305D00FAA8CBC4]
-name=Kiwalhontr-Menes Egor
+oldname=Kiwalhontr-Menes Egor
 
 [Sys006D00FAA8CBC4]
+oldname=Naibolsk
 name=Naibolsk
 race=Vykeen
 class=Yellow
 distance=707016.000000
 
 [Pln106D00FAA8CBC4]
-name=Syamnonerger / Ebbie Primus
+oldname=Syamnonerger
+name=Ebbie Primus
 
 [Pln206D00FAA8CBC4]
-name=Magnandram Ilioc / Drushya II
+oldname=Magnandram Ilioc
+name=Drushya II
 
 [Pln306D00FAA8CBC4]
-name=Loyarnaulic / Leuthow IV
+oldname=Loyarnaulic
+name=Leuthow IV
 
 [Sys007900FAA8CBC4]
-name=Kihgora-Agyu X
+oldname=Kihgora-Agyu X
 race=Vykeen
 class=Yellow
 short=Blackhole
 info=Schwarzes Loch im System
 
 [Pln107900FAA8CBC4]
-name=Axellenboe Ummi
+oldname=Axellenboe Ummi
 
 [Pln207900FAA8CBC4]
-name=Tisluitsoch
+oldname=Tisluitsoch
 short.P=Grav
 info=Gravitino-Balls
 
 [Pln307900FAA8CBC4]
-name=Dessilaum Ramm
+oldname=Dessilaum Ramm
 short=ExtRad
 info=Extrem verstrahlter Planet
 short.P=Ka
 info=Kalium (Kugeln)
 
 [Pln407900FAA8CBC4]
-name=Biyskogolo Unzhe
+oldname=Biyskogolo Unzhe
 short=ExtTox
 info=Extrem giftiger Planet
 short.P=Ka
 info=Kalium (Kugeln)
 
 [Sys007A00FAA8CBC4]
-name=Sibirsky
+oldname=Sibirsky
 race=Vykeen
 class=Yellow
 short=Atlas
 info=Atlas-Station
 
 [Pln107A00FAA8CBC4]
-name=Guyohldemigla
+oldname=Guyohldemigla
 
 [Pln207A00FAA8CBC4]
-name=Obinzhichi Udamad
+oldname=Obinzhichi Udamad
 
 [Pln307A00FAA8CBC4]
-name=Yecheveli Kawari
+oldname=Yecheveli Kawari
 
 [Pln407A00FAA8CBC4]
-name=Oansum Inleug
+oldname=Oansum Inleug
 
 [Pln507A00FAA8CBC4]
-name=Kipatjil Kagog
+oldname=Kipatjil Kagog
 
 [Pln607A00FAA8CBC4]
-name=Gautumis Hobar
+oldname=Gautumis Hobar
 
 [Sys013200FAA8CBC4]
-name=Rakaspo XVII
+oldname=Rakaspo XVII
 race=Vykeen
 class=Yellow
 
 [Pln113200FAA8CBC4]
-name=Dotukullia BZ895
+oldname=Dotukullia BZ895
 
 [Sys014B00FAA8CBC4]
-name=Zeyang XIII
+oldname=Zeyang XIII
 race=Korvax
 class=Yellow
 
 [Sys014F00FAA8CBC4]
-name=Tolugach XV
+oldname=Tolugach XV
 race=Vykeen
 class=Green
 
 [Pln114F00FAA8CBC4]
-name=Eikkeerhodov
+oldname=Eikkeerhodov
 
 [Pln214F00FAA8CBC4]
-name=Dihruva Oband
+oldname=Dihruva Oband
 
 [Sys016F00FAA8CBC4]
-name=Esvets
+oldname=Esvets
 race=Vykeen
 class=Yellow
 
 [Pln116F00FAA8CBC4]
-name=Haktiscudol-1
+oldname=Haktiscudol-1
 
 [Pln216F00FAA8CBC4]
-name=Gujalptakma-Nenuma
+oldname=Gujalptakma-Nenuma
 
 [Pln316F00FAA8CBC4]
-name=Osfellaggni
+oldname=Osfellaggni
 short.P=VC
 info=Vortex Cubes
 
 [Sys018000FAA8CBC4]
-name=Aylovk XVI
+oldname=Aylovk XVI
 race=Korvax
 class=Red
 
 [Pln118000FAA8CBC4]
-name=Yanentunent-Obyt
+oldname=Yanentunent-Obyt
 short=ExtRad
 info=Extrem verstrahlter Planet
 short.P=Ka
@@ -203,68 +224,68 @@ short.P=Ru
 info=Rubeum (Große Kegel)
 
 [Sys01C800FAA8CBC4]
-name=Xandop-Isuma
+oldname=Xandop-Isuma
 race=Gek
 class=Yellow
 
 [Pln11C800FAA8CBC4]
-name=Uwonokob Antaka
+oldname=Uwonokob Antaka
 
 [Pln21C800FAA8CBC4]
-name=Malmetyug Buzhn
+oldname=Malmetyug Buzhn
 
 [Sys01EA00FAA8CBC4]
-name=Gagada-Arzam
+oldname=Gagada-Arzam
 race=Korvax
 class=Yellow
 
 [Pln11EA00FAA8CBC4]
-name=Uagetuhuals
+oldname=Uagetuhuals
 
 [Pln21EA00FAA8CBC4]
-name=Belevskom SX986
+oldname=Belevskom SX986
 short.P=Ra
 info=Radnox
 short=ExtCold
 info=Extrem kalter Planet
 
 [Pln31EA00FAA8CBC4]
-name=Ikokstelmh Gronis
+oldname=Ikokstelmh Gronis
 short.P=Grav
 info=Gravitino-Balls
 
 [Pln41EA00FAA8CBC4]
-name=Omoriyamama
+oldname=Omoriyamama
 
 [Pln51EA00FAA8CBC4]
-name=Rudoindain-Tuzl VS533
+oldname=Rudoindain-Tuzl VS533
 
 [Sys000100F8FF8FF8]
 race=Vykeen
 class=Green
 
 [Pln100100F8FF8FF8]
-name=Kudamagano Towa
+oldname=Kudamagano Towa
 
 [Pln300100F8FF8FF8]
-name=Azyvaius OX857
+oldname=Azyvaius OX857
 
 [Sys00010008FF8FF8]
-name=Detadfal
+oldname=Detadfal
 race=Korvax
 class=Red
 
 [Pln10010008FF8FF8]
-name=Yewagesta Edvard
+oldname=Yewagesta Edvard
 
 [Pln20010008FF8FF8]
-name=[GRA] Kumerat-Gader Tutimil
+oldname=[GRA] Kumerat-Gader Tutimil
 
 [Pln30010008FF8FF8]
-name=[GRA] Sekart Ryugaile
+oldname=[GRA] Sekart Ryugaile
 
 [Sys000100F8008FF8]
-name=Imurag
+oldname=Imurag
 race=Gek
 class=Red
 
@@ -273,43 +294,43 @@ short.P=Ru
 info=Rubeum (Große Kegel)
 
 [Pln200100F8008FF8]
-name=Guyinkannurtu
+oldname=Guyinkannurtu
 short.P=Ru
 info=Rubeum (Große Kegel)
 
 [Pln300100F8008FF8]
-name=Ezka'oeregus
+oldname=Ezka'oeregus
 short.P=Ru
 info=Rubeum (Große Kegel)
 
 [Sys00010008008FF8]
-name=Yaring
+oldname=Yaring
 race=Korvax
 class=Blue
 
 [Pln10010008008FF8]
-name=Lutieneralat
+oldname=Lutieneralat
 
 [Pln30010008008FF8]
-name=Perthymeng Avndas
+oldname=Perthymeng Avndas
 
 [Sys00010010000000]
-name=Saitamb-Nabla
+oldname=Saitamb-Nabla
 race=Vykeen
 class=Green
 
 [Pln10010010000000]
-name=Nooitbili Bleijk
+oldname=Nooitbili Bleijk
 short.P=Vi
 info=Viridium
 
 [Pln20010010000000]
-name=Bihopisnik Uque
+oldname=Bihopisnik Uque
 short.P=Vi
 info=Viridium
 
 [Pln30010010000000]
-name=Urneferi Fukiha
+oldname=Urneferi Fukiha
 short.P=Vi
 info=Viridium
 short=ExtRad
@@ -322,106 +343,106 @@ race=Korvax
 class=Green
 
 [Sys000100F8008008]
-name=Tumise-Rekv
+oldname=Tumise-Rekv
 race=Vykeen
 class=Red
 
 [Pln100100F8008008]
-name=Sagayamatsuy-5
+oldname=Sagayamatsuy-5
 
 [Reg000000FF9852B9]
-name=Zudden-Weite
+oldname=Zudden-Weite
 
 [Sys003200FF9852B9]
-name=Teinna II
+oldname=Teinna II
 race=Vykeen
 
 [Pln103200FF9852B9]
-name=Heronito Tau
+oldname=Heronito Tau
 
 [Sys00010000444444]
-name=Idewij-Hizdr
+oldname=Idewij-Hizdr
 
 [Pln10010000444444]
-name=Beokayas Bigase
+oldname=Beokayas Bigase
 
 [Reg000000024F14BB]
-name=Ajjaroe-Rand
+oldname=Ajjaroe-Rand
 
 [Sys003800024F14BB]
-name=Kolovki-Poh
+oldname=Kolovki-Poh
 race=Vykeen
 class=Yellow
 
 [Pln103800024F14BB]
-name=Iksmui Rohlinme
+oldname=Iksmui Rohlinme
 
 [Pln203800024F14BB]
-name=Degenkaari-6 Enjaoa
+oldname=Degenkaari-6 Enjaoa
 
 [Pln303800024F14BB]
-name=Meches Glattfi
+oldname=Meches Glattfi
 
 [Pln403800024F14BB]
-name=Quangseou Oomoll
+oldname=Quangseou Oomoll
 
 [Pln503800024F14BB]
-name=Nudalria-Algz Zeiten
+oldname=Nudalria-Algz Zeiten
 short.P=VC
 info=Vortex Cubes
 
 [Sys007200024F14BB]
-name=Alchukovr
+oldname=Alchukovr
 race=Gek
 class=Yellow
 
 [Pln107200024F14BB]
-name=Jiedarean Meener
+oldname=Jiedarean Meener
 
 [Pln207200024F14BB]
-name=Hihuaiqiongdo-Oug
+oldname=Hihuaiqiongdo-Oug
 
 [Pln307200024F14BB]
-name=Huvshi Ohashi
+oldname=Huvshi Ohashi
 
 [Pln407200024F14BB]
-name=Miplinga Dazaw
+oldname=Miplinga Dazaw
 
 [Sys001B00FC4AD502]
-name=Hunyaz-Elfer VIII
+oldname=Hunyaz-Elfer VIII
 race=Vykeen
 class=Yellow
 
 [Pln101B00FC4AD502]
-name=Bibataga Hamat
+oldname=Bibataga Hamat
 
 [Pln201B00FC4AD502]
-name=Urabkausop Pretho
+oldname=Urabkausop Pretho
 
 [Pln301B00FC4AD502]
-name=Lichouvalil-4
+oldname=Lichouvalil-4
 
 [Sys007200FEB7F529]
-name=Imsenl IV
+oldname=Imsenl IV
 race=Korvax
 class=Yellow
 
 [Pln107200FEB7F529]
-name=Naarhurdorcan
+oldname=Naarhurdorcan
 short=ExtHot
 info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
 
 [Reg000000FE1FA68F]
-name=Dedurot-Weite
+oldname=Dedurot-Weite
 
 [Sys005000FE1FA68F]
-name=Nozolwe-Afor
+oldname=Nozolwe-Afor
 race=Gek
 
 [Pln105000FE1FA68F]
-name=Ezawasahirish
+oldname=Ezawasahirish
 
 [Pln205000FE1FA68F]
-name=Itachita Irli
+oldname=Itachita Irli

@@ -657,9 +657,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
 		
-		if (obj.hasOriginalName()) textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName()));
-		if (obj.hasUploadedName()) textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));
-		if (obj.hasDiscoverer  ()) textArea.append(String.format("Discovered by : %s\r\n", obj.getDiscoverer()));
+		String oldNameLabel = "Old Original Name";
+		if (obj.hasOriginalName   ()) { textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName())); oldNameLabel = "  -\"-   (old)"; }
+		if (obj.hasOldOriginalName())   textArea.append(String.format(           "%s : %s\r\n", oldNameLabel, obj.getOldOriginalName()));
+		if (obj.hasUploadedName   ())   textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));
+		if (obj.hasDiscoverer     ())   textArea.append(String.format("Discovered by : %s\r\n", obj.getDiscoverer()));
 		if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
 			textArea.append("Discovered Items:\r\n");
 			if (!obj.discoveredItems_Avail.isEmpty()) {
@@ -1033,9 +1035,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
 				if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
 				if (obj != null) {
-					if (!obj.hasOriginalName() && !obj.hasUploadedName()) {
+					if (!obj.hasOriginalName()) {
 						if (!selected) setForeground(TEXTCOLOR__WITHOUT_NAME);
-					}
+					} else
 					if (obj.isNotUploaded) {
 						if (!selected) setForeground(TEXTCOLOR__NOT_UPLOADED);
 					}

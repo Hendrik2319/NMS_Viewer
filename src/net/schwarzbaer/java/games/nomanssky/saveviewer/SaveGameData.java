@@ -68,6 +68,27 @@ public class SaveGameData {
 		this.persistentPlayerBases = null;
 	}
 	
+	public SaveGameData parse(boolean isNEXT) {
+		if (!isNEXT) return this;
+		
+		general.parse();
+		parseStats();
+		parseKnownBlueprints();
+		parseKnownWords();
+		parseDiscoveryData();
+		parseInventories();
+		parseBaseBuildingObjects();
+		parsePersistentPlayerBases();
+		parseStoredInteractions();
+		universe.sort();
+		//universe.writeToConsole();
+		
+		GameInfos.readUniverseObjectDataFromDataPool(universe);
+		GameInfos.saveAllIDsToFiles();
+		GameInfos.updateUpgrades();
+		return this;
+	}
+
 	private static Long parseHexFormatedNumber(JSON_Object obj, String valueName) {
 		return parseHexFormatedNumber(obj.getValue(valueName));
 	}
@@ -404,27 +425,6 @@ public class SaveGameData {
 		public String UID;
 		public String USN;
 		public TimeStamp TS;
-	}
-
-	public SaveGameData parse(boolean isNEXT) {
-		if (!isNEXT) return this;
-		
-		general.parse();
-		parseStats();
-		parseKnownBlueprints();
-		parseKnownWords();
-		parseDiscoveryData();
-		parseInventories();
-		parseBaseBuildingObjects();
-		parsePersistentPlayerBases();
-		parseStoredInteractions();
-		universe.sort();
-		//universe.writeToConsole();
-		
-		GameInfos.readUniverseObjectDataFromDataPool(universe);
-		GameInfos.saveAllIDsToFiles();
-		GameInfos.updateUpgrades();
-		return this;
 	}
 
 	private void parseStoredInteractions() {
@@ -1762,6 +1762,7 @@ public class SaveGameData {
 			private final int voxelY;
 			public final int voxelZ;
 			public final Vector<SolarSystem> solarSystems;
+			public String oldname;
 			public String name;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
@@ -1775,13 +1776,16 @@ public class SaveGameData {
 
 			@Override
 			public String toString() {
-				if (name==null) return "Region "+voxelX+","+voxelY+","+voxelZ;
-				return "Region \""+name+"\"  ("+voxelX+","+voxelY+","+voxelZ+")";
+				if (name==null && oldname==null) return "Region "+voxelX+","+voxelY+","+voxelZ;
+				return "Region "+(name==null?("["+oldname+"]"):("\""+name+"\""))+"  ("+voxelX+","+voxelY+","+voxelZ+")";
 			}
 
-			public void    setName(String name) { this.name = (name==null||name.isEmpty())?null:name; }
-			public String  getName() { return name==null?"":name; }
-			public boolean hasName() { return name!=null; }
+			public void    setOldName(String name) { this.oldname = (name==null||name.isEmpty())?null:name; }
+			public void    setName   (String name) { this.   name = (name==null||name.isEmpty())?null:name; }
+			public String  getOldName() { return oldname==null?"":oldname; }
+			public String  getName   () { return    name==null?"":   name; }
+			public boolean hasOldName() { return oldname!=null; }
+			public boolean hasName   () { return    name!=null; }
 
 			public void addSolarSystem(SolarSystem solarSystem) {
 				solarSystems.add(solarSystem);
@@ -1810,8 +1814,9 @@ public class SaveGameData {
 			
 			public final Vector<ExtraInfo> extraInfos;
 			
-			private String originalName;
-			private String uploadedName;
+			private String oldOriginalName; // defined by universe generator before NEXT update
+			private String originalName; // defined by universe generator
+			private String uploadedName; // defined by uploading player  
 			
 			public final HashMap<String,Integer> discoveredItems_Avail;
 			public final HashMap<String,Integer> discoveredItems_Store;
@@ -1878,12 +1883,15 @@ public class SaveGameData {
 			public String getDiscoverer() { return discoverer; }
 			public void setDiscoverer(String name) { this.discoverer = name; }
 
-			public boolean hasOriginalName() { return originalName!=null; }
-			public boolean hasUploadedName() { return uploadedName!=null; }
-			public void setOriginalName(String name) { this.originalName = name; }
-			public void setUploadedName(String name) { this.uploadedName = name; }
-			public String getOriginalName() { return this.originalName; }
-			public String getUploadedName() { return this.uploadedName; }
+			public boolean hasOldOriginalName() { return oldOriginalName!=null; }
+			public boolean hasOriginalName   () { return    originalName!=null; }
+			public boolean hasUploadedName   () { return    uploadedName!=null; }
+			public void setOldOriginalName(String name) { this.oldOriginalName = name; }
+			public void setOriginalName   (String name) { this.   originalName = name; }
+			public void setUploadedName   (String name) { this.   uploadedName = name; }
+			public String getOldOriginalName() { return oldOriginalName; }
+			public String getOriginalName   () { return    originalName; }
+			public String getUploadedName   () { return    uploadedName; }
 			
 			public static final class ExtraInfo {
 				public boolean showInParent;
@@ -1946,8 +1954,9 @@ public class SaveGameData {
 
 			public String toString(boolean withName, boolean withExtraInfo, boolean withDataName, boolean withRace) {
 				String strName;
-				if (hasOriginalName()) strName = String.format("Sys%03X %s", solarSystemIndex, getOriginalName());
-				else                   strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
+				if      (   hasOriginalName()) strName = String.format("Sys%03X %s", solarSystemIndex, getOriginalName());
+				else if (hasOldOriginalName()) strName = String.format("Sys%03X [%s]", solarSystemIndex, getOldOriginalName());
+				else                           strName = String.format("SolarSystem %03X (%d)", solarSystemIndex, solarSystemIndex);
 				
 				String strDataName = (!hasUploadedName()?"":(" | "+getUploadedName()));
 				
@@ -2006,6 +2015,8 @@ public class SaveGameData {
 				String strName;
 				if (hasOriginalName())
 					strName = String.format("P%1X %s", planetIndex, getOriginalName());
+				else if (hasOldOriginalName())
+					strName = String.format("P%1X [%s]", planetIndex, getOldOriginalName());
 				else {
 					UniverseAddress ua = getUniverseAddress();
 					if (ua!=null)
