@@ -948,6 +948,12 @@
 ^UNW3.type=ExosuitExtensionUpgrade
 ^UNW3.image=Render.helmet.png
 ^UNW3.imageBG=085C78
+^UP_BOLT1#29076=
+^UP_BOLT4#25005=
+^UP_ENGY3#34654=
+^UP_LASER1#52959=
+^UP_SCAN4#76203=
+^UP_SHLD3#27437=
 ^UP_UNW3#14230=Reiner Sauerstoff: Tiefenschutzeinheit
 ^UP_UNW3#14230.type=ExocraftExtension
 ^UP_UNW3#14230.imageBG=F0A92B

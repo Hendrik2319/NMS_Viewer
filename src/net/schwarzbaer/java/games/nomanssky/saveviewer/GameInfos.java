@@ -94,6 +94,8 @@ public class GameInfos {
 		String name;
 		Universe.SolarSystem.Race race;
 		Universe.SolarSystem.StarClass starClass; 
+		Universe.Planet.Biome biome;
+		Universe.Planet.SentinelLevel sentinelLevel; 
 		Double distanceToCenter;
 		Vector<ExtraInfo> extraInfos;
 		
@@ -104,12 +106,14 @@ public class GameInfos {
 			this.name = null;
 			this.race = null;
 			this.starClass = null;
+			this.biome = null;
+			this.sentinelLevel = null;
 			this.distanceToCenter = null;
 			this.extraInfos = new Vector<>();
 		}
 	
 		public boolean hasData() {
-			return name!=null || oldname!=null || race!=null || starClass!=null || distanceToCenter!=null || !extraInfos.isEmpty();
+			return name!=null || oldname!=null || race!=null || starClass!=null || biome!=null || sentinelLevel!=null || distanceToCenter!=null || !extraInfos.isEmpty();
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
@@ -127,6 +131,8 @@ public class GameInfos {
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Planet planet) {
 			this(universeAddress,Type.Planet,planet);
+			biome = planet.biome;
+			sentinelLevel = planet.sentinelLevel;
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type, UniverseObject uo) {
@@ -203,6 +209,20 @@ public class GameInfos {
 					catch (Exception e) { uoData.starClass = null; }
 					continue;
 				}
+				if (str.startsWith("biome=")) {
+					if (uoData==null) continue;
+					String biome = str.substring("biome=".length());
+					try { uoData.biome = Universe.Planet.Biome.valueOf(biome); }
+					catch (Exception e) { uoData.biome = null; }
+					continue;
+				}
+				if (str.startsWith("sentinel=")) {
+					if (uoData==null) continue;
+					String sentinelLevel = str.substring("sentinel=".length());
+					try { uoData.sentinelLevel = Universe.Planet.SentinelLevel.valueOf(sentinelLevel); }
+					catch (Exception e) { uoData.sentinelLevel = null; }
+					continue;
+				}
 				if (str.startsWith("distance=")) {
 					if (uoData==null) continue;
 					String distance = str.substring("distance=".length());
@@ -243,8 +263,8 @@ public class GameInfos {
 		Region region = null;
 		SolarSystem system = null;
 		Planet planet = null;
-		
 		UniverseObject uniObj = null;
+		
 		String objName = null;
 		for (Long address:universeObjectDataArr.keySet()) {
 			UniverseObjectData uoData = universeObjectDataArr.get(address);
@@ -285,6 +305,16 @@ public class GameInfos {
 			if (uoData.starClass!=null && system!=null) {
 				system.starClass = uoData.starClass;
 				if (withOutput) SaveViewer.log("   StarClass of %s was defined: %s\r\n",objName,system.starClass);
+			}
+			
+			if (uoData.biome!=null && planet!=null) {
+				planet.biome = uoData.biome;
+				if (withOutput) SaveViewer.log("   Biome of %s was defined: %s\r\n",objName,planet.biome);
+			}
+			
+			if (uoData.sentinelLevel!=null && planet!=null) {
+				planet.sentinelLevel = uoData.sentinelLevel;
+				if (withOutput) SaveViewer.log("   SentinelLevel of %s was defined: %s\r\n",objName,planet.sentinelLevel);
 			}
 			
 			if (uoData.distanceToCenter!=null && system!=null) {
@@ -344,9 +374,13 @@ public class GameInfos {
 				if (uoData.   name!=null) out.printf(   "name=%s\r\n",uoData.   name);
 				if (uoData.oldname!=null) out.printf("oldname=%s\r\n",uoData.oldname);
 				if (uoData.type==UniverseObjectData.Type.SolarSystem) {
-					if (uoData.race!=null            ) out.printf("race=%s\r\n",uoData.race);
-					if (uoData.starClass!=null       ) out.printf("class=%s\r\n",uoData.starClass);
+					if (uoData.race            !=null) out.printf("race=%s\r\n",uoData.race);
+					if (uoData.starClass       !=null) out.printf("class=%s\r\n",uoData.starClass);
 					if (uoData.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uoData.distanceToCenter.doubleValue());
+				}
+				if (uoData.type==UniverseObjectData.Type.Planet) {
+					if (uoData.biome        !=null) out.printf("biome=%s\r\n",uoData.biome);
+					if (uoData.sentinelLevel!=null) out.printf("sentinel=%s\r\n",uoData.sentinelLevel);
 				}
 				
 				for (ExtraInfo ei:uoData.extraInfos)

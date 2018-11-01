@@ -15,11 +15,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -45,13 +46,17 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenuItems;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.SentinelLevel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
@@ -67,66 +72,161 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static final long serialVersionUID = -4594889224613582352L;
 	
 	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject }
-	private enum UniverseTreeIcons { Universe, Galaxy, Region, SolarSystem, Planet, GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue }
+	private enum UniverseTreeIcons {
+		Universe, Galaxy, Region, SolarSystem, Planet,
+		GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue;
+	}
+	private enum PlanetTreeIcons {
+		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless,
+		SentinelLevel1, SentinelLevel2, SentinelLevel3, SentinelAggressive;
+	}
+	
 	private static final int TreeIconHeight = 20;
 	private static IconSource.CachedIcons<UniverseTreeIcons> UniverseTreeIconsIS;
 	public  static IconSource.CachedIndexedImages PortalGlyphsIS;
-	private static HashMap<Race,Icon> RaceIcons;
-	private static HashMap<StarClass,Icon> StarClassIcons;
-	private static UniverseTreeSolarSystemIconsMap UniverseTreeSolarSystemIcons;
+	private static SolarSystemIcons SolarSystemIcons;
+	private static PlanetIcons PlanetIcons;
 
-	private static class UniverseTreeSolarSystemIconsMap {
+	private static class IconsMap<S extends Enum<S>> {
 		
-		private Icon[][] values;
-		
-		UniverseTreeSolarSystemIconsMap() {
-			values = null;
+		private CachedIcons<S> iconSource;
+		protected IconsMap(IconSource.CachedIcons<S> iconSource) {
+			this.iconSource = iconSource;
 		}
 		
-		void createValues() {
-			Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.SolarSystem);
-			
-			Race[] races = Race.values();
-			Icon[] raceIcons = new Icon[races.length];
-			for (Race race:races)
-				switch(race) {
-				case Gek   : raceIcons[race.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys);    break;
-				case Korvax: raceIcons[race.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys); break;
-				case Vykeen: raceIcons[race.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys); break;
-				}
-			
-			StarClass[] starClasses = StarClass.values();
-			Icon[] starClassIcons = new Icon[starClasses.length];
-			for (StarClass starClass:starClasses)
-				switch(starClass) {
-				case Yellow: starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Yellow); break;
-				case Red   : starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Red   ); break;
-				case Green : starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Green ); break;
-				case Blue  : starClassIcons[starClass.ordinal()] = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Blue  ); break;
-				}
-			
-			values = new Icon[races.length+1][starClasses.length+1];
-			values[0][0] = icon;
-			Icon icon2;
-			for (Race race:races) {
-				icon2 = IconSource.combine(icon, raceIcons[race.ordinal()]);
-				values[race.ordinal()+1][0] = icon2;
-				for (StarClass starClass:starClasses)
-					values[race.ordinal()+1][starClass.ordinal()+1] = IconSource.combine(icon2, starClassIcons[starClass.ordinal()]);
+		protected <E extends Enum<E>> Icon[] createIconArray(E[] values, S iconNullId, Function<E,S> getIconID) {
+			Icon[] icons = new Icon[values.length+1];
+			icons[0] = iconNullId!=null?iconSource.getCachedIcon(iconNullId):null;
+			for (int i=0; i<values.length; i++)
+				icons[i+1] = iconSource.getCachedIcon(getIconID.apply(values[i]));
+			return icons;
+		}
+		
+		protected Icon[][] combineIconArrays(Icon[] icons1, Icon[] icons2, S iconBgId) {
+			Icon iconBG = iconBgId!=null?iconSource.getCachedIcon(iconBgId):null;
+			Icon[][] icons = new Icon[icons1.length][icons2.length];
+			Icon icon;
+			for (int i=0; i<icons1.length; i++) {
+				icon = IconSource.combine(iconBG, icons1[i]);
+				for (int j=0; j<icons2.length; j++)
+					icons[i][j] = IconSource.combine(icon, icons2[j]);
 			}
-			for (StarClass starClass:starClasses)
-				values[0][starClass.ordinal()+1] = IconSource.combine(icon, starClassIcons[starClass.ordinal()]);
-			
+			return icons;
 		}
 		
-//			void put(Race race, StarClass starClass, Icon value) {
-//				values[race.ordinal()][starClass.ordinal()] = value;
-//			}
+		protected <E extends Enum<E>> EnumMap<E,Icon> createIconEnumMap(Class<E> eClass, E[] values, int x, int y, int w, int h, Function<E,S> getIconID) {
+			EnumMap<E, Icon> enumMap = new EnumMap<>(eClass);
+			for (E value:values) {
+				S iconID = getIconID.apply(value);
+				Icon cachedIcon = iconSource.getCachedIcon(iconID);
+				enumMap.put(value, IconSource.cutIcon(cachedIcon,x,y,w,h)); 
+			}
+			return enumMap;
+		}
+	}
+	
+	private static class SolarSystemIcons extends IconsMap<UniverseTreeIcons> {
+		
+		private Icon[][] icons;
+		EnumMap<Race,Icon> RaceIcons;
+		EnumMap<StarClass,Icon> StarClassIcons;
+		
+		SolarSystemIcons() {
+			super(UniverseTreeIconsIS);
+			icons = null;
+			RaceIcons = null;
+			StarClassIcons = null;
+		}
+
+		void createValues() {
+			Function<Race, UniverseTreeIcons> getRaceIconID = (Race race)->{
+				switch(race) {
+				case Gek   : return UniverseTreeIcons.GekSys;
+				case Korvax: return UniverseTreeIcons.KorvaxSys;
+				case Vykeen: return UniverseTreeIcons.VykeenSys;
+				}
+				return null;
+			};
+			Function<StarClass, UniverseTreeIcons> getStarClassIconID = (StarClass starClass)->{
+				switch(starClass) {
+				case Yellow: return UniverseTreeIcons.Yellow;
+				case Red   : return UniverseTreeIcons.Red   ;
+				case Green : return UniverseTreeIcons.Green ;
+				case Blue  : return UniverseTreeIcons.Blue  ;
+				}
+				return null;
+			};
+			
+			Icon[] raceIcons = createIconArray(Race.values(), null, getRaceIconID);
+			Icon[] starClassIcons = createIconArray(StarClass.values(), null, getStarClassIconID);
+			icons = combineIconArrays(raceIcons, starClassIcons, UniverseTreeIcons.SolarSystem);
+			
+			RaceIcons = createIconEnumMap(Race.class, Race.values(), 10,0,20,20, getRaceIconID);
+			StarClassIcons = new EnumMap<>(StarClass.class);
+			for (StarClass starClass:StarClass.values()) {
+				Icon cachedIcon = get(null, starClass);
+				StarClassIcons.put(starClass, IconSource.cutIcon(cachedIcon,0,0,20,20)); 
+			}
+		}
 		
 		Icon get(Race race, StarClass starClass) {
 			int raceIndex      = race     ==null?0:(race     .ordinal()+1);
 			int starClassIndex = starClass==null?0:(starClass.ordinal()+1);
-			return values[raceIndex][starClassIndex];
+			return icons[raceIndex][starClassIndex];
+		}
+	}
+	
+	private static class PlanetIcons extends IconsMap<PlanetTreeIcons> {
+
+		private Icon[][] icons;
+		EnumMap<Universe.Planet.Biome,Icon> BiomeIcons;
+		EnumMap<Universe.Planet.SentinelLevel,Icon> SentinelLevelIcons;
+		
+		PlanetIcons(IconSource.CachedIcons<PlanetTreeIcons> iconSource) {
+			super(iconSource);
+			icons = null;
+			BiomeIcons = null;
+			SentinelLevelIcons = null;
+		}
+
+		void createValues() {
+			Function<Biome, PlanetTreeIcons> getBiomeIconID = (Universe.Planet.Biome biome)->{
+				switch(biome) {
+				case Lush       : return PlanetTreeIcons.BiomeLush;
+				case Scorched   : return PlanetTreeIcons.BiomeScorched;
+				case Barren     : return PlanetTreeIcons.BiomeBarren;
+				case Toxic      : return PlanetTreeIcons.BiomeToxic;
+				case Frozen     : return PlanetTreeIcons.BiomeFrozen;
+				case Irradiated : return PlanetTreeIcons.BiomeIrradiated;
+				case Airless    : return PlanetTreeIcons.BiomeAirless;
+				case Exotic     : return null;
+				case Exotic_Mega: return null;
+				}
+				return null;
+			};
+			
+			Function<SentinelLevel, PlanetTreeIcons> getSentinelLevelIconID = (Universe.Planet.SentinelLevel level)->{
+				switch(level) {
+				case Level1    : return PlanetTreeIcons.SentinelLevel1;
+				case Level2    : return PlanetTreeIcons.SentinelLevel2;
+				case Level3    : return PlanetTreeIcons.SentinelLevel3;
+				case Aggressive: return PlanetTreeIcons.SentinelAggressive;
+				}
+				return null;
+			};
+			
+			Icon[] biomeIcons    = createIconArray(Universe.Planet.Biome.values(), PlanetTreeIcons.BiomeUndef, getBiomeIconID);
+			Icon[] sentinelIcons = createIconArray(Universe.Planet.SentinelLevel.values(), null, getSentinelLevelIconID);
+			icons = combineIconArrays(biomeIcons, sentinelIcons, null);
+			
+			BiomeIcons         = createIconEnumMap(Universe.Planet.Biome        .class, Universe.Planet.Biome        .values(), 0,0,20,20, getBiomeIconID);
+			SentinelLevelIcons = createIconEnumMap(Universe.Planet.SentinelLevel.class, Universe.Planet.SentinelLevel.values(), 0,0,20,20, getSentinelLevelIconID);
+		}
+
+		Icon get(Universe.Planet.Biome biome, Universe.Planet.SentinelLevel level) {
+			int biomeIndex = biome==null?0:(biome.ordinal()+1);
+			int levelIndex = level==null?0:(level.ordinal()+1);
+			return icons[biomeIndex][levelIndex];
 		}
 	}
 
@@ -157,27 +257,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		icon = IconSource.cutIcon(icon,5,0,20,20);
 		UniverseTreeIconsIS.setCachedIcon(UniverseTreeIcons.Galaxy,icon);
 		
-		UniverseTreeSolarSystemIcons = new UniverseTreeSolarSystemIconsMap();
-		UniverseTreeSolarSystemIcons.createValues();
+		SolarSystemIcons = new SolarSystemIcons();
+		SolarSystemIcons.createValues();
 		
-		RaceIcons = new HashMap<>();
-		Race[] races = Race.values();
-		for (Race race:races) {
-			Icon cachedIcon = null;
-			switch(race) {
-			case Gek   : cachedIcon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.GekSys   ); break;
-			case Korvax: cachedIcon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.KorvaxSys); break;
-			case Vykeen: cachedIcon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.VykeenSys); break;
-			}
-			RaceIcons.put(race, IconSource.cutIcon(cachedIcon,10,0,20,20)); 
-		}
-		
-		StarClassIcons = new HashMap<>();
-		StarClass[] starClasses = StarClass.values();
-		for (StarClass starClass:starClasses) {
-			Icon cachedIcon = UniverseTreeSolarSystemIcons.get(null, starClass);
-			StarClassIcons.put(starClass, IconSource.cutIcon(cachedIcon,0,0,20,20)); 
-		}
+		IconSource<PlanetTreeIcons> UncachedPlanetIcons = new IconSource<PlanetTreeIcons>(0,TreeIconHeight,20,20);
+		UncachedPlanetIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
+		PlanetIcons = new PlanetIcons(UncachedPlanetIcons.cacheIcons(PlanetTreeIcons.values()));
+		PlanetIcons.createValues();
 	}
 
 	private JTree tree;
@@ -193,13 +279,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 //		private ExtraInfoTableModel extraInfoTableModel;
 	private SimplifiedTable extraInfoTable;
 	
-	private JPopupMenu contextMenu_Other;
-	private JPopupMenu contextMenu_Named;
-	private JPopupMenu contextMenu_SolarSystem;
-	private JMenuItem miSetName_Named;
-	private JMenuItem miSetName_SolarSystem;
-	private Gui.ListMenuItems<StarClass> miSetStarClass;
-	private Gui.ListMenuItems<Race> miSetRace;
+	private Contextmenu_Other       contextMenu_Other;
+	private Contextmenu_Region      contextMenu_Region;
+	private Contextmenu_SolarSystem contextMenu_SolarSystem;
+	private Contextmenu_Planet      contextMenu_Planet;
 	
 	private Window mainWindow;
 	
@@ -220,77 +303,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		tree.setRowHeight(TreeIconHeight+1);
 		expandFullTree();
 		
-		contextMenu_Other = new JPopupMenu("Contextmenu");
-		contextMenu_Other.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
-		contextMenu_Other.addSeparator();
-		contextMenu_Other.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
-		contextMenu_Other.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
-		
-		contextMenu_SolarSystem = new JPopupMenu("SolarSystem");
-		contextMenu_SolarSystem.add(miSetName_SolarSystem = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
-		contextMenu_SolarSystem.add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
-		
-		contextMenu_SolarSystem.addSeparator();
-		miSetRace = new Gui.ListMenuItems<Universe.SolarSystem.Race>(Universe.SolarSystem.Race.values(),null,
-			new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.Race>() {
-				@Override public void setResult(Race value) {
-					if (clickedNode instanceof SolarSystemNode) {
-						((SolarSystemNode)clickedNode).value.race = value;
-						treeModel.nodeChanged(clickedNode);
-						if (selectedNode==clickedNode) selectionChanged();
-						GameInfos.saveUniverseObjectDataToFile(data.universe);
-					}
-				}
-				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Race value) {
-					if (value==null) {
-						menuItem.setIcon(null);
-						menuItem.setText("<none>");
-					} else {
-						menuItem.setIcon(RaceIcons.get(value));
-						menuItem.setText(value.fullName);
-					}
-				}
-			}
-		);
-		miSetRace.addTo(contextMenu_SolarSystem);
-		
-		contextMenu_SolarSystem.addSeparator();
-		miSetStarClass = new Gui.ListMenuItems<Universe.SolarSystem.StarClass>(Universe.SolarSystem.StarClass.values(),null,
-			new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.StarClass>() {
-				@Override public void setResult(StarClass value) {
-					if (clickedNode instanceof SolarSystemNode) {
-						((SolarSystemNode)clickedNode).value.starClass = value;
-						treeModel.nodeChanged(clickedNode);
-						if (selectedNode==clickedNode) selectionChanged();
-						GameInfos.saveUniverseObjectDataToFile(data.universe);
-					}
-				}
-				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, StarClass value) {
-					if (value==null) {
-						menuItem.setIcon(null);
-						menuItem.setText("<none>");
-					} else {
-						menuItem.setIcon(StarClassIcons.get(value));
-						menuItem.setText(value.toString()+" Class");
-					}
-				}
-			}
-		);
-		miSetStarClass.addTo(contextMenu_SolarSystem);
-		
-		contextMenu_SolarSystem.addSeparator();
-		contextMenu_SolarSystem.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
-		contextMenu_SolarSystem.addSeparator();
-		contextMenu_SolarSystem.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
-		contextMenu_SolarSystem.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
-		
-		contextMenu_Named = new JPopupMenu("Planet");
-		contextMenu_Named.add(miSetName_Named = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
-		contextMenu_Named.addSeparator();
-		contextMenu_Named.add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
-		contextMenu_Named.addSeparator();
-		contextMenu_Named.add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
-		contextMenu_Named.add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+		contextMenu_Other       = new Contextmenu_Other();
+		contextMenu_SolarSystem = new Contextmenu_SolarSystem();
+		contextMenu_Planet      = new Contextmenu_Planet();
+		contextMenu_Region      = new Contextmenu_Region();
 		
 		textArea = new JTextArea();
 		textArea.setEditable(false);
@@ -316,6 +332,173 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		add(treeScrollPane,BorderLayout.CENTER);
 		add(eastPanel,BorderLayout.EAST);
+	}
+	
+	private abstract class AbstractContextmenu extends JPopupMenu {
+		private static final long serialVersionUID = -2141303182163706658L;
+		
+		AbstractContextmenu(String name) {
+			super(name);
+		}
+		protected void addDefaultItems() {
+			add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
+			addSeparator();
+			add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
+			add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+		}
+	}
+	
+	private class Contextmenu_Other extends AbstractContextmenu {
+		private static final long serialVersionUID = 46825168641238400L;
+		Contextmenu_Other() {
+			super("Other");
+			addDefaultItems();
+		}
+	}
+	
+	private class Contextmenu_SolarSystem extends AbstractContextmenu {
+		private static final long serialVersionUID = -735489295003911054L;
+		
+		private JMenuItem miSetName;
+		private ListMenuItems<Race> miSetRace;
+		private ListMenuItems<StarClass> miSetStarClass;
+		
+		Contextmenu_SolarSystem() {
+			super("SolarSystem");
+			
+			add(miSetName = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
+			
+			addSeparator();
+			miSetRace = new Gui.ListMenuItems<Universe.SolarSystem.Race>(Universe.SolarSystem.Race.values(),null,
+				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.Race>() {
+					@Override public void setResult(Race value) {
+						if (clickedNode instanceof SolarSystemNode) {
+							((SolarSystemNode)clickedNode).value.race = value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Race value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(SolarSystemIcons.RaceIcons.get(value));
+							menuItem.setText(value.fullName);
+						}
+					}
+				}
+			);
+			miSetRace.addTo(this);
+			
+			addSeparator();
+			miSetStarClass = new Gui.ListMenuItems<Universe.SolarSystem.StarClass>(Universe.SolarSystem.StarClass.values(),null,
+				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.StarClass>() {
+					@Override public void setResult(StarClass value) {
+						if (clickedNode instanceof SolarSystemNode) {
+							((SolarSystemNode)clickedNode).value.starClass = value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, StarClass value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(SolarSystemIcons.StarClassIcons.get(value));
+							menuItem.setText(value.toString()+" Class");
+						}
+					}
+				}
+			);
+			miSetStarClass.addTo(this);
+			
+			addSeparator();
+			addDefaultItems();
+		}
+	}
+	
+	private class Contextmenu_Planet extends AbstractContextmenu {
+		private static final long serialVersionUID = 170749132550138734L;
+		
+		private JMenuItem miSetName;
+		private ListMenuItems<Biome> miSetBiome;
+		private ListMenuItems<SentinelLevel> miSetSentinelLevel;
+		
+		Contextmenu_Planet() {
+			super("Planet");
+			
+			add(miSetName = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			
+			addSeparator();
+			miSetBiome = new Gui.ListMenuItems<Universe.Planet.Biome>(Universe.Planet.Biome.values(),null,
+				new Gui.ListMenuItems.ExternFunction<Universe.Planet.Biome>() {
+					@Override public void setResult(Universe.Planet.Biome value) {
+						if (clickedNode instanceof PlanetNode) {
+							((PlanetNode)clickedNode).value.biome = value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Universe.Planet.Biome value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(PlanetIcons.BiomeIcons.get(value));
+							menuItem.setText(value.name_EN);
+						}
+					}
+				}
+			);
+			miSetBiome.addTo(this);
+			
+			addSeparator();
+			miSetSentinelLevel = new Gui.ListMenuItems<Universe.Planet.SentinelLevel>(Universe.Planet.SentinelLevel.values(),null,
+				new Gui.ListMenuItems.ExternFunction<Universe.Planet.SentinelLevel>() {
+					@Override public void setResult(Universe.Planet.SentinelLevel value) {
+						if (clickedNode instanceof PlanetNode) {
+							((PlanetNode)clickedNode).value.sentinelLevel = value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Universe.Planet.SentinelLevel value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(PlanetIcons.SentinelLevelIcons.get(value));
+							menuItem.setText(value.name);
+						}
+					}
+				}
+			);
+			miSetSentinelLevel.addTo(this);
+			
+			addSeparator();
+			addDefaultItems();
+		}
+	}
+	
+	private class Contextmenu_Region extends AbstractContextmenu {
+		private static final long serialVersionUID = 6065947291015643167L;
+		
+		private JMenuItem miSetName;
+		
+		Contextmenu_Region() {
+			super("Region");
+			add(miSetName = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			
+			addSeparator();
+			addDefaultItems();
+		}
 	}
 
 	private JMenuItem createMenuItem(String label, UniverseTreeActionCommand actionCommand) {
@@ -518,18 +701,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		switch(clickedNode.type) {
 		case SolarSystem:
 			SolarSystem system = ((SolarSystemNode)clickedNode).value;
-			miSetName_SolarSystem.setText(system.hasOriginalName()?"Change name":"Set name");
-			miSetRace.setValue(system.race);
-			miSetStarClass.setValue(system.starClass);
+			contextMenu_SolarSystem.miSetName.setText(system.hasOriginalName()?"Change name":"Set name");
+			contextMenu_SolarSystem.miSetRace.setValue(system.race);
+			contextMenu_SolarSystem.miSetStarClass.setValue(system.starClass);
 			return contextMenu_SolarSystem;
 			
 		case Region:
-			miSetName_Named.setText(((RegionNode)clickedNode).value.hasName()?"Change name":"Set name");
-			return contextMenu_Named;
+			contextMenu_Region.miSetName.setText(((RegionNode)clickedNode).value.hasName()?"Change name":"Set name");
+			return contextMenu_Region;
 			
 		case Planet:
-			miSetName_Named.setText(((PlanetNode)clickedNode).value.hasOriginalName()?"Change name":"Set name");
-			return contextMenu_Named;
+			Planet planet = ((PlanetNode)clickedNode).value;
+			contextMenu_Planet.miSetName.setText(planet.hasOriginalName()?"Change name":"Set name");
+			contextMenu_Planet.miSetBiome.setValue(planet.biome);
+			contextMenu_Planet.miSetSentinelLevel.setValue(planet.sentinelLevel);
+			return contextMenu_Planet;
 			
 		default:
 			return contextMenu_Other;
@@ -1023,10 +1209,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case SolarSystem:
 					if (node instanceof SolarSystemNode) {
 						SolarSystem system = ((SolarSystemNode)node).value;
-						setIcon(UniverseTreeSolarSystemIcons.get(system.race, system.starClass));
+						setIcon(SolarSystemIcons.get(system.race, system.starClass));
 					}
 					break;
-				case Planet     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     )); break;
+				case Planet:
+					if (node instanceof PlanetNode) {
+						Planet planet = ((PlanetNode)node).value;
+						setIcon(PlanetIcons.get(planet.biome, planet.sentinelLevel));
+					}
+					//setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     ));
+					break;
 				}
 				setFont(standardFont);
 				Universe.UniverseObject obj = null;

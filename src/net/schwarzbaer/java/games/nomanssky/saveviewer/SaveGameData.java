@@ -1998,13 +1998,48 @@ public class SaveGameData {
 		
 		public static final class Planet extends UniverseObject {
 			
+			public enum Biome {
+				Lush       ("lush","erdähnlich"),
+				Barren     ("barren","trocken"),
+				Scorched   ("scorched","trocken"),
+				Frozen     ("frozen","gefroren"),
+				Toxic      ("toxic","giftig"),
+				Irradiated ("irradiated","verstrahlt"),
+				Airless    ("airless","trostlos, ohne Atmosphäre"),
+				Exotic     ("exotic","exotisch"),
+				Exotic_Mega("exotic (Mega)","exotisch, mit Riesenpflanzen"),
+				;
+
+				public final String name_EN;
+				public final String name_DE;
+				private Biome(String name_EN, String name_DE) {
+					this.name_EN = name_EN;
+					this.name_DE = name_DE;
+				}
+			}
+			
+			public enum SentinelLevel {
+				Level1    ("Sentinel Level 1"),
+				Level2    ("Sentinel Level 2"),
+				Level3    ("Sentinel Level 3"),
+				Aggressive("Sentinel Aggressive"),
+				;
+
+				public final String name;
+				private SentinelLevel(String name) { this.name = name; }
+			}
+			
 			final SolarSystem solarSystem;
 			final int planetIndex;
 			private Stats.PlanetStats stats;
+			public Biome biome;
+			public SentinelLevel sentinelLevel;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
+				this.biome = null;
+				this.sentinelLevel = null;
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;

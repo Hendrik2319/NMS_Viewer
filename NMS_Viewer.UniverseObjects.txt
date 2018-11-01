@@ -44,13 +44,14 @@ race=Korvax
 class=Yellow
 
 [Sys005700FAA8CBC4]
-oldname=Atnino
 name=Atnino
+oldname=Atnino
 race=Vykeen
 class=Yellow
 
 [Pln105700FAA8CBC4]
 name=Naeanggu VI
+biome=Scorched
 short=ExtHot
 info=Extrem Heiß
 short.P=AktCu
@@ -60,12 +61,15 @@ info=mit Tiefsee
 
 [Pln205700FAA8CBC4]
 name=Hiyad Tau
+biome=Barren
 
 [Pln305700FAA8CBC4]
 name=Epenniazus Totsu
 
 [Pln405700FAA8CBC4]
 name=Neu: Ralottawa
+biome=Toxic
+sentinel=Aggressive
 short=ExtrGiftig
 info=Biom: Sehr Giftig (2)
 short=AggrWächter
@@ -77,6 +81,7 @@ info=Gravitino-Bälle
 
 [Pln505700FAA8CBC4]
 name=Oroz 92/B2
+biome=Scorched
 short=Heiß
 info=normal heiß
 short=
@@ -97,23 +102,25 @@ oldname=Nozelensk Sano
 oldname=Kiwalhontr-Menes Egor
 
 [Sys006D00FAA8CBC4]
-oldname=Naibolsk
 name=Naibolsk
+oldname=Naibolsk
 race=Vykeen
 class=Yellow
 distance=707016.000000
 
 [Pln106D00FAA8CBC4]
-oldname=Syamnonerger
 name=Ebbie Primus
+oldname=Syamnonerger
+biome=Frozen
 
 [Pln206D00FAA8CBC4]
-oldname=Magnandram Ilioc
 name=Drushya II
+oldname=Magnandram Ilioc
+biome=Lush
 
 [Pln306D00FAA8CBC4]
-oldname=Loyarnaulic
 name=Leuthow IV
+oldname=Loyarnaulic
 
 [Sys007900FAA8CBC4]
 oldname=Kihgora-Agyu X
