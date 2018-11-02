@@ -397,6 +397,12 @@ public class TableView {
 		protected void fireTableRowAdded(int rowIndex) {
 			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
 		}
+		protected void fireTableRowRemoved(int rowIndex) {
+			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
+		}
+		protected void fireTableRowsRemoved(int firstRowIndex, int lastRowIndex) {
+			fireTableModelEvent(new TableModelEvent(this, firstRowIndex, lastRowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
+		}
 		protected void fireTableUpdate() {
 			fireTableModelEvent(new TableModelEvent(this));
 		}

@@ -34,9 +34,17 @@ class=Yellow
 oldname=Midakasahik
 
 [Sys004600FAA8CBC4]
+name=Tusevoz-Kiku
 oldname=Tusevoz-Kiku
 race=Gek
 class=Yellow
+distance=706847.000000
+
+[Pln204600FAA8CBC4]
+name=Interen
+biome=Toxic
+short=
+info=Ag, U, Cu
 
 [Sys004700FAA8CBC4]
 oldname=Izberes-Ort

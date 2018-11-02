@@ -85,7 +85,6 @@ public class SaveGameData {
 		
 		GameInfos.readUniverseObjectDataFromDataPool(universe);
 		GameInfos.saveAllIDsToFiles();
-		GameInfos.updateUpgrades();
 		return this;
 	}
 

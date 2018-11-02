@@ -9,7 +9,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.Image;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -23,7 +22,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -38,9 +36,6 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageSelectDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
@@ -287,27 +282,12 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						textarea.append("           "+slot.id.type.getLabel()+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
 					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
-					
-					if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade) {
-						Vector<GeneralizedID> upgrades = getUpgrades(slot);
-						if (!upgrades.isEmpty())        textarea.append("   Upgrades:\r\n");
-						for (GeneralizedID id:upgrades) textarea.append("      "+(id.hasLabel()?id.label:id.id)+"\r\n");
-					}
 				}
 			}
 		}
 
-		private static Vector<GeneralizedID> getUpgrades(Slot slot) {
-			Vector<GeneralizedID> upgrades = new Vector<>();
-			for (GeneralizedID id:slot.id.betterUpgrades) {
-				Usage usage = id.getUsage(slot.getSource());
-				if (usage!=null && !usage.blueprintUsages.isEmpty() && usage.inventoryUsages.isEmpty())
-					upgrades.add(id);
-			}
-			return upgrades;
-		}
-
 		private static class InventoryDisplay extends Canvas implements MouseListener, MouseMotionListener {
+
 			private static final long serialVersionUID = -1799938226122102016L;
 			
 			private static final Color COLOR__SLOT_HOVERED       = new Color(0xFFD800);
@@ -334,7 +314,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_TEXT_TECH      = new Color(0xAD00AD);
 
 			private static final Color COLOR__SLOT_BG            = Color.WHITE;
-			private static final Paint COLOR__SLOT_BG_UPGRADABLE = Gui.brighter(Color.MAGENTA,0.5f);
+
+			private static final Color COLOR__UPGRCLS_BG     = new Color(0,0,0,160);
+			private static final Color COLOR__UPGRCLS_BORDER = new Color(255,255,255,192);
+			private static final Paint COLOR__UPGRCLS_TEXT   = Color.WHITE;
 
 			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
 			
@@ -347,19 +330,41 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final int SLOT_RASTER_X = SLOT_WIDTH +2*SLOT_BORDER;
 			private static final int SLOT_RASTER_Y = SLOT_HEIGHT+2*SLOT_BORDER;
 			
-			private static final int UPGRCAT_WIDTH  = Math.round(SLOT_WIDTH*0.4f);
-			private static final int UPGRCAT_HEIGHT = UPGRCAT_WIDTH;
-			private static final int UPGRCAT_BORDER = 4;
-			private static final int UPGRCAT_CORNER_RADIUS = 7;
-
-			private static final int UPGRCAT_IMG_SIZE = 20;
-			private static final int UPGRCAT_IMG_OFFSET_X = 3;
-			private static final int UPGRCAT_IMG_OFFSET_Y = 3;
+			private static final int UPGRCLS_WIDTH  = Math.round(SLOT_WIDTH*0.4f);
+			private static final int UPGRCLS_HEIGHT = UPGRCLS_WIDTH;
+			private static final int UPGRCLS_BORDER = 4;
+			private static final int UPGRCLS_CORNER_RADIUS = 7;
 			
-			private static final float UPGRCAT_STR_FONT_SCALE = 1.3f;
-			private static final int UPGRCAT_STR_OFFSET_X = 4;
-			private static final int UPGRCAT_STR_OFFSET_Y = 6;
+			private static final float UPGRCLS_STR_FONT_SCALE = 1.7f;
+			private static final int UPGRCLS_STR_OFFSET_Y = 6;
+			
+			private enum UpgrCls {
+				S("S",new Color(0xFFA712), 0),
+				A("A",new Color(0xA063D8),-1),
+				B("B",new Color(0x3C8BD6), 0),
+				C("C",new Color(0x3FA782),-1);
+				
+				private String letter;
+				private Color color;
+				private int offsetX;
 
+				private UpgrCls(String letter, Color color, int offsetX) {
+					this.letter = letter;
+					this.color = color;
+					this.offsetX = offsetX;
+				}
+				static UpgrCls get(GeneralizedID.UpgradeClass upgradeClass) {
+					if (upgradeClass!=null)
+						switch (upgradeClass) {
+						case S: return S;
+						case A: return A;
+						case B: return B;
+						case C: return C;
+						}
+					return null;
+				}
+			}
+			
 			private int inventoryWidth;
 			private int inventoryHeight;
 			private int imageWidth;
@@ -417,10 +422,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						int x=indexX*SLOT_RASTER_X+SLOT_BORDER;
 						int y=indexY*SLOT_RASTER_Y+SLOT_BORDER;
 						if (!slot.isEmpty) {
-							if (slot.id!=null && slot.id.type!=null && slot.id.type.isUpgrade && !getUpgrades(slot).isEmpty())
-								g2.setPaint(COLOR__SLOT_BG_UPGRADABLE);
-							else
-								g2.setPaint(COLOR__SLOT_BG);
+							g2.setPaint(COLOR__SLOT_BG);
 							g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
 						}
 						g2.setPaint(COLOR__SLOT_EDGE);
@@ -472,24 +474,42 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 							
 							g2.drawImage(image, x+innerOffsetX+imageBorder,y+innerOffsetY+innerHeight-imageBorder-imageSize, null);
 							
-							if (slot.id.upgradeCat!=null || slot.id.upgradeStr!=null) {
-								int iconX = x+innerOffsetX+imageBorder+UPGRCAT_BORDER;
-								int iconY = y+innerOffsetY+innerHeight-imageBorder-UPGRCAT_BORDER-UPGRCAT_HEIGHT;
-								g2.setPaint(Color.BLACK);
-								g2.fillRoundRect(iconX,iconY, UPGRCAT_WIDTH, UPGRCAT_HEIGHT, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
-								g2.setPaint(Color.WHITE);
-								g2.drawRoundRect(iconX,iconY, UPGRCAT_WIDTH-1, UPGRCAT_HEIGHT-1, UPGRCAT_CORNER_RADIUS*2, UPGRCAT_CORNER_RADIUS*2);
-								if (slot.id.upgradeCat!=null) {
-									Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
-									g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
-								}
-								if (slot.id.upgradeStr!=null) {
-									g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCAT_STR_FONT_SCALE) );
-									int strX = iconX+UPGRCAT_WIDTH-UPGRCAT_STR_OFFSET_X-g2.getFontMetrics().stringWidth(slot.id.upgradeStr);
-									int strY = iconY+UPGRCAT_HEIGHT-UPGRCAT_STR_OFFSET_Y;
-									g2.drawString(slot.id.upgradeStr, strX, strY);
-									g2.setFont( stdBoldFont );
-								}
+							if (slot.id.upgradeClass!=null) {
+								UpgrCls upgrCls = UpgrCls.get(slot.id.upgradeClass);
+								int iconX = x+innerOffsetX+imageBorder+UPGRCLS_BORDER;
+								int iconY = y+innerOffsetY+innerHeight-imageBorder-UPGRCLS_BORDER-UPGRCLS_HEIGHT;
+								g2.setPaint(COLOR__UPGRCLS_BG);
+								g2.fillRoundRect(iconX,iconY, UPGRCLS_WIDTH, UPGRCLS_HEIGHT, UPGRCLS_CORNER_RADIUS*2, UPGRCLS_CORNER_RADIUS*2);
+								g2.setPaint(COLOR__UPGRCLS_BORDER);
+								g2.drawRoundRect(iconX,iconY, UPGRCLS_WIDTH-1, UPGRCLS_HEIGHT-1, UPGRCLS_CORNER_RADIUS*2, UPGRCLS_CORNER_RADIUS*2);
+								
+								int UPGRCLS_ICON_WIDTH  = 18;
+								int UPGRCLS_ICON_HEIGHT = 28;
+								g2.setPaint(upgrCls.color);
+								g2.fillPolygon(
+										new int[]{
+												iconX+UPGRCLS_WIDTH/2-UPGRCLS_ICON_WIDTH/2,
+												iconX+UPGRCLS_WIDTH/2+UPGRCLS_ICON_WIDTH/2,
+												iconX+UPGRCLS_WIDTH/2+UPGRCLS_ICON_WIDTH/2,
+												iconX+UPGRCLS_WIDTH/2,
+												iconX+UPGRCLS_WIDTH/2-UPGRCLS_ICON_WIDTH/2,
+										},
+										new int[]{
+												iconY+UPGRCLS_HEIGHT/2-UPGRCLS_ICON_HEIGHT/2,
+												iconY+UPGRCLS_HEIGHT/2-UPGRCLS_ICON_HEIGHT/2,
+												iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/4,
+												iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/2,
+												iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/4,
+										}, 5);
+								//Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
+								//g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
+
+								g2.setPaint(COLOR__UPGRCLS_TEXT);
+								g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCLS_STR_FONT_SCALE) );
+								int strX = iconX+UPGRCLS_WIDTH/2-g2.getFontMetrics().stringWidth(upgrCls.letter)/2+upgrCls.offsetX;
+								int strY = iconY+UPGRCLS_HEIGHT/2+UPGRCLS_STR_OFFSET_Y;
+								g2.drawString(upgrCls.letter, strX, strY);
+								g2.setFont( stdBoldFont );
 							}
 							
 							

@@ -1,7 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -46,6 +45,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -118,7 +118,7 @@ public class GameInfos {
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
 			this(universeAddress,Type.Region);
-			this.oldname = region.oldname; // TODO
+			this.oldname = region.oldname;
 			this.name = region.name;
 		}
 		
@@ -496,56 +496,15 @@ public class GameInfos {
 			return existingID==null ? newID : existingID;
 		}
 
-		public HashMap<String, Vector<GeneralizedID>> getIDBaseGroups() {
-			HashMap<String, Vector<GeneralizedID>> groups = new HashMap<>();
-			for (GeneralizedID id:map.values()) {
-				Vector<GeneralizedID> group = groups.get(id.idBase);
-				if (group==null) groups.put(id.idBase,group = new Vector<GeneralizedID>());
-				group.add(id);
-			}
-			return groups;
-		}
-
-		public Vector<GeneralizedID> getIDBaseGroup(String idBase) {
-			Vector<GeneralizedID> group = new Vector<>();
-			for (GeneralizedID id:map.values())
-				if (id.idBase.equals(idBase))
-					group.add(id);
-			return group;
-		}
-	}
-
-	public static void updateUpgrades() {
-		updateUpgrades(productIDs  );
-		updateUpgrades(techIDs     );
-		updateUpgrades(substanceIDs);
-	}
-
-	public static void updateUpgrades(IDMap map) {
-		HashMap<String,Vector<GeneralizedID>> groups = map.getIDBaseGroups();
-		for (String idBase:groups.keySet())
-			updateUpgrades(groups.get(idBase));
-	}
-
-	public static void updateUpgrades(IDMap map, GeneralizedID id) {
-		updateUpgrades(map.getIDBaseGroup(id.idBase));
-	}
-
-	public static void updateUpgrades(Vector<GeneralizedID> group) {
-		group.sort(Comparator.comparing((GeneralizedID id)->id.idIndex,Comparator.nullsFirst(Comparator.naturalOrder())));
-		for (int i=0; i<group.size(); ++i) {
-			GeneralizedID id = group.get(i);
-			Vector<GeneralizedID> vec = id.betterUpgrades;
-			vec.clear();
-			//if (id.type!=null && id.type.isUpgrade)
-			vec.addAll( group.subList(i+1,group.size()) );
+		public void remove(GeneralizedID id) {
+			map.remove(id.id);
 		}
 	}
 
 	public static void loadAllIDsFromFiles() {
-		loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   ); updateUpgrades(productIDs  );
-		loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology"); updateUpgrades(techIDs     );
-		loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" ); updateUpgrades(substanceIDs);
+		loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   );
+		loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology");
+		loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" );
 	}
 	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
 		File file = new File(filePath);
@@ -588,17 +547,12 @@ public class GameInfos {
 					try { id.setImageBG(Integer.parseInt(value,16)); }
 					catch (NumberFormatException e) {}
 				}
-				else if (idStr.endsWith(".upgradeCat")) {
-					idStr = idStr.substring(0, idStr.length()-".upgradeCat".length());
+				else if (idStr.endsWith(".upgradeClass")) {
+					idStr = idStr.substring(0, idStr.length()-".upgradeClass".length());
 					GeneralizedID id = map.get(idStr);
-					id.upgradeCat = Images.UpgradeCategory.getValue(value);
+					id.upgradeClass = GeneralizedID.UpgradeClass.parseValue(value);
 				}
-				else if (idStr.endsWith(".upgradeStr")) {
-					idStr = idStr.substring(0, idStr.length()-".upgradeStr".length());
-					GeneralizedID id = map.get(idStr);
-					id.setUpgradeStr(value);
-				}
-				else {
+				else if (idStr.indexOf('.')<0) {
 					GeneralizedID id = map.get(idStr);
 					id.setLabel(value);
 				}
@@ -643,13 +597,12 @@ public class GameInfos {
 			for (String idStr:map.getSortedKeys()) {
 				GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.getLabel());
-				if (id.isObsolete        ) out.printf("%s.obsolete=\r\n"    ,idStr);
-				if (id.type!=null        ) out.printf("%s.type=%s\r\n"      ,idStr,id.type);
-				if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"    ,idStr,id.symbol);
-				if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"     ,idStr,id.getImageFileName());
-				if (id.hasImageBG      ()) out.printf("%s.imageBG=%06X\r\n" ,idStr,id.getImageBG());
-				if (id.upgradeCat!=null  ) out.printf("%s.upgradeCat=%s\r\n",idStr,id.upgradeCat);
-				if (id.upgradeStr!=null  ) out.printf("%s.upgradeStr=%s\r\n",idStr,id.upgradeStr);
+				if (id.isObsolete        ) out.printf("%s.obsolete=\r\n"      ,idStr);
+				if (id.type!=null        ) out.printf("%s.type=%s\r\n"        ,idStr,id.type);
+				if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"      ,idStr,id.symbol);
+				if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"       ,idStr,id.getImageFileName());
+				if (id.hasImageBG      ()) out.printf("%s.imageBG=%06X\r\n"   ,idStr,id.getImageBG());
+				if (id.upgradeClass!=null) out.printf("%s.upgradeClass=%s\r\n",idStr,id.upgradeClass);
 			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -660,40 +613,48 @@ public class GameInfos {
 	public static class GeneralizedID {
 		
 		public enum Type {
-			MultitoolWeapon          ("Multitool-Waffe"),
-			MultitoolWeaponUpgrade   ("Multitool-Waffen-Upgrade",true),
-			MultitoolExtension       ("Multitool-Erweiterung"),
-			MultitoolExtensionUpgrade("Multitool-Erw.-Upgrade",true),
-			ExosuitExtension         ("Exo-Anzug-Erweiterung"),
-			ExosuitExtensionUpgrade  ("Exo-Anzug-Erw.-Upgrade",true),
-			ExocraftWeapon           ("Exo-Fahrzeug-Waffe"),
-			ExocraftWeaponUpgrade    ("Exo-Fahrzeug-Waffen-Upgrade",true),
-			ExocraftExtension        ("Exo-Fahrzeug-Erweiterung"),
-			ExocraftExtensionUpgrade ("Exo-Fahrzeug-Erw.-Upgrade",true),
-			ShipWeapon               ("Schiffswaffe"),
-			ShipWeaponUpgrade        ("Schiffswaffen-Upgrade",true),
-			ShipExtension            ("Schiffs-Erweiterung"),
-			ShipExtensionUpgrade     ("Schiffs-Erw.-Upgrade",true),
-			FreighterExtension       ("Frachter-Erweiterung"),
-			FreighterExtensionUpgrade("Frachter-Erw.-Upgrade",true),
-			BaseComponent            ("Basis-Komponente"),
-			BaseComponent_FertigTeil ("Basis-Komponente (Fertigteil)"),
-			BaseDekoration           ("Basis-Dekoration"),
-			BaseExternal             ("Basis-Außenanlage"),
-			BaseComponentFreighter   ("Basis-Komponente (Frachter)"),
-			BaseDekorationFreighter  ("Basis-Dekoration (Frachter)"),
-			Resource                 ("Rohstoff"),
-			ResourceCrystal          ("Rohstoff-Kristall"),
-			Alloy                    ("Legierung"),
-			AtlasSeed                ("Atlas-Samen"),
-			Product                  ("Allgemeines Produkt"),
-			ProductExpensive         ("Teures Produkt"),
-			Energy                   ("Energie-Produkt"),
-			Ammunition               ("Munition"),
-			Plant                    ("Pflanze"),
-			PlantProduct             ("Frucht"),
-			RaceGift                 ("Völker-Geschenk"),
-			Special                  ("Speziell");
+			MultitoolWeapon           ("Multitool-Waffe"),
+			MultitoolWeaponUpgrade    ("Multitool-Waffen-Upgrade",true),
+			MultitoolWeaponUpgradeM   ("Multitool-Waffen-Upgr.-Modul",true),
+			MultitoolExtension        ("Multitool-Erweiterung"),
+			MultitoolExtensionUpgrade ("Multitool-Erw.-Upgrade",true),
+			MultitoolExtensionUpgradeM("Multitool-Erw.-Upgr.-Modul",true),
+			ExosuitExtension          ("Exo-Anzug-Erweiterung"),
+			ExosuitExtensionUpgrade   ("Exo-Anzug-Erw.-Upgrade",true),
+			ExosuitExtensionUpgradeM  ("Exo-Anzug-Erw.-Upgr.-Modul",true),
+			ExocraftWeapon            ("Exo-Fahrzeug-Waffe"),
+			ExocraftWeaponUpgrade     ("Exo-Fahrzeug-Waffen-Upgrade",true),
+			ExocraftWeaponUpgradeM    ("Exo-Fahrzeug-Waffen-Upgr.-Modul",true),
+			ExocraftExtension         ("Exo-Fahrzeug-Erweiterung"),
+			ExocraftExtensionUpgrade  ("Exo-Fahrzeug-Erw.-Upgrade",true),
+			ExocraftExtensionUpgradeM ("Exo-Fahrzeug-Erw.-Upgr.-Modul",true),
+			ShipWeapon                ("Schiffswaffe"),
+			ShipWeaponUpgrade         ("Schiffswaffen-Upgrade",true),
+			ShipWeaponUpgradeM        ("Schiffswaffen-Upgr.-Modul",true),
+			ShipExtension             ("Schiffs-Erweiterung"),
+			ShipExtensionUpgrade      ("Schiffs-Erw.-Upgrade",true),
+			ShipExtensionUpgradeM     ("Schiffs-Erw.-Upgr.-Modul",true),
+			FreighterExtension        ("Frachter-Erweiterung"),
+			FreighterExtensionUpgrade ("Frachter-Erw.-Upgrade",true),
+			FreighterExtensionUpgradeM("Frachter-Erw.-Upgr.-Modul",true),
+			BaseComponent             ("Basis-Komponente"),
+			BaseComponent_FertigTeil  ("Basis-Komponente (Fertigteil)"),
+			BaseDekoration            ("Basis-Dekoration"),
+			BaseExternal              ("Basis-Außenanlage"),
+			BaseComponentFreighter    ("Basis-Komponente (Frachter)"),
+			BaseDekorationFreighter   ("Basis-Dekoration (Frachter)"),
+			Resource                  ("Rohstoff"),
+			ResourceCrystal           ("Rohstoff-Kristall"),
+			Alloy                     ("Legierung"),
+			AtlasSeed                 ("Atlas-Samen"),
+			Product                   ("Allgemeines Produkt"),
+			ProductExpensive          ("Teures Produkt"),
+			Energy                    ("Energie-Produkt"),
+			Ammunition                ("Munition"),
+			Plant                     ("Pflanze"),
+			PlantProduct              ("Frucht"),
+			RaceGift                  ("Völker-Geschenk"),
+			Special                   ("Speziell");
 			
 			private String label;
 			public boolean isUpgrade;
@@ -708,21 +669,27 @@ public class GameInfos {
 			}
 		}
 		
+		public enum UpgradeClass {
+			S,A,B,C;
+			public static UpgradeClass parseValue(String str) {
+				try { return valueOf(str); }
+				catch (Exception e) { return null; }
+			}
+			public String getLabel() {
+				return this.toString()+"-Class";
+			}
+		}
+		
 		public final String id;
 		public boolean isObsolete;
 		public String label;
 		public String symbol;
 		public Type type;
-		public Images.UpgradeCategory upgradeCat;
-		public String  upgradeStr;
+		public UpgradeClass upgradeClass;
 		private String imageFileName;
 		private Integer imageBackground;
 		final HashMap<SaveGameData,Usage> usage;
 		private BufferedImage cachedImage;
-		
-		private String idBase;
-		private Integer idIndex;
-		public Vector<GeneralizedID> betterUpgrades;
 		
 		private GeneralizedID(String id, String label) {
 			this.id = id;
@@ -730,14 +697,11 @@ public class GameInfos {
 			this.label = label;
 			this.symbol = null;
 			this.type = null;
-			this.upgradeCat = null;
-			this.upgradeStr = null;
+			this.upgradeClass = null;
 			this.usage = new HashMap<>();
 			this.imageFileName = null;
 			this.imageBackground = null;
 			this.cachedImage = null;
-			splitID();
-			this.betterUpgrades = new Vector<>();
 		}
 		public GeneralizedID(String id) {
 			this(id,"");
@@ -747,29 +711,11 @@ public class GameInfos {
 			this.label = other.label;
 			this.symbol = other.symbol;
 			this.type = other.type;
-			this.upgradeCat = other.upgradeCat;
-			this.upgradeStr = other.upgradeStr;
+			this.upgradeClass = other.upgradeClass;
 			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
 			this.imageFileName = other.imageFileName;
 			this.imageBackground = other.imageBackground;
 			this.cachedImage = other.cachedImage;
-			splitID();
-		}
-		
-		private void splitID() {
-			int i;
-			for (i = id.length(); i>0; --i) {
-				char ch = id.charAt(i-1);
-				if (ch<'0'||'9'<ch) break;
-			}
-			
-			idBase = id.substring(0,i);
-			
-			idIndex = null;
-			String indexStr = id.substring(i);
-			if (!indexStr.isEmpty()) 
-				try { idIndex = Integer.parseInt(indexStr); }
-				catch (NumberFormatException e) {}
 		}
 		
 		public boolean hasLabel () { return label !=null && !label .isEmpty(); }
@@ -779,15 +725,11 @@ public class GameInfos {
 		public String getLabel () { return label ==null?"":label ; }
 		public String getSymbol() { return symbol==null?"":symbol; }
 		
-		
 		public String getName() {
 			if (!hasLabel ()) return "["+id+"]";
 			if (!hasSymbol()) return label+" ["+id+"]";
 			return "("+symbol+") "+label+" ["+id+"]";
 		}
-		
-		public void setUpgradeStr(String str) { this.upgradeStr = (str==null||str.isEmpty())?null:str; }
-		public String getUpgradeStr() { return upgradeStr==null?"":upgradeStr; }
 		
 		public boolean hasImageFileName() { return imageFileName!=null; }
 		public String getImageFileName() { return imageFileName==null?"":imageFileName; }
@@ -920,7 +862,7 @@ public class GameInfos {
 			GeneralizedID.Type[] types = addNull(GeneralizedID.Type.values());
 			Gui.ListMenuItems.ExternFunction<GeneralizedID.Type> setType = new Gui.ListMenuItems.ExternFunction<GeneralizedID.Type>() {
 				@Override public void setResult(GeneralizedID.Type value) {
-					updateAfterContextMenuAction(setType(value));
+					updateAfterContextMenuAction(setType(value),null);
 				}
 				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Type value) {
 					menuItem.setText(value==null?"<none>":value.getLabel());
@@ -931,25 +873,24 @@ public class GameInfos {
 			Gui.ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType);
 			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Group   = new Gui.ListMenu<GeneralizedID.Type>("Type of selected", types, null, setType);
 			
-			Images.UpgradeCategory[] upgrcats = addNull(Images.UpgradeCategory.values());
-			Gui.ListMenuItems.ExternFunction<Images.UpgradeCategory> setUpgradeCat = new Gui.ListMenuItems.ExternFunction<Images.UpgradeCategory>() {
-				@Override public void setResult(Images.UpgradeCategory value) {
-					updateAfterContextMenuAction(setUpgradeCat(value));
+			GeneralizedID.UpgradeClass[] upgradeClasses = addNull(GeneralizedID.UpgradeClass.values());
+			Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass> setUpgradeCat = new Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass>() {
+				@Override public void setResult(GeneralizedID.UpgradeClass value) {
+					updateAfterContextMenuAction(setUpgradeClass(value),null);
 				}
-				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Images.UpgradeCategory value) {
+				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, GeneralizedID.UpgradeClass value) {
 					menuItem.setText(value==null?"<none>":value.getLabel());
-					menuItem.setIcon(value==null?null:new ImageIcon(Images.UpgradeCategoryImages.createImage(value,20,20,Color.BLACK)));
 				}
 			};
-			Gui.ListMenu<Images.UpgradeCategory> upgrcatListMenu_Std     = new Gui.ListMenu<Images.UpgradeCategory>("Upgrade Icon", upgrcats, null, setUpgradeCat);
-			Gui.ListMenu<Images.UpgradeCategory> upgrcatListMenu_Image   = new Gui.ListMenu<Images.UpgradeCategory>("Upgrade Icon", upgrcats, null, setUpgradeCat);
-			Gui.ListMenu<Images.UpgradeCategory> upgrcatListMenu_ImageBG = new Gui.ListMenu<Images.UpgradeCategory>("Upgrade Icon", upgrcats, null, setUpgradeCat);
-			Gui.ListMenu<Images.UpgradeCategory> upgrcatListMenu_Group   = new Gui.ListMenu<Images.UpgradeCategory>("Upgrade Icon of selected", upgrcats, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Std     = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Image   = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Group   = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class of selected", upgradeClasses, null, setUpgradeCat);
 			
 			NamedColor[] colors = addNull(SaveViewer.images.colorValues);
 			Gui.NamedColorListMenu.ExternFunction setImageBG = new Gui.NamedColorListMenu.ExternFunction() {
 				@Override public void setResult(NamedColor value) {
-					updateAfterContextMenuAction(setImageBG(value==null?null:value.value));
+					updateAfterContextMenuAction(setImageBG(value==null?null:value.value),null);
 				}
 			};
 			
@@ -975,10 +916,12 @@ public class GameInfos {
 			DebugTableContextMenu contextMenuGroup       = new DebugTableContextMenu(table);
 			
 			contextMenuGroup.addSeparator();
+			contextMenuGroup.add(createMenuItem("Delete selected",ActionCommand.DeleteID,SaveViewer.ToolbarIcons.Delete));
+			contextMenuGroup.addSeparator();
 			contextMenuGroup.add(typeListMenu_Group);
 			contextMenuGroup.add(colorListMenu_Group);
 			contextMenuGroup.add(createMenuItem("ImageFile of selected ...",ActionCommand.SelectImage4AllSelected));
-			contextMenuGroup.add(upgrcatListMenu_Group);
+			contextMenuGroup.add(upgrclsListMenu_Group);
 			contextMenuGroup.addSeparator();
 			contextMenuGroup.add(createMenuItem("Clear ImageFile of selected",ActionCommand.ClearImage,SaveViewer.ToolbarIcons.Delete));
 			contextMenuGroup.add(createMenuItem("Paste ImageFile of selected",ActionCommand.PasteImage,SaveViewer.ToolbarIcons.Paste));
@@ -989,17 +932,17 @@ public class GameInfos {
 			contextMenuGroup.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
 			
 			contextMenuStd.addSeparator();
-			addStandardItems(contextMenuStd, typeListMenu_Std, colorListMenu_Std, upgrcatListMenu_Std);
+			addStandardItems(contextMenuStd, typeListMenu_Std, colorListMenu_Std, upgrclsListMenu_Std);
 			
 			contextMenuImage.addSeparator();
-			addStandardItems(contextMenuImage, typeListMenu_Image, colorListMenu_Image, upgrcatListMenu_Image);
+			addStandardItems(contextMenuImage, typeListMenu_Image, colorListMenu_Image, upgrclsListMenu_Image);
 			contextMenuImage.addSeparator();
 			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage,SaveViewer.ToolbarIcons.Delete));
 			contextMenuImage.add(createMenuItem("Copy ImageFile" ,ActionCommand.CopyImage ,SaveViewer.ToolbarIcons.Copy  ));
 			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage,SaveViewer.ToolbarIcons.Paste ));
 			
 			contextMenuImageBG.addSeparator();
-			addStandardItems(contextMenuImageBG, typeListMenu_ImageBG, colorListMenu_ImageBG, upgrcatListMenu_ImageBG);
+			addStandardItems(contextMenuImageBG, typeListMenu_ImageBG, colorListMenu_ImageBG, upgrclsListMenu_ImageBG);
 			contextMenuImageBG.addSeparator();
 			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground,SaveViewer.ToolbarIcons.Delete));
 			contextMenuImageBG.add(createMenuItem("Copy Background" ,ActionCommand.CopyBackground ,SaveViewer.ToolbarIcons.Copy  ));
@@ -1020,38 +963,38 @@ public class GameInfos {
 						if (table.getSelectedRowCount()>1) {
 							typeListMenu_Group.clearSelection();
 							colorListMenu_Group.clearSelection();
-							upgrcatListMenu_Group.clearSelection();
+							upgrclsListMenu_Group.clearSelection();
 							contextMenuGroup.show(table, e.getX(), e.getY());
 						} else {
 							table.clearSelection();
 							DebugTableContextMenu contextMenu;
 							Gui.ListMenu<GeneralizedID.Type> typeListMenu;
 							Gui.NamedColorListMenu colorListMenu;
-							Gui.ListMenu<Images.UpgradeCategory> upgrcatListMenu;
+							Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu;
 							switch (tableModel.getColumnID(colM)) {
 							case Image:
 								typeListMenu = typeListMenu_Image;
 								colorListMenu = colorListMenu_Image;
-								upgrcatListMenu = upgrcatListMenu_Image;
+								upgrclsListMenu = upgrclsListMenu_Image;
 								contextMenu = contextMenuImage;
 								break;
 							case ImgBG:
 								typeListMenu = typeListMenu_ImageBG;
 								colorListMenu = colorListMenu_ImageBG;
-								upgrcatListMenu = upgrcatListMenu_ImageBG;
+								upgrclsListMenu = upgrclsListMenu_ImageBG;
 								contextMenu = contextMenuImageBG;
 								break;
 							default:
 								typeListMenu = typeListMenu_Std;
 								colorListMenu = colorListMenu_Std;
-								upgrcatListMenu = upgrcatListMenu_Std;
+								upgrclsListMenu = upgrclsListMenu_Std;
 								contextMenu = contextMenuStd;
 								break;
 							}
 							if (clickedID!=null) {
 								typeListMenu.setValue(clickedID.type);
 								colorListMenu.setValue(SaveViewer.images.getColor(clickedID.getImageBG()));
-								upgrcatListMenu.setValue(clickedID.upgradeCat);
+								upgrclsListMenu.setValue(clickedID.upgradeClass);
 							}
 							contextMenu.show(table, e.getX(), e.getY());
 						}
@@ -1079,12 +1022,14 @@ public class GameInfos {
 			
 		}
 
-		private void addStandardItems(DebugTableContextMenu contextMenu, Gui.ListMenu<GeneralizedID.Type> typeListMenu, Gui.NamedColorListMenu colorListMenu, Gui.ListMenu<Images.UpgradeCategory> upgrcatListMenu) {
+		private void addStandardItems(DebugTableContextMenu contextMenu, Gui.ListMenu<GeneralizedID.Type> typeListMenu, Gui.NamedColorListMenu colorListMenu, Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu) {
 			contextMenu.add(createMenuItem("Edit ID",ActionCommand.EditID));
 			contextMenu.add(typeListMenu);
 			contextMenu.add(colorListMenu);
 			contextMenu.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
-			contextMenu.add(upgrcatListMenu);
+			contextMenu.add(upgrclsListMenu);
+			contextMenu.addSeparator();;
+			contextMenu.add(createMenuItem("Delete",ActionCommand.DeleteID,SaveViewer.ToolbarIcons.Delete));
 		}
 		
 		private JMenuItem createMenuItem(String label, ActionCommand actionCommand) {
@@ -1100,7 +1045,7 @@ public class GameInfos {
 			return menuItem;
 		}
 	
-		enum ActionCommand { EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor, SelectImage4AllSelected }
+		enum ActionCommand { DeleteID, EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor, SelectImage4AllSelected }
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
@@ -1109,6 +1054,8 @@ public class GameInfos {
 			if (clickedID==null) return;
 			
 			boolean idChanged = false;
+			Vector<Integer> deletedRows = new Vector<>();
+			
 			String clipboardValue;
 			switch(actionCommand) {
 			case EditID: {
@@ -1118,6 +1065,31 @@ public class GameInfos {
 				if (dlg.hasDataChanged()) {
 					dlg.transferChangesTo(clickedID);
 					idChanged = true;
+				}
+			} break;
+			
+			case DeleteID: {
+				int[] rows = table.getSelectedRows();
+				int rowCount = rows.length>1?rows.length:(clickedCell!=null?1:0);
+				if (rowCount>0) {
+					String message = "Do you really want to delete "+(rowCount==1?"this ID":("these "+rowCount+" IDs"))+"?";
+					if (JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(mainwindow, message, "Delete IDs", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE)) {
+						//SaveViewer.log_ln("Rows to delete: %s", Arrays.toString(rows));
+						if (rows.length>1) {
+							table.stopCellEditing();
+							Vector<Integer> rows2Delete = new Vector<>();
+							for (int rowV:rows) rows2Delete.add(table.convertRowIndexToModel(rowV));
+							rows2Delete.sort(null);
+							for (int i=rows2Delete.size()-1; i>=0; i--)
+								if (tableModel.deleteValue(rows2Delete.get(i)))
+									deletedRows.add(rows2Delete.get(i));
+						} else if (clickedCell!=null) {
+							table.stopCellEditing();
+							if (tableModel.deleteValue(clickedCell.y))
+								deletedRows.add(clickedCell.y);
+						}
+						//SaveViewer.log_ln("DeletedRows: %s", deletedRows.toString());
+					}
 				}
 			} break;
 			
@@ -1168,7 +1140,7 @@ public class GameInfos {
 				SaveViewer.images.showAddColorDialog(mainwindow,"Add Color");
 				break;
 			}
-			updateAfterContextMenuAction(idChanged);
+			updateAfterContextMenuAction(idChanged,deletedRows);
 		}
 
 		private boolean setImageBG(Integer bgColor) {
@@ -1179,34 +1151,34 @@ public class GameInfos {
 			return changeValue(id->id.setImageFileName(imageFileName));
 		}
 
-		private boolean setUpgradeCat(Images.UpgradeCategory value) {
-			return changeValue(id->id.upgradeCat = value);
+		private boolean setUpgradeClass(GeneralizedID.UpgradeClass value) {
+			return changeValue(id->id.upgradeClass = value);
 		}
 
 		private boolean setType(GeneralizedID.Type value) {
 			return changeValue(id->id.type = value);
 		}
 
-		private boolean changeValue(Consumer<GeneralizedID> Consumer) {
+		private boolean changeValue(Consumer<GeneralizedID> setValue) {
 			int[] rows = table.getSelectedRows();
 			if (rows.length>1) {
 				table.stopCellEditing();
 				for (int row:rows) {
 					GeneralizedID id = tableModel.getValue(table.convertRowIndexToModel(row));
-					if (id!=null) Consumer.accept(id); 
+					if (id!=null) setValue.accept(id);
 				}
 				return true;
 			}
 			if (clickedID!=null) {
 				table.stopCellEditing();
-				Consumer.accept(clickedID);
+				setValue.accept(clickedID);
 				return true;
 			}
 			return false;
 		}
 
-		private void updateAfterContextMenuAction(boolean idChanged) {
-			if (idChanged) {
+		private void updateAfterContextMenuAction(boolean idChanged, Vector<Integer> deletedRows) {
+			if (idChanged && (deletedRows==null || deletedRows.isEmpty())) {
 				if (clickedCell!=null) tableModel.updateTableCell(clickedCell.x,clickedCell.y);
 				tableModel.updateAfterCellChange(clickedID);
 				if (clickedCell!=null) {
@@ -1214,19 +1186,23 @@ public class GameInfos {
 					table.setRowSelectionInterval(row,row);
 				}
 				table.repaint();
+			} else if (deletedRows!=null && !deletedRows.isEmpty()) {
+				tableModel.updateTableRowsRemoved(deletedRows);
+				tableModel.updateAfterCellChange(null);
+				table.repaint();
 			}
 			clickedID = null;
+			clickedCell = null;
 		}
 		
 		private void prepareTable() {
-			ComboboxCellEditor<Images.UpgradeCategory> upgrCatCellEditor =
-					new TableView.ComboboxCellEditor<Images.UpgradeCategory>(addNull(Images.UpgradeCategory.values()));
-			TableView.UpgradeCategoryRenderer upgrCatRenderer = new TableView.UpgradeCategoryRenderer();
-			upgrCatCellEditor.setRenderer(upgrCatRenderer);
-			setCellEditor  (GeneralizedIDColumnID.UpgrCat, upgrCatCellEditor);
-			setCellRenderer(GeneralizedIDColumnID.UpgrCat, upgrCatRenderer);
-			
-			
+			ComboboxCellEditor<GeneralizedID.UpgradeClass> upgradeClassCellEditor =
+					new TableView.ComboboxCellEditor<GeneralizedID.UpgradeClass>(addNull(GeneralizedID.UpgradeClass.values()));
+			NonStringRenderer<GeneralizedID.UpgradeClass> upgradeClassRenderer =
+					new TableView.NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; });
+			upgradeClassCellEditor.setRenderer(upgradeClassRenderer);
+			setCellEditor  (GeneralizedIDColumnID.UpgrCls, upgradeClassCellEditor);
+			setCellRenderer(GeneralizedIDColumnID.UpgrCls, upgradeClassRenderer);
 			
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
 					new TableView.ComboboxCellEditor<GeneralizedID.Type>(addNull(GeneralizedID.Type.values()));
@@ -1304,13 +1280,6 @@ public class GameInfos {
 			if (id.hasImageFileName  ()) textarea.append("Image  : "+id.getImageFileName()+"\r\n");
 			if (id.hasImageBG()) textarea.append("ImageBG: "+String.format("%06X",id.getImageBG())+"\r\n");
 			
-			if (id.type!=null && id.type.isUpgrade) {
-				if (!id.betterUpgrades.isEmpty())
-					textarea.append("Upgrades:\r\n");
-				for (GeneralizedID upg:id.betterUpgrades)
-					textarea.append("   "+(upg.hasLabel()?upg.label:upg.id)+"\r\n");
-			}
-			
 			for (SaveGameData key:id.usage.keySet()) {
 				textarea.append("\r\n");
 				textarea.append(key.filename+":\r\n");
@@ -1348,16 +1317,15 @@ public class GameInfos {
 		}
 	
 		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
-			Obsolete("Obs"          ,                String.class,  10,-1, 30, 30),
-			ID      ("ID"           ,                String.class,  80,-1,120,120),
-			Type    ("Type"         ,    GeneralizedID.Type.class, 100,-1,160,160),
-			Symbol  ("Sym."         ,                String.class,  10,-1, 30, 30),
-			Label   ("Label"        ,                String.class, 150,-1,200,200),
-			Image   ("Image"        ,                String.class, 150,-1,250,250),
-			ImgBG   ("Background"   ,            NamedColor.class, 150,-1,200,200),
-			UpgrCat ("Upgrade Image",Images.UpgradeCategory.class,  80,-1,100,100),
-			UpgrStr ("Upgrade Label",                String.class,  50,-1, 80, 80),
-			Usage   (""             ,                String.class,  50,-1, 80, 80);
+			Obsolete("Obs"          ,                    String.class,  10,-1, 30, 30),
+			ID      ("ID"           ,                    String.class,  80,-1,120,120),
+			Type    ("Type"         ,        GeneralizedID.Type.class, 100,-1,160,160),
+			Symbol  ("Sym."         ,                    String.class,  10,-1, 30, 30),
+			Label   ("Label"        ,                    String.class, 150,-1,200,200),
+			Image   ("Image"        ,                    String.class, 150,-1,250,250),
+			ImgBG   ("Background"   ,                NamedColor.class, 150,-1,200,200),
+			UpgrCls ("Upgrade Class",GeneralizedID.UpgradeClass.class,  80,-1,100,100),
+			Usage   (""             ,                    String.class,  50,-1, 80, 80);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -1377,8 +1345,7 @@ public class GameInfos {
 					GeneralizedIDColumnID.Label,
 					GeneralizedIDColumnID.Image,
 					GeneralizedIDColumnID.ImgBG,
-					GeneralizedIDColumnID.UpgrCat,
-					GeneralizedIDColumnID.UpgrStr
+					GeneralizedIDColumnID.UpgrCls,
 				};
 
 			private static final int EXTRA_ROWS = 1;
@@ -1400,7 +1367,20 @@ public class GameInfos {
 				updateIdList();
 				updateNumberOfLabledIDs();
 			}
-	
+
+			public void updateTableRowsRemoved(Vector<Integer> deletedRows) {
+				deletedRows.sort(null);
+				int rangeStart = -1;
+				for (int i=0; i<deletedRows.size(); i++) {
+					int rowM = deletedRows.get(i);
+					if (rangeStart==-1) rangeStart = rowM;
+					if (i+1>=deletedRows.size() || deletedRows.get(i)>rowM+1) {
+						fireTableRowsRemoved(rangeStart,rowM);
+						rangeStart = -1;
+					}
+				}
+			}
+
 			public void updateTableCell(int col, int row) {
 				fireTableCellUpdate(row, col);
 			}
@@ -1469,8 +1449,7 @@ public class GameInfos {
 				case Label :
 				case Image :
 				case ImgBG :
-				case UpgrCat:
-				case UpgrStr: return true;
+				case UpgrCls: return true;
 				case Usage : return false;
 				}
 				return false;
@@ -1480,7 +1459,15 @@ public class GameInfos {
 				if (rowIndex<EXTRA_ROWS) return null;
 				return IDs.get(rowIndex-EXTRA_ROWS);
 			}
-	
+
+			public boolean deleteValue(int rowIndex) {
+				if (rowIndex<EXTRA_ROWS) return false;
+				GeneralizedID id = IDs.remove(rowIndex-EXTRA_ROWS);
+				sourceIdMap.remove(id);
+				//SaveViewer.log_ln("GeneralizedIDTableModel.deleteValue: [%d] -> %s", rowIndex, id==null?"<null>":id.getName());
+				return true;
+			}
+
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, GeneralizedIDColumnID columnID) {
 				if (rowIndex<EXTRA_ROWS) {
@@ -1492,8 +1479,7 @@ public class GameInfos {
 					case Label : return String.format(Locale.ENGLISH,"labeled: %d (%1.1f%%)", numberOfLabledIDs, IDs.isEmpty()?0:numberOfLabledIDs*100.0f/IDs.size());
 					case Image :
 					case ImgBG :
-					case UpgrCat:
-					case UpgrStr:
+					case UpgrCls:
 					case Usage : return "";
 					}
 					return null;
@@ -1508,8 +1494,7 @@ public class GameInfos {
 				case Label   : return id.label;
 				case Image   : return id.imageFileName;
 				case ImgBG   : return SaveViewer.images.getColor( id.getImageBG() );
-				case UpgrCat : return id.upgradeCat;
-				case UpgrStr : return id.upgradeStr;
+				case UpgrCls : return id.upgradeClass;
 				case Usage :
 					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";
@@ -1534,14 +1519,13 @@ public class GameInfos {
 				
 				switch(columnID) {
 				case Obsolete:
-				case ID    : return;
-				case Type  : id.type   = (aValue instanceof GeneralizedID.Type)?(GeneralizedID.Type)aValue:null; break;
-				case Symbol: id.setSymbol(aValue==null?"":aValue.toString()); break;
-				case Label : id.setLabel (aValue==null?"":aValue.toString()); break;
-				case Image : id.setImageFileName(aValue); break;
-				case ImgBG : id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
-				case UpgrCat: id.upgradeCat = (aValue instanceof Images.UpgradeCategory)?(Images.UpgradeCategory)aValue:null; break;
-				case UpgrStr: id.setUpgradeStr(aValue==null?"":aValue.toString()); break;
+				case ID      : return;
+				case Type    : id.type   = (aValue instanceof GeneralizedID.Type)?(GeneralizedID.Type)aValue:null; break;
+				case Symbol  : id.setSymbol(aValue==null?"":aValue.toString()); break;
+				case Label   : id.setLabel (aValue==null?"":aValue.toString()); break;
+				case Image   : id.setImageFileName(aValue); break;
+				case ImgBG   : id.setImageBG((aValue instanceof NamedColor)?((NamedColor)aValue).value:null); break;
+				case UpgrCls : id.upgradeClass = (aValue instanceof GeneralizedID.UpgradeClass)?(GeneralizedID.UpgradeClass)aValue:null; break;
 				case Usage : return;
 				}
 				updateAfterCellChange(id);
@@ -1642,16 +1626,10 @@ public class GameInfos {
 				}
 			};
 			
-			JComboBox<Images.UpgradeCategory> cmbbxUpgradeIcon = new JComboBox<>(addNull(Images.UpgradeCategory.values())	);
-			cmbbxUpgradeIcon.setRenderer(new TableView.UpgradeCategoryRenderer());
-			cmbbxUpgradeIcon.setSelectedItem(id.upgradeCat);
-			cmbbxUpgradeIcon.addActionListener(e->{id.upgradeCat=(Images.UpgradeCategory)cmbbxUpgradeIcon.getSelectedItem(); dataChanged();});
-			
-			JTextField upgradeStrTextField = new ModifiedJTextField() {
-				@Override protected String getValue() { return id.getUpgradeStr(); }
-				@Override protected void setValue(String str) { id.setUpgradeStr(str); dataChanged(); }
-			}.getTextField();
-			upgradeStrTextField.setPreferredSize(new Dimension(80,16));
+			JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeIcon = new JComboBox<>(addNull(GeneralizedID.UpgradeClass.values())	);
+			cmbbxUpgradeIcon.setRenderer(new TableView.NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
+			cmbbxUpgradeIcon.setSelectedItem(id.upgradeClass);
+			cmbbxUpgradeIcon.addActionListener(e->{id.upgradeClass=(GeneralizedID.UpgradeClass)cmbbxUpgradeIcon.getSelectedItem(); dataChanged();});
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,5,5));
 			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
@@ -1684,12 +1662,12 @@ public class GameInfos {
 			addComp(cmbbxPanel,cmbbxPanelLayout,c,addColorButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Upgrade : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxUpgradeIcon,1,0,2,1, GridBagConstraints.BOTH);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,upgradeStrTextField,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxUpgradeIcon,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			imageField = new JLabel();
 			imageField.setBorder(BorderFactory.createEtchedBorder());
 			imageField.setPreferredSize(new Dimension(256,256));
+			imageField.setMinimumSize(new Dimension(256,256));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
@@ -1772,8 +1750,7 @@ public class GameInfos {
 			id.type   = this.id.type;
 			id.setImageFileName(this.id.imageFileName);
 			id.setImageBG      (this.id.imageBackground);
-			id.upgradeCat = this.id.upgradeCat;
-			id.upgradeStr = this.id.upgradeStr;
+			id.upgradeClass = this.id.upgradeClass;
 		}
 
 //		public Integer getImageBG() { return id.getImageBG(); }
