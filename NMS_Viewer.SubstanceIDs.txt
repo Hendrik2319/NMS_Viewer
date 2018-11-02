@@ -66,7 +66,11 @@
 ^DUSTY1.symbol=Py
 ^DUSTY1.image=SUBSTANCE.BIOME.DUSTY.png
 ^DUSTY1.imageBG=E57000
-^EX_YELLOW=
+^EX_YELLOW=Aktiviertes Kupfer
+^EX_YELLOW.type=Resource
+^EX_YELLOW.symbol=Cu
+^EX_YELLOW.image=SUBSTANCE.EXYELLOW.2.png
+^EX_YELLOW.imageBG=E88F00
 ^FUEL1=Kohlenstoff
 ^FUEL1.type=Resource
 ^FUEL1.symbol=C
