@@ -96,6 +96,69 @@ public class SimplePanels {
 		}
 	}
 	
+	static class TeleportEndpointsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 3670607708610340039L;
+
+		public TeleportEndpointsPanel(SaveGameData data) {
+			super(data);
+			
+			LocalTableModel tableModel = new LocalTableModel();
+			SimplifiedTable table = new SimplifiedTable("TeleportEndpointsTable",tableModel,true,SaveViewer.DEBUG,true);
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			add(tableScrollPane,BorderLayout.CENTER);
+		}
+		
+		private enum LocalTableColumnID implements TableView.SimplifiedColumnIDInterface {
+			// [250, 100, 160, 421, 220, 170]
+			Name           ("Name"            , String.class, 150,-1,250,250),
+			TeleportHost   ("Teleport Host"   , String.class,  50,-1,100,100),
+			UniverseAddress("Universe Address", String.class,  80,-1,160,160),
+			PlanetOrSystem ("Planet / System" , String.class, 200,-1,420,420),
+			Position       ("Position"        , String.class, 100,-1,220,220),
+			LookAt         ("Look At"         , String.class,  90,-1,170,170);
+			
+			private TableView.SimplifiedColumnConfig columnConfig;
+			
+			LocalTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class LocalTableModel extends TableView.SimplifiedTableModel<LocalTableColumnID> {
+			
+			public LocalTableModel() {
+				super(LocalTableColumnID.values());
+			}
+	
+			@Override
+			public int getRowCount() {
+				return data.teleportEndpoints.size();
+			}
+	
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, LocalTableColumnID columnID) {
+				SaveGameData.TeleportEndpoints te = data.teleportEndpoints.get(rowIndex);
+				if (te==null) return null;
+				switch(columnID) {
+				case Name           : return te.name;
+				case TeleportHost   : return te.teleportHost;
+				case UniverseAddress: if (te.universeAddress==null) return ""; else return te.universeAddress.getCoordinates();
+				case LookAt         : if (te.lookAt  ==null) return ""; else return te.lookAt  .toString(" %1.4f ");
+				case Position       : if (te.position==null) return ""; else return te.position.toString(" %1.2f ");
+				case PlanetOrSystem : {
+					if (te.universeAddress==null) return "";
+					String strOut = "";
+					Vector<String> verboseName = te.universeAddress.getVerboseName(data.universe);
+					for (int i=0; i<verboseName.size() && i<2; i++)
+						strOut += " "+verboseName.get(i);
+					return strOut; }
+				}
+				return null;
+			}
+		}
+	}
+
 	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6246130206148705495L;
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
@@ -215,14 +278,15 @@ public class SimplePanels {
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
-			Timestamp       ("Timestamp"       , TimeStamp.class, 35,-1,140,140),
-			ObjectID        ("ObjectID"        ,    String.class, 80,-1,160,160),
-			GalacticAddress ("GalacticAddress" ,    String.class, 80,-1,160,160),
-			RegionSeed      ("RegionSeed"      ,    String.class, 65,-1,130,130),
-			UserData        ("UserData"        ,    String.class, 40,-1, 80, 80),
-			Position        ("Position"        ,    String.class, 95,-1,250,250),
-			Up              ("Up"              ,    String.class, 75,-1,150,150),
-			At              ("At"              ,    String.class, 75,-1,150,150);
+			Timestamp       ("Timestamp"       , TimeStamp.class,  35,-1,140,140),
+			ObjectID        ("ObjectID"        ,    String.class,  80,-1,160,160),
+			GalacticAddress ("GalacticAddress" ,    String.class,  80,-1,160,160),
+			PlanetOrSystem  ("Planet / System" ,    String.class, 200,-1,420,420),
+			RegionSeed      ("RegionSeed"      ,    String.class,  65,-1,130,130),
+			UserData        ("UserData"        ,    String.class,  40,-1, 80, 80),
+			Position        ("Position"        ,    String.class,  95,-1,250,250),
+			Up              ("Up"              ,    String.class,  75,-1,150,150),
+			At              ("At"              ,    String.class,  75,-1,150,150);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
 			
@@ -256,7 +320,13 @@ public class SimplePanels {
 				case Position       : if (bbo.position==null || bbo.position.pos==null) return ""; else return bbo.position.pos.toString("%1.2f")+String.format(Locale.ENGLISH," [R:%1.1f]",bbo.position.pos.length());
 				case Up             : if (bbo.position==null || bbo.position.up ==null) return ""; else return bbo.position.up .toString("%1.4f");
 				case At             : if (bbo.position==null || bbo.position.at ==null) return ""; else return bbo.position.at .toString("%1.4f");
-				
+				case PlanetOrSystem : {
+					if (bbo.galacticAddress==null) return "";
+					String strOut = "";
+					Vector<String> verboseName = bbo.galacticAddress.getVerboseName(data.universe);
+					for (int i=0; i<verboseName.size() && i<2; i++)
+						strOut += " "+verboseName.get(i);
+					return strOut; }
 				}
 				return null;
 			}

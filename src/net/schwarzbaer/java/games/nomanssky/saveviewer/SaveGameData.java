@@ -49,6 +49,7 @@ public class SaveGameData {
 	public UnboundBuildingObject[] baseBuildingObjects;
 	public Vector<PersistentPlayerBase> persistentPlayerBases;
 	public Vector<StoredInteraction> storedInteractions;
+	public Vector<TeleportEndpoints> teleportEndpoints;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -66,6 +67,7 @@ public class SaveGameData {
 		this.inventories = null;
 		this.baseBuildingObjects = null;
 		this.persistentPlayerBases = null;
+		this.teleportEndpoints = null;
 	}
 	
 	public SaveGameData parse(boolean isNEXT) {
@@ -80,12 +82,44 @@ public class SaveGameData {
 		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
 		parseStoredInteractions();
+		parseTeleportEndpoints();
 		universe.sort();
 		//universe.writeToConsole();
+		
+		determineAdditionalInfos();
 		
 		GameInfos.readUniverseObjectDataFromDataPool(universe);
 		GameInfos.saveAllIDsToFiles();
 		return this;
+	}
+
+	private void determineAdditionalInfos() {
+		if (baseBuildingObjects!=null) {
+			for (UnboundBuildingObject bbo:baseBuildingObjects) {
+				if (bbo.galacticAddress==null) continue;
+				if (bbo.objectID==null) continue;
+				if (bbo.objectID.equals("^SUMMON_GARAGE")) {
+					Planet planet = universe.findPlanet(bbo.galacticAddress);
+					if (planet!=null) planet.additionalInfos.hasExocraftSummoningStation = true;
+				}
+			}
+		}
+		if (persistentPlayerBases!=null) {
+			for (PersistentPlayerBase base:persistentPlayerBases) {
+				if (base.galacticAddress==null) continue;
+				if (base.baseType==null) continue;
+				switch(base.baseType) {
+				case FreighterBase: {
+						SolarSystem system = universe.findSolarSystem(base.galacticAddress);
+						if (system!=null) system.additionalInfos.hasFreighter = true;
+					} break;
+				case HomePlanetBase: {
+						Planet planet = universe.findPlanet(base.galacticAddress);
+						if (planet!=null) planet.additionalInfos.bases.add(base);
+					} break;
+				}
+			}
+		}
 	}
 
 	private static Long parseHexFormatedNumber(JSON_Object obj, String valueName) {
@@ -426,6 +460,51 @@ public class SaveGameData {
 		public TimeStamp TS;
 	}
 
+	private void parseTeleportEndpoints() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","TeleportEndpoints");
+		if (arrayValue==null) return;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		teleportEndpoints = new Vector<TeleportEndpoints>();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			JSON_Object objectValue = getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			
+			TeleportEndpoints te = new TeleportEndpoints();
+			te.universeAddress  = parseUniverseAddressStructure(objectValue, "UniverseAddress");
+			te.position         = parseCoordinates(objectValue, "Position");
+			te.lookAt           = parseCoordinates(objectValue, "LookAt");
+			te.teleportHost     = getStringValue(objectValue, "TeleportHost");
+			te.name             = getStringValue(objectValue, "Name");
+			
+			teleportEndpoints.add(te);
+		}
+		
+		if (!notParsableObjects.isEmpty())
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
+	}
+
+	public static class TeleportEndpoints {
+		
+		public String name;
+		public String teleportHost;
+		public Coordinates position;
+		public Coordinates lookAt;
+		public UniverseAddress universeAddress;
+		
+		public TeleportEndpoints() {
+			this.name = null;
+			this.teleportHost = null;
+			this.position = null;
+			this.lookAt = null;
+			this.universeAddress = null;
+		}
+	}
+
 	private void parseStoredInteractions() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","StoredInteractions");
 		if (arrayValue==null) return;
@@ -462,7 +541,7 @@ public class SaveGameData {
 		}
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
 	}
 	
 	public static class StoredInteraction {
@@ -650,6 +729,7 @@ public class SaveGameData {
 			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
 			parseBuildingObject(objectValue, bbo, "BaseBuildingObjects", i);
+			
 			vector.add(bbo);
 		}
 		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
@@ -1950,6 +2030,16 @@ public class SaveGameData {
 				private Race(String fullName) { this.fullName = fullName; }
 			}
 			
+			public static class AdditionalInfos {
+				public boolean hasFreighter;
+				public AdditionalInfos() {
+					this.hasFreighter = false;
+				}
+				public boolean isEmpty() {
+					return !hasFreighter;
+				}
+			}
+			
 			final Region region;
 			final int solarSystemIndex;
 			public final Vector<Planet> planets;
@@ -1957,6 +2047,7 @@ public class SaveGameData {
 			public StarClass starClass;
 			public Double distanceToCenter;
 			public int conflictLevel;
+			public AdditionalInfos additionalInfos; 
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
@@ -1966,6 +2057,7 @@ public class SaveGameData {
 				this.starClass = null;
 				this.distanceToCenter = null;
 				this.conflictLevel = -1;
+				this.additionalInfos = new AdditionalInfos();
 			}
 
 			@Override
@@ -2039,17 +2131,31 @@ public class SaveGameData {
 				}
 			}
 			
+			public static class AdditionalInfos {
+				public Vector<PersistentPlayerBase> bases;
+				public boolean hasExocraftSummoningStation;
+				public AdditionalInfos() {
+					this.bases = new Vector<>();
+					this.hasExocraftSummoningStation = false;
+				}
+				public boolean isEmpty() {
+					return !(!bases.isEmpty() || hasExocraftSummoningStation);
+				}
+			}
+			
 			final SolarSystem solarSystem;
 			final int planetIndex;
 			private Stats.PlanetStats stats;
 			public Biome biome;
 			public boolean areSentinelsAggressive;
+			public AdditionalInfos additionalInfos; 
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
 				this.biome = null;
 				this.areSentinelsAggressive = false;
+				this.additionalInfos = new AdditionalInfos();
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;

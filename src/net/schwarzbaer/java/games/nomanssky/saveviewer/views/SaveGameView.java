@@ -75,8 +75,9 @@ public class SaveGameView extends JPanel {
 			if (data.stats      !=null) tabbedPane.addTab("Stats",new StatsPanel(data));
 			if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
 			
-			if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases"       ,new SimplePanels.PersistentPlayerBasesPanel(data));
-			if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects",new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
+			if (data.teleportEndpoints    !=null) tabbedPane.addTab("Teleport Endpoints" , new SimplePanels.TeleportEndpointsPanel(data));
+			if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases"       , new SimplePanels.PersistentPlayerBasesPanel(data));
+			if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects", new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
 			
 			SaveGameViewTabGroupingPanel discoveredDataPanel = new SaveGameViewTabGroupingPanel(data);
 			discoveredDataPanel.addPanel("Available", new SimplePanels.DiscoveredDataAvailablePanel(data));
@@ -89,7 +90,7 @@ public class SaveGameView extends JPanel {
 			tabbedPane.addTab("Blueprints",blueprintsPanel);
 			tabbedPane.addTab("DiscoveryData",discoveredDataPanel);
 			
-			if (data.storedInteractions !=null) tabbedPane.addTab("Stored Interactions",new SimplePanels.StoredInteractionsPanel(data));
+			if (data.storedInteractions!=null) tabbedPane.addTab("Stored Interactions",new SimplePanels.StoredInteractionsPanel(data));
 		}
 		
 //		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));

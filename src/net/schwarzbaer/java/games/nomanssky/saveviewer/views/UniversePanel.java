@@ -52,9 +52,11 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
@@ -81,9 +83,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless,
 		SentinelAggressive;
 	}
+	private enum AdditionalTreeIcons {
+		VehicleSummoner(20), BaseMainRoom(26), Freighter(44);
+
+		private int iconWidth;
+		private AdditionalTreeIcons(int iconWidth) { this.iconWidth = iconWidth; }
+	}
 	
 	private static final int TreeIconHeight = 20;
 	private static IconSource.CachedIcons<UniverseTreeIcons> UniverseTreeIconsIS;
+	private static IconSource.CachedIcons<AdditionalTreeIcons> AdditionalIcons;
 	public  static IconSource.CachedIndexedImages PortalGlyphsIS;
 	private static SolarSystemIcons SolarSystemIcons;
 	private static PlanetIcons PlanetIcons;
@@ -274,9 +283,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		
-		IconSource<UniverseTreeIcons> UniverseTreeIcons_ = new IconSource<UniverseTreeIcons>(30,TreeIconHeight);
-		UniverseTreeIcons_.readIconsFromResource("/images/UniverseTreeIcons.png");
-		UniverseTreeIconsIS = UniverseTreeIcons_.cacheIcons(UniverseTreeIcons.values());
+		IconSource<UniverseTreeIcons> UncachedUniverseTreeIcons = new IconSource<UniverseTreeIcons>(30,TreeIconHeight);
+		UncachedUniverseTreeIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
+		UniverseTreeIconsIS = UncachedUniverseTreeIcons.cacheIcons(UniverseTreeIcons.values());
 		
 		Icon icon = UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy);
 		icon = IconSource.cutIcon(icon,5,0,20,20);
@@ -285,10 +294,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		SolarSystemIcons = new SolarSystemIcons();
 		SolarSystemIcons.createValues();
 		
-		IconSource<PlanetTreeIcons> UncachedPlanetIcons = new IconSource<PlanetTreeIcons>(0,TreeIconHeight,20,20);
+		IconSource<PlanetTreeIcons> UncachedPlanetIcons = new IconSource<PlanetTreeIcons>(0,TreeIconHeight,20,TreeIconHeight);
 		UncachedPlanetIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
 		PlanetIcons = new PlanetIcons(UncachedPlanetIcons.cacheIcons(PlanetTreeIcons.values()));
 		PlanetIcons.createValues();
+		
+		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<AdditionalTreeIcons>(180,TreeIconHeight,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
+		UncachedAdditionalIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
+		AdditionalIcons = UncachedAdditionalIcons.cacheIcons(AdditionalTreeIcons.values());
+		
 	}
 
 	private JTree tree;
@@ -860,6 +874,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
 			
 			showDiscNameObj(planet);
+			
+			if (!planet.additionalInfos.isEmpty()) {
+				textArea.append("\r\n");
+				textArea.append("Additional Infos:\r\n");
+				if (planet.additionalInfos.hasExocraftSummoningStation)
+					textArea.append("    Exocraft Summoning Station on Planet\r\n");
+				for (PersistentPlayerBase base:planet.additionalInfos.bases)
+					textArea.append(String.format("    Base on Planet: \"%s\"\r\n", base.name));
+			}
 		break;
 			
 		case SolarSystem:
@@ -888,6 +911,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 			
 			showDiscNameObj(system);
+			
+			if (!system.additionalInfos.isEmpty()) {
+				textArea.append("\r\n");
+				textArea.append("Additional Infos:\r\n");
+				if (system.additionalInfos.hasFreighter)
+					textArea.append("    Freighter in System\r\n");
+			}
 		break;
 			
 		case Region:
@@ -1285,14 +1315,42 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case Region     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Region     )); break;
 				case SolarSystem:
 					if (node instanceof SolarSystemNode) {
-						SolarSystem system = ((SolarSystemNode)node).value;
-						setIcon(SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel));
+						SolarSystemNode solarSystemNode = (SolarSystemNode)node;
+						SolarSystem system = solarSystemNode.value;
+						Icon icon;
+						if (!system.additionalInfos.isEmpty()) {
+							if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel))
+								icon = solarSystemNode.cachedCustomIcon.get();
+							else {
+								icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel);
+								if (system.additionalInfos.hasFreighter)
+									icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
+								solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel);
+							}
+						} else
+							icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel);
+						setIcon(icon);
 					}
 					break;
 				case Planet:
 					if (node instanceof PlanetNode) {
-						Planet planet = ((PlanetNode)node).value;
-						setIcon(PlanetIcons.get(planet.biome, planet.areSentinelsAggressive));
+						PlanetNode planetNode = (PlanetNode)node;
+						Planet planet = planetNode.value;
+						Icon icon;
+						if (!planet.additionalInfos.isEmpty()) {
+							if (planetNode.cachedCustomIcon!=null && planetNode.cachedCustomIcon.is(planet.biome, planet.areSentinelsAggressive))
+								icon = planetNode.cachedCustomIcon.get();
+							else {
+								icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
+								if (!planet.additionalInfos.bases.isEmpty())
+									icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom));
+								if (planet.additionalInfos.hasExocraftSummoningStation)
+									icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner));
+								planetNode.cachedCustomIcon = new PlanetNode.CachedCustomIcon(icon,planet.biome, planet.areSentinelsAggressive);
+							}
+						} else
+							icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
+						setIcon(icon);
 					}
 					//setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     ));
 					break;
@@ -1383,16 +1441,56 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		@Override protected LocalTreeNode createTreeChild(int i) { return new SolarSystemNode(this,value.solarSystems.get(i)); }
 	}
 	static class SolarSystemNode extends GenericTreeNode<SolarSystem> {
-		private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); }
+		CachedCustomIcon cachedCustomIcon;
+		private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); cachedCustomIcon = null; }
 		@Override protected int getDataChildrenCount() { return value.planets.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new PlanetNode(this,value.planets.get(i)); }
 		//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
+		
+		static class CachedCustomIcon {
+			private final Icon icon;
+			private final Race race;
+			private final StarClass starClass;
+			private final int conflictLevel;
+
+			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel) {
+				this.icon = icon;
+				this.race = race;
+				this.starClass = starClass;
+				this.conflictLevel = conflictLevel;
+			}
+			public boolean is(Race race, StarClass starClass, int conflictLevel) {
+				return this.race==race && this.starClass==starClass && this.conflictLevel==conflictLevel;
+			}
+			public Icon get() {
+				return icon;
+			}
+		}
 	}
 	static class PlanetNode extends GenericTreeNode<Planet> {
-		private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); }
+		CachedCustomIcon cachedCustomIcon;
+		private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); cachedCustomIcon = null; }
 		@Override protected int getDataChildrenCount() { return 0; }
 		@Override protected LocalTreeNode createTreeChild(int i) { throw new UnsupportedOperationException("Can't create a TreeChild from a PlanetNode."); }
 		//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
 		@Override public boolean getAllowsChildren() { return false; }
+		
+		static class CachedCustomIcon {
+			private final Icon icon;
+			private final Biome biome;
+			private final boolean areSentinelsAggressive;
+
+			public CachedCustomIcon(Icon icon, Biome biome, boolean areSentinelsAggressive) {
+				this.icon = icon;
+				this.biome = biome;
+				this.areSentinelsAggressive = areSentinelsAggressive;
+			}
+			public boolean is(Biome biome, boolean areSentinelsAggressive) {
+				return this.biome==biome && this.areSentinelsAggressive==areSentinelsAggressive;
+			}
+			public Icon get() {
+				return icon;
+			}
+		}
 	}
 }

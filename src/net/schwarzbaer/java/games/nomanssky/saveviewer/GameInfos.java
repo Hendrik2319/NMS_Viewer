@@ -395,7 +395,7 @@ public class GameInfos {
 				}
 				if (uoData.type==UniverseObjectData.Type.Planet) {
 					if (uoData.biome           !=null) out.printf("biome=%s\r\n",uoData.biome);
-					if (uoData.areSentinelsAggressive) out.printf("aggrSentinels=\r\nsentinel=Aggressive\r\n");
+					if (uoData.areSentinelsAggressive) out.printf("aggrSentinels=\r\n");
 				}
 				
 				for (ExtraInfo ei:uoData.extraInfos)
