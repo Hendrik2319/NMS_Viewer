@@ -11,6 +11,8 @@ import java.util.Locale;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -271,7 +273,14 @@ public class SimplePanels {
 			Vector<PersistentPlayerBase> bases = this.data.persistentPlayerBases;
 			for (int j = 0; j < bases.size(); j++) {
 				PersistentPlayerBase pb = bases.get(j);
-				addBaseTab(tabbedPane, pb, String.format("Base %d: %s", j, pb.baseType), j);
+				String title;
+				//if (bases.size()<15)
+					title = String.format("Base %d: %s", j, pb.baseType!=null?pb.baseType.getLongLabel():("["+pb.baseTypeStr+"]"));
+				//else if (bases.size()<30)
+				//	title = String.format("B%d:%s", j, pb.baseType==null?"????":pb.baseType.getMidLabel());
+				//else
+				//	title = String.format("B%d:%s", j, pb.baseType==null?"??":pb.baseType.getShortLabel());
+				addBaseTab(tabbedPane, pb, title, j);
 			}
 			
 			add(tabbedPane,BorderLayout.CENTER);
@@ -280,9 +289,29 @@ public class SimplePanels {
 		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title, int baseIndex) {
 			//String title = String.format("Base %d", ++i);
 			//if (pb.name!=null && !pb.name.isEmpty()) title = String.format("Base \"%s\"", pb.name);
-			tabbedPane.addTab(title, new PlayerBasePanel(this.data,pb));
+			int index = tabbedPane.getTabCount();
+			tabbedPane.insertTab(title,null, new PlayerBasePanel(this.data,pb), null, index);
+			tabbedPane.setTabComponentAt(index, new BaseTabHeader(title,pb));
 		}
 		
+		private static final class BaseTabHeader extends JPanel {
+			private static final long serialVersionUID = -4150419571200547225L;
+			private static final Color FG_Freighter = new Color(0x4483FF);
+			private static final Color FG_Planet    = new Color(0x007F00);
+
+			public BaseTabHeader(String title, PersistentPlayerBase pb) {
+				setOpaque(false);
+				setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+				JLabel label = new JLabel(title);
+				if (pb.baseType!=null)
+					switch (pb.baseType) {
+					case FreighterBase : label.setForeground(FG_Freighter); break;
+					case HomePlanetBase: label.setForeground(FG_Planet); break;
+					}
+				add(label);
+			}
+		}
+
 		static class PlayerBasePanel extends JPanel {
 			private static final long serialVersionUID = 6070388468452658705L;
 			
@@ -302,7 +331,7 @@ public class SimplePanels {
 				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
 				
 				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(this.playerbase.objects);
-				SimplifiedTable table = new SimplifiedTable("BBOTable",tableModel,true,SaveViewer.DEBUG,true);
+				SimplifiedTable table = new SimplifiedTable("BaseObjectsTable",tableModel,true,SaveViewer.DEBUG,true);
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
 				TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
@@ -391,7 +420,7 @@ public class SimplePanels {
 				textArea.append("Base Version : "+(playerbase.baseVersion ==null?"":playerbase.baseVersion )+"\r\n");
 				textArea.append("User Data    : "+(playerbase.userData    ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
 				textArea.append("RID          : "+(playerbase.rid         ==null?"":playerbase.rid         )+"\r\n");
-				textArea.append("Type         : "+(playerbase.baseType    ==null?"":playerbase.baseType    )+"\r\n");
+				textArea.append("Type         : "+(playerbase.baseType    !=null?playerbase.baseType.getLongLabel():(playerbase.baseTypeStr==""?"":("["+playerbase.baseTypeStr+"]")))+"\r\n");
 				textArea.append("Last Update  : "+(playerbase.lastUpdateTS==null?"":playerbase.lastUpdateTS.toString())+"\r\n");
 				textArea.append("Value [wx7]  : "+(playerbase.value__wx7  ==null?"":playerbase.value__wx7  )+"\r\n");
 				

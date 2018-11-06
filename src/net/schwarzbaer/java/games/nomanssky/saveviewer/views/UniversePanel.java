@@ -50,13 +50,11 @@ import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenuItems;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.SentinelLevel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
@@ -74,11 +72,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject }
 	private enum UniverseTreeIcons {
 		Universe, Galaxy, Region, SolarSystem, Planet,
-		GekSys, KorvaxSys, VykeenSys, Yellow, Red, Green, Blue;
+		GekSys, KorvaxSys, VykeenSys,
+		Yellow, Red, Green, Blue,
+		ConflictLevel1, ConflictLevel2, ConflictLevel3,
+		;
 	}
 	private enum PlanetTreeIcons {
 		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless,
-		SentinelLevel1, SentinelLevel2, SentinelLevel3, SentinelAggressive;
+		SentinelAggressive;
 	}
 	
 	private static final int TreeIconHeight = 20;
@@ -87,14 +88,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static SolarSystemIcons SolarSystemIcons;
 	private static PlanetIcons PlanetIcons;
 
-	private static class IconsMap<S extends Enum<S>> {
+	private static class IconsMap<IconID extends Enum<IconID>> {
 		
-		private CachedIcons<S> iconSource;
-		protected IconsMap(IconSource.CachedIcons<S> iconSource) {
+		protected CachedIcons<IconID> iconSource;
+		protected IconsMap(IconSource.CachedIcons<IconID> iconSource) {
 			this.iconSource = iconSource;
 		}
 		
-		protected <E extends Enum<E>> Icon[] createIconArray(E[] values, S iconNullId, Function<E,S> getIconID) {
+		protected <KeyType> Icon[] createIconArray(KeyType[] values, IconID iconNullId, Function<KeyType,IconID> getIconID) {
 			Icon[] icons = new Icon[values.length+1];
 			icons[0] = iconNullId!=null?iconSource.getCachedIcon(iconNullId):null;
 			for (int i=0; i<values.length; i++)
@@ -102,7 +103,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			return icons;
 		}
 		
-		protected Icon[][] combineIconArrays(Icon[] icons1, Icon[] icons2, S iconBgId) {
+		protected Icon[][] combineIconArrays(Icon[] icons1, Icon[] icons2, IconID iconBgId) {
 			Icon iconBG = iconBgId!=null?iconSource.getCachedIcon(iconBgId):null;
 			Icon[][] icons = new Icon[icons1.length][icons2.length];
 			Icon icon;
@@ -114,10 +115,36 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			return icons;
 		}
 		
-		protected <E extends Enum<E>> EnumMap<E,Icon> createIconEnumMap(Class<E> eClass, E[] values, int x, int y, int w, int h, Function<E,S> getIconID) {
+		protected Icon[][][] combineIconArrays(Icon[] icons1, Icon[] icons2, Icon[] icons3, IconID iconBgId) {
+			Icon iconBG = iconBgId!=null?iconSource.getCachedIcon(iconBgId):null;
+			Icon[][][] icons = new Icon[icons1.length][icons2.length][icons3.length];
+			Icon icon1,icon2;
+			for (int i=0; i<icons1.length; i++) {
+				icon1 = IconSource.combine(iconBG, icons1[i]);
+				for (int j=0; j<icons2.length; j++) {
+					icon2 = IconSource.combine(icon1, icons2[j]);
+					for (int k=0; k<icons3.length; k++) {
+						icons[i][j][k] = IconSource.combine(icon2, icons3[k]);
+					}
+				}
+			}
+			return icons;
+		}
+		
+		protected <KeyType> Icon[] createIconArray(KeyType[] values, int x, int y, int w, int h, Function<KeyType,IconID> getIconID) {
+			Icon[] icons = new Icon[values.length];
+			for (int i=0; i<values.length; i++) {
+				IconID iconID = getIconID.apply(values[i]);
+				Icon cachedIcon = iconSource.getCachedIcon(iconID);
+				icons[i] = IconSource.cutIcon(cachedIcon,x,y,w,h);
+			}
+			return icons;
+		}
+		
+		protected <E extends Enum<E>> EnumMap<E,Icon> createIconEnumMap(Class<E> eClass, E[] values, int x, int y, int w, int h, Function<E,IconID> getIconID) {
 			EnumMap<E, Icon> enumMap = new EnumMap<>(eClass);
 			for (E value:values) {
-				S iconID = getIconID.apply(value);
+				IconID iconID = getIconID.apply(value);
 				Icon cachedIcon = iconSource.getCachedIcon(iconID);
 				enumMap.put(value, IconSource.cutIcon(cachedIcon,x,y,w,h)); 
 			}
@@ -127,9 +154,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	private static class SolarSystemIcons extends IconsMap<UniverseTreeIcons> {
 		
-		private Icon[][] icons;
+		private Icon[][][] icons;
 		EnumMap<Race,Icon> RaceIcons;
 		EnumMap<StarClass,Icon> StarClassIcons;
+		private Icon[] ConflictLevelIcons;
 		
 		SolarSystemIcons() {
 			super(UniverseTreeIconsIS);
@@ -156,23 +184,34 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 				return null;
 			};
+			Function<Integer, UniverseTreeIcons> getConflictLevelIconID = (Integer conflictLevel)->{
+				switch(conflictLevel) {
+				case 1: return UniverseTreeIcons.ConflictLevel1;
+				case 2: return UniverseTreeIcons.ConflictLevel2;
+				case 3: return UniverseTreeIcons.ConflictLevel3;
+				}
+				return null;
+			};
 			
 			Icon[] raceIcons = createIconArray(Race.values(), null, getRaceIconID);
 			Icon[] starClassIcons = createIconArray(StarClass.values(), null, getStarClassIconID);
-			icons = combineIconArrays(raceIcons, starClassIcons, UniverseTreeIcons.SolarSystem);
+			Icon[] conflictLevelIcons = createIconArray(new Integer[]{1,2,3}, null, getConflictLevelIconID);
+			icons = combineIconArrays(raceIcons, starClassIcons, conflictLevelIcons, UniverseTreeIcons.SolarSystem);
 			
+			ConflictLevelIcons = createIconArray(new Integer[]{1,2,3}, 0,9,11,11, getConflictLevelIconID);
 			RaceIcons = createIconEnumMap(Race.class, Race.values(), 10,0,20,20, getRaceIconID);
 			StarClassIcons = new EnumMap<>(StarClass.class);
 			for (StarClass starClass:StarClass.values()) {
-				Icon cachedIcon = get(null, starClass);
+				Icon cachedIcon = get(null, starClass, -1);
 				StarClassIcons.put(starClass, IconSource.cutIcon(cachedIcon,0,0,20,20)); 
 			}
 		}
 		
-		Icon get(Race race, StarClass starClass) {
+		Icon get(Race race, StarClass starClass, int conflictLevel) {
 			int raceIndex      = race     ==null?0:(race     .ordinal()+1);
 			int starClassIndex = starClass==null?0:(starClass.ordinal()+1);
-			return icons[raceIndex][starClassIndex];
+			if (conflictLevel<1 || 3<conflictLevel) conflictLevel = 0;
+			return icons[raceIndex][starClassIndex][conflictLevel];
 		}
 	}
 	
@@ -180,17 +219,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private Icon[][] icons;
 		EnumMap<Universe.Planet.Biome,Icon> BiomeIcons;
-		EnumMap<Universe.Planet.SentinelLevel,Icon> SentinelLevelIcons;
 		
 		PlanetIcons(IconSource.CachedIcons<PlanetTreeIcons> iconSource) {
 			super(iconSource);
 			icons = null;
 			BiomeIcons = null;
-			SentinelLevelIcons = null;
 		}
 
 		void createValues() {
-			Function<Biome, PlanetTreeIcons> getBiomeIconID = (Universe.Planet.Biome biome)->{
+			Function<Universe.Planet.Biome, PlanetTreeIcons> getBiomeIconID = (Universe.Planet.Biome biome)->{
 				switch(biome) {
 				case Lush       : return PlanetTreeIcons.BiomeLush;
 				case Scorched   : return PlanetTreeIcons.BiomeScorched;
@@ -205,28 +242,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				return null;
 			};
 			
-			Function<SentinelLevel, PlanetTreeIcons> getSentinelLevelIconID = (Universe.Planet.SentinelLevel level)->{
-				switch(level) {
-				case Level1    : return PlanetTreeIcons.SentinelLevel1;
-				case Level2    : return PlanetTreeIcons.SentinelLevel2;
-				case Level3    : return PlanetTreeIcons.SentinelLevel3;
-				case Aggressive: return PlanetTreeIcons.SentinelAggressive;
-				}
-				return null;
-			};
-			
 			Icon[] biomeIcons    = createIconArray(Universe.Planet.Biome.values(), PlanetTreeIcons.BiomeUndef, getBiomeIconID);
-			Icon[] sentinelIcons = createIconArray(Universe.Planet.SentinelLevel.values(), null, getSentinelLevelIconID);
+			Icon[] sentinelIcons = new Icon[] { null, iconSource.getCachedIcon(PlanetTreeIcons.SentinelAggressive) };
 			icons = combineIconArrays(biomeIcons, sentinelIcons, null);
 			
-			BiomeIcons         = createIconEnumMap(Universe.Planet.Biome        .class, Universe.Planet.Biome        .values(), 0,0,20,20, getBiomeIconID);
-			SentinelLevelIcons = createIconEnumMap(Universe.Planet.SentinelLevel.class, Universe.Planet.SentinelLevel.values(), 0,0,20,20, getSentinelLevelIconID);
+			BiomeIcons = createIconEnumMap(Universe.Planet.Biome.class, Universe.Planet.Biome.values(), 0,0,20,20, getBiomeIconID);
 		}
 
-		Icon get(Universe.Planet.Biome biome, Universe.Planet.SentinelLevel level) {
+		Icon get(Universe.Planet.Biome biome, boolean areSentinelsAggressive) {
 			int biomeIndex = biome==null?0:(biome.ordinal()+1);
-			int levelIndex = level==null?0:(level.ordinal()+1);
-			return icons[biomeIndex][levelIndex];
+			return icons[biomeIndex][areSentinelsAggressive?1:0];
 		}
 	}
 
@@ -334,6 +359,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		add(eastPanel,BorderLayout.EAST);
 	}
 	
+	
+	
+	
 	private abstract class AbstractContextmenu extends JPopupMenu {
 		private static final long serialVersionUID = -2141303182163706658L;
 		
@@ -360,8 +388,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = -735489295003911054L;
 		
 		private JMenuItem miSetName;
-		private ListMenuItems<Race> miSetRace;
-		private ListMenuItems<StarClass> miSetStarClass;
+		private ListMenu<Race> miSetRace;
+		private ListMenu<StarClass> miSetStarClass;
+		private ListMenu<Integer> miSetConflictLevel;
 		
 		Contextmenu_SolarSystem() {
 			super("SolarSystem");
@@ -370,7 +399,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
 			
 			addSeparator();
-			miSetRace = new Gui.ListMenuItems<Universe.SolarSystem.Race>(Universe.SolarSystem.Race.values(),null,
+			miSetRace = new Gui.ListMenu<Universe.SolarSystem.Race>("Set Dominant Race",Universe.SolarSystem.Race.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.Race>() {
 					@Override public void setResult(Race value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -380,7 +409,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							GameInfos.saveUniverseObjectDataToFile(data.universe);
 						}
 					}
-					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Race value) {
+					@Override public void configureMenuItem(JMenuItem menuItem, Race value) {
 						if (value==null) {
 							menuItem.setIcon(null);
 							menuItem.setText("<none>");
@@ -391,10 +420,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				}
 			);
-			miSetRace.addTo(this);
+			miSetRace.setShowSelectedValue(true);
+			add(miSetRace);
 			
-			addSeparator();
-			miSetStarClass = new Gui.ListMenuItems<Universe.SolarSystem.StarClass>(Universe.SolarSystem.StarClass.values(),null,
+			miSetStarClass = new Gui.ListMenu<Universe.SolarSystem.StarClass>("Set Star Class",Universe.SolarSystem.StarClass.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.StarClass>() {
 					@Override public void setResult(StarClass value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -404,7 +433,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							GameInfos.saveUniverseObjectDataToFile(data.universe);
 						}
 					}
-					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, StarClass value) {
+					@Override public void configureMenuItem(JMenuItem menuItem, StarClass value) {
 						if (value==null) {
 							menuItem.setIcon(null);
 							menuItem.setText("<none>");
@@ -415,10 +444,42 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				}
 			);
-			miSetStarClass.addTo(this);
+			miSetStarClass.setShowSelectedValue(true);
+			add(miSetStarClass);
+			
+			miSetConflictLevel = new Gui.ListMenu<Integer>("Set Conflict Level",new Integer[]{1,2,3},null,
+				new Gui.ListMenuItems.ExternFunction<Integer>() {
+					@Override public void setResult(Integer value) {
+						if (clickedNode instanceof SolarSystemNode) {
+							((SolarSystemNode)clickedNode).value.conflictLevel = value==null?-1:value;
+							treeModel.nodeChanged(clickedNode);
+							if (selectedNode==clickedNode) selectionChanged();
+							GameInfos.saveUniverseObjectDataToFile(data.universe);
+						}
+					}
+					@Override public void configureMenuItem(JMenuItem menuItem, Integer value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(SolarSystemIcons.ConflictLevelIcons[value-1]);
+							menuItem.setText("Conflict Level "+value);
+						}
+					}
+				}
+			);
+			miSetConflictLevel.setShowSelectedValue(true);
+			add(miSetConflictLevel);
 			
 			addSeparator();
 			addDefaultItems();
+		}
+
+		public void setSolarSystem(SolarSystem system) {
+			miSetName.setText(system.hasOriginalName()?"Change name":"Set name");
+			miSetRace.setValue(system.race);
+			miSetStarClass.setValue(system.starClass);
+			miSetConflictLevel.setValue(1<=system.conflictLevel&&system.conflictLevel<=3?system.conflictLevel:null);
 		}
 	}
 	
@@ -426,8 +487,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = 170749132550138734L;
 		
 		private JMenuItem miSetName;
-		private ListMenuItems<Biome> miSetBiome;
-		private ListMenuItems<SentinelLevel> miSetSentinelLevel;
+		private ListMenu<Universe.Planet.Biome> miSetBiome;
+		private JCheckBoxMenuItem miAggressiveSentinels;
+//		private ListMenuItems<SentinelLevel> miSetSentinelLevel;
 		
 		Contextmenu_Planet() {
 			super("Planet");
@@ -435,7 +497,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			add(miSetName = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
 			
 			addSeparator();
-			miSetBiome = new Gui.ListMenuItems<Universe.Planet.Biome>(Universe.Planet.Biome.values(),null,
+			miSetBiome = new Gui.ListMenu<Universe.Planet.Biome>("Set Biome",Universe.Planet.Biome.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Universe.Planet.Biome>() {
 					@Override public void setResult(Universe.Planet.Biome value) {
 						if (clickedNode instanceof PlanetNode) {
@@ -445,7 +507,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							GameInfos.saveUniverseObjectDataToFile(data.universe);
 						}
 					}
-					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Universe.Planet.Biome value) {
+					@Override public void configureMenuItem(JMenuItem menuItem, Universe.Planet.Biome value) {
 						if (value==null) {
 							menuItem.setIcon(null);
 							menuItem.setText("<none>");
@@ -456,8 +518,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				}
 			);
-			miSetBiome.addTo(this);
+			miSetBiome.setShowSelectedValue(true);
+			add(miSetBiome);
 			
+			add(miAggressiveSentinels = new JCheckBoxMenuItem("Aggressive Sentinels", false));
+			miAggressiveSentinels.addActionListener(e->{
+				if (clickedNode instanceof PlanetNode) {
+					((PlanetNode)clickedNode).value.areSentinelsAggressive = miAggressiveSentinels.isSelected();
+					treeModel.nodeChanged(clickedNode);
+					if (selectedNode==clickedNode) selectionChanged();
+					GameInfos.saveUniverseObjectDataToFile(data.universe);
+				}
+			});
+/*			
 			addSeparator();
 			miSetSentinelLevel = new Gui.ListMenuItems<Universe.Planet.SentinelLevel>(Universe.Planet.SentinelLevel.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Universe.Planet.SentinelLevel>() {
@@ -469,7 +542,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							GameInfos.saveUniverseObjectDataToFile(data.universe);
 						}
 					}
-					@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Universe.Planet.SentinelLevel value) {
+					@Override public void configureMenuItem(JMenuItem menuItem, Universe.Planet.SentinelLevel value) {
 						if (value==null) {
 							menuItem.setIcon(null);
 							menuItem.setText("<none>");
@@ -481,9 +554,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 			);
 			miSetSentinelLevel.addTo(this);
-			
+*/			
 			addSeparator();
 			addDefaultItems();
+		}
+		
+		public void setPlanet(Planet planet) {
+			miSetName.setText(planet.hasOriginalName()?"Change name":"Set name");
+			miSetBiome.setValue(planet.biome);
+			miAggressiveSentinels.setSelected(planet.areSentinelsAggressive);
 		}
 	}
 	
@@ -498,6 +577,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			addSeparator();
 			addDefaultItems();
+		}
+
+		public void setRegion(Region region) {
+			miSetName.setText(region.hasName()?"Change name":"Set name");
 		}
 	}
 
@@ -700,21 +783,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		switch(clickedNode.type) {
 		case SolarSystem:
-			SolarSystem system = ((SolarSystemNode)clickedNode).value;
-			contextMenu_SolarSystem.miSetName.setText(system.hasOriginalName()?"Change name":"Set name");
-			contextMenu_SolarSystem.miSetRace.setValue(system.race);
-			contextMenu_SolarSystem.miSetStarClass.setValue(system.starClass);
+			contextMenu_SolarSystem.setSolarSystem(((SolarSystemNode)clickedNode).value);
 			return contextMenu_SolarSystem;
 			
 		case Region:
-			contextMenu_Region.miSetName.setText(((RegionNode)clickedNode).value.hasName()?"Change name":"Set name");
+			contextMenu_Region.setRegion(((RegionNode)clickedNode).value);
 			return contextMenu_Region;
 			
 		case Planet:
-			Planet planet = ((PlanetNode)clickedNode).value;
-			contextMenu_Planet.miSetName.setText(planet.hasOriginalName()?"Change name":"Set name");
-			contextMenu_Planet.miSetBiome.setValue(planet.biome);
-			contextMenu_Planet.miSetSentinelLevel.setValue(planet.sentinelLevel);
+			contextMenu_Planet.setPlanet(((PlanetNode)clickedNode).value);
 			return contextMenu_Planet;
 			
 		default:
@@ -1209,13 +1286,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case SolarSystem:
 					if (node instanceof SolarSystemNode) {
 						SolarSystem system = ((SolarSystemNode)node).value;
-						setIcon(SolarSystemIcons.get(system.race, system.starClass));
+						setIcon(SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel));
 					}
 					break;
 				case Planet:
 					if (node instanceof PlanetNode) {
 						Planet planet = ((PlanetNode)node).value;
-						setIcon(PlanetIcons.get(planet.biome, planet.sentinelLevel));
+						setIcon(PlanetIcons.get(planet.biome, planet.areSentinelsAggressive));
 					}
 					//setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     ));
 					break;

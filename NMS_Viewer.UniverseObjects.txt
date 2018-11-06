@@ -1,10 +1,138 @@
+[Sys00B800231C1823]
+name=Volandro
+class=Green
+
+[Pln10B800231C1823]
+name=Kofu 31/J2
+biome=Toxic
+aggrSentinels=
+sentinel=Aggressive
+short=DunkelRot
+info=Monochrome und Rot
+
 [Reg000000FAA8CBC4]
 oldname=Gaentam-Rand
 
+[Sys000800FAA8CBC4]
+name=Nograd
+race=Gek
+class=Yellow
+conflict=3
+short=
+info=Konfliktstufe 3
+
+[Pln100800FAA8CBC4]
+name=Ucsones Beta
+biome=Irradiated
+short=
+info=Ag, U, Cu
+
+[Pln200800FAA8CBC4]
+name=Neu: Durha
+biome=Scorched
+short=ExtHot
+info=Stufe 2
+short=
+info=Na, P, #Cu
+
+[Pln300800FAA8CBC4]
+name=Urbi
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=Na, Pf, Cu, Eiweißperle
+
+[Pln400800FAA8CBC4]
+name=Nurtn
+biome=Airless
+short=
+info=NaCl, Re#, Cu
+
+[Pln500800FAA8CBC4]
+name=Jevo
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=NaCl, Pf, Cu, Eiweißperle
+
 [Sys000A00FAA8CBC4]
+name=Lograt
 oldname=Lograt
 race=Vykeen
 class=Yellow
+conflict=2
+short=
+info=Konfliktstufe 2
+
+[Pln100A00FAA8CBC4]
+name=Aeumo VII
+biome=Toxic
+short=
+info=Fe#, NH3, Cu
+
+[Pln200A00FAA8CBC4]
+name=Idor 41/U6
+biome=Lush
+short=
+info=NaCl, Pf, Cu, Eiweißperle
+
+[Pln300A00FAA8CBC4]
+name=Kieve Minoris
+biome=Frozen
+short=Extrem 3
+info=
+short=
+info=NaCl, CO2, #Cu
+
+[Sys001200FAA8CBC4]
+name=Muzhel-Erk XVI
+race=Gek
+class=Yellow
+conflict=2
+short=
+info=Konfliktstufe 2
+
+[Pln101200FAA8CBC4]
+name=Vulptone VII
+biome=Airless
+aggrSentinels=
+sentinel=Aggressive
+short=
+info=NaCl, Fe#, Cu
+short=Grav
+info=
+
+[Pln201200FAA8CBC4]
+name=Rerok
+biome=Toxic
+short=
+info=Ag, NH3, Cu
+
+[Pln301200FAA8CBC4]
+name=Pacalloy XIX
+biome=Airless
+short=
+info=Na, Fe#, Cu
+
+[Pln401200FAA8CBC4]
+name=Neu: Aron
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=Ag, Pf, Cu
+short=
+info=Eiweißperle
+short=U
+info=Uran ("Metall-Finger")
+
+[Pln501200FAA8CBC4]
+name=Kewesterd Yugaw
+biome=Airless
+short=
+info=Na, Fe#, Cu
 
 [Sys001300FAA8CBC4]
 oldname=Ankovsky XV
@@ -17,13 +145,102 @@ race=Vykeen
 class=Yellow
 
 [Sys002700FAA8CBC4]
+name=Odvins-Unnan
 oldname=Odvins-Unnan
+race=Gek
 class=Yellow
+conflict=2
+short=
+info=Konfliktstufe 2
+
+[Pln102700FAA8CBC4]
+name=Neu: Ochdal
+biome=Lush
+short=Wasser
+info=
+short=
+info=Na, Pf, Cu, Eiweißperle
+
+[Pln202700FAA8CBC4]
+name=Lusingf R4
+biome=Frozen
+short.P=Wasser
+info=
+short=ExtCold
+info=Stufe 3
+short=
+info=NaCl, CO2, #Cu
+
+[Pln302700FAA8CBC4]
+name=Boeoti V
+biome=Scorched
+short=
+info=Na, P, Cu
+
+[Sys002F00FAA8CBC4]
+name=Party Town
+race=Gek
+class=Yellow
+conflict=1
+short=
+info=Konfliktstufe: 1 gering
+
+[Pln102F00FAA8CBC4]
+name=Idnaeanr Sigma
+biome=Airless
+aggrSentinels=
+sentinel=Aggressive
+short=
+info=Cu, Fe#, Na
+short=Grav
+info=Gravitino-Bälle
+
+[Pln202F00FAA8CBC4]
+name=Icoll XIV
+biome=Toxic
+short=
+info=Na, NH3, Cu
+short.P=Wasser
+info=mit Tiefsee
+
+[Pln302F00FAA8CBC4]
+name=Oann ...
+biome=Frozen
+short=
+info=Ag, CO2, Cu
 
 [Sys003000FAA8CBC4]
 oldname=Zuhcher X
 race=Korvax
 class=Yellow
+
+[Sys003F00FAA8CBC4]
+name=Vasakyvin
+race=Gek
+class=Yellow
+conflict=2
+short=
+info=Konfliktstufe 2
+
+[Pln103F00FAA8CBC4]
+name=Ilad
+biome=Scorched
+short=
+info=Ag, P, Cu
+
+[Pln203F00FAA8CBC4]
+name=Nocerius Somag
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=NaCl, Pf, Cu, Eiweißperle
+
+[Pln303F00FAA8CBC4]
+name=Tagir Delta
+biome=Airless
+short=
+info=Co, Fe#, Cu
 
 [Sys004000FAA8CBC4]
 oldname=Azrants VIII
@@ -33,6 +250,48 @@ class=Yellow
 [Pln404000FAA8CBC4]
 oldname=Midakasahik
 
+[Sys004500FAA8CBC4]
+name=Lozhna-Naku
+race=Vykeen
+class=Yellow
+conflict=3
+short=
+info=Konfliktstufe 3
+
+[Pln104500FAA8CBC4]
+name=Nicaro Sigma
+biome=Irradiated
+short=
+info=NaCl, U, Cu
+
+[Pln204500FAA8CBC4]
+name=Watfo
+biome=Frozen
+short=
+info=NaCl, CO2, Cu
+
+[Pln304500FAA8CBC4]
+name=Oburydon
+biome=Toxic
+short=
+info=NaCl, NH3, Cu
+
+[Pln404500FAA8CBC4]
+name=Neswick II
+biome=Irradiated
+short=ExtRad
+info=Stufe 3
+short=
+info=Fe#, U, #Cu
+short.P=#Cu
+info=
+
+[Pln504500FAA8CBC4]
+name=Abasill
+biome=Toxic
+short=
+info=Ag, NH3, Cu
+
 [Sys004600FAA8CBC4]
 name=Tusevoz-Kiku
 oldname=Tusevoz-Kiku
@@ -40,11 +299,21 @@ race=Gek
 class=Yellow
 distance=706847.000000
 
+[Pln104600FAA8CBC4]
+name=Bucky
+biome=Scorched
+short=
+info=Na, P, Cu
+
 [Pln204600FAA8CBC4]
 name=Interen
-biome=Toxic
+biome=Irradiated
 short=
 info=Ag, U, Cu
+
+[Pln304600FAA8CBC4]
+name=Oolef VIII
+biome=Scorched
 
 [Sys004700FAA8CBC4]
 oldname=Izberes-Ort
@@ -61,10 +330,10 @@ class=Yellow
 name=Naeanggu VI
 biome=Scorched
 short=ExtHot
-info=Extrem Heiß
-short.P=AktCu
+info=Stufe 2
+short.P=#Cu
 info=Aktiviertes Kupfer
-short=Wasser
+short.P=Wasser
 info=mit Tiefsee
 
 [Pln205700FAA8CBC4]
@@ -73,16 +342,18 @@ biome=Barren
 
 [Pln305700FAA8CBC4]
 name=Epenniazus Totsu
+biome=Lush
+short=
+info=Co, Pf, Cu, Eiweißperle
 
 [Pln405700FAA8CBC4]
 name=Neu: Ralottawa
 biome=Toxic
+aggrSentinels=
 sentinel=Aggressive
-short=ExtrGiftig
-info=Biom: Sehr Giftig (2)
-short=AggrWächter
-info=Wächter: feindlich
-short=AktCu
+short=Extrem ?
+info=
+short.P=#Cu
 info=Aktiviertes Kupfer
 short.P=Grav
 info=Gravitino-Bälle
@@ -90,24 +361,40 @@ info=Gravitino-Bälle
 [Pln505700FAA8CBC4]
 name=Oroz 92/B2
 biome=Scorched
-short=Heiß
-info=normal heiß
 short=
 info=Na, P, Cu
 
 [Sys005D00FAA8CBC4]
+name=Tionovk-Exand
 oldname=Tionovk-Exand
 race=Korvax
 class=Yellow
+conflict=2
+short=
+info=Konfliktstufe 2
 
 [Pln105D00FAA8CBC4]
+name=Luypsongh XIV
 oldname=Miyama Opogaets
+biome=Lush
+short=
+info=Na, Pf, Cu. Eiweißperle
+short.P=Wasser
+info=mit Tiefsee
 
 [Pln205D00FAA8CBC4]
+name=Pipis IV
 oldname=Nozelensk Sano
+biome=Airless
+short=
+info=Na, Fe#, Cu
 
 [Pln305D00FAA8CBC4]
+name=Eykjaviu Primus
 oldname=Kiwalhontr-Menes Egor
+biome=Frozen
+short=
+info=Na, CO2, Cu
 
 [Sys006D00FAA8CBC4]
 name=Naibolsk
@@ -115,6 +402,9 @@ oldname=Naibolsk
 race=Vykeen
 class=Yellow
 distance=707016.000000
+conflict=1
+short=
+info=Konfliktstufe 1 mild
 
 [Pln106D00FAA8CBC4]
 name=Ebbie Primus
@@ -125,39 +415,70 @@ biome=Frozen
 name=Drushya II
 oldname=Magnandram Ilioc
 biome=Lush
+short.P=Wasser
+info=mit Tiefsee
 
 [Pln306D00FAA8CBC4]
 name=Leuthow IV
 oldname=Loyarnaulic
+biome=Airless
+short=
+info=Fe#, Cu
 
 [Sys007900FAA8CBC4]
+name=Kihgora-Agyu X
 oldname=Kihgora-Agyu X
 race=Vykeen
 class=Yellow
+conflict=2
 short=Blackhole
 info=Schwarzes Loch im System
+short=
+info=Konfliktstufe 2
 
 [Pln107900FAA8CBC4]
+name=Axellenboe Ummi
 oldname=Axellenboe Ummi
+biome=Scorched
+short.P=Wasser
+info=
+short=
+info=Na, P, Cu
 
 [Pln207900FAA8CBC4]
+name=Tisluitsoch
 oldname=Tisluitsoch
+biome=Barren
+aggrSentinels=
+sentinel=Aggressive
 short.P=Grav
-info=Gravitino-Balls
+info=Gravitino-Bälle
+short=
+info=Ag, Py, Cu
 
 [Pln307900FAA8CBC4]
+name=Dessilaum Ramm
 oldname=Dessilaum Ramm
+biome=Irradiated
 short=ExtRad
-info=Extrem verstrahlter Planet
-short.P=Ka
-info=Kalium (Kugeln)
+info=Stufe 3
+short=
+info=Na, U, #Cu
+short.P=Wasser
+info=mit Tiefsee
+short.P=#Cu
+info=Aktiviertes Kupfer
 
 [Pln407900FAA8CBC4]
+name=Biyskogolo
 oldname=Biyskogolo Unzhe
+biome=Toxic
 short=ExtTox
-info=Extrem giftiger Planet
-short.P=Ka
-info=Kalium (Kugeln)
+info=Stufe 3
+short=
+info=Fe#, NH3, #Cu
+short.P=#Cu
+info=Aktiviertes Kupfer
 
 [Sys007A00FAA8CBC4]
 oldname=Sibirsky
@@ -184,6 +505,25 @@ oldname=Kipatjil Kagog
 [Pln607A00FAA8CBC4]
 oldname=Gautumis Hobar
 
+[Sys00CA00FAA8CBC4]
+name=Anskit-Abad
+race=Gek
+class=Blue
+conflict=3
+short=
+info=Konfliktstufe 3 (Gewalttätig)
+
+[Pln10CA00FAA8CBC4]
+name=Aika III
+biome=Scorched
+short=
+info=Fe#, P, In
+
+[Pln20CA00FAA8CBC4]
+name=Lagordiw X21
+short=
+info=Na, Pf, #In, Eiweißperle
+
 [Sys013200FAA8CBC4]
 oldname=Rakaspo XVII
 race=Vykeen
@@ -198,15 +538,46 @@ race=Korvax
 class=Yellow
 
 [Sys014F00FAA8CBC4]
+name=Tolugach
 oldname=Tolugach XV
 race=Vykeen
 class=Green
+conflict=2
+short=
+info=Konfliktstufe 2
 
 [Pln114F00FAA8CBC4]
+name=Reolousall Nosh
 oldname=Eikkeerhodov
+biome=Scorched
+short=Extrem 3
+info=
+short=
+info=Co, P, #Em
 
 [Pln214F00FAA8CBC4]
+name=Uceston XIV
 oldname=Dihruva Oband
+biome=Toxic
+short=
+info=NaCl, NH3, Em
+
+[Sys016A00FAA8CBC4]
+name=Uduton
+race=Gek
+class=Blue
+short=Verlassene Station
+info=
+short=2x Erinnerungs-Terminals
+info=
+
+[Pln116A00FAA8CBC4]
+name=Daymaireth Ganei
+biome=Exotic_Mega
+short.P=Wasser
+info=
+short=
+info=Co, Fe#, #In
 
 [Sys016F00FAA8CBC4]
 oldname=Esvets
@@ -225,18 +596,45 @@ short.P=VC
 info=Vortex Cubes
 
 [Sys018000FAA8CBC4]
+name=Aylovk XVI
 oldname=Aylovk XVI
 race=Korvax
 class=Red
+short=Keine Station
+info="Unerforscht"
 
 [Pln118000FAA8CBC4]
+name=Dawa 69/W9
 oldname=Yanentunent-Obyt
-short=ExtRad
-info=Extrem verstrahlter Planet
-short.P=Ka
-info=Kalium (Kugeln)
-short.P=Ru
-info=Rubeum (Große Kegel)
+biome=Barren
+short=ExtBar
+info=Extrem 
+
+[Sys018200FAA8CBC4]
+name=Zuhokum
+class=Green
+short=Keine Station
+info="Unerforscht"
+
+[Pln118200FAA8CBC4]
+name=Thdakoma
+biome=Exotic_Mega
+short=
+info="Verdammter Jade-Planet"
+short=
+info=Na, Fe#, #Em
+short.P=#Em
+info=
+short=Wasser
+info=
+short=Extrem ?
+info=Biom: Säure Echos
+
+[Pln218200FAA8CBC4]
+name=Runtwic V
+biome=Airless
+short=
+info=NaCl, Fe#, Em
 
 [Sys01C800FAA8CBC4]
 oldname=Xandop-Isuma
@@ -267,7 +665,7 @@ info=Extrem kalter Planet
 [Pln31EA00FAA8CBC4]
 oldname=Ikokstelmh Gronis
 short.P=Grav
-info=Gravitino-Balls
+info=Gravitino-Bälle
 
 [Pln41EA00FAA8CBC4]
 oldname=Omoriyamama

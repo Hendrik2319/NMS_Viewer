@@ -27,6 +27,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -562,8 +563,7 @@ public class Gui {
 		private static final long serialVersionUID = -7848156677924768189L;
 
 		public NamedColorListMenu(String title, NamedColor[] values, NamedColor initialValue, ExternFunction externFunctionality) {
-			super(title,new ListMenuItems<Images.NamedColor>(values, initialValue, externFunctionality) {
-			});
+			super(title,new ListMenuItems<Images.NamedColor>(values, initialValue, externFunctionality));
 		}
 		
 		public static abstract class ExternFunction extends ListMenuItems.ExternFunction<NamedColor> {
@@ -572,7 +572,7 @@ public class Gui {
 				if (v1==null || v2==null) return false;
 				return v1.value==v2.value;
 			}
-			@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, NamedColor value) {
+			@Override public void configureMenuItem(JMenuItem menuItem, NamedColor value) {
 				if (value!=null) {
 					menuItem.setText(value.name);
 					menuItem.setIcon(new ImageIcon(NamedColor.createImage(value,20,13)));
@@ -587,14 +587,16 @@ public class Gui {
 	public static class ListMenu<ValueType> extends JMenu {
 		private static final long serialVersionUID = 1243718139539544213L;
 		protected ListMenuItems<ValueType> listMenuItems;
+		private boolean showSelectedValue;
+		private String title;
 		
 		public ListMenu(String title, ValueType[] values, ValueType initialValue, ListMenuItems.ExternFunction<ValueType> externFunctionality) {
-			super(title);
-			this.listMenuItems = new ListMenuItems<ValueType>(values, initialValue, externFunctionality);
-			this.listMenuItems.addTo(this);
+			this(title, new ListMenuItems<ValueType>(values, initialValue, externFunctionality));
 		}
 		public ListMenu(String title, ListMenuItems<ValueType> listMenuItems) {
 			super(title);
+			this.title = title;
+			this.showSelectedValue = false;
 			this.listMenuItems = listMenuItems;
 			this.listMenuItems.addTo(this);
 		}
@@ -606,9 +608,24 @@ public class Gui {
 		}
 		public void setValue(ValueType value) {
 			listMenuItems.setValue(value);
+			if (showSelectedValue) showValue(value);
 		}
 		public void clearSelection() {
 			listMenuItems.clearSelection();
+			if (showSelectedValue) {
+				setIcon(null);
+				setText(title);
+			}
+		}
+		public void setShowSelectedValue( boolean showSelectedValue ) {
+			this.showSelectedValue = showSelectedValue;
+		}
+		private void showValue(ValueType value) {
+			if (value==null) {
+				setIcon(null);
+				setText(title);
+			} else
+				listMenuItems.externFunctionality.configureMenuItem(this,value);
 		}
 	}
 
@@ -617,11 +634,18 @@ public class Gui {
 		private ButtonGroup buttonGroup;
 		private ValueType selectedValue;
 		private ValueType[] values;
+		private ListMenu<ValueType> parentListMenu;
 
 		public ListMenuItems(ValueType[] values, ValueType initialValue, ExternFunction<ValueType> externFunctionality) {
 			this.values = values;
 			this.selectedValue = initialValue;
 			this.externFunctionality = externFunctionality;
+			this.parentListMenu = null;
+		}
+		
+		public void addTo(ListMenu<ValueType> parentListMenu) {
+			this.parentListMenu = parentListMenu;
+			addTo((JComponent)parentListMenu);
 		}
 		
 		public void addTo(JComponent parentMenu) {
@@ -633,6 +657,9 @@ public class Gui {
 				menuItem.addActionListener(e->{
 					selectedValue = value;
 					externFunctionality.setResult(value);
+					if (parentListMenu!=null && parentListMenu.showSelectedValue) {
+						parentListMenu.showValue(value);
+					}
 				});
 				
 				buttonGroup.add(menuItem);
@@ -673,7 +700,7 @@ public class Gui {
 		public static abstract class ExternFunction<T> {
 			public abstract void setResult(T value);
 			public boolean isEqual(T v1, T v2) { return v1==v2; }
-			public void configureMenuItem(JCheckBoxMenuItem menuItem, T value) { menuItem.setText(value==null?"<none>":value.toString()); }
+			public void configureMenuItem(JMenuItem menuItem, T value) { menuItem.setText(value==null?"<none>":value.toString()); }
 		}
 		
 	}

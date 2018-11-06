@@ -41,7 +41,6 @@ import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -92,11 +91,15 @@ public class GameInfos {
 		final UniverseObjectData.Type type;
 		String oldname;
 		String name;
+		
 		Universe.SolarSystem.Race race;
-		Universe.SolarSystem.StarClass starClass; 
-		Universe.Planet.Biome biome;
-		Universe.Planet.SentinelLevel sentinelLevel; 
+		Universe.SolarSystem.StarClass starClass;
 		Double distanceToCenter;
+		int conflictLevel;
+		
+		Universe.Planet.Biome biome;
+		boolean areSentinelsAggressive;
+		
 		Vector<ExtraInfo> extraInfos;
 		
 		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type) {
@@ -104,16 +107,20 @@ public class GameInfos {
 			this.type = type;
 			this.oldname = null;
 			this.name = null;
+			
 			this.race = null;
 			this.starClass = null;
-			this.biome = null;
-			this.sentinelLevel = null;
 			this.distanceToCenter = null;
+			this.conflictLevel = -1;
+			
+			this.biome = null;
+			this.areSentinelsAggressive = false;
+			
 			this.extraInfos = new Vector<>();
 		}
 	
 		public boolean hasData() {
-			return name!=null || oldname!=null || race!=null || starClass!=null || biome!=null || sentinelLevel!=null || distanceToCenter!=null || !extraInfos.isEmpty();
+			return name!=null || oldname!=null || race!=null || starClass!=null || biome!=null || areSentinelsAggressive || distanceToCenter!=null || conflictLevel>=0 || !extraInfos.isEmpty();
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
@@ -127,12 +134,13 @@ public class GameInfos {
 			race = sys.race;
 			starClass = sys.starClass;
 			distanceToCenter = sys.distanceToCenter;
+			conflictLevel = sys.conflictLevel;
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Planet planet) {
 			this(universeAddress,Type.Planet,planet);
 			biome = planet.biome;
-			sentinelLevel = planet.sentinelLevel;
+			areSentinelsAggressive = planet.areSentinelsAggressive;
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type, UniverseObject uo) {
@@ -209,6 +217,20 @@ public class GameInfos {
 					catch (Exception e) { uoData.starClass = null; }
 					continue;
 				}
+				if (str.startsWith("distance=")) {
+					if (uoData==null) continue;
+					String distance = str.substring("distance=".length());
+					try { uoData.distanceToCenter = Double.parseDouble(distance); }
+					catch (NumberFormatException e) { uoData.distanceToCenter = null; }
+					continue;
+				}
+				if (str.startsWith("conflict=")) {
+					if (uoData==null) continue;
+					String conflictLevel = str.substring("conflict=".length());
+					try { uoData.conflictLevel = Integer.parseInt(conflictLevel); }
+					catch (NumberFormatException e) { uoData.conflictLevel = -1; }
+					continue;
+				}
 				if (str.startsWith("biome=")) {
 					if (uoData==null) continue;
 					String biome = str.substring("biome=".length());
@@ -216,18 +238,9 @@ public class GameInfos {
 					catch (Exception e) { uoData.biome = null; }
 					continue;
 				}
-				if (str.startsWith("sentinel=")) {
+				if (str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
 					if (uoData==null) continue;
-					String sentinelLevel = str.substring("sentinel=".length());
-					try { uoData.sentinelLevel = Universe.Planet.SentinelLevel.valueOf(sentinelLevel); }
-					catch (Exception e) { uoData.sentinelLevel = null; }
-					continue;
-				}
-				if (str.startsWith("distance=")) {
-					if (uoData==null) continue;
-					String distance = str.substring("distance=".length());
-					try { uoData.distanceToCenter = Double.parseDouble(distance); }
-					catch (NumberFormatException e) { uoData.distanceToCenter = null; }
+					uoData.areSentinelsAggressive = true;
 					continue;
 				}
 				if (str.startsWith("short=")) {
@@ -301,25 +314,26 @@ public class GameInfos {
 				system.race = uoData.race;
 				if (withOutput) SaveViewer.log("   Race of %s was defined: %s\r\n",objName,system.race);
 			}
-			
 			if (uoData.starClass!=null && system!=null) {
 				system.starClass = uoData.starClass;
-				if (withOutput) SaveViewer.log("   StarClass of %s was defined: %s\r\n",objName,system.starClass);
+				if (withOutput) SaveViewer.log("   Star Class of %s was defined: %s\r\n",objName,system.starClass);
+			}
+			if (uoData.distanceToCenter!=null && system!=null) {
+				system.distanceToCenter = uoData.distanceToCenter;
+				if (withOutput) SaveViewer.log("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
+			}
+			if (uoData.conflictLevel>=0 && system!=null) {
+				system.conflictLevel = uoData.conflictLevel;
+				if (withOutput) SaveViewer.log("   Conflict Level of %s was defined: %s\r\n",objName,system.starClass);
 			}
 			
 			if (uoData.biome!=null && planet!=null) {
 				planet.biome = uoData.biome;
 				if (withOutput) SaveViewer.log("   Biome of %s was defined: %s\r\n",objName,planet.biome);
 			}
-			
-			if (uoData.sentinelLevel!=null && planet!=null) {
-				planet.sentinelLevel = uoData.sentinelLevel;
-				if (withOutput) SaveViewer.log("   SentinelLevel of %s was defined: %s\r\n",objName,planet.sentinelLevel);
-			}
-			
-			if (uoData.distanceToCenter!=null && system!=null) {
-				system.distanceToCenter = uoData.distanceToCenter;
-				if (withOutput) SaveViewer.log("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
+			if (uoData.areSentinelsAggressive && planet!=null) {
+				planet.areSentinelsAggressive = uoData.areSentinelsAggressive;
+				if (withOutput) SaveViewer.log("   Sentinels of %s are aggressive\r\n",objName);
 			}
 			
 			for (ExtraInfo ei:uoData.extraInfos) {
@@ -377,10 +391,11 @@ public class GameInfos {
 					if (uoData.race            !=null) out.printf("race=%s\r\n",uoData.race);
 					if (uoData.starClass       !=null) out.printf("class=%s\r\n",uoData.starClass);
 					if (uoData.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uoData.distanceToCenter.doubleValue());
+					if (uoData.conflictLevel   >=0   ) out.printf("conflict=%d\r\n",uoData.conflictLevel);
 				}
 				if (uoData.type==UniverseObjectData.Type.Planet) {
-					if (uoData.biome        !=null) out.printf("biome=%s\r\n",uoData.biome);
-					if (uoData.sentinelLevel!=null) out.printf("sentinel=%s\r\n",uoData.sentinelLevel);
+					if (uoData.biome           !=null) out.printf("biome=%s\r\n",uoData.biome);
+					if (uoData.areSentinelsAggressive) out.printf("aggrSentinels=\r\nsentinel=Aggressive\r\n");
 				}
 				
 				for (ExtraInfo ei:uoData.extraInfos)
@@ -864,7 +879,7 @@ public class GameInfos {
 				@Override public void setResult(GeneralizedID.Type value) {
 					updateAfterContextMenuAction(setType(value),null);
 				}
-				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, Type value) {
+				@Override public void configureMenuItem(JMenuItem menuItem, Type value) {
 					menuItem.setText(value==null?"<none>":value.getLabel());
 				}
 			};
@@ -878,7 +893,7 @@ public class GameInfos {
 				@Override public void setResult(GeneralizedID.UpgradeClass value) {
 					updateAfterContextMenuAction(setUpgradeClass(value),null);
 				}
-				@Override public void configureMenuItem(JCheckBoxMenuItem menuItem, GeneralizedID.UpgradeClass value) {
+				@Override public void configureMenuItem(JMenuItem menuItem, GeneralizedID.UpgradeClass value) {
 					menuItem.setText(value==null?"<none>":value.getLabel());
 				}
 			};

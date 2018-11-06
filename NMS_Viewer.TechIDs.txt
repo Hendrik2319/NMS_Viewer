@@ -809,6 +809,7 @@
 ^UT_PROTECT.type=ExosuitExtensionUpgrade
 ^UT_PROTECT.image=RENDER.PROTECTGENERICMOD.png
 ^UT_PROTECT.imageBG=085C78
+^UT_PROTECT.upgradeClass=B
 ^UT_RAIL=
 ^UT_ROCKETS=
 ^UT_SCAN=Wellenformwiederverwerter

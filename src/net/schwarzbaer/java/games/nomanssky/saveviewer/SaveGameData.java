@@ -505,10 +505,11 @@ public class SaveGameData {
 			pb.rid             = getStringValue  (objectValue, "RID");
 			pb.owner           = parseOwnerField(objectValue, "Owner");
 			pb.name            = getStringValue  (objectValue, "Name");
-			pb.baseType        = getStringValue  (objectValue, "BaseType", "BaseType_");
+			pb.baseTypeStr     = getStringValue  (objectValue, "BaseType", "BaseType_");
+			pb.baseType        = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
 			pb.value__wx7      = getIntegerValue_silent(objectValue, "??? [wx7]");
 			
-			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseType!=null?pb.baseType:"Base", baseIndex);
+			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
 			
 			persistentPlayerBases.add(pb);
 //			persistentPlayerBases.set(i,pb);
@@ -577,7 +578,26 @@ public class SaveGameData {
 //	}
 
 	public static class PersistentPlayerBase {
+		
+		public enum BaseType {
+			FreighterBase("F","Freighter","Freighter Base"), HomePlanetBase("P","Planet","Planet Base");
+			
+			static BaseType parseValue(String str) {
+				try { return valueOf(str); }
+				catch (Exception e) { return null; }
+			}
 
+			private String shortLabel, midLabel, longLabel;
+			private BaseType(String shortLabel, String midLabel, String longLabel) {
+				this.shortLabel = shortLabel;
+				this.midLabel   = midLabel;
+				this.longLabel  = longLabel;
+			}
+			public String getLongLabel () { return longLabel; }
+			public String getMidLabel  () { return midLabel; }
+			public String getShortLabel() { return shortLabel; }
+		}
+		
 		public final SaveGameData source;
 		public final int baseIndex;
 		
@@ -591,8 +611,8 @@ public class SaveGameData {
 		public Coordinates forward;
 		public Coordinates position;
 		public BuildingObject[] objects;
-		public String baseType;
-		public boolean isFreighterBase___;
+		public String baseTypeStr;
+		public BaseType baseType;
 		public Long value__wx7;
 		
 		public PersistentPlayerBase(SaveGameData source, int baseIndex) {
@@ -607,7 +627,7 @@ public class SaveGameData {
 			this.forward = null;
 			this.position = null;
 			this.objects = null;
-			this.isFreighterBase___ = false;
+			this.baseTypeStr = null;
 			this.baseType = null;
 			this.value__wx7 = null;
 		}
@@ -1936,6 +1956,7 @@ public class SaveGameData {
 			public Race race;
 			public StarClass starClass;
 			public Double distanceToCenter;
+			public int conflictLevel;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
@@ -1944,6 +1965,7 @@ public class SaveGameData {
 				this.race = null;
 				this.starClass = null;
 				this.distanceToCenter = null;
+				this.conflictLevel = -1;
 			}
 
 			@Override
@@ -2017,28 +2039,17 @@ public class SaveGameData {
 				}
 			}
 			
-			public enum SentinelLevel {
-				Level1    ("Sentinel Level 1"),
-				Level2    ("Sentinel Level 2"),
-				Level3    ("Sentinel Level 3"),
-				Aggressive("Sentinel Aggressive"),
-				;
-
-				public final String name;
-				private SentinelLevel(String name) { this.name = name; }
-			}
-			
 			final SolarSystem solarSystem;
 			final int planetIndex;
 			private Stats.PlanetStats stats;
 			public Biome biome;
-			public SentinelLevel sentinelLevel;
+			public boolean areSentinelsAggressive;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
 				this.biome = null;
-				this.sentinelLevel = null;
+				this.areSentinelsAggressive = false;
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;
