@@ -341,24 +341,22 @@ public class SimplePanels {
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
 			Vector<PersistentPlayerBase> bases = this.data.persistentPlayerBases;
-			for (int j = 0; j < bases.size(); j++) {
-				PersistentPlayerBase pb = bases.get(j);
+			for (int i=0; i<bases.size(); i++) {
+				PersistentPlayerBase pb = bases.get(i);
 				String title;
 				//if (bases.size()<15)
-					title = String.format("Base %d: %s", j, pb.baseType!=null?pb.baseType.getLongLabel():("["+pb.baseTypeStr+"]"));
+					title = String.format("Base %d: %s", i+1, pb.baseType!=null?pb.baseType.getLongLabel():("["+pb.baseTypeStr+"]"));
 				//else if (bases.size()<30)
-				//	title = String.format("B%d:%s", j, pb.baseType==null?"????":pb.baseType.getMidLabel());
+				//	title = String.format("B%d:%s", j+1, pb.baseType==null?"????":pb.baseType.getMidLabel());
 				//else
-				//	title = String.format("B%d:%s", j, pb.baseType==null?"??":pb.baseType.getShortLabel());
-				addBaseTab(tabbedPane, pb, title, j);
+				//	title = String.format("B%d:%s", j+1, pb.baseType==null?"??":pb.baseType.getShortLabel());
+				addBaseTab(tabbedPane, pb, title);
 			}
 			
 			add(tabbedPane,BorderLayout.CENTER);
 		}
 
-		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title, int baseIndex) {
-			//String title = String.format("Base %d", ++i);
-			//if (pb.name!=null && !pb.name.isEmpty()) title = String.format("Base \"%s\"", pb.name);
+		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title) {
 			int index = tabbedPane.getTabCount();
 			tabbedPane.insertTab(title,null, new PlayerBasePanel(this.data,pb), null, index);
 			tabbedPane.setTabComponentAt(index, new BaseTabHeader(title,pb));
