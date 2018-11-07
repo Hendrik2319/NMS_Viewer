@@ -1156,6 +1156,7 @@
 ^U_HYPER3.type=ShipExtensionUpgradeM
 ^U_HYPER3.image=NmsCommodity_QuantumAccelerator_icon.png
 ^U_HYPER3.imageBG=7C4562
+^U_HYPER4=
 ^U_JETBOOST1=Bewegungsmodul (C)
 ^U_JETBOOST1.type=ExosuitExtensionUpgradeM
 ^U_JETBOOST1.image=Stamina.booster.Lebenserhaltungsmodul.png
@@ -1231,6 +1232,7 @@
 ^U_SHIPSHIELD3.type=ShipExtensionUpgradeM
 ^U_SHIPSHIELD3.image=NmsCommodity_QuantumAccelerator_icon.png
 ^U_SHIPSHIELD3.imageBG=7C4562
+^U_SHIPSHIELD4=
 ^U_SHIPSHOT1=
 ^U_SHOTGUN3=
 ^U_SMG4=Impulswerfer-Modul (S)

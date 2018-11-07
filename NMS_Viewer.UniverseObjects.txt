@@ -6,11 +6,11 @@ class=Green
 name=Kofu 31/J2
 biome=Toxic
 aggrSentinels=
-sentinel=Aggressive
 short=DunkelRot
 info=Monochrome und Rot
 
 [Reg000000FAA8CBC4]
+name=Gaentam-Rand
 oldname=Gaentam-Rand
 
 [Sys000800FAA8CBC4]
@@ -18,8 +18,6 @@ name=Nograd
 race=Gek
 class=Yellow
 conflict=3
-short=
-info=Konfliktstufe 3
 
 [Pln100800FAA8CBC4]
 name=Ucsones Beta
@@ -63,8 +61,6 @@ oldname=Lograt
 race=Vykeen
 class=Yellow
 conflict=2
-short=
-info=Konfliktstufe 2
 
 [Pln100A00FAA8CBC4]
 name=Aeumo VII
@@ -91,14 +87,11 @@ name=Muzhel-Erk XVI
 race=Gek
 class=Yellow
 conflict=2
-short=
-info=Konfliktstufe 2
 
 [Pln101200FAA8CBC4]
 name=Vulptone VII
 biome=Airless
 aggrSentinels=
-sentinel=Aggressive
 short=
 info=NaCl, Fe#, Cu
 short=Grav
@@ -150,8 +143,6 @@ oldname=Odvins-Unnan
 race=Gek
 class=Yellow
 conflict=2
-short=
-info=Konfliktstufe 2
 
 [Pln102700FAA8CBC4]
 name=Neu: Ochdal
@@ -182,14 +173,11 @@ name=Party Town
 race=Gek
 class=Yellow
 conflict=1
-short=
-info=Konfliktstufe: 1 gering
 
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
 biome=Airless
 aggrSentinels=
-sentinel=Aggressive
 short=
 info=Cu, Fe#, Na
 short=Grav
@@ -201,7 +189,7 @@ biome=Toxic
 short=
 info=Na, NH3, Cu
 short.P=Wasser
-info=mit Tiefsee
+info=
 
 [Pln302F00FAA8CBC4]
 name=Oann ...
@@ -219,8 +207,6 @@ name=Vasakyvin
 race=Gek
 class=Yellow
 conflict=2
-short=
-info=Konfliktstufe 2
 
 [Pln103F00FAA8CBC4]
 name=Ilad
@@ -255,8 +241,6 @@ name=Lozhna-Naku
 race=Vykeen
 class=Yellow
 conflict=3
-short=
-info=Konfliktstufe 3
 
 [Pln104500FAA8CBC4]
 name=Nicaro Sigma
@@ -334,7 +318,7 @@ info=Stufe 2
 short.P=#Cu
 info=Aktiviertes Kupfer
 short.P=Wasser
-info=mit Tiefsee
+info=
 
 [Pln205700FAA8CBC4]
 name=Hiyad Tau
@@ -350,7 +334,6 @@ info=Co, Pf, Cu, Eiweißperle
 name=Neu: Ralottawa
 biome=Toxic
 aggrSentinels=
-sentinel=Aggressive
 short=Extrem ?
 info=
 short.P=#Cu
@@ -370,8 +353,6 @@ oldname=Tionovk-Exand
 race=Korvax
 class=Yellow
 conflict=2
-short=
-info=Konfliktstufe 2
 
 [Pln105D00FAA8CBC4]
 name=Luypsongh XIV
@@ -380,7 +361,7 @@ biome=Lush
 short=
 info=Na, Pf, Cu. Eiweißperle
 short.P=Wasser
-info=mit Tiefsee
+info=
 
 [Pln205D00FAA8CBC4]
 name=Pipis IV
@@ -403,8 +384,6 @@ race=Vykeen
 class=Yellow
 distance=707016.000000
 conflict=1
-short=
-info=Konfliktstufe 1 mild
 
 [Pln106D00FAA8CBC4]
 name=Ebbie Primus
@@ -416,7 +395,7 @@ name=Drushya II
 oldname=Magnandram Ilioc
 biome=Lush
 short.P=Wasser
-info=mit Tiefsee
+info=
 
 [Pln306D00FAA8CBC4]
 name=Leuthow IV
@@ -433,8 +412,6 @@ class=Yellow
 conflict=2
 short=Blackhole
 info=Schwarzes Loch im System
-short=
-info=Konfliktstufe 2
 
 [Pln107900FAA8CBC4]
 name=Axellenboe Ummi
@@ -450,7 +427,6 @@ name=Tisluitsoch
 oldname=Tisluitsoch
 biome=Barren
 aggrSentinels=
-sentinel=Aggressive
 short.P=Grav
 info=Gravitino-Bälle
 short=
@@ -465,7 +441,7 @@ info=Stufe 3
 short=
 info=Na, U, #Cu
 short.P=Wasser
-info=mit Tiefsee
+info=
 short.P=#Cu
 info=Aktiviertes Kupfer
 
@@ -510,8 +486,6 @@ name=Anskit-Abad
 race=Gek
 class=Blue
 conflict=3
-short=
-info=Konfliktstufe 3 (Gewalttätig)
 
 [Pln10CA00FAA8CBC4]
 name=Aika III
@@ -521,6 +495,7 @@ info=Fe#, P, In
 
 [Pln20CA00FAA8CBC4]
 name=Lagordiw X21
+biome=Lush
 short=
 info=Na, Pf, #In, Eiweißperle
 
@@ -543,8 +518,6 @@ oldname=Tolugach XV
 race=Vykeen
 class=Green
 conflict=2
-short=
-info=Konfliktstufe 2
 
 [Pln114F00FAA8CBC4]
 name=Reolousall Nosh
@@ -561,6 +534,43 @@ oldname=Dihruva Oband
 biome=Toxic
 short=
 info=NaCl, NH3, Em
+
+[Sys016500FAA8CBC4]
+name=Piyskit-Rizhu XVII
+race=Vykeen
+class=Yellow
+conflict=3
+
+[Pln116500FAA8CBC4]
+name=Vanahei IX
+biome=Irradiated
+aggrSentinels=
+short=
+info=Co, U, Cu
+
+[Pln216500FAA8CBC4]
+name=Esveg Primus
+biome=Airless
+short=
+info=Na, Fe#, Cu
+
+[Pln316500FAA8CBC4]
+name=Iago Delta
+biome=Toxic
+short=
+info=Fe#, NH3, Cu
+
+[Pln416500FAA8CBC4]
+name=Pedro IV
+biome=Scorched
+short=
+info=Fe#, P, Cu
+
+[Pln516500FAA8CBC4]
+name=Oebenja R48
+biome=Irradiated
+short=
+info=Ag, U, Cu
 
 [Sys016A00FAA8CBC4]
 name=Uduton
@@ -609,6 +619,8 @@ oldname=Yanentunent-Obyt
 biome=Barren
 short=ExtBar
 info=Extrem 
+short.P=#Cd
+info=
 
 [Sys018200FAA8CBC4]
 name=Zuhokum
