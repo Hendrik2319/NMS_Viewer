@@ -219,23 +219,28 @@ public class SaveGameData {
 		position.pos = parseCoordinates(obj, valueName_Pos);
 		position.at  = parseCoordinates(obj, valueName_At);
 		position.up  = parseCoordinates(obj, valueName_Up);
+		position.gps = PolarCoordinates.parse(position.pos);
 		return position;
 	}
 
 	public static class Position {
+		
 		public Coordinates pos;
 		public Coordinates at;
 		public Coordinates up;
+		public PolarCoordinates gps;
 		
 		public Position() {
 			this.pos = null;
 			this.at = null;
 			this.up = null;
+			this.gps = null;
 		}
 		public Position(Position position) {
-			this.pos = position.pos==null?null:new Coordinates(position.pos);
-			this.at  = position.at ==null?null:new Coordinates(position.at );
-			this.up  = position.up ==null?null:new Coordinates(position.up );
+			this.pos = position.pos==null?null:new      Coordinates(position.pos);
+			this.at  = position.at ==null?null:new      Coordinates(position.at );
+			this.up  = position.up ==null?null:new      Coordinates(position.up );
+			this.gps = position.gps==null?null:new PolarCoordinates(position.gps);
 		}
 	}
 
@@ -254,6 +259,47 @@ public class SaveGameData {
 		}
 		
 		return coords;
+	}
+
+	public static class PolarCoordinates {
+		
+		public final double latitude, longitude, radius;
+		
+		private PolarCoordinates(double latitude, double longitude, double radius) {
+			this.latitude  = latitude;
+			this.longitude = longitude;
+			this.radius    = radius;
+		}
+
+		public PolarCoordinates(PolarCoordinates gps) {
+			this(gps.latitude,gps.longitude,gps.radius);
+		}
+
+		public static PolarCoordinates parse(Coordinates pos) {
+			if (pos==null) return null;
+			if (pos.length<3) return null;
+			
+			//new PolarCoordinates();
+			double radius    = Math.sqrt(pos.x*pos.x+pos.y*pos.y+pos.z*pos.z);
+			double latitude  = Math.asin(pos.y/radius)/Math.PI*180;
+			double longitude = Math.atan2(pos.x,pos.z)/Math.PI*180;
+			
+			return new PolarCoordinates(latitude, longitude, radius);
+		}
+
+		@Override
+		public String toString() {
+			return toString(true);
+		}
+
+		public String toString(boolean withRadius) {
+			String latCh =  latitude<0?"S":"N";
+			String lonCh = longitude<0?"W":"E";
+			if (withRadius)
+				return String.format(Locale.ENGLISH, " %s%05.2f  %s%06.2f  (R:%1.2f)", latCh, Math.abs(latitude), lonCh, Math.abs(longitude), radius);
+			else
+				return String.format(Locale.ENGLISH, " %s%05.2f  %s%06.2f"           , latCh, Math.abs(latitude), lonCh, Math.abs(longitude));
+		}
 	}
 
 	public static class Coordinates extends Point3D {
@@ -359,8 +405,17 @@ public class SaveGameData {
 		public double distTo(Point3D p) {
 			return Math.sqrt((x-p.x)*(x-p.x) + (y-p.y)*(y-p.y) + (z-p.z)*(z-p.z));
 		}
+		
+		public double distTo_onSphere(Point3D other) {
+			double thisR = this.length();
+			double otherR = other.length();
+			double angle = Math.asin( this.crossProd(other).length()/thisR/otherR );
+			double distOnSameHeight = angle * (thisR+otherR)/2;
+			return Math.sqrt((thisR-otherR)*(thisR-otherR)+distOnSameHeight*distOnSameHeight);
+		}
 	
 		public Point3D crossProd(Point3D p) {
+			// this X p
 			return new Point3D( y*p.z-z*p.y, z*p.x-x*p.z, x*p.y-y*p.x );
 		}
 
@@ -477,6 +532,7 @@ public class SaveGameData {
 			TeleportEndpoints te = new TeleportEndpoints();
 			te.universeAddress  = parseUniverseAddressStructure(objectValue, "UniverseAddress");
 			te.position         = parseCoordinates(objectValue, "Position");
+			te.gpsCoords        = PolarCoordinates.parse(te.position);
 			te.lookAt           = parseCoordinates(objectValue, "LookAt");
 			te.teleportHost     = getStringValue(objectValue, "TeleportHost");
 			te.name             = getStringValue(objectValue, "Name");
@@ -495,6 +551,7 @@ public class SaveGameData {
 		public Coordinates position;
 		public Coordinates lookAt;
 		public UniverseAddress universeAddress;
+		public PolarCoordinates gpsCoords;
 		
 		public TeleportEndpoints() {
 			this.name = null;
@@ -502,6 +559,7 @@ public class SaveGameData {
 			this.position = null;
 			this.lookAt = null;
 			this.universeAddress = null;
+			this.gpsCoords = null;
 		}
 	}
 
@@ -535,6 +593,7 @@ public class SaveGameData {
 				si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
 				si.value            = getIntegerValue(interaction, "Value");
 				si.position         = parseCoordinates(interaction, "Position");
+				si.gpsCoords        = PolarCoordinates.parse(si.position);
 				
 				storedInteractions.add(si);
 			}
@@ -545,17 +604,21 @@ public class SaveGameData {
 	}
 	
 	public static class StoredInteraction {
+		
 		public int groupIndex;
 		public int interactionIndex;
 		public UniverseAddress galacticAddress;
 		public Long value;
 		public Coordinates position;
+		public PolarCoordinates gpsCoords;
+		
 		public StoredInteraction() {
 			this.groupIndex = -1;
 			this.interactionIndex = -1;
 			this.galacticAddress = null;
 			this.value = null;
 			this.position = null;
+			this.gpsCoords = null;
 		}
 	}
 
@@ -578,6 +641,7 @@ public class SaveGameData {
 			pb.baseVersion     = getIntegerValue (objectValue, "BaseVersion");
 			pb.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			pb.position        = parseCoordinates(objectValue, "Position");
+			pb.gpsCoords       = PolarCoordinates.parse(pb.position);
 			pb.forward         = parseCoordinates(objectValue, "Forward");
 			pb.userData        = getIntegerValue (objectValue, "UserData");
 			pb.lastUpdateTS    = TimeStamp.create(getIntegerValue (objectValue, "LastUpdateTimestamp"));
@@ -657,7 +721,7 @@ public class SaveGameData {
 //	}
 
 	public static class PersistentPlayerBase {
-		
+
 		public enum BaseType {
 			FreighterBase("F","Freighter","Freighter Base"), HomePlanetBase("P","Planet","Planet Base");
 			
@@ -689,6 +753,7 @@ public class SaveGameData {
 		public Long userData;
 		public Coordinates forward;
 		public Coordinates position;
+		public PolarCoordinates gpsCoords;
 		public BuildingObject[] objects;
 		public String baseTypeStr;
 		public BaseType baseType;
@@ -705,6 +770,7 @@ public class SaveGameData {
 			this.userData = null;
 			this.forward = null;
 			this.position = null;
+			this.gpsCoords = null;
 			this.objects = null;
 			this.baseTypeStr = null;
 			this.baseType = null;
@@ -841,14 +907,14 @@ public class SaveGameData {
 	private void parseInventories() {
 		inventories = null;
 		inventories = new Inventories();
-		inventories.player        = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
-		inventories.playerTech    = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
-		inventories.playerCargo   = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
-		inventories.ship_old      = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
-		inventories.multitool     = inventories.parse(getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
-		inventories.grave         = inventories.parse(getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
-		inventories.freighter     = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
-		inventories.freighterTech = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+		inventories.player.standard    = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
+		inventories.player.tech        = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
+		inventories.player.cargo       = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
+		inventories.ship_old           = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
+		inventories.multitool          = inventories.parse(getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
+		inventories.grave              = inventories.parse(getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
+		inventories.freighter.standard = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
+		inventories.freighter.tech     = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
 		
 		inventories.chests = new Inventory[10];
 		for (int i=0; i<inventories.chests.length; ++i)
@@ -856,36 +922,36 @@ public class SaveGameData {
 		inventories.magicChest  = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
 		inventories.magicChest2 = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
 		
+		String[] vehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", "", "Nautilon"};
 		inventories.vehicles = null;
-		inventories.vehicles_Tech = null;
 		JSON_Array vehicles = getArrayValue(json_data, "PlayerStateData","VehicleOwnership");
 		if (vehicles!=null) {
-			inventories.vehicles = new Inventory[vehicles.size()];
-			inventories.vehicles_Tech = new Inventory[vehicles.size()];
+			inventories.vehicles = new Vehicle[vehicles.size()];
 			for (int i=0; i<vehicles.size(); ++i) {
 				JSON_Object vehicleData = getObject(vehicles.get(i));
-				inventories.vehicles[i] = null;
-				inventories.vehicles_Tech[i] = null;
+				inventories.vehicles[i] = new Vehicle();
 				if (vehicleData != null) {
-					inventories.vehicles     [i] = inventories.parse(getObjectValue(vehicleData,"Inventory"         ),"Vehicle "    +(i+1), "VehicleOwnership["+i+"].Inventory");
-					inventories.vehicles_Tech[i] = inventories.parse(getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle Tech"+(i+1), "VehicleOwnership["+i+"].Inventory_TechOnly");
+					String name = getStringValue(vehicleData,"Name");
+					if (name==null) name = "";
+					if (name.isEmpty() && i<vehicleNames.length) name = vehicleNames[i];
+					inventories.vehicles[i].standard = inventories.parse(getObjectValue(vehicleData,"Inventory"         ),"Vehicle "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "VehicleOwnership["+i+"].Inventory");
+					inventories.vehicles[i].tech     = inventories.parse(getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle "+(i+1)+" (Tech)"                            , "VehicleOwnership["+i+"].Inventory_TechOnly");
 				}
 			}
 		}
 		
 		inventories.ships = null;
-		inventories.ships_Tech = null;
 		JSON_Array ships = getArrayValue(json_data, "PlayerStateData","ShipOwnership");
 		if (ships!=null) {
-			inventories.ships = new Inventory[ships.size()];
-			inventories.ships_Tech = new Inventory[ships.size()];
+			inventories.ships = new Vehicle[ships.size()];
 			for (int i=0; i<ships.size(); ++i) {
 				JSON_Object shipData = getObject(ships.get(i));
-				inventories.ships     [i] = null;
-				inventories.ships_Tech[i] = null;
+				inventories.ships[i] = new Vehicle();
 				if (shipData != null) {
-					inventories.ships     [i] = inventories.parse(getObjectValue(shipData,"Inventory"         ), "Ship "     +(i+1), "ShipOwnership["+i+"].Inventory");
-					inventories.ships_Tech[i] = inventories.parse(getObjectValue(shipData,"Inventory_TechOnly"), "Ship Tech "+(i+1), "ShipOwnership["+i+"].Inventory_TechOnly");
+					String name = getStringValue(shipData,"Name");
+					if (name==null) name = "";
+					inventories.ships[i].standard = inventories.parse(getObjectValue(shipData,"Inventory"         ), "Ship "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "ShipOwnership["+i+"].Inventory");
+					inventories.ships[i].tech     = inventories.parse(getObjectValue(shipData,"Inventory_TechOnly"), "Ship "+(i+1)+" (Tech)"                            , "ShipOwnership["+i+"].Inventory_TechOnly");
 				}
 			}
 		}		
@@ -930,40 +996,50 @@ public class SaveGameData {
 			return inventory;
 		}
 		
-		public Inventory player;
-		public Inventory playerTech;
-		public Inventory playerCargo;
+		public Player player;
 		public Inventory multitool;
-		public Inventory[] ships;
-		public Inventory[] ships_Tech;
-		public Inventory[] vehicles;
-		public Inventory[] vehicles_Tech;
+		public Vehicle[] ships;
+		public Vehicle[] vehicles;
 		public Inventory[] chests;
 		public Inventory magicChest2;
 		public Inventory magicChest;
-		public Inventory freighter;
-		public Inventory freighterTech;
+		public Vehicle   freighter;
 		public Inventory ship_old;
 		public Inventory grave;
 		public Inventories() {
 			super();
 			this.ship_old = null;
-			this.ships_Tech = null;
 			this.ships = null;
 			this.vehicles = null;
-			this.vehicles_Tech = null;
 			this.magicChest2 = null;
 			this.magicChest = null;
 			this.chests = null;
-			this.freighterTech = null;
-			this.freighter = null;
+			this.freighter = new Vehicle();
 			this.grave = null;
 			this.multitool = null;
-			this.playerCargo = null;
-			this.playerTech = null;
-			this.player = null;
+			this.player = new Player();
 		}
 	
+	}
+	
+	public static class Player {
+		public Inventory standard;
+		public Inventory tech;
+		public Inventory cargo;
+		public Player() {
+			this.standard = null;
+			this.tech = null;
+			this.cargo = null;
+		}
+	}
+	
+	public static class Vehicle {
+		public Inventory standard;
+		public Inventory tech;
+		public Vehicle() {
+			this.standard = null;
+			this.tech = null;
+		}
 	}
 
 	public final class Inventory {

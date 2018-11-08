@@ -55,16 +55,16 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
-		addTab(data.inventories.player       );
-		addTab(data.inventories.playerTech   );
-		addTab(data.inventories.playerCargo  );
-		addTab(data.inventories.grave        );
-		addTab(data.inventories.multitool    );
-		addTab(data.inventories.freighter    );
-		addTab(data.inventories.freighterTech);
-		addTab(data.inventories.ship_old     );
-		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships,data.inventories.ships_Tech));
-		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles,data.inventories.vehicles_Tech));
+		addTab(data.inventories.player.standard);
+		addTab(data.inventories.player.tech    );
+		addTab(data.inventories.player.cargo   );
+		addTab(data.inventories.grave          );
+		addTab(data.inventories.multitool      );
+		addTab(data.inventories.freighter.standard);
+		addTab(data.inventories.freighter.tech    );
+		addTab(data.inventories.ship_old          );
+		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships));
+		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
 		tabbedPane.addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
 		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2));
 
@@ -665,6 +665,14 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			return this;
 		}
 
+		public InventoryListPanel addInv(SaveGameData.Vehicle[] vehicles) {
+			for (int i=0; i<vehicles.length; ++i) {
+				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].standard,true,false,this));
+				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].tech    ,true,false,this));
+			}
+			return this;
+		}
+/*
 		public InventoryListPanel addInv(Inventory[] inventories1, Inventory[] inventories2) {
 			for (int i=0; i<inventories1.length; ++i) {
 				contentPanel.add(new InventoryPanel(mainwindow,inventories1[i],true,false,this));
@@ -677,6 +685,6 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		
 			return this;
 		}
-	
+*/	
 	}
 }

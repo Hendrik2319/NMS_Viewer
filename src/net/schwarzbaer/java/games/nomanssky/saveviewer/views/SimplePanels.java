@@ -58,6 +58,7 @@ public class SimplePanels {
 			InteractionIndex ("I"               , String.class,  35,-1, 35, 35),
 			GalacticAddress  ("GalacticAddress" , String.class,  80,-1,160,160),
 			Value            ("Value"           , String.class,  65,-1,100,100),
+			GpsCoords        ("GPS Coords"      , String.class, 150,-1,250,250),
 			Position         ("Position"        , String.class, 150,-1,250,250);
 			
 			private TableView.SimplifiedColumnConfig columnConfig;
@@ -87,8 +88,9 @@ public class SimplePanels {
 				case GroupIndex      : return si.groupIndex;
 				case InteractionIndex: return si.interactionIndex;
 				case GalacticAddress : if (si.galacticAddress==null) return ""; else return si.galacticAddress.getCoordinates();
-				case Value           : if (si.value   ==null) return ""; else return String.format("[0x%04X] %d", si.value, si.value);
-				case Position        : if (si.position==null) return ""; else return si.position.toString(" %1.2f ");
+				case Value           : if (si.value    ==null) return ""; else return String.format("[0x%04X] %d", si.value, si.value);
+				case Position        : if (si.position ==null) return ""; else return si.position.toString(" %1.2f ");
+				case GpsCoords       : if (si.gpsCoords==null) return ""; else return si.gpsCoords.toString();
 				}
 				return null;
 			}
@@ -110,10 +112,12 @@ public class SimplePanels {
 		
 		private enum LocalTableColumnID implements TableView.SimplifiedColumnIDInterface {
 			// [250, 100, 160, 421, 220, 170]
+			// [250, 100, 160, 420, 181, 220, 170]
 			Name           ("Name"            , String.class, 150,-1,250,250),
 			TeleportHost   ("Teleport Host"   , String.class,  50,-1,100,100),
 			UniverseAddress("Universe Address", String.class,  80,-1,160,160),
 			PlanetOrSystem ("Planet / System" , String.class, 200,-1,420,420),
+			GpsCoords      ("GPS Coords"      , String.class,  90,-1,180,180),
 			Position       ("Position"        , String.class, 100,-1,220,220),
 			LookAt         ("Look At"         , String.class,  90,-1,170,170);
 			
@@ -144,8 +148,9 @@ public class SimplePanels {
 				case Name           : return te.name;
 				case TeleportHost   : return te.teleportHost;
 				case UniverseAddress: if (te.universeAddress==null) return ""; else return te.universeAddress.getCoordinates();
-				case LookAt         : if (te.lookAt  ==null) return ""; else return te.lookAt  .toString(" %1.4f ");
-				case Position       : if (te.position==null) return ""; else return te.position.toString(" %1.2f ");
+				case LookAt         : if (te.lookAt   ==null) return ""; else return te.lookAt   .toString(" %1.4f ");
+				case Position       : if (te.position ==null) return ""; else return te.position .toString(" %1.2f ");
+				case GpsCoords      : if (te.gpsCoords==null) return ""; else return te.gpsCoords.toString();
 				case PlanetOrSystem : {
 					if (te.universeAddress==null) return "";
 					String strOut = "";
@@ -278,12 +283,14 @@ public class SimplePanels {
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
+			// [140, 160, 160, 420, 130, 80, 172, 250, 150, 150]
 			Timestamp       ("Timestamp"       , TimeStamp.class,  35,-1,140,140),
 			ObjectID        ("ObjectID"        ,    String.class,  80,-1,160,160),
 			GalacticAddress ("GalacticAddress" ,    String.class,  80,-1,160,160),
 			PlanetOrSystem  ("Planet / System" ,    String.class, 200,-1,420,420),
 			RegionSeed      ("RegionSeed"      ,    String.class,  65,-1,130,130),
 			UserData        ("UserData"        ,    String.class,  40,-1, 80, 80),
+			GpsCoords       ("GPS Coords"      ,    String.class,  80,-1,170,170),
 			Position        ("Position"        ,    String.class,  95,-1,250,250),
 			Up              ("Up"              ,    String.class,  75,-1,150,150),
 			At              ("At"              ,    String.class,  75,-1,150,150);
@@ -320,6 +327,7 @@ public class SimplePanels {
 				case Position       : if (bbo.position==null || bbo.position.pos==null) return ""; else return bbo.position.pos.toString("%1.2f")+String.format(Locale.ENGLISH," [R:%1.1f]",bbo.position.pos.length());
 				case Up             : if (bbo.position==null || bbo.position.up ==null) return ""; else return bbo.position.up .toString("%1.4f");
 				case At             : if (bbo.position==null || bbo.position.at ==null) return ""; else return bbo.position.at .toString("%1.4f");
+				case GpsCoords      : if (bbo.position==null || bbo.position.gps==null) return ""; else return bbo.position.gps.toString();
 				case PlanetOrSystem : {
 					if (bbo.galacticAddress==null) return "";
 					String strOut = "";
@@ -456,10 +464,10 @@ public class SimplePanels {
 					textArea.append("\r\nOther objects on same planet :\r\n");
 					for(BuildingObject obj:nearObj) {
 						textArea.append("   ");
-						if (obj.position!=null && obj.position.pos!=null) {
-							textArea.append(obj.position.pos.toString("%8.1f"));
+						if (obj.position!=null && obj.position.pos!=null && obj.position.gps!=null) {
+							textArea.append(obj.position.gps.toString(false));
 							if (playerbase.position!=null)
-								textArea.append(String.format(Locale.ENGLISH," (-> %9.2f u)", playerbase.position.distTo(obj.position.pos)));
+								textArea.append(String.format(Locale.ENGLISH," (-> %9.2f u)", playerbase.position.distTo_onSphere(obj.position.pos)));
 							textArea.append("   ");
 						}
 						textArea.append(obj.getNameOfObjectID()+"\r\n");
@@ -510,10 +518,11 @@ public class SimplePanels {
 					textArea.append("   "+String.format(Locale.ENGLISH, "%1.1f", playerbase.galacticAddress.getDistToCenter_inRegionUnits())+" regions to center of galaxy\r\n");
 				}
 				
-				if (playerbase.position!=null || playerbase.forward!=null) {
+				if (playerbase.position!=null || playerbase.forward!=null || playerbase.gpsCoords!=null) {
 					textArea.append("\r\nPosition :\r\n");
-					if (playerbase.position!=null) textArea.append("   position : "+playerbase.position.toString("%1.2f")+"\r\n");
-					if (playerbase.forward !=null) textArea.append("   forward  : "+playerbase.forward .toString("%1.4f")+"\r\n");
+					if (playerbase.position !=null) textArea.append("   position  : "+playerbase.position .toString("%1.2f")+"\r\n");
+					if (playerbase.forward  !=null) textArea.append("   forward   : "+playerbase.forward  .toString("%1.4f")+"\r\n");
+					if (playerbase.gpsCoords!=null) textArea.append("   gps coords: "+playerbase.gpsCoords.toString()+"\r\n");
 				}
 			}
 

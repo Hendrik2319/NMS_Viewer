@@ -1357,6 +1357,9 @@ public class FileExport {
 			addModels("GARAGE_S",		"^GARAGE_S", "^GARAGE_B");
 			
 			addModels("NPCTERMINAL",	"^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
+			
+			
+			addModels("CUBEROOM_SPACE",		"^CUBEROOM_SPACE", "^FREIGHTER_CORE");
 		}
 		private static void addModels(String modelName, String... objectIDs) {
 			for (String id:objectIDs)
@@ -1378,20 +1381,40 @@ public class FileExport {
 			
 			writeProtoToFile(vrml, "TEST_BIOROOM", ()->{
 				vrml.println("# New BIOROOM");
-				VRMLconstruction2.PolyLine polyLine = new VRMLconstruction2.PolyLine().addArc(VRMLconstruction2.Axis.Y, new Point3D(0,0,0), 6, 0, 70, false);
-				VRMLconstruction2.GroupingNode group1 = new VRMLconstruction2.GroupingNode();
+				LineGeometry.PolyLine polyLine = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,0), 6, 0, 70, false);
+				LineGeometry.GroupingNode group1 = new LineGeometry.GroupingNode();
 				for (int i=0; i<16; i++) {
-					VRMLconstruction2.Transform transform = new VRMLconstruction2.Transform(polyLine);
-					transform.addRotation(VRMLconstruction2.Axis.X, 360.0/16*i);
+					LineGeometry.Transform transform = new LineGeometry.Transform(polyLine);
+					transform.addRotation(LineGeometry.Axis.X, 360.0/16*i);
 					group1.add(transform);
 				}
-				VRMLconstruction2.loopArc(6, 0, 70, false, 4, (i, nSeg, x, y) -> group1.add(new VRMLconstruction2.Circle(VRMLconstruction2.Axis.X, new Point3D(y,0,0), x)));
+				LineGeometry.loopArc(6, 0, 70, false, 4, (i, nSeg, x, y) -> group1.add(new LineGeometry.Circle(LineGeometry.Axis.X, new Point3D(y,0,0), x)));
 				group1.write(vrml, "	", null);
 			});
 			vrml.println("");
 			
 			writeProtoToFile(vrml, "CUBEFLOOR", ()->{
-				new VRMLconstruction2.Box(0.1,3.9,3.9).write(vrml, "	", null);
+				new LineGeometry.Box(0.1,3.9,3.9).write(vrml, "	", null);
+			});
+			vrml.println("");
+			
+			writeProtoToFile(vrml, "CUBEROOM_SPACE", ()->{
+//				LineGeometry.Box box = new LineGeometry.Box(3.8,8,8);
+//				box.addTranslation(new Point3D(1.9,0,0));
+//				box.write(vrml, "	", null);
+				
+				LineGeometry.PolyLine polyLine = new LineGeometry.PolyLine();
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, 3, 3), 1,  0, 90, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-3, 3), 1, 90,180, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-3,-3), 1,180,270, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, 3,-3), 1,270,360, false);
+				polyLine.add(new Point3D(0, 4, 3));
+				
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode();
+				group.add(polyLine);
+				group.add(new LineGeometry.Transform(polyLine).addTranslation(new Point3D(3,0,0)));
+				
+				group.write(vrml, "	", null);
 			});
 			vrml.println("");
 			
@@ -1658,8 +1681,7 @@ public class FileExport {
 		
 	}
 	
-	@SuppressWarnings("unused")
-	private static class VRMLconstruction2 {
+	private static class LineGeometry {
 		private static int CIRCLE_SEGMENTS = 32;
 		
 		private enum Axis { X, Y, Z }
@@ -1849,14 +1871,17 @@ public class FileExport {
 				this.transformMatrix = new TransformMatrix();
 			}
 			
-			void addTranslation( Point3D translation ) {
+			Transform addTranslation( Point3D translation ) {
 				transformMatrix = new TransformMatrix().setTranslation(translation).mul(transformMatrix);
+				return this;
 			}
-			void addRotation( Axis rotationAxis, double rotationAngle_deg ) {
+			Transform addRotation( Axis rotationAxis, double rotationAngle_deg ) {
 				transformMatrix = new TransformMatrix().setRotation(rotationAxis, rotationAngle_deg).mul(transformMatrix);
+				return this;
 			}
-			void addScale( Point3D scale ) {
+			Transform addScale( Point3D scale ) {
 				transformMatrix = new TransformMatrix().setScale(scale).mul(transformMatrix);
+				return this;
 			}
 
 			@Override
