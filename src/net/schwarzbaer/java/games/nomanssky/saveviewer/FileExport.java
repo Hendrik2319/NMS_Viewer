@@ -1363,7 +1363,7 @@ public class FileExport {
 			addModels("NPCTERMINAL",	"^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 			
 			
-			addModels("CUBEROOM_SPACE",		"^CUBEROOM_SPACE", "^FREIGHTER_CORE");
+			addModels("CUBEROOM_SPACE",	"^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 		}
 		private static void addModels(String modelName, String... objectIDs) {
 			for (String id:objectIDs)
@@ -1383,8 +1383,8 @@ public class FileExport {
 			vrml.println(templateSB.toString());
 			vrml.println("");
 			
-			writeProtoToFile(vrml, "TEST_BIOROOM", ()->{
-				vrml.println("# New BIOROOM");
+			vrml.println("# New BIOROOM");
+			writeProtoToFile(vrml, "BIOROOM", ()->{
 				LineGeometry.PolyLine polyLine = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,0), 6, 0, 70, false);
 				LineGeometry.GroupingNode group1 = new LineGeometry.GroupingNode();
 				for (int i=0; i<16; i++) {
@@ -1397,6 +1397,10 @@ public class FileExport {
 			});
 			vrml.println("");
 			
+			vrml.println("");
+			vrml.println("# Other New PROTOs");
+			vrml.println("");
+			
 			writeProtoToFile(vrml, "CUBEFLOOR", ()->{
 				new LineGeometry.Box(0.1,3.9,3.9).write(vrml, "	", null);
 			});
@@ -1407,16 +1411,102 @@ public class FileExport {
 //				box.addTranslation(new Point3D(1.9,0,0));
 //				box.write(vrml, "	", null);
 				
-				LineGeometry.PolyLine polyLine = new LineGeometry.PolyLine();
+				LineGeometry.PolyLine polyLine;
+				LineGeometry.GroupingNode group;
+				
+				polyLine = new LineGeometry.PolyLine();
 				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, 3, 3), 1,  0, 90, false);
 				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-3, 3), 1, 90,180, false);
 				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-3,-3), 1,180,270, false);
 				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, 3,-3), 1,270,360, false);
-				polyLine.add(new Point3D(0, 4, 3));
+				polyLine.close();
 				
-				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode();
-				group.add(polyLine);
-				group.add(new LineGeometry.Transform(polyLine).addTranslation(new Point3D(3,0,0)));
+				group = new LineGeometry.GroupingNode();
+				group.add(
+					polyLine,
+					new LineGeometry.Transform(polyLine).addTranslation(new Point3D(3,0,0))
+				);
+				//group.write(vrml, "	", null);
+				
+				double w = 6;
+				double h = 3.8;
+				
+				double cr  = 0.6;
+				double at1 = 45;
+				
+				double ht1 = 0.5;
+				double wt1 = ht1/Math.tan(at1/180*Math.PI);;
+				double wt2 = 1.0;
+				double wb2 = 1.0;
+				
+				double h1 = h-ht1;
+				double w1 = w-2*wb2;
+				
+				group = new LineGeometry.GroupingNode();
+				
+				polyLine = new LineGeometry.PolyLine();
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(   cr  ,0,  w/2-cr    ),   cr,270,360, false);
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(h1-cr  ,0,  w/2-cr    ),   cr,  0, 90, false);
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(h1-cr  ,0,-(w/2-cr   )),   cr, 90,180, false);
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(   cr  ,0,-(w/2-cr   )),   cr,180,270, false);
+				polyLine.close();
+				group.add(
+					new LineGeometry.Transform(polyLine).addTranslation(new Point3D(0,-2,0)),
+					new LineGeometry.Transform(polyLine).addTranslation(new Point3D(0, 2,0)),
+					new LineGeometry.Transform(polyLine).addRotation(LineGeometry.Axis.X,90).addTranslation(new Point3D(0,0,-2)),
+					new LineGeometry.Transform(polyLine).addRotation(LineGeometry.Axis.X,90).addTranslation(new Point3D(0,0, 2))
+				);
+				
+				polyLine = new LineGeometry.PolyLine();
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, w1/2, w1/2), wb2,  0, 90, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-w1/2, w1/2), wb2, 90,180, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-w1/2,-w1/2), wb2,180,270, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, w1/2,-w1/2), wb2,270,360, false);
+				polyLine.close();
+				group.add(
+					new LineGeometry.Transform(polyLine).addTranslation(new Point3D(cr,0,0)),
+					new LineGeometry.Transform(polyLine).addTranslation(new Point3D(h1-cr,0,0))
+				);
+				
+				polyLine = new LineGeometry.PolyLine();
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, w1/2, w1/2), wb2-cr,  0, 90, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-w1/2, w1/2), wb2-cr, 90,180, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0,-w1/2,-w1/2), wb2-cr,180,270, false);
+				polyLine.addArc(LineGeometry.Axis.X, new Point3D(0, w1/2,-w1/2), wb2-cr,270,360, false);
+				polyLine.close();
+				group.add(
+					polyLine,
+					new LineGeometry.Transform(polyLine).addTranslation(new Point3D(h1,0,0))
+				);
+				
+				polyLine = new LineGeometry.PolyLine();
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(   cr  ,0,  w/2-cr    ),   cr,270,360, false);
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(h1-cr  ,0,  w/2-cr    ),   cr,  0, 90, false);
+				polyLine.add(new Point3D(h1    , 0,  w/2-wt2     ));
+				polyLine.add(new Point3D(h1+ht1, 0,  w/2-wt2-wt1 ));
+				polyLine.add(new Point3D(h1+ht1, 0,-(w/2-wt2-wt1)));
+				polyLine.add(new Point3D(h1    , 0,-(w/2-wt2    )));
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(h1-cr  ,0,-(w/2-cr   )),   cr, 90,180, false);
+				polyLine.addArc(LineGeometry.Axis.Y, new Point3D(   cr  ,0,-(w/2-cr   )),   cr,180,270, false);
+				polyLine.close();
+				group.add(
+					polyLine,
+					new LineGeometry.Transform(polyLine).addRotation(LineGeometry.Axis.X,90)
+				);
+				
+				polyLine = new LineGeometry.PolyLine();
+				polyLine.add(new Point3D(h,  w/2-wt2-wt1 ,  w/2-wt2-wt1 ));
+				polyLine.add(new Point3D(h,-(w/2-wt2-wt1),  w/2-wt2-wt1 ));
+				polyLine.add(new Point3D(h,-(w/2-wt2-wt1),-(w/2-wt2-wt1)));
+				polyLine.add(new Point3D(h,  w/2-wt2-wt1 ,-(w/2-wt2-wt1)));
+				polyLine.close();
+				group.add(
+					polyLine,
+					new LineGeometry.PolyLine(new Point3D(h,  w/2-wt2-wt1 ,  w/2-wt2-wt1 ),new Point3D(h1,  w/2-wt2 ,  w/2-wt2 )),
+					new LineGeometry.PolyLine(new Point3D(h,-(w/2-wt2-wt1),  w/2-wt2-wt1 ),new Point3D(h1,-(w/2-wt2),  w/2-wt2 )),
+					new LineGeometry.PolyLine(new Point3D(h,-(w/2-wt2-wt1),-(w/2-wt2-wt1)),new Point3D(h1,-(w/2-wt2),-(w/2-wt2))),
+					new LineGeometry.PolyLine(new Point3D(h,  w/2-wt2-wt1 ,-(w/2-wt2-wt1)),new Point3D(h1,  w/2-wt2 ,-(w/2-wt2)))
+				);
 				
 				group.write(vrml, "	", null);
 			});
@@ -1699,7 +1789,7 @@ public class FileExport {
 				this();
 				indexes.addAll(seg.indexes);
 			}
-			public Segment addOffset(int indexOffset) {
+			public Segment addIndexOffset(int indexOffset) {
 				for (int i=0; i<indexes.size(); i++)
 					indexes.set(i,indexes.get(i)+indexOffset);
 				return this;
@@ -1708,7 +1798,34 @@ public class FileExport {
 				for (int i:indexes) this.indexes.add(i);
 				return this;
 			}
+			public boolean equals(Segment other) {
+				if (other==null) return false;
+				if (this.indexes.size()!=other.indexes.size()) return false;
+				int size = indexes.size();
+				boolean isEqual = true;
+				boolean isReversed = true;
+				for (int i=0; i<size; i++) {
+					isEqual    &= (int)this.indexes.get(i)==(int)other.indexes.get(i);
+					isReversed &= (int)this.indexes.get(i)==(int)other.indexes.get(size-i-1);
+					if (!isEqual && !isReversed)
+						return false;
+				}
+				return true;
+			}
+			public boolean isConnectedTo(Segment other) {
+				if (other==null) return false;
+				int first1 = this.indexes.firstElement();
+				int first2 = other.indexes.firstElement();
+				int last1 = this.indexes.lastElement();
+				int last2 = other.indexes.lastElement();
+				return (first1==first2) || (last1==last2) || (first1==last2) || (last1==first2);
+			}
+			@Override
+			public String toString() {
+				return "Segment [indexes=" + indexes.toString() + "]";
+			}
 		}
+		
 		private static abstract class IndexedLineSet {
 			Vector<Point3D> points;
 			Vector<Segment> segments;
@@ -1722,7 +1839,8 @@ public class FileExport {
 				StringBuilder indexesStr = new StringBuilder();
 				
 				prepareForOutput();
-				optimize();
+				optimizePoints();
+				optimizeSegments();
 				
 				for (Point3D p:points) {
 					if (pointsStr.length()>0) pointsStr.append(", ");
@@ -1739,7 +1857,7 @@ public class FileExport {
 			
 			protected abstract void prepareForOutput();
 
-			private void optimize() {
+			private void optimizePoints() {
 				for (int p1Index=0; p1Index<points.size(); p1Index++) {
 					Point3D p1 = points.get(p1Index);
 					
@@ -1760,6 +1878,33 @@ public class FileExport {
 							p2Index++;
 					}
 				}
+			}
+			
+			private static class Pair {
+				@SuppressWarnings("unused")
+				Segment seg1,seg2;
+				Pair(Segment seg1, Segment seg2) {
+					this.seg1 = seg1;
+					this.seg2 = seg2;
+				} 
+			}
+			
+			private void optimizeSegments() {
+				Vector<Pair> connectedSegments = new Vector<>();
+				for (int i1=0; i1<segments.size(); i1++) {
+					Segment seg1 = segments.get(i1);
+					for (int i2=i1+1; i2<segments.size();) {
+						Segment seg2 = segments.get(i2);
+						if (seg1.equals(seg2))
+							segments.remove(i2);
+						else {
+							if (seg1.isConnectedTo(seg2))
+								connectedSegments.add(new Pair(seg1,seg2));
+							i2++;
+						}
+					}
+				}
+				// TODO optimizeSegments()
 			}
 			
 		}
@@ -1784,7 +1929,7 @@ public class FileExport {
 				for (IndexedLineSet subNode:subNodes) {
 					subNode.prepareForOutput();
 					for (Segment seg:subNode.segments)
-						segments.add(new Segment(seg).addOffset(points.size()));
+						segments.add(new Segment(seg).addIndexOffset(points.size()));
 					points.addAll(subNode.points);
 				}
 			}
@@ -1926,6 +2071,11 @@ public class FileExport {
 				segment.add(points.size());
 				points.add(p);
 				return this;
+			}
+			
+			public void close() {
+				if (segment.indexes.isEmpty()) return;
+				segment.add(segment.indexes.firstElement());
 			}
 			
 			PolyLine addArc(Axis axis, Point3D center, double radius, double startAngle_deg, double endAngle_deg, boolean flipped) {
