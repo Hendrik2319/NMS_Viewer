@@ -506,6 +506,15 @@ public class SaveGameData {
 			long h = (value_s-m)/60;
 			return String.format("%3d:%02d:%02d", h,m,s);
 		}
+		public static String toString(double value_s) {
+			long value_s_long = (long)value_s;
+			int frac = (int)((value_s-value_s_long)*1000);
+			long s = value_s_long%60;
+			value_s_long = (value_s_long-s)/60;
+			long m = value_s_long%60;
+			long h = (value_s_long-m)/60;
+			return String.format("%3d:%02d:%02d.%03d", h,m,s,frac);
+		}
 	}
 
 	public static class Owner {
@@ -847,7 +856,17 @@ public class SaveGameData {
 			//this.objectID1   = obj.objectID1;
 		}
 
-		public String getNameOfObjectID() {
+		public String getNameOnly() {
+			if (objectID==null) {
+				if (specialName!=null) return specialName;
+				return "";
+			}
+			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			if (id==null) return "";
+			return id.getLabel();
+		}
+
+		public String getNameOrObjectID() {
 			if (objectID==null) {
 				if (specialName!=null) return specialName;
 				return "";
@@ -2449,7 +2468,7 @@ public class SaveGameData {
 		}
 
 		private void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {
-			StatValue.KnownID[] knownIDs = StatValue.KnownID.values();
+//			StatValue.KnownID[] knownIDs = StatValue.KnownID.values();
 			for (Value value : stats) {
 				JSON_Object statObject = data.getObject(value);
 				if (statObject==null) continue;
@@ -2458,9 +2477,10 @@ public class SaveGameData {
 				
 				stat.ID = data.getStringValue(statObject,"Id");
 				if (stat.ID==null) continue;
-				for (int i=0; i<knownIDs.length; ++i)
-					if (stat.ID.equals("^"+knownIDs[i]))
-						stat.knownID = knownIDs[i];
+				stat.knownID = StatValue.KnownID.findID(stat.ID);
+//				for (int i=0; i<knownIDs.length; ++i)
+//					if (stat.ID.equals("^"+knownIDs[i]))
+//						stat.knownID = knownIDs[i];
 				
 				JSON_Object statValue = data.getObjectValue(statObject,"Value");
 				if (statValue!=null) {
@@ -2469,6 +2489,7 @@ public class SaveGameData {
 					stat.Denominator = data.getFloatValue_silent  (statValue,"Denominator");
 				}
 				
+				stat.interpretValues();
 				statsVector.add(stat);
 			}
 			
@@ -2477,31 +2498,45 @@ public class SaveGameData {
 
 		public static class StatValue implements Comparable<StatValue> {
 			public enum KnownID {
-				TIME, DEATHS, LONGEST_LIFE, LONGEST_LIFE_EX, TIMES_IN_SPACE,
+				TIME,
+				DEATHS("Number of deaths"),
+				LONGEST_LIFE("Longest life"),
+				LONGEST_LIFE_EX("Longest life in extrem environment"),
+				TIMES_IN_SPACE("Number of times in space"),
 				GLOBAL_MISSION, ATLAS_PATH, ATLAS_STORY,
 				DIST_WALKED("Distance walked"),
 				DIST_SWAM  ("Distance swam"),
 				DIST_FLY   ("Distance flown"),
+				DIST_SUB   ("Distance swam with a submarine"),
 				ALIENS_MET ("Aliens met"),
 				WORDS_LEARNT("Words learnt"),
-				TRA_STANDING("Gek"    +" standing"), TSEEN_SYSTEMS("Gek"    +" systems seen"), TWORDS_LEARNT("Gek"    +" words learnt"), TDONE_MISSIONS("Gek"    +" missions done"),
-				EXP_STANDING("Korvax" +" standing"), ESEEN_SYSTEMS("Korvax" +" systems seen"), EWORDS_LEARNT("Korvax" +" words learnt"), EDONE_MISSIONS("Korvax" +" missions done"),
-				WAR_STANDING("Vy'keen"+" standing"), WSEEN_SYSTEMS("Vy'keen"+" systems seen"), WWORDS_LEARNT("Vy'keen"+" words learnt"), WDONE_MISSIONS("Vy'keen"+" missions done"),
+				TRA_STANDING("Gek"    +" standing"), TSEEN_SYSTEMS("Gek"    +" systems seen"), TWORDS_LEARNT("Gek"    +" words learnt"), TDONE_MISSIONS("Gek"    +" missions done"), TRA_MET("Gek"    +" met"),
+				EXP_STANDING("Korvax" +" standing"), ESEEN_SYSTEMS("Korvax" +" systems seen"), EWORDS_LEARNT("Korvax" +" words learnt"), EDONE_MISSIONS("Korvax" +" missions done"), EXP_MET("Korvax" +" met"),
+				WAR_STANDING("Vy'keen"+" standing"), WSEEN_SYSTEMS("Vy'keen"+" systems seen"), WWORDS_LEARNT("Vy'keen"+" words learnt"), WDONE_MISSIONS("Vy'keen"+" missions done"), WAR_MET("Vy'keen"+" met"),
 				TGUILD_STAND("Traders"  +" guild standing"), TGDONE_MISSIONS("Traders"  +" guild missions done"), MONEY("Units max. earned"), PLANTS_PLANTED("Plants planted"),
-				EGUILD_STAND("Explorers"+" guild standing"), EGDONE_MISSIONS("Explorers"+" guild missions done"), DIST_WARP  ("Number of warps"), RARE_SCANNED("Rare creatures scanned"),
+				EGUILD_STAND("Explorers"+" guild standing"), EGDONE_MISSIONS("Explorers"+" guild missions done"), DIST_WARP("Number of warps"), RARE_SCANNED("Rare creatures scanned"),
 				WGUILD_STAND("Warriors" +" guild standing"), WGDONE_MISSIONS("Warriors" +" guild missions done"), SENTINEL_KILLS("Sentinels killed (all)"), ENEMIES_KILLED("Enemies killed"),
 				DRONES_KILLED("Sentinel drones killed"), QUADS_KILLED("Sentinel quads killed"), WALKERS_KILLED("Sentinel walkers killed"),
 				POLICE_KILLED("Sentinel ships killed"),
 				PIRATES_KILLED("Pirates killed"),
-				PREDS_KILLED, CREATURES_KILL,
+				PREDS_KILLED("Predatory animals killed"),
+				FLORA_KILLED,
+				TRADERS_KILLED,
+				FIENDS_KILLED,
+				FIEND_EGG,
+				CREATURES_KILL,
 				DISC_ALL_CREATU("Planets, where all creatures were found"),
-				DISC_FLORA, DISC_CREATURES, DISC_MINERALS, DISC_PLANETS, DISC_WAYPOINTS,
+				DISC_FLORA    ("Discovered vegetables"),
+				DISC_CREATURES("Discovered creatures"),
+				DISC_MINERALS ("Discovered minerals"),
+				DISC_PLANETS  ("Discovered planets"),
+				DISC_WAYPOINTS("Discovered waypoints"),
 				TUTORIAL,
 				TECH_BOUGHT, SHIPS_BOUGHT,
 				DEPOTS_BROKEN,
 				FPODS_BROKEN,
 				EARLY_WARPS,
-				BLACKHOLE_WARPS,
+				BLACKHOLE_WARPS("Warps through a blackhole"),
 				ITEMS_TELEPRT,
 				STATION_VISITED,
 				SPACE_BATTLES,
@@ -2510,6 +2545,47 @@ public class SaveGameData {
 				RES_EXTRACTED,
 				SALVAGE_LOOTED,
 				VISIT_EXT_BASE,
+				APP_SESSIONS,
+				COMM_04_FOUND,
+				COMM_04_HANDED,
+				COMM_05_FOUND,
+				COMM_05_HANDED,
+				COMM_06_CHOICE1,
+				COMM_06_CHOICE2,
+				COMM_06_CHOICE3,
+				COMM_06_CHOICE4,
+				COMM_06_FOUND,
+				COMM_06_HANDED,
+				COMM_06_STORY,
+				COMM_07_FOUND,
+				COMM_07_HANDED,
+				COMM_CREA_FED,
+				COMM_GLITCHLVL,
+				COMM_GLITCHSTAG,
+				COMM_INIT_FED,
+				COMM_INIT_SENTK,
+				COMM_SENT_KILL,
+				CREATURES_FED,
+				DIS_CREA_BANK,
+				DIS_FLORA_BANK,
+				DIS_MIN_BANK,
+				DIS_PLANET_BANK,
+				EMOTES,
+				EXPEDITIONS,
+				JM,
+				JM_BANKED,
+				MP_FULL_COUNT,
+				MP_FULL_TIME,
+				MP_ORB_COUNT,
+				MP_ORB_TIME,
+				MP_SESSIONS,
+				NADA_PROGRESS,
+				POLO_PROGRESS,
+				PARTS_PLACED,
+				PLAY_SESSIONS,
+				REWARD_SEED,
+				TREASURE_FOUND,
+				
 				
 				// only in planet stats
 				ALL_CREATURES;
@@ -2522,6 +2598,11 @@ public class SaveGameData {
 				KnownID(String name) {
 					this.fullName = name;
 				}
+				public static KnownID findID(String id) {
+					if (id.startsWith("^")) id = id.substring(1);
+					try { return valueOf(id); }
+					catch (Exception e) { return null; }
+				}
 			}
 			
 			public String ID;
@@ -2529,6 +2610,7 @@ public class SaveGameData {
 			public Long IntValue;
 			public Double FloatValue;
 			public Double Denominator;
+			public String interpretedValue;
 			
 			
 			public StatValue() {
@@ -2537,6 +2619,37 @@ public class SaveGameData {
 				this.IntValue = null;
 				this.FloatValue = null;
 				this.Denominator = null;
+				this.interpretedValue = null;
+			}
+
+
+			public void interpretValues() {
+				if (knownID==null) return;
+				
+				switch (knownID) {
+				case TIME:
+				case LONGEST_LIFE:
+				case LONGEST_LIFE_EX:
+					interpretedValue = Duration.toString(FloatValue==null?0:FloatValue);
+					break;
+					
+				case DIST_FLY:
+				case DIST_SUB:
+				case DIST_SWAM:
+				case DIST_WALKED:
+					interpretedValue = String.format(Locale.ENGLISH, "%1.2f u", FloatValue==null?0:FloatValue);
+					break;
+					
+				case EXP_STANDING:
+				case TRA_STANDING:
+				case WAR_STANDING:
+					interpretedValue = String.format(Locale.ENGLISH, "%d of 100", IntValue==null?0:IntValue);
+					break;
+					
+				
+				default: break;
+				}
+				
 			}
 
 

@@ -40,7 +40,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 
 public class SimplePanels {
 	
-	static class StoredInteractionsPanel extends SaveGameViewTabPanel {
+	public static class StoredInteractionsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 1017824861605442560L;
 
 		public StoredInteractionsPanel(SaveGameData data) {
@@ -98,7 +98,7 @@ public class SimplePanels {
 		}
 	}
 	
-	static class TeleportEndpointsPanel extends SaveGameViewTabPanel {
+	public static class TeleportEndpointsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 3670607708610340039L;
 
 		public TeleportEndpointsPanel(SaveGameData data) {
@@ -164,7 +164,7 @@ public class SimplePanels {
 		}
 	}
 
-	static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
+	public static class BaseBuildingObjectsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6246130206148705495L;
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
 		private Window mainWindow;
@@ -284,9 +284,11 @@ public class SimplePanels {
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
 			// [140, 160, 160, 420, 130, 80, 172, 250, 150, 150]
-			Timestamp       ("Timestamp"       , TimeStamp.class,  35,-1,140,140),
-			ObjectID        ("ObjectID"        ,    String.class,  80,-1,160,160),
-			GalacticAddress ("GalacticAddress" ,    String.class,  80,-1,160,160),
+			// [140, 139, 120, 160, 420, 130, 80, 170, 250, 150, 150]
+			Timestamp       ("Timestamp"       , TimeStamp.class,  50,-1,140,140),
+			Name            ("Name"            ,    String.class,  50,-1,140,140),
+			ObjectID        ("ObjectID"        ,    String.class,  50,-1,120,120),
+			GalacticAddress ("GalacticAddress" ,    String.class,  50,-1,160,160),
 			PlanetOrSystem  ("Planet / System" ,    String.class, 200,-1,420,420),
 			RegionSeed      ("RegionSeed"      ,    String.class,  65,-1,130,130),
 			UserData        ("UserData"        ,    String.class,  40,-1, 80, 80),
@@ -320,10 +322,11 @@ public class SimplePanels {
 				if (bbo==null) return null;
 				switch(columnID) {
 				case Timestamp      : return bbo.timestamp;
-				case ObjectID       : if (bbo.objectID       ==null) return ""; else return bbo.getNameOfObjectID();
-				case GalacticAddress: if (bbo.galacticAddress==null) return ""; else return bbo.galacticAddress.getCoordinates();
-				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; else return String.format("0x%016X", bbo.regionSeed);
-				case UserData       : if (bbo.userData       ==null) return ""; else return String.format("0x%08X" , bbo.userData  );
+				case Name           : return bbo.getNameOnly();
+				case ObjectID       : if (bbo.objectID       ==null) return ""; return bbo.objectID;
+				case GalacticAddress: if (bbo.galacticAddress==null) return ""; return bbo.galacticAddress.getCoordinates();
+				case RegionSeed     : if (bbo.regionSeed     ==null) return ""; return String.format("0x%016X", bbo.regionSeed);
+				case UserData       : if (bbo.userData       ==null) return ""; return String.format("0x%08X" , bbo.userData  );
 				case Position       : if (bbo.position==null || bbo.position.pos==null) return ""; else return bbo.position.pos.toString("%1.2f")+String.format(Locale.ENGLISH," [R:%1.1f]",bbo.position.pos.length());
 				case Up             : if (bbo.position==null || bbo.position.up ==null) return ""; else return bbo.position.up .toString("%1.4f");
 				case At             : if (bbo.position==null || bbo.position.at ==null) return ""; else return bbo.position.at .toString("%1.4f");
@@ -341,7 +344,7 @@ public class SimplePanels {
 		}
 	}
 
-	static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {
+	public static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -632703090899520348L;
 
 		public PersistentPlayerBasesPanel(SaveGameData data) {
@@ -388,7 +391,7 @@ public class SimplePanels {
 			}
 		}
 
-		static class PlayerBasePanel extends JPanel {
+		public static class PlayerBasePanel extends JPanel {
 			private static final long serialVersionUID = 6070388468452658705L;
 			
 			private SaveGameData data;
@@ -426,8 +429,11 @@ public class SimplePanels {
 				showOtherObjectsOnThisPlanet();
 			}
 			
-			private enum Type { Simple, Models, Planet }
+			public enum Type { Simple, Models, Planet }
 			private String suggestFileName(Type type) {
+				return suggestFileName(type, data, playerbase);
+			}
+			public static String suggestFileName(Type type, SaveGameData data, PersistentPlayerBase playerbase) {
 				String prefix = String.format("Base_%s.%d", data.index>=0?(""+(data.index+1)):"#", playerbase.baseIndex+1);
 				switch (type) {
 				case Simple: return prefix+"_simple.wrl";
@@ -439,7 +445,7 @@ public class SimplePanels {
 			
 			private void addVRMLtasks(JPopupMenu contextMenu) {
 				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null, PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,PlayerBasePanel.this, false), null, SaveViewer.ToolbarIcons.SaveAs));
 				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
@@ -470,7 +476,7 @@ public class SimplePanels {
 								textArea.append(String.format(Locale.ENGLISH," (-> %9.2f u)", playerbase.position.distTo_onSphere(obj.position.pos)));
 							textArea.append("   ");
 						}
-						textArea.append(obj.getNameOfObjectID()+"\r\n");
+						textArea.append(obj.getNameOrObjectID()+"\r\n");
 					}
 				}
 			}
@@ -527,12 +533,14 @@ public class SimplePanels {
 			}
 
 			private enum BaseObjectsColumnID implements TableView.SimplifiedColumnIDInterface {
-				Timestamp       ("Timestamp"       , TimeStamp.class, 70,-1,140,140),
-				ObjectID        ("ObjectID"        ,    String.class,120,-1,240,240),
-				UserData        ("UserData"        ,    String.class, 40,-1, 80, 80),
-				Position        ("Position"        ,    String.class, 75,-1,150,150),
-				Up              ("Up"              ,    String.class, 85,-1,170,170),
-				At              ("At"              ,    String.class, 85,-1,170,170);
+				// [140, 176, 128, 80, 150, 170, 170]
+				Timestamp("Timestamp", TimeStamp.class, 70,-1,140,140),
+				Name     ("Name"     ,    String.class, 50,-1,180,180),
+				ObjectID ("ObjectID" ,    String.class, 50,-1,130,130),
+				UserData ("UserData" ,    String.class, 40,-1, 80, 80),
+				Position ("Position" ,    String.class, 75,-1,150,150),
+				Up       ("Up"       ,    String.class, 85,-1,170,170),
+				At       ("At"       ,    String.class, 85,-1,170,170);
 				
 				private TableView.SimplifiedColumnConfig columnConfig;
 				
@@ -562,7 +570,8 @@ public class SimplePanels {
 					if (obj==null) return null;
 					switch(columnID) {
 					case Timestamp: return obj.timestamp;
-					case ObjectID : if (obj.objectID==null) return ""; return obj.getNameOfObjectID();
+					case Name     : return obj.getNameOnly();
+					case ObjectID : if (obj.objectID==null) return ""; return obj.objectID;
 					case UserData : if (obj.userData==null) return ""; return String.format("0x%08X" , obj.userData  );
 					case Position : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
 					case Up       : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
@@ -574,7 +583,7 @@ public class SimplePanels {
 		}
 	}
 	
-	static class BlueprintsPanel extends SaveGameViewTabPanel {
+	public static class BlueprintsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -3032632553321731912L;
 		enum BlueprintType { KnownProductBlueprints, KnownTechBlueprints }
 		
@@ -654,7 +663,7 @@ public class SimplePanels {
 		}
 	}
 	
-	static class DiscoveredDataAvailablePanel extends SaveGameViewTabPanel {
+	public static class DiscoveredDataAvailablePanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 2870833302184314416L;
 	
 		public DiscoveredDataAvailablePanel(SaveGameData data) {
@@ -717,7 +726,7 @@ public class SimplePanels {
 		return "["+str+"]";
 	}
 
-	static class DiscoveredDataStoredPanel extends SaveGameViewTabPanel {
+	public static class DiscoveredDataStoredPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 6619075068331735784L;
 	
 		public DiscoveredDataStoredPanel(SaveGameData data) {

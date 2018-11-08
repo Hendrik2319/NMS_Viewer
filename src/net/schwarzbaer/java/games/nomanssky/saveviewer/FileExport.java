@@ -216,12 +216,16 @@ public class FileExport {
 		
 	}
 	
-	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent) {
+	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent, boolean dontAsk) {
 		if (objects==null && playerbase!=null) objects = playerbase.objects;
 		if (objects==null) return;
 		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 		
-		File file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
+		File file;
+		if (dontAsk)
+			file = new File(suggestedFileName);
+		else
+			file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
 		if (file==null) return;
 		
 		Point3D min = null;
@@ -366,7 +370,7 @@ public class FileExport {
 				vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", p.pos.x, p.pos.y, p.pos.z);
 				if (p.up!=null && !p.up.isZero()) vrml.printf(" up %s", p.up.normalize().mul(size).toString("%1.3f",false));
 				if (p.at!=null && !p.at.isZero()) vrml.printf(" at %s", p.at.normalize().mul(size).toString("%1.3f",false));
-				vrml.printf(               " string \"%s\"", obj.getNameOfObjectID().replace('\"','_'));
+				vrml.printf(               " string \"%s\"", obj.getNameOrObjectID().replace('\"','_'));
 				vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
 			}
 			

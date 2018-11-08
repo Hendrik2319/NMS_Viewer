@@ -67,6 +67,8 @@ import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageEditDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.Type;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
@@ -94,11 +96,21 @@ public class SaveViewer implements ActionListener {
 	private Vector<SaveGameView> loadedSaveGames;
 	
 	public static void main(String[] args) {
-		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
-		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
 		config = Config.readFromFile();
 		deObfuscator = DeObfuscator.readFromFile();
+		
+		GameInfos.loadKnownStatIDsFromFile();
+		GameInfos.loadAllIDsFromFiles();
+		GameInfos.loadUniverseObjectDataFromFile();
+		
+		if (args.length>0) {
+			processCommands(args);
+			return;
+		}
+		
+		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
+		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
 		images = new Images();
 		images.init();
@@ -124,10 +136,6 @@ public class SaveViewer implements ActionListener {
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
 			}};
 		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
-		
-		GameInfos.loadKnownStatIDsFromFile();
-		GameInfos.loadAllIDsFromFiles();
-		GameInfos.loadUniverseObjectDataFromFile();
 		
 //		GameInfos.createFilesWithObsoleteIDs();
 
@@ -161,6 +169,66 @@ public class SaveViewer implements ActionListener {
 		new SaveViewer().createGUI();
 	}
 
+	private static void processCommands(String[] args) {
+		int loadSavegame = -1;
+		int writeBase2VRML = -1;
+		for (int i=0; i<args.length; i++) {
+			switch (args[i]) {
+			case "-loadGame":
+				if (i+1<args.length) {
+					try { loadSavegame = Integer.parseInt(args[i+1]); }
+					catch (NumberFormatException e) { loadSavegame = -1; }
+				}
+				break;
+				
+			case "-base2vrml":
+				if (i+1<args.length) {
+					try { writeBase2VRML = Integer.parseInt(args[i+1]); }
+					catch (NumberFormatException e) { writeBase2VRML = -1; }
+				}
+				break;
+			}
+		}
+		
+		if (loadSavegame<0)
+			return;
+		
+		ActionCommand actionCommand = null;
+		for (ActionCommand ac:ActionCommand.values()) {
+			if (ac.index==loadSavegame-1)
+				actionCommand = ac;
+		}
+		if (actionCommand==null)
+			return;
+		
+		SaveViewer saveViewer = new SaveViewer();
+		File saveGameFile = new File(saveViewer.getSavegameFolder()+actionCommand.filename);
+		if (!saveGameFile.isFile())
+			return;
+		
+		SaveGameData data = saveViewer.openSaveGame(saveGameFile, actionCommand.index, null);
+		if (data==null)
+			return;
+		
+		if (writeBase2VRML>=0)
+			savePlayerBases2VRML(data,writeBase2VRML);
+	}
+
+	private static void savePlayerBases2VRML(SaveGameData data, int baseIndex) {
+		if (data.persistentPlayerBases==null)
+			return;
+		if (baseIndex-1<0 || baseIndex-1>=data.persistentPlayerBases.size())
+			return;
+		
+		SaveGameData.PersistentPlayerBase playerbase =
+				data.persistentPlayerBases.get(baseIndex-1);
+		SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.Type type =
+				SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.Type.Models;
+		
+		String suggestFileName = SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.suggestFileName(type,data,playerbase);
+		FileExport.writePosToVRML_models(suggestFileName,null,playerbase,null,true);
+	}
+
 	@SuppressWarnings("unused")
 	private static void writeUIDefaults(String title, UIDefaults defaults) {
 		SaveViewer.log_ln(title+".keys: [");
@@ -174,6 +242,7 @@ public class SaveViewer implements ActionListener {
 	
 	public SaveViewer() {
 		loadedSaveGames = new Vector<SaveGameView>();
+		mainWindow = null;
 	}
 
 	private void createGUI() {
@@ -391,7 +460,7 @@ public class SaveViewer implements ActionListener {
 		pd.showDialog();
 	}
 
-	private void openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
+	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
 		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 4); }
 		log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
@@ -404,23 +473,35 @@ public class SaveViewer implements ActionListener {
 			isNEXT = true;
 		}
 		
+		SaveGameData saveGameData = null;
 		if (new_json_data==null) {
-			JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
+			if (mainWindow!=null)
+				JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
+			
 		} else {
-			SaveGameData saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex);
+			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex);
+			
 			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(2); }
 			saveGameData.parse(isNEXT);
-			if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
-			SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,isNEXT);
-			loadedSaveGames.add(saveGameView);
-			contentPane.addSaveGameView(saveGameView);
-			updateWindowTitle();
+			
+			if (mainWindow!=null) {
+				if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
+				SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,isNEXT);
+				loadedSaveGames.add(saveGameView);
+				contentPane.addSaveGameView(saveGameView);
+				updateWindowTitle();
+			}
 		}
-		contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
-		contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
-		contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
-		contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.selectedSaveGameView!=null);
-		contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.selectedSaveGameView!=null);
+		
+		if (mainWindow!=null) {
+			contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
+			contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
+			contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
+			contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.selectedSaveGameView!=null);
+			contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.selectedSaveGameView!=null);
+		}
+		
+		return saveGameData;
 	}
 
 	private void reloadSaveGameView(SaveGameView view) {
@@ -993,21 +1074,12 @@ public class SaveViewer implements ActionListener {
 		return "[\r\n"+str+"\r\n]";
 	}
 
-	public static void log_ln( String format, Object... values ) {
-		System.out.printf(Locale.ENGLISH,format+"\r\n",values);
-	}
-	
-	public static void log( String format, Object... values ) {
-		System.out.printf(Locale.ENGLISH,format,values);
-	}
-	
-	public static void log_error_ln( String format, Object... values ) {
-		System.err.printf(Locale.ENGLISH,format+"\r\n",values);
-	}
-	
-	public static void log_error( String format, Object... values ) {
-		System.err.printf(Locale.ENGLISH,format,values);
-	}
+	public static void log_ln      ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format+"\r\n",values); }
+	public static void log         ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format       ,values); }
+	public static void log_error_ln( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
+	public static void log_error   ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
+	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
+	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
 
 	public static JButton createButton(String title, ActionListener l) {
 		JButton button = new JButton(title);

@@ -60,11 +60,13 @@ class StatsPanel extends SaveGameViewTabPanel {
 	}
 
 	private enum StatsTableColumnID implements SimplifiedColumnIDInterface {
-		ID         ("ID"         , String.class, 50,-1,120,120),
-		Name       ("Name"       , String.class, 50,-1,210,210),
-		IntValue   ("Int"        , Long.class  , 20,-1, 70, 70),
-		FloatValue ("Float"      , Double.class, 20,-1, 70, 70),
-		Denominator("Denominator", Double.class, 20,-1, 40, 40);
+		ID              ("ID"               , String.class, 50,-1,120,120),
+		Name            ("Name"             , String.class, 50,-1,210,210),
+		IntValue        ("Int"              ,   Long.class, 20,-1, 70, 70),
+		FloatValue      ("Float"            , Double.class, 20,-1, 70, 70),
+		Denominator     ("Denominator"      , Double.class, 20,-1, 40, 40),
+		InterpretedValue("Interpreted Value", String.class, 50,-1,210,210);
+		
 		
 		private TableView.SimplifiedColumnConfig columnConfig;
 		
@@ -83,7 +85,7 @@ class StatsPanel extends SaveGameViewTabPanel {
 		private Vector<StatValue> statsList;
 		
 		public StatsTableModel(Vector<StatValue> statsList) {
-			super(new StatsPanel.StatsTableColumnID[]{ StatsTableColumnID.ID, StatsTableColumnID.Name, StatsTableColumnID.IntValue, StatsTableColumnID.FloatValue, StatsTableColumnID.Denominator });
+			super(StatsPanel.StatsTableColumnID.values());
 			this.statsList = statsList;
 		}
 	
@@ -101,6 +103,7 @@ class StatsPanel extends SaveGameViewTabPanel {
 			case IntValue: return statValue.IntValue;
 			case FloatValue: return statValue.FloatValue;
 			case Denominator: return statValue.Denominator;
+			case InterpretedValue: return statValue.interpretedValue;
 			}
 			return null;
 		}

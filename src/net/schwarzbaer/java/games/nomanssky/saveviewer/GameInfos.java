@@ -416,8 +416,9 @@ public class GameInfos {
 		File file = new File(FILE_KNOWN_STAT_ID);
 		if (!file.isFile()) return;
 		
+		boolean somethingChanged = false;
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read known StatIDs from file \""+file.getPath()+"\" ...");
+		SaveViewer.log_ln("Read known StatIDs from file \"%s\" ...", file.getPath());
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -431,13 +432,16 @@ public class GameInfos {
 				
 				String fullName = str.substring(pos+1);
 				if (!fullName.equals(knownID.fullName)) {
-					SaveViewer.log("Changed StatValue.KnownID.fullName found: %16s [old]\"%s\" -> [new]\"%s\"\r\n",knownID,knownID.fullName,fullName);
+					SaveViewer.log_warn_ln("   changed fullName of %16s  from \"%s\"  into \"%s\"",knownID,knownID.fullName,fullName);
 					knownID.fullName = fullName;
+					somethingChanged = true;
 				}
 			}
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
+		
+		if (!somethingChanged) SaveViewer.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 

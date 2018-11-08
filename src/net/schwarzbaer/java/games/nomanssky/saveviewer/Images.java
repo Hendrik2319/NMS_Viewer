@@ -163,7 +163,7 @@ public class Images {
 		
 		boolean noNewColorAdded = true;
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read newly defined background colors from file \""+file.getPath()+"\"...");
+		SaveViewer.log_ln("Read newly defined background colors from file \"%s\"...", file.getPath());
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -180,11 +180,11 @@ public class Images {
 				NamedColor existingColor = colorMap.putIfAbsent(newColor.value, newColor);
 				if (existingColor!=null) {
 					if (!existingColor.name.equals(newColor.name)) {
-						SaveViewer.log("   changed name of %s into \"%s\"\r\n", existingColor, newColor.name);
+						SaveViewer.log_warn_ln("   changed name of %s into \"%s\"", existingColor, newColor.name);
 						existingColor.name = newColor.name;
 					}
 				} else {
-					SaveViewer.log("   added %s\r\n", newColor);
+					SaveViewer.log_warn_ln("   added %s", newColor);
 					noNewColorAdded = false;
 					colorValuesVec.add(newColor);
 				}
@@ -193,7 +193,7 @@ public class Images {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
-		if (noNewColorAdded) SaveViewer.log_ln("   All colors from file are already known. File \""+file.getPath()+"\" can be deleted.");
+		if (noNewColorAdded) SaveViewer.log_warn_ln("   All colors from file are already known. File \"%s\" can be deleted.",file.getPath());
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
