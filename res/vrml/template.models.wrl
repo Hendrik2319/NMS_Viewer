@@ -55,6 +55,18 @@ PROTO AxisCross [
 	}
 }
 
+PROTO SingleText [
+	field MFString string []
+	field SFColor textColor 0 0 0.5
+] {
+	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+		children Shape {
+			appearance Appearance { material Material { diffuseColor IS textColor } }
+			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
+		}
+	}
+}
+
 PROTO BUILDDOOR [
 	field MFString string []
 	field SFColor textColor 0 0 0.5

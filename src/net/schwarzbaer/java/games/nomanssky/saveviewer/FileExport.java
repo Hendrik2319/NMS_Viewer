@@ -2,6 +2,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -21,12 +22,14 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
@@ -216,175 +219,272 @@ public class FileExport {
 		
 	}
 	
-	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Component parent, boolean dontAsk) {
-		if (objects==null && playerbase!=null) objects = playerbase.objects;
-		if (objects==null) return;
-		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
-		
-		File file;
-		if (dontAsk)
-			file = new File(suggestedFileName);
-		else
-			file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
-		if (file==null) return;
-		
-		Point3D min = null;
-		Point3D max = null;
-		
-		for (BuildingObject obj:objects) {
-			if (obj.position==null) continue;
-			if (obj.position.pos==null) continue;
-			Point3D pos = new Point3D(obj.position.pos);
-			if (min==null) min = new Point3D(pos); else min.min(pos);
-			if (max==null) max = new Point3D(pos); else max.max(pos);
-		}
-		double sizeOfAxisCrosses = 0;
-		if (max!=null && min!=null)
-			sizeOfAxisCrosses = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
-		sizeOfAxisCrosses = Math.max(sizeOfAxisCrosses, 0.25);
-		
-		try (PrintWriter vrml = new PrintWriter(new BufferedWriter( new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8)))) {
-			
-			VRMLoutput.writeTemplateToFile(vrml);
-			
-			//writeBioroomCoords(vrml);
-			//writeMainroomCoords(vrml);
-			
-			//vrml.println("# race initiator"); writeExocraftPodCoords(vrml, 8,6,16,4, 4,1,16,4, Math.PI/4);
-			//vrml.println("# Koloss"); writeExocraftPodCoords(vrml, 7.00,5.0,18,3, 3.5,1.5,18,3, Math.PI/2);
-			//vrml.println("# Roamer"); writeExocraftPodCoords(vrml, 5.25,3.5,18,3, 2.5,1.0,18,3, Math.PI/2);
-			//vrml.println("# Nomad" ); writeExocraftPodCoords(vrml, 4.75,3.0,18,3, 2.0,1.0,18,3, Math.PI/2);
-			
-			//vrml.println("# Container" );
-			//writeContainer(vrml);
-			
-			/*if (playerbase!=null && !playerbase.isFreighterBase___) {
-				String name = playerbase.name;
-				if (name==null || name.isEmpty()) name = "PlayerBase";
-				if (playerbase.position!=null && playerbase.forward!=null) {
-					Point3D pos = new Point3D(0,0,0);
-					Point3D at = playerbase.position.isZero()?null:playerbase.position.normalize();
-					Point3D up = playerbase.forward .isZero()?null:playerbase.forward .normalize();
-					writeModel(vrml, "^MAINROOM", name, pos, at, up, size, null);
-				}
-			}*/
-			
-			CubeCombine cubeCombine = /*new CubeCombine_Dummy();*/ new CubeCombine();
-			FreighterRoomCombine freightCombine = new FreighterRoomCombine();
-			
-			if (playerbase!=null) {
-				Point3D at = Point3D.normalizeOrNull(playerbase.position);
-				Point3D up = Point3D.normalizeOrNull(playerbase.forward);
-				if (at!=null && up!=null) {
-					cubeCombine.setBaseOrientation(at,up);
-					//freightCombine.setBaseOrientation(at,up);
-				}
-			}
-			
-			for (BuildingObject obj:objects)
-				if (!cubeCombine.add(obj) && !freightCombine.add(obj))
-					VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
-			
-			cubeCombine.writeModel(vrml);
-			freightCombine.writeModel(vrml);
-			
-			for (BuildingObject obj:cubeCombine.getRemainingObjects())
-				VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
-			
-			for (BuildingObject obj:freightCombine.getRemainingObjects())
-				VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		SaveViewer.log_ln("done");
+	private static long startTask(ProgressDialog pd, String indent, String taskTitle) {
+		return startTask(pd, indent, taskTitle, -1);
 	}
 
-	public static void writePosToVRML_simple(String suggestedFileName, BuildingObject[] objects, Double radius, Component parent) {
-		SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
-		
-		if (radius!=null && radius<=0) radius=null;
-		
-		File file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
-		if (file==null) return;
-		
-		Point3D min = null;
-		Point3D max = null;
-		
-		if (radius!=null) {
-			min = new Point3D(-radius,-radius,-radius);
-			max = new Point3D( radius, radius, radius);
+	private static long startTask(ProgressDialog pd, String indent, String taskTitle, int max) {
+		if (pd!=null) {
+			pd.setTaskTitle(taskTitle);
+			if (max>=0) pd.setValue(0, max);
+			else pd.setIndeterminate(true);
 		}
-		
-		for (BuildingObject obj:objects) {
-			if (obj.position==null) continue;
-			if (obj.position.pos==null) continue;
-			if (min==null) min = new Point3D(obj.position.pos); else min.min(obj.position.pos);
-			if (max==null) max = new Point3D(obj.position.pos); else max.max(obj.position.pos);
-		}
-		double size = 0;;
-		if (max!=null && min!=null)
-			size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
-		
-		try (PrintWriter vrml = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8))) {
+		long startTime = System.currentTimeMillis();
+		SaveViewer.log("%s%s ... ",indent,taskTitle);
+		return startTime;
+	}
+
+	private static void endTask(long startTime) {
+		endTask(startTime,"");
+	}
+
+	private static void endTask(long startTime, String additionalInfo) {
+		SaveViewer.log_ln("done (in %1.2fs)%s", (System.currentTimeMillis()-startTime)/1000.0, additionalInfo);
+	}
+
+	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Window parent, String label, boolean dontAsk) {
+		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
+			BuildingObject[] bObjs = objects;
+			if (bObjs==null && playerbase!=null) bObjs = playerbase.objects;
+			if (bObjs==null) return;
 			
-			vrml.println("#VRML V2.0 utf8");
-			vrml.println("");
-			vrml.println("Background { skyColor 0.6 0.7 0.8 }");
-			vrml.println("");
-			vrml.println("PROTO Axis [");
-			vrml.println("	field SFVec3f scale 1 1 1");
-			vrml.println("	field SFVec3f pos 0 0 0");
-			vrml.println("	field SFVec3f at  1 0 0");
-			vrml.println("	field SFVec3f up  0 1 0");
-			vrml.println("	field MFString string []");
-			vrml.println("] {");
-			vrml.println("	Transform { translation IS pos");
-			vrml.println("		children [");
-			vrml.println("			Transform { scale IS scale children [");
-			vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 1 1 1 } } geometry DEF sphere Sphere { radius 0.5 } }");
-			vrml.println("				Billboard { axisOfRotation 0 0 0");
-			vrml.println("					children [");
-			vrml.println("						Transform { translation 0 1 0 scale 1 1 1 children [");
-			vrml.println("							Shape {");
-			vrml.println("								appearance Appearance { material Material { diffuseColor 1 1 0 } }");
-			vrml.println("								geometry Text { string IS string fontStyle FontStyle { justify [ \"MIDDLE\" \"END\" ] family \"SANSSERIF\"} }");
-			vrml.println("							}");
-			vrml.println("						]}");
-			vrml.println("					]");
-			vrml.println("				}");
-			vrml.println("			] }");
-			vrml.println("			Transform { translation IS at scale IS scale children [");
-			vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 1 0 0 } } geometry USE sphere }");
-			vrml.println("			] }");
-			vrml.println("			Transform { translation IS up scale IS scale children [");
-			vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 0 1 0 } } geometry USE sphere }");
-			vrml.println("			] }");
-			vrml.println("		]");
-			vrml.println("	}");
-			vrml.println("}");
-			vrml.println("");
+			long startTime, startTimeTotal = System.currentTimeMillis();
+			SaveViewer.log_ln("Write positions of "+bObjs.length+" BuildingObjects to VRML file ...");
 			
-			if (radius!=null)
-				VRMLoutput.writeSphere(vrml,radius, new Point3D(0,0,0), java.awt.Color.GRAY);
+			File file;
+			if (dontAsk)
+				file = new File(suggestedFileName);
+			else {
+				if (pd!=null) {
+					pd.setIndeterminate(true);
+					pd.setTaskTitle("Ask for filename");
+				}
+				file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
+			}
+			if (file==null) return;
+			
+			if (pd!=null) {
+				pd.setIndeterminate(true);
+				pd.setTaskTitle("Determine max. dimensions");
+			}
+			Point3D min = null;
+			Point3D max = null;
+			
+			for (BuildingObject obj:bObjs) {
+				if (obj.position==null) continue;
+				if (obj.position.pos==null) continue;
+				Point3D pos = new Point3D(obj.position.pos);
+				if (min==null) min = new Point3D(pos); else min.min(pos);
+				if (max==null) max = new Point3D(pos); else max.max(pos);
+			}
+			double sizeOfAxisCrosses = 0;
+			if (max!=null && min!=null)
+				sizeOfAxisCrosses = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
+			sizeOfAxisCrosses = Math.max(sizeOfAxisCrosses, 0.25);
+			
+			try (PrintWriter vrml = new PrintWriter(new BufferedWriter( new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8)))) {
+				
+				startTime = startTask(pd, "   ", "Write templates");
+				VRMLoutput.writeTemplateToFile(vrml);
+				endTask(startTime);
+				
+				//writeBioroomCoords(vrml);
+				//writeMainroomCoords(vrml);
+				
+				//vrml.println("# race initiator"); writeExocraftPodCoords(vrml, 8,6,16,4, 4,1,16,4, Math.PI/4);
+				//vrml.println("# Koloss"); writeExocraftPodCoords(vrml, 7.00,5.0,18,3, 3.5,1.5,18,3, Math.PI/2);
+				//vrml.println("# Roamer"); writeExocraftPodCoords(vrml, 5.25,3.5,18,3, 2.5,1.0,18,3, Math.PI/2);
+				//vrml.println("# Nomad" ); writeExocraftPodCoords(vrml, 4.75,3.0,18,3, 2.0,1.0,18,3, Math.PI/2);
+				
+				//vrml.println("# Container" );
+				//writeContainer(vrml);
+				
+				/*if (playerbase!=null && !playerbase.isFreighterBase___) {
+					String name = playerbase.name;
+					if (name==null || name.isEmpty()) name = "PlayerBase";
+					if (playerbase.position!=null && playerbase.forward!=null) {
+						Point3D pos = new Point3D(0,0,0);
+						Point3D at = playerbase.position.isZero()?null:playerbase.position.normalize();
+						Point3D up = playerbase.forward .isZero()?null:playerbase.forward .normalize();
+						writeModel(vrml, "^MAINROOM", name, pos, at, up, size, null);
+					}
+				}*/
+				
+				CubeCombine cubeCombine = /*new CubeCombine_Dummy();*/ new CubeCombine();
+				FreighterRoomCombine freightCombine = new FreighterRoomCombine();
+				
+				if (playerbase!=null) {
+					Point3D at = Point3D.normalizeOrNull(playerbase.position);
+					Point3D up = Point3D.normalizeOrNull(playerbase.forward);
+					if (at!=null && up!=null) {
+						cubeCombine.setBaseOrientation(at,up);
+						//freightCombine.setBaseOrientation(at,up);
+					}
+				}
+				
+				startTime = startTask(pd, "   ", "Write standard objects to file", bObjs.length);
+				for (int i=0; i<bObjs.length; i++) {
+					BuildingObject obj = bObjs[i];
+					if (!cubeCombine.add(obj) && !freightCombine.add(obj))
+						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+					if (pd!=null) pd.setValue(i+1);
+				}
+				endTask(startTime);
+				
+				if (!cubeCombine.isEmpty()) {
+					startTime = startTask(pd, "   ", "Write result of CubeCombine to file");
+					cubeCombine.writeModel(vrml);
+					endTask(startTime);
+				}
+				
+				if (!freightCombine.isEmpty()) {
+					startTime = startTask(pd, "   ", "Write result of FreighterRoomCombine to file");
+					SaveViewer.log_ln("");
+					freightCombine.writeModel(vrml,pd);
+					SaveViewer.log("   ");
+					endTask(startTime);
+				}
+				
+				
+				BuildingObject[] remainingObjects;
+				remainingObjects = cubeCombine.getRemainingObjects();
+				if (remainingObjects.length>0) {
+					startTime = startTask(pd, "   ", "Write unprocessed objects of CubeCombine to file");
+					for (BuildingObject obj:remainingObjects)
+						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+					endTask(startTime);
+				}
+				
+				remainingObjects = freightCombine.getRemainingObjects();
+				if (remainingObjects.length>0) {
+					startTime = startTask(pd, "   ", "Write unprocessed objects of FreighterRoomCombine to file");
+					for (BuildingObject obj:remainingObjects)
+						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+					endTask(startTime);
+				}
+				
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			SaveViewer.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
+		};
+		if (parent==null)
+			task.accept(null);
+		else
+			SaveViewer.runWithProgressDialog(parent, "Write "+label+" to VRML", task);
+	}
+
+	public static void writePosToVRML_simple(String suggestedFileName, BuildingObject[] objects, Double planetRadius, Window parent, String label) {
+		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
+			
+			long startTime, startTimeTotal = System.currentTimeMillis();
+			SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
+			Double pRad = planetRadius;
+			if (pRad!=null && pRad<=0) pRad=null;
+			
+			if (pd!=null) {
+				pd.setIndeterminate(true);
+				pd.setTaskTitle("Ask for filename");
+			}
+			File file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
+			if (file==null) return;
+			
+			if (pd!=null) {
+				pd.setIndeterminate(true);
+				pd.setTaskTitle("Determine max. dimensions");
+			}
+			Point3D min = null;
+			Point3D max = null;
+			
+			if (pRad!=null) {
+				min = new Point3D(-pRad,-pRad,-pRad);
+				max = new Point3D( pRad, pRad, pRad);
+			}
 			
 			for (BuildingObject obj:objects) {
 				if (obj.position==null) continue;
 				if (obj.position.pos==null) continue;
-				Position p = obj.position;
-				vrml.printf(               "Axis {");
-				if (size>0) vrml.printf(Locale.ENGLISH," scale %1.2f %1.2f %1.2f", size, size, size);
-				vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", p.pos.x, p.pos.y, p.pos.z);
-				if (p.up!=null && !p.up.isZero()) vrml.printf(" up %s", p.up.normalize().mul(size).toString("%1.3f",false));
-				if (p.at!=null && !p.at.isZero()) vrml.printf(" at %s", p.at.normalize().mul(size).toString("%1.3f",false));
-				vrml.printf(               " string \"%s\"", obj.getNameOrObjectID().replace('\"','_'));
-				vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
+				if (min==null) min = new Point3D(obj.position.pos); else min.min(obj.position.pos);
+				if (max==null) max = new Point3D(obj.position.pos); else max.max(obj.position.pos);
 			}
+			double size = 0;;
+			if (max!=null && min!=null)
+				size = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
 			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		SaveViewer.log_ln("done");
+			try (PrintWriter vrml = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8))) {
+				
+				startTime = startTask(pd, "   ", "Write templates");
+				vrml.println("#VRML V2.0 utf8");
+				vrml.println("");
+				vrml.println("Background { skyColor 0.6 0.7 0.8 }");
+				vrml.println("");
+				vrml.println("PROTO Axis [");
+				vrml.println("	field SFVec3f scale 1 1 1");
+				vrml.println("	field SFVec3f pos 0 0 0");
+				vrml.println("	field SFVec3f at  1 0 0");
+				vrml.println("	field SFVec3f up  0 1 0");
+				vrml.println("	field MFString string []");
+				vrml.println("] {");
+				vrml.println("	Transform { translation IS pos");
+				vrml.println("		children [");
+				vrml.println("			Transform { scale IS scale children [");
+				vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 1 1 1 } } geometry DEF sphere Sphere { radius 0.5 } }");
+				vrml.println("				Billboard { axisOfRotation 0 0 0");
+				vrml.println("					children [");
+				vrml.println("						Transform { translation 0 1 0 scale 1 1 1 children [");
+				vrml.println("							Shape {");
+				vrml.println("								appearance Appearance { material Material { diffuseColor 1 1 0 } }");
+				vrml.println("								geometry Text { string IS string fontStyle FontStyle { justify [ \"MIDDLE\" \"END\" ] family \"SANSSERIF\"} }");
+				vrml.println("							}");
+				vrml.println("						]}");
+				vrml.println("					]");
+				vrml.println("				}");
+				vrml.println("			] }");
+				vrml.println("			Transform { translation IS at scale IS scale children [");
+				vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 1 0 0 } } geometry USE sphere }");
+				vrml.println("			] }");
+				vrml.println("			Transform { translation IS up scale IS scale children [");
+				vrml.println("				Shape { appearance Appearance { material Material { diffuseColor 0 1 0 } } geometry USE sphere }");
+				vrml.println("			] }");
+				vrml.println("		]");
+				vrml.println("	}");
+				vrml.println("}");
+				vrml.println("");
+				endTask(startTime);
+				
+				if (pRad!=null) {
+					startTime = startTask(pd, "   ", "Write planet");
+					VRMLoutput.writeSphere(vrml,pRad, new Point3D(0,0,0), java.awt.Color.GRAY);
+					endTask(startTime);
+				}
+				
+				startTime = startTask(pd, "   ", "Write objects", objects.length);
+				for (int i=0; i<objects.length; i++) {
+					if (pd!=null) pd.setValue(i);
+					BuildingObject obj = objects[i];
+					if (obj.position==null) continue;
+					if (obj.position.pos==null) continue;
+					Position p = obj.position;
+					vrml.printf(               "Axis {");
+					if (size>0) vrml.printf(Locale.ENGLISH," scale %1.2f %1.2f %1.2f", size, size, size);
+					vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", p.pos.x, p.pos.y, p.pos.z);
+					if (p.up!=null && !p.up.isZero()) vrml.printf(" up %s", p.up.normalize().mul(size).toString("%1.3f",false));
+					if (p.at!=null && !p.at.isZero()) vrml.printf(" at %s", p.at.normalize().mul(size).toString("%1.3f",false));
+					vrml.printf(               " string \"%s\"", obj.getNameOrObjectID().replace('\"','_'));
+					vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
+				}
+				if (pd!=null) pd.setValue(objects.length);
+				endTask(startTime);
+				
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			SaveViewer.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
+		};
+		if (parent==null)
+			task.accept(null);
+		else
+			SaveViewer.runWithProgressDialog(parent, "Write "+label+" to VRML", task);
 	}
 
 	private static class FreighterRoomCombine {
@@ -553,7 +653,7 @@ public class FileExport {
 				
 				// special: AIRLCKCONNECTOR
 				if (placingObj.objectID==ObjectID.AIRLCKCONNECTOR) {
-					placingObj.objectID=ObjectID.CORSTAIRS_SPACE;
+					//placingObj.objectID=ObjectID.CORSTAIRS_SPACE;
 					placingObj.locDir = placingObj.locDir.prev();
 					indexPos.y -= 1;
 				}
@@ -629,6 +729,10 @@ public class FileExport {
 			remainingObjects = new Vector<>();
 		}
 
+		public boolean isEmpty() {
+			return remainingObjects.isEmpty();
+		}
+
 		public BuildingObject[] getRemainingObjects() {
 			return remainingObjects.toArray(new BuildingObject[0]);
 		}
@@ -643,19 +747,52 @@ public class FileExport {
 			return false;
 		}
 		
-		public void writeModel(PrintWriter vrml) {
+		public void writeModel(PrintWriter vrml, ProgressDialog pd) {
 			if (remainingObjects.isEmpty())
 				return;
 			
+			long startTime;
+			
+			startTime = startTask(pd, "      ", "Create Raster");
 			Raster raster = createRaster();
+			endTask(startTime);
+			
 			if (raster==null)
 				return;
 			
-			LineGeometry.IndexedLineSet geometry = createGeometry(raster);
-			geometry.write(vrml, "", Color.BLACK);
+			Vector<SingleText> extraTexts = new Vector<>();
+			startTime = startTask(pd, "      ", "Create Geometry");
+			LineGeometry.IndexedLineSet geometry = createGeometry(raster,extraTexts);
+			endTask(startTime);
+			
+			startTime = startTask(pd, "      ", "Write Geometry to File");
+			SaveViewer.log_ln("");
+			LineGeometry.writeIndexedLineSet_verbose(vrml, geometry, "", Color.BLACK, pd, "         ");
+			SaveViewer.log("      ");
+			endTask(startTime);
+			
+			if (!extraTexts.isEmpty()) {
+				startTime = startTask(pd, "      ", "Write Texts to File");
+				for (SingleText txt:extraTexts)
+					VRMLoutput.writeSingleTextNode(vrml, txt.text, txt.pos, txt.at, txt.up);
+				endTask(startTime);
+			}
 		}
 		
-		private static final boolean DEBUG_Dont_Remove_Objects = false;
+		private static class SingleText {
+
+			public String text;
+			public Point3D pos;
+			public Point3D at;
+			public Point3D up;
+			
+			public SingleText(BuildingObject obj) {
+				text = VRMLoutput.getLabel(obj.objectID);
+				pos = obj.position.pos;
+				at  = obj.position.at;
+				up  = obj.position.up;
+			}
+		}
 
 		private Raster createRaster() {
 			PlacingObj anchor = null;
@@ -674,18 +811,14 @@ public class FileExport {
 			if (!anchor.isObjPosAsExpected())
 				return null;
 			
-			if (!DEBUG_Dont_Remove_Objects || anchor.objectID==ObjectID.CUBEROOM_SPACE)
-				remainingObjects.remove(anchor.obj);
+			remainingObjects.remove(anchor.obj);
 			
 			Raster raster = new Raster();
 			for (int i=0; i<remainingObjects.size();) {
 				BuildingObject obj = remainingObjects.get(i);
 				PlacingObj placingObj;
 				if ((placingObj = anchor.createOthogonalObj(obj))!=null) {
-					if (!DEBUG_Dont_Remove_Objects || placingObj.objectID==ObjectID.CUBEROOM_SPACE)
-						remainingObjects.remove(i);
-					else
-						i++;
+					remainingObjects.remove(i);
 					raster.setRange(placingObj);
 					placingObjects.add(placingObj);
 				} else
@@ -700,7 +833,7 @@ public class FileExport {
 			return raster;
 		}
 
-		private LineGeometry.IndexedLineSet createGeometry(Raster raster) {
+		private LineGeometry.IndexedLineSet createGeometry(Raster raster, Vector<SingleText> extraTexts) {
 			
 			LineGeometry.GroupingNode baseGroup = new LineGeometry.GroupingNode();
 			for (int x=0; x<raster.sizeX; x++)
@@ -712,15 +845,15 @@ public class FileExport {
 						LineGeometry.IndexedLineSet objGeometry = null;
 						switch (obj.objectID) {
 						case CUBEROOM_SPACE : objGeometry = new CUBEROOM(raster,x,y,z).createGeometry(); break;
-						case AIRLCKCONNECTOR:
-						case CORSTAIRS_SPACE: objGeometry = new CORSTAIRS      (obj).createGeometry(); break;
-						case CORRIDOR_SPACE : objGeometry = new CORRIDOR       (obj).createGeometry(); break;
-						case CORRIDORL_SPACE: objGeometry = new CORRIDOR_L     (obj).createGeometry(); break;
-						case CORRIDORT_SPACE: objGeometry = new CORRIDOR_T     (obj).createGeometry(); break;
-						case CORRIDORX_SPACE: objGeometry = new CORRIDOR_X     ()   .createGeometry(); break;
-						case S_CONTAINER    : objGeometry = new S_CONTAINER    (obj).createGeometry(); break;
-						case NPCFRIGTERM    : break;
-						case BRIDGECONNECTOR: break;
+						case AIRLCKCONNECTOR: extraTexts.add(new SingleText(obj.obj)); 
+						case CORSTAIRS_SPACE: objGeometry = new CORSTAIRS  (obj).createGeometry(); break;
+						case CORRIDOR_SPACE : objGeometry = new CORRIDOR   (obj).createGeometry(); break;
+						case CORRIDORL_SPACE: objGeometry = new CORRIDOR_L (obj).createGeometry(); break;
+						case CORRIDORT_SPACE: objGeometry = new CORRIDOR_T (obj).createGeometry(); break;
+						case CORRIDORX_SPACE: objGeometry = new CORRIDOR_X ()   .createGeometry(); break;
+						case S_CONTAINER    : objGeometry = new S_CONTAINER()   .createGeometry(); extraTexts.add(new SingleText(obj.obj)); break;
+						case NPCFRIGTERM    : objGeometry = new NPCFRIGTERM(obj).createGeometry(); extraTexts.add(new SingleText(obj.obj)); break;
+						case BRIDGECONNECTOR: extraTexts.add(new SingleText(obj.obj)); break;
 						}
 						if (objGeometry!=null)
 							baseGroup.add(
@@ -755,7 +888,8 @@ public class FileExport {
 					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,0), 0.6,  90,180, false)
 					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,0), 0.6, 180,270, false)
 					.close();
-				LineGeometry.GroupingNode objWestEast = new LineGeometry.GroupingNode(
+				
+				LineGeometry.OptimizeNode objWestEast = new LineGeometry.OptimizeNode(
 					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,-4)),
 					fullProfile,
 					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,4)),
@@ -782,8 +916,8 @@ public class FileExport {
 					new LineGeometry.PolyLine( new Point3D(-1.0,0, 1), new Point3D(1.0,0, 1) ),
 					new LineGeometry.PolyLine( new Point3D(-1.0,0,-3), new Point3D(1.0,0,-3) ),
 					new LineGeometry.PolyLine( new Point3D(-1.0,0, 3), new Point3D(1.0,0, 3) )
-
 				);
+				
 				switch (obj.locDir) {
 				case Xpos:
 				case Xneg: return objWestEast;
@@ -830,7 +964,7 @@ public class FileExport {
 					
 				);
 				
-				LineGeometry.GroupingNode tcrossWSE = new LineGeometry.GroupingNode(
+				LineGeometry.OptimizeNode tcrossWSE = new LineGeometry.OptimizeNode(
 					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y, -90),
 					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y,-180),
 					profile,
@@ -893,34 +1027,36 @@ public class FileExport {
 					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,0), 0.6, 180,270, false)
 					.close();
 				
-				LineGeometry.Transform objWestEast = new LineGeometry.Transform( new LineGeometry.GroupingNode(
-					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)),
-					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)).addRotation(LineGeometry.Axis.Y, -45),
-					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)).addRotation(LineGeometry.Axis.Y, -90),
-					
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.8,0), 4.0-0.5, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0-1.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0-1.4, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.7,0), 4.0-2.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.6,0), 4.0-2.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0-1.4, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0-1.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+0.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+1.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+1.4, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.6,0), 4.0+2.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.7,0), 4.0+2.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0+1.4, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0+1.0, 0,90, false, 8),
-					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.8,0), 4.0+0.5, 0,90, false, 8),
-					
-					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -11.25),
-					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0-1.4,0,0), new Point3D(4.0+1.4,0,0) ) ).addRotation(LineGeometry.Axis.Y, -22.5 ),
-					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -33.75),
-					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -56.25),
-					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0-1.4,0,0), new Point3D(4.0+1.4,0,0) ) ).addRotation(LineGeometry.Axis.Y, -67.5 ),
-					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -78.75)
-				) ).addTranslation(new Point3D(-4,0,-4));
+				LineGeometry.Transform objWestEast = new LineGeometry.Transform(
+					new LineGeometry.OptimizeNode(
+						new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)),
+						new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)).addRotation(LineGeometry.Axis.Y, -45),
+						new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)).addRotation(LineGeometry.Axis.Y, -90),
+						
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.8,0), 4.0-0.5, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0-1.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0-1.4, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.7,0), 4.0-2.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.6,0), 4.0-2.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0-1.4, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0-1.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+0.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+1.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+1.4, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.6,0), 4.0+2.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.7,0), 4.0+2.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0+1.4, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0+1.0, 0,90, false, 8),
+						new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.8,0), 4.0+0.5, 0,90, false, 8),
+						
+						new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -11.25),
+						new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0-1.4,0,0), new Point3D(4.0+1.4,0,0) ) ).addRotation(LineGeometry.Axis.Y, -22.5 ),
+						new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -33.75),
+						new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -56.25),
+						new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0-1.4,0,0), new Point3D(4.0+1.4,0,0) ) ).addRotation(LineGeometry.Axis.Y, -67.5 ),
+						new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -78.75)
+					)
+				).addTranslation(new Point3D(-4,0,-4));
 				
 				switch (obj.locDir) {
 				case Xpos: return objWestEast;
@@ -966,7 +1102,7 @@ public class FileExport {
 					new LineGeometry.PolyLine( new Point3D(0,0,0), new Point3D(0,0,4) )
 				);
 				
-				return new LineGeometry.GroupingNode(
+				return new LineGeometry.OptimizeNode(
 					cornerNE,
 					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y, 90),
 					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y,180),
@@ -994,7 +1130,8 @@ public class FileExport {
 					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,0), 0.6,  90,180, false)
 					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,0), 0.6, 180,270, false)
 					.close();
-				LineGeometry.GroupingNode objWestEast = new LineGeometry.GroupingNode(
+				
+				LineGeometry.GroupingNode objWestEast = new LineGeometry.OptimizeNode(
 					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,-4)),
 					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,-3)),
 					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,2, 0)),
@@ -1024,6 +1161,7 @@ public class FileExport {
 					new LineGeometry.PolyLine( new Point3D(-1.4,3.0, 1.5 ), new Point3D(1.4,3.0, 1.5 ) ),
 					new LineGeometry.PolyLine( new Point3D(-1.0,3.5, 2.25), new Point3D(1.0,3.5, 2.25) )
 				);
+				
 				switch (obj.locDir) {
 				case Xpos: return objWestEast;
 				case Zneg: return new LineGeometry.Transform(objWestEast).addRotation(LineGeometry.Axis.Y, 90);
@@ -1049,8 +1187,6 @@ public class FileExport {
 			}
 			
 			public LineGeometry.IndexedLineSet createGeometry() {
-				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode();
-				
 				PlacingObj neighbor_NW = raster.get(x+1, y  , z-1);
 				PlacingObj neighbor_NE = raster.get(x+1, y  , z+1);
 				PlacingObj neighbor_SW = raster.get(x-1, y  , z-1);
@@ -1064,29 +1200,23 @@ public class FileExport {
 				PlacingObj neighbor_W0 = raster.get(x  , y-1, z-1);
 				PlacingObj neighbor_E0 = raster.get(x  , y-1, z+1);
 				
-				group.add(
+				return new LineGeometry.OptimizeNode(
 					createCornerNE( neighbor_N, neighbor_NE, neighbor_E ),
 					createCornerNE( neighbor_W, neighbor_NW, neighbor_N ).addRotation(LineGeometry.Axis.Y, 90),
 					createCornerNE( neighbor_S, neighbor_SW, neighbor_W ).addRotation(LineGeometry.Axis.Y,180),
-					createCornerNE( neighbor_E, neighbor_SE, neighbor_S ).addRotation(LineGeometry.Axis.Y,270)
-				);
-				
-				group.add(
+					createCornerNE( neighbor_E, neighbor_SE, neighbor_S ).addRotation(LineGeometry.Axis.Y,270),
+					
 					createWallN( neighbor_N, neighbor_N0, PlacingObj.LocalDirection.Xpos ),
 					createWallN( neighbor_W, neighbor_W0, PlacingObj.LocalDirection.Zneg ).addRotation(LineGeometry.Axis.Y, 90),
 					createWallN( neighbor_S, neighbor_S0, PlacingObj.LocalDirection.Xneg ).addRotation(LineGeometry.Axis.Y,180),
-					createWallN( neighbor_E, neighbor_E0, PlacingObj.LocalDirection.Zpos ).addRotation(LineGeometry.Axis.Y,270)
-				); 				
-				
-				group.add(
+					createWallN( neighbor_E, neighbor_E0, PlacingObj.LocalDirection.Zpos ).addRotation(LineGeometry.Axis.Y,270),
+					
 					createCeilingLight(),
 					createFloor()
 				);
-				
-				return group;
 			}
 
-			private LineGeometry.IndexedLineSet createCeilingLight() {
+			private static LineGeometry.IndexedLineSet createCeilingLight() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine()
 						.addArc(LineGeometry.Axis.Y, new Point3D( 1.2,3.8, 1.2), 0.2,  0, 90, false)
@@ -1109,7 +1239,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createFloor() {
+			private static LineGeometry.IndexedLineSet createFloor() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine( new Point3D( 2,0, 2), new Point3D( 2,0,-2) ),
 					new LineGeometry.PolyLine( new Point3D( 1,0, 2), new Point3D( 1,0,-2) ),
@@ -1124,7 +1254,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.Transform createWallN(PlacingObj neighbor_N, PlacingObj neighbor_N0, PlacingObj.LocalDirection locDir) {
+			private static LineGeometry.Transform createWallN(PlacingObj neighbor_N, PlacingObj neighbor_N0, PlacingObj.LocalDirection locDir) {
 				if (is(neighbor_N,ObjectID.CUBEROOM_SPACE))
 					return new LineGeometry.Transform(createNoWallN()).addTranslation(new Point3D(3,0,0));
 				else {
@@ -1141,6 +1271,8 @@ public class FileExport {
 							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir.next()) ||
 							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir.prev()) ||
 							
+							is(neighbor_N ,ObjectID.AIRLCKCONNECTOR, locDir.next()) ||
+							is(neighbor_N0,ObjectID.AIRLCKCONNECTOR, locDir.prev()) ||
 							is(neighbor_N ,ObjectID.CORSTAIRS_SPACE, locDir.next()) ||
 							is(neighbor_N0,ObjectID.CORSTAIRS_SPACE, locDir.prev()) ||
 							
@@ -1155,7 +1287,7 @@ public class FileExport {
 				}
 			}
 
-			private LineGeometry.IndexedLineSet createNoWallN() {
+			private static LineGeometry.IndexedLineSet createNoWallN() {
 				return new LineGeometry.GroupingNode(
 						
 					new LineGeometry.PolyLine( new Point3D( 1,0, 2), new Point3D( 1,0, 0) ),
@@ -1171,7 +1303,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createWallN() {
+			private static LineGeometry.IndexedLineSet createWallN() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine()
 						.add(new Point3D(-1.0,0.0,2))
@@ -1188,7 +1320,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createWallDoorN() {
+			private static LineGeometry.IndexedLineSet createWallDoorN() {
 				LineGeometry.PolyLine profilTuerZarge = new LineGeometry.PolyLine()
 					.addArc(LineGeometry.Axis.Y, new Point3D( 0.3,0,0), 0.2,  90, 180, false)
 					.addArc(LineGeometry.Axis.Y, new Point3D(-0.3,0,0), 0.2, 180, 270, false);
@@ -1248,7 +1380,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.Transform createCornerNE(PlacingObj neighbor_N, PlacingObj neighbor_NE, PlacingObj neighbor_E) {
+			private static LineGeometry.Transform createCornerNE(PlacingObj neighbor_N, PlacingObj neighbor_NE, PlacingObj neighbor_E) {
 				if (is(neighbor_N,ObjectID.CUBEROOM_SPACE)) {
 					if (is(neighbor_E,ObjectID.CUBEROOM_SPACE)) {
 						if (is(neighbor_NE,ObjectID.CUBEROOM_SPACE)) return new LineGeometry.Transform(createEmptyCorner()).addTranslation(new Point3D(3,0,3));
@@ -1263,7 +1395,7 @@ public class FileExport {
 				}
 			}
 
-			private LineGeometry.IndexedLineSet createEmptyCorner() {
+			private static LineGeometry.IndexedLineSet createEmptyCorner() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine( new Point3D( 1, 0 , 1), new Point3D( 1, 0 ,-1) ),
 					new LineGeometry.PolyLine( new Point3D( 0, 0 , 1), new Point3D( 0, 0 ,-1) ),
@@ -1275,7 +1407,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createInsideCornerNE() {
+			private static LineGeometry.IndexedLineSet createInsideCornerNE() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine()
 						.add(new Point3D(-1.5,3.8,-1.5))
@@ -1290,7 +1422,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createOutsideCornerNE() {
+			private static LineGeometry.IndexedLineSet createOutsideCornerNE() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine()
 						.add(new Point3D(-1.0,0.0,1))
@@ -1310,7 +1442,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createCornerNEWallNS() {
+			private static LineGeometry.IndexedLineSet createCornerNEWallNS() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine()
 						.add(new Point3D(-1,3.8,-1.5))
@@ -1327,7 +1459,7 @@ public class FileExport {
 				);
 			}
 
-			private LineGeometry.IndexedLineSet createCornerNEWallWE() {
+			private static LineGeometry.IndexedLineSet createCornerNEWallWE() {
 				return new LineGeometry.GroupingNode(
 					new LineGeometry.PolyLine()
 						.add(new Point3D(-1.0,0.0,1))
@@ -1345,28 +1477,275 @@ public class FileExport {
 				);
 			}
 
-			private boolean is(PlacingObj neighbor, ObjectID objectID) {
+			private static boolean is(PlacingObj neighbor, ObjectID objectID) {
 				return is(neighbor, objectID, null);
 			}
 
-			private boolean is(PlacingObj neighbor, ObjectID objectID, PlacingObj.LocalDirection locDir) {
+			private static boolean is(PlacingObj neighbor, ObjectID objectID, PlacingObj.LocalDirection locDir) {
 				if (neighbor==null) return false;
 				return neighbor.objectID==objectID && (neighbor.locDir==locDir || locDir==null);
 			}
 		
 		}
 
-		private static class S_CONTAINER {
+		private static class NPCFRIGTERM {
 		
-			public S_CONTAINER(PlacingObj obj) {
-				// TODO Auto-generated constructor stub
+			private PlacingObj obj;
+
+			public NPCFRIGTERM(PlacingObj obj) {
+				this.obj = obj;
 			}
 		
 			public LineGeometry.IndexedLineSet createGeometry() {
-				// TODO Auto-generated method stub
+				LineGeometry.IndexedLineSet tempObj;
+				LineGeometry.Transform roomObjS = new LineGeometry.Transform(
+					new LineGeometry.OptimizeNode(
+						new LineGeometry.Transform(tempObj = CUBEROOM.createInsideCornerNE()).addTranslation(new Point3D(3,0,3)),
+						new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y, 90).addTranslation(new Point3D( 3,0,-3)),
+						new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,180).addTranslation(new Point3D(-3,0,-3)),
+						new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,270).addTranslation(new Point3D(-3,0, 3)),
+						
+						new LineGeometry.Transform(tempObj = CUBEROOM.createWallN()).addTranslation(new Point3D(3,0,0)),
+						new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y, 90).addTranslation(new Point3D(0,0,-3)),
+						new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,270).addTranslation(new Point3D(0,0, 3)),
+						
+						new LineGeometry.Transform(createWallDoorN_terminal()).addRotation(LineGeometry.Axis.Y,180).addTranslation(new Point3D(-3,0,0)),
+						
+						CUBEROOM.createCeilingLight(),
+						CUBEROOM.createFloor()
+					)
+				).addTranslation(new Point3D(-1,0,0));
+				
+				switch (obj.locDir) {
+				case Xneg: return roomObjS;
+				case Zpos: return roomObjS.addRotation(LineGeometry.Axis.Y, 90);
+				case Xpos: return roomObjS.addRotation(LineGeometry.Axis.Y,180);
+				case Zneg: return roomObjS.addRotation(LineGeometry.Axis.Y,270);
+				}
 				return null;
 			}
+
+			private static LineGeometry.IndexedLineSet createWallDoorN_terminal() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1.0,0.0,2))
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,0.6,2), 0.6, 270, 360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,2.7,2), 0.6,   0,  90, false)
+						.add(new Point3D(-1.0,3.3,2)),
+					
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0.6, 1.4), 0.6,  90,180, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0.6,-1.4), 0.6, 180,270, false),
+					
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,-2), 0.6, 270,360, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,-2), 1.0, 270,360, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0, 2), 1.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0, 2), 0.6, 180,270, false),
+					
+					new LineGeometry.PolyLine( new Point3D( 0,0, 1), new Point3D(-1,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D( 0,0, 0), new Point3D(-1,0, 0) ),
+					new LineGeometry.PolyLine( new Point3D( 0,0,-1), new Point3D(-1,0,-1) ),
+					
+					new LineGeometry.PolyLine( new Point3D( 0.0,2.7,-2), new Point3D( 0.0,2.7,2) ),
+					new LineGeometry.PolyLine( new Point3D(-0.6,3.3,-2), new Point3D(-0.6,3.3,2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-2), new Point3D(-1.0,3.3,2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.5), new Point3D(-1.5,3.8,1.5) )
+				);
+			}
+		}
+
+		private static class S_CONTAINER {
 		
+			public S_CONTAINER() {}
+		
+			public LineGeometry.IndexedLineSet createGeometry() {
+				LineGeometry.IndexedLineSet tempObj;
+				return new LineGeometry.OptimizeNode(
+					new LineGeometry.Transform(tempObj = createInsideCornerNE()).addTranslation(new Point3D(4,0,4)),
+					new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y, 90).addTranslation(new Point3D( 4,0,-4)),
+					new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,180).addTranslation(new Point3D(-4,0,-4)),
+					new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,270).addTranslation(new Point3D(-4,0, 4)),
+					
+					new LineGeometry.Transform(tempObj = createWallDoorN()).addTranslation(new Point3D(4,0,0)),
+					new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y, 90).addTranslation(new Point3D( 0,0,-4)),
+					new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,180).addTranslation(new Point3D(-4,0, 0)),
+					new LineGeometry.Transform(tempObj).addRotation(LineGeometry.Axis.Y,270).addTranslation(new Point3D( 0,0, 4)),
+					
+					CUBEROOM.createCeilingLight(),
+					createFloor(),
+					createMonitoringDesk()
+				);
+			}
+
+			private static LineGeometry.IndexedLineSet createInsideCornerNE() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-1.0), new Point3D(-1.5,3.8,-1.5) ),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,0.0,-1), 0.4, 0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,0.5,-1), 0.9, 0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,2.8,-1), 0.9, 0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,3.3,-1), 0.4, 0, 90, false)
+				);
+			}
+
+			private static LineGeometry.IndexedLineSet createWallDoorN() {
+				LineGeometry.PolyLine vertWallLine = new LineGeometry.PolyLine()
+					.add(new Point3D(-1.0,0.0,0))
+					.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,0.5,0), 0.5, 270, 360, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,2.8,0), 0.5,   0,  90, false)
+					.add(new Point3D(-1.0,3.3,0));
+				
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.Transform(vertWallLine).addTranslation(new Point3D(0,0,-3)),
+					new LineGeometry.Transform(vertWallLine).addTranslation(new Point3D(0,0,-2)),
+					new LineGeometry.Transform(vertWallLine).addTranslation(new Point3D(0,0, 2)),
+					new LineGeometry.Transform(vertWallLine).addTranslation(new Point3D(0,0, 3)),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-2), new Point3D(-1.5,3.8,-2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3, 2), new Point3D(-1.5,3.8, 2) ),
+					
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.X, new Point3D(0,2.2, 1.4), 0.5,   0, 90, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0.5, 1.4), 0.5,  90,180, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0.5,-1.4), 0.5, 180,270, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0,2.2,-1.4), 0.5, 270,360, false)
+						.close(),
+						
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(-0.1,2.2, 1.4), 0.6,   0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(-0.1,2.2,-1.4), 0.6, 270,360, false),
+						
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(0,2.8, 1.4), 0.1, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(0,2.8,-1.4), 0.1, 180,270, false),
+					
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.2,-2), 0.1, 360,270, true ),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.5,-2), 0.1, 360,270, true ).add(new Point3D(-0.1,0.5,-3)),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,-2), 0.6, 360,270, true ).add(new Point3D(-0.6,0.0,-3)),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,-2), 1.0, 360,270, true ),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0, 2), 1.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0, 2), 0.6, 180,270, false).add(new Point3D(-0.6,0.0,3)),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.5, 2), 0.1, 180,270, false).add(new Point3D(-0.1,0.5,3)),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.2, 2), 0.1, 180,270, false),
+					
+					new LineGeometry.PolyLine( new Point3D( 0,0, 1), new Point3D(-2,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D( 0,0, 0), new Point3D(-2,0, 0) ),
+					new LineGeometry.PolyLine( new Point3D( 0,0,-1), new Point3D(-2,0,-1) ),
+					
+					new LineGeometry.PolyLine( new Point3D(-0.1,2.8,-3), new Point3D(-0.1,2.8,3) ),
+					new LineGeometry.PolyLine( new Point3D(-0.6,3.3,-3), new Point3D(-0.6,3.3,3) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-3), new Point3D(-1.0,3.3,3) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-2.5), new Point3D(-1.5,3.8,2.5) )
+				);
+			}
+		
+			
+			private static LineGeometry.IndexedLineSet createMonitoringDesk() {
+				
+				LineGeometry.PolyLine line1 = new LineGeometry.PolyLine();
+				LineGeometry.PolyLine line2 = new LineGeometry.PolyLine();
+				LineGeometry.PolyLine line3 = new LineGeometry.PolyLine();
+				LineGeometry.PolyLine line4 = new LineGeometry.PolyLine();
+				LineGeometry.loopArc(2.1, 0, 360, false, 16, (i, nSeg, x, y) -> {
+					if ((i&1)==1) {
+						line1.add(new Point3D(y     ,0.0,x     ));
+						line2.add(new Point3D(y*0.9 ,0.0,x*0.9 ));
+						line3.add(new Point3D(y*0.5 ,0.0,x*0.5 ));
+						line4.add(new Point3D(y*0.45,0.0,x*0.45));
+					}
+				});
+				line1.close(); line2.close(); line3.close(); line4.close();
+				
+				double h_under = 0.7;
+				double h_edge  = 1.0;
+				double h_top = 1.3;
+				double r_top = 0.9;
+				
+				double w_edge = 1.4; // half of width :)
+				double wc_edge = 0.8; // edge corner
+				double w_under = 0.6; // half of width :)
+				
+				double x = 0.4;
+				double y = Math.sqrt(r_top*r_top-x*x);
+				
+				LineGeometry.PolyLine edge = new LineGeometry.PolyLine()
+					.addArc(LineGeometry.Axis.X, new Point3D(0,0.1, 0.5), 0.1, 180,270, false)
+					.add(new Point3D(0,h_under,0.35));
+				
+				return new LineGeometry.GroupingNode(
+					line1,line2,line3,line4,
+					
+					new LineGeometry.Circle(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 0.5),
+					new LineGeometry.Circle(LineGeometry.Axis.Y, new Point3D(0,0.1,0), 0.4),
+					new LineGeometry.Circle(LineGeometry.Axis.Y, new Point3D(0,h_under,0), 0.35),
+					
+					edge,
+					new LineGeometry.Transform(edge).addRotation(LineGeometry.Axis.Y, 90),
+					new LineGeometry.Transform(edge).addRotation(LineGeometry.Axis.Y,180),
+					new LineGeometry.Transform(edge).addRotation(LineGeometry.Axis.Y,270),
+					
+					new LineGeometry.PolyLine(
+						new Point3D(-w_under,h_under,-w_under),
+						new Point3D( w_under,h_under,-w_under),
+						new Point3D( w_under,h_under, w_under),
+						new Point3D(-w_under,h_under, w_under)
+					).close(),
+					
+					new LineGeometry.PolyLine(
+						new Point3D(- w_edge,h_edge,-wc_edge),
+						new Point3D(-wc_edge,h_edge,- w_edge),
+						new Point3D( wc_edge,h_edge,- w_edge),
+						new Point3D(  w_edge,h_edge,-wc_edge),
+						new Point3D(  w_edge,h_edge, wc_edge),
+						new Point3D( wc_edge,h_edge,  w_edge),
+						new Point3D(-wc_edge,h_edge,  w_edge),
+						new Point3D(- w_edge,h_edge, wc_edge)
+					).close(),
+					
+					new LineGeometry.PolyLine(
+						new Point3D(-y,h_top,-x),
+						new Point3D(-w_edge ,h_edge ,-wc_edge),
+						new Point3D(-w_under,h_under,-w_under),
+						new Point3D(-wc_edge,h_edge ,-w_edge ),
+						new Point3D(-x,h_top,-y)
+					),
+			
+					new LineGeometry.PolyLine(
+						new Point3D( x,h_top,-y),
+						new Point3D( wc_edge,h_edge ,-w_edge ),
+						new Point3D( w_under,h_under,-w_under),
+						new Point3D( w_edge ,h_edge ,-wc_edge),
+						new Point3D( y,h_top,-x)
+					),
+			
+					new LineGeometry.PolyLine(
+						new Point3D( y,h_top,x),
+						new Point3D( w_edge ,h_edge , wc_edge),
+						new Point3D( w_under,h_under, w_under),
+						new Point3D( wc_edge,h_edge , w_edge ),
+						new Point3D( x,h_top,y)
+					),
+			
+					new LineGeometry.PolyLine(
+						new Point3D(-x,h_top,y),
+						new Point3D(-wc_edge,h_edge , w_edge ),
+						new Point3D(-w_under,h_under, w_under),
+						new Point3D(-w_edge ,h_edge , wc_edge),
+						new Point3D(-y,h_top,x)
+					),
+					
+					new LineGeometry.Circle(LineGeometry.Axis.Y, new Point3D(0,h_top,0), r_top)
+				);
+			}
+		
+			private static LineGeometry.IndexedLineSet createFloor() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine( new Point3D( 3,0, 3), new Point3D( 3,0,-3) ),
+					new LineGeometry.PolyLine( new Point3D( 2,0, 3), new Point3D( 2,0,-3) ),
+					new LineGeometry.PolyLine( new Point3D(-2,0, 3), new Point3D(-2,0,-3) ),
+					new LineGeometry.PolyLine( new Point3D(-3,0, 3), new Point3D(-3,0,-3) ),
+					new LineGeometry.PolyLine( new Point3D( 3,0, 3), new Point3D(-3,0, 3) ),
+					new LineGeometry.PolyLine( new Point3D( 3,0, 2), new Point3D(-3,0, 2) ),
+					new LineGeometry.PolyLine( new Point3D( 3,0,-2), new Point3D(-3,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D( 3,0,-3), new Point3D(-3,0,-3) )
+				);
+			}
 		}
 	}
 
@@ -1430,6 +1809,10 @@ public class FileExport {
 				}
 			}
 	
+			public boolean isEmpty() {
+				return freeObj.isEmpty();
+			}
+
 			private BuildingObject fixUpsideDown(BuildingObject obj) {
 				if (baseAt==null || baseUp==null) return obj;
 				if (obj==null) return obj;
@@ -2383,7 +2766,7 @@ public class FileExport {
 					group1.add(transform);
 				}
 				LineGeometry.loopArc(6, 0, 70, false, 4, (i, nSeg, x, y) -> group1.add(new LineGeometry.Circle(LineGeometry.Axis.X, new Point3D(y,0,0), x)));
-				group1.write(vrml, "	", null);
+				LineGeometry.writeIndexedLineSet(vrml, group1, "	", null);
 			});
 			vrml.println("");
 			
@@ -2392,7 +2775,7 @@ public class FileExport {
 			vrml.println("");
 			
 			writeProtoToFile(vrml, "CUBEFLOOR", ()->{
-				new LineGeometry.Box(0.1,3.9,3.9).write(vrml, "	", null);
+				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(0.1,3.9,3.9), "	", null);
 			});
 			vrml.println("");
 			
@@ -2498,7 +2881,7 @@ public class FileExport {
 					new LineGeometry.PolyLine(new Point3D(h,  w/2-wt2-wt1 ,-(w/2-wt2-wt1)),new Point3D(h1,  w/2-wt2 ,-(w/2-wt2)))
 				);
 				
-				group.write(vrml, "	", null);
+				LineGeometry.writeIndexedLineSet(vrml, group, "	", null);
 			});
 			vrml.println("");
 			
@@ -2617,11 +3000,22 @@ public class FileExport {
 			if (obj.position.at==null) return;
 			
 			String objectID = obj.objectID;
+			String label = getLabel(objectID);
+			
+			writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
+		}
+		
+		private static String getLabel(String objectID) {
 			GameInfos.GeneralizedID id = GameInfos.productIDs.get(objectID);
 			String label = objectID;
 			if (id!=null && id.hasLabel()) label = id.label;
-			
-			writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
+			return label;
+		}
+
+		private static void writeSingleTextNode(PrintWriter vrml, String text, Point3D pos, Point3D at, Point3D up) {
+			writeMyOrientation(vrml, pos, at, up, ()->{
+				vrml.printf(" SingleText { string %s }", createLabelStrs(text));
+			});
 		}
 
 		private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double sizeOfAxisCrosses, Point3D color) {
@@ -2630,11 +3024,7 @@ public class FileExport {
 				
 				if (modelName!=null) {
 					String colorStr = color==null?"":(" lineColor "+color.toString("%1.2f",false));
-					String labelStr = "\""+label+"\"";
-					if (label.length()>20) {
-						Vector<String> strParts = splitIntoChunks(label,20);
-						labelStr = "["+join(strParts, str->" \""+str+"\"")+" ]";;
-					}
+					String labelStr = createLabelStrs(label);
 					vrml.printf(" %s { string %s%s }", modelName, labelStr, colorStr);
 				} else
 					switch (objectID) {
@@ -2644,6 +3034,15 @@ public class FileExport {
 					}
 			});
 			
+		}
+		private static String createLabelStrs(String label) {
+			String labelStr;
+			if (label.length()>20) {
+				Vector<String> strParts = splitIntoChunks(label,20);
+				labelStr = "["+join(strParts, str->" \""+str+"\"")+" ]";;
+			} else
+				labelStr = "\""+label+"\"";
+			return labelStr;
 		}
 
 		private static String join(Vector<String> parts, Function<String,String> convertPart) {
@@ -2655,18 +3054,28 @@ public class FileExport {
 		private static Vector<String> splitIntoChunks(String label, int maxChunkLength) {
 			Vector<String> strParts = new Vector<>();
 			
+			label = label.trim();
 			while ( !label.isEmpty() ) {
+				label = label.trim();
+				
 				int chpos = label.indexOf(' ');
-				while (chpos==0) { label = label.trim(); chpos = label.indexOf(' '); }
+				int chposLine = label.indexOf('-');
+				if (0<=chposLine && (chposLine<chpos || chpos<0))
+					chpos = chposLine;
 				
 				String part;
-				if (chpos<0) { part = label; label = ""; }
-				else { part = label.substring(0,chpos); label = label.substring(chpos+1); }
+				if (chpos<0) {
+					part = label;
+					label = "";
+				} else {
+					part = label.substring(0,chpos+1); // incl. space or line char
+					label = label.substring(chpos+1);
+				}
 				
 				if (strParts.isEmpty())
 					strParts.add(part);
 				else {
-					String newLastPart = strParts.lastElement()+" "+part;
+					String newLastPart = strParts.lastElement()+part;
 					if (newLastPart.length()<maxChunkLength)
 						strParts.set(strParts.size()-1, newLastPart);
 					else
@@ -2766,11 +3175,11 @@ public class FileExport {
 	}
 	
 	private static class LineGeometry {
-		private static int CIRCLE_SEGMENTS = 20; // = 32;
+		static int CIRCLE_SEGMENTS = 20; // = 32;
 		
-		private enum Axis { X, Y, Z }
+		enum Axis { X, Y, Z }
 		
-		private static class Segment {
+		static class Segment {
 			Vector<Integer> indexes;
 			Segment() {
 				indexes = new Vector<>();
@@ -2815,39 +3224,72 @@ public class FileExport {
 				return "Segment [indexes=" + indexes.toString() + "]";
 			}
 		}
+
+		static void writeIndexedLineSet_verbose(PrintWriter vrml, IndexedLineSet indexedLineSet, String vrmlIndent, Color color, ProgressDialog pd, String logIndent) {
+			long startTime = 0;
+			boolean verbose = logIndent!=null;
+			
+			StringBuilder pointsStr = new StringBuilder();
+			StringBuilder indexesStr = new StringBuilder();
+			
+			if (verbose) startTime = startTask(pd, logIndent, "Prepare Geometry for output");
+			indexedLineSet.prepareForOutput();
+			if (verbose) endTask(startTime);
+/*			
+			int n0, n1;
+			
+			if (verbose) startTime = startTask(pd, logIndent, "Optimize points");
+			n0 = indexedLineSet.points.size();
+			indexedLineSet.optimizePoints();
+			n1 = indexedLineSet.points.size();
+			if (verbose) endTask(startTime, String.format(Locale.ENGLISH, "  -> %d of %d points removed (%1.1f%%)", n0-n1, n0, (n0-n1)*100.0/n0) );
+			
+			if (verbose) startTime = startTask(pd, logIndent, "Optimize segments");
+			n0 = indexedLineSet.segments.size();
+			indexedLineSet.optimizeSegments();
+			n1 = indexedLineSet.segments.size();
+			if (verbose) endTask(startTime, String.format(Locale.ENGLISH, "  -> %d of %d segments removed (%1.1f%%)", n0-n1, n0, (n0-n1)*100.0/n0) );
+*/			
+			Vector<Point3D> points = indexedLineSet.points;
+			if (verbose) startTime = startTask(pd, logIndent, "Build point array", points.size());
+			for (int i=0; i<points.size(); i++) {
+				Point3D p = points.get(i);
+				if (pointsStr.length()>0) pointsStr.append(", ");
+				pointsStr.append(String.format(Locale.ENGLISH,"%1.2f %1.2f %1.2f", p.x, p.y, p.z));
+				if (verbose && pd!=null) pd.setValue(i+1); 
+			}
+			if (verbose) endTask(startTime);
+			
+			Vector<Segment> segments = indexedLineSet.segments;
+			if (verbose) startTime = startTask(pd, logIndent, "Build index array", segments.size());
+			for (int s=0; s<segments.size(); s++) {
+				Segment seg = segments.get(s);
+				if (indexesStr.length()>0) indexesStr.append(" -1");
+				for (int i:seg.indexes) indexesStr.append(" "+i);
+				if (verbose && pd!=null) pd.setValue(s+1); 
+			}
+			if (verbose) endTask(startTime);
+			
+			if (verbose) startTime = startTask(pd, logIndent, "Write VRML structure");
+			VRMLoutput.writeIndexedLineSet(vrml, vrmlIndent, pointsStr, indexesStr, color);
+			if (verbose) endTask(startTime);
+		}
+
+		static void writeIndexedLineSet(PrintWriter vrml, IndexedLineSet indexedLineSet, String vrmlIndent, Color color) {
+			writeIndexedLineSet_verbose(vrml, indexedLineSet, vrmlIndent, color, null, null);
+		}
 		
-		private static abstract class IndexedLineSet {
+		public static abstract class IndexedLineSet {
 			Vector<Point3D> points;
 			Vector<Segment> segments;
 			IndexedLineSet() {
 				points = new Vector<>();
 				segments = new Vector<>();
 			}
-
-			void write(PrintWriter vrml, String indent, Color color) {
-				StringBuilder pointsStr = new StringBuilder();
-				StringBuilder indexesStr = new StringBuilder();
-				
-				prepareForOutput();
-				optimizePoints();
-				optimizeSegments();
-				
-				for (Point3D p:points) {
-					if (pointsStr.length()>0) pointsStr.append(", ");
-					pointsStr.append(String.format(Locale.ENGLISH,"%1.2f %1.2f %1.2f", p.x, p.y, p.z));
-				}
-				
-				for (Segment seg:segments) {
-					if (indexesStr.length()>0) indexesStr.append(" -1");
-					for (int i:seg.indexes) indexesStr.append(" "+i);
-				}
-				
-				VRMLoutput.writeIndexedLineSet(vrml, indent, pointsStr, indexesStr, color);
-			}
 			
 			protected abstract void prepareForOutput();
 
-			private void optimizePoints() {
+			void optimizePoints() {
 				for (int p1Index=0; p1Index<points.size(); p1Index++) {
 					Point3D p1 = points.get(p1Index);
 					
@@ -2879,7 +3321,7 @@ public class FileExport {
 				} 
 			}
 			
-			private void optimizeSegments() {
+			void optimizeSegments() {
 				Vector<Pair> connectedSegments = new Vector<>();
 				for (int i1=0; i1<segments.size(); i1++) {
 					Segment seg1 = segments.get(i1);
@@ -2899,7 +3341,23 @@ public class FileExport {
 			
 		}
 		
-		private static class GroupingNode extends IndexedLineSet {
+		static class OptimizeNode extends GroupingNode {
+			OptimizeNode(IndexedLineSet... objs) {
+				super.add(objs);
+				super.prepareForOutput();
+				super.optimizePoints();
+				super.optimizeSegments();
+			}
+			@Override
+			OptimizeNode add(IndexedLineSet... objs) {
+				throw new UnsupportedOperationException("Can't add object to an OptimizeNode after construction.");
+			}
+			@Override
+			protected void prepareForOutput() {
+			}
+		}
+		
+		static class GroupingNode extends IndexedLineSet {
 			Vector<IndexedLineSet> subNodes;
 			GroupingNode() {
 				subNodes = new Vector<>();
@@ -2925,7 +3383,7 @@ public class FileExport {
 			}
 		}
 		
-		private static class Transform extends IndexedLineSet {
+		static class Transform extends IndexedLineSet {
 			
 			private static class TransformMatrix {
 				double[][] m; // m[row][col];
@@ -3040,7 +3498,7 @@ public class FileExport {
 			}
 		}
 		
-		private static class PolyLine extends IndexedLineSet {
+		static class PolyLine extends IndexedLineSet {
 			
 			private Segment segment;
 			
@@ -3088,13 +3546,13 @@ public class FileExport {
 			}
 		}
 		
-		private static class Circle extends PolyLine {
+		static class Circle extends PolyLine {
 			Circle(Axis axis, Point3D center, double radius) {
 				addArc(axis, center, radius, 0, 360, false);
 			}
 		}
 		
-		private static class Box extends Transform {
+		static class Box extends Transform {
 			Box(double sizeX, double sizeY, double sizeZ) {
 				super(new GroupingNode(
 					new PolyLine(new Point3D(0,0,0),new Point3D(1,0,0)),
@@ -3115,16 +3573,16 @@ public class FileExport {
 			}
 		}
 		
-		private static interface LoopArcReceiver {
+		static interface LoopArcReceiver {
 			public void setValue( int i, int nSeg, double x, double y );
 		}
 		
 		@SuppressWarnings("unused")
-		private static void loopArc(double radius, double startAngle_deg, double endAngle_deg, boolean flipped, LoopArcReceiver receiver) {
+		static void loopArc(double radius, double startAngle_deg, double endAngle_deg, boolean flipped, LoopArcReceiver receiver) {
 			loopArc(radius, startAngle_deg, endAngle_deg, flipped, -1, receiver);
 		}
 		
-		private static void loopArc(double radius, double startAngle_deg, double endAngle_deg, boolean flipped, int nSeg, LoopArcReceiver receiver) {
+		static void loopArc(double radius, double startAngle_deg, double endAngle_deg, boolean flipped, int nSeg, LoopArcReceiver receiver) {
 			while (startAngle_deg    >endAngle_deg) endAngle_deg += 360;
 			while (startAngle_deg+360<endAngle_deg) endAngle_deg -= 360;
 			

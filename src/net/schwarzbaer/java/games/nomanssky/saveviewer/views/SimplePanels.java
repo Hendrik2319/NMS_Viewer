@@ -278,7 +278,7 @@ public class SimplePanels {
 			//System.out.println("objects.size(): "+objects.size());
 			
 			String suggestedFileName = String.format("BBO_%s.wrl", data.index>=0?(""+(data.index+1)):"#");
-			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, this);
+			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, mainWindow,"BuildingObjects");
 		}
 
 		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
@@ -346,9 +346,11 @@ public class SimplePanels {
 
 	public static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -632703090899520348L;
+		private Window mainWindow;
 
-		public PersistentPlayerBasesPanel(SaveGameData data) {
+		public PersistentPlayerBasesPanel(SaveGameData data, Window mainWindow) {
 			super(data);
+			this.mainWindow = mainWindow;
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
 			Vector<PersistentPlayerBase> bases = this.data.persistentPlayerBases;
@@ -369,7 +371,7 @@ public class SimplePanels {
 
 		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title) {
 			int index = tabbedPane.getTabCount();
-			tabbedPane.insertTab(title,null, new PlayerBasePanel(this.data,pb), null, index);
+			tabbedPane.insertTab(title,null, new PlayerBasePanel(this.data,pb,mainWindow), null, index);
 			tabbedPane.setTabComponentAt(index, new BaseTabHeader(title,pb));
 		}
 		
@@ -398,8 +400,11 @@ public class SimplePanels {
 			private PersistentPlayerBase playerbase;
 			private JTextArea textArea;
 
-			public PlayerBasePanel(SaveGameData data, PersistentPlayerBase playerbase) {
+			private Window mainWindow;
+
+			public PlayerBasePanel(SaveGameData data, PersistentPlayerBase playerbase, Window mainWindow) {
 				super(new BorderLayout(3, 3));
+				this.mainWindow = mainWindow;
 				setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
 				this.data = data;
@@ -444,8 +449,8 @@ public class SimplePanels {
 			}
 			
 			private void addVRMLtasks(JPopupMenu contextMenu) {
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null, PlayerBasePanel.this), null, SaveViewer.ToolbarIcons.SaveAs));
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,PlayerBasePanel.this, false), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base"), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false), null, SaveViewer.ToolbarIcons.SaveAs));
 				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
@@ -457,7 +462,7 @@ public class SimplePanels {
 							else radius = Math.min(radius, obj.position.pos.length());
 						}
 					
-					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,this);
+					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet");
 				}, null, SaveViewer.ToolbarIcons.SaveAs));
 			}
 

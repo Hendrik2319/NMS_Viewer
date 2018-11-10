@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -34,6 +35,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javax.activation.DataHandler;
 import javax.swing.BorderFactory;
@@ -225,7 +227,7 @@ public class SaveViewer implements ActionListener {
 				SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.Type.Models;
 		
 		String suggestFileName = SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.suggestFileName(type,data,playerbase);
-		FileExport.writePosToVRML_models(suggestFileName,null,playerbase,null,true);
+		FileExport.writePosToVRML_models(suggestFileName,null,playerbase,null,"Base "+baseIndex,true);
 	}
 
 	@SuppressWarnings("unused")
@@ -400,13 +402,9 @@ public class SaveViewer implements ActionListener {
 		} break;
 			
 		case RefreshExtraImages:
-			ProgressDialog pd = new ProgressDialog(mainWindow,"Refresh Extra Images");
-			new Thread(()->{
-				pd.waitUntilDialogIsVisible();
+			runWithProgressDialog(mainWindow,"Refresh Extra Images", pd->{
 				images.reloadImageList(pd);
-				pd.closeDialog();
-			}).start();
-			pd.showDialog();
+			});
 			break;
 			
 		case ShowExtraImages:
@@ -450,13 +448,9 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
-		ProgressDialog pd = new ProgressDialog(mainWindow,"Open SaveGame");
-		new Thread(()->{
-			pd.waitUntilDialogIsVisible();
+		runWithProgressDialog(mainWindow,"Open SaveGame", pd->{
 			openSaveGame(saveGameFile,saveGameIndex,pd);
-			pd.closeDialog();
-		}).start();
-		pd.showDialog();
+		});
 	}
 
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
@@ -504,61 +498,45 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void reloadSaveGameView(SaveGameView view) {
-		ProgressDialog pd = new ProgressDialog(mainWindow,"Reload SaveGame");
-		new Thread(()->{
-			pd.waitUntilDialogIsVisible();
-			reloadSaveGameView(view,pd);
-			pd.closeDialog();
-		}).start();
-		pd.showDialog();
-	}
-
-	private void reloadSaveGameView(SaveGameView view, ProgressDialog pd) {
-		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 5); }
-		log_ln("");
-		log("Parse file \"%s\" ...",view.file.getPath());
-		JSON_Object new_json_data = new JSON_Parser(view.file).parse();
-		log_ln(" done");
-		
-		boolean isNEXT = false;
-		if (!SaveGameData.hasValue(new_json_data, "Version")) {
-			if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
-			new_json_data = deObfuscator.deObfuscate(new_json_data);
-			isNEXT = true;
-		}
-		
-		if (new_json_data!=null) {
-			if (pd!=null) { pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); }
-			GameInfos.removeUsages(view.data);
-			SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index);
-			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(3); }
-			saveGameData.parse(isNEXT);
-			if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
-			view.replaceData(saveGameData,isNEXT);
-			contentPane.updateIDPanels();
-		}
+		runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
+			if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 5); }
+			log_ln("");
+			log("Parse file \"%s\" ...",view.file.getPath());
+			JSON_Object new_json_data = new JSON_Parser(view.file).parse();
+			log_ln(" done");
+			
+			boolean isNEXT = false;
+			if (!SaveGameData.hasValue(new_json_data, "Version")) {
+				if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
+				new_json_data = deObfuscator.deObfuscate(new_json_data);
+				isNEXT = true;
+			}
+			
+			if (new_json_data!=null) {
+				if (pd!=null) { pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); }
+				GameInfos.removeUsages(view.data);
+				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index);
+				if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(3); }
+				saveGameData.parse(isNEXT);
+				if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
+				view.replaceData(saveGameData,isNEXT);
+				contentPane.updateIDPanels();
+			}
+		});
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
-		ProgressDialog pd = new ProgressDialog(mainWindow,"Close SaveGame");
-		new Thread(()->{
-			pd.waitUntilDialogIsVisible();
-			closeSaveGameView(view,pd);
-			pd.closeDialog();
-		}).start();
-		pd.showDialog();
-	}
-
-	private void closeSaveGameView(SaveGameView view, ProgressDialog pd) {
-		loadedSaveGames.remove(view);
-		contentPane.removeSaveGameView(view);
-		GameInfos.removeUsages(view.data);
-		updateWindowTitle();
-		
-		if (loadedSaveGames.size()<2 && compareTab!=null) {
-			contentPane.removeTab(compareTab);
-			compareTab=null;
-		}
+		runWithProgressDialog(mainWindow,"Close SaveGame", pd->{
+			loadedSaveGames.remove(view);
+			contentPane.removeSaveGameView(view);
+			GameInfos.removeUsages(view.data);
+			updateWindowTitle();
+			
+			if (loadedSaveGames.size()<2 && compareTab!=null) {
+				contentPane.removeTab(compareTab);
+				compareTab=null;
+			}
+		});
 	}
 
 	private void updateWindowTitle() {
@@ -567,6 +545,16 @@ public class SaveViewer implements ActionListener {
 		else
 			mainWindow.setTitle("(New) No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
+	}
+
+	public static void runWithProgressDialog(Window parent, String title, Consumer<ProgressDialog> useProgressDialog) {
+		ProgressDialog pd = new ProgressDialog(parent,title,400);
+		new Thread(()->{
+			pd.waitUntilDialogIsVisible();
+			useProgressDialog.accept(pd);
+			pd.closeDialog();
+		}).start();
+		pd.showDialog();
 	}
 	
 	public static class FrequentlyTask implements Runnable {
