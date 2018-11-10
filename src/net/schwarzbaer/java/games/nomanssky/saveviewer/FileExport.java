@@ -270,21 +270,28 @@ public class FileExport {
 			}*/
 			
 			CubeCombine cubeCombine = /*new CubeCombine_Dummy();*/ new CubeCombine();
+			FreighterRoomCombine freightCombine = new FreighterRoomCombine();
+			
 			if (playerbase!=null) {
 				Point3D at = Point3D.normalizeOrNull(playerbase.position);
 				Point3D up = Point3D.normalizeOrNull(playerbase.forward);
-				if (at!=null && up!=null)
+				if (at!=null && up!=null) {
 					cubeCombine.setBaseOrientation(at,up);
+					//freightCombine.setBaseOrientation(at,up);
+				}
 			}
 			
 			for (BuildingObject obj:objects)
-				if (!cubeCombine.add(obj))
+				if (!cubeCombine.add(obj) && !freightCombine.add(obj))
 					VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
 			
 			cubeCombine.writeModel(vrml);
+			freightCombine.writeModel(vrml);
 			
-			BuildingObject[] remainingObjects = cubeCombine.getRemainingObjects();
-			for (BuildingObject obj:remainingObjects)
+			for (BuildingObject obj:cubeCombine.getRemainingObjects())
+				VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+			
+			for (BuildingObject obj:freightCombine.getRemainingObjects())
 				VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
 			
 		} catch (FileNotFoundException e) {
@@ -378,6 +385,989 @@ public class FileExport {
 			e.printStackTrace();
 		}
 		SaveViewer.log_ln("done");
+	}
+
+	private static class FreighterRoomCombine {
+		private static final String OBJECT_ID_FREIGHTER_CORE = "^FREIGHTER_CORE";
+
+		private enum ObjectID {
+			BRIDGECONNECTOR("^BRIDGECONNECTOR"),
+			AIRLCKCONNECTOR("^AIRLCKCONNECTOR"),
+			CUBEROOM_SPACE (OBJECT_ID_FREIGHTER_CORE, "^CUBEROOM_SPACE", "^CUBEROOMB_SPACE", "^CUBEROOMC_SPACE"),
+			S_CONTAINER    ("^S_CONTAINER0", "^S_CONTAINER1", "^S_CONTAINER2", "^S_CONTAINER3", "^S_CONTAINER4",
+			                "^S_CONTAINER5", "^S_CONTAINER6", "^S_CONTAINER7", "^S_CONTAINER8", "^S_CONTAINER9"),
+			CORRIDOR_SPACE ("^CORRIDOR_SPACE"),
+			CORRIDORL_SPACE("^CORRIDORL_SPACE"),
+			CORRIDORT_SPACE("^CORRIDORT_SPACE"),
+			CORRIDORX_SPACE("^CORRIDORX_SPACE"),
+			CORSTAIRS_SPACE("^CORSTAIRS_SPACE"),
+			NPCFRIGTERM    ("^NPCFRIGTERM"),
+			;
+			
+			private String[] ids;
+			ObjectID(String...ids) {
+				this.ids = ids;
+			}
+			public boolean is(String id) {
+				for (String id1:ids)
+					if (id1.equals(id))
+						return true;
+				return false;
+			}
+			public static ObjectID get(String id) {
+				for (ObjectID objectID:ObjectID.values())
+					if (objectID.is(id))
+						return objectID;
+				return null;
+			}
+		}
+		
+		private static class PlacingObj {
+			
+			private static final Point3D VecZpos = new Point3D(0,0,1);
+			private static final Point3D VecXpos = new Point3D(1,0,0);
+
+			enum LocalDirection { Xpos, Xneg, Zpos, Zneg;
+
+				public LocalDirection prev() {
+					switch (this) {
+					case Xneg: return Zneg;
+					case Zneg: return Xpos;
+					case Xpos: return Zpos;
+					case Zpos: return Xneg;
+					}
+					return null;
+				}
+	
+				public LocalDirection next() {
+					switch (this) {
+					case Xneg: return Zpos;
+					case Zpos: return Xpos;
+					case Xpos: return Zneg;
+					case Zneg: return Xneg;
+					}
+					return null;
+				}
+
+				public LocalDirection opp() {
+					switch (this) {
+					case Xneg: return Xpos;
+					case Zpos: return Zneg;
+					case Xpos: return Xneg;
+					case Zneg: return Zpos;
+					}
+					return null;
+				}
+			}
+			
+			private BuildingObject obj;
+			private int x;
+			private int y;
+			private int z;
+			private LocalDirection locDir;
+			private ObjectID objectID;
+
+			public PlacingObj(BuildingObject obj) {
+				this.obj = obj;
+				locDir = null;
+				setPos(Integer.MAX_VALUE,Integer.MAX_VALUE,Integer.MAX_VALUE);
+				objectID=ObjectID.get(obj.objectID);
+			}
+
+			public void setPos(int x, int y, int z) {
+				this.x = x;
+				this.y = y;
+				this.z = z;
+			}
+
+			private static boolean isSameDirection(Point3D vec1, Point3D vec2) {
+				if (vec1.crossProd(vec2).length() > 0.0001)
+					// both "at"s are not parallel
+					return false;
+				
+				if (vec1.normalize().add(vec2.normalize()).length()<1)
+					// both "at"s have not same direction
+					return false;
+				
+				return true;
+			}
+
+			private static LocalDirection getLocalDirection(Point3D vec) {
+				if (vec.crossProd(VecXpos).length() < 0.0001) {
+					double x = VecXpos.add(vec.normalize()).length();
+					if (x>1.5) return LocalDirection.Xpos;
+					if (x<0.5) return LocalDirection.Xneg;
+					
+				} else if (vec.crossProd(VecZpos).length() < 0.0001) {
+					double z = VecZpos.add(vec.normalize()).length();
+					if (z>1.5) return LocalDirection.Zpos;
+					if (z<0.5) return LocalDirection.Zneg;
+				}
+				return null;
+			}
+
+			private static Point3D getFixedPos(BuildingObject obj) {
+				if (ObjectID.BRIDGECONNECTOR.is(obj.objectID))
+					return obj.position.pos.add(obj.position.up.mul(4));
+				
+				if (ObjectID.NPCFRIGTERM    .is(obj.objectID))
+					return obj.position.pos.add(obj.position.up.mul(-2)).add(obj.position.at.mul(0.05));
+				
+				if (ObjectID.AIRLCKCONNECTOR.is(obj.objectID))
+					return obj.position.pos.add(obj.position.up.mul(4));
+				
+				if (ObjectID.CORRIDORL_SPACE.is(obj.objectID))
+					return obj.position.pos.add(obj.position.at.crossProd(obj.position.up).mul(-2));
+				
+				if (ObjectID.CORRIDORT_SPACE.is(obj.objectID))
+					return obj.position.pos.add(obj.position.up.mul(4));
+				
+				return new Point3D(obj.position.pos);
+			}
+
+			public boolean isObjPosAsExpected() {
+				if (this.obj==null || this.obj.position==null || this.obj.position.pos==null || this.obj.position.at==null || this.obj.position.up==null)
+					return false;
+				
+				if (!isSameDirection(this.obj.position.at,new Point3D(0,1,0)))
+					return false;
+				
+				locDir = getLocalDirection(this.obj.position.up);
+				if (locDir==null)
+					return false;
+				
+				return true;
+			}
+
+			public PlacingObj createOthogonalObj(BuildingObject obj) {
+				PlacingObj placingObj = new PlacingObj(obj);
+				
+				if (!placingObj.isObjPosAsExpected())
+					return null;
+				
+				Point3D pos = getFixedPos(obj);
+				Point3D indexPos = pos.sub(this.obj.position.pos).mul(0.125,0.25,0.125);
+				if (Math.abs(indexPos.x-Math.round(indexPos.x))>0.001) return null;
+				if (Math.abs(indexPos.y-Math.round(indexPos.y))>0.001) return null;
+				if (Math.abs(indexPos.z-Math.round(indexPos.z))>0.001) return null;
+				
+				// special: AIRLCKCONNECTOR
+				if (placingObj.objectID==ObjectID.AIRLCKCONNECTOR) {
+					placingObj.objectID=ObjectID.CORSTAIRS_SPACE;
+					placingObj.locDir = placingObj.locDir.prev();
+					indexPos.y -= 1;
+				}
+				
+				placingObj.setPos(
+					(int)Math.round(indexPos.x),
+					(int)Math.round(indexPos.y),
+					(int)Math.round(indexPos.z)
+				);
+				
+				return placingObj;
+			}
+			
+		}
+
+		private static class Raster {
+			
+			private PlacingObj[][][] objects;
+			public int sizeX;
+			public int sizeY;
+			public int sizeZ;
+			public int offsetX;
+			public int offsetY;
+			public int offsetZ;
+			
+			public Raster() {
+				objects = null;
+				offsetX = 0; sizeX = 1;
+				offsetY = 0; sizeY = 1;
+				offsetZ = 0; sizeZ = 1;
+			}
+			
+			public void setRange(PlacingObj obj) {
+				int maxX = offsetX+sizeX-1;
+				int maxY = offsetY+sizeY-1;
+				int maxZ = offsetZ+sizeZ-1;
+				offsetX = Math.min( obj.x, offsetX );
+				offsetY = Math.min( obj.y, offsetY );
+				offsetZ = Math.min( obj.z, offsetZ );
+				sizeX   = Math.max( obj.x, maxX )-offsetX+1;
+				sizeY   = Math.max( obj.y, maxY )-offsetY+1;
+				sizeZ   = Math.max( obj.z, maxZ )-offsetZ+1;
+			}
+
+			public void createEmptyRaster() {
+				objects = new PlacingObj[sizeX][sizeY][sizeZ];
+				for (int x=0; x<sizeX; x++)
+					for (int y=0; y<sizeY; y++)
+						Arrays.fill(objects[x][y],null);
+			}
+			
+			public void set(PlacingObj obj) {
+				objects[obj.x-offsetX][obj.y-offsetY][obj.z-offsetZ] = obj;
+			}
+			
+//			public boolean is(int x, int y, int z, int dx, int dy, int dz, ObjectID objectID) {
+//				PlacingObj rasterObj = get(x+dx,y+dy,z+dz);
+//				if (rasterObj==null) return false;
+//				return (rasterObj.objectID==objectID);
+//			}
+
+			public PlacingObj get(int x, int y, int z) {
+				if (x<0 || x>=sizeX) return null;
+				if (y<0 || y>=sizeY) return null;
+				if (z<0 || z>=sizeZ) return null;
+				return objects[x][y][z];
+			}
+		}
+
+		Vector<BuildingObject> remainingObjects;
+		
+		FreighterRoomCombine() {
+			remainingObjects = new Vector<>();
+		}
+
+		public BuildingObject[] getRemainingObjects() {
+			return remainingObjects.toArray(new BuildingObject[0]);
+		}
+
+		public boolean add(BuildingObject obj) {
+			if (obj==null) return false;
+			for (ObjectID id:ObjectID.values())
+				if (id.is(obj.objectID)) {
+					remainingObjects.add(obj);
+					return true;
+				}
+			return false;
+		}
+		
+		public void writeModel(PrintWriter vrml) {
+			if (remainingObjects.isEmpty())
+				return;
+			
+			Raster raster = createRaster();
+			if (raster==null)
+				return;
+			
+			LineGeometry.IndexedLineSet geometry = createGeometry(raster);
+			geometry.write(vrml, "", Color.BLACK);
+		}
+		
+		private static final boolean DEBUG_Dont_Remove_Objects = false;
+
+		private Raster createRaster() {
+			PlacingObj anchor = null;
+			Vector<PlacingObj> placingObjects = new Vector<>();
+			
+			for (BuildingObject obj : remainingObjects)
+				if (OBJECT_ID_FREIGHTER_CORE.equals(obj.objectID)) {
+					anchor = new PlacingObj(obj);
+					anchor.setPos(0,0,0);
+					placingObjects.add(anchor);
+					break;
+				}
+			if (anchor==null)
+				return null;
+			
+			if (!anchor.isObjPosAsExpected())
+				return null;
+			
+			if (!DEBUG_Dont_Remove_Objects || anchor.objectID==ObjectID.CUBEROOM_SPACE)
+				remainingObjects.remove(anchor.obj);
+			
+			Raster raster = new Raster();
+			for (int i=0; i<remainingObjects.size();) {
+				BuildingObject obj = remainingObjects.get(i);
+				PlacingObj placingObj;
+				if ((placingObj = anchor.createOthogonalObj(obj))!=null) {
+					if (!DEBUG_Dont_Remove_Objects || placingObj.objectID==ObjectID.CUBEROOM_SPACE)
+						remainingObjects.remove(i);
+					else
+						i++;
+					raster.setRange(placingObj);
+					placingObjects.add(placingObj);
+				} else
+					i++;
+			}
+			
+			raster.createEmptyRaster();
+			
+			for (PlacingObj obj:placingObjects)
+				raster.set(obj);
+			
+			return raster;
+		}
+
+		private LineGeometry.IndexedLineSet createGeometry(Raster raster) {
+			
+			LineGeometry.GroupingNode baseGroup = new LineGeometry.GroupingNode();
+			for (int x=0; x<raster.sizeX; x++)
+				for (int y=0; y<raster.sizeY; y++)
+					for (int z=0; z<raster.sizeZ; z++) {
+						PlacingObj obj = raster.get(x,y,z);
+						if (obj==null) continue;
+						
+						LineGeometry.IndexedLineSet objGeometry = null;
+						switch (obj.objectID) {
+						case CUBEROOM_SPACE : objGeometry = new CUBEROOM(raster,x,y,z).createGeometry(); break;
+						case AIRLCKCONNECTOR:
+						case CORSTAIRS_SPACE: objGeometry = new CORSTAIRS      (obj).createGeometry(); break;
+						case CORRIDOR_SPACE : objGeometry = new CORRIDOR       (obj).createGeometry(); break;
+						case CORRIDORL_SPACE: objGeometry = new CORRIDOR_L     (obj).createGeometry(); break;
+						case CORRIDORT_SPACE: objGeometry = new CORRIDOR_T     (obj).createGeometry(); break;
+						case CORRIDORX_SPACE: objGeometry = new CORRIDOR_X     ()   .createGeometry(); break;
+						case S_CONTAINER    : objGeometry = new S_CONTAINER    (obj).createGeometry(); break;
+						case NPCFRIGTERM    : break;
+						case BRIDGECONNECTOR: break;
+						}
+						if (objGeometry!=null)
+							baseGroup.add(
+								new LineGeometry.Transform(objGeometry)
+								.addTranslation(new Point3D(x*8,y*4,z*8))
+							);
+					}
+			
+			PlacingObj anchor = raster.get(-raster.offsetX,-raster.offsetY,-raster.offsetZ);
+			
+			return new LineGeometry.Transform(baseGroup)
+				.addTranslation(new Point3D(raster.offsetX*8,raster.offsetY*4,raster.offsetZ*8))
+				.addTranslation(anchor.obj.position.pos);
+		}
+
+		private static class CORRIDOR {
+		
+			private PlacingObj obj;
+
+			public CORRIDOR(PlacingObj obj) {
+				this.obj = obj;
+			}
+		
+			public LineGeometry.IndexedLineSet createGeometry() {
+				LineGeometry.PolyLine fullProfile = new LineGeometry.PolyLine()
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,0.6,0), 0.6, 270,360, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,2.7,0), 0.6,   0, 90, false)
+					.add(new Point3D( 1.0,3.3,0))
+					.add(new Point3D( 0.5,3.8,0))
+					.add(new Point3D(-0.5,3.8,0))
+					.add(new Point3D(-1.0,3.3,0))
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,0), 0.6,  90,180, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,0), 0.6, 180,270, false)
+					.close();
+				LineGeometry.GroupingNode objWestEast = new LineGeometry.GroupingNode(
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,-4)),
+					fullProfile,
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,4)),
+					
+					new LineGeometry.PolyLine( new Point3D(-0.5,3.8,-4), new Point3D(-0.5,3.8,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-4), new Point3D(-1.0,3.3,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,3.3,-4), new Point3D(-1.4,3.3,4) ),
+					new LineGeometry.PolyLine( new Point3D(-2.0,2.7,-4), new Point3D(-2.0,2.7,4) ),
+					new LineGeometry.PolyLine( new Point3D(-2.0,0.6,-4), new Point3D(-2.0,0.6,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,0.0,-4), new Point3D(-1.4,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0.0,-4), new Point3D(-1.0,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 0.0,0.0,-4), new Point3D( 0.0,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.0,0.0,-4), new Point3D( 1.0,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.4,0.0,-4), new Point3D( 1.4,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 2.0,0.6,-4), new Point3D( 2.0,0.6,4) ),
+					new LineGeometry.PolyLine( new Point3D( 2.0,2.7,-4), new Point3D( 2.0,2.7,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.4,3.3,-4), new Point3D( 1.4,3.3,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.0,3.3,-4), new Point3D( 1.0,3.3,4) ),
+					new LineGeometry.PolyLine( new Point3D( 0.5,3.8,-4), new Point3D( 0.5,3.8,4) ),
+					
+					new LineGeometry.PolyLine( new Point3D(-1.4,0,-2), new Point3D(1.4,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,0, 2), new Point3D(1.4,0, 2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0,-1), new Point3D(1.0,0,-1) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0, 1), new Point3D(1.0,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0,-3), new Point3D(1.0,0,-3) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0, 3), new Point3D(1.0,0, 3) )
+
+				);
+				switch (obj.locDir) {
+				case Xpos:
+				case Xneg: return objWestEast;
+				case Zneg:
+				case Zpos: return new LineGeometry.Transform(objWestEast).addRotation(LineGeometry.Axis.Y, 90);
+				}
+				return null;
+			}
+		}
+
+		private static class CORRIDOR_T {
+		
+			private PlacingObj obj;
+
+			public CORRIDOR_T(PlacingObj obj) {
+				this.obj = obj;
+			}
+		
+			public LineGeometry.IndexedLineSet createGeometry() {
+				LineGeometry.PolyLine profile = new LineGeometry.PolyLine()
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,0.6,4), 0.6, 270,360, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,2.7,4), 0.6,   0, 90, false)
+					.add(new Point3D( 1.0,3.3,4))
+					.add(new Point3D( 0.5,3.8,4))
+					.add(new Point3D(-0.5,3.8,4))
+					.add(new Point3D(-1.0,3.3,4))
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,4), 0.6,  90,180, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,4), 0.6, 180,270, false)
+					.close();
+				
+				LineGeometry.GroupingNode cornerNE = new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,3.8,4), 4.0-0.5, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,3.3,4), 4.0-1.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,3.3,4), 4.0-1.4, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,2.7,4), 4.0-2.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.6,4), 4.0-2.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.0,4), 4.0-1.4, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.0,4), 4.0-1.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.0,4), 4.0+0.0, 180,270, false, 8),
+					
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(0,0,-4), new Point3D(0,0,-4+1.0) ) ).addRotation(LineGeometry.Axis.Y,22.5).addTranslation(new Point3D(4,0,4)),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(0,0,-4), new Point3D(0,0,-4+1.4) ) ).addRotation(LineGeometry.Axis.Y,45  ).addTranslation(new Point3D(4,0,4)),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(0,0,-4), new Point3D(0,0,-4+1.0) ) ).addRotation(LineGeometry.Axis.Y,67.5).addTranslation(new Point3D(4,0,4))
+					
+				);
+				
+				LineGeometry.GroupingNode tcrossWSE = new LineGeometry.GroupingNode(
+					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y, -90),
+					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y,-180),
+					profile,
+					new LineGeometry.Transform(profile).addRotation(LineGeometry.Axis.Y,-90),
+					new LineGeometry.Transform(profile).addRotation(LineGeometry.Axis.Y,-180),
+						
+					new LineGeometry.PolyLine( new Point3D( 0.0,0.0,-4), new Point3D( 0.0,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.0,0.0,-4), new Point3D( 1.0,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.4,0.0,-4), new Point3D( 1.4,0.0,4) ),
+					new LineGeometry.PolyLine( new Point3D( 2.0,0.6,-4), new Point3D( 2.0,0.6,4) ),
+					new LineGeometry.PolyLine( new Point3D( 2.0,2.7,-4), new Point3D( 2.0,2.7,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.4,3.3,-4), new Point3D( 1.4,3.3,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.0,3.3,-4), new Point3D( 1.0,3.3,4) ),
+					new LineGeometry.PolyLine( new Point3D( 0.5,3.8,-4), new Point3D( 0.5,3.8,4) ),
+					
+					new LineGeometry.PolyLine( new Point3D(0,0,-3), new Point3D(1.0,0,-3) ),
+					new LineGeometry.PolyLine( new Point3D(0,0,-2), new Point3D(1.4,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D(0,0,-1), new Point3D(1.0,0,-1) ),
+					
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-4,0,0))
+						.addArc(LineGeometry.Axis.Z, new Point3D(1.4,0.6,0), 0.6, 270,360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(1.4,2.7,0), 0.6,   0, 90, false)
+						.add(new Point3D( 1.0,3.3,0))
+						.add(new Point3D( 0.5,3.8,0)),
+					
+					new LineGeometry.PolyLine( new Point3D(0,0, 1), new Point3D(1.0,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D(0,0, 2), new Point3D(1.4,0, 2) ),
+					new LineGeometry.PolyLine( new Point3D(0,0, 3), new Point3D(1.0,0, 3) )
+				);
+				
+				switch (obj.locDir) {
+				case Xpos: return tcrossWSE;
+				case Zneg: return new LineGeometry.Transform(tcrossWSE).addRotation(LineGeometry.Axis.Y, 90);
+				case Xneg: return new LineGeometry.Transform(tcrossWSE).addRotation(LineGeometry.Axis.Y,180);
+				case Zpos: return new LineGeometry.Transform(tcrossWSE).addRotation(LineGeometry.Axis.Y,270);
+				}
+				return null;
+			}
+		}
+
+		private static class CORRIDOR_L {
+		
+			private PlacingObj obj;
+
+			public CORRIDOR_L(PlacingObj obj) {
+				this.obj = obj;
+			}
+		
+			public LineGeometry.IndexedLineSet createGeometry() {
+				
+				LineGeometry.PolyLine fullProfile = new LineGeometry.PolyLine()
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,0.6,0), 0.6, 270,360, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,2.7,0), 0.6,   0, 90, false)
+					.add(new Point3D( 1.0,3.3,0))
+					.add(new Point3D( 0.5,3.8,0))
+					.add(new Point3D(-0.5,3.8,0))
+					.add(new Point3D(-1.0,3.3,0))
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,0), 0.6,  90,180, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,0), 0.6, 180,270, false)
+					.close();
+				
+				LineGeometry.Transform objWestEast = new LineGeometry.Transform( new LineGeometry.GroupingNode(
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)),
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)).addRotation(LineGeometry.Axis.Y, -45),
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(4,0,0)).addRotation(LineGeometry.Axis.Y, -90),
+					
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.8,0), 4.0-0.5, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0-1.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0-1.4, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.7,0), 4.0-2.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.6,0), 4.0-2.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0-1.4, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0-1.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+0.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+1.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.0,0), 4.0+1.4, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0.6,0), 4.0+2.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,2.7,0), 4.0+2.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0+1.4, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.3,0), 4.0+1.0, 0,90, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,3.8,0), 4.0+0.5, 0,90, false, 8),
+					
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -11.25),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0-1.4,0,0), new Point3D(4.0+1.4,0,0) ) ).addRotation(LineGeometry.Axis.Y, -22.5 ),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -33.75),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -56.25),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0-1.4,0,0), new Point3D(4.0+1.4,0,0) ) ).addRotation(LineGeometry.Axis.Y, -67.5 ),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(4.0+0.0,0,0), new Point3D(4.0+1.0,0,0) ) ).addRotation(LineGeometry.Axis.Y, -78.75)
+				) ).addTranslation(new Point3D(-4,0,-4));
+				
+				switch (obj.locDir) {
+				case Xpos: return objWestEast;
+				case Zneg: return objWestEast.addRotation(LineGeometry.Axis.Y, 90);
+				case Xneg: return objWestEast.addRotation(LineGeometry.Axis.Y,180);
+				case Zpos: return objWestEast.addRotation(LineGeometry.Axis.Y,270);
+				}
+				return null;
+			}
+		}
+
+		private static class CORRIDOR_X {
+		
+			public CORRIDOR_X() {}
+		
+			public LineGeometry.IndexedLineSet createGeometry() {
+				
+				LineGeometry.GroupingNode cornerNE = new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.Z, new Point3D(1.4,0.6,4), 0.6, 270,360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(1.4,2.7,4), 0.6,   0, 90, false)
+						.add(new Point3D( 1.0,3.3,4))
+						.add(new Point3D( 0.5,3.8,4))
+						.add(new Point3D(-0.5,3.8,4))
+						.add(new Point3D(-1.0,3.3,4))
+						.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,4), 0.6,  90,180, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,4), 0.6, 180,270, false)
+						.close(),
+						
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,3.8,4), 4.0-0.5, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,3.3,4), 4.0-1.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,3.3,4), 4.0-1.4, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,2.7,4), 4.0-2.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.6,4), 4.0-2.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.0,4), 4.0-1.4, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.0,4), 4.0-1.0, 180,270, false, 8),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(4,0.0,4), 4.0+0.0, 180,270, false, 8),
+					
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(0,0,-4), new Point3D(0,0,-4+1.0) ) ).addRotation(LineGeometry.Axis.Y,22.5).addTranslation(new Point3D(4,0,4)),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(0,0,-4), new Point3D(0,0,-4+1.4) ) ).addRotation(LineGeometry.Axis.Y,45  ).addTranslation(new Point3D(4,0,4)),
+					new LineGeometry.Transform( new LineGeometry.PolyLine( new Point3D(0,0,-4), new Point3D(0,0,-4+1.0) ) ).addRotation(LineGeometry.Axis.Y,67.5).addTranslation(new Point3D(4,0,4)),
+					
+					new LineGeometry.PolyLine( new Point3D(0,0,0), new Point3D(0,0,4) )
+				);
+				
+				return new LineGeometry.GroupingNode(
+					cornerNE,
+					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y, 90),
+					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y,180),
+					new LineGeometry.Transform(cornerNE).addRotation(LineGeometry.Axis.Y,270)
+				);
+			}
+		}
+
+		private static class CORSTAIRS {
+		
+			private PlacingObj obj;
+
+			public CORSTAIRS(PlacingObj obj) {
+				this.obj = obj;
+			}
+
+			public LineGeometry.IndexedLineSet createGeometry() {
+				LineGeometry.PolyLine fullProfile = new LineGeometry.PolyLine()
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,0.6,0), 0.6, 270,360, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(1.4,2.7,0), 0.6,   0, 90, false)
+					.add(new Point3D( 1.0,3.3,0))
+					.add(new Point3D( 0.5,3.8,0))
+					.add(new Point3D(-0.5,3.8,0))
+					.add(new Point3D(-1.0,3.3,0))
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,2.7,0), 0.6,  90,180, false)
+					.addArc(LineGeometry.Axis.Z, new Point3D(-1.4,0.6,0), 0.6, 180,270, false)
+					.close();
+				LineGeometry.GroupingNode objWestEast = new LineGeometry.GroupingNode(
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,-4)),
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,0,-3)),
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,2, 0)),
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,4, 3)),
+					new LineGeometry.Transform(fullProfile).addTranslation(new Point3D(0,4, 4)),
+					
+					new LineGeometry.PolyLine( new Point3D(-0.5,3.8,-4), new Point3D(-0.5,3.8,-3), new Point3D(-0.5,3.8+4,3), new Point3D(-0.5,3.8+4,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-4), new Point3D(-1.0,3.3,-3), new Point3D(-1.0,3.3+4,3), new Point3D(-1.0,3.3+4,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,3.3,-4), new Point3D(-1.4,3.3,-3), new Point3D(-1.4,3.3+4,3), new Point3D(-1.4,3.3+4,4) ),
+					new LineGeometry.PolyLine( new Point3D(-2.0,2.7,-4), new Point3D(-2.0,2.7,-3), new Point3D(-2.0,2.7+4,3), new Point3D(-2.0,2.7+4,4) ),
+					new LineGeometry.PolyLine( new Point3D(-2.0,0.6,-4), new Point3D(-2.0,0.6,-3), new Point3D(-2.0,0.6+4,3), new Point3D(-2.0,0.6+4,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,0.0,-4), new Point3D(-1.4,0.0,-3), new Point3D(-1.4,0.0+4,3), new Point3D(-1.4,0.0+4,4) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0.0,-4), new Point3D(-1.0,0.0,-3), new Point3D(-1.0,0.0+4,3), new Point3D(-1.0,0.0+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 0.0,0.0,-4), new Point3D( 0.0,0.0,-3), new Point3D( 0.0,0.0+4,3), new Point3D( 0.0,0.0+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.0,0.0,-4), new Point3D( 1.0,0.0,-3), new Point3D( 1.0,0.0+4,3), new Point3D( 1.0,0.0+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.4,0.0,-4), new Point3D( 1.4,0.0,-3), new Point3D( 1.4,0.0+4,3), new Point3D( 1.4,0.0+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 2.0,0.6,-4), new Point3D( 2.0,0.6,-3), new Point3D( 2.0,0.6+4,3), new Point3D( 2.0,0.6+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 2.0,2.7,-4), new Point3D( 2.0,2.7,-3), new Point3D( 2.0,2.7+4,3), new Point3D( 2.0,2.7+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.4,3.3,-4), new Point3D( 1.4,3.3,-3), new Point3D( 1.4,3.3+4,3), new Point3D( 1.4,3.3+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 1.0,3.3,-4), new Point3D( 1.0,3.3,-3), new Point3D( 1.0,3.3+4,3), new Point3D( 1.0,3.3+4,4) ),
+					new LineGeometry.PolyLine( new Point3D( 0.5,3.8,-4), new Point3D( 0.5,3.8,-3), new Point3D( 0.5,3.8+4,3), new Point3D( 0.5,3.8+4,4) ),
+					
+					new LineGeometry.PolyLine( new Point3D(-1.0,0.5,-2.25), new Point3D(1.0,0.5,-2.25) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,1.0,-1.5 ), new Point3D(1.4,1.0,-1.5 ) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,1.5,-0.75), new Point3D(1.0,1.5,-0.75) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,2.5, 0.75), new Point3D(1.0,2.5, 0.75) ),
+					new LineGeometry.PolyLine( new Point3D(-1.4,3.0, 1.5 ), new Point3D(1.4,3.0, 1.5 ) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.5, 2.25), new Point3D(1.0,3.5, 2.25) )
+				);
+				switch (obj.locDir) {
+				case Xpos: return objWestEast;
+				case Zneg: return new LineGeometry.Transform(objWestEast).addRotation(LineGeometry.Axis.Y, 90);
+				case Xneg: return new LineGeometry.Transform(objWestEast).addRotation(LineGeometry.Axis.Y,180);
+				case Zpos: return new LineGeometry.Transform(objWestEast).addRotation(LineGeometry.Axis.Y,270);
+				}
+				return null;
+			}
+		}
+
+		private static class CUBEROOM {
+		
+			private Raster raster;
+			private int x;
+			private int y;
+			private int z;
+
+			public CUBEROOM(Raster raster, int x, int y, int z) {
+				this.raster = raster;
+				this.x = x;
+				this.y = y;
+				this.z = z;
+			}
+			
+			public LineGeometry.IndexedLineSet createGeometry() {
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode();
+				
+				PlacingObj neighbor_NW = raster.get(x+1, y  , z-1);
+				PlacingObj neighbor_NE = raster.get(x+1, y  , z+1);
+				PlacingObj neighbor_SW = raster.get(x-1, y  , z-1);
+				PlacingObj neighbor_SE = raster.get(x-1, y  , z+1);
+				PlacingObj neighbor_N  = raster.get(x+1, y  , z  );
+				PlacingObj neighbor_S  = raster.get(x-1, y  , z  );
+				PlacingObj neighbor_W  = raster.get(x  , y  , z-1);
+				PlacingObj neighbor_E  = raster.get(x  , y  , z+1);
+				PlacingObj neighbor_N0 = raster.get(x+1, y-1, z  );
+				PlacingObj neighbor_S0 = raster.get(x-1, y-1, z  );
+				PlacingObj neighbor_W0 = raster.get(x  , y-1, z-1);
+				PlacingObj neighbor_E0 = raster.get(x  , y-1, z+1);
+				
+				group.add(
+					createCornerNE( neighbor_N, neighbor_NE, neighbor_E ),
+					createCornerNE( neighbor_W, neighbor_NW, neighbor_N ).addRotation(LineGeometry.Axis.Y, 90),
+					createCornerNE( neighbor_S, neighbor_SW, neighbor_W ).addRotation(LineGeometry.Axis.Y,180),
+					createCornerNE( neighbor_E, neighbor_SE, neighbor_S ).addRotation(LineGeometry.Axis.Y,270)
+				);
+				
+				group.add(
+					createWallN( neighbor_N, neighbor_N0, PlacingObj.LocalDirection.Xpos ),
+					createWallN( neighbor_W, neighbor_W0, PlacingObj.LocalDirection.Zneg ).addRotation(LineGeometry.Axis.Y, 90),
+					createWallN( neighbor_S, neighbor_S0, PlacingObj.LocalDirection.Xneg ).addRotation(LineGeometry.Axis.Y,180),
+					createWallN( neighbor_E, neighbor_E0, PlacingObj.LocalDirection.Zpos ).addRotation(LineGeometry.Axis.Y,270)
+				); 				
+				
+				group.add(
+					createCeilingLight(),
+					createFloor()
+				);
+				
+				return group;
+			}
+
+			private LineGeometry.IndexedLineSet createCeilingLight() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.Y, new Point3D( 1.2,3.8, 1.2), 0.2,  0, 90, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D( 1.2,3.8,-1.2), 0.2, 90,180, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D(-1.2,3.8,-1.2), 0.2,180,270, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D(-1.2,3.8, 1.2), 0.2,270,360, false)
+						.close(),
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.Y, new Point3D( 0.9,3.8, 0.9), 0.2,  0, 90, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D( 0.9,3.8,-0.9), 0.2, 90,180, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D(-0.9,3.8,-0.9), 0.2,180,270, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D(-0.9,3.8, 0.9), 0.2,270,360, false)
+						.close(),
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.Y, new Point3D( 0.9,3.8, 0.9), 0.1,  0, 90, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D( 0.9,3.8,-0.9), 0.1, 90,180, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D(-0.9,3.8,-0.9), 0.1,180,270, false)
+						.addArc(LineGeometry.Axis.Y, new Point3D(-0.9,3.8, 0.9), 0.1,270,360, false)
+						.close()
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createFloor() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine( new Point3D( 2,0, 2), new Point3D( 2,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0, 2), new Point3D( 1,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D( 0,0, 2), new Point3D( 0,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D(-1,0, 2), new Point3D(-1,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D(-2,0, 2), new Point3D(-2,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D( 2,0, 2), new Point3D(-2,0, 2) ),
+					new LineGeometry.PolyLine( new Point3D( 2,0, 1), new Point3D(-2,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D( 2,0, 0), new Point3D(-2,0, 0) ),
+					new LineGeometry.PolyLine( new Point3D( 2,0,-1), new Point3D(-2,0,-1) ),
+					new LineGeometry.PolyLine( new Point3D( 2,0,-2), new Point3D(-2,0,-2) )
+				);
+			}
+
+			private LineGeometry.Transform createWallN(PlacingObj neighbor_N, PlacingObj neighbor_N0, PlacingObj.LocalDirection locDir) {
+				if (is(neighbor_N,ObjectID.CUBEROOM_SPACE))
+					return new LineGeometry.Transform(createNoWallN()).addTranslation(new Point3D(3,0,0));
+				else {
+					if (
+							is(neighbor_N ,ObjectID.NPCFRIGTERM    , locDir.opp ()) ||
+							
+							is(neighbor_N ,ObjectID.CORRIDOR_SPACE , locDir.next()) ||
+							is(neighbor_N ,ObjectID.CORRIDOR_SPACE , locDir.prev()) ||
+							
+							is(neighbor_N ,ObjectID.CORRIDORL_SPACE, locDir.next()) ||
+							is(neighbor_N ,ObjectID.CORRIDORL_SPACE, locDir       ) ||
+							
+							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir       ) ||
+							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir.next()) ||
+							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir.prev()) ||
+							
+							is(neighbor_N ,ObjectID.CORSTAIRS_SPACE, locDir.next()) ||
+							is(neighbor_N0,ObjectID.CORSTAIRS_SPACE, locDir.prev()) ||
+							
+							is(neighbor_N ,ObjectID.CORRIDORX_SPACE) ||
+							
+							is(neighbor_N ,ObjectID.S_CONTAINER))
+						
+						return new LineGeometry.Transform(createWallDoorN()).addTranslation(new Point3D(3,0,0));
+					
+					else
+						return new LineGeometry.Transform(createWallN()).addTranslation(new Point3D(3,0,0));
+				}
+			}
+
+			private LineGeometry.IndexedLineSet createNoWallN() {
+				return new LineGeometry.GroupingNode(
+						
+					new LineGeometry.PolyLine( new Point3D( 1,0, 2), new Point3D( 1,0, 0) ),
+					new LineGeometry.PolyLine( new Point3D( 0,0, 2), new Point3D( 0,0,-2) ),
+					
+					new LineGeometry.PolyLine( new Point3D( 1,0, 2), new Point3D(-1,0, 2) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0, 1), new Point3D(-1,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0, 0), new Point3D(-1,0, 0) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0,-1), new Point3D(-1,0,-1) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0,-2), new Point3D(-1,0,-2) ),
+					new LineGeometry.PolyLine( new Point3D(-1,3.8,-1.5), new Point3D(-1,3.8,1.5) ),
+					new LineGeometry.PolyLine( new Point3D( 1,3.8, 0.0), new Point3D( 1,3.8,1.5) )
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createWallN() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1.0,0.0,2))
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,0.6,2), 0.6, 270, 360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,2.7,2), 0.6,   0,  90, false)
+						.add(new Point3D(-1.0,3.3,2)),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0  , 0  ), new Point3D(-0.6,0  ,0  ) ),
+					new LineGeometry.PolyLine( new Point3D(-0.6,0  ,-2  ), new Point3D(-0.6,0  ,2  ) ),
+					new LineGeometry.PolyLine( new Point3D( 0.0,0.6,-2  ), new Point3D( 0.0,0.6,2  ) ),
+					new LineGeometry.PolyLine( new Point3D( 0.0,2.7,-2  ), new Point3D( 0.0,2.7,2  ) ),
+					new LineGeometry.PolyLine( new Point3D(-0.6,3.3,-2  ), new Point3D(-0.6,3.3,2  ) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-2  ), new Point3D(-1.0,3.3,2  ) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.5), new Point3D(-1.5,3.8,1.5) )
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createWallDoorN() {
+				LineGeometry.PolyLine profilTuerZarge = new LineGeometry.PolyLine()
+					.addArc(LineGeometry.Axis.Y, new Point3D( 0.3,0,0), 0.2,  90, 180, false)
+					.addArc(LineGeometry.Axis.Y, new Point3D(-0.3,0,0), 0.2, 180, 270, false);
+
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1.0,0.0,2))
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,0.6,2), 0.6, 270, 360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,2.7,2), 0.6,   0,  90, false)
+						.add(new Point3D(-1.0,3.3,2)),
+					
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0.6, 1.4), 0.6,  90,180, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0.6,-1.4), 0.6, 180,270, false),
+					
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,-2), 0.6, 270,360, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,-2), 1.0, 270,360, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0, 2), 1.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0, 2), 0.6, 180,270, false),
+					
+					new LineGeometry.PolyLine( new Point3D( 1,0, 1), new Point3D(-1,0, 1) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0, 0), new Point3D(-1,0, 0) ),
+					new LineGeometry.PolyLine( new Point3D( 1,0,-1), new Point3D(-1,0,-1) ),
+					
+					new LineGeometry.PolyLine( new Point3D( 0.0,2.7,-2), new Point3D( 0.0,2.7,2) ),
+					new LineGeometry.PolyLine( new Point3D(-0.6,3.3,-2), new Point3D(-0.6,3.3,2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-2), new Point3D(-1.0,3.3,2) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.5), new Point3D(-1.5,3.8,1.5) ),
+					
+					new LineGeometry.Transform(profilTuerZarge)                                      .addTranslation(new Point3D(0.5,0  , 1.4)),
+					new LineGeometry.Transform(profilTuerZarge)                                      .addTranslation(new Point3D(0.5,2.3, 1.4)),
+					new LineGeometry.Transform(profilTuerZarge).addRotation(LineGeometry.Axis.X, -90).addTranslation(new Point3D(0.5,2.7, 1.0)),
+					new LineGeometry.Transform(profilTuerZarge).addRotation(LineGeometry.Axis.X, -90).addTranslation(new Point3D(0.5,2.7,-1.0)),
+					new LineGeometry.Transform(profilTuerZarge).addRotation(LineGeometry.Axis.X,-180).addTranslation(new Point3D(0.5,2.3,-1.4)),
+					new LineGeometry.Transform(profilTuerZarge).addRotation(LineGeometry.Axis.X,-180).addTranslation(new Point3D(0.5,0  ,-1.4)),
+					new LineGeometry.PolyLine()
+						.add(new Point3D(0.0,0,-1.4))
+						.addArc(LineGeometry.Axis.X, new Point3D(0.0,2.3,-1.0), 0.4, 270, 360, false),
+					new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.X, new Point3D(0.0,2.3, 1.0), 0.4,   0,  90, false)
+						.add(new Point3D(0.0,0, 1.4)),
+					new LineGeometry.PolyLine()
+						.add(new Point3D(0.2,0,-1.2))
+						.addArc(LineGeometry.Axis.X, new Point3D(0.2,2.3,-1.0), 0.2, 270, 360, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0.2,2.3, 1.0), 0.2,   0,  90, false)
+						.add(new Point3D(0.2,0, 1.2)),
+					new LineGeometry.PolyLine()
+						.add(new Point3D(0.8,0,-1.2))
+						.addArc(LineGeometry.Axis.X, new Point3D(0.8,2.3,-1.0), 0.2, 270, 360, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(0.8,2.3, 1.0), 0.2,   0,  90, false)
+						.add(new Point3D(0.8,0, 1.2)),
+					new LineGeometry.PolyLine()
+						.add(new Point3D(1.0,0,-1.4))
+						.addArc(LineGeometry.Axis.X, new Point3D(1.0,2.3,-1.0), 0.4, 270, 360, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(1.0,2.3, 1.0), 0.4,   0,  90, false)
+						.add(new Point3D(1.0,0, 1.4))
+				);
+			}
+
+			private LineGeometry.Transform createCornerNE(PlacingObj neighbor_N, PlacingObj neighbor_NE, PlacingObj neighbor_E) {
+				if (is(neighbor_N,ObjectID.CUBEROOM_SPACE)) {
+					if (is(neighbor_E,ObjectID.CUBEROOM_SPACE)) {
+						if (is(neighbor_NE,ObjectID.CUBEROOM_SPACE)) return new LineGeometry.Transform(createEmptyCorner()).addTranslation(new Point3D(3,0,3));
+						else return new LineGeometry.Transform(createOutsideCornerNE()).addTranslation(new Point3D(3,0,3));
+					} else
+						return new LineGeometry.Transform(createCornerNEWallNS()).addTranslation(new Point3D(3,0,3));
+				} else {
+					if (is(neighbor_E,ObjectID.CUBEROOM_SPACE))
+						return new LineGeometry.Transform(createCornerNEWallWE()).addTranslation(new Point3D(3,0,3));
+					else
+						return new LineGeometry.Transform(createInsideCornerNE()).addTranslation(new Point3D(3,0,3));
+				}
+			}
+
+			private LineGeometry.IndexedLineSet createEmptyCorner() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine( new Point3D( 1, 0 , 1), new Point3D( 1, 0 ,-1) ),
+					new LineGeometry.PolyLine( new Point3D( 0, 0 , 1), new Point3D( 0, 0 ,-1) ),
+					new LineGeometry.PolyLine( new Point3D( 1, 0 , 1), new Point3D(-1, 0 , 1) ),
+					new LineGeometry.PolyLine( new Point3D( 1, 0 , 0), new Point3D(-1, 0 , 0) ),
+					new LineGeometry.PolyLine( new Point3D( 1,3.8, 1), new Point3D(-1.5,3.8, 1.0) ),
+					new LineGeometry.PolyLine( new Point3D(-1,3.8, 1), new Point3D(-1.0,3.8,-1.5) ),
+					new LineGeometry.PolyLine( new Point3D( 1,3.8,-1), new Point3D(-1.5,3.8,-1.0) )
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createInsideCornerNE() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1.5,3.8,-1.5))
+						.add(new Point3D(-1.0,3.3,-1.0))
+						.addArc(LineGeometry.Axis.X, new Point3D(-1,2.7,-0.6), 0.6,  0, 90, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(-1,0.6,-0.6), 0.6, 90,180, false)
+						.add(new Point3D(-1.0,0.0,-1.0)),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,0.0,-1), 0.4, 0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,0.6,-1), 1.0, 0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,2.7,-1), 1.0, 0, 90, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(-1,3.3,-1), 0.4, 0, 90, false)
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createOutsideCornerNE() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1.0,0.0,1))
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,0.6,1), 0.6, 270, 360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,2.7,1), 0.6,   0,  90, false)
+						.add(new Point3D(-1.0,3.3,1))
+						.add(new Point3D(-1.5,3.8,1)),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,0.0,1), 2.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,0.0,1), 1.6, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,0.6,1), 1.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,2.7,1), 1.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,3.3,1), 1.6, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,3.3,1), 2.0, 180,270, false),
+					new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(1,3.8,1), 2.5, 180,270, false),
+					new LineGeometry.PolyLine( new Point3D(-1,0,0), new Point3D(0,0,-1) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,1), new Point3D(-1.5,3.8,-1), new Point3D(-1,3.8,-1.5), new Point3D(1,3.8,-1.5) )
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createCornerNEWallNS() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1,3.8,-1.5))
+						.add(new Point3D(-1,3.3,-1.0))
+						.addArc(LineGeometry.Axis.X, new Point3D(-1,2.7,-0.6), 0.6,  0, 90, false)
+						.addArc(LineGeometry.Axis.X, new Point3D(-1,0.6,-0.6), 0.6, 90,180, false)
+						.add(new Point3D(-1,0.0,-1.0)),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0  ,-0.6), new Point3D(1,0  ,-0.6) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,0.6, 0.0), new Point3D(1,0.6, 0.0) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,2.7, 0.0), new Point3D(1,2.7, 0.0) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-0.6), new Point3D(1,3.3,-0.6) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-1.0), new Point3D(1,3.3,-1.0) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.5), new Point3D(1,3.8,-1.5) )
+				);
+			}
+
+			private LineGeometry.IndexedLineSet createCornerNEWallWE() {
+				return new LineGeometry.GroupingNode(
+					new LineGeometry.PolyLine()
+						.add(new Point3D(-1.0,0.0,1))
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,0.6,1), 0.6, 270, 360, false)
+						.addArc(LineGeometry.Axis.Z, new Point3D(-0.6,2.7,1), 0.6,   0,  90, false)
+						.add(new Point3D(-1.0,3.3,1))
+						.add(new Point3D(-1.5,3.8,1)),
+					new LineGeometry.PolyLine( new Point3D(-0.6,0  ,-1.0), new Point3D(-0.6,0  ,1) ),
+					new LineGeometry.PolyLine( new Point3D( 0.0,0.6,-1.0), new Point3D( 0.0,0.6,1) ),
+					new LineGeometry.PolyLine( new Point3D( 0.0,2.7,-1.0), new Point3D( 0.0,2.7,1) ),
+					new LineGeometry.PolyLine( new Point3D(-0.6,3.3,-1.0), new Point3D(-0.6,3.3,1) ),
+					new LineGeometry.PolyLine( new Point3D(-1.0,3.3,-1.0), new Point3D(-1.0,3.3,1) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.5), new Point3D(-1.5,3.8,1) ),
+					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.0), new Point3D(-1.0,3.3,-1) )
+				);
+			}
+
+			private boolean is(PlacingObj neighbor, ObjectID objectID) {
+				return is(neighbor, objectID, null);
+			}
+
+			private boolean is(PlacingObj neighbor, ObjectID objectID, PlacingObj.LocalDirection locDir) {
+				if (neighbor==null) return false;
+				return neighbor.objectID==objectID && (neighbor.locDir==locDir || locDir==null);
+			}
+		
+		}
+
+		private static class S_CONTAINER {
+		
+			public S_CONTAINER(PlacingObj obj) {
+				// TODO Auto-generated constructor stub
+			}
+		
+			public LineGeometry.IndexedLineSet createGeometry() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+		
+		}
 	}
 
 	@SuppressWarnings("unused")
@@ -1776,7 +2766,7 @@ public class FileExport {
 	}
 	
 	private static class LineGeometry {
-		private static int CIRCLE_SEGMENTS = 32;
+		private static int CIRCLE_SEGMENTS = 20; // = 32;
 		
 		private enum Axis { X, Y, Z }
 		
@@ -1919,7 +2909,7 @@ public class FileExport {
 				add(objs);
 			}
 			GroupingNode add(IndexedLineSet... objs) {
-				for (IndexedLineSet obj:objs) subNodes.add(obj);
+				for (IndexedLineSet obj:objs) if (obj!=null) subNodes.add(obj);
 				return this;
 			}
 			@Override
@@ -2035,6 +3025,9 @@ public class FileExport {
 
 			@Override
 			protected void prepareForOutput() {
+				if (child==null)
+					return;
+				
 				child.prepareForOutput();
 				
 				segments.clear();
@@ -2063,23 +3056,28 @@ public class FileExport {
 			@Override
 			protected void prepareForOutput() {}
 			
-			PolyLine addAll(Point3D... points) {
+			public PolyLine addAll(Point3D... points) {
 				for (Point3D p:points) add(p);
 				return this;
 			}
-			PolyLine add(Point3D p) {
+			public PolyLine add(Point3D p) {
 				segment.add(points.size());
 				points.add(p);
 				return this;
 			}
 			
-			public void close() {
-				if (segment.indexes.isEmpty()) return;
-				segment.add(segment.indexes.firstElement());
+			public PolyLine close() {
+				if (!segment.indexes.isEmpty())
+					segment.add(segment.indexes.firstElement());
+				return this;
 			}
 			
-			PolyLine addArc(Axis axis, Point3D center, double radius, double startAngle_deg, double endAngle_deg, boolean flipped) {
-				loopArc(radius, startAngle_deg, endAngle_deg, flipped, (i, nSeg, x, y) -> {
+			public PolyLine addArc(Axis axis, Point3D center, double radius, double startAngle_deg, double endAngle_deg, boolean flipped) {
+				return addArc(axis, center, radius, startAngle_deg, endAngle_deg, flipped, -1);
+			}
+			
+			public PolyLine addArc(Axis axis, Point3D center, double radius, double startAngle_deg, double endAngle_deg, boolean flipped, int nSeg) {
+				loopArc(radius, startAngle_deg, endAngle_deg, flipped, nSeg, (i, nSeg_, x, y) -> {
 					switch (axis) {
 					case X: add( center.add(0, x, y) ); break;
 					case Y: add( center.add(y, 0, x) ); break;
@@ -2121,6 +3119,7 @@ public class FileExport {
 			public void setValue( int i, int nSeg, double x, double y );
 		}
 		
+		@SuppressWarnings("unused")
 		private static void loopArc(double radius, double startAngle_deg, double endAngle_deg, boolean flipped, LoopArcReceiver receiver) {
 			loopArc(radius, startAngle_deg, endAngle_deg, flipped, -1, receiver);
 		}

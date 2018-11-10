@@ -401,6 +401,10 @@ public class SaveGameData {
 		public Point3D mul(double size) {
 			return new Point3D(x*size, y*size, z*size);
 		}
+		
+		public Point3D mul(double x, double y, double z) {
+			return new Point3D(x*this.x, y*this.y, z*this.z);
+		}
 	
 		public double distTo(Point3D p) {
 			return Math.sqrt((x-p.x)*(x-p.x) + (y-p.y)*(y-p.y) + (z-p.z)*(z-p.z));
