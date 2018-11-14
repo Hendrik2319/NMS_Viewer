@@ -9,6 +9,107 @@ aggrSentinels=
 short=DunkelRot
 info=Monochrome und Rot
 
+[Reg000000F9A8CBC3]
+name=Meer von Idgewo
+
+[Sys007A00F9A8CBC3]
+name=Geermya
+race=Korvax
+class=Yellow
+conflict=3
+short=Atlas
+info=
+
+[Pln107A00F9A8CBC3]
+name=Sakkura
+biome=Frozen
+short.P=Wasser
+info=
+short=
+info=Co, CO2, Cu
+
+[Pln207A00F9A8CBC3]
+name=Gilycity XVII
+biome=Airless
+short=
+info=Fe#, Cu
+
+[Reg000000FAA8CBC3]
+name=Cuvits-Untiefe
+
+[Sys007A00FAA8CBC3]
+name=Steadle
+race=Gek
+class=Yellow
+conflict=1
+short=Atlas
+info=Atlas-Schnittstelle
+
+[Pln107A00FAA8CBC3]
+name=Lukeswo
+biome=Irradiated
+short=
+info=NaCl, U, Cu
+
+[Pln207A00FAA8CBC3]
+name=Flori
+biome=Frozen
+short=
+info=Fe#, CO2, Cu
+
+[Reg000000F9A8DBC3]
+name=Rasdemit
+
+[Sys007A00F9A8DBC3]
+name=Mukosiat XVII
+race=Gek
+class=Yellow
+conflict=3
+short=Atlas
+info=
+
+[Pln107A00F9A8DBC3]
+name=Allseyci XIV
+biome=Toxic
+aggrSentinels=
+short=
+info=Na, NH3, Cu
+short.P=Wasser
+info=
+short=Grav
+info=Gravitino-Bälle
+
+[Pln207A00F9A8DBC3]
+name=Egemis VI
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=NaCl, Pf, Cu, Eiweißperle
+
+[Pln307A00F9A8DBC3]
+name=Hisom 60/H8
+biome=Barren
+aggrSentinels=
+short=
+info=Ag, Py, Cu
+short=Grav
+info=Gravitino-Bälle
+
+[Pln407A00F9A8DBC3]
+name=Igglenae Delta
+biome=Toxic
+short=
+info=Co, NH3, Cu
+
+[Pln507A00F9A8DBC3]
+name=Kuton Sigma
+biome=Lush
+short=
+info=NaCl, Pf, Cu, Eiweißperle
+short.P=Wasser
+info=
+
 [Reg000000FAA8CBC4]
 name=Gaentam-Rand
 oldname=Gaentam-Rand
@@ -95,7 +196,7 @@ aggrSentinels=
 short=
 info=NaCl, Fe#, Cu
 short=Grav
-info=
+info=Gravitino-Bälle
 
 [Pln201200FAA8CBC4]
 name=Rerok
@@ -389,6 +490,8 @@ conflict=1
 name=Ebbie Primus
 oldname=Syamnonerger
 biome=Frozen
+short=
+info=Na, CO2, Cu
 
 [Pln206D00FAA8CBC4]
 name=Drushya II
@@ -684,6 +787,153 @@ oldname=Omoriyamama
 
 [Pln51EA00FAA8CBC4]
 oldname=Rudoindain-Tuzl VS533
+
+[Reg000000F8A8DBC4]
+name=Kawini
+
+[Sys007A00F8A8DBC4]
+name=Rodingu
+race=Korvax
+class=Yellow
+conflict=1
+short=Atlas
+info=
+
+[Pln107A00F8A8DBC4]
+name=Oproby Hachi
+biome=Irradiated
+short.P=Wasser
+info=
+short=
+info=NaCl, U, Cu
+
+[Pln207A00F8A8DBC4]
+name=Gaapopp
+biome=Barren
+short=ExtBar
+info=
+short=
+info=Fe#, Py, #Cu
+short.P=#Cu
+info=
+
+[Sys00AD00F8A8DBC4]
+name=Wuzhouc-Voypov
+race=Korvax
+class=Blue
+conflict=1
+
+[Pln10AD00F8A8DBC4]
+name=Evizes IX
+biome=Toxic
+aggrSentinels=
+short=
+info=NaCl, NH3, In
+short=Grav
+info=
+
+[Sys00CD00F8A8DBC4]
+name=Qigegy-Qingo
+race=Gek
+class=Green
+conflict=2
+short=Erinnerungs-Terminal
+info=
+
+[Pln10CD00F8A8DBC4]
+name=Eybrie
+biome=Barren
+short=
+info=Co, Py, Em
+short.P=Wasser
+info=
+
+[Reg000000F9A8DBC4]
+name=Aokipg-Quadrant
+
+[Sys007A00F9A8DBC4]
+name=Linesk Midda
+race=Gek
+class=Yellow
+conflict=1
+short=Atlas
+info=
+
+[Pln107A00F9A8DBC4]
+name=Leyunthio Minoris
+biome=Irradiated
+short.P=Wasser
+info=
+short=
+info=Na, U, Cu
+
+[Pln207A00F9A8DBC4]
+name=Uhmanue
+biome=Toxic
+short=
+info=Fe#, NH3, Cu
+
+[Pln307A00F9A8DBC4]
+name=Nidsey Sigma
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=Fe#, Pf, Cu, Eiweißperle
+
+[Pln407A00F9A8DBC4]
+name=Kasa 57/T1
+biome=Toxic
+short=
+info=Ag, NH3, Cu
+
+[Pln507A00F9A8DBC4]
+name=Cell Omega
+biome=Scorched
+short=
+info=Na, P, Cu
+
+[Sys012200F9A8DBC4]
+name=Dakjala-Uis IV
+class=Red
+short=Keine Station
+info="Unerforscht"
+
+[Pln112200F9A8DBC4]
+name=Ongham Teya
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=NaCl, Pf, #Cd, Eiweißperle
+short.P=#Cd
+info=
+short=Extrem ??
+info="Schmerzhaft heißer Regen"
+
+[Sys013A00F9A8DBC4]
+name=Asbaku
+class=Red
+short=Unerforscht
+info=Keine Station
+
+[Pln113A00F9A8DBC4]
+name=Arhunt VI
+biome=Exotic
+short=
+info=Na, Fe#, Cd
+
+[Pln213A00F9A8DBC4]
+name=Taplebys Ouchi
+biome=Barren
+short.P=Wasser
+info=
+short=
+info=Co, Py, #Cd
+short.P=#Cd
+info=
+short=ExtBar
+info=
 
 [Sys000100F8FF8FF8]
 race=Vykeen

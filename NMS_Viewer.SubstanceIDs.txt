@@ -218,6 +218,11 @@
 ^RADIO1.symbol=U
 ^RADIO1.image=Substance.Uranium.png
 ^RADIO1.imageBG=FFAD00
+^RED2=Cadmium
+^RED2.type=Resource
+^RED2.symbol=Cd
+^RED2.image=Substance.Cadmium.png
+^RED2.imageBG=7E0100
 ^ROBOT1=Pugneum
 ^ROBOT1.type=Resource
 ^ROBOT1.symbol=Pg
@@ -428,6 +433,7 @@
 ^WATERPLANT=Zytophosphat
 ^WATERPLANT.type=Resource
 ^WATERPLANT.symbol=Cy
+^WATERPLANT.image=SUBSTANCE.WATER.PLANT.png
 ^WATERPLANT.imageBG=1F8B40
 ^YELLOW2=Kupfer
 ^YELLOW2.type=Resource
