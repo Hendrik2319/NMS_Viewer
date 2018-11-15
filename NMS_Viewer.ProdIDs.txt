@@ -68,6 +68,10 @@
 ^ATLAS_SEED_1.type=AtlasSeed
 ^ATLAS_SEED_1.image=ATLASSEED.1.png
 ^ATLAS_SEED_1.imageBG=CCCCCC
+^ATLAS_SEED_10=Herz der Sonne
+^ATLAS_SEED_10.type=AtlasSeed
+^ATLAS_SEED_10.image=ATLASSEED.10.png
+^ATLAS_SEED_10.imageBG=CCCCCC
 ^ATLAS_SEED_2=Umhüllter Schatten
 ^ATLAS_SEED_2.type=AtlasSeed
 ^ATLAS_SEED_2.image=ATLASSEED.2.png
@@ -127,7 +131,7 @@
 ^BP_ANALYSER.type=BaseExternal
 ^BP_ANALYSER.image=BUILDABLE.BLUEPRINTAN.NEXT.png
 ^BP_ANALYSER.imageBG=2C7C9F
-^BP_SALVAGE=Weiderhergestellte Technologie
+^BP_SALVAGE=Wiederhergestellte Technologie
 ^BP_SALVAGE.type=Special
 ^BP_SALVAGE.image=PRODUCT.SALVAGE.NEXT.png
 ^BP_SALVAGE.imageBG=0063B6
@@ -1291,6 +1295,7 @@
 ^U_SMG4.type=MultitoolWeaponUpgradeM
 ^U_SMG4.image=MAINTTECH.FUEL2.NEXT.png
 ^U_SMG4.imageBG=F0A92B
+^U_TGRENADE2=
 ^U_TGRENADE3=Geologiekanonen-Modul (A)
 ^U_TGRENADE3.type=MultitoolExtensionUpgradeM
 ^U_TGRENADE3.image=MAINTTECH.FUEL2.NEXT.png

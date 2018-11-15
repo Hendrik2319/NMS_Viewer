@@ -564,6 +564,10 @@
 ^SMG.type=MultitoolWeapon
 ^SMG.image=Pulse_spitter.png
 ^SMG.imageBG=236D4C
+^STARSUIT=Sternsamen
+^STARSUIT.type=ExosuitExtension
+^STARSUIT.image=PRODUCT.HEXCORE.png
+^STARSUIT.imageBG=085C78
 ^STRONGLASER=Fortgeschrittener Minenlaser
 ^STRONGLASER.type=MultitoolWeaponUpgrade
 ^STRONGLASER.image=AdvMiningLaserIcon.png

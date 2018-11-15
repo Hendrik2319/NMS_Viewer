@@ -681,7 +681,9 @@ race=Gek
 class=Blue
 short=Verlassene Station
 info=
-short=2x Erinnerungs-Terminals
+short=1x Erinnerungs-Terminal (besucht)
+info=
+short=1x Erinnerungs-Terminal (stoppt)
 info=
 
 [Pln116A00FAA8CBC4]
@@ -713,8 +715,8 @@ name=Aylovk XVI
 oldname=Aylovk XVI
 race=Korvax
 class=Red
-short=Keine Station
-info="Unerforscht"
+short=Unerforscht
+info=
 
 [Pln118000FAA8CBC4]
 name=Dawa 69/W9
@@ -728,8 +730,8 @@ info=
 [Sys018200FAA8CBC4]
 name=Zuhokum
 class=Green
-short=Keine Station
-info="Unerforscht"
+short=Unerforscht
+info=
 
 [Pln118200FAA8CBC4]
 name=Thdakoma
@@ -837,7 +839,7 @@ name=Qigegy-Qingo
 race=Gek
 class=Green
 conflict=2
-short=Erinnerungs-Terminal
+short=Erinnerungs-Terminal (besucht)
 info=
 
 [Pln10CD00F8A8DBC4]
@@ -934,6 +936,211 @@ short.P=#Cd
 info=
 short=ExtBar
 info=
+
+[Reg000000F8A8DBC5]
+name=Wapitz-Weite
+
+[Sys007A00F8A8DBC5]
+name=Othila XIII
+race=Gek
+class=Yellow
+conflict=3
+short=Atlas
+info=
+
+[Pln107A00F8A8DBC5]
+name=Noom 17/Q2
+biome=Toxic
+short=ExtTox
+info=
+short=
+info=Co, NH3, #Cu
+short=#Cu
+info=
+short.P=Erinnerungs-Terminal (Pl) (besucht)
+info=
+
+[Reg000000FAA8DBC5]
+name=Mibwenhu-Instabilität
+
+[Sys00BA00FAA8DBC5]
+name=Dicton
+race=Gek
+class=Yellow
+conflict=1
+short=5 Planeten "unentdeckt"
+info=
+
+[Reg000000F8A8DBC6]
+name=Thhori-Zufluss
+
+[Sys007900F8A8DBC6]
+name=Antiruit XIV
+race=Korvax
+class=Yellow
+conflict=1
+short=Schwarzes Loch
+info=
+
+[Pln107900F8A8DBC6]
+name=Azzav Minoris
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=NaCl, Pf, Cu, Eiweißperle
+
+[Pln207900F8A8DBC6]
+name=Raxa Omega
+biome=Irradiated
+short.P=Wasser
+info=
+short=ExtRad
+info=Stufe 3
+short=
+info=Na, U, #Cu
+short=#Cu
+info=
+
+[Sys007A00F8A8DBC6]
+name=Omaysk-Sihui
+race=Korvax
+class=Yellow
+conflict=2
+short=Atlas
+info=
+
+[Pln107A00F8A8DBC6]
+name=Misbiyteus
+biome=Lush
+short=
+info=Fe#, Pf, Cu, Eiweißperle
+
+[Reg000000FAA8DBC6]
+name=Tagosag-Anomalie
+
+[Sys009300FAA8DBC6]
+name=Mubriali IV
+race=Gek
+class=Yellow
+conflict=2
+
+[Pln109300FAA8DBC6]
+name=Xaborus XI
+biome=Barren
+short.P=Wasser
+info=
+short=
+info=NaCl, Py, Cu
+
+[Reg000000FAA90BC7]
+name=Pabelyco-Quadrant
+
+[Sys007900FAA90BC7]
+name=Avermion
+race=Korvax
+class=Yellow
+conflict=1
+short=Schwarzes Loch
+info=
+
+[Reg00000004994DA5]
+name=Netegoc
+
+[Sys001E0004994DA5]
+name=Bronez
+race=Gek
+class=Yellow
+conflict=3
+
+[Pln101E0004994DA5]
+name=Neohitne A20
+biome=Barren
+short=Extrem
+info=
+short=
+info=Ag, Py, Cu
+
+[Pln201E0004994DA5]
+name=Gehdadoi Delta
+biome=Lush
+aggrSentinels=
+short=ExtLush
+info="Blasen bildende Überflutung"
+short=#Cu
+info=Na, Pf, #Cu
+short=Grav
+info=Gravitono-Bälle
+
+[Pln301E0004994DA5]
+name=Oydona VI
+biome=Frozen
+short=
+info=Fe#, CO2, Cu
+
+[Pln401E0004994DA5]
+name=Megasak IV
+biome=Lush
+short.P=Wasser
+info=
+short=ExtLush
+info=
+short=
+info=Ag, Pf, #Cu
+short=#Cu
+info=
+
+[Sys007A0004994DA5]
+name=Revkaz
+race=Vykeen
+class=Yellow
+conflict=2
+short=Atlas
+info=
+
+[Pln107A0004994DA5]
+name=Sanfor
+biome=Frozen
+short.P=Wasser
+info=
+short=
+info=Na, CO2, Cu
+
+[Sys00BD0004994DA5]
+name=Seloma-Ame
+class=Red
+short=Unerforscht
+info=
+
+[Pln10BD0004994DA5]
+name=Eirushe Iedat
+biome=Toxic
+short=
+info=Fe#, NH3, Cd
+short.P=Wasser
+info=
+
+[Pln20BD0004994DA5]
+name=Ricussee Sigma
+biome=Lush
+short.P=Wasser
+info=
+short=#Cd
+info=Fe#, Pf, #Cd
+
+[Sys01770004994DA5]
+name=Murskog
+class=Red
+short=Unerforscht
+info=
+
+[Pln11770004994DA5]
+name=Rifforto
+biome=Scorched
+short=ExtHot
+info=
+short=#Cd
+info=Na, P, #Cd
 
 [Sys000100F8FF8FF8]
 race=Vykeen
