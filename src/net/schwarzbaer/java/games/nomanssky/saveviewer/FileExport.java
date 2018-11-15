@@ -869,6 +869,38 @@ public class FileExport {
 				.addTranslation(anchor.obj.position.pos);
 		}
 
+		private static boolean needDoorToNeighbor(PlacingObj neighbor, PlacingObj neighbor_sub, PlacingObj.LocalDirection dirToNeighbor) {
+			return
+				is(neighbor    ,ObjectID.NPCFRIGTERM    , dirToNeighbor.opp ()) ||
+				
+				is(neighbor    ,ObjectID.CORRIDOR_SPACE , dirToNeighbor.next()) ||
+				is(neighbor    ,ObjectID.CORRIDOR_SPACE , dirToNeighbor.prev()) ||
+				
+				is(neighbor    ,ObjectID.CORRIDORL_SPACE, dirToNeighbor.next()) ||
+				is(neighbor    ,ObjectID.CORRIDORL_SPACE, dirToNeighbor       ) ||
+				
+				is(neighbor    ,ObjectID.CORRIDORT_SPACE, dirToNeighbor       ) ||
+				is(neighbor    ,ObjectID.CORRIDORT_SPACE, dirToNeighbor.next()) ||
+				is(neighbor    ,ObjectID.CORRIDORT_SPACE, dirToNeighbor.prev()) ||
+				
+				is(neighbor    ,ObjectID.AIRLCKCONNECTOR, dirToNeighbor.next()) ||
+				is(neighbor_sub,ObjectID.AIRLCKCONNECTOR, dirToNeighbor.prev()) ||
+				is(neighbor    ,ObjectID.CORSTAIRS_SPACE, dirToNeighbor.next()) ||
+				is(neighbor_sub,ObjectID.CORSTAIRS_SPACE, dirToNeighbor.prev()) ||
+				
+				is(neighbor    ,ObjectID.CORRIDORX_SPACE) ||
+				
+				is(neighbor    ,ObjectID.S_CONTAINER);
+		}
+
+		private static boolean is(PlacingObj neighbor, ObjectID objectID) {
+			return is(neighbor, objectID, null);
+		}
+
+		private static boolean is(PlacingObj neighbor, ObjectID objectID, PlacingObj.LocalDirection neighborLocDir) {
+			return neighbor!=null && (objectID==null || neighbor.objectID==objectID) && (neighborLocDir==null || neighbor.locDir==neighborLocDir);
+		}
+
 		private static class CORRIDOR {
 		
 			private PlacingObj obj;
@@ -1258,30 +1290,8 @@ public class FileExport {
 				if (is(neighbor_N,ObjectID.CUBEROOM_SPACE))
 					return new LineGeometry.Transform(createNoWallN()).addTranslation(new Point3D(3,0,0));
 				else {
-					if (
-							is(neighbor_N ,ObjectID.NPCFRIGTERM    , locDir.opp ()) ||
-							
-							is(neighbor_N ,ObjectID.CORRIDOR_SPACE , locDir.next()) ||
-							is(neighbor_N ,ObjectID.CORRIDOR_SPACE , locDir.prev()) ||
-							
-							is(neighbor_N ,ObjectID.CORRIDORL_SPACE, locDir.next()) ||
-							is(neighbor_N ,ObjectID.CORRIDORL_SPACE, locDir       ) ||
-							
-							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir       ) ||
-							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir.next()) ||
-							is(neighbor_N ,ObjectID.CORRIDORT_SPACE, locDir.prev()) ||
-							
-							is(neighbor_N ,ObjectID.AIRLCKCONNECTOR, locDir.next()) ||
-							is(neighbor_N0,ObjectID.AIRLCKCONNECTOR, locDir.prev()) ||
-							is(neighbor_N ,ObjectID.CORSTAIRS_SPACE, locDir.next()) ||
-							is(neighbor_N0,ObjectID.CORSTAIRS_SPACE, locDir.prev()) ||
-							
-							is(neighbor_N ,ObjectID.CORRIDORX_SPACE) ||
-							
-							is(neighbor_N ,ObjectID.S_CONTAINER))
-						
+					if (needDoorToNeighbor(neighbor_N, neighbor_N0, locDir))
 						return new LineGeometry.Transform(createWallDoorN()).addTranslation(new Point3D(3,0,0));
-					
 					else
 						return new LineGeometry.Transform(createWallN()).addTranslation(new Point3D(3,0,0));
 				}
@@ -1475,15 +1485,6 @@ public class FileExport {
 					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.5), new Point3D(-1.5,3.8,1) ),
 					new LineGeometry.PolyLine( new Point3D(-1.5,3.8,-1.0), new Point3D(-1.0,3.3,-1) )
 				);
-			}
-
-			private static boolean is(PlacingObj neighbor, ObjectID objectID) {
-				return is(neighbor, objectID, null);
-			}
-
-			private static boolean is(PlacingObj neighbor, ObjectID objectID, PlacingObj.LocalDirection locDir) {
-				if (neighbor==null) return false;
-				return neighbor.objectID==objectID && (neighbor.locDir==locDir || locDir==null);
 			}
 		
 		}

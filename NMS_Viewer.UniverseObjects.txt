@@ -15,10 +15,10 @@ name=Meer von Idgewo
 [Sys007A00F9A8CBC3]
 name=Geermya
 race=Korvax
-class=Yellow
 conflict=3
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A00F9A8CBC3]
 name=Sakkura
@@ -40,8 +40,8 @@ name=Cuvits-Untiefe
 [Sys007A00FAA8CBC3]
 name=Steadle
 race=Gek
-class=Yellow
 conflict=1
+class=Yellow
 short=Atlas
 info=Atlas-Schnittstelle
 
@@ -63,10 +63,10 @@ name=Rasdemit
 [Sys007A00F9A8DBC3]
 name=Mukosiat XVII
 race=Gek
-class=Yellow
 conflict=3
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A00F9A8DBC3]
 name=Allseyci XIV
@@ -117,8 +117,8 @@ oldname=Gaentam-Rand
 [Sys000800FAA8CBC4]
 name=Nograd
 race=Gek
-class=Yellow
 conflict=3
+class=Yellow
 
 [Pln100800FAA8CBC4]
 name=Ucsones Beta
@@ -160,8 +160,8 @@ info=NaCl, Pf, Cu, Eiweißperle
 name=Lograt
 oldname=Lograt
 race=Vykeen
-class=Yellow
 conflict=2
+class=Yellow
 
 [Pln100A00FAA8CBC4]
 name=Aeumo VII
@@ -186,8 +186,8 @@ info=NaCl, CO2, #Cu
 [Sys001200FAA8CBC4]
 name=Muzhel-Erk XVI
 race=Gek
-class=Yellow
 conflict=2
+class=Yellow
 
 [Pln101200FAA8CBC4]
 name=Vulptone VII
@@ -242,13 +242,13 @@ class=Yellow
 name=Odvins-Unnan
 oldname=Odvins-Unnan
 race=Gek
-class=Yellow
 conflict=2
+class=Yellow
 
 [Pln102700FAA8CBC4]
 name=Neu: Ochdal
 biome=Lush
-short=Wasser
+short.P=Wasser
 info=
 short=
 info=Na, Pf, Cu, Eiweißperle
@@ -272,8 +272,8 @@ info=Na, P, Cu
 [Sys002F00FAA8CBC4]
 name=Party Town
 race=Gek
-class=Yellow
 conflict=1
+class=Yellow
 
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
@@ -303,11 +303,13 @@ oldname=Zuhcher X
 race=Korvax
 class=Yellow
 
+[Sys003D00FAA8CBC4]
+
 [Sys003F00FAA8CBC4]
 name=Vasakyvin
 race=Gek
-class=Yellow
 conflict=2
+class=Yellow
 
 [Pln103F00FAA8CBC4]
 name=Ilad
@@ -337,11 +339,13 @@ class=Yellow
 [Pln404000FAA8CBC4]
 oldname=Midakasahik
 
+[Sys004300FAA8CBC4]
+
 [Sys004500FAA8CBC4]
 name=Lozhna-Naku
 race=Vykeen
-class=Yellow
 conflict=3
+class=Yellow
 
 [Pln104500FAA8CBC4]
 name=Nicaro Sigma
@@ -452,8 +456,8 @@ info=Na, P, Cu
 name=Tionovk-Exand
 oldname=Tionovk-Exand
 race=Korvax
-class=Yellow
 conflict=2
+class=Yellow
 
 [Pln105D00FAA8CBC4]
 name=Luypsongh XIV
@@ -482,9 +486,9 @@ info=Na, CO2, Cu
 name=Naibolsk
 oldname=Naibolsk
 race=Vykeen
+conflict=1
 class=Yellow
 distance=707016.000000
-conflict=1
 
 [Pln106D00FAA8CBC4]
 name=Ebbie Primus
@@ -511,8 +515,8 @@ info=Fe#, Cu
 name=Kihgora-Agyu X
 oldname=Kihgora-Agyu X
 race=Vykeen
-class=Yellow
 conflict=2
+class=Yellow
 short=Blackhole
 info=Schwarzes Loch im System
 
@@ -564,7 +568,7 @@ oldname=Sibirsky
 race=Vykeen
 class=Yellow
 short=Atlas
-info=Atlas-Station
+info=Atlas-Schnittstelle
 
 [Pln107A00FAA8CBC4]
 oldname=Guyohldemigla
@@ -587,8 +591,8 @@ oldname=Gautumis Hobar
 [Sys00CA00FAA8CBC4]
 name=Anskit-Abad
 race=Gek
-class=Blue
 conflict=3
+class=Blue
 
 [Pln10CA00FAA8CBC4]
 name=Aika III
@@ -619,8 +623,8 @@ class=Yellow
 name=Tolugach
 oldname=Tolugach XV
 race=Vykeen
-class=Green
 conflict=2
+class=Green
 
 [Pln114F00FAA8CBC4]
 name=Reolousall Nosh
@@ -638,11 +642,13 @@ biome=Toxic
 short=
 info=NaCl, NH3, Em
 
+[Sys015200FAA8CBC4]
+
 [Sys016500FAA8CBC4]
 name=Piyskit-Rizhu XVII
 race=Vykeen
-class=Yellow
 conflict=3
+class=Yellow
 
 [Pln116500FAA8CBC4]
 name=Vanahei IX
@@ -713,10 +719,8 @@ info=Vortex Cubes
 [Sys018000FAA8CBC4]
 name=Aylovk XVI
 oldname=Aylovk XVI
-race=Korvax
+unexplored
 class=Red
-short=Unerforscht
-info=
 
 [Pln118000FAA8CBC4]
 name=Dawa 69/W9
@@ -729,9 +733,8 @@ info=
 
 [Sys018200FAA8CBC4]
 name=Zuhokum
+unexplored
 class=Green
-short=Unerforscht
-info=
 
 [Pln118200FAA8CBC4]
 name=Thdakoma
@@ -742,7 +745,7 @@ short=
 info=Na, Fe#, #Em
 short.P=#Em
 info=
-short=Wasser
+short.P=Wasser
 info=
 short=Extrem ?
 info=Biom: Säure Echos
@@ -790,16 +793,20 @@ oldname=Omoriyamama
 [Pln51EA00FAA8CBC4]
 oldname=Rudoindain-Tuzl VS533
 
+[Sys020800FAA8CBC4]
+
+[Sys020B00FAA8CBC4]
+
 [Reg000000F8A8DBC4]
 name=Kawini
 
 [Sys007A00F8A8DBC4]
 name=Rodingu
 race=Korvax
-class=Yellow
 conflict=1
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A00F8A8DBC4]
 name=Oproby Hachi
@@ -822,8 +829,8 @@ info=
 [Sys00AD00F8A8DBC4]
 name=Wuzhouc-Voypov
 race=Korvax
-class=Blue
 conflict=1
+class=Blue
 
 [Pln10AD00F8A8DBC4]
 name=Evizes IX
@@ -832,13 +839,13 @@ aggrSentinels=
 short=
 info=NaCl, NH3, In
 short=Grav
-info=
+info=Gravitino-Bälle
 
 [Sys00CD00F8A8DBC4]
 name=Qigegy-Qingo
 race=Gek
-class=Green
 conflict=2
+class=Green
 short=Erinnerungs-Terminal (besucht)
 info=
 
@@ -856,10 +863,10 @@ name=Aokipg-Quadrant
 [Sys007A00F9A8DBC4]
 name=Linesk Midda
 race=Gek
-class=Yellow
 conflict=1
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A00F9A8DBC4]
 name=Leyunthio Minoris
@@ -897,9 +904,8 @@ info=Na, P, Cu
 
 [Sys012200F9A8DBC4]
 name=Dakjala-Uis IV
+unexplored
 class=Red
-short=Keine Station
-info="Unerforscht"
 
 [Pln112200F9A8DBC4]
 name=Ongham Teya
@@ -915,9 +921,8 @@ info="Schmerzhaft heißer Regen"
 
 [Sys013A00F9A8DBC4]
 name=Asbaku
+unexplored
 class=Red
-short=Unerforscht
-info=Keine Station
 
 [Pln113A00F9A8DBC4]
 name=Arhunt VI
@@ -943,10 +948,10 @@ name=Wapitz-Weite
 [Sys007A00F8A8DBC5]
 name=Othila XIII
 race=Gek
-class=Yellow
 conflict=3
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A00F8A8DBC5]
 name=Noom 17/Q2
@@ -966,8 +971,8 @@ name=Mibwenhu-Instabilität
 [Sys00BA00FAA8DBC5]
 name=Dicton
 race=Gek
-class=Yellow
 conflict=1
+class=Yellow
 short=5 Planeten "unentdeckt"
 info=
 
@@ -977,8 +982,8 @@ name=Thhori-Zufluss
 [Sys007900F8A8DBC6]
 name=Antiruit XIV
 race=Korvax
-class=Yellow
 conflict=1
+class=Yellow
 short=Schwarzes Loch
 info=
 
@@ -1005,10 +1010,10 @@ info=
 [Sys007A00F8A8DBC6]
 name=Omaysk-Sihui
 race=Korvax
-class=Yellow
 conflict=2
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A00F8A8DBC6]
 name=Misbiyteus
@@ -1022,8 +1027,8 @@ name=Tagosag-Anomalie
 [Sys009300FAA8DBC6]
 name=Mubriali IV
 race=Gek
-class=Yellow
 conflict=2
+class=Yellow
 
 [Pln109300FAA8DBC6]
 name=Xaborus XI
@@ -1033,16 +1038,22 @@ info=
 short=
 info=NaCl, Py, Cu
 
+[Sys00E900FAA8EBC7]
+
+[Sys01F100FAA8FBC7]
+
 [Reg000000FAA90BC7]
 name=Pabelyco-Quadrant
 
 [Sys007900FAA90BC7]
 name=Avermion
 race=Korvax
-class=Yellow
 conflict=1
+class=Yellow
 short=Schwarzes Loch
 info=
+
+[Sys012D00FAA90BC8]
 
 [Reg00000004994DA5]
 name=Netegoc
@@ -1050,8 +1061,8 @@ name=Netegoc
 [Sys001E0004994DA5]
 name=Bronez
 race=Gek
-class=Yellow
 conflict=3
+class=Yellow
 
 [Pln101E0004994DA5]
 name=Neohitne A20
@@ -1070,7 +1081,7 @@ info="Blasen bildende Überflutung"
 short=#Cu
 info=Na, Pf, #Cu
 short=Grav
-info=Gravitono-Bälle
+info=Gravitino-Bälle
 
 [Pln301E0004994DA5]
 name=Oydona VI
@@ -1093,10 +1104,10 @@ info=
 [Sys007A0004994DA5]
 name=Revkaz
 race=Vykeen
-class=Yellow
 conflict=2
+class=Yellow
 short=Atlas
-info=
+info=Atlas-Schnittstelle
 
 [Pln107A0004994DA5]
 name=Sanfor
@@ -1108,9 +1119,8 @@ info=Na, CO2, Cu
 
 [Sys00BD0004994DA5]
 name=Seloma-Ame
+unexplored
 class=Red
-short=Unerforscht
-info=
 
 [Pln10BD0004994DA5]
 name=Eirushe Iedat
@@ -1130,9 +1140,8 @@ info=Fe#, Pf, #Cd
 
 [Sys01770004994DA5]
 name=Murskog
+unexplored
 class=Red
-short=Unerforscht
-info=
 
 [Pln11770004994DA5]
 name=Rifforto

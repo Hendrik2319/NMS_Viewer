@@ -146,11 +146,11 @@ public class SimplePanels {
 				if (te==null) return null;
 				switch(columnID) {
 				case Name           : return te.name;
-				case TeleportHost   : return te.teleportHost;
+				case TeleportHost   : if (te.teleportHost   !=null) return te.teleportHost.label; if (te.teleportHostStr==null) return ""; return "["+te.teleportHostStr+"]"; 
 				case UniverseAddress: if (te.universeAddress==null) return ""; else return te.universeAddress.getCoordinates();
-				case LookAt         : if (te.lookAt   ==null) return ""; else return te.lookAt   .toString(" %1.4f ");
-				case Position       : if (te.position ==null) return ""; else return te.position .toString(" %1.2f ");
-				case GpsCoords      : if (te.gpsCoords==null) return ""; else return te.gpsCoords.toString();
+				case LookAt         : if (te.lookAt         ==null) return ""; else return te.lookAt   .toString(" %1.4f ");
+				case Position       : if (te.position       ==null) return ""; else return te.position .toString(" %1.2f ");
+				case GpsCoords      : if (te.gpsCoords      ==null) return ""; else return te.gpsCoords.toString();
 				case PlanetOrSystem : {
 					if (te.universeAddress==null) return "";
 					String strOut = "";

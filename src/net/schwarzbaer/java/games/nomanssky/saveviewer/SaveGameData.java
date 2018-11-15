@@ -115,8 +115,29 @@ public class SaveGameData {
 					} break;
 				case HomePlanetBase: {
 						Planet planet = universe.findPlanet(base.galacticAddress);
-						if (planet!=null) planet.additionalInfos.bases.add(base);
+						if (planet!=null) {
+							planet.additionalInfos.bases.add(base);
+							for (BuildingObject bbo:base.objects) {
+								if (bbo.objectID==null) continue;
+								if (bbo.objectID.equals("^SUMMON_GARAGE")) {
+									planet.additionalInfos.hasExocraftSummoningStation = true;
+								}
+							}
+						}
 					} break;
+				}
+			}
+		}
+		if (teleportEndpoints!=null) {
+			for (TeleportEndpoints tel:teleportEndpoints) {
+				if (tel.universeAddress==null) continue;
+				if (tel.universeAddress.isPlanet()) {
+					Planet planet = universe.findPlanet(tel.universeAddress);
+					if (planet!=null) planet.additionalInfos.hasTeleportEndPoint=true;
+				}
+				if (tel.universeAddress.isSolarSystem()) {
+					SolarSystem system = universe.findSolarSystem(tel.universeAddress);
+					if (system!=null) system.additionalInfos.hasTeleportEndPoint=true;
 				}
 			}
 		}
@@ -547,7 +568,8 @@ public class SaveGameData {
 			te.position         = parseCoordinates(objectValue, "Position");
 			te.gpsCoords        = PolarCoordinates.parse(te.position);
 			te.lookAt           = parseCoordinates(objectValue, "LookAt");
-			te.teleportHost     = getStringValue(objectValue, "TeleportHost");
+			te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
+			te.teleportHost     = TeleportEndpoints.TeleportHost.parseValue(te.teleportHostStr);
 			te.name             = getStringValue(objectValue, "Name");
 			
 			teleportEndpoints.add(te);
@@ -559,8 +581,25 @@ public class SaveGameData {
 
 	public static class TeleportEndpoints {
 		
+		public enum TeleportHost {
+			Base("Base on Planet"), Spacestation("Space Station");
+			
+			public String label;
+			TeleportHost(String label) {
+				this.label = label;
+			}
+
+			public static TeleportHost parseValue(String teleportHostStr) {
+				if (teleportHostStr==null) return null;
+				try { return valueOf(teleportHostStr); }
+				catch (Exception e) { return null; }
+			}
+		}
+		
+		
 		public String name;
-		public String teleportHost;
+		public String teleportHostStr;
+		public TeleportHost teleportHost;
 		public Coordinates position;
 		public Coordinates lookAt;
 		public UniverseAddress universeAddress;
@@ -569,6 +608,7 @@ public class SaveGameData {
 		public TeleportEndpoints() {
 			this.name = null;
 			this.teleportHost = null;
+			this.teleportHostStr = null;
 			this.position = null;
 			this.lookAt = null;
 			this.universeAddress = null;
@@ -1962,6 +2002,7 @@ public class SaveGameData {
 			public final Vector<SolarSystem> solarSystems;
 			public String oldname;
 			public String name;
+			public boolean isHighlighted;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
@@ -1970,6 +2011,7 @@ public class SaveGameData {
 				this.voxelZ = z;
 				this.solarSystems = new Vector<>();
 				this.setName(null);
+				this.isHighlighted = false;
 			}
 
 			@Override
@@ -2000,6 +2042,17 @@ public class SaveGameData {
 				if (galaxy==null) return null;
 				return new UniverseAddress( galaxy.galacticIndex, voxelX,voxelY,voxelZ, 0,0 );
 			}
+
+			public boolean isReachableByTeleport() {
+				for (SolarSystem sys:solarSystems) {
+					if (sys.additionalInfos.hasTeleportEndPoint)
+						return true;
+					for (Planet planet:sys.planets)
+						if (planet.additionalInfos.hasTeleportEndPoint)
+							return true;
+				}
+				return false;
+			}
 		}
 		
 		public static class UniverseObject {
@@ -2019,7 +2072,7 @@ public class SaveGameData {
 			public final HashMap<String,Integer> discoveredItems_Avail;
 			public final HashMap<String,Integer> discoveredItems_Store;
 			
-			public boolean isSelected;
+			public boolean isHighlighted;
 			
 			protected UniverseObject() {
 				discoverer = null;
@@ -2036,7 +2089,7 @@ public class SaveGameData {
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
 				
-				isSelected = false;
+				isHighlighted = false;
 			}
 
 			protected String getCombinedExtraInfoLabels() {
@@ -2131,22 +2184,27 @@ public class SaveGameData {
 			
 			public static class AdditionalInfos {
 				public boolean hasFreighter;
+				public boolean hasTeleportEndPoint;
 				public AdditionalInfos() {
 					this.hasFreighter = false;
+					this.hasTeleportEndPoint = false;
 				}
 				public boolean isEmpty() {
-					return !hasFreighter;
+					return !hasFreighter && !hasTeleportEndPoint;
 				}
 			}
 			
 			final Region region;
 			final int solarSystemIndex;
 			public final Vector<Planet> planets;
+			
 			public Race race;
 			public StarClass starClass;
-			public Double distanceToCenter;
 			public int conflictLevel;
-			public AdditionalInfos additionalInfos; 
+			public boolean isUnexplored; 
+			
+			public Double distanceToCenter;
+			public AdditionalInfos additionalInfos;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				this.region = region;
@@ -2154,8 +2212,9 @@ public class SaveGameData {
 				this.planets = new Vector<>();
 				this.race = null;
 				this.starClass = null;
-				this.distanceToCenter = null;
 				this.conflictLevel = -1;
+				this.isUnexplored = false;
+				this.distanceToCenter = null;
 				this.additionalInfos = new AdditionalInfos();
 			}
 
@@ -2173,6 +2232,7 @@ public class SaveGameData {
 				String strDataName = (!hasUploadedName()?"":(" | "+getUploadedName()));
 				
 				String strRace = (race==null)?"":(" ["+race.fullName+"]");
+				if (isUnexplored) strRace = " <Unexplored>";
 				
 				HashSet<String> foundLabels = new HashSet<>();
 				for (Planet p:planets)
@@ -2233,12 +2293,14 @@ public class SaveGameData {
 			public static class AdditionalInfos {
 				public Vector<PersistentPlayerBase> bases;
 				public boolean hasExocraftSummoningStation;
+				public boolean hasTeleportEndPoint;
 				public AdditionalInfos() {
 					this.bases = new Vector<>();
 					this.hasExocraftSummoningStation = false;
+					this.hasTeleportEndPoint = false;
 				}
 				public boolean isEmpty() {
-					return !(!bases.isEmpty() || hasExocraftSummoningStation);
+					return bases.isEmpty() && !hasExocraftSummoningStation && !hasTeleportEndPoint;
 				}
 			}
 			

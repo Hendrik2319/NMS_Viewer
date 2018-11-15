@@ -96,6 +96,7 @@ public class GameInfos {
 		Universe.SolarSystem.StarClass starClass;
 		Double distanceToCenter;
 		int conflictLevel;
+		Boolean isUnexplored;
 		
 		Universe.Planet.Biome biome;
 		boolean areSentinelsAggressive;
@@ -112,6 +113,7 @@ public class GameInfos {
 			this.starClass = null;
 			this.distanceToCenter = null;
 			this.conflictLevel = -1;
+			this.isUnexplored = null;
 			
 			this.biome = null;
 			this.areSentinelsAggressive = false;
@@ -120,7 +122,7 @@ public class GameInfos {
 		}
 	
 		public boolean hasData() {
-			return name!=null || oldname!=null || race!=null || starClass!=null || biome!=null || areSentinelsAggressive || distanceToCenter!=null || conflictLevel>=0 || !extraInfos.isEmpty();
+			return name!=null || oldname!=null || race!=null || starClass!=null || biome!=null || areSentinelsAggressive || distanceToCenter!=null || conflictLevel>=0 || isUnexplored!=null || !extraInfos.isEmpty();
 		}
 		
 		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
@@ -132,6 +134,7 @@ public class GameInfos {
 		public UniverseObjectData(UniverseAddress universeAddress, SolarSystem sys) {
 			this(universeAddress,Type.SolarSystem,sys);
 			race = sys.race;
+			isUnexplored = sys.isUnexplored;
 			starClass = sys.starClass;
 			distanceToCenter = sys.distanceToCenter;
 			conflictLevel = sys.conflictLevel;
@@ -208,6 +211,11 @@ public class GameInfos {
 					String race = str.substring("race=".length());
 					try { uoData.race = Universe.SolarSystem.Race.valueOf(race); }
 					catch (Exception e) { uoData.race = null; }
+					continue;
+				}
+				if (str.equals("unexplored")) {
+					if (uoData==null) continue;
+					uoData.isUnexplored = true;
 					continue;
 				}
 				if (str.startsWith("class=")) {
@@ -326,6 +334,10 @@ public class GameInfos {
 				system.conflictLevel = uoData.conflictLevel;
 				if (withOutput) SaveViewer.log("   Conflict Level of %s was defined: %s\r\n",objName,system.starClass);
 			}
+			if (uoData.isUnexplored!=null && system!=null) {
+				system.isUnexplored = uoData.isUnexplored;
+				if (withOutput) SaveViewer.log("   %s was defined as unexplored: %s\r\n",objName);
+			}
 			
 			if (uoData.biome!=null && planet!=null) {
 				planet.biome = uoData.biome;
@@ -388,10 +400,14 @@ public class GameInfos {
 				if (uoData.   name!=null) out.printf(   "name=%s\r\n",uoData.   name);
 				if (uoData.oldname!=null) out.printf("oldname=%s\r\n",uoData.oldname);
 				if (uoData.type==UniverseObjectData.Type.SolarSystem) {
-					if (uoData.race            !=null) out.printf("race=%s\r\n",uoData.race);
+					if (uoData.isUnexplored!=null && uoData.isUnexplored)
+						out.printf("unexplored\r\n");
+					else {
+						if (uoData.race         !=null) out.printf("race=%s\r\n",uoData.race);
+						if (uoData.conflictLevel>=0   ) out.printf("conflict=%d\r\n",uoData.conflictLevel);
+					}
 					if (uoData.starClass       !=null) out.printf("class=%s\r\n",uoData.starClass);
 					if (uoData.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uoData.distanceToCenter.doubleValue());
-					if (uoData.conflictLevel   >=0   ) out.printf("conflict=%d\r\n",uoData.conflictLevel);
 				}
 				if (uoData.type==UniverseObjectData.Type.Planet) {
 					if (uoData.biome           !=null) out.printf("biome=%s\r\n",uoData.biome);

@@ -21,31 +21,34 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
-import javax.swing.SwingUtilities;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
 class GalaxyMapPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 9055290876621464068L;
 
 		private Window mainWindow;
+		private UniversePanel universePanel;
 		
 		private GalaxyMap galaxyMap;
 		private JScrollBar scrollBarHoriz;
@@ -81,41 +84,25 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			}
 		}
 		
-		public GalaxyMapPanel(SaveGameData data, Window mainWindow) {
+		public GalaxyMapPanel(SaveGameData data, Window mainWindow, UniversePanel universePanel) {
 			super(data);
 			this.mainWindow = mainWindow;
+			this.universePanel = universePanel;
 			
 			CombinedListener combiListener = new CombinedListener();
 			
 			int preselectedGalaxy = 0;
+			RegionData regionData = new RegionData(data.universe.galaxies.get(preselectedGalaxy));
 			Long knownGlyphs = data.general.getKnownGlyphsMaks();
 			//knownGlyphs = 0b110111100L;
-			galaxyMap = new GalaxyMap(combiListener,data.universe.galaxies.get(preselectedGalaxy),data.general.currentUniverseAddress,knownGlyphs);
+			galaxyMap = new GalaxyMap(combiListener,regionData,data.general.currentUniverseAddress,knownGlyphs);
 			
-			
-			JCheckBoxMenuItem chkbxUsePreparedBitmap = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
-			JCheckBoxMenuItem chkbxShowMarkers = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
-			chkbxShowMarkers.setEnabled(!galaxyMap.usePreparedBitmap);
-			
-			chkbxUsePreparedBitmap.addActionListener( e->{
-				boolean usePreparedBitmap = chkbxUsePreparedBitmap.isSelected();
-				galaxyMap.usePreparedBitmap(usePreparedBitmap);
-				chkbxShowMarkers.setEnabled(usePreparedBitmap);
-				if (!usePreparedBitmap) chkbxShowMarkers.setSelected(true);
-			});
-			chkbxShowMarkers.addActionListener( e->{
-				galaxyMap.showMarkers(chkbxShowMarkers.isSelected());
-			});
-			
-			JPopupMenu contextMenu = new JPopupMenu("Contextmenu");
-			contextMenu.add(chkbxUsePreparedBitmap);
-			contextMenu.add(chkbxShowMarkers);
-			combiListener.setContextMenu(galaxyMap,contextMenu);
+			combiListener.setContextMenu(new ContextMenu(galaxyMap));
 			
 			
 			JComboBox<Galaxy> cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
 			cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
-			cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy((Galaxy)cmbbxGalaxies.getSelectedItem()));
+			cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy(new RegionData((Galaxy)cmbbxGalaxies.getSelectedItem())));
 			
 			zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
 			zoomField.addActionListener( e->{
@@ -192,21 +179,25 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			Worker worker = galaxyMap.showGlyphOverlay(numberOfKnownGlyphs);
 			if (worker==null) return;
 			
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override public void run() {
-					ProgressDialog pd = new ProgressDialog(mainWindow,"Create Glyph Overlay");
-					worker.setProgressDialog(pd);
-					pd.addCancelListener(worker);
-					new Thread(worker).start();
-					boolean error;
-					int errorcount = 0;
-					do {
-						error = false;
-						try { pd.showDialog(); }
-						catch (Exception e) { error=true; SaveViewer.log_error_ln("pd.showDialog() -> error["+(++errorcount)+"]"); }
-					} while(error);
-				}
+			SaveViewer.runWithProgressDialog(mainWindow,"Create Glyph Overlay", pd->{
+				worker.setProgressDialog(pd);
+				worker.run();
 			});
+//			SwingUtilities.invokeLater(new Runnable() {
+//				@Override public void run() {
+//					ProgressDialog pd = new ProgressDialog(mainWindow,"Create Glyph Overlay");
+//					worker.setProgressDialog(pd);
+//					pd.addCancelListener(worker);
+//					new Thread(worker).start();
+//					boolean error;
+//					int errorcount = 0;
+//					do {
+//						error = false;
+//						try { pd.showDialog(); }
+//						catch (Exception e) { error=true; SaveViewer.log_error_ln("pd.showDialog() -> error["+(++errorcount)+"]"); }
+//					} while(error);
+//				}
+//			});
 		}
 		
 		private static abstract class Worker implements ProgressDialog.CancelListener, Runnable {
@@ -225,11 +216,11 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			protected abstract void compute();
 		}
 
-		private void showStatus(int x, int y) {
+		private void showStatus(int mouseX, int mouseY) {
 			String str = String.format(Locale.ENGLISH, "Zoom: %1.1f%%", galaxyMap.zoomRatio*100);
-			if (x>=0 && y>=0) {
-				int voxelX = galaxyMap.computeVoxelX(x);
-				int voxelZ = galaxyMap.computeVoxelZ(y);
+			if (mouseX>=0 && mouseY>=0) {
+				int voxelX = galaxyMap.computeVoxelX(mouseX);
+				int voxelZ = galaxyMap.computeVoxelZ(mouseY);
 				UniverseAddress ua = new UniverseAddress(0,voxelX,0,voxelZ,0,0);
 				str += String.format(Locale.ENGLISH, ",  Region: (%d,#,%d)", voxelX,voxelZ);
 				str += String.format(Locale.ENGLISH, ",  GlyphCode: %s", ua.getPortalGlyphCodeStr());
@@ -238,20 +229,63 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			statusField.setText(str);
 		}
 		
+		private class ContextMenu extends JPopupMenu {
+			private static final long serialVersionUID = -5698577950332700493L;
+			
+			private Component invoker;
+			private RegionData.RegionCoord clickedPos;
+
+			private ContextMenu(Component invoker) {
+				super("Contextmenu");
+				this.invoker = invoker;
+				this.clickedPos = null;
+				
+				JMenuItem miMarkRegions = new JMenuItem("Mark Regions in \"Known Universe\"");
+				miMarkRegions.addActionListener(e->{
+					if (clickedPos!=null)
+						universePanel.highlightRegions(clickedPos.voxelX,clickedPos.voxelZ);
+				});
+				
+				JCheckBoxMenuItem chkbxUsePreparedBitmap = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
+				JCheckBoxMenuItem chkbxShowMarkers = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
+				chkbxShowMarkers.setEnabled(!galaxyMap.usePreparedBitmap);
+				
+				chkbxUsePreparedBitmap.addActionListener( e->{
+					boolean usePreparedBitmap = chkbxUsePreparedBitmap.isSelected();
+					galaxyMap.usePreparedBitmap(usePreparedBitmap);
+					chkbxShowMarkers.setEnabled(usePreparedBitmap);
+					if (!usePreparedBitmap) chkbxShowMarkers.setSelected(true);
+				});
+				chkbxShowMarkers.addActionListener( e->{
+					galaxyMap.showMarkers(chkbxShowMarkers.isSelected());
+				});
+				
+				add(miMarkRegions);
+				addSeparator();
+				add(chkbxUsePreparedBitmap);
+				add(chkbxShowMarkers);
+			}
+
+			public void show(int x, int y) {
+				show(invoker, x, y);
+			}
+
+			public void setClickedPos(RegionData.RegionCoord clickedPos) {
+				this.clickedPos = clickedPos;
+			}
+		}
+		
 		private class CombinedListener implements MouseWheelListener, MouseMotionListener, MouseListener, AdjustmentListener {
 			
 			private boolean isScrollBarListeningEnabled;
-			private JPopupMenu contextMenu;
-			private Component contextMenuInvoker;
+			private ContextMenu contextMenu;
 			
 			CombinedListener() {
 				isScrollBarListeningEnabled = true;
-				contextMenuInvoker = null;
 				contextMenu = null;
 			}
 			
-			public void setContextMenu(Component invoker, JPopupMenu contextMenu) {
-				this.contextMenuInvoker = invoker;
+			public void setContextMenu(ContextMenu contextMenu) {
 				this.contextMenu = contextMenu;
 			}
 
@@ -304,11 +338,73 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			@Override public void mouseEntered (MouseEvent e) { showStatus(e.getX(),e.getY()); galaxyMap.setMousePos(e.getX(),e.getY()); }
 			@Override public void mouseMoved   (MouseEvent e) { showStatus(e.getX(),e.getY()); galaxyMap.setMousePos(e.getX(),e.getY()); }
 			@Override public void mouseExited  (MouseEvent e) { showStatus(-1,-1); galaxyMap.clearMousePos(); }
-			@Override public void mouseClicked (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON3 && contextMenu!=null) contextMenu.show(contextMenuInvoker, e.getX(), e.getY()); }
+			@Override public void mouseClicked (MouseEvent e) {
+				if (e.getButton()==MouseEvent.BUTTON3 && contextMenu!=null) {
+					int voxelX = galaxyMap.computeVoxelX(e.getX());
+					int voxelZ = galaxyMap.computeVoxelZ(e.getY());
+					contextMenu.setClickedPos(new RegionData.RegionCoord(voxelX, voxelZ));
+					contextMenu.show(e.getX(), e.getY());
+				}
+			}
 			
 			@Override public void mousePressed (MouseEvent e) {}
 			@Override public void mouseReleased(MouseEvent e) {}
 			@Override public void mouseDragged (MouseEvent e) {}
+		}
+		
+		private static class RegionData {
+			
+			private HashMap<RegionCoord, RegionState> regions;
+			
+			private RegionData(Galaxy galaxy) {
+				regions = new HashMap<>();
+				for (Region region:galaxy.regions) {
+					RegionCoord rc = new RegionCoord(region.voxelX,region.voxelZ);
+					RegionState regionState = regions.get(rc);
+					if (regionState==null)
+						regions.put( rc, new RegionState(region) );
+					else
+						regionState.update(region);
+				}
+			}
+			
+			public void forEach(BiConsumer<RegionCoord, RegionState> action) {
+				regions.forEach(action);
+			}
+			
+			public static class RegionState {
+				boolean isReachableByTeleport;
+				
+				RegionState(Region region) {
+					isReachableByTeleport = false;
+					update(region);
+				}
+
+				private void update(Region region) {
+					isReachableByTeleport = isReachableByTeleport || region.isReachableByTeleport();
+				}
+			}
+			
+			private static class RegionCoord {
+				private int voxelX;
+				private int voxelZ;
+				public RegionCoord(int voxelX, int voxelZ) {
+					this.voxelX = voxelX;
+					this.voxelZ = voxelZ;
+				}
+				@Override
+				public int hashCode() {
+					return (voxelX&0xFFFF)<<16 | (voxelZ&0xFFFF);
+				}
+				@Override
+				public boolean equals(Object obj) {
+					if (this == obj) return true;
+					if (obj == null) return false;
+					if (!(obj instanceof RegionCoord)) return false;
+					RegionCoord other = (RegionCoord) obj;
+					return (voxelX!=other.voxelX) || (voxelZ!=other.voxelZ);
+				}
+			}
 		}
 		
 		private static class GalaxyMap extends Canvas {
@@ -318,6 +414,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR_BACKGROUND = Color.BLACK;
 			private static final Color COLOR_GRID  = new Color(0x202020);
 			private static final Color COLOR_AXIS = new Color(0x000090);
+			private static final Color COLOR_KNOWN_REGION_WITH_TELEPORT = Color.CYAN;
 			private static final Color COLOR_KNOWN_REGION = Color.YELLOW;
 			private static final Color COLOR_CURRENT_POS  = Color.MAGENTA;
 			private static final Color COLOR_GALAXY_CENTER = Color.RED;
@@ -334,7 +431,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			
 			private static final double ZOOM_INC = 1.1;
 			
-			private Galaxy galaxy;
+			private RegionData regionData;
 			private BufferedImage mapBaseImage;
 //			private BufferedImage mapImage;
 			private BufferedImage overlayImage;
@@ -354,11 +451,12 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			private int mouseVoxelX;
 			private int mouseVoxelZ;
 			private boolean ignoreMousePos;
+
 			
-			GalaxyMap(CombinedListener combiListener, Galaxy galaxy, UniverseAddress currentPos, Long knownGlyphs) {
+			GalaxyMap(CombinedListener combiListener, RegionData regionData, UniverseAddress currentPos, Long knownGlyphs) {
 				this.combiListener = combiListener;
+				this.regionData = regionData;
 				//withDebugOutput = true;
-				this.galaxy = galaxy;
 				this.currentPos = currentPos;
 				this.knownGlyphs = knownGlyphs;
 				
@@ -405,8 +503,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				repaint();
 			}
 
-			public void setGalaxy(Galaxy galaxy) {
-				this.galaxy = galaxy;
+			public void setGalaxy(RegionData regionData) {
+				this.regionData = regionData;
 				prepareMap();
 				repaint();
 			}
@@ -498,7 +596,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			}
 
 			public void prepareMap() {
-				if (galaxy==null) setMapBaseImage(null);
+				if (regionData==null) setMapBaseImage(null);
 				else setMapBaseImage( prepareBaseMap() );
 			}
 			
@@ -525,10 +623,10 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				graphics.drawLine(MAP_CENTER_X, 0, MAP_CENTER_X, MAP_HEIGHT);
 				graphics.drawLine(0, MAP_CENTER_Y, MAP_WIDTH, MAP_CENTER_Y);
 				
-				graphics.setColor(COLOR_KNOWN_REGION);
-				for (Region region:galaxy.regions) {
-					graphics.fillRect(region.voxelX+MAP_CENTER_X, region.voxelZ+MAP_CENTER_Y, 1, 1);
-				}
+				regionData.forEach((rc,rs)->{
+					graphics.setColor(rs.isReachableByTeleport?COLOR_KNOWN_REGION_WITH_TELEPORT:COLOR_KNOWN_REGION);
+					graphics.fillRect(rc.voxelX+MAP_CENTER_X, rc.voxelZ+MAP_CENTER_Y, 1, 1);
+				});
 				graphics.setColor(COLOR_CURRENT_POS);
 				graphics.fillRect(currentPos.voxelX+MAP_CENTER_X, currentPos.voxelZ+MAP_CENTER_Y, 1, 1);
 				
@@ -659,12 +757,21 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 						fillRect(g2,maxX,maxY, 0,axisY, maxX,thickness);
 						
 						g2.setColor(COLOR_KNOWN_REGION);
-						for (Region region:galaxy.regions)
-							if (region.voxelX!=currentPos.voxelX || region.voxelZ!=currentPos.voxelZ)
-								fillBox(g2, maxX, maxY,region.voxelX,region.voxelZ);
+						regionData.forEach((rc,rs)->{
+							if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+							if (rs.isReachableByTeleport) return;
+							fillBox(g2, maxX, maxY, rc.voxelX, rc.voxelZ);
+						});
+						
+						g2.setColor(COLOR_KNOWN_REGION_WITH_TELEPORT);
+						regionData.forEach((rc,rs)->{
+							if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+							if (!rs.isReachableByTeleport) return;
+							fillBox(g2, maxX, maxY, rc.voxelX, rc.voxelZ);
+						});
 						
 						g2.setColor(COLOR_CURRENT_POS);
-						fillBox(g2, maxX, maxY,currentPos.voxelX,currentPos.voxelZ);
+						fillBox(g2, maxX, maxY, currentPos.voxelX, currentPos.voxelZ);
 						
 						g2.setColor(COLOR_GALAXY_CENTER);
 						fillBox(g2, maxX,maxY,0,0);
@@ -717,11 +824,21 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 					g2.setClip(new Rectangle(0, 0, maxX, maxY));
 					
 					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.setColor(COLOR_KNOWN_REGION);
 					int markerSize = 5;
-					for (Region region:galaxy.regions)
-						if (region.voxelX!=currentPos.voxelX || region.voxelZ!=currentPos.voxelZ)
-							drawMarker(g2, region.voxelX, region.voxelZ, markerSize);
+					
+					g2.setColor(COLOR_KNOWN_REGION);
+					regionData.forEach((rc,rs)->{
+						if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+						if (rs.isReachableByTeleport) return;
+						drawMarker(g2, rc.voxelX, rc.voxelZ, markerSize);
+					});
+					
+					g2.setColor(COLOR_KNOWN_REGION_WITH_TELEPORT);
+					regionData.forEach((rc,rs)->{
+						if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+						if (!rs.isReachableByTeleport) return;
+						drawMarker(g2, rc.voxelX, rc.voxelZ, markerSize);
+					});
 					
 					g2.setColor(COLOR_CURRENT_POS);
 					drawMarker(g2, currentPos.voxelX, currentPos.voxelZ, markerSize);

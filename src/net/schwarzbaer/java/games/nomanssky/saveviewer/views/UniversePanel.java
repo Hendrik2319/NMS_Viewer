@@ -71,20 +71,20 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
 	
-	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject }
+	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject, RemoveHighlights }
 	private enum UniverseTreeIcons {
 		Universe, Galaxy, Region, SolarSystem, Planet,
-		GekSys, KorvaxSys, VykeenSys,
+		GekSys, KorvaxSys, VykeenSys, Unexplored,
 		Yellow, Red, Green, Blue,
 		ConflictLevel1, ConflictLevel2, ConflictLevel3,
 		;
 	}
 	private enum PlanetTreeIcons {
-		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless,
+		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless, BiomeExotic, BiomeExoticMega,
 		SentinelAggressive;
 	}
 	private enum AdditionalTreeIcons {
-		VehicleSummoner(20), BaseMainRoom(26), Freighter(44);
+		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20);
 
 		private int iconWidth;
 		private AdditionalTreeIcons(int iconWidth) { this.iconWidth = iconWidth; }
@@ -164,6 +164,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static class SolarSystemIcons extends IconsMap<UniverseTreeIcons> {
 		
 		private Icon[][][] icons;
+		private Icon[] unexploredIcons;
+		
 		EnumMap<Race,Icon> RaceIcons;
 		EnumMap<StarClass,Icon> StarClassIcons;
 		private Icon[] ConflictLevelIcons;
@@ -171,8 +173,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		SolarSystemIcons() {
 			super(UniverseTreeIconsIS);
 			icons = null;
+			unexploredIcons = null;
 			RaceIcons = null;
 			StarClassIcons = null;
+			ConflictLevelIcons = null;
 		}
 
 		void createValues() {
@@ -207,19 +211,23 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			Icon[] conflictLevelIcons = createIconArray(new Integer[]{1,2,3}, null, getConflictLevelIconID);
 			icons = combineIconArrays(raceIcons, starClassIcons, conflictLevelIcons, UniverseTreeIcons.SolarSystem);
 			
+			Icon[] unexploredIcon = new Icon[] { null, iconSource.getCachedIcon(UniverseTreeIcons.Unexplored) };
+			unexploredIcons = combineIconArrays(unexploredIcon, starClassIcons, UniverseTreeIcons.SolarSystem)[1];
+			
 			ConflictLevelIcons = createIconArray(new Integer[]{1,2,3}, 0,9,11,11, getConflictLevelIconID);
 			RaceIcons = createIconEnumMap(Race.class, Race.values(), 10,0,20,20, getRaceIconID);
 			StarClassIcons = new EnumMap<>(StarClass.class);
 			for (StarClass starClass:StarClass.values()) {
-				Icon cachedIcon = get(null, starClass, -1);
+				Icon cachedIcon = get(null, starClass, -1, false);
 				StarClassIcons.put(starClass, IconSource.cutIcon(cachedIcon,0,0,20,20)); 
 			}
 		}
 		
-		Icon get(Race race, StarClass starClass, int conflictLevel) {
+		Icon get(Race race, StarClass starClass, int conflictLevel, boolean unexplored) {
 			int raceIndex      = race     ==null?0:(race     .ordinal()+1);
 			int starClassIndex = starClass==null?0:(starClass.ordinal()+1);
 			if (conflictLevel<1 || 3<conflictLevel) conflictLevel = 0;
+			if (unexplored) return unexploredIcons[starClassIndex];
 			return icons[raceIndex][starClassIndex][conflictLevel];
 		}
 	}
@@ -245,8 +253,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case Frozen     : return PlanetTreeIcons.BiomeFrozen;
 				case Irradiated : return PlanetTreeIcons.BiomeIrradiated;
 				case Airless    : return PlanetTreeIcons.BiomeAirless;
-				case Exotic     : return null;
-				case Exotic_Mega: return null;
+				case Exotic     : return PlanetTreeIcons.BiomeExotic;
+				case Exotic_Mega: return PlanetTreeIcons.BiomeExoticMega;
 				}
 				return null;
 			};
@@ -299,7 +307,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		PlanetIcons = new PlanetIcons(UncachedPlanetIcons.cacheIcons(PlanetTreeIcons.values()));
 		PlanetIcons.createValues();
 		
-		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<AdditionalTreeIcons>(180,TreeIconHeight,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
+		int offsetX = PlanetTreeIcons.values().length*20;
+		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<AdditionalTreeIcons>(offsetX,TreeIconHeight,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
 		UncachedAdditionalIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
 		AdditionalIcons = UncachedAdditionalIcons.cacheIcons(AdditionalTreeIcons.values());
 		
@@ -383,7 +392,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(name);
 		}
 		protected void addDefaultItems() {
-			add(createMenuItem("Find universe object",UniverseTreeActionCommand.FindObject));
+			add(createMenuItem("Remove all Highlights",UniverseTreeActionCommand.RemoveHighlights));
+			add(createMenuItem("Find Solar System or Planet",UniverseTreeActionCommand.FindObject));
 			addSeparator();
 			add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
@@ -405,6 +415,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private ListMenu<Race> miSetRace;
 		private ListMenu<StarClass> miSetStarClass;
 		private ListMenu<Integer> miSetConflictLevel;
+		private JCheckBoxMenuItem miUnexplored;
 		
 		Contextmenu_SolarSystem() {
 			super("SolarSystem");
@@ -485,6 +496,18 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetConflictLevel.setShowSelectedValue(true);
 			add(miSetConflictLevel);
 			
+			add(miUnexplored = new JCheckBoxMenuItem("Unexplored", false));
+			miUnexplored.addActionListener(e->{
+				if (clickedNode instanceof SolarSystemNode) {
+					((SolarSystemNode)clickedNode).value.isUnexplored = miUnexplored.isSelected();
+					miSetRace.setEnabled(!miUnexplored.isSelected());
+					miSetConflictLevel.setEnabled(!miUnexplored.isSelected());
+					treeModel.nodeChanged(clickedNode);
+					if (selectedNode==clickedNode) selectionChanged();
+					GameInfos.saveUniverseObjectDataToFile(data.universe);
+				}
+			});
+			
 			addSeparator();
 			addDefaultItems();
 		}
@@ -494,6 +517,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetRace.setValue(system.race);
 			miSetStarClass.setValue(system.starClass);
 			miSetConflictLevel.setValue(1<=system.conflictLevel&&system.conflictLevel<=3?system.conflictLevel:null);
+			miUnexplored.setSelected(system.isUnexplored);
+			miSetRace.setEnabled(!system.isUnexplored);
+			miSetConflictLevel.setEnabled(!system.isUnexplored);
 		}
 	}
 	
@@ -671,17 +697,54 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				expandPath(clickedTreePath);
 			break;
 			
-		case FindObject:
+		case FindObject: {
 			FindObjectDialog dialog = new FindObjectDialog(mainWindow,data.universe);
 			dialog.showDialog();
 			UniverseObject[] changedObjects = dialog.getChangedObjects();
 			show(changedObjects);
 			updateChangedObjects(treeRoot,changedObjects);
 			//tree.repaint();
-			break;
+			} break;
+			
+		case RemoveHighlights: {
+			Vector<Object> changedObjects = new Vector<>(); 
+			for (Galaxy g:data.universe.galaxies)
+				for (Region r:g.regions) {
+					if (r.isHighlighted) {
+						r.isHighlighted = false;
+						changedObjects.addElement(r);
+					}
+					for (SolarSystem s:r.solarSystems) {
+						if (s.isHighlighted) {
+							s.isHighlighted = false;
+							changedObjects.addElement(s);
+						}
+						for (Planet p:s.planets)
+							if (p.isHighlighted) {
+								p.isHighlighted = false;
+								changedObjects.addElement(p);
+							}
+					}
+				}
+			updateChangedObjects(treeRoot,changedObjects.toArray());
+			} break;
 		}
 		clickedNode = null;
 		clickedTreePath = null;
+	}
+
+	public void highlightRegions(int voxelX, int voxelZ) {
+		Vector<Object> changedObjects = new Vector<>(); 
+		for (Galaxy g:data.universe.galaxies)
+			for (Region r:g.regions) {
+				if (r.voxelX==voxelX && r.voxelZ==voxelZ) {
+					if (!r.isHighlighted) {
+						r.isHighlighted = true;
+						changedObjects.addElement(r);
+					}
+				}
+			}
+		updateChangedObjects(treeRoot,changedObjects.toArray());
 	}
 
 	private void show(UniverseObject[] changedObjects) {
@@ -691,11 +754,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 
-	private void updateChangedObjects(LocalTreeNode node, UniverseObject[] changedObjects) {
+	private void updateChangedObjects(LocalTreeNode node, Object[] changedObjects) {
 		for (LocalTreeNode child:node.getChildren()) {
 			if (child instanceof GenericTreeNode<?>) {
 				Object value = ((GenericTreeNode<?>)child).value;
-				for (UniverseObject obj:changedObjects)
+				for (Object obj:changedObjects)
 					if (value.equals(obj)) {
 						treeModel.nodeChanged(child);
 						break;
@@ -1006,7 +1069,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			JCheckBox chkbx;
 			buttonPanel.add(chkbx = SaveViewer.createCheckbox("Allow Editing", null, false));
 			buttonPanel.add(btnOK = SaveViewer.createButton("Show Selected in Tree", e->{ if (tableModel!=null) tableModel.setSelected(); closeDialog(); }));
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
+			buttonPanel.add(SaveViewer.createButton("Close", e->closeDialog()));
 			
 			chkbx.addActionListener(e->{ if (tableModel!=null) { tableModel.allowEditing(chkbx.isSelected()); table.setModel(tableModel); } });
 			
@@ -1143,8 +1206,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						notSelectedObjs.addAll(fei.sourceObjs);
 				notSelectedObjs.removeAll(selectedObjs);
 				
-				for (UniverseObject obj:   selectedObjs) if (!obj.isSelected) { changedObj.add(obj); obj.isSelected = true; }
-				for (UniverseObject obj:notSelectedObjs) if ( obj.isSelected) { changedObj.add(obj); obj.isSelected = false; }
+				for (UniverseObject obj:   selectedObjs) if (!obj.isHighlighted) { changedObj.add(obj); obj.isHighlighted = true; }
+				for (UniverseObject obj:notSelectedObjs) if ( obj.isHighlighted) { changedObj.add(obj); obj.isHighlighted = false; }
 			}
 
 			@Override public int getRowCount() { return data.length; }
@@ -1289,7 +1352,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	static class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
 
-		private static final Color TEXTCOLOR__SELECTED     = Color.RED;
+		private static final Color TEXTCOLOR__HIGHLIGHTED     = Color.RED;
 		private static final Color TEXTCOLOR__CURRENT_POS  = new Color(0x2EA000);
 		private static final Color TEXTCOLOR__WITHOUT_NAME = new Color(0x808080);
 		private static final Color TEXTCOLOR__NOT_UPLOADED  = new Color(0x0000FF); // or 0x1D67AE
@@ -1307,83 +1370,93 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		@Override
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			Component component = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
-			if (value instanceof GenericTreeNode<?>) {
-				GenericTreeNode<?> node = (GenericTreeNode<?>)value;
-				switch (node.type) {
-				case Universe   : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Universe   )); break;
-				case Galaxy     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy     )); break;
-				case Region     : setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Region     )); break;
-				case SolarSystem:
-					if (node instanceof SolarSystemNode) {
-						SolarSystemNode solarSystemNode = (SolarSystemNode)node;
-						SolarSystem system = solarSystemNode.value;
-						Icon icon;
-						if (!system.additionalInfos.isEmpty()) {
-							if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel))
-								icon = solarSystemNode.cachedCustomIcon.get();
-							else {
-								icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel);
-								if (system.additionalInfos.hasFreighter)
-									icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
-								solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel);
-							}
-						} else
-							icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel);
-						setIcon(icon);
-					}
-					break;
-				case Planet:
-					if (node instanceof PlanetNode) {
-						PlanetNode planetNode = (PlanetNode)node;
-						Planet planet = planetNode.value;
-						Icon icon;
-						if (!planet.additionalInfos.isEmpty()) {
-							if (planetNode.cachedCustomIcon!=null && planetNode.cachedCustomIcon.is(planet.biome, planet.areSentinelsAggressive))
-								icon = planetNode.cachedCustomIcon.get();
-							else {
-								icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
-								if (!planet.additionalInfos.bases.isEmpty())
-									icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom));
-								if (planet.additionalInfos.hasExocraftSummoningStation)
-									icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner));
-								planetNode.cachedCustomIcon = new PlanetNode.CachedCustomIcon(icon,planet.biome, planet.areSentinelsAggressive);
-							}
-						} else
-							icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
-						setIcon(icon);
-					}
-					//setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     ));
-					break;
-				}
-				setFont(standardFont);
-				Universe.UniverseObject obj = null;
-				Region region = null;
-				if (node instanceof      RegionNode) region = ((  RegionNode)node).value;
-				if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
-				if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
-				if (obj != null) {
-					if (!obj.hasOriginalName()) {
-						if (!selected) setForeground(TEXTCOLOR__WITHOUT_NAME);
+			if (component instanceof JLabel && value instanceof GenericTreeNode<?>)
+				setValues((JLabel)component, selected, (GenericTreeNode<?>)value);
+			return component;
+		}
+
+		private void setValues(JLabel component, boolean selected, GenericTreeNode<?> node) {
+			switch (node.type) {
+			case Universe   : component.setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Universe   )); break;
+			case Galaxy     : component.setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Galaxy     )); break;
+			case Region     : component.setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Region     )); break;
+			case SolarSystem:
+				if (node instanceof SolarSystemNode) {
+					SolarSystemNode solarSystemNode = (SolarSystemNode)node;
+					SolarSystem system = solarSystemNode.value;
+					Icon icon;
+					if (!system.additionalInfos.isEmpty()) {
+						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.isUnexplored))
+							icon = solarSystemNode.cachedCustomIcon.get();
+						else {
+							icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel, system.isUnexplored);
+							if (system.additionalInfos.hasTeleportEndPoint)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter));
+							if (system.additionalInfos.hasFreighter)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
+							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.isUnexplored);
+						}
 					} else
-					if (obj.isNotUploaded) {
-						if (!selected) setForeground(TEXTCOLOR__NOT_UPLOADED);
-					}
-					if (obj.isCurrPos) {
-						if (!selected) setForeground(TEXTCOLOR__CURRENT_POS);
-						setFont(boldfont);
-					}
-					if (obj.isSelected) {
-						if (!selected) setForeground(TEXTCOLOR__SELECTED);
-						setFont(boldfont);
-					}
+						icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel, system.isUnexplored);
+					component.setIcon(icon);
 				}
-				if (region!=null) {
-					if (!region.hasName()) {
-						if (!selected) setForeground(TEXTCOLOR__WITHOUT_NAME);
-					}
+				break;
+			case Planet:
+				if (node instanceof PlanetNode) {
+					PlanetNode planetNode = (PlanetNode)node;
+					Planet planet = planetNode.value;
+					Icon icon;
+					if (!planet.additionalInfos.isEmpty()) {
+						if (planetNode.cachedCustomIcon!=null && planetNode.cachedCustomIcon.is(planet.biome, planet.areSentinelsAggressive))
+							icon = planetNode.cachedCustomIcon.get();
+						else {
+							icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
+							if (planet.additionalInfos.hasTeleportEndPoint)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter));
+							if (!planet.additionalInfos.bases.isEmpty())
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom));
+							if (planet.additionalInfos.hasExocraftSummoningStation)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner));
+							planetNode.cachedCustomIcon = new PlanetNode.CachedCustomIcon(icon,planet.biome, planet.areSentinelsAggressive);
+						}
+					} else
+						icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
+					component.setIcon(icon);
+				}
+				//setIcon(UniverseTreeIconsIS.getCachedIcon(UniverseTreeIcons.Planet     ));
+				break;
+			}
+			component.setFont(standardFont);
+			Universe.UniverseObject obj = null;
+			Region region = null;
+			if (node instanceof      RegionNode) region = ((  RegionNode)node).value;
+			if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
+			if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
+			if (obj != null) {
+				if (!obj.hasOriginalName()) {
+					if (!selected) component.setForeground(TEXTCOLOR__WITHOUT_NAME);
+				} else
+				if (obj.isNotUploaded) {
+					if (!selected) component.setForeground(TEXTCOLOR__NOT_UPLOADED);
+				}
+				if (obj.isCurrPos) {
+					if (!selected) component.setForeground(TEXTCOLOR__CURRENT_POS);
+					component.setFont(boldfont);
+				}
+				if (obj.isHighlighted) {
+					if (!selected) component.setForeground(TEXTCOLOR__HIGHLIGHTED);
+					component.setFont(boldfont);
 				}
 			}
-			return component;
+			if (region!=null) {
+				if (!region.hasName()) {
+					if (!selected) component.setForeground(TEXTCOLOR__WITHOUT_NAME);
+				}
+				if (region.isHighlighted) {
+					if (!selected) component.setForeground(TEXTCOLOR__HIGHLIGHTED);
+					component.setFont(boldfont);
+				}
+			}
 		}
 	}
 	
@@ -1452,15 +1525,17 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private final Race race;
 			private final StarClass starClass;
 			private final int conflictLevel;
+			private final boolean isUnexplored;
 
-			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel) {
+			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel, boolean isUnexplored) {
 				this.icon = icon;
 				this.race = race;
 				this.starClass = starClass;
 				this.conflictLevel = conflictLevel;
+				this.isUnexplored = isUnexplored;
 			}
-			public boolean is(Race race, StarClass starClass, int conflictLevel) {
-				return this.race==race && this.starClass==starClass && this.conflictLevel==conflictLevel;
+			public boolean is(Race race, StarClass starClass, int conflictLevel, boolean isUnexplored) {
+				return this.race==race && this.starClass==starClass && this.conflictLevel==conflictLevel && this.isUnexplored==isUnexplored;
 			}
 			public Icon get() {
 				return icon;
