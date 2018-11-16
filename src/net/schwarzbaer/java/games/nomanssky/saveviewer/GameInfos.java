@@ -84,6 +84,83 @@ public class GameInfos {
 	
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	
+	private static class UOD_Region extends UniverseObjectData {
+		public UOD_Region(UniverseAddress ua) {
+			super(ua, Type.Region);
+		}
+		public UOD_Region(Region region) {
+			this(region.getUniverseAddress());
+			this.oldname = region.oldname;
+			this.name = region.name;
+		}
+	}
+	
+	private static class UOD_UniverseObject extends UniverseObjectData {
+		Vector<ExtraInfo> extraInfos;
+		public UOD_UniverseObject(UniverseAddress ua, Type type) {
+			super(ua,type);
+			extraInfos = new Vector<>();
+		}
+		public UOD_UniverseObject(UniverseAddress ua, Type type, UniverseObject uo) {
+			this(ua,type);
+			this.oldname = uo.getOldOriginalName();
+			this.   name = uo.   getOriginalName();
+			for (ExtraInfo ei:uo.extraInfos)
+				extraInfos.add(new ExtraInfo(ei));
+		}
+		@Override
+		public boolean hasData() {
+			return super.hasData() || !extraInfos.isEmpty();
+		}
+	}
+	
+	private static class UOD_SolarSystem extends UOD_UniverseObject {
+		Universe.SolarSystem.Race race;
+		Universe.SolarSystem.StarClass starClass;
+		Double distanceToCenter;
+		int conflictLevel;
+		Boolean isUnexplored;
+		public UOD_SolarSystem(UniverseAddress ua) {
+			super(ua, Type.SolarSystem);
+			race = null;
+			isUnexplored = null;
+			starClass = null;
+			distanceToCenter = null;
+			conflictLevel = -1;
+		}
+		public UOD_SolarSystem(SolarSystem sys) {
+			super(sys.getUniverseAddress(), Type.SolarSystem, sys);
+			race = sys.race;
+			isUnexplored = sys.isUnexplored;
+			starClass = sys.starClass;
+			distanceToCenter = sys.distanceToCenter;
+			conflictLevel = sys.conflictLevel;
+		}
+		@Override
+		public boolean hasData() {
+			return super.hasData() || race!=null || starClass!=null || distanceToCenter!=null || conflictLevel>=0 || isUnexplored!=null;
+		}
+	}
+	
+	private static class UOD_Planet extends UOD_UniverseObject {
+		Universe.Planet.Biome biome;
+		boolean areSentinelsAggressive;
+		public UOD_Planet(UniverseAddress ua) {
+			super(ua, Type.Planet);
+			biome = null;
+			areSentinelsAggressive = false;
+		}
+		public UOD_Planet(Planet planet) {
+			super(planet.getUniverseAddress(),Type.Planet,planet);
+			biome = planet.biome;
+			areSentinelsAggressive = planet.areSentinelsAggressive;
+		}
+		@Override
+		public boolean hasData() {
+			return super.hasData() || biome!=null || areSentinelsAggressive;
+		}
+	}
+	
 	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
 		enum Type { Region,SolarSystem,Planet }
 		
@@ -92,66 +169,15 @@ public class GameInfos {
 		String oldname;
 		String name;
 		
-		Universe.SolarSystem.Race race;
-		Universe.SolarSystem.StarClass starClass;
-		Double distanceToCenter;
-		int conflictLevel;
-		Boolean isUnexplored;
-		
-		Universe.Planet.Biome biome;
-		boolean areSentinelsAggressive;
-		
-		Vector<ExtraInfo> extraInfos;
-		
-		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type) {
+		protected UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type) {
 			this.universeAddress = universeAddress;
 			this.type = type;
 			this.oldname = null;
 			this.name = null;
-			
-			this.race = null;
-			this.starClass = null;
-			this.distanceToCenter = null;
-			this.conflictLevel = -1;
-			this.isUnexplored = null;
-			
-			this.biome = null;
-			this.areSentinelsAggressive = false;
-			
-			this.extraInfos = new Vector<>();
 		}
 	
 		public boolean hasData() {
-			return name!=null || oldname!=null || race!=null || starClass!=null || biome!=null || areSentinelsAggressive || distanceToCenter!=null || conflictLevel>=0 || isUnexplored!=null || !extraInfos.isEmpty();
-		}
-		
-		public UniverseObjectData(UniverseAddress universeAddress, Region region) {
-			this(universeAddress,Type.Region);
-			this.oldname = region.oldname;
-			this.name = region.name;
-		}
-		
-		public UniverseObjectData(UniverseAddress universeAddress, SolarSystem sys) {
-			this(universeAddress,Type.SolarSystem,sys);
-			race = sys.race;
-			isUnexplored = sys.isUnexplored;
-			starClass = sys.starClass;
-			distanceToCenter = sys.distanceToCenter;
-			conflictLevel = sys.conflictLevel;
-		}
-		
-		public UniverseObjectData(UniverseAddress universeAddress, Planet planet) {
-			this(universeAddress,Type.Planet,planet);
-			biome = planet.biome;
-			areSentinelsAggressive = planet.areSentinelsAggressive;
-		}
-		
-		public UniverseObjectData(UniverseAddress universeAddress, UniverseObjectData.Type type, UniverseObject uo) {
-			this(universeAddress,type);
-			this.oldname = uo.getOldOriginalName();
-			this.   name = uo.   getOriginalName();
-			for (ExtraInfo ei:uo.extraInfos)
-				extraInfos.add(new ExtraInfo(ei));
+			return name!=null || oldname!=null;
 		}
 	
 		@Override
@@ -175,15 +201,29 @@ public class GameInfos {
 		}
 		
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			String str;
+			
 			UniverseObjectData uoData = null;
+			@SuppressWarnings("unused")
+			UOD_Region         region = null;
+			UOD_SolarSystem    system = null;
+			UOD_Planet         planet = null;
+			UOD_UniverseObject uniObj = null;
 			
 			String nextShortLabel = null;
-			boolean showInParent = false;
+			Boolean showInParent = null;
+			
+			String str;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
 				if ((str.startsWith("[Reg") || str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
 					uoData = null;
+					region = null;
+					system = null;
+					planet = null;
+					uniObj = null;
+					nextShortLabel = null;
+					showInParent = null;
+					
 					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
 					long address;
 					try { address = Long.parseLong(addressStr, 16); }
@@ -192,81 +232,83 @@ public class GameInfos {
 						continue;
 					}
 					UniverseAddress ua = new UniverseAddress(address);
-					if (str.startsWith("[Reg") && ua.isRegion     ()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.Region);
-					if (str.startsWith("[Sys") && ua.isSolarSystem()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.SolarSystem);
-					if (str.startsWith("[Pln") && ua.isPlanet     ()) uoData = new UniverseObjectData(ua,UniverseObjectData.Type.Planet);
+					if (str.startsWith("[Reg") && ua.isRegion     ()) uoData =          region = new UOD_Region     (ua);
+					if (str.startsWith("[Sys") && ua.isSolarSystem()) uoData = uniObj = system = new UOD_SolarSystem(ua);
+					if (str.startsWith("[Pln") && ua.isPlanet     ()) uoData = uniObj = planet = new UOD_Planet     (ua);
 					if (uoData != null) universeObjectDataArr.put(address, uoData);
 					continue;
 				}
-				if (str.startsWith("name=")) {
-					if (uoData!=null) uoData.name = str.substring("name=".length());
-					continue;
+				if (uoData!=null) {
+					if (str.startsWith("name=")) {
+						uoData.name = str.substring("name=".length());
+						continue;
+					}
+					if (str.startsWith("oldname=")) {
+						uoData.oldname = str.substring("oldname=".length());
+						continue;
+					}
 				}
-				if (str.startsWith("oldname=")) {
-					if (uoData!=null) uoData.oldname = str.substring("oldname=".length());
-					continue;
+				if (system!=null) {
+					if (str.startsWith("race=")) {
+						String race = str.substring("race=".length());
+						try { system.race = Universe.SolarSystem.Race.valueOf(race); }
+						catch (Exception e) { system.race = null; }
+						continue;
+					}
+					if (str.equals("unexplored")) {
+						system.isUnexplored = true;
+						continue;
+					}
+					if (str.startsWith("class=")) {
+						String starClass = str.substring("class=".length());
+						try { system.starClass = Universe.SolarSystem.StarClass.valueOf(starClass); }
+						catch (Exception e) { system.starClass = null; }
+						continue;
+					}
+					if (str.startsWith("distance=")) {
+						String distance = str.substring("distance=".length());
+						try { system.distanceToCenter = Double.parseDouble(distance); }
+						catch (NumberFormatException e) { system.distanceToCenter = null; }
+						continue;
+					}
+					if (str.startsWith("conflict=")) {
+						String conflictLevel = str.substring("conflict=".length());
+						try { system.conflictLevel = Integer.parseInt(conflictLevel); }
+						catch (NumberFormatException e) { system.conflictLevel = -1; }
+						continue;
+					}
 				}
-				if (str.startsWith("race=")) {
-					if (uoData==null) continue;
-					String race = str.substring("race=".length());
-					try { uoData.race = Universe.SolarSystem.Race.valueOf(race); }
-					catch (Exception e) { uoData.race = null; }
-					continue;
+				if (planet!=null) {
+					if (str.startsWith("biome=")) {
+						String biome = str.substring("biome=".length());
+						try { planet.biome = Universe.Planet.Biome.valueOf(biome); }
+						catch (Exception e) { planet.biome = null; }
+						continue;
+					}
+					if (str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
+						planet.areSentinelsAggressive = true;
+						continue;
+					}
 				}
-				if (str.equals("unexplored")) {
-					if (uoData==null) continue;
-					uoData.isUnexplored = true;
-					continue;
-				}
-				if (str.startsWith("class=")) {
-					if (uoData==null) continue;
-					String starClass = str.substring("class=".length());
-					try { uoData.starClass = Universe.SolarSystem.StarClass.valueOf(starClass); }
-					catch (Exception e) { uoData.starClass = null; }
-					continue;
-				}
-				if (str.startsWith("distance=")) {
-					if (uoData==null) continue;
-					String distance = str.substring("distance=".length());
-					try { uoData.distanceToCenter = Double.parseDouble(distance); }
-					catch (NumberFormatException e) { uoData.distanceToCenter = null; }
-					continue;
-				}
-				if (str.startsWith("conflict=")) {
-					if (uoData==null) continue;
-					String conflictLevel = str.substring("conflict=".length());
-					try { uoData.conflictLevel = Integer.parseInt(conflictLevel); }
-					catch (NumberFormatException e) { uoData.conflictLevel = -1; }
-					continue;
-				}
-				if (str.startsWith("biome=")) {
-					if (uoData==null) continue;
-					String biome = str.substring("biome=".length());
-					try { uoData.biome = Universe.Planet.Biome.valueOf(biome); }
-					catch (Exception e) { uoData.biome = null; }
-					continue;
-				}
-				if (str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
-					if (uoData==null) continue;
-					uoData.areSentinelsAggressive = true;
-					continue;
-				}
-				if (str.startsWith("short=")) {
-					nextShortLabel = str.substring("short=".length());
-					showInParent = false;
-					continue;
-				}
-				if (str.startsWith("short.P=")) {
-					nextShortLabel = str.substring("short.P=".length());
-					showInParent = true;
-					continue;
-				}
-				if (str.startsWith("info=")) {
-					String info = str.substring("info=".length());
-					if (nextShortLabel!=null && uoData!=null)
-						uoData.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,info));
-					nextShortLabel=null;
-					continue;
+				if (uniObj!=null) {
+					if (str.startsWith("short=")) {
+						nextShortLabel = str.substring("short=".length());
+						showInParent = false;
+						continue;
+					}
+					if (str.startsWith("short.P=")) {
+						nextShortLabel = str.substring("short.P=".length());
+						showInParent = true;
+						continue;
+					}
+					if (str.startsWith("info=")) {
+						String info = str.substring("info=".length());
+						if (nextShortLabel!=null && showInParent!=null)
+							uniObj.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,info));
+						nextShortLabel=null;
+						showInParent=null;
+						continue;
+					}
 				}
 			}
 		}
@@ -281,30 +323,40 @@ public class GameInfos {
 		
 		boolean withOutput = false; // DEBUG;
 		
-		Region region = null;
-		SolarSystem system = null;
-		Planet planet = null;
-		UniverseObject uniObj = null;
+		Region         region;
+		SolarSystem    system;
+		Planet         planet;
+		UniverseObject uniObj;
 		
-		String objName = null;
+		@SuppressWarnings("unused")
+		UOD_Region         uod_region;
+		UOD_SolarSystem    uod_system;
+		UOD_Planet         uod_planet;
+		UOD_UniverseObject uod_uniObj;
+		
+		String objName;
 		for (Long address:universeObjectDataArr.keySet()) {
 			UniverseObjectData uoData = universeObjectDataArr.get(address);
 			UniverseAddress ua = new UniverseAddress(address);
 			
+			objName = null;
 			region = null;
 			system = null;
 			planet = null;
 			uniObj = null;
-			objName = null;
+			uod_region = null;
+			uod_system = null;
+			uod_planet = null;
+			uod_uniObj = null;
 			
 			switch(uoData.type) {
-			case Region     : if (ua.isRegion     ()) region = universe.findRegion     (ua); break;
-			case SolarSystem: if (ua.isSolarSystem()) system = universe.findSolarSystem(ua); break;
-			case Planet     : if (ua.isPlanet     ()) planet = universe.findPlanet     (ua); break;
+			case Region     :              uod_region = (UOD_Region     )uoData; if (ua.isRegion     ())          region = universe.findRegion     (ua); break;
+			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = universe.findSolarSystem(ua); break;
+			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = universe.findPlanet     (ua); break;
 			}
-			if (region!=null) { uniObj = null;   objName = "region "+ua.getRegionCoordinates();    if (withOutput) SaveViewer.log("Region %s\r\n"      ,ua.getRegionCoordinates   ()); }
-			if (system!=null) { uniObj = system; objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log("Solar system %s\r\n",ua.getSigBoostCode        ()); }
-			if (planet!=null) { uniObj = planet; objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
+			if (region!=null) { objName = "region "+ua.getRegionCoordinates();    if (withOutput) SaveViewer.log("Region %s\r\n"      ,ua.getRegionCoordinates   ()); }
+			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log("Solar system %s\r\n",ua.getSigBoostCode        ()); }
+			if (planet!=null) { objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
 			
 			if (uoData.name!=null) {
 				if (uniObj!=null) uniObj.setOriginalName(uoData.name);
@@ -318,38 +370,43 @@ public class GameInfos {
 				if (withOutput && objName!=null) SaveViewer.log("   Old Name of %s was defined: \"%s\"\r\n",objName,uoData.oldname);
 			}
 			
-			if (uoData.race!=null && system!=null) {
-				system.race = uoData.race;
-				if (withOutput) SaveViewer.log("   Race of %s was defined: %s\r\n",objName,system.race);
-			}
-			if (uoData.starClass!=null && system!=null) {
-				system.starClass = uoData.starClass;
-				if (withOutput) SaveViewer.log("   Star Class of %s was defined: %s\r\n",objName,system.starClass);
-			}
-			if (uoData.distanceToCenter!=null && system!=null) {
-				system.distanceToCenter = uoData.distanceToCenter;
-				if (withOutput) SaveViewer.log("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
-			}
-			if (uoData.conflictLevel>=0 && system!=null) {
-				system.conflictLevel = uoData.conflictLevel;
-				if (withOutput) SaveViewer.log("   Conflict Level of %s was defined: %s\r\n",objName,system.starClass);
-			}
-			if (uoData.isUnexplored!=null && system!=null) {
-				system.isUnexplored = uoData.isUnexplored;
-				if (withOutput) SaveViewer.log("   %s was defined as unexplored: %s\r\n",objName);
-			}
-			
-			if (uoData.biome!=null && planet!=null) {
-				planet.biome = uoData.biome;
-				if (withOutput) SaveViewer.log("   Biome of %s was defined: %s\r\n",objName,planet.biome);
-			}
-			if (uoData.areSentinelsAggressive && planet!=null) {
-				planet.areSentinelsAggressive = uoData.areSentinelsAggressive;
-				if (withOutput) SaveViewer.log("   Sentinels of %s are aggressive\r\n",objName);
+			if (system!=null) {
+				if (uod_system.race!=null) {
+					system.race = uod_system.race;
+					if (withOutput) SaveViewer.log("   Race of %s was defined: %s\r\n",objName,system.race);
+				}
+				if (uod_system.starClass!=null) {
+					system.starClass = uod_system.starClass;
+					if (withOutput) SaveViewer.log("   Star Class of %s was defined: %s\r\n",objName,system.starClass);
+				}
+				if (uod_system.distanceToCenter!=null) {
+					system.distanceToCenter = uod_system.distanceToCenter;
+					if (withOutput) SaveViewer.log("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
+				}
+				if (uod_system.conflictLevel>=0) {
+					system.conflictLevel = uod_system.conflictLevel;
+					if (withOutput) SaveViewer.log("   Conflict Level of %s was defined: %s\r\n",objName,system.starClass);
+				}
+				if (uod_system.isUnexplored!=null) {
+					system.isUnexplored = uod_system.isUnexplored;
+					if (withOutput) SaveViewer.log("   %s was defined as unexplored: %s\r\n",objName);
+				}
 			}
 			
-			for (ExtraInfo ei:uoData.extraInfos) {
-				if (uniObj!=null) {
+			if (planet!=null) {
+				if (uod_planet.biome!=null) {
+					planet.biome = uod_planet.biome;
+					if (withOutput) SaveViewer.log("   Biome of %s was defined: %s\r\n",objName,planet.biome);
+				}
+				if (uod_planet.areSentinelsAggressive) {
+					planet.areSentinelsAggressive = uod_planet.areSentinelsAggressive;
+					if (withOutput) SaveViewer.log("   Sentinels of %s are aggressive\r\n",objName);
+				}
+			}
+			
+			
+			if (uniObj!=null) {
+				for (ExtraInfo ei:uod_uniObj.extraInfos) {
 					uniObj.extraInfos.add(ei);
 					if (withOutput) SaveViewer.log("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",objName,ei.shortLabel,ei.info);
 				}
@@ -365,13 +422,13 @@ public class GameInfos {
 		for (Galaxy g:universe.galaxies)
 			for (Region r:g.regions) {
 				UniverseAddress ua = r.getUniverseAddress();
-				universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,r));
+				universeObjectDataArr.put(ua.getAddress(),new UOD_Region(r));
 				for (SolarSystem sys:r.solarSystems) {
 					ua = sys.getUniverseAddress();
-					universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,sys));
+					universeObjectDataArr.put(ua.getAddress(),new UOD_SolarSystem(sys));
 					for (Planet p:sys.planets) {
 						ua = p.getUniverseAddress();
-						universeObjectDataArr.put(ua.getAddress(),new UniverseObjectData(ua,p));
+						universeObjectDataArr.put(ua.getAddress(),new UOD_Planet(p));
 					}
 				}
 			}
@@ -384,6 +441,11 @@ public class GameInfos {
 		SaveViewer.log("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
 		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
 		boolean isFirst = true;
+		@SuppressWarnings("unused")
+		UOD_Region         uod_region = null;
+		UOD_SolarSystem    uod_system = null;
+		UOD_Planet         uod_planet = null;
+		UOD_UniverseObject uod_uniObj = null;
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (UniverseObjectData uoData:values) {
 				if (!uoData.hasData()) continue;
@@ -391,36 +453,44 @@ public class GameInfos {
 				if (!isFirst) out.println();
 				isFirst = false;
 				
+				uod_region = null;
+				uod_system = null;
+				uod_planet = null;
+				uod_uniObj = null;
 				switch (uoData.type) {
-				case Region     : out.printf("[Reg%014X]\r\n",uoData.universeAddress.getAddress()); break;
-				case SolarSystem: out.printf("[Sys%014X]\r\n",uoData.universeAddress.getAddress()); break;
-				case Planet     : out.printf("[Pln%014X]\r\n",uoData.universeAddress.getAddress()); break;
+				case Region     :              uod_region = (UOD_Region     )uoData; out.printf("[Reg%014X]\r\n",uoData.universeAddress.getAddress()); break;
+				case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; out.printf("[Sys%014X]\r\n",uoData.universeAddress.getAddress()); break;
+				case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; out.printf("[Pln%014X]\r\n",uoData.universeAddress.getAddress()); break;
 				}
 				
 				if (uoData.   name!=null) out.printf(   "name=%s\r\n",uoData.   name);
 				if (uoData.oldname!=null) out.printf("oldname=%s\r\n",uoData.oldname);
-				if (uoData.type==UniverseObjectData.Type.SolarSystem) {
-					if (uoData.isUnexplored!=null && uoData.isUnexplored)
+				
+				if (uod_system!=null) {
+					if (uod_system.isUnexplored!=null && uod_system.isUnexplored)
 						out.printf("unexplored\r\n");
 					else {
-						if (uoData.race         !=null) out.printf("race=%s\r\n",uoData.race);
-						if (uoData.conflictLevel>=0   ) out.printf("conflict=%d\r\n",uoData.conflictLevel);
+						if (uod_system.race         !=null) out.printf("race=%s\r\n",uod_system.race);
+						if (uod_system.conflictLevel>=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
 					}
-					if (uoData.starClass       !=null) out.printf("class=%s\r\n",uoData.starClass);
-					if (uoData.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uoData.distanceToCenter.doubleValue());
-				}
-				if (uoData.type==UniverseObjectData.Type.Planet) {
-					if (uoData.biome           !=null) out.printf("biome=%s\r\n",uoData.biome);
-					if (uoData.areSentinelsAggressive) out.printf("aggrSentinels=\r\n");
+					if (uod_system.starClass       !=null) out.printf("class=%s\r\n",uod_system.starClass);
+					if (uod_system.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uod_system.distanceToCenter.doubleValue());
 				}
 				
-				for (ExtraInfo ei:uoData.extraInfos)
-					if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
-						String showInParentStr="";
-						if (uoData.type==UniverseObjectData.Type.Planet && ei.showInParent) showInParentStr = ".P";
-						out.printf("short%s=%s\r\n", showInParentStr, ei.shortLabel);
-						out.printf("info=%s\r\n" , ei.info);
-					}
+				if (uod_planet!=null) {
+					if (uod_planet.biome           !=null) out.printf("biome=%s\r\n",uod_planet.biome);
+					if (uod_planet.areSentinelsAggressive) out.printf("aggrSentinels=\r\n");
+				}
+				
+				if (uod_uniObj!=null) {
+					for (ExtraInfo ei:uod_uniObj.extraInfos)
+						if (!ei.shortLabel.isEmpty() || !ei.info.isEmpty()) {
+							String showInParentStr="";
+							if (uoData.type==UniverseObjectData.Type.Planet && ei.showInParent) showInParentStr = ".P";
+							out.printf("short%s=%s\r\n", showInParentStr, ei.shortLabel);
+							out.printf("info=%s\r\n" , ei.info);
+						}
+				}
 			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

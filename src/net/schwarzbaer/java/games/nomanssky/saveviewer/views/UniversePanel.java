@@ -39,7 +39,6 @@ import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -322,17 +321,17 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private GenericTreeNode<?> clickedNode;
 	private TreePath clickedTreePath;
 	
-	private JLabel portalGlyphs;
-	private JTextArea textArea;
-//		private ExtraInfoTableModel extraInfoTableModel;
-	private SimplifiedTable extraInfoTable;
-	
 	private Contextmenu_Other       contextMenu_Other;
 	private Contextmenu_Region      contextMenu_Region;
 	private Contextmenu_SolarSystem contextMenu_SolarSystem;
 	private Contextmenu_Planet      contextMenu_Planet;
 	
 	private Window mainWindow;
+	
+	private GeneralInfoPanel     infoPanel_Other;
+	private SolarSystemInfoPanel infoPanel_SolarSystem;
+	private PlanetInfoPanel      infoPanel_Planet;
+	private InfoPanel            currentInfoPanel;
 	
 	public UniversePanel(SaveGameData data, Window mainWindow) {
 		super(data);
@@ -356,34 +355,327 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		contextMenu_Planet      = new Contextmenu_Planet();
 		contextMenu_Region      = new Contextmenu_Region();
 		
-		textArea = new JTextArea();
-		textArea.setEditable(false);
-		textArea.setBorder(BorderFactory.createEtchedBorder());
-		
-//			extraInfoTableModel = new ExtraInfoTableModel();
-		extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
-		extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
-//			extraInfoTableModel.setTable(extraInfoTable);
-		
-		portalGlyphs = new JLabel();
-		portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
-		portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
-		
-		JPanel infoPanel = new JPanel(new BorderLayout(3,3));
-		infoPanel.add(new JScrollPane(textArea),BorderLayout.CENTER);
-		infoPanel.add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
-		
-		JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
-		//eastPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
-		eastPanel.add(portalGlyphs,BorderLayout.NORTH);
-		eastPanel.add(infoPanel,BorderLayout.CENTER);
+		infoPanel_Other       = new GeneralInfoPanel();
+		infoPanel_SolarSystem = new SolarSystemInfoPanel(this,data.general.currentUniverseAddress);
+		infoPanel_Planet      = new PlanetInfoPanel(this);
 		
 		add(treeScrollPane,BorderLayout.CENTER);
-		add(eastPanel,BorderLayout.EAST);
+		
+		add(currentInfoPanel = infoPanel_Other,BorderLayout.EAST);
 	}
 	
+	private void updateTreeNode(GenericTreeNode<?> node, boolean isPlanet) {
+		//GenericTreeNode<?> node = selectedNode;
+		treeModel.nodeChanged(node);
+		if (isPlanet) treeModel.nodeChanged(node.parent);
+		GameInfos.saveUniverseObjectDataToFile(data.universe);
+	}
 	
+	private static abstract class InfoPanel extends JPanel {
+		private static final long serialVersionUID = 1055278730261206951L;
+		
+		protected JTextArea textArea;
+		
+		InfoPanel() {
+			super(new BorderLayout(3,3));
+			setPreferredSize(new Dimension(650,500));
+			
+			textArea = new JTextArea();
+			textArea.setEditable(false);
+			
+			JScrollPane scrollPane = new JScrollPane(textArea);
+			scrollPane.setBorder(BorderFactory.createEtchedBorder());
+			
+			add(scrollPane,BorderLayout.CENTER);
+		}
+		public abstract void setContent(GenericTreeNode<?> node);
+	}
 	
+	private static class GeneralInfoPanel extends InfoPanel {
+		private static final long serialVersionUID = 4133259332387200850L;
+
+		@Override
+		public void setContent(GenericTreeNode<?> selectedNode) {
+			textArea.setText("");
+			
+			if (selectedNode==null)
+				return;
+			
+			int n;
+			UniverseAddress ua;
+			double distance_reg;
+			
+			switch(selectedNode.type) {
+			
+			case Region:
+				n = selectedNode.getDataChildrenCount();
+				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
+				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
+				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getRegionCoordinates()));
+				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
+				
+				distance_reg = ua.getDistToCenter_inRegionUnits();
+				textArea.append("\r\n");
+				textArea.append(                             "Distance to Galaxy Center :\r\n");
+				textArea.append(String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+				break;
+				
+			case Galaxy:
+				n = selectedNode.getDataChildrenCount();
+				textArea.append(String.format("%d known region%s\r\n", n, n>1?"s":""));
+				break;
+				
+			case Universe:
+				n = selectedNode.getDataChildrenCount();
+				textArea.append(String.format("%d known galax%s\r\n", n, n>1?"ies":"y"));
+				break;
+			
+			default:
+				break;
+			}
+		}
+	}
+	
+	private static abstract class UniverseObjectInfoPanel extends InfoPanel {
+		private static final long serialVersionUID = -8235731718380188431L;
+		
+		protected SimplifiedTable extraInfoTable;
+		private UniversePanel universePanel;
+		
+		UniverseObjectInfoPanel(UniversePanel universePanel) {
+			this.universePanel = universePanel;
+			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
+		}
+
+		protected void showDiscNameObj(GenericTreeNode<?> node, Universe.UniverseObject obj) {
+			textArea.append("\r\n");
+			
+			//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
+			
+			String oldNameLabel = "Old Original Name";
+			if (obj.hasOriginalName   ()) { textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName())); oldNameLabel = "  -\"-   (old)"; }
+			if (obj.hasOldOriginalName())   textArea.append(String.format(           "%s : %s\r\n", oldNameLabel, obj.getOldOriginalName()));
+			if (obj.hasUploadedName   ())   textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));
+			if (obj.hasDiscoverer     ())   textArea.append(String.format("Discovered by : %s\r\n", obj.getDiscoverer()));
+			if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
+				textArea.append("Discovered Items:\r\n");
+				if (!obj.discoveredItems_Avail.isEmpty()) {
+					textArea.append("   available:\r\n");
+					for (String item:new TreeSet<>(obj.discoveredItems_Avail.keySet()))
+						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Avail.get(item)));
+				}
+				if (!obj.discoveredItems_Store.isEmpty()) {
+					textArea.append("   stored:\r\n");
+					for (String item:new TreeSet<>(obj.discoveredItems_Store.keySet()))
+						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Store.get(item)));
+				}
+			}
+			extraInfoTable.setModel(new ExtraInfoTableModel(node, obj instanceof Planet, obj.extraInfos));
+	//			extraInfoTableModel.setData(obj.extraInfos);
+		}
+
+		private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
+			ShowInParent("", Boolean.class, 10,-1, 20, 20),
+			Label("Label", String.class, 20,-1, 50, 50),
+			Info ("Info" , String.class, 50,-1,500,500);
+			
+			private SimplifiedColumnConfig config;
+		
+			private ExtraInfoColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				config = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			
+			@Override public SimplifiedColumnConfig getColumnConfig() { return config; }
+		}
+
+		private class ExtraInfoTableModel extends TableView.SimplifiedTableModel<ExtraInfoColumnID> {
+		
+			private Vector<ExtraInfo> tableData;
+	//			private JTable table;
+			private boolean isPlanet;
+			private GenericTreeNode<?> node;
+	
+			protected ExtraInfoTableModel(GenericTreeNode<?> node, boolean isPlanet, Vector<ExtraInfo> tableData) {
+				super(isPlanet?
+						new ExtraInfoColumnID[]{ExtraInfoColumnID.ShowInParent,ExtraInfoColumnID.Label,ExtraInfoColumnID.Info}:
+						new ExtraInfoColumnID[]{ExtraInfoColumnID.Label,ExtraInfoColumnID.Info}
+					);
+				this.node = node;
+				this.isPlanet = isPlanet;
+				this.tableData = tableData;
+	//				this.table = null;
+			}
+
+//			public void setTable(JTable table) {
+//				this.table = table;
+//			}
+//
+//			public void clearData() { setData(null); }
+//			public void setData(Vector<ExtraInfo> data) {
+//				if (table!=null && table.isEditing()) {
+//					TableCellEditor cellEditor = table.getCellEditor();
+//					if (cellEditor!=null) cellEditor.cancelCellEditing();
+//				}
+//				this.tableData = data;
+//				fireTableUpdate();
+//			}
+	
+			@Override
+			public int getRowCount() {
+				if (tableData==null) return 0;
+				return tableData.size()+1;
+			}
+	
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
+				if (tableData==null) return null;
+				switch(columnID) {
+				case ShowInParent: if (rowIndex==tableData.size()) return false; return tableData.get(rowIndex).showInParent;
+				case Label       : if (rowIndex==tableData.size()) return "";    return tableData.get(rowIndex).shortLabel;
+				case Info        : if (rowIndex==tableData.size()) return "";    return tableData.get(rowIndex).info;
+				}
+				return null;
+			}
+	
+			@Override
+			protected boolean isCellEditable(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
+				return true;
+			}
+	
+			@Override
+			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
+				if (tableData==null) return;
+				if (rowIndex==tableData.size()) {
+					switch(columnID) {
+					case ShowInParent: tableData.add(new ExtraInfo((Boolean)aValue,"","")); break;
+					case Label       : tableData.add(new ExtraInfo(aValue.toString(),"")); break;
+					case Info        : tableData.add(new ExtraInfo("",aValue.toString())); break;
+					}
+					fireTableRowAdded(rowIndex+1);
+				} else
+					switch(columnID) {
+					case ShowInParent: tableData.get(rowIndex).showInParent = (aValue instanceof Boolean)?(Boolean)aValue:false; break;
+					case Label       : tableData.get(rowIndex).shortLabel   = aValue.toString(); break;
+					case Info        : tableData.get(rowIndex).info         = aValue.toString(); break;
+					}
+				universePanel.updateTreeNode(node, isPlanet);
+			}
+		}
+	}
+	
+	private static class SolarSystemInfoPanel extends UniverseObjectInfoPanel {
+		private static final long serialVersionUID = 1050112094455682248L;
+		
+		private UniverseAddress currentUniverseAddress;
+
+		SolarSystemInfoPanel(UniversePanel universePanel, UniverseAddress currentUniverseAddress) {
+			super(universePanel);
+			this.currentUniverseAddress = currentUniverseAddress;
+			
+			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			
+			add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
+		}
+		
+		@Override
+		public void setContent(GenericTreeNode<?> node) {
+			double distance_reg;
+			
+			SolarSystem system = ((SolarSystemNode)node).value;
+			int n = system.planets.size();
+			UniverseAddress ua = system.getUniverseAddress();
+			
+			textArea.setText("");
+			textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
+			textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
+			textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
+			if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
+			if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
+			
+			distance_reg = ua.getDistToOther_inRegionUnits(currentUniverseAddress);
+			textArea.append("\r\n");
+			textArea.append(                                 "Distance to current position:\r\n");
+			textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+			
+			distance_reg = ua.getDistToCenter_inRegionUnits();
+			textArea.append("\r\n");
+			textArea.append(                                 "Distance to Galaxy Center :\r\n");
+			textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+			if (system.distanceToCenter!=null) {
+				double distance_LY = system.distanceToCenter.doubleValue();
+				textArea.append(String.format(Locale.ENGLISH,"    measured: %1.1f ly\r\n", distance_LY));
+				textArea.append(String.format(Locale.ENGLISH,"    -> Region size: %1.2f ly\r\n", distance_LY/distance_reg));
+			}
+			
+			showDiscNameObj(node,system);
+			
+			if (!system.additionalInfos.isEmpty()) {
+				textArea.append("\r\n");
+				textArea.append("Additional Infos:\r\n");
+				if (system.additionalInfos.hasFreighter)
+					textArea.append("    Freighter in System\r\n");
+			}
+		}
+	}
+	
+	private static class PlanetInfoPanel extends UniverseObjectInfoPanel {
+		private static final long serialVersionUID = -5303591976120968332L;
+		
+		private JLabel portalGlyphs;
+		
+		PlanetInfoPanel(UniversePanel universePanel) {
+			super(universePanel);
+			
+			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			
+			portalGlyphs = new JLabel();
+			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
+			portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
+			
+			add(portalGlyphs,BorderLayout.NORTH);
+			add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
+		}
+		
+		@Override
+		public void setContent(GenericTreeNode<?> node) {
+			
+			Planet planet = ((PlanetNode)node).value;
+			UniverseAddress ua = planet.getUniverseAddress();
+			long portalGlyphCode = ua.getPortalGlyphCode();
+			
+			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
+			
+			textArea.setText("");
+			textArea.append(String.format("Universe Coordinates       : %s\r\n", ua.getCoordinates()));
+			textArea.append(String.format("Universe Address           : 0x%014X\r\n", ua.getAddress()));
+			textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
+			textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
+			
+			showDiscNameObj(node,planet);
+			
+			if (!planet.additionalInfos.isEmpty()) {
+				textArea.append("\r\n");
+				textArea.append("Additional Infos:\r\n");
+				if (planet.additionalInfos.hasExocraftSummoningStation)
+					textArea.append("    Exocraft Summoning Station on Planet\r\n");
+				for (PersistentPlayerBase base:planet.additionalInfos.bases)
+					textArea.append(String.format("    Base on Planet: \"%s\"\r\n", base.name));
+			}
+		}
+
+		private static Icon createPortalGlyphs(long portalGlyphCode) {
+			BufferedImage image = new BufferedImage(50*12, 45*1, BufferedImage.TYPE_INT_RGB);
+			Graphics graphics = image.getGraphics();
+			
+			for (int i=11; i>=0; --i) {
+				int nr = (int)(portalGlyphCode&0xF);
+				portalGlyphCode = portalGlyphCode>>4;
+				BufferedImage glyph = PortalGlyphsIS.getCachedImage(nr);
+				graphics.drawImage(glyph, i*50, 0, null);
+			}
+			return new ImageIcon(image);
+		}
+	}
 	
 	private abstract class AbstractContextmenu extends JPopupMenu {
 		private static final long serialVersionUID = -2141303182163706658L;
@@ -903,151 +1195,26 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void selectionChanged() {
-		textArea.setText("");
+		InfoPanel prevInfoPanel = currentInfoPanel;
 		
 		if (selectedNode==null) {
-			extraInfoTable.setModel(new DefaultTableModel());
-//				extraInfoTableModel.clearData();
-			return;
+			currentInfoPanel=infoPanel_Other;
+			currentInfoPanel.setContent(null);
+		} else {
+			switch(selectedNode.type) {
+			case Planet     : currentInfoPanel = infoPanel_Planet;      break;
+			case SolarSystem: currentInfoPanel = infoPanel_SolarSystem; break;
+			default         : currentInfoPanel = infoPanel_Other;       break;
+			}
+			currentInfoPanel.setContent(selectedNode);
 		}
 		
-		if (selectedNode.type!=NodeType.Planet) {
-			portalGlyphs.setIcon(null);
-			extraInfoTable.setModel(new DefaultTableModel());
-//				extraInfoTableModel.clearData();
-		}
-		
-		int n;
-		UniverseAddress ua;
-		Planet planet;
-		SolarSystem system;
-		long portalGlyphCode;
-		double distance_reg;
-		
-		switch(selectedNode.type) {
-		case Planet:
-			planet = ((PlanetNode)selectedNode).value;
-			ua = planet.getUniverseAddress();
-			portalGlyphCode = ua.getPortalGlyphCode();
-			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
-			
-			textArea.append(String.format("Universe Coordinates       : %s\r\n", ua.getCoordinates()));
-			textArea.append(String.format("Universe Address           : 0x%014X\r\n", ua.getAddress()));
-			textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
-			textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
-			
-			showDiscNameObj(planet);
-			
-			if (!planet.additionalInfos.isEmpty()) {
-				textArea.append("\r\n");
-				textArea.append("Additional Infos:\r\n");
-				if (planet.additionalInfos.hasExocraftSummoningStation)
-					textArea.append("    Exocraft Summoning Station on Planet\r\n");
-				for (PersistentPlayerBase base:planet.additionalInfos.bases)
-					textArea.append(String.format("    Base on Planet: \"%s\"\r\n", base.name));
-			}
-		break;
-			
-		case SolarSystem:
-			n = selectedNode.getDataChildrenCount();
-			textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
-			system = ((SolarSystemNode)selectedNode).value;
-			ua = system.getUniverseAddress();
-			textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
-			textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
-			if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
-			if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
-			
-			distance_reg = ua.getDistToOther_inRegionUnits(data.general.currentUniverseAddress);
-			textArea.append("\r\n");
-			textArea.append(                                 "Distance to current position:\r\n");
-			textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
-			
-			distance_reg = ua.getDistToCenter_inRegionUnits();
-			textArea.append("\r\n");
-			textArea.append(                                 "Distance to Galaxy Center :\r\n");
-			textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
-			if (system.distanceToCenter!=null) {
-				double distance_LY = system.distanceToCenter.doubleValue();
-				textArea.append(String.format(Locale.ENGLISH,"    measured: %1.1f ly\r\n", distance_LY));
-				textArea.append(String.format(Locale.ENGLISH,"    -> Region size: %1.2f ly\r\n", distance_LY/distance_reg));
-			}
-			
-			showDiscNameObj(system);
-			
-			if (!system.additionalInfos.isEmpty()) {
-				textArea.append("\r\n");
-				textArea.append("Additional Infos:\r\n");
-				if (system.additionalInfos.hasFreighter)
-					textArea.append("    Freighter in System\r\n");
-			}
-		break;
-			
-		case Region:
-			n = selectedNode.getDataChildrenCount();
-			textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
-			ua = ((RegionNode)selectedNode).value.getUniverseAddress();
-			textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getRegionCoordinates()));
-			textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
-			
-			distance_reg = ua.getDistToCenter_inRegionUnits();
-			textArea.append("\r\n");
-			textArea.append(                             "Distance to Galaxy Center :\r\n");
-			textArea.append(String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
-		break;
-			
-		case Galaxy:
-			n = selectedNode.getDataChildrenCount();
-			textArea.append(String.format("%d known region%s\r\n", n, n>1?"s":""));
-		break;
-			
-		case Universe:
-			n = selectedNode.getDataChildrenCount();
-			textArea.append(String.format("%d known galax%s\r\n", n, n>1?"ies":"y"));
-		break;
-		}
-	}
-	
-	private void showDiscNameObj(Universe.UniverseObject obj) {
-		textArea.append("\r\n");
-		
-		//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
-		
-		String oldNameLabel = "Old Original Name";
-		if (obj.hasOriginalName   ()) { textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName())); oldNameLabel = "  -\"-   (old)"; }
-		if (obj.hasOldOriginalName())   textArea.append(String.format(           "%s : %s\r\n", oldNameLabel, obj.getOldOriginalName()));
-		if (obj.hasUploadedName   ())   textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));
-		if (obj.hasDiscoverer     ())   textArea.append(String.format("Discovered by : %s\r\n", obj.getDiscoverer()));
-		if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
-			textArea.append("Discovered Items:\r\n");
-			if (!obj.discoveredItems_Avail.isEmpty()) {
-				textArea.append("   available:\r\n");
-				for (String item:new TreeSet<>(obj.discoveredItems_Avail.keySet()))
-					textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Avail.get(item)));
-			}
-			if (!obj.discoveredItems_Store.isEmpty()) {
-				textArea.append("   stored:\r\n");
-				for (String item:new TreeSet<>(obj.discoveredItems_Store.keySet()))
-					textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Store.get(item)));
-			}
-		}
-		extraInfoTable.setModel(new ExtraInfoTableModel(obj instanceof Planet, obj.extraInfos));
-//			extraInfoTableModel.setData(obj.extraInfos);
+		remove(prevInfoPanel); 
+		add(currentInfoPanel,BorderLayout.EAST);
+		repaint();
+		revalidate();
 	}
 
-	private Icon createPortalGlyphs(long portalGlyphCode) {
-		BufferedImage image = new BufferedImage(50*12, 45*1, BufferedImage.TYPE_INT_RGB);
-		Graphics graphics = image.getGraphics();
-		
-		for (int i=11; i>=0; --i) {
-			int nr = (int)(portalGlyphCode&0xF);
-			portalGlyphCode = portalGlyphCode>>4;
-			BufferedImage glyph = PortalGlyphsIS.getCachedImage(nr);
-			graphics.drawImage(glyph, i*50, 0, null);
-		}
-		return new ImageIcon(image);
-	}
-	
 	private static class FindObjectDialog extends StandardDialog {
 		private static final long serialVersionUID = -356863578675221086L;
 		
@@ -1261,93 +1428,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 		}
 		
-	}
-	
-	private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
-		ShowInParent("", Boolean.class, 10,-1, 20, 20),
-		Label("Label", String.class, 20,-1, 50, 50),
-		Info ("Info" , String.class, 50,-1,500,500);
-		
-		private SimplifiedColumnConfig config;
-
-		private ExtraInfoColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			config = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
-		}
-		
-		@Override public SimplifiedColumnConfig getColumnConfig() { return config; }
-	}
-	private class ExtraInfoTableModel extends TableView.SimplifiedTableModel<ExtraInfoColumnID> {
-
-		private Vector<ExtraInfo> tableData;
-//			private JTable table;
-		private boolean isPlanet;
-
-		protected ExtraInfoTableModel(boolean isPlanet, Vector<ExtraInfo> tableData) {
-			super(isPlanet?
-					new ExtraInfoColumnID[]{ExtraInfoColumnID.ShowInParent,ExtraInfoColumnID.Label,ExtraInfoColumnID.Info}:
-					new ExtraInfoColumnID[]{ExtraInfoColumnID.Label,ExtraInfoColumnID.Info}
-				);
-			this.isPlanet = isPlanet;
-			this.tableData = tableData;
-//				this.table = null;
-		}
-
-//			public void setTable(JTable table) {
-//				this.table = table;
-//			}
-//
-//			public void clearData() { setData(null); }
-//			public void setData(Vector<ExtraInfo> data) {
-//				if (table!=null && table.isEditing()) {
-//					TableCellEditor cellEditor = table.getCellEditor();
-//					if (cellEditor!=null) cellEditor.cancelCellEditing();
-//				}
-//				this.tableData = data;
-//				fireTableUpdate();
-//			}
-
-		@Override
-		public int getRowCount() {
-			if (tableData==null) return 0;
-			return tableData.size()+1;
-		}
-
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
-			if (tableData==null) return null;
-			switch(columnID) {
-			case ShowInParent: if (rowIndex==tableData.size()) return false; return tableData.get(rowIndex).showInParent;
-			case Label       : if (rowIndex==tableData.size()) return "";    return tableData.get(rowIndex).shortLabel;
-			case Info        : if (rowIndex==tableData.size()) return "";    return tableData.get(rowIndex).info;
-			}
-			return null;
-		}
-
-		@Override
-		protected boolean isCellEditable(int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
-			return true;
-		}
-
-		@Override
-		protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ExtraInfoColumnID columnID) {
-			if (tableData==null) return;
-			if (rowIndex==tableData.size()) {
-				switch(columnID) {
-				case ShowInParent: tableData.add(new ExtraInfo((Boolean)aValue,"","")); break;
-				case Label       : tableData.add(new ExtraInfo(aValue.toString(),"")); break;
-				case Info        : tableData.add(new ExtraInfo("",aValue.toString())); break;
-				}
-				fireTableRowAdded(rowIndex+1);
-			} else
-				switch(columnID) {
-				case ShowInParent: tableData.get(rowIndex).showInParent = (aValue instanceof Boolean)?(Boolean)aValue:false; break;
-				case Label       : tableData.get(rowIndex).shortLabel   = aValue.toString(); break;
-				case Info        : tableData.get(rowIndex).info         = aValue.toString(); break;
-				}
-			treeModel.nodeChanged(selectedNode);
-			if (isPlanet) treeModel.nodeChanged(selectedNode.parent);
-			GameInfos.saveUniverseObjectDataToFile(data.universe);
-		}
 	}
 	
 	static class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
