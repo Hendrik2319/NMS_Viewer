@@ -1270,6 +1270,7 @@
 ^U_SHIPLAS2.type=ShipWeaponUpgradeM
 ^U_SHIPLAS2.image=NmsCommodity_QuantumAccelerator_icon.png
 ^U_SHIPLAS2.imageBG=0063B6
+^U_SHIPLAS4=
 ^U_SHIPMINI1=Inframesser-Modul (C)
 ^U_SHIPMINI1.type=ShipWeaponUpgradeM
 ^U_SHIPMINI1.image=NmsCommodity_QuantumAccelerator_icon.png

@@ -9,6 +9,79 @@ aggrSentinels=
 short=DunkelRot
 info=Monochrome und Rot
 
+[Reg00000002FDC947]
+name=Eyerand-Nebel
+
+[Sys004A0002FDC947]
+name=Peltsik-Azun XII
+race=Korvax
+conflict=1
+class=Yellow
+distance=688533.000000
+
+[Pln104A0002FDC947]
+name=Yunnesit Tau
+biome=Lush
+short=
+info=Fe#, Pf, Cu, Eiweißperle
+
+[Pln204A0002FDC947]
+name=Torio 53/S1
+biome=Frozen
+short=ExtCold
+info=Stufe 3
+short.P=#Cu
+info=Na, CO2, #Cu
+
+[Pln304A0002FDC947]
+name=Ennsylv
+biome=Scorched
+short=
+info=Ag, P, Cu
+
+[Sys00790002FDC947]
+name=Akirnaf
+race=Gek
+conflict=2
+class=Yellow
+short=Schwarzes Loch
+info=
+short=5 unentdeckte Planeten
+info=
+
+[Reg00000004E7D981]
+name=Ninunkamp-Instabilität
+
+[Sys00160004E7D981]
+name=Ranarfi-Ste XIV
+race=Gek
+conflict=1
+class=Yellow
+short=florierend
+info=Wirtschaft 3
+
+[Pln10160004E7D981]
+name=Aguc 14/H3
+biome=Frozen
+short=
+info=Ag, CO2, Cu
+
+[Pln20160004E7D981]
+name=Pusc XVIII
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=Co, Pf, Cu, Eiweißperle
+
+[Pln30160004E7D981]
+name=Atsuy 17/P1
+biome=Barren
+short=
+info=Fe#, Py, Cu
+short.P=Wasser
+info=
+
 [Reg000000F9A8CBC3]
 name=Meer von Idgewo
 
@@ -1101,6 +1174,24 @@ info=Ag, Pf, #Cu
 short=#Cu
 info=
 
+[Sys00790004994DA5]
+name=Idetelnik XIV
+race=Korvax
+conflict=1
+class=Yellow
+short=Schwarzes Loch
+info=
+
+[Pln10790004994DA5]
+name=Hiydran Daba
+biome=Lush
+short.P=Wasser
+info=
+short.P=#Cu
+info=Co, Pf, #Cu, Eiweißperle
+short=Extrem
+info=
+
 [Sys007A0004994DA5]
 name=Revkaz
 race=Vykeen
@@ -1324,6 +1415,114 @@ short=ExtHot
 info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
+
+[Reg00000002C825D1]
+name=Leonist-Quadrant
+
+[Sys002A0002C825D1]
+name=Iobanabe
+race=Gek
+conflict=1
+class=Yellow
+distance=694540.000000
+
+[Pln102A0002C825D1]
+name=Mitid
+biome=Toxic
+short=Wasser
+info=
+short=#Cu
+info=Ag, NH3, #Cu
+short=ExtTox
+info=Stufe 3
+
+[Pln202A0002C825D1]
+name=Ekio Alpha
+biome=Airless
+short=
+info=NaCl, Fe#, Cu
+
+[Pln302A0002C825D1]
+name=Esotapi
+biome=Irradiated
+short=
+info=Co, U, Cu
+
+[Sys00790002C825D1]
+name=Iderag-Esaud XIX
+race=Vykeen
+conflict=2
+class=Yellow
+distance=694811.000000
+short=Schwarzes Loch
+info=
+
+[Pln10790002C825D1]
+name=Retsey XV
+biome=Toxic
+short=
+info=NaCl, NH3, Cu
+
+[Pln20790002C825D1]
+name=Bewdlewis Totto
+biome=Airless
+short=
+info=NaCl, Fe#, Cu
+
+[Pln30790002C825D1]
+name=Eroysto
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=Co, Pf, Cu, Eiweißperle
+
+[Pln40790002C825D1]
+name=Eusiss IV
+biome=Barren
+aggrSentinels=
+short=
+info=Co, Py, Cu
+
+[Pln50790002C825D1]
+name=Neu: Dettoxe
+biome=Irradiated
+short=
+info=Co, U, Cu
+
+[Pln60790002C825D1]
+name=Yavaccacok Tamo
+biome=Toxic
+short=#Cu
+info=NaCl, NH3, #Cu
+short=ExtTox
+info=Stufe 3
+
+[Sys00A00002C825D1]
+name=Aguchi
+unexplored
+class=Blue
+short=#In
+info=Ag, P, #In
+short=ExtHot
+info=Stufe 3
+
+[Pln10A00002C825D1]
+name=Galiu
+biome=Scorched
+
+[Sys00B80002C825D1]
+name=Yokazumi
+unexplored
+class=Green
+
+[Pln10B80002C825D1]
+name=Neu: Didymai
+biome=Barren
+short.P=Wasser
+info=
+short=
+info=Co, Py, Em
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
