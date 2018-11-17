@@ -246,6 +246,9 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 						universePanel.highlightRegions(clickedPos.voxelX,clickedPos.voxelZ);
 				});
 				
+				JMenuItem miDistCircle = new JMenuItem("Show Circle with Distance to Galaxy Center");
+				miDistCircle.addActionListener(e->galaxyMap.showDistCircle(clickedPos));
+				
 				JCheckBoxMenuItem chkbxUsePreparedBitmap = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
 				JCheckBoxMenuItem chkbxShowMarkers = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
 				chkbxShowMarkers.setEnabled(!galaxyMap.usePreparedBitmap);
@@ -261,6 +264,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				});
 				
 				add(miMarkRegions);
+				add(miDistCircle);
 				addSeparator();
 				add(chkbxUsePreparedBitmap);
 				add(chkbxShowMarkers);
@@ -452,6 +456,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			private int mouseVoxelZ;
 			private boolean ignoreMousePos;
 
+			private Double distCircle;
+
 			
 			GalaxyMap(CombinedListener combiListener, RegionData regionData, UniverseAddress currentPos, Long knownGlyphs) {
 				this.combiListener = combiListener;
@@ -475,6 +481,16 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				this.mouseVoxelX = 0;
 				this.mouseVoxelZ = 0;
 				this.ignoreMousePos = true;
+				
+				this.distCircle = null;
+			}
+
+			public void showDistCircle( RegionData.RegionCoord coords) {
+				if (coords!=null)
+					distCircle = new SaveGameData.Point3D(coords.voxelX,0,coords.voxelZ).length()-0.5;
+				else
+					distCircle = null;
+				repaint();
 			}
 
 			public void setMousePos(int mouseX, int mouseY) {
@@ -512,10 +528,10 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			public int computeVoxelX(int screenX) { return (int) Math.floor((screenX+offsetX)/zoomRatio)-MAP_CENTER_X; }
 			public int computeVoxelZ(int screenY) { return (int) Math.floor((screenY+offsetY)/zoomRatio)-MAP_CENTER_Y; }
 
-			public double computeScreenX_d(int voxelX) { return (voxelX+0.5+MAP_CENTER_X)*zoomRatio-offsetX; }
-			public double computeScreenY_d(int voxelZ) { return (voxelZ+0.5+MAP_CENTER_Y)*zoomRatio-offsetY; }
-			public int computeScreenX(int voxelX) { return (int) Math.round(computeScreenX_d(voxelX)); }
-			public int computeScreenY(int voxelZ) { return (int) Math.round(computeScreenY_d(voxelZ)); }
+			public double computeScreenX_d(double voxelX) { return (voxelX+0.5+MAP_CENTER_X)*zoomRatio-offsetX; }
+			public double computeScreenY_d(double voxelZ) { return (voxelZ+0.5+MAP_CENTER_Y)*zoomRatio-offsetY; }
+			public int computeScreenX(double voxelX) { return (int) Math.round(computeScreenX_d(voxelX)); }
+			public int computeScreenY(double voxelZ) { return (int) Math.round(computeScreenY_d(voxelZ)); }
 
 			public int getViewWidth () { return width; }
 			public int getViewHeight() { return height; }
@@ -846,6 +862,15 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 					g2.setColor(COLOR_GALAXY_CENTER);
 					drawMarker(g2, 0,0, markerSize);
 					
+				}
+				
+				if (distCircle != null) {
+					g2.setColor(Color.WHITE);
+					int x  = computeScreenX(-distCircle);
+					int y  = computeScreenY(-distCircle);
+					int x1 = computeScreenX( distCircle);
+					int y1 = computeScreenY( distCircle);
+					g2.drawArc( x,y, x1-x,y1-y, 0,360);
 				}
 				
 				if (zoomRatio>5 && !ignoreMousePos) {

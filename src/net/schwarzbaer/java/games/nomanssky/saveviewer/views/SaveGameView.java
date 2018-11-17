@@ -21,7 +21,6 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels.BlueprintsPanel.BlueprintType;
 
 public class SaveGameView extends JPanel {
@@ -196,9 +195,9 @@ public class SaveGameView extends JPanel {
 		@Override
 		public void updateContent() {}
 
-		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.UniverseObject object, String objectStr) {
+		protected void setNameForUniverseAddress(Universe.UniverseObject object, String objectStr) {
 			String initialValue = object.hasOriginalName()?object.getOriginalName():object.getOldOriginalName();
-			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), initialValue);
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr, initialValue);
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
 				object.setOriginalName(name);
@@ -206,9 +205,9 @@ public class SaveGameView extends JPanel {
 			}
 		}
 
-		protected void setNameForUniverseAddress(UniverseAddress ua, Universe.Region region, String objectStr) {
+		protected void setNameForUniverseAddress(Universe.Region region, String objectStr) {
 			String initialValue = region.hasName()?region.getName():region.getOldName();
-			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr+" "+ua.getExtendedSigBoostCode(), initialValue);
+			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr, initialValue);
 			if (name!=null) {
 				if (name.isEmpty()) name=null;
 				region.setName(name);

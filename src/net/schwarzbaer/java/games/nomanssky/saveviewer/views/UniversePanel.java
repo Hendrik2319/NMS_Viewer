@@ -15,6 +15,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -411,7 +413,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				n = selectedNode.getDataChildrenCount();
 				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
 				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
-				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getRegionCoordinates()));
+				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getCoordinates_Region()));
 				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
 				
 				distance_reg = ua.getDistToCenter_inRegionUnits();
@@ -587,7 +589,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			textArea.setText("");
 			textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
-			textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getSolarSystemCoordinates()));
+			textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getCoordinates_SolarSystem()));
 			textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
 			if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
 			if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
@@ -948,9 +950,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				SolarSystem system;
 				Region region;
 				switch(clickedNode.type) {
-				case Planet     : planet = ((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet.getUniverseAddress(),planet, "planet"      ); break;
-				case SolarSystem: system = ((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system.getUniverseAddress(),system, "solar system"); break;
-				case Region     : region = ((     RegionNode)clickedNode).value; setNameForUniverseAddress(region.getUniverseAddress(),region, "region"      ); break;
+				case Planet     : planet = ((     PlanetNode)clickedNode).value; setNameForUniverseAddress(planet, "planet"      +" "+planet.getUniverseAddress().getExtendedSigBoostCode_Planet()     ); break;
+				case SolarSystem: system = ((SolarSystemNode)clickedNode).value; setNameForUniverseAddress(system, "solar system"+" "+system.getUniverseAddress().getExtendedSigBoostCode_SolarSystem()); break;
+				case Region     : region = ((     RegionNode)clickedNode).value; setNameForUniverseAddress(region, "region"      +" "+region.getUniverseAddress().getExtendedSigBoostCode_Region()     ); break;
 				default:break;
 				}
 				treeModel.nodeChanged(clickedNode);
@@ -1553,12 +1555,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		protected abstract String getLabel();
 		protected abstract int getDataChildrenCount();
 		protected abstract LocalTreeNode createTreeChild(int i);
+		protected abstract Comparator<Integer> getSorter();
 
 		@Override
 		void createChildren() {
 			children = new LocalTreeNode[getDataChildrenCount()];
-			for (int i=0; i<children.length; ++i)
-				children[i] = createTreeChild(i);
+			Comparator<Integer> sorter = getSorter();
+			if (sorter!=null) {
+				Integer[] order = new Integer[children.length];
+				for (int i=0; i<children.length; ++i) order[i] = i;
+				Arrays.sort(order,sorter);
+				for (int i=0; i<order.length; ++i)
+					children[i] = createTreeChild(order[i]);
+			} else
+				for (int i=0; i<children.length; ++i)
+					children[i] = createTreeChild(i);
 		}
 		
 	}
@@ -1576,6 +1587,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		@Override public boolean getAllowsChildren() { return true; /*except Planet*/ }
 		@Override protected String getLabel() { return value.toString(); }
+		@Override protected Comparator<Integer> getSorter() { return null; }
+		
 	}
 	
 	static class UniverseNode extends GenericTreeNode<Universe> {
@@ -1587,11 +1600,22 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, NodeType.Galaxy, value); }
 		@Override protected int getDataChildrenCount() { return value.regions.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new RegionNode(this,value.regions.get(i)); }
+		@Override protected Comparator<Integer> getSorter() { return new Comparator<Integer>() {
+			@Override
+			public int compare(Integer i1, Integer i2) {
+				double d1 = value.regions.get(i1).getUniverseAddress().getDistToCenter_inRegionUnits();
+				double d2 = value.regions.get(i2).getUniverseAddress().getDistToCenter_inRegionUnits();
+				if (d1>d2) return -1;
+				if (d1<d2) return +1;
+				return 0;
+			}
+		}; }
 	}
 	static class RegionNode extends GenericTreeNode<Region> {
 		private RegionNode(GalaxyNode parent, Region value) { super(parent, NodeType.Region, value); }
 		@Override protected int getDataChildrenCount() { return value.solarSystems.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new SolarSystemNode(this,value.solarSystems.get(i)); }
+		@Override protected String getLabel() { return String.format(Locale.ENGLISH, "%s [%1.1f ly]", value.toString(), value.getUniverseAddress().getDistToCenter_inRegionUnits()*400); }
 	}
 	static class SolarSystemNode extends GenericTreeNode<SolarSystem> {
 		CachedCustomIcon cachedCustomIcon;

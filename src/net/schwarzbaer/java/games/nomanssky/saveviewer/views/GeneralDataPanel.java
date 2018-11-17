@@ -42,12 +42,14 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			textAreas[1] = createTextarea(textareaPanel,600,500);
 			currentTextArea = 0;
 			
+			/*
 			JPanel buttonPanel = new JPanel();
 			buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
 			buttonPanel.add(SaveViewer.createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.currentUniverseAddress)));
+			*/
 			
 			add(textareaPanel,BorderLayout.CENTER);
-			add(buttonPanel,BorderLayout.SOUTH);
+			//add(buttonPanel,BorderLayout.SOUTH);
 			
 			updateContent();
 		}
@@ -61,6 +63,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			return textArea;
 		}
 		
+		/*
 		private void setNameForUniverseAddress(UniverseAddress ua) {
 			if (ua==null) {
 				JOptionPane.showMessageDialog(this, "Current location couldn't be identified.");
@@ -72,6 +75,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			
 			updateContent();
 		}
+		*/
 
 		@Override
 		public void updateContent() {

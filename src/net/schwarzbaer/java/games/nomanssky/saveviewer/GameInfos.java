@@ -354,7 +354,7 @@ public class GameInfos {
 			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = universe.findSolarSystem(ua); break;
 			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = universe.findPlanet     (ua); break;
 			}
-			if (region!=null) { objName = "region "+ua.getRegionCoordinates();    if (withOutput) SaveViewer.log("Region %s\r\n"      ,ua.getRegionCoordinates   ()); }
+			if (region!=null) { objName = "region "+ua.getCoordinates_Region();    if (withOutput) SaveViewer.log("Region %s\r\n"      ,ua.getCoordinates_Region   ()); }
 			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log("Solar system %s\r\n",ua.getSigBoostCode        ()); }
 			if (planet!=null) { objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
 			

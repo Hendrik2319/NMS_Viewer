@@ -55,13 +55,15 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
-		addTab(data.inventories.player.standard);
-		addTab(data.inventories.player.tech    );
+		tabbedPane.addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard).addInv(data.inventories.player.tech));
+		//addTab(data.inventories.player.standard);
+		//addTab(data.inventories.player.tech    );
 		addTab(data.inventories.player.cargo   );
 		addTab(data.inventories.grave          );
 		addTab(data.inventories.multitool      );
-		addTab(data.inventories.freighter.standard);
-		addTab(data.inventories.freighter.tech    );
+		tabbedPane.addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(new SaveGameData.Vehicle[] {data.inventories.freighter}));
+		//addTab(data.inventories.freighter.standard);
+		//addTab(data.inventories.freighter.tech    );
 		addTab(data.inventories.ship_old          );
 		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships));
 		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
@@ -314,6 +316,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_TEXT_TECH      = new Color(0xAD00AD);
 
 			private static final Color COLOR__SLOT_BG            = Color.WHITE;
+			private static final Color COLOR__DAMAGED_SLOT_BG    = Color.RED;
 
 			private static final Color COLOR__UPGRCLS_BG     = new Color(0,0,0,160);
 			private static final Color COLOR__UPGRCLS_BORDER = new Color(255,255,255,192);
@@ -422,7 +425,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						int x=indexX*SLOT_RASTER_X+SLOT_BORDER;
 						int y=indexY*SLOT_RASTER_Y+SLOT_BORDER;
 						if (!slot.isEmpty) {
-							g2.setPaint(COLOR__SLOT_BG);
+							g2.setPaint(slot.damageFactor==0?COLOR__SLOT_BG:COLOR__DAMAGED_SLOT_BG);
 							g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
 						}
 						g2.setPaint(COLOR__SLOT_EDGE);

@@ -1801,45 +1801,34 @@ public class SaveGameData {
 		public String getVerboseNameInOneLine(Universe universe) {
 			
 			if (isRegion())
-				return "Region \""+getRegionCoordinates()+"\"";
+				return "Region \""+getCoordinates_Region()+"\"";
 			
 			if (isSolarSystem()) {
 				SolarSystem sys = universe.findSolarSystem(this);
-				return "SolarSystem \""+getRegionCoordinates()+" | "+sys.toString()+"\"";
+				return "SolarSystem \""+getCoordinates_Region()+" | "+sys.toString()+"\"";
 			}
 			
 			if (isPlanet()) {
 				SolarSystem sys = universe.findSolarSystem(this);
 				Planet pln = universe.findPlanet(this);
-				return "Planet \""+getRegionCoordinates()+" | "+sys.toString(true,true,false,false)+" | "+pln.toString()+"\"";
+				return "Planet \""+getCoordinates_Region()+" | "+sys.toString(true,true,false,false)+" | "+pln.toString()+"\"";
 			}
 			
 			return getCoordinates();
 		}
 
-		public String getCoordinates() {
-			return String.format("%d | %d,%d,%d | %d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
-		}
+		public String getCoordinates() { return getCoordinates_Planet(); }
+		public String getCoordinates_Planet     () { return String.format("%d | %d,%d,%d | %d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex); }
+		public String getCoordinates_SolarSystem() { return String.format("%d | %d,%d,%d | %d"     , galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex); }
+		public String getCoordinates_Region     () { return String.format("%d | %d,%d,%d"          , galaxyIndex, voxelX, voxelY, voxelZ); }
 
-		public String getSolarSystemCoordinates() {
-			return String.format("%d | %d,%d,%d | %d", galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex);
-		}
+		public String getReducedSigBoostCode() { return String.format("%04X:%04X:%04X", (voxelX+2047)&0xFFFF, (voxelY+127)&0xFFFF, (voxelZ+2047)&0xFFFF); }
+		public String getSigBoostCode       () { return String.format(            "%s:%04X", getReducedSigBoostCode(), solarSystemIndex&0xFFFF); }
 
-		public String getRegionCoordinates() {
-			return String.format("%d | %d,%d,%d", galaxyIndex, voxelX, voxelY, voxelZ);
-		}
-
-		public String getReducedSigBoostCode() {
-			return String.format("%04X:%04X:%04X", (voxelX+2047)&0xFFFF, (voxelY+127)&0xFFFF, (voxelZ+2047)&0xFFFF);
-		}
-
-		public String getSigBoostCode() {
-			return String.format("%s:%04X", getReducedSigBoostCode(), solarSystemIndex&0xFFFF);
-		}
-
-		public String getExtendedSigBoostCode() {
-			return String.format("G%d|%s|P%d", galaxyIndex, getSigBoostCode(), planetIndex);
-		}
+		public String getExtendedSigBoostCode() { return getExtendedSigBoostCode_Planet(); }
+		public String getExtendedSigBoostCode_Planet     () { return String.format("G%d|%s|P%d", galaxyIndex, getSigBoostCode(), planetIndex); }
+		public String getExtendedSigBoostCode_SolarSystem() { return String.format("G%d|%s", galaxyIndex, getSigBoostCode()); }
+		public String getExtendedSigBoostCode_Region     () { return String.format("G%d|%s", galaxyIndex, getReducedSigBoostCode()); }
 
 		public double getDistToCenter_inRegionUnits() {
 			return Math.sqrt(voxelX*voxelX+voxelY*voxelY+voxelZ*voxelZ);

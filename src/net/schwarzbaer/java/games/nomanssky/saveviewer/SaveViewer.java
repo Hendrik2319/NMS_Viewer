@@ -868,16 +868,20 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
-			toolBar.add(createButton(ActionCommand.save_hg  .label, ToolbarIcons.Open, ActionCommand.save_hg  ,true));
-			toolBar.add(createButton(ActionCommand.save2_hg .label, ToolbarIcons.Open, ActionCommand.save2_hg ,true));
-			toolBar.add(createButton(ActionCommand.save3_hg .label, ToolbarIcons.Open, ActionCommand.save3_hg ,true));
-			toolBar.add(createButton(ActionCommand.save4_hg .label, ToolbarIcons.Open, ActionCommand.save4_hg ,true));
-			toolBar.add(createButton(ActionCommand.save5_hg .label, ToolbarIcons.Open, ActionCommand.save5_hg ,true));
-			toolBar.add(createButton(ActionCommand.save6_hg .label, ToolbarIcons.Open, ActionCommand.save6_hg ,true));
-			toolBar.add(createButton(ActionCommand.save7_hg .label, ToolbarIcons.Open, ActionCommand.save7_hg ,true));
-			toolBar.add(createButton(ActionCommand.save8_hg .label, ToolbarIcons.Open, ActionCommand.save8_hg ,true));
-			toolBar.add(createButton(ActionCommand.save9_hg .label, ToolbarIcons.Open, ActionCommand.save9_hg ,true));
-			toolBar.add(createButton(ActionCommand.save10_hg.label, ToolbarIcons.Open, ActionCommand.save10_hg,true));
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save_hg  ,true));
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save2_hg ,true));
+			toolBar.addSeparator();
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save3_hg ,true));
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save4_hg ,true));
+			toolBar.addSeparator();
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save5_hg ,true));
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save6_hg ,true));
+			toolBar.addSeparator();
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save7_hg ,true));
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save8_hg ,true));
+			toolBar.addSeparator();
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save9_hg ,true));
+			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save10_hg,true));
 			toolBar.addSeparator();
 			toolBar.add(createButton("Compute Coordinates" , ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates"  , ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
@@ -911,6 +915,10 @@ public class SaveViewer implements ActionListener {
 			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
 			button.setEnabled(enabled);
 			return button;
+		}
+
+		private JButton createButton(ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
+			return createButton(actionCommand.label, iconKey, actionCommand, enabled);
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
