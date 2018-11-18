@@ -93,9 +93,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			
 			int preselectedGalaxy = 0;
 			RegionData regionData = new RegionData(data.universe.galaxies.get(preselectedGalaxy));
-			Long knownGlyphs = data.general.getKnownGlyphsMaks();
 			//knownGlyphs = 0b110111100L;
-			galaxyMap = new GalaxyMap(combiListener,regionData,data.general.currentUniverseAddress,knownGlyphs);
+			galaxyMap = new GalaxyMap(combiListener,regionData,data.general.currentUniverseAddress,data.general.knownGlyphsMask);
 			
 			combiListener.setContextMenu(new ContextMenu(galaxyMap));
 			

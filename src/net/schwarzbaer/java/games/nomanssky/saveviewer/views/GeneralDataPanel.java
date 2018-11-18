@@ -5,27 +5,17 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.Locale;
 
-import javax.swing.BoxLayout;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.PathIsNotSolvableException;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 class GeneralDataPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -3866983525686776846L;
@@ -42,12 +32,6 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			textAreas[1] = createTextarea(textareaPanel,600,500);
 			currentTextArea = 0;
 			
-			/*
-			JPanel buttonPanel = new JPanel();
-			buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-			buttonPanel.add(SaveViewer.createButton("Set name for current position",e -> setNameForUniverseAddress(data.general.currentUniverseAddress)));
-			*/
-			
 			add(textareaPanel,BorderLayout.CENTER);
 			//add(buttonPanel,BorderLayout.SOUTH);
 			
@@ -62,43 +46,29 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			textareaPanel.add(scrollPane);
 			return textArea;
 		}
-		
-		/*
-		private void setNameForUniverseAddress(UniverseAddress ua) {
-			if (ua==null) {
-				JOptionPane.showMessageDialog(this, "Current location couldn't be identified.");
-				return;
-			}
-			
-			if (ua.isPlanet     ()) setNameForUniverseAddress(ua, data.universe.getOrCreatePlanet     (ua), "planet"      );
-			if (ua.isSolarSystem()) setNameForUniverseAddress(ua, data.universe.getOrCreateSolarSystem(ua), "solar system");
-			
-			updateContent();
-		}
-		*/
 
 		@Override
 		public void updateContent() {
 			for (JTextArea t:textAreas) t.setText("");
 			
 			currentTextArea = 0;
-			appendValue("Current Units    ", data.general.getUnits() );
-			appendValue("Current Nanites  ", data.general.getNanites() );
-			appendValue("Player Health    ", data.general.getPlayerHealth() );
-			appendValue("Player Shield    ", data.general.getPlayerShield() );
-			appendValue("Energy           ", data.general.getEnergy() );
-			appendValue("Ship Health      ", data.general.getShipHealth() );
-			appendValue("Ship Shield      ", data.general.getShipShield() );
-			appendValue("Time Alive       ", data.general.getTimeAlive_TStr() );
-			appendValue("Total PlayTime   ", data.general.getTotalPlayTime_TStr() );
-			appendValue("Hazard Time Alive", data.general.getHazardTimeAlive_TStr() );
+			appendValueT("Current Units    ", data.general.units );
+			appendValueT("Current Nanites  ", data.general.nanites );
+			appendValue ("Player Health    ", data.general.playerHealth );
+			appendValue ("Player Shield    ", data.general.playerShield );
+			appendValue ("Energy           ", data.general.energy );
+			appendValue ("Ship Health      ", data.general.shipHealth );
+			appendValue ("Ship Shield      ", data.general.shipShield );
+			appendValue ("Time Alive       ", Duration.toString(data.general.timeAlive) );
+			appendValue ("Total PlayTime   ", Duration.toString(data.general.totalPlayTime) );
+			appendValue ("Hazard Time Alive", Duration.toString(data.general.hazardTimeAlive) );
 			
 			currentTextArea = 1;
 			UniverseAddress currentUA = data.general.currentUniverseAddress;
 			if (currentUA!=null) {
 				appendEmptyLine();
 				appendLine("Current Location in Universe:");
-				if (currentUA.isPlanet     ()) {
+				if (currentUA.isPlanet()) {
 					Planet planet = data.universe.findPlanet(currentUA);
 					if (planet!=null)
 						appendLine("    on planet \""+planet+"\"");
@@ -121,7 +91,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			showUAddressAndPosition(data.general.graveUA, data.general.gravePos,"Position of Grave");
 			
 			currentTextArea = 0;
-			Long knownGlyphs = data.general.getKnownGlyphsMaks();
+			Long knownGlyphs = data.general.knownGlyphsMask;
 			if (knownGlyphs!=null) {
 				appendEmptyLine();
 				appendLine("Known Portal Glyphs:");
@@ -137,26 +107,16 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				appendLine("   "+str);
 			}
 			
-			appendEmptyLine();
-			appendLine("Discovered Items:");
-			appendValue("   available"          , (long)data.discoveryData.availableData.size() );
-			appendValue("      on planets"      , (long)data.discoveryData.availDiscoveredItemOnPlanets );
-			appendValue("      in solar systems", (long)data.discoveryData.availDiscoveredItemInSolarSystms );
-			appendValue("   stored   "          , (long)data.discoveryData.storeData.size() );
-			appendValue("      on planets"      , (long)data.discoveryData.storedDiscoveredItemOnPlanets );
-			appendValue("      in solar systems", (long)data.discoveryData.storedDiscoveredItemInSolarSystms );
-			
-			
-			
-//			if (SaveViewer.DEBUG) {
-//				appendEmptyLine();
-//				appendValue("Test value 1 (Bool)"   , data.general.getTestBool   ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-//				appendValue("Test value 2 (Integer)", data.general.getTestInteger("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-//				appendValue("Test value 3 (Float)"  , data.general.getTestFloat  ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-//				appendValue("Test value 4 (String)" , data.general.getTestString ("PlayerStateData","Stats",7,"Stats",4,"Value","Denominator") );
-//				appendValue("Test value 5 (Float)"  , Type.Float  , "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
-//				appendValue("Test value 6 (Integer)", Type.Integer, "PlayerStateData","Stats",7,"Stats",4,"Value","Denominator");
-//			}
+			if (data.discoveryData!=null) {
+				appendEmptyLine();
+				appendLine("Discovered Items:");
+				appendValue("   available"          , data.discoveryData.availableData.size() );
+				appendValue("      on planets"      , data.discoveryData.availDiscoveredItemOnPlanets );
+				appendValue("      in solar systems", data.discoveryData.availDiscoveredItemInSolarSystms );
+				appendValue("   stored   "          , data.discoveryData.storeData.size() );
+				appendValue("      on planets"      , data.discoveryData.storedDiscoveredItemOnPlanets );
+				appendValue("      in solar systems", data.discoveryData.storedDiscoveredItemInSolarSystms );
+			}
 		}
 
 		private void showUAddressAndPosition(UniverseAddress address, Position position, String title) {
@@ -180,103 +140,22 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			}
 		}
 		
-		private void appendEmptyLine() {
-			textAreas[currentTextArea].append("\r\n");
-		}
-
-		private void appendStatement(String label, String statement) {
-			String line = label+": "+statement;
-			appendLine(line);
-		}
-
 		private void appendLine(String line) {
 			if (!textAreas[currentTextArea].getText().isEmpty())
 				textAreas[currentTextArea].append("\r\n");
 			textAreas[currentTextArea].append(line);
 		}
 
-		private void showError(String label) {
-			switch (data.error) {
-			case NoError:
-				appendStatement(label,"???");
-				SaveViewer.log_error_ln("Value \""+label+"\" is <null>, but error is unknown: \""+data.errorMessage+"\"");
-				break;
-			case PathIsNotSolvable:
-				appendStatement(label,"Value not found");
-				SaveViewer.log_error_ln("Value \""+label+"\" not found: "+data.errorMessage);
-				break;
-			case UnexpectedType:
-				appendStatement(label,"Value has unexpected type");
-				SaveViewer.log_error_ln("Value \""+label+"\" has unexpected type: "+data.errorMessage);
-				break;
-			case ValueIsNull:
-				appendStatement(label,"<null>");
-				SaveViewer.log_error_ln("Value \""+label+"\" is <null>: "+data.errorMessage);
-				break;
-			}
+		private void appendEmptyLine() {
+			textAreas[currentTextArea].append("\r\n");
 		}
 
-		@SuppressWarnings("unused")
-		private void appendValue(String label, Boolean value) { if (value==null) showError(label); else appendStatement(label, ""+value); }
-		private void appendValue(String label, Long    value) { if (value==null) showError(label); else appendStatement(label, ""+value); }
-		@SuppressWarnings("unused")
-		private void appendValue(String label, Double  value) { if (value==null) showError(label); else appendStatement(label, ""+value); }
-		private void appendValue(String label, String  value) { if (value==null) showError(label); else appendStatement(label,    value); }
-		
-		@SuppressWarnings("unused")
-		private void appendValue(String label, Type expectedType, Object... path) {
-			Value value = null;
-			try {
-				value = JSON_Data.getSubNode(data.json_data,path);
-				switch(expectedType) {
-				case Bool   : if (appendBoolValue   (label,value)) return; break;
-				case Float  : if (appendFloatValue  (label,value)) return; break;
-				case Integer: if (appendIntegerValue(label,value)) return; break;
-				case String : if (appendStringValue (label,value)) return; break;
-				default: break;
-				}
-			} catch (PathIsNotSolvableException e) {
-				appendStatement(label,"Value not found");
-				SaveViewer.log_error_ln("Value \""+label+"\" not found: "+e.getMessage());
-				return;
-			}
-			appendStatement(label,"Value has unexpected type");
-			SaveViewer.log_error_ln("Value \""+label+"\" has unexpected type: "+(value==null?"<null>":value.getClass()));
-		}
+		private void appendValue (String label, int     value) { appendStatement(label, ""+value); }
+		private void appendValueT(String label, Long    value) { appendStatement(label, value==null?"":String.format(Locale.ENGLISH, "%,d", value)); }
+		private void appendValue (String label, Long    value) { appendStatement(label, value==null?"":(""+value)); }
+		private void appendValue (String label, String  value) { appendStatement(label, value==null?"":(   value)); }
 
-		private boolean appendBoolValue(String label, Value value) {
-			if (value instanceof BoolValue) {
-				BoolValue valueB = (BoolValue)value;
-				appendStatement(label, ""+valueB.value);
-				return true;
-			}
-			return false;
-		}
-
-		private boolean appendIntegerValue(String label, Value value) {
-			if (value instanceof IntegerValue) {
-				IntegerValue valueI = (IntegerValue)value;
-				appendStatement(label, ""+valueI.value);
-				return true;
-			}
-			return false;
-		}
-
-		private boolean appendFloatValue(String label, Value value) {
-			if (value instanceof FloatValue) {
-				FloatValue valueF = (FloatValue)value;
-				appendStatement(label, ""+valueF.value);
-				return true;
-			}
-			return false;
-		}
-
-		private boolean appendStringValue(String label, Value value) {
-			if (value instanceof StringValue) {
-				StringValue valueS = (StringValue)value;
-				appendStatement(label, valueS.value);
-				return true;
-			}
-			return false;
+		private void appendStatement(String label, String statement) {
+			appendLine(label+": "+statement);
 		}
 	}

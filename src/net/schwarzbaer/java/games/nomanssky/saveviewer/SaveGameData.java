@@ -524,6 +524,10 @@ public class SaveGameData {
 		@Override public int compareTo(Duration other) {
 			return (int) (this.value_s-other.value_s);
 		}
+		public static String toString(Long value_s) {
+			if (value_s==null) return "";
+			return toString((long)value_s);
+		}
 		public static String toString(long value_s) {
 			long s = value_s%60;
 			value_s = (value_s-s)/60;
@@ -1609,9 +1613,38 @@ public class SaveGameData {
 		public UniverseAddress graveUA;
 		public Position freighterPos;
 		public Position gravePos;
+		public Long units;
+		public Long nanites;
+		public Long playerHealth;
+		public Long playerShield;
+		public Long energy;
+		public Long shipHealth;
+		public Long shipShield;
+		public Long timeAlive;
+		public Long totalPlayTime;
+		public Long hazardTimeAlive;
+		public Long knownGlyphsMask;
 		
 		public General(SaveGameData data) {
 			this.data = data;
+			
+			currentUniverseAddress = null;
+			freighterUA  = null;
+			graveUA      = null;
+			freighterPos = null;
+			gravePos     = null;
+			
+			units        = null;
+			nanites      = null;
+			playerHealth = null;
+			playerShield = null;
+			energy       = null;
+			shipHealth   = null;
+			shipShield   = null;
+			timeAlive       = null;
+			totalPlayTime   = null;
+			hazardTimeAlive = null;
+			knownGlyphsMask = null;
 		}
 		
 		public void parse() {
@@ -1632,30 +1665,41 @@ public class SaveGameData {
 			freighterPos = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
 			gravePos     = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
+			units           = data.getIntegerValue( data.json_data, "PlayerStateData","Units"           );
+			nanites         = data.getIntegerValue( data.json_data, "PlayerStateData","Nanites"         );
+			playerHealth    = data.getIntegerValue( data.json_data, "PlayerStateData","Health"          );
+			playerShield    = data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          );
+			energy          = data.getIntegerValue( data.json_data, "PlayerStateData","Energy"          );
+			shipHealth      = data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      );
+			shipShield      = data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      );
+			timeAlive       = data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       );
+			totalPlayTime   = data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   );
+			hazardTimeAlive = data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" );
+			knownGlyphsMask = data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes");
 		}
 		
-		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
-		public Long getNanites        () { return data.getIntegerValue( data.json_data, "PlayerStateData","Nanites"         ); }
-		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
-		public Long getPlayerShield   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          ); }
-		public Long getEnergy         () { return data.getIntegerValue( data.json_data, "PlayerStateData","Energy"          ); }
-		public Long getShipHealth     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      ); }
-		public Long getShipShield     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      ); }
-		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
-		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
-		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
-		public Long getKnownGlyphsMaks() { return data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes"); }
-		
-		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return Duration.toString(v); }
-		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return Duration.toString(v); }
-		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return Duration.toString(v); }
-		
-		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
-		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
-		public Double      getTestFloat  (Object... path) { return data.getFloatValue  (data.json_data, path); }
-		public String      getTestString (Object... path) { return data.getStringValue (data.json_data, path); }
-		public JSON_Array  getTestArray  (Object... path) { return data.getArrayValue  (data.json_data, path); }
-		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
+//		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
+//		public Long getNanites        () { return data.getIntegerValue( data.json_data, "PlayerStateData","Nanites"         ); }
+//		public Long getPlayerHealth   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Health"          ); }
+//		public Long getPlayerShield   () { return data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          ); }
+//		public Long getEnergy         () { return data.getIntegerValue( data.json_data, "PlayerStateData","Energy"          ); }
+//		public Long getShipHealth     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      ); }
+//		public Long getShipShield     () { return data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      ); }
+//		public Long getTimeAlive      () { return data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       ); }
+//		public Long getTotalPlayTime  () { return data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   ); }
+//		public Long getHazardTimeAlive() { return data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" ); }
+//		public Long getKnownGlyphsMaks() { return data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes"); }
+//		
+//		public String getTimeAlive_TStr      () { Long v = getTimeAlive      (); if (v==null) return ""; return Duration.toString(v); }
+//		public String getTotalPlayTime_TStr  () { Long v = getTotalPlayTime  (); if (v==null) return ""; return Duration.toString(v); }
+//		public String getHazardTimeAlive_TStr() { Long v = getHazardTimeAlive(); if (v==null) return ""; return Duration.toString(v); }
+//		
+//		public Boolean     getTestBool   (Object... path) { return data.getBoolValue   (data.json_data, path); }
+//		public Long        getTestInteger(Object... path) { return data.getIntegerValue(data.json_data, path); }
+//		public Double      getTestFloat  (Object... path) { return data.getFloatValue  (data.json_data, path); }
+//		public String      getTestString (Object... path) { return data.getStringValue (data.json_data, path); }
+//		public JSON_Array  getTestArray  (Object... path) { return data.getArrayValue  (data.json_data, path); }
+//		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
 	}
 
 	public static final class UniverseAddress implements Comparable<UniverseAddress> {
