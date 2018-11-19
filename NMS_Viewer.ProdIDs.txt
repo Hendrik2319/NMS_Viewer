@@ -937,6 +937,7 @@
 ^POWERCELL2.type=Energy
 ^POWERCELL2.image=Product.powercell2.png
 ^POWERCELL2.imageBG=F0A92B
+^PROC_FARM#46483=
 ^PROC_FARM#78518=Letzte Weizenbohrer-Stecklinge
 ^PROC_FARM#78518.type=Special
 ^PROC_FARM#78518.image=Artifact.DelicateFlora.png
@@ -1116,6 +1117,7 @@
 ^TRA_ALLOY4.obsolete=
 ^TRA_ALLOY4.image=NmsCommodity_Superconducting_Fibre_icon.png
 ^TRA_ALLOY4.imageBG=F0A92B
+^TRA_COMMODITY2=
 ^TRA_COMMODITY3=Kometentröpfchen
 ^TRA_COMMODITY3.obsolete=
 ^TRA_COMMODITY3.image=NmsCommodity_Comet_Droplets_icon.png
@@ -1363,7 +1365,7 @@
 ^WAR_CURIO1.type=RaceGift
 ^WAR_CURIO1.image=Product.effigy.VykeenBildnis.png
 ^WAR_CURIO1.imageBG=10805C
-^WAR_CURIO2=Vy'keen-Dolch
+^WAR_CURIO2=Vy'keen-Dolch  (für Portal-Lokalisation)
 ^WAR_CURIO2.type=RaceGift
 ^WAR_CURIO2.image=Product.vykeendagger.png
 ^WAR_CURIO2.imageBG=10805C

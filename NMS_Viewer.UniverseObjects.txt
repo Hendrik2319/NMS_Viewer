@@ -1,5 +1,56 @@
+[Sys00010000801801]
+name=Alpha Polaris
+race=Korvax
+conflict=1
+class=Yellow
+short=
+info=Konfliktstufe: belanglos
+short=
+info=Wirtschaft: mittellos
+
+[Pln10010000801801]
+name=Alpha Polaris 1
+biome=Airless
+short=
+info=Fe#, Cu
+
+[Pln20010000801801]
+name=Dinae
+biome=Frozen
+short=
+info=Ag, CO2, Cu
+
+[Pln30010000801801]
+name=Alpha Polaris Prime
+biome=Lush
+short=
+info=Fe#, Pf, Cu
+
+[Pln40010000801801]
+name=Ebashane
+biome=Barren
+short=
+info=Fe#, Py, Cu
+
+[Pln50010000801801]
+name=Alpha Polaris 3
+biome=Frozen
+short.P=Wasser
+info=
+short=ExtCold
+info=Stufe 3
+short=
+info=Co, CO2, #Cu
+
+[Pln60010000801801]
+name=Aturin
+biome=Irradiated
+short=
+info=Fe#, U, Cu
+
 [Sys00B800231C1823]
 name=Volandro
+unexplored
 class=Green
 
 [Pln10B800231C1823]
@@ -46,7 +97,7 @@ conflict=2
 class=Yellow
 short=Schwarzes Loch
 info=
-short=5 unentdeckte Planeten
+short=5 Planeten
 info=
 
 [Reg00000004E7D981]
@@ -81,6 +132,22 @@ short=
 info=Fe#, Py, Cu
 short.P=Wasser
 info=
+
+[Sys00790004E7D981]
+name=Vohistnes XII
+race=Vykeen
+conflict=2
+class=Yellow
+short=Schwarzes Loch
+info=
+short=Erinnerungs-Terminal
+info=
+
+[Pln10790004E7D981]
+name=Esvega Tau
+biome=Frozen
+short=
+info=Ag, CO2, Cu
 
 [Reg000000F9A8CBC3]
 name=Meer von Idgewo
@@ -375,8 +442,6 @@ info=Ag, CO2, Cu
 oldname=Zuhcher X
 race=Korvax
 class=Yellow
-
-[Sys003D00FAA8CBC4]
 
 [Sys003F00FAA8CBC4]
 name=Vasakyvin
@@ -1046,7 +1111,7 @@ name=Dicton
 race=Gek
 conflict=1
 class=Yellow
-short=5 Planeten "unentdeckt"
+short=5 Planeten zu erforschen
 info=
 
 [Reg000000F8A8DBC6]
@@ -1127,6 +1192,27 @@ short=Schwarzes Loch
 info=
 
 [Sys012D00FAA90BC8]
+
+[Reg000000FCA45CAF]
+name=Nayluman-Cluster
+
+[Sys000200FCA45CAF]
+name=Afzelin-Gumie XIV
+race=Korvax
+conflict=1
+class=Yellow
+short=5 Planeten
+info=
+
+[Sys007900FCA45CAF]
+name=Dadurer-Iue
+race=Gek
+conflict=1
+class=Yellow
+short=4 Planeten
+info=
+short=Schwarzes Loch
+info=
 
 [Reg00000004994DA5]
 name=Netegoc
@@ -1265,6 +1351,46 @@ oldname=[GRA] Kumerat-Gader Tutimil
 
 [Pln30010008FF8FF8]
 oldname=[GRA] Sekart Ryugaile
+
+[Sys00790003000FF8]
+name=Tiganyada
+race=Vykeen
+conflict=1
+class=Yellow
+
+[Pln10790003000FF8]
+name=Xiazusc M44
+biome=Frozen
+short=
+info=Co, CO2, Cu
+
+[Pln20790003000FF8]
+name=Opiumfor Majoris
+biome=Irradiated
+short.P=Wasser
+info=
+short=ExtRad
+info=Stufe 3
+short=
+info=Co, U, #Cu
+
+[Pln30790003000FF8]
+name=Daka 55/Y4
+biome=Barren
+short=
+info=Co, Py, Cu
+
+[Pln40790003000FF8]
+name=Naslo D10
+biome=Scorched
+short=
+info=NaCl, P, Cu
+
+[Pln50790003000FF8]
+name=Neu: Wastosho
+biome=Toxic
+short=
+info=Na, NH3, Cu
 
 [Sys000100F8008FF8]
 oldname=Imurag
@@ -1415,6 +1541,26 @@ short=ExtHot
 info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
+
+[Reg00000003CC45B8]
+name=Aygans-Quadrant
+
+[Sys000B0003CC45B8]
+name=Uapseu-Altay
+race=Vykeen
+conflict=2
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln100B0003CC45B8]
+name=Rutwor
+biome=Airless
+aggrSentinels=
+short=Grav
+info=Gravitino-Bälle
+short=
+info=Ag, Fe#, Cu
 
 [Reg00000002C825D1]
 name=Leonist-Quadrant
