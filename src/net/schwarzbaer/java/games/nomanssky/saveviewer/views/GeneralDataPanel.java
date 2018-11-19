@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.Locale;
+import java.util.Vector;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -12,8 +13,8 @@ import javax.swing.JTextArea;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
@@ -66,24 +67,9 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			currentTextArea = 1;
 			UniverseAddress currentUA = data.general.currentUniverseAddress;
 			if (currentUA!=null) {
-				appendEmptyLine();
+				if (!textAreaIsEmpty()) appendEmptyLine();
 				appendLine("Current Location in Universe:");
-				if (currentUA.isPlanet()) {
-					Planet planet = data.universe.findPlanet(currentUA);
-					if (planet!=null)
-						appendLine("    on planet \""+planet+"\"");
-					else
-						appendLine("    on a planet");
-				}
-				if (currentUA.isSolarSystem()) {
-					SolarSystem system = data.universe.findSolarSystem(currentUA);
-					if (system!=null)
-						appendLine("    in solar system \""+system+"\"");
-					else
-						appendLine("    in a solar system");
-				}
-				appendLine("    "+currentUA.getCoordinates());
-				appendLine("    "+currentUA.getExtendedSigBoostCode());
+				showLocationInUniverse(currentUA,"    ");
 				appendLine(String.format(Locale.ENGLISH, "    distance to center of galaxy: %1.1f regions", currentUA.getDistToCenter_inRegionUnits()));
 			}
 			
@@ -93,7 +79,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			currentTextArea = 0;
 			Long knownGlyphs = data.general.knownGlyphsMask;
 			if (knownGlyphs!=null) {
-				appendEmptyLine();
+				if (!textAreaIsEmpty()) appendEmptyLine();
 				appendLine("Known Portal Glyphs:");
 				String str = "";
 				int n = (int)(long)knownGlyphs;
@@ -108,7 +94,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			}
 			
 			if (data.discoveryData!=null) {
-				appendEmptyLine();
+				if (!textAreaIsEmpty()) appendEmptyLine();
 				appendLine("Discovered Items:");
 				appendValue("   available"          , data.discoveryData.availableData.size() );
 				appendValue("      on planets"      , data.discoveryData.availDiscoveredItemOnPlanets );
@@ -117,17 +103,49 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				appendValue("      on planets"      , data.discoveryData.storedDiscoveredItemOnPlanets );
 				appendValue("      in solar systems", data.discoveryData.storedDiscoveredItemInSolarSystms );
 			}
+			
+			if (currentUA!=null && data.universe!=null) {
+				Galaxy galaxy = data.universe.findGalaxy(currentUA);
+				if (galaxy!=null) {
+					double min = Double.POSITIVE_INFINITY; Vector<Region> minRegions = new Vector<>();
+					double max = Double.NEGATIVE_INFINITY; Vector<Region> maxRegions = new Vector<>();
+					for (Region r:galaxy.regions) {
+						if (!r.isReachableByTeleport()) continue;
+						
+						if (min>r.distToCenter) {
+							minRegions.clear();
+							minRegions.add(r);
+							min = r.distToCenter;
+						} else if (min==r.distToCenter)
+							minRegions.add(r);
+						
+						if (max<r.distToCenter) {
+							maxRegions.clear();
+							maxRegions.add(r);
+							max = r.distToCenter;
+						} else if (max==r.distToCenter)
+							maxRegions.add(r);
+					}
+					
+					if (!maxRegions.isEmpty() && !minRegions.isEmpty()) {
+						if (!textAreaIsEmpty()) appendEmptyLine();
+						appendLine("Way to Galactic Center:    ( = Teleport Range )");
+						appendLine(String.format(Locale.ENGLISH, "   max: %1.1f ly  %s", max*400, maxRegions.toString()));
+						appendLine(String.format(Locale.ENGLISH, "   min: %1.1f ly  %s", min*400, minRegions.toString()));
+						appendLine(String.format(Locale.ENGLISH, "        = %1.1f%% of max", min/max*100));
+						appendLine(String.format(Locale.ENGLISH, "-> Way to Galactic Center: %1.1f%% passed", (1-min/max)*100));
+					}
+				}
+			}
 		}
 
 		private void showUAddressAndPosition(UniverseAddress address, Position position, String title) {
 			if (address!=null || position!=null) {
-				appendEmptyLine();
+				if (!textAreaIsEmpty()) appendEmptyLine();
 				appendLine(title+":");
 				if (address!=null) {
 					appendLine("    location in universe:");
-					for (String str:address.getVerboseName(data.universe)) appendLine("        "+str);
-					appendLine("        "+address.getCoordinates());
-					appendLine("        "+address.getExtendedSigBoostCode());
+					showLocationInUniverse(address, "        ");
 				}
 				if (position!=null) {
 					appendLine("    position in system:");
@@ -139,11 +157,23 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				}
 			}
 		}
+
+		private void showLocationInUniverse(UniverseAddress address, String indent) {
+			for (String str:address.getVerboseName(data.universe)) {
+				appendLine(indent+str);
+			}
+			appendLine(indent+address.getCoordinates());
+			appendLine(indent+address.getExtendedSigBoostCode());
+		}
 		
 		private void appendLine(String line) {
-			if (!textAreas[currentTextArea].getText().isEmpty())
+			if (!textAreaIsEmpty())
 				textAreas[currentTextArea].append("\r\n");
 			textAreas[currentTextArea].append(line);
+		}
+
+		private boolean textAreaIsEmpty() {
+			return textAreas[currentTextArea].getText().isEmpty();
 		}
 
 		private void appendEmptyLine() {

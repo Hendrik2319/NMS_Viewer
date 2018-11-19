@@ -1027,17 +1027,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		clickedTreePath = null;
 	}
 
-	public void highlightRegions(int voxelX, int voxelZ) {
+	public void highlightRegions(int galaxyIndex, int voxelX, int voxelZ) {
 		Vector<Object> changedObjects = new Vector<>(); 
-		for (Galaxy g:data.universe.galaxies)
-			for (Region r:g.regions) {
-				if (r.voxelX==voxelX && r.voxelZ==voxelZ) {
-					if (!r.isHighlighted) {
-						r.isHighlighted = true;
-						changedObjects.addElement(r);
-					}
+		
+		Galaxy g = data.universe.findGalaxy(galaxyIndex);
+		if (g==null) return;
+		
+		for (Region r:g.regions) {
+			if (r.voxelX==voxelX && r.voxelZ==voxelZ) {
+				if (!r.isHighlighted) {
+					r.isHighlighted = true;
+					changedObjects.addElement(r);
 				}
 			}
+		}
 		updateChangedObjects(treeRoot,changedObjects.toArray());
 	}
 
@@ -1600,16 +1603,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, NodeType.Galaxy, value); }
 		@Override protected int getDataChildrenCount() { return value.regions.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new RegionNode(this,value.regions.get(i)); }
-		@Override protected Comparator<Integer> getSorter() { return new Comparator<Integer>() {
-			@Override
-			public int compare(Integer i1, Integer i2) {
-				double d1 = value.regions.get(i1).getUniverseAddress().getDistToCenter_inRegionUnits();
-				double d2 = value.regions.get(i2).getUniverseAddress().getDistToCenter_inRegionUnits();
-				if (d1>d2) return -1;
-				if (d1<d2) return +1;
-				return 0;
-			}
-		}; }
+//		@Override protected Comparator<Integer> getSorter() { return new Comparator<Integer>() {
+//			@Override
+//			public int compare(Integer i1, Integer i2) {
+//				double d1 = value.regions.get(i1).distToCenter;
+//				double d2 = value.regions.get(i2).distToCenter;
+//				if (d1>d2) return -1;
+//				if (d1<d2) return +1;
+//				return 0;
+//			}
+//		}; }
 	}
 	static class RegionNode extends GenericTreeNode<Region> {
 		private RegionNode(GalaxyNode parent, Region value) { super(parent, NodeType.Region, value); }

@@ -1704,7 +1704,7 @@ public class SaveGameData {
 
 	public static final class UniverseAddress implements Comparable<UniverseAddress> {
 
-		final int galaxyIndex;
+		public final int galaxyIndex;
 		public final int voxelX;
 		final int voxelY;
 		public final int voxelZ;
@@ -1912,9 +1912,15 @@ public class SaveGameData {
 		}
 
 		public void sort() {
-			galaxies.sort(Comparator.comparing(g -> g.galacticIndex));
+			galaxies.sort(Comparator.comparing(g -> g.galaxyIndex));
 			for (Galaxy g:galaxies) {
-				g.regions.sort(Comparator.comparing((Region r) -> r.voxelX).thenComparing((Region r) -> r.voxelY).thenComparing((Region r) -> r.voxelZ));
+				g.regions.sort(
+						Comparator
+						.comparing((Region r) -> -r.distToCenter)
+						.thenComparing((Region r) -> r.voxelX)
+						.thenComparing((Region r) -> r.voxelY)
+						.thenComparing((Region r) -> r.voxelZ)
+					);
 				for (Region r:g.regions) {
 					r.solarSystems.sort(Comparator.comparing(s -> s.solarSystemIndex));
 					for (SolarSystem s:r.solarSystems) {
@@ -1960,9 +1966,13 @@ public class SaveGameData {
 			return galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
 		}
 
-		private Galaxy findGalaxy(int galacticIndex) {
+		public Galaxy findGalaxy(UniverseAddress ua) {
+			return findGalaxy(ua.galaxyIndex);
+		}
+
+		public Galaxy findGalaxy(int galaxyIndex) {
 			for (Galaxy g:galaxies)
-				if (g.galacticIndex==galacticIndex)
+				if (g.galaxyIndex==galaxyIndex)
 					return g;
 			return null;
 		}
@@ -1998,20 +2008,20 @@ public class SaveGameData {
 			@SuppressWarnings("unused")
 			private final static String[] PREDEFINED_NAMES_DE = {"Euklid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
 			final Universe universe;
-			final int galacticIndex;
+			public final int galaxyIndex;
 			public final Vector<Region> regions;
 			
 			public Galaxy(Universe universe, int galacticIndex) {
 				this.universe = universe;
-				this.galacticIndex = galacticIndex;
+				this.galaxyIndex = galacticIndex;
 				this.regions = new Vector<>();
 			}
 
 			@Override
 			public String toString() {
-				if (galacticIndex<PREDEFINED_NAMES_EN.length)
-					return "Galaxy \""+PREDEFINED_NAMES_EN[galacticIndex]+"\"";
-				return "Galaxy "+galacticIndex;
+				if (galaxyIndex<PREDEFINED_NAMES_EN.length)
+					return "Galaxy \""+PREDEFINED_NAMES_EN[galaxyIndex]+"\"";
+				return "Galaxy "+galaxyIndex;
 			}
 
 			public void addRegion(Region galacticRegion) {
@@ -2036,6 +2046,7 @@ public class SaveGameData {
 			public String oldname;
 			public String name;
 			public boolean isHighlighted;
+			public double distToCenter;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				this.galaxy = galaxy;
@@ -2045,6 +2056,7 @@ public class SaveGameData {
 				this.solarSystems = new Vector<>();
 				this.setName(null);
 				this.isHighlighted = false;
+				this.distToCenter = getUniverseAddress().getDistToCenter_inRegionUnits();
 			}
 
 			@Override
@@ -2073,7 +2085,7 @@ public class SaveGameData {
 
 			public UniverseAddress getUniverseAddress() {
 				if (galaxy==null) return null;
-				return new UniverseAddress( galaxy.galacticIndex, voxelX,voxelY,voxelZ, 0,0 );
+				return new UniverseAddress( galaxy.galaxyIndex, voxelX,voxelY,voxelZ, 0,0 );
 			}
 
 			public boolean isReachableByTeleport() {
