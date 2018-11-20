@@ -8,6 +8,9 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -25,11 +28,13 @@ import java.util.Vector;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -85,7 +90,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		SentinelAggressive;
 	}
 	private enum AdditionalTreeIcons {
-		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20);
+		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20), BlackHole(20), Atlas(17);
 
 		private int iconWidth;
 		private AdditionalTreeIcons(int iconWidth) { this.iconWidth = iconWidth; }
@@ -330,14 +335,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	private Window mainWindow;
 	
-	private GeneralInfoPanel     infoPanel_Other;
-	private SolarSystemInfoPanel infoPanel_SolarSystem;
-	private PlanetInfoPanel      infoPanel_Planet;
-	private InfoPanel            currentInfoPanel;
+	private AbstractInfoPanel     currentInfoPanel;
+	private InfoPanel_Other       infoPanel_Other;
+	private InfoPanel_SolarSystem infoPanel_SolarSystem;
+	private InfoPanel_Planet      infoPanel_Planet;
+	private GalaxyMapPanel galaxyMapPanel;
 	
 	public UniversePanel(SaveGameData data, Window mainWindow) {
 		super(data);
 		this.mainWindow = mainWindow;
+		this.galaxyMapPanel = null;
 		
 		selectedNode = null;
 		TreeListener listener = new TreeListener();
@@ -357,15 +364,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		contextMenu_Planet      = new Contextmenu_Planet();
 		contextMenu_Region      = new Contextmenu_Region();
 		
-		infoPanel_Other       = new GeneralInfoPanel();
-		infoPanel_SolarSystem = new SolarSystemInfoPanel(this,data.general.currentUniverseAddress);
-		infoPanel_Planet      = new PlanetInfoPanel(this);
+		infoPanel_Other       = new InfoPanel_Other();
+		infoPanel_SolarSystem = new InfoPanel_SolarSystem();
+		infoPanel_Planet      = new InfoPanel_Planet();
 		
 		add(treeScrollPane,BorderLayout.CENTER);
 		
 		add(currentInfoPanel = infoPanel_Other,BorderLayout.EAST);
 	}
 	
+	public void setGalaxyMapPanel(GalaxyMapPanel galaxyMapPanel) {
+		this.galaxyMapPanel = galaxyMapPanel;
+	}
+
 	private void updateTreeNode(GenericTreeNode<?> node, boolean isPlanet) {
 		//GenericTreeNode<?> node = selectedNode;
 		treeModel.nodeChanged(node);
@@ -373,12 +384,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		GameInfos.saveUniverseObjectDataToFile(data.universe);
 	}
 	
-	private static abstract class InfoPanel extends JPanel {
+	private static abstract class AbstractInfoPanel extends JPanel {
 		private static final long serialVersionUID = 1055278730261206951L;
 		
 		protected JTextArea textArea;
 		
-		InfoPanel() {
+		AbstractInfoPanel() {
 			super(new BorderLayout(3,3));
 			setPreferredSize(new Dimension(650,500));
 			
@@ -393,7 +404,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		public abstract void setContent(GenericTreeNode<?> node);
 	}
 	
-	private static class GeneralInfoPanel extends InfoPanel {
+	private static class InfoPanel_Other extends AbstractInfoPanel {
 		private static final long serialVersionUID = 4133259332387200850L;
 
 		@Override
@@ -438,13 +449,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private static abstract class UniverseObjectInfoPanel extends InfoPanel {
+	private static abstract class InfoPanel_UniverseObject extends AbstractInfoPanel {
 		private static final long serialVersionUID = -8235731718380188431L;
 		
 		protected SimplifiedTable extraInfoTable;
-		private UniversePanel universePanel;
+		protected UniversePanel universePanel;
 		
-		UniverseObjectInfoPanel(UniversePanel universePanel) {
+		InfoPanel_UniverseObject(UniversePanel universePanel) {
 			this.universePanel = universePanel;
 			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
 		}
@@ -565,25 +576,112 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private static class SolarSystemInfoPanel extends UniverseObjectInfoPanel {
+	private class InfoPanel_SolarSystem extends InfoPanel_UniverseObject {
 		private static final long serialVersionUID = 1050112094455682248L;
 		
-		private UniverseAddress currentUniverseAddress;
+		private SolarSystemNode node;
 
-		SolarSystemInfoPanel(UniversePanel universePanel, UniverseAddress currentUniverseAddress) {
-			super(universePanel);
-			this.currentUniverseAddress = currentUniverseAddress;
+		private JPanel valuePanel;
+		private GridBagLayout valuePanelLayout;
+		private JCheckBox chkbxAtlasInterface;
+		private JCheckBox chkbxBlackHole;
+		private JPanel blackHoleTargetPanel;
+		private JComboBox<Region> cmbbxBlackHoleTargetRegion;
+		private JComboBox<SolarSystem> cmbbxBlackHoleTargetSolarSystem;
+
+		InfoPanel_SolarSystem() {
+			super(UniversePanel.this);
+			this.node = null;
 			
-			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));
+			chkbxAtlasInterface = SaveViewer.createCheckbox("has atlas interface", e->{ node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected(); this.universePanel.updateTreeNode(node, false); }, false);
+			chkbxBlackHole      = SaveViewer.createCheckbox("has black hole"     , e->{ setBlackHole(); updateTreeNode(node, false); galaxyMapPanel.updateBlackHoleConnections(); }, false);
 			
-			add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
+			cmbbxBlackHoleTargetRegion      = new JComboBox<Region>();
+			cmbbxBlackHoleTargetSolarSystem = new JComboBox<SolarSystem>();
+			if (data.general.currentUniverseAddress!=null) {
+				final Galaxy galaxy = data.universe.findGalaxy(data.general.currentUniverseAddress);
+				if (galaxy!=null) {
+					cmbbxBlackHoleTargetRegion.setModel(new DefaultComboBoxModel<>(galaxy.regions));
+					//cmbbxBlackHoleTargetRegion.setSelectedItem(null);
+				}
+			}
+			cmbbxBlackHoleTargetRegion.addActionListener(e->{
+				Region region = (Region)cmbbxBlackHoleTargetRegion.getSelectedItem();
+				if (region==null) cmbbxBlackHoleTargetSolarSystem.setModel(new DefaultComboBoxModel<>());
+				else              cmbbxBlackHoleTargetSolarSystem.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(region.solarSystems)));
+			});
+			cmbbxBlackHoleTargetSolarSystem.addActionListener(e->{
+				SolarSystem system = (SolarSystem)cmbbxBlackHoleTargetSolarSystem.getSelectedItem();
+				node.value.blackHoleTarget = system==null?null:system.getUniverseAddress();
+				updateTreeNode(node, false);
+				galaxyMapPanel.updateBlackHoleConnections();
+			});
+			cmbbxBlackHoleTargetSolarSystem.setRenderer(new TableView.NonStringRenderer<SolarSystem>((Object obj)->{
+				if (!(obj instanceof SolarSystem)) return "";
+				SolarSystem system = (SolarSystem)obj;
+				return system.toString(true, false, false, true);
+			}));
+			
+			blackHoleTargetPanel = new JPanel(new GridLayout(0,1,3,3));
+			blackHoleTargetPanel.setBorder(BorderFactory.createTitledBorder("Black Hole Target"));
+			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
+			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
+			
+			valuePanel = new JPanel(valuePanelLayout = new GridBagLayout());
+			valuePanel.setBorder(BorderFactory.createTitledBorder("Values"));
+			
+			GridBagConstraints c = new GridBagConstraints();
+			addCompToValuePanel(c, chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(c, chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(c, blackHoleTargetPanel, 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			
+			JPanel southPanel = new JPanel(new BorderLayout(3,3));
+			southPanel.add(valuePanel, BorderLayout.WEST);
+			southPanel.add(new JScrollPane(extraInfoTable), BorderLayout.CENTER);
+			
+			add(southPanel,BorderLayout.SOUTH);
+		}
+
+		private void setBlackHole() {
+			node.value.hasBlackHole = chkbxBlackHole.isSelected();
+			updateBlackHoleTargetPanel();
+		}
+
+		private void updateBlackHoleTargetPanel() {
+			SolarSystem system = node.value;
+			blackHoleTargetPanel.setEnabled(system.hasBlackHole);
+			cmbbxBlackHoleTargetRegion.setEnabled(system.hasBlackHole);
+			cmbbxBlackHoleTargetSolarSystem.setEnabled(system.hasBlackHole);
+			if (system.blackHoleTarget==null) {
+				cmbbxBlackHoleTargetRegion.setSelectedItem(null);
+				cmbbxBlackHoleTargetSolarSystem.setSelectedItem(null);
+			} else {
+				cmbbxBlackHoleTargetRegion.setSelectedItem(data.universe.findRegion(system.blackHoleTarget));
+				cmbbxBlackHoleTargetSolarSystem.setSelectedItem(data.universe.findSolarSystem(system.blackHoleTarget));
+			}
+		}
+		
+		private void addCompToValuePanel(GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+			c.weightx=weightx;
+			c.weighty=weighty;
+			c.gridwidth=gridwidth;
+			c.gridheight=gridheight;
+			c.fill = fill;
+			valuePanelLayout.setConstraints(comp, c);
+			valuePanel.add(comp);
 		}
 		
 		@Override
 		public void setContent(GenericTreeNode<?> node) {
+			this.node = (SolarSystemNode)node;
 			double distance_reg;
 			
-			SolarSystem system = ((SolarSystemNode)node).value;
+			SolarSystem system = this.node.value;
+			chkbxAtlasInterface.setSelected(system.hasAtlasInterface);
+			chkbxBlackHole     .setSelected(system.hasBlackHole     );
+			updateBlackHoleTargetPanel();
+			
 			int n = system.planets.size();
 			UniverseAddress ua = system.getUniverseAddress();
 			
@@ -594,10 +692,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
 			if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
 			
-			distance_reg = ua.getDistToOther_inRegionUnits(currentUniverseAddress);
-			textArea.append("\r\n");
-			textArea.append(                                 "Distance to current position:\r\n");
-			textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+			if (data.general.currentUniverseAddress!=null) {
+				distance_reg = ua.getDistToOther_inRegionUnits( data.general.currentUniverseAddress );
+				textArea.append("\r\n");
+				textArea.append(                             "Distance to current position:\r\n");
+				textArea.append(String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+			}
 			
 			distance_reg = ua.getDistToCenter_inRegionUnits();
 			textArea.append("\r\n");
@@ -620,13 +720,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private static class PlanetInfoPanel extends UniverseObjectInfoPanel {
+	private class InfoPanel_Planet extends InfoPanel_UniverseObject {
 		private static final long serialVersionUID = -5303591976120968332L;
 		
 		private JLabel portalGlyphs;
 		
-		PlanetInfoPanel(UniversePanel universePanel) {
-			super(universePanel);
+		InfoPanel_Planet() {
+			super(UniversePanel.this);
 			
 			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
 			
@@ -665,7 +765,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 
-		private static Icon createPortalGlyphs(long portalGlyphCode) {
+		private Icon createPortalGlyphs(long portalGlyphCode) {
 			BufferedImage image = new BufferedImage(50*12, 45*1, BufferedImage.TYPE_INT_RGB);
 			Graphics graphics = image.getGraphics();
 			
@@ -1200,7 +1300,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void selectionChanged() {
-		InfoPanel prevInfoPanel = currentInfoPanel;
+		AbstractInfoPanel prevInfoPanel = currentInfoPanel;
 		
 		if (selectedNode==null) {
 			currentInfoPanel=infoPanel_Other;
@@ -1470,16 +1570,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					SolarSystemNode solarSystemNode = (SolarSystemNode)node;
 					SolarSystem system = solarSystemNode.value;
 					Icon icon;
-					if (!system.additionalInfos.isEmpty()) {
-						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.isUnexplored))
+					if (!system.additionalInfos.isEmpty() || system.hasAtlasInterface || system.hasBlackHole) {
+						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole))
 							icon = solarSystemNode.cachedCustomIcon.get();
 						else {
 							icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel, system.isUnexplored);
+							if (system.hasAtlasInterface)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Atlas));
+							if (system.hasBlackHole)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BlackHole));
 							if (system.additionalInfos.hasTeleportEndPoint)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter));
 							if (system.additionalInfos.hasFreighter)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
-							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.isUnexplored);
+							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole);
 						}
 					} else
 						icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel, system.isUnexplored);
@@ -1633,16 +1737,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private final StarClass starClass;
 			private final int conflictLevel;
 			private final boolean isUnexplored;
+			protected boolean hasAtlasInterface;
+			private boolean hasBlackHole;
 
-			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel, boolean isUnexplored) {
+			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel, boolean isUnexplored, boolean hasAtlasInterface, boolean hasBlackHole) {
 				this.icon = icon;
 				this.race = race;
 				this.starClass = starClass;
 				this.conflictLevel = conflictLevel;
 				this.isUnexplored = isUnexplored;
+				this.hasAtlasInterface = hasAtlasInterface;
+				this.hasBlackHole = hasBlackHole;
 			}
-			public boolean is(Race race, StarClass starClass, int conflictLevel, boolean isUnexplored) {
-				return this.race==race && this.starClass==starClass && this.conflictLevel==conflictLevel && this.isUnexplored==isUnexplored;
+			public boolean is(Race race, StarClass starClass, int conflictLevel, boolean isUnexplored, boolean hasAtlasInterface, boolean hasBlackHole) {
+				return this.race==race && this.starClass==starClass && this.conflictLevel==conflictLevel && this.isUnexplored==isUnexplored && this.hasAtlasInterface==hasAtlasInterface && this.hasBlackHole==hasBlackHole;
 			}
 			public Icon get() {
 				return icon;

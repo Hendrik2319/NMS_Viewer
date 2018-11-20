@@ -23,6 +23,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Vector;
 import java.util.function.BiConsumer;
 
 import javax.swing.BoxLayout;
@@ -38,8 +39,10 @@ import javax.swing.JScrollBar;
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
@@ -56,7 +59,9 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 
 	private JComboBox<ZoomStep> zoomField;
 	private JLabel statusField;
+	
 	private Galaxy currentGalaxy;
+	private RegionData currentRegionData;
 	
 	private static class ZoomStep {
 		private double value;
@@ -85,25 +90,25 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		}
 	}
 	
-	public GalaxyMapPanel(SaveGameData data, Window mainWindow, UniversePanel universePanel) {
+	public GalaxyMapPanel(SaveGameData data, Window mainWindow) {
 		super(data);
 		this.mainWindow = mainWindow;
-		this.universePanel = universePanel;
+		this.universePanel = null;
 		
 		CombinedListener combiListener = new CombinedListener();
 		
 		int preselectedGalaxy = 0;
 		currentGalaxy = data.universe.galaxies.get(preselectedGalaxy);
-		RegionData regionData = new RegionData(currentGalaxy);
+		currentRegionData = new RegionData(currentGalaxy);
 		//knownGlyphs = 0b110111100L;
-		galaxyMap = new GalaxyMap(combiListener,regionData,data.general.currentUniverseAddress,data.general.knownGlyphsMask);
+		galaxyMap = new GalaxyMap(combiListener,currentRegionData,data.general.currentUniverseAddress,data.general.knownGlyphsMask);
 		
 		combiListener.setContextMenu(new ContextMenu(galaxyMap));
 		
 		
 		JComboBox<Galaxy> cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
 		cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
-		cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy(new RegionData(currentGalaxy = (Galaxy)cmbbxGalaxies.getSelectedItem())));
+		cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy(currentRegionData = new RegionData(currentGalaxy = (Galaxy)cmbbxGalaxies.getSelectedItem())));
 		
 		zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
 		zoomField.addActionListener( e->{
@@ -165,6 +170,14 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		add(statusPanel,BorderLayout.SOUTH);
 		
 		zoomField.setSelectedItem(null);
+	}
+
+	public void setUniversePanel(UniversePanel universePanel) {
+		this.universePanel = universePanel;
+	}
+
+	public void updateBlackHoleConnections() {
+		currentRegionData.updateBlackHoleConnections();
 	}
 
 	private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int fill) {
@@ -236,22 +249,27 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		private Component invoker;
 		private RegionData.RegionCoord clickedPos;
 
+		private JMenuItem miMarkRegions;
+		private JMenuItem miDistCircle;
+
 		private ContextMenu(Component invoker) {
 			super("Contextmenu");
 			this.invoker = invoker;
 			this.clickedPos = null;
 			
-			JMenuItem miMarkRegions = new JMenuItem("Mark Regions in \"Known Universe\"");
+			miMarkRegions = new JMenuItem("Mark Regions in \"Known Universe\"");
 			miMarkRegions.addActionListener(e->{
 				if (clickedPos!=null)
 					universePanel.highlightRegions(currentGalaxy.galaxyIndex,clickedPos.voxelX,clickedPos.voxelZ);
 			});
 			
-			JMenuItem miDistCircle = new JMenuItem("Show Circle with Distance to Galaxy Center");
+			miDistCircle = new JMenuItem("Show Circle with Distance to Galaxy Center");
 			miDistCircle.addActionListener(e->galaxyMap.showDistCircle(clickedPos));
 			
-			JCheckBoxMenuItem chkbxUsePreparedBitmap = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
-			JCheckBoxMenuItem chkbxShowMarkers = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
+			JCheckBoxMenuItem chkbxUsePreparedBitmap    = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
+			JCheckBoxMenuItem chkbxShowMarkers          = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
+			JCheckBoxMenuItem chkbxShowBlackHoleTargets = new JCheckBoxMenuItem("Show Black Hole Targets", galaxyMap.showBlackHoleTargets);
+			
 			chkbxShowMarkers.setEnabled(!galaxyMap.usePreparedBitmap);
 			
 			chkbxUsePreparedBitmap.addActionListener( e->{
@@ -263,20 +281,23 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			chkbxShowMarkers.addActionListener( e->{
 				galaxyMap.showMarkers(chkbxShowMarkers.isSelected());
 			});
+			chkbxShowBlackHoleTargets.addActionListener( e->{
+				galaxyMap.showBlackHoleTargets(chkbxShowBlackHoleTargets.isSelected());
+			});
 			
 			add(miMarkRegions);
 			add(miDistCircle);
 			addSeparator();
 			add(chkbxUsePreparedBitmap);
 			add(chkbxShowMarkers);
+			add(chkbxShowBlackHoleTargets);
 		}
 
-		public void show(int x, int y) {
-			show(invoker, x, y);
-		}
-
-		public void setClickedPos(RegionData.RegionCoord clickedPos) {
+		public void show(int screenX, int screenY, RegionData.RegionCoord clickedPos) {
 			this.clickedPos = clickedPos;
+			miMarkRegions.setText(String.format("Mark Regions (%d,#,%d) in \"Known Universe\"", clickedPos.voxelX, clickedPos.voxelZ));
+			miDistCircle .setText(String.format("Show Circle with Distance to Galaxy Center for Region (%d,#,%d)", clickedPos.voxelX, clickedPos.voxelZ));
+			show(invoker, screenX, screenY);
 		}
 	}
 	
@@ -347,8 +368,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			if (e.getButton()==MouseEvent.BUTTON3 && contextMenu!=null) {
 				int voxelX = galaxyMap.computeVoxelX(e.getX());
 				int voxelZ = galaxyMap.computeVoxelZ(e.getY());
-				contextMenu.setClickedPos(new RegionData.RegionCoord(voxelX, voxelZ));
-				contextMenu.show(e.getX(), e.getY());
+				contextMenu.show(e.getX(), e.getY(), new RegionData.RegionCoord(voxelX, voxelZ));
 			}
 		}
 		
@@ -360,10 +380,14 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 	private static class RegionData {
 		
 		private HashMap<RegionCoord, RegionState> regions;
+		private Vector<BlackHoleConn> blackHoleConnections;
+		private Galaxy galaxy;
 		
 		private RegionData(Galaxy galaxy) {
+			this.galaxy = galaxy;
 			regions = new HashMap<>();
-			for (Region region:galaxy.regions) {
+			blackHoleConnections = new Vector<>();
+			for (Region region:this.galaxy.regions) {
 				RegionCoord rc = new RegionCoord(region.voxelX,region.voxelZ);
 				RegionState regionState = regions.get(rc);
 				if (regionState==null)
@@ -371,9 +395,18 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				else
 					regionState.update(region);
 			}
+			updateBlackHoleConnections();
+		}
+
+		private void updateBlackHoleConnections() {
+			blackHoleConnections.clear();
+			for (Region region:galaxy.regions)
+				for (SolarSystem sys:region.solarSystems)
+					if (sys.hasBlackHole && sys.blackHoleTarget!=null)
+						blackHoleConnections.add(new BlackHoleConn(sys.getUniverseAddress(), sys.blackHoleTarget));
 		}
 		
-		public void forEach(BiConsumer<RegionCoord, RegionState> action) {
+		public void forEachRegion(BiConsumer<RegionCoord, RegionState> action) {
 			regions.forEach(action);
 		}
 		
@@ -397,6 +430,9 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				this.voxelX = voxelX;
 				this.voxelZ = voxelZ;
 			}
+			public RegionCoord(UniverseAddress ua) {
+				this(ua.voxelX,ua.voxelZ);
+			}
 			@Override
 			public int hashCode() {
 				return (voxelX&0xFFFF)<<16 | (voxelZ&0xFFFF);
@@ -408,6 +444,48 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				if (!(obj instanceof RegionCoord)) return false;
 				RegionCoord other = (RegionCoord) obj;
 				return (voxelX!=other.voxelX) || (voxelZ!=other.voxelZ);
+			}
+		}
+		
+		private static class BlackHoleConn {
+			static int CIRCLE_SEGMENTS = 200;
+			
+			private final RegionCoord source;
+			private final RegionCoord target;
+			final SaveGameData.Point3D[] polygon;
+			
+			public BlackHoleConn(RegionCoord source, RegionCoord target) {
+				this.source = source;
+				this.target = target;
+				this.polygon = generatePolygon();
+			}
+			public BlackHoleConn(UniverseAddress sourceUA, UniverseAddress targetUA) {
+				this(new RegionCoord(sourceUA), new RegionCoord(targetUA));
+			}
+			
+			private SaveGameData.Point3D[] generatePolygon() {
+				double startRadius = Math.sqrt( source.voxelX*source.voxelX + source.voxelZ*source.voxelZ );
+				double endRadius   = Math.sqrt( target.voxelX*target.voxelX + target.voxelZ*target.voxelZ );
+				double startAngle_deg = Math.atan2(source.voxelZ, source.voxelX)/Math.PI*180;
+				double endAngle_deg   = Math.atan2(target.voxelZ, target.voxelX)/Math.PI*180;
+				boolean flipped = (endAngle_deg>startAngle_deg &&  endAngle_deg-startAngle_deg>180) || (startAngle_deg>endAngle_deg &&  startAngle_deg-endAngle_deg<180);
+				
+				while (startAngle_deg    >endAngle_deg) endAngle_deg += 360;
+				while (startAngle_deg+360<endAngle_deg) endAngle_deg -= 360;
+				
+				double angleDelta_deg = endAngle_deg-startAngle_deg;
+				if (flipped) angleDelta_deg -= 360;
+				int nSeg = (int)Math.ceil(Math.abs(angleDelta_deg)/360*CIRCLE_SEGMENTS);
+				double segAngle_deg = angleDelta_deg/nSeg;
+				
+				SaveGameData.Point3D[] polygons = new SaveGameData.Point3D[nSeg+1];
+				for (int i=0; i<=nSeg; i++) {
+					double radius = (startRadius*(nSeg-i) + endRadius*i)/nSeg;
+					double x = radius * Math.cos( (i*segAngle_deg+startAngle_deg)/180*Math.PI );
+					double z = radius * Math.sin( (i*segAngle_deg+startAngle_deg)/180*Math.PI );
+					polygons[i] = new SaveGameData.Point3D(x,0,z);
+				}
+				return polygons;
 			}
 		}
 	}
@@ -452,6 +530,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		private Long knownGlyphs;
 		private boolean showMarkers;
 		private boolean usePreparedBitmap;
+		private boolean showBlackHoleTargets;
 
 		private int mouseVoxelX;
 		private int mouseVoxelZ;
@@ -517,6 +596,11 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 
 		public void showMarkers(boolean showMarkers) {
 			this.showMarkers = showMarkers;
+			repaint();
+		}
+
+		public void showBlackHoleTargets(boolean showBlackHoleTargets) {
+			this.showBlackHoleTargets = showBlackHoleTargets;
 			repaint();
 		}
 
@@ -640,7 +724,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			graphics.drawLine(MAP_CENTER_X, 0, MAP_CENTER_X, MAP_HEIGHT);
 			graphics.drawLine(0, MAP_CENTER_Y, MAP_WIDTH, MAP_CENTER_Y);
 			
-			regionData.forEach((rc,rs)->{
+			regionData.forEachRegion((rc,rs)->{
 				graphics.setColor(rs.isReachableByTeleport?COLOR_KNOWN_REGION_WITH_TELEPORT:COLOR_KNOWN_REGION);
 				graphics.fillRect(rc.voxelX+MAP_CENTER_X, rc.voxelZ+MAP_CENTER_Y, 1, 1);
 			});
@@ -774,14 +858,14 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 					fillRect(g2,maxX,maxY, 0,axisY, maxX,thickness);
 					
 					g2.setColor(COLOR_KNOWN_REGION);
-					regionData.forEach((rc,rs)->{
+					regionData.forEachRegion((rc,rs)->{
 						if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 						if (rs.isReachableByTeleport) return;
 						fillBox(g2, maxX, maxY, rc.voxelX, rc.voxelZ);
 					});
 					
 					g2.setColor(COLOR_KNOWN_REGION_WITH_TELEPORT);
-					regionData.forEach((rc,rs)->{
+					regionData.forEachRegion((rc,rs)->{
 						if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 						if (!rs.isReachableByTeleport) return;
 						fillBox(g2, maxX, maxY, rc.voxelX, rc.voxelZ);
@@ -844,14 +928,14 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				int markerSize = 5;
 				
 				g2.setColor(COLOR_KNOWN_REGION);
-				regionData.forEach((rc,rs)->{
+				regionData.forEachRegion((rc,rs)->{
 					if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 					if (rs.isReachableByTeleport) return;
 					drawMarker(g2, rc.voxelX, rc.voxelZ, markerSize);
 				});
 				
 				g2.setColor(COLOR_KNOWN_REGION_WITH_TELEPORT);
-				regionData.forEach((rc,rs)->{
+				regionData.forEachRegion((rc,rs)->{
 					if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 					if (!rs.isReachableByTeleport) return;
 					drawMarker(g2, rc.voxelX, rc.voxelZ, markerSize);
@@ -863,6 +947,23 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				g2.setColor(COLOR_GALAXY_CENTER);
 				drawMarker(g2, 0,0, markerSize);
 				
+			}
+			
+			if (showBlackHoleTargets) {
+				g2.setColor(Color.PINK);
+				int[] xPoints = new int[40];
+				int[] yPoints = new int[40];
+				for (RegionData.BlackHoleConn bhc:regionData.blackHoleConnections) {
+					Point3D[] polygon = bhc.polygon;
+					if (xPoints.length<polygon.length) xPoints = new int[polygon.length+10];
+					if (yPoints.length<polygon.length) yPoints = new int[polygon.length+10];
+					for (int i = 0; i < polygon.length; i++) {
+						Point3D p = polygon[i];
+						xPoints[i] = computeScreenX(p.x);
+						yPoints[i] = computeScreenY(p.z);
+					}
+					g2.drawPolyline(xPoints, yPoints, polygon.length);
+				}
 			}
 			
 			if (distCircle != null) {

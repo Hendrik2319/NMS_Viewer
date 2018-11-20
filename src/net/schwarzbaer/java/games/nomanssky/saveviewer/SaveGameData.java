@@ -1855,7 +1855,7 @@ public class SaveGameData {
 			if (isPlanet()) {
 				SolarSystem sys = universe.findSolarSystem(this);
 				Planet pln = universe.findPlanet(this);
-				return "Planet \""+getCoordinates_Region()+" | "+sys.toString(true,true,false,false)+" | "+pln.toString()+"\"";
+				return "Planet \""+getCoordinates_Region()+" | "+sys.toString(true,true,false,true)+" | "+pln.toString()+"\"";
 			}
 			
 			return getCoordinates();
@@ -2146,8 +2146,7 @@ public class SaveGameData {
 						sb.append(ei.shortLabel);
 						sbIsEmpty = false;
 					}
-				String string2 = sb.toString();
-				return string2;
+				return sb.toString();
 			}
 
 			public void addDiscoveredItem(String itemLabel, DiscoveryData.SourceArray sourceArray) {
@@ -2247,8 +2246,11 @@ public class SaveGameData {
 			public StarClass starClass;
 			public int conflictLevel;
 			public boolean isUnexplored; 
-			
 			public Double distanceToCenter;
+			public boolean hasAtlasInterface; 
+			public boolean hasBlackHole; 
+			public UniverseAddress blackHoleTarget;
+			
 			public AdditionalInfos additionalInfos;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
@@ -2260,8 +2262,17 @@ public class SaveGameData {
 				this.conflictLevel = -1;
 				this.isUnexplored = false;
 				this.distanceToCenter = null;
+				this.hasAtlasInterface = shouldHaveAtlasInterface(); 
+				this.hasBlackHole = shouldHaveBlackHole();
+				this.blackHoleTarget = null;
+				
 				this.additionalInfos = new AdditionalInfos();
 			}
+
+			public boolean shouldHaveBlackHole     () { return shouldHaveBlackHole     (solarSystemIndex); }
+			public boolean shouldHaveAtlasInterface() { return shouldHaveAtlasInterface(solarSystemIndex); }
+			public static boolean shouldHaveBlackHole     (int solarSystemIndex) { return solarSystemIndex == 0x79; }
+			public static boolean shouldHaveAtlasInterface(int solarSystemIndex) { return solarSystemIndex == 0x7A; }
 
 			@Override
 			public String toString() {
@@ -2284,6 +2295,9 @@ public class SaveGameData {
 					for (ExtraInfo ei:p.extraInfos)
 						if (ei.showInParent && !ei.shortLabel.isEmpty())
 							foundLabels.add(ei.shortLabel);
+				if (hasAtlasInterface) foundLabels.add("<Atlas>");
+				if (hasBlackHole) foundLabels.add("<BlackHole>");
+				
 				String strExtraInfo=getCombinedExtraInfoLabels();
 				for (String str:foundLabels) {
 					if (!strExtraInfo.isEmpty()) strExtraInfo+=", ";
@@ -2291,7 +2305,7 @@ public class SaveGameData {
 				}
 				if (!strExtraInfo.isEmpty()) strExtraInfo=" ("+strExtraInfo+")";
 				
-				return strName+strExtraInfo+strDataName+strRace;
+				return (withName?strName:"")+(withExtraInfo?strExtraInfo:"")+(withDataName?strDataName:"")+(withRace?strRace:"");
 			}
 
 			public void addPlanet(Planet planet) {

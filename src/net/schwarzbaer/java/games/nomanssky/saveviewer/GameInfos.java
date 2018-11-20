@@ -27,7 +27,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -108,10 +107,6 @@ public class GameInfos {
 			for (ExtraInfo ei:uo.extraInfos)
 				extraInfos.add(new ExtraInfo(ei));
 		}
-		@Override
-		public boolean hasData() {
-			return super.hasData() || !extraInfos.isEmpty();
-		}
 	}
 	
 	private static class UOD_SolarSystem extends UOD_UniverseObject {
@@ -120,6 +115,10 @@ public class GameInfos {
 		Double distanceToCenter;
 		int conflictLevel;
 		Boolean isUnexplored;
+		Boolean hasAtlasInterface; 
+		Boolean hasBlackHole;
+		Long blackHoleTarget;
+		
 		public UOD_SolarSystem(UniverseAddress ua) {
 			super(ua, Type.SolarSystem);
 			race = null;
@@ -127,6 +126,9 @@ public class GameInfos {
 			starClass = null;
 			distanceToCenter = null;
 			conflictLevel = -1;
+			hasAtlasInterface = null;
+			hasBlackHole = null;
+			blackHoleTarget = null;
 		}
 		public UOD_SolarSystem(SolarSystem sys) {
 			super(sys.getUniverseAddress(), Type.SolarSystem, sys);
@@ -135,10 +137,9 @@ public class GameInfos {
 			starClass = sys.starClass;
 			distanceToCenter = sys.distanceToCenter;
 			conflictLevel = sys.conflictLevel;
-		}
-		@Override
-		public boolean hasData() {
-			return super.hasData() || race!=null || starClass!=null || distanceToCenter!=null || conflictLevel>=0 || isUnexplored!=null;
+			hasAtlasInterface = sys.hasAtlasInterface;
+			hasBlackHole = sys.hasBlackHole;
+			blackHoleTarget = (sys.blackHoleTarget==null || !sys.hasBlackHole)?null:sys.blackHoleTarget.getAddress();
 		}
 	}
 	
@@ -155,10 +156,6 @@ public class GameInfos {
 			biome = planet.biome;
 			areSentinelsAggressive = planet.areSentinelsAggressive;
 		}
-		@Override
-		public boolean hasData() {
-			return super.hasData() || biome!=null || areSentinelsAggressive;
-		}
 	}
 	
 	private static class UniverseObjectData implements Comparable<UniverseObjectData>{
@@ -174,10 +171,6 @@ public class GameInfos {
 			this.type = type;
 			this.oldname = null;
 			this.name = null;
-		}
-	
-		public boolean hasData() {
-			return name!=null || oldname!=null;
 		}
 	
 		@Override
@@ -257,6 +250,22 @@ public class GameInfos {
 					}
 					if (str.equals("unexplored")) {
 						system.isUnexplored = true;
+						continue;
+					}
+					if (str.startsWith("atlasinterface=")) {
+						String valueStr = str.substring("atlasinterface=".length());
+						system.hasAtlasInterface = valueStr.equalsIgnoreCase("true");
+						continue;
+					}
+					if (str.startsWith("blackhole=")) {
+						String valueStr = str.substring("blackhole=".length());
+						system.hasBlackHole = valueStr.equalsIgnoreCase("true");
+						continue;
+					}
+					if (str.startsWith("blackholetarget=")) {
+						String valueStr = str.substring("blackholetarget=".length());
+						try { system.blackHoleTarget = Long.parseLong(valueStr, 16); }
+						catch (NumberFormatException e) { system.blackHoleTarget = null; }
 						continue;
 					}
 					if (str.startsWith("class=")) {
@@ -391,6 +400,18 @@ public class GameInfos {
 					system.isUnexplored = uod_system.isUnexplored;
 					if (withOutput) SaveViewer.log("   %s was defined as unexplored: %s\r\n",objName);
 				}
+				if (uod_system.hasAtlasInterface!=null) {
+					system.hasAtlasInterface = uod_system.hasAtlasInterface;
+					if (withOutput) SaveViewer.log("   %s has an Atlas Interface: %s\r\n",objName,system.hasAtlasInterface);
+				}
+				if (uod_system.hasBlackHole!=null) {
+					system.hasBlackHole = uod_system.hasBlackHole;
+					if (withOutput) SaveViewer.log("   %s has a Black Hole: %s\r\n",objName,system.hasBlackHole);
+				}
+				if (uod_system.blackHoleTarget!=null) {
+					system.blackHoleTarget = new UniverseAddress(uod_system.blackHoleTarget);
+					if (withOutput) SaveViewer.log("   %s has a Black Hole Target: %s\r\n",objName,system.blackHoleTarget);
+				}
 			}
 			
 			if (planet!=null) {
@@ -448,8 +469,6 @@ public class GameInfos {
 		UOD_UniverseObject uod_uniObj = null;
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 			for (UniverseObjectData uoData:values) {
-				if (!uoData.hasData()) continue;
-				
 				if (!isFirst) out.println();
 				isFirst = false;
 				
@@ -473,6 +492,15 @@ public class GameInfos {
 						if (uod_system.race         !=null) out.printf("race=%s\r\n",uod_system.race);
 						if (uod_system.conflictLevel>=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
 					}
+					if (uod_system.hasAtlasInterface!=null) {
+						if (uod_system.hasAtlasInterface || SolarSystem.shouldHaveAtlasInterface(uod_system.universeAddress.solarSystemIndex))
+							out.printf("atlasinterface=%s\r\n",uod_system.hasAtlasInterface);
+					}
+					if (uod_system.hasBlackHole!=null) {
+						if (uod_system.hasBlackHole || SolarSystem.shouldHaveBlackHole(uod_system.universeAddress.solarSystemIndex))
+							out.printf("blackhole=%s\r\n",uod_system.hasBlackHole);
+					}
+					if (uod_system.blackHoleTarget !=null) out.printf("blackholetarget=%014X\r\n",uod_system.blackHoleTarget);
 					if (uod_system.starClass       !=null) out.printf("class=%s\r\n",uod_system.starClass);
 					if (uod_system.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uod_system.distanceToCenter.doubleValue());
 				}
@@ -926,12 +954,6 @@ public class GameInfos {
 		}
 	}
 
-	private static <T> T[] addNull(T[] arr) {
-		Vector<T> vec = new Vector<>(Arrays.asList(arr));
-		vec.insertElementAt(null,0);
-		return vec.toArray(Arrays.copyOf(arr,0));
-	}
-
 	static class GeneralizedIDPanel extends JPanel implements ActionListener {
 		private static final long serialVersionUID = -4946966056212175920L;
 	
@@ -964,7 +986,7 @@ public class GameInfos {
 			});
 			prepareTable();
 			
-			GeneralizedID.Type[] types = addNull(GeneralizedID.Type.values());
+			GeneralizedID.Type[] types = SaveViewer.addNull(GeneralizedID.Type.values());
 			Gui.ListMenuItems.ExternFunction<GeneralizedID.Type> setType = new Gui.ListMenuItems.ExternFunction<GeneralizedID.Type>() {
 				@Override public void setResult(GeneralizedID.Type value) {
 					updateAfterContextMenuAction(setType(value),null);
@@ -978,7 +1000,7 @@ public class GameInfos {
 			Gui.ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType);
 			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Group   = new Gui.ListMenu<GeneralizedID.Type>("Type of selected", types, null, setType);
 			
-			GeneralizedID.UpgradeClass[] upgradeClasses = addNull(GeneralizedID.UpgradeClass.values());
+			GeneralizedID.UpgradeClass[] upgradeClasses = SaveViewer.addNull(GeneralizedID.UpgradeClass.values());
 			Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass> setUpgradeCat = new Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass>() {
 				@Override public void setResult(GeneralizedID.UpgradeClass value) {
 					updateAfterContextMenuAction(setUpgradeClass(value),null);
@@ -992,7 +1014,7 @@ public class GameInfos {
 			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
 			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Group   = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class of selected", upgradeClasses, null, setUpgradeCat);
 			
-			NamedColor[] colors = addNull(SaveViewer.images.colorValues);
+			NamedColor[] colors = SaveViewer.addNull(SaveViewer.images.colorValues);
 			Gui.NamedColorListMenu.ExternFunction setImageBG = new Gui.NamedColorListMenu.ExternFunction() {
 				@Override public void setResult(NamedColor value) {
 					updateAfterContextMenuAction(setImageBG(value==null?null:value.value),null);
@@ -1006,7 +1028,7 @@ public class GameInfos {
 			Gui.NamedColorListMenu colorListMenu_Group       = new Gui.NamedColorListMenu("Background of selected", colors, null, setImageBG);
 			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
-					NamedColor[] colors = addNull(SaveViewer.images.colorValues);
+					NamedColor[] colors = SaveViewer.addNull(SaveViewer.images.colorValues);
 					colorListMenu_Std        .updateValues(colors);
 					colorListMenu_Image      .updateValues(colors);
 					colorListMenu_ImageBG    .updateValues(colors);
@@ -1302,7 +1324,7 @@ public class GameInfos {
 		
 		private void prepareTable() {
 			ComboboxCellEditor<GeneralizedID.UpgradeClass> upgradeClassCellEditor =
-					new TableView.ComboboxCellEditor<GeneralizedID.UpgradeClass>(addNull(GeneralizedID.UpgradeClass.values()));
+					new TableView.ComboboxCellEditor<GeneralizedID.UpgradeClass>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values()));
 			NonStringRenderer<GeneralizedID.UpgradeClass> upgradeClassRenderer =
 					new TableView.NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; });
 			upgradeClassCellEditor.setRenderer(upgradeClassRenderer);
@@ -1310,7 +1332,7 @@ public class GameInfos {
 			setCellRenderer(GeneralizedIDColumnID.UpgrCls, upgradeClassRenderer);
 			
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
-					new TableView.ComboboxCellEditor<GeneralizedID.Type>(addNull(GeneralizedID.Type.values()));
+					new TableView.ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			NonStringRenderer<GeneralizedID.Type> typeRenderer =
 					new TableView.NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; });
 			typeCellEditor.setRenderer(typeRenderer);
@@ -1318,17 +1340,17 @@ public class GameInfos {
 			setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
 			
 			ComboboxCellEditor<String> imageCellEditor =
-					new TableView.ComboboxCellEditor<String>(addNull(SaveViewer.images.imagesNames));
+					new TableView.ComboboxCellEditor<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
 			SaveViewer.images.addImageListListener(new Images.ImageListListener() {
 				@Override public void imageListChanged() {
-					imageCellEditor.setValues(addNull(SaveViewer.images.imagesNames));
+					imageCellEditor.setValues(SaveViewer.addNull(SaveViewer.images.imagesNames));
 					tableModel.updateTableColumn(GeneralizedIDColumnID.Image);
 				}
 			});
 			setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
-					new TableView.ComboboxCellEditor<NamedColor>(addNull(SaveViewer.images.colorValues));
+					new TableView.ComboboxCellEditor<NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues));
 			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					colorCellEditor.addValue(color);
@@ -1696,7 +1718,7 @@ public class GameInfos {
 			}.getTextField();
 			symbolTextField.setPreferredSize(new Dimension(50,16));
 			
-			JComboBox<GeneralizedID.Type> cmbbxTypes = new JComboBox<GeneralizedID.Type>(addNull(GeneralizedID.Type.values()));
+			JComboBox<GeneralizedID.Type> cmbbxTypes = new JComboBox<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			cmbbxTypes.setSelectedItem(id.type);
 			cmbbxTypes.addActionListener(e->{
 				id.type = (GeneralizedID.Type)cmbbxTypes.getSelectedItem();
@@ -1704,18 +1726,18 @@ public class GameInfos {
 			});
 			cmbbxTypes.setRenderer(new TableView.NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; }));
 			
-			JComboBox<String> cmbbxImages = new JComboBox<String>(addNull(SaveViewer.images.imagesNames));
+			JComboBox<String> cmbbxImages = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
 			cmbbxImages.setSelectedItem(id.getImageFileName());
 			cmbbxImages.addActionListener(e->{ id.setImageFileName((String)cmbbxImages.getSelectedItem()); dataChanged(); });
 			
 			imageListListender = new Images.ImageListListener() {
 				@Override public void imageListChanged() {
-					cmbbxImages.setModel(new DefaultComboBoxModel<>(addNull(SaveViewer.images.imagesNames)));
+					cmbbxImages.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(SaveViewer.images.imagesNames)));
 					cmbbxImages.setSelectedItem(id.getImageFileName());
 				}
 			};
 			
-			JComboBox<Images.NamedColor> cmbbxColors = new JComboBox<Images.NamedColor>(new DefaultComboBoxModel<Images.NamedColor>(addNull(SaveViewer.images.colorValues)));
+			JComboBox<Images.NamedColor> cmbbxColors = new JComboBox<Images.NamedColor>(new DefaultComboBoxModel<Images.NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues)));
 			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
 			cmbbxColors.setSelectedItem(SaveViewer.images.getColor(id.getImageBG()));
 			cmbbxColors.addActionListener(e->{
@@ -1731,7 +1753,7 @@ public class GameInfos {
 				}
 			};
 			
-			JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeIcon = new JComboBox<>(addNull(GeneralizedID.UpgradeClass.values())	);
+			JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeIcon = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
 			cmbbxUpgradeIcon.setRenderer(new TableView.NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
 			cmbbxUpgradeIcon.setSelectedItem(id.upgradeClass);
 			cmbbxUpgradeIcon.addActionListener(e->{id.upgradeClass=(GeneralizedID.UpgradeClass)cmbbxUpgradeIcon.getSelectedItem(); dataChanged();});

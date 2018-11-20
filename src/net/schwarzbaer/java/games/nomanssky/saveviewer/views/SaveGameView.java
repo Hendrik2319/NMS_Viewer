@@ -66,7 +66,9 @@ public class SaveGameView extends JPanel {
 	private void addAllTabs() {
 		if (isNEXT) {
 			UniversePanel universePanel = new UniversePanel(data,mainWindow);
-			GalaxyMapPanel galaxyMapPanel = new GalaxyMapPanel(data,mainWindow,universePanel);
+			GalaxyMapPanel galaxyMapPanel = new GalaxyMapPanel(data,mainWindow);
+			galaxyMapPanel.setUniversePanel(universePanel);
+			universePanel.setGalaxyMapPanel(galaxyMapPanel);
 			
 			tabbedPane.addTab("General",new GeneralDataPanel(data));
 			tabbedPane.addTab("Known Universe",universePanel);

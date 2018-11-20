@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1067,6 +1068,18 @@ public class SaveViewer implements ActionListener {
 			str+=""+df;
 		}
 		return "[\r\n"+str+"\r\n]";
+	}
+
+	public static <T> T[] addNull(T[] arr) {
+		Vector<T> vec = new Vector<>(Arrays.asList(arr));
+		vec.insertElementAt(null,0);
+		return vec.toArray(Arrays.copyOf(arr,0));
+	}
+
+	public static <T> Vector<T> addNull(Vector<T> arr) {
+		Vector<T> vec = new Vector<>(arr);
+		vec.insertElementAt(null,0);
+		return vec;
 	}
 
 	public static void log_ln      ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format+"\r\n",values); }

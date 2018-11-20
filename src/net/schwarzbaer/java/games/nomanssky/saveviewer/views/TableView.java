@@ -515,7 +515,7 @@ public class TableView {
 
 		@Override
 		public Component getListCellRendererComponent(JList<? extends T> list, T value, int index, boolean isSelected, boolean cellHasFocus) {
-			Color bgColor   = isSelected ? list.getSelectionBackground() : list.getBackground();
+			Color bgColor   = isSelected ? list.getSelectionBackground() : null; //list.getBackground();
 			Color textColor = isSelected ? list.getSelectionForeground() : list.getForeground();
 			comp.set(converter.apply(value),bgColor,textColor);
 			return comp;
@@ -529,6 +529,7 @@ public class TableView {
 			}
 
 			public void set(String value, Color bgColor, Color textColor) {
+				setOpaque(bgColor!=null);
 				setBackground(bgColor);
 				setForeground(textColor);
 				setText(value==null?"":value);
