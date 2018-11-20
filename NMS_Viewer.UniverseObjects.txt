@@ -1,3 +1,5 @@
+[Reg00000000801801]
+
 [Sys00010000801801]
 name=Alpha Polaris
 race=Korvax
@@ -48,6 +50,8 @@ biome=Irradiated
 short=
 info=Fe#, U, Cu
 
+[Reg000000231C1823]
+
 [Sys00B800231C1823]
 name=Volandro
 unexplored
@@ -94,9 +98,9 @@ info=Ag, P, Cu
 name=Akirnaf
 race=Gek
 conflict=2
+blackhole=true
+blackholetarget=00160004E7D981
 class=Yellow
-short=Schwarzes Loch
-info=
 short=5 Planeten
 info=
 
@@ -137,9 +141,9 @@ info=
 name=Vohistnes XII
 race=Vykeen
 conflict=2
+blackhole=true
+blackholetarget=000200FCA45CAF
 class=Yellow
-short=Schwarzes Loch
-info=
 short=Erinnerungs-Terminal
 info=
 
@@ -149,6 +153,67 @@ biome=Frozen
 short=
 info=Ag, CO2, Cu
 
+[Reg0000000101A99B]
+name=Wiyomis-Sektor
+
+[Sys0050000101A99B]
+name=Tosong-Nuyov XVIII
+race=Korvax
+conflict=3
+class=Yellow
+short=6 Planeten
+info=
+
+[Sys0079000101A99B]
+name=Aicangou
+race=Gek
+conflict=1
+blackhole=true
+blackholetarget=00410004C074F0
+class=Yellow
+short=2 Planeten
+info=
+
+[Reg000000FEEC69F7]
+name=Fostva-Quadrant
+
+[Sys003700FEEC69F7]
+name=Okazuna-Nuo
+race=Vykeen
+conflict=1
+class=Yellow
+short=3 Planeten
+info=
+short=Erinnerungs-Terminal
+info=
+
+[Reg00000004369A84]
+name=Iogamus
+
+[Sys002B0004369A84]
+name=Nazawas V
+race=Korvax
+conflict=1
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln102B0004369A84]
+name=Aizun 56/P7
+biome=Irradiated
+short=
+info=Fe#, U, Cu
+
+[Sys00790004369A84]
+name=Ittorid-Enbas VIII
+race=Gek
+conflict=1
+blackhole=true
+blackholetarget=0050000101A99B
+class=Yellow
+short=4 Planeten
+info=
+
 [Reg000000F9A8CBC3]
 name=Meer von Idgewo
 
@@ -156,9 +221,8 @@ name=Meer von Idgewo
 name=Geermya
 race=Korvax
 conflict=3
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00F9A8CBC3]
 name=Sakkura
@@ -181,9 +245,8 @@ name=Cuvits-Untiefe
 name=Steadle
 race=Gek
 conflict=1
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00FAA8CBC3]
 name=Lukeswo
@@ -204,9 +267,8 @@ name=Rasdemit
 name=Mukosiat XVII
 race=Gek
 conflict=3
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00F9A8DBC3]
 name=Allseyci XIV
@@ -479,6 +541,12 @@ oldname=Midakasahik
 
 [Sys004300FAA8CBC4]
 
+[Pln104300FAA8CBC4]
+
+[Pln204300FAA8CBC4]
+
+[Pln304300FAA8CBC4]
+
 [Sys004500FAA8CBC4]
 name=Lozhna-Naku
 race=Vykeen
@@ -654,9 +722,8 @@ name=Kihgora-Agyu X
 oldname=Kihgora-Agyu X
 race=Vykeen
 conflict=2
+blackhole=true
 class=Yellow
-short=Blackhole
-info=Schwarzes Loch im System
 
 [Pln107900FAA8CBC4]
 name=Axellenboe Ummi
@@ -704,9 +771,8 @@ info=Aktiviertes Kupfer
 [Sys007A00FAA8CBC4]
 oldname=Sibirsky
 race=Vykeen
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00FAA8CBC4]
 oldname=Guyohldemigla
@@ -781,6 +847,10 @@ short=
 info=NaCl, NH3, Em
 
 [Sys015200FAA8CBC4]
+
+[Pln115200FAA8CBC4]
+
+[Pln215200FAA8CBC4]
 
 [Sys016500FAA8CBC4]
 name=Piyskit-Rizhu XVII
@@ -933,7 +1003,27 @@ oldname=Rudoindain-Tuzl VS533
 
 [Sys020800FAA8CBC4]
 
+[Pln120800FAA8CBC4]
+
+[Pln220800FAA8CBC4]
+
+[Pln320800FAA8CBC4]
+
+[Pln420800FAA8CBC4]
+
+[Pln520800FAA8CBC4]
+
+[Pln620800FAA8CBC4]
+
 [Sys020B00FAA8CBC4]
+
+[Pln120B00FAA8CBC4]
+
+[Pln220B00FAA8CBC4]
+
+[Pln320B00FAA8CBC4]
+
+[Pln420B00FAA8CBC4]
 
 [Reg000000F8A8DBC4]
 name=Kawini
@@ -942,9 +1032,8 @@ name=Kawini
 name=Rodingu
 race=Korvax
 conflict=1
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00F8A8DBC4]
 name=Oproby Hachi
@@ -1002,9 +1091,8 @@ name=Aokipg-Quadrant
 name=Linesk Midda
 race=Gek
 conflict=1
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00F9A8DBC4]
 name=Leyunthio Minoris
@@ -1087,9 +1175,8 @@ name=Wapitz-Weite
 name=Othila XIII
 race=Gek
 conflict=3
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00F8A8DBC5]
 name=Noom 17/Q2
@@ -1121,9 +1208,8 @@ name=Thhori-Zufluss
 name=Antiruit XIV
 race=Korvax
 conflict=1
+blackhole=true
 class=Yellow
-short=Schwarzes Loch
-info=
 
 [Pln107900F8A8DBC6]
 name=Azzav Minoris
@@ -1149,9 +1235,8 @@ info=
 name=Omaysk-Sihui
 race=Korvax
 conflict=2
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A00F8A8DBC6]
 name=Misbiyteus
@@ -1176,7 +1261,11 @@ info=
 short=
 info=NaCl, Py, Cu
 
+[Reg000000FAA8EBC7]
+
 [Sys00E900FAA8EBC7]
+
+[Reg000000FAA8FBC7]
 
 [Sys01F100FAA8FBC7]
 
@@ -1187,9 +1276,11 @@ name=Pabelyco-Quadrant
 name=Avermion
 race=Korvax
 conflict=1
+blackhole=true
+blackholetarget=001E0004994DA5
 class=Yellow
-short=Schwarzes Loch
-info=
+
+[Reg000000FAA90BC8]
 
 [Sys012D00FAA90BC8]
 
@@ -1208,10 +1299,10 @@ info=
 name=Dadurer-Iue
 race=Gek
 conflict=1
+blackhole=true
+blackholetarget=000B0003CC45B8
 class=Yellow
 short=4 Planeten
-info=
-short=Schwarzes Loch
 info=
 
 [Reg00000004994DA5]
@@ -1264,9 +1355,9 @@ info=
 name=Idetelnik XIV
 race=Korvax
 conflict=1
+blackhole=true
+blackholetarget=002A0002C825D1
 class=Yellow
-short=Schwarzes Loch
-info=
 
 [Pln10790004994DA5]
 name=Hiydran Daba
@@ -1282,9 +1373,8 @@ info=
 name=Revkaz
 race=Vykeen
 conflict=2
+atlasinterface=true
 class=Yellow
-short=Atlas
-info=Atlas-Schnittstelle
 
 [Pln107A0004994DA5]
 name=Sanfor
@@ -1328,6 +1418,29 @@ info=
 short=#Cd
 info=Na, P, #Cd
 
+[Reg00000000635F1B]
+name=Joraphr-Sektor
+
+[Sys00780000635F1B]
+name=Hiesial-Eildn
+race=Gek
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+
+[Sys00790000635F1B]
+name=Tuapse-Nugtan
+race=Vykeen
+conflict=1
+blackhole=true
+blackholetarget=001900FD608181
+class=Yellow
+short=5 Planeten
+info=
+
+[Reg000000F8FF8FF8]
+
 [Sys000100F8FF8FF8]
 race=Vykeen
 class=Green
@@ -1337,6 +1450,8 @@ oldname=Kudamagano Towa
 
 [Pln300100F8FF8FF8]
 oldname=Azyvaius OX857
+
+[Reg00000008FF8FF8]
 
 [Sys00010008FF8FF8]
 oldname=Detadfal
@@ -1352,10 +1467,13 @@ oldname=[GRA] Kumerat-Gader Tutimil
 [Pln30010008FF8FF8]
 oldname=[GRA] Sekart Ryugaile
 
+[Reg00000003000FF8]
+
 [Sys00790003000FF8]
 name=Tiganyada
 race=Vykeen
 conflict=1
+blackhole=true
 class=Yellow
 
 [Pln10790003000FF8]
@@ -1392,6 +1510,8 @@ biome=Toxic
 short=
 info=Na, NH3, Cu
 
+[Reg000000F8008FF8]
+
 [Sys000100F8008FF8]
 oldname=Imurag
 race=Gek
@@ -1411,6 +1531,8 @@ oldname=Ezka'oeregus
 short.P=Ru
 info=Rubeum (Große Kegel)
 
+[Reg00000008008FF8]
+
 [Sys00010008008FF8]
 oldname=Yaring
 race=Korvax
@@ -1421,6 +1543,8 @@ oldname=Lutieneralat
 
 [Pln30010008008FF8]
 oldname=Perthymeng Avndas
+
+[Reg00000010000000]
 
 [Sys00010010000000]
 oldname=Saitamb-Nabla
@@ -1446,9 +1570,15 @@ info=Extrem verstrahlter Planet
 short.P=Ka
 info=Kalium (Kugeln)
 
+[Reg00000008FF8008]
+
 [Sys00010008FF8008]
 race=Korvax
 class=Green
+
+[Pln10010008FF8008]
+
+[Reg000000F8008008]
 
 [Sys000100F8008008]
 oldname=Tumise-Rekv
@@ -1457,6 +1587,29 @@ class=Red
 
 [Pln100100F8008008]
 oldname=Sagayamatsuy-5
+
+[Reg000000FD608181]
+name=Fouorsi-Zufluss
+
+[Sys001900FD608181]
+name=Leganna-Dafang XI
+race=Gek
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+short=Erinnerungs-Terminal
+info=
+
+[Sys007900FD608181]
+name=Pompain
+race=Gek
+conflict=2
+blackhole=true
+blackholetarget=003700FEEC69F7
+class=Yellow
+short=6 Planeten
+info=
 
 [Reg000000FF9852B9]
 oldname=Zudden-Weite
@@ -1467,6 +1620,8 @@ race=Vykeen
 
 [Pln103200FF9852B9]
 oldname=Heronito Tau
+
+[Reg00000000444444]
 
 [Sys00010000444444]
 oldname=Idewij-Hizdr
@@ -1516,6 +1671,29 @@ oldname=Huvshi Ohashi
 [Pln407200024F14BB]
 oldname=Miplinga Dazaw
 
+[Reg00000004C074F0]
+name=Sagroa-Instabilität
+
+[Sys00410004C074F0]
+name=Sogroveraw
+race=Korvax
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+
+[Sys00790004C074F0]
+name=Miskipto XI
+race=Vykeen
+conflict=1
+blackhole=true
+blackholetarget=00780000635F1B
+class=Yellow
+short=3 Planeten
+info=
+
+[Reg000000FC4AD502]
+
 [Sys001B00FC4AD502]
 oldname=Hunyaz-Elfer VIII
 race=Vykeen
@@ -1529,6 +1707,8 @@ oldname=Urabkausop Pretho
 
 [Pln301B00FC4AD502]
 oldname=Lichouvalil-4
+
+[Reg000000FEB7F529]
 
 [Sys007200FEB7F529]
 oldname=Imsenl IV
@@ -1561,6 +1741,15 @@ short=Grav
 info=Gravitino-Bälle
 short=
 info=Ag, Fe#, Cu
+
+[Sys00790003CC45B8]
+race=Korvax
+conflict=1
+blackhole=true
+blackholetarget=001F0000DBE61C
+class=Yellow
+short=5 Planeten
+info=
 
 [Reg00000002C825D1]
 name=Leonist-Quadrant
@@ -1598,10 +1787,10 @@ info=Co, U, Cu
 name=Iderag-Esaud XIX
 race=Vykeen
 conflict=2
+blackhole=true
+blackholetarget=004A0002FDC947
 class=Yellow
 distance=694811.000000
-short=Schwarzes Loch
-info=
 
 [Pln10790002C825D1]
 name=Retsey XV
@@ -1669,6 +1858,37 @@ short.P=Wasser
 info=
 short=
 info=Co, Py, Em
+
+[Reg00000000DBE61C]
+name=Ibiluro-Weite
+
+[Sys001F0000DBE61C]
+name=Boyaru-Suku
+race=Vykeen
+conflict=1
+class=Yellow
+short=4 Planeten
+info=
+
+[Pln101F0000DBE61C]
+name=Lumiris Majoris
+biome=Irradiated
+short=Wasser
+info=
+short=ExtRad
+info=Stufe 3
+short=#Cu
+info=Na, U, #Cu
+
+[Sys00790000DBE61C]
+name=Apulygi IX
+race=Korvax
+conflict=1
+blackhole=true
+blackholetarget=002B0004369A84
+class=Yellow
+short=2 Planeten
+info=
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
