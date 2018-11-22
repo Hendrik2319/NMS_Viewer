@@ -124,7 +124,7 @@ public class Images {
 		addColor(colorValuesVec, 0x7D4665, "Waffe Zyklotron-B. Upgrade" );
 		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
 		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk" );
-		addColor(colorValuesVec, 0xF0A92B, "Produkt" );
+		addColor(colorValuesVec, 0xF0A92B, "Produkt & Upgrade S" );
 		addColor(colorValuesVec, 0xC11746, "Energie" );
 		addColor(colorValuesVec, 0x2C7C9F, "Tragbares Objekt" );
 		addColor(colorValuesVec, 0x085C78, "Tech 1" );
@@ -132,6 +132,7 @@ public class Images {
 		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
 		addColor(colorValuesVec, 0x5B9352, "Upgrade C" );
 		addColor(colorValuesVec, 0x682603, "Schlüssel" );
+		addColor(colorValuesVec, 0x7E0100, "Rohstoff Cd" );
 		addColor(colorValuesVec, 0xBB3830, "Rohstoff O2" );
 		addColor(colorValuesVec, 0xD92600, "Rohstoff P" );
 		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
@@ -142,12 +143,14 @@ public class Images {
 		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
 		addColor(colorValuesVec, 0x4D414F, "Rohstoff Pf" );
 		addColor(colorValuesVec, 0x4D3780, "Rohstoff Rn" );
+		addColor(colorValuesVec, 0x386118, "Rohstoff Em" );
 		addColor(colorValuesVec, 0x265E39, "Rohstoff Sf" );
 		addColor(colorValuesVec, 0x1F8A42, "Rohstoff Cl" );
 		addColor(colorValuesVec, 0x1F8B40, "Rohstoff NaCl" );
 		addColor(colorValuesVec, 0x4F7576, "Rohstoff Pt" );
 		addColor(colorValuesVec, 0x365A7E, "Rohstoff H" );
 		addColor(colorValuesVec, 0x005C83, "Rohstoff Co" );
+		addColor(colorValuesVec, 0x013A7F, "Rohstoff In" );
 		addColor(colorValuesVec, 0xDEDCD0, "Rohstoff H3" );
 		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
 		addColor(colorValuesVec, 0xCCCCCC, "__" );
