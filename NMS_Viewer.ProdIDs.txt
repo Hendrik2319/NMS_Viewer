@@ -1117,7 +1117,10 @@
 ^TRA_ALLOY4.obsolete=
 ^TRA_ALLOY4.image=NmsCommodity_Superconducting_Fibre_icon.png
 ^TRA_ALLOY4.imageBG=F0A92B
-^TRA_COMMODITY2=
+^TRA_COMMODITY2=Sternenseide
+^TRA_COMMODITY2.type=Special
+^TRA_COMMODITY2.image=NmsCommodity_StarSilk_icon.png
+^TRA_COMMODITY2.imageBG=CCCCCC
 ^TRA_COMMODITY3=Kometentröpfchen
 ^TRA_COMMODITY3.obsolete=
 ^TRA_COMMODITY3.image=NmsCommodity_Comet_Droplets_icon.png

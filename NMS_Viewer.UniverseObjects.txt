@@ -187,6 +187,39 @@ info=
 short=Erinnerungs-Terminal
 info=
 
+[Sys007900FEEC69F7]
+name=Gotakeo-Aksan XIII
+race=Vykeen
+conflict=1
+blackhole=true
+blackholetarget=004F0002A0BEB1
+class=Yellow
+short=4 Planeten
+info=
+
+[Reg000000FEEBAA17]
+name=Cemiini-Untiefe
+
+[Sys001300FEEBAA17]
+name=Yinghai XVII
+race=Korvax
+conflict=1
+class=Yellow
+short=3 Planeten
+info=
+
+[Sys007900FEEBAA17]
+name=Awatarm-Apug
+race=Vykeen
+conflict=2
+blackhole=true
+blackholetarget=00390003A5FDF5
+class=Yellow
+short=2 Planeten
+info=
+short=W: Erfolgversprechend
+info=
+
 [Reg00000004369A84]
 name=Iogamus
 
@@ -212,6 +245,17 @@ blackhole=true
 blackholetarget=0050000101A99B
 class=Yellow
 short=4 Planeten
+info=
+
+[Reg000000FC234ACE]
+name=Der Arm von Jalibbyifi
+
+[Sys004600FC234ACE]
+name=Lichido-Here
+race=Korvax
+conflict=3
+class=Yellow
+short=6 Planeten
 info=
 
 [Reg000000F9A8CBC3]
@@ -1418,6 +1462,70 @@ info=
 short=#Cd
 info=Na, P, #Cd
 
+[Reg00000003A5FDF5]
+name=Liyxeno-Terminus
+
+[Sys00390003A5FDF5]
+name=Iirteg
+race=Gek
+conflict=3
+class=Yellow
+short=5 Planeten
+info=
+
+[Sys00790003A5FDF5]
+name=Diroflj-Edz XII
+race=Korvax
+conflict=1
+blackhole=true
+blackholetarget=0015000352B2EB
+class=Yellow
+short=4 Planeten
+info=
+
+[Reg00000002A0BEB1]
+name=Requao-Instabilität
+
+[Sys004F0002A0BEB1]
+name=Riholband
+race=Korvax
+conflict=2
+class=Yellow
+short=W: komfortabel
+info=
+short=5 Planeten
+info=
+
+[Sys00790002A0BEB1]
+name=Runalsa XVIII
+race=Vykeen
+conflict=1
+blackhole=true
+blackholetarget=001300FEEBAA17
+class=Yellow
+short=6 Planeten
+info=
+
+[Reg000000FE5CAF06]
+name=Hoveli-Cluster
+
+[Sys006A00FE5CAF06]
+name=Santium VI
+race=Vykeen
+conflict=1
+class=Yellow
+short=4 Planeten
+info=
+
+[Sys007900FE5CAF06]
+name=Beyblosso
+race=Gek
+conflict=2
+blackhole=true
+class=Yellow
+short=5 Planeten
+info=
+
 [Reg00000000635F1B]
 name=Joraphr-Sektor
 
@@ -1611,6 +1719,46 @@ class=Yellow
 short=6 Planeten
 info=
 
+[Reg00000003A861ED]
+name=Tatiya-Wolke
+
+[Sys006E0003A861ED]
+name=Barhuta-Nicitu
+race=Korvax
+conflict=1
+class=Yellow
+short=5 Planeten
+info=
+
+[Sys00790003A861ED]
+name=Utionsvar I
+race=Gek
+conflict=3
+blackhole=true
+class=Yellow
+short=1 Planet
+info=
+
+[Reg000000FDAA4218]
+name=Owerdi
+
+[Sys001200FDAA4218]
+name=Ikkerhe XV
+race=Gek
+conflict=3
+class=Yellow
+short=4 Planeten
+info=
+
+[Sys007900FDAA4218]
+name=Rulofti
+race=Korvax
+conflict=2
+blackhole=true
+class=Yellow
+short=5 Planeten
+info=
+
 [Reg000000FF9852B9]
 oldname=Zudden-Weite
 
@@ -1621,6 +1769,27 @@ race=Vykeen
 [Pln103200FF9852B9]
 oldname=Heronito Tau
 
+[Reg0000000352B2EB]
+name=Utzerina-Zufluss
+
+[Sys0015000352B2EB]
+name=Horles-Raha XI
+race=Vykeen
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+
+[Sys0079000352B2EB]
+name=Ruthpor
+race=Gek
+conflict=2
+blackhole=true
+blackholetarget=006A00FE5CAF06
+class=Yellow
+short=5 Planeten
+info=
+
 [Reg00000000444444]
 
 [Sys00010000444444]
@@ -1628,6 +1797,28 @@ oldname=Idewij-Hizdr
 
 [Pln10010000444444]
 oldname=Beokayas Bigase
+
+[Reg000000FEC5345C]
+name=Layehyme
+
+[Sys001800FEC5345C]
+name=Bolinqiny
+race=Gek
+conflict=2
+class=Yellow
+short=W: wohlhabend
+info=
+short=6 Planeten
+info=
+
+[Sys007900FEC5345C]
+name=Zebarub-Kav XVIII
+race=Vykeen
+conflict=2
+blackhole=true
+class=Yellow
+short=2 Planeten
+info=
 
 [Reg000000024F14BB]
 oldname=Ajjaroe-Rand
