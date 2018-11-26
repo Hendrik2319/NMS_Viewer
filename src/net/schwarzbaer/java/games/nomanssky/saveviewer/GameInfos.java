@@ -326,7 +326,7 @@ public class GameInfos {
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
-	public static void readUniverseObjectDataFromDataPool(Universe universe) {
+	public static void readUniverseObjectDataFromDataPool(Universe universe, boolean forceCreation) {
 		long start = System.currentTimeMillis();
 		SaveViewer.log_ln("Read data of universe objects from data pool ... ");
 		
@@ -359,77 +359,78 @@ public class GameInfos {
 			uod_uniObj = null;
 			
 			switch(uoData.type) {
-			case Region     :              uod_region = (UOD_Region     )uoData; if (ua.isRegion     ())          region = universe.findRegion     (ua); break;
-			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = universe.findSolarSystem(ua); break;
-			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = universe.findPlanet     (ua); break;
+			case Region     :              uod_region = (UOD_Region     )uoData; if (ua.isRegion     ())          region = forceCreation ? universe.getOrCreateRegion     (ua) : universe.findRegion     (ua); break;
+			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = forceCreation ? universe.getOrCreateSolarSystem(ua) : universe.findSolarSystem(ua); break;
+			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = forceCreation ? universe.getOrCreatePlanet     (ua) : universe.findPlanet     (ua); break;
 			}
-			if (region!=null) { objName = "region "+ua.getCoordinates_Region();    if (withOutput) SaveViewer.log("Region %s\r\n"      ,ua.getCoordinates_Region   ()); }
-			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log("Solar system %s\r\n",ua.getSigBoostCode        ()); }
-			if (planet!=null) { objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log("Planet %s\r\n"      ,ua.getExtendedSigBoostCode()); }
+			if (region!=null) { objName = "region "+ua.getCoordinates_Region();   if (withOutput) SaveViewer.log_ln("Region %s"      ,ua.getCoordinates_Region  ()); }
+			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log_ln("Solar system %s",ua.getSigBoostCode        ()); }
+			if (planet!=null) { objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log_ln("Planet %s"      ,ua.getExtendedSigBoostCode()); }
 			
 			if (uoData.name!=null) {
 				if (uniObj!=null) uniObj.setOriginalName(uoData.name);
 				if (region!=null) region.setName(uoData.name);
-				if (withOutput && objName!=null) SaveViewer.log("   Name of %s was defined: \"%s\"\r\n",objName,uoData.name);
+				if (withOutput && objName!=null) SaveViewer.log_ln("   Name of %s was defined: \"%s\"",objName,uoData.name);
 			}
 			
 			if (uoData.oldname!=null) {
 				if (uniObj!=null) uniObj.setOldOriginalName(uoData.oldname);
 				if (region!=null) region.setOldName(uoData.oldname);
-				if (withOutput && objName!=null) SaveViewer.log("   Old Name of %s was defined: \"%s\"\r\n",objName,uoData.oldname);
+				if (withOutput && objName!=null) SaveViewer.log_ln("   Old Name of %s was defined: \"%s\"",objName,uoData.oldname);
 			}
 			
 			if (system!=null) {
 				if (uod_system.race!=null) {
 					system.race = uod_system.race;
-					if (withOutput) SaveViewer.log("   Race of %s was defined: %s\r\n",objName,system.race);
+					if (withOutput) SaveViewer.log_ln("   Race of %s was defined: %s",objName,system.race);
 				}
 				if (uod_system.starClass!=null) {
 					system.starClass = uod_system.starClass;
-					if (withOutput) SaveViewer.log("   Star Class of %s was defined: %s\r\n",objName,system.starClass);
+					if (withOutput) SaveViewer.log_ln("   Star Class of %s was defined: %s",objName,system.starClass);
 				}
 				if (uod_system.distanceToCenter!=null) {
 					system.distanceToCenter = uod_system.distanceToCenter;
-					if (withOutput) SaveViewer.log("   Distance to galactic center of %s was defined: %s\r\n",objName,system.distanceToCenter);
+					if (withOutput) SaveViewer.log_ln("   Distance to galactic center of %s was defined: %s",objName,system.distanceToCenter);
 				}
 				if (uod_system.conflictLevel>=0) {
 					system.conflictLevel = uod_system.conflictLevel;
-					if (withOutput) SaveViewer.log("   Conflict Level of %s was defined: %s\r\n",objName,system.starClass);
+					if (withOutput) SaveViewer.log_ln("   Conflict Level of %s was defined: %s",objName,system.starClass);
 				}
 				if (uod_system.isUnexplored!=null) {
 					system.isUnexplored = uod_system.isUnexplored;
-					if (withOutput) SaveViewer.log("   %s was defined as unexplored: %s\r\n",objName);
+					if (withOutput) SaveViewer.log_ln("   %s was defined as unexplored: %s",objName);
 				}
 				if (uod_system.hasAtlasInterface!=null) {
 					system.hasAtlasInterface = uod_system.hasAtlasInterface;
-					if (withOutput) SaveViewer.log("   %s has an Atlas Interface: %s\r\n",objName,system.hasAtlasInterface);
+					if (withOutput) SaveViewer.log_ln("   %s has an Atlas Interface: %s",objName,system.hasAtlasInterface);
 				}
 				if (uod_system.hasBlackHole!=null) {
 					system.hasBlackHole = uod_system.hasBlackHole;
-					if (withOutput) SaveViewer.log("   %s has a Black Hole: %s\r\n",objName,system.hasBlackHole);
+					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole: %s",objName,system.hasBlackHole);
 				}
 				if (uod_system.blackHoleTarget!=null) {
 					system.blackHoleTarget = new UniverseAddress(uod_system.blackHoleTarget);
-					if (withOutput) SaveViewer.log("   %s has a Black Hole Target: %s\r\n",objName,system.blackHoleTarget);
+					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole Target: %s",objName,system.blackHoleTarget);
 				}
 			}
 			
 			if (planet!=null) {
 				if (uod_planet.biome!=null) {
 					planet.biome = uod_planet.biome;
-					if (withOutput) SaveViewer.log("   Biome of %s was defined: %s\r\n",objName,planet.biome);
+					if (withOutput) SaveViewer.log_ln("   Biome of %s was defined: %s",objName,planet.biome);
 				}
 				if (uod_planet.areSentinelsAggressive) {
 					planet.areSentinelsAggressive = uod_planet.areSentinelsAggressive;
-					if (withOutput) SaveViewer.log("   Sentinels of %s are aggressive\r\n",objName);
+					if (withOutput) SaveViewer.log_ln("   Sentinels of %s are aggressive",objName);
 				}
 			}
 			
 			
 			if (uniObj!=null) {
+				uniObj.extraInfos.clear();
 				for (ExtraInfo ei:uod_uniObj.extraInfos) {
 					uniObj.extraInfos.add(ei);
-					if (withOutput) SaveViewer.log("   Info of %s was defined: ( \"%s\", \"%s\" )\r\n",objName,ei.shortLabel,ei.info);
+					if (withOutput) SaveViewer.log_ln("   Info of %s was defined: ( \"%s\", \"%s\" )",objName,ei.shortLabel,ei.info);
 				}
 			}
 			

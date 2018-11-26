@@ -27,6 +27,7 @@ import java.util.Vector;
 import java.util.function.BiConsumer;
 
 import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
@@ -62,6 +63,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 	
 	private Galaxy currentGalaxy;
 	private RegionData currentRegionData;
+
+	private JComboBox<Galaxy> cmbbxGalaxies;
 	
 	private static class ZoomStep {
 		private double value;
@@ -105,8 +108,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		
 		combiListener.setContextMenu(new ContextMenu(galaxyMap));
 		
-		
-		JComboBox<Galaxy> cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
+		cmbbxGalaxies = new JComboBox<>(data.universe.galaxies);
 		cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
 		cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy(currentRegionData = new RegionData(currentGalaxy = (Galaxy)cmbbxGalaxies.getSelectedItem())));
 		
@@ -178,6 +180,14 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 
 	public void updateBlackHoleConnections() {
 		currentRegionData.updateBlackHoleConnections();
+	}
+
+	public void updateUniverseData() {
+		if (currentGalaxy!=null)
+			currentGalaxy = data.universe.findGalaxy(currentGalaxy.galaxyIndex);
+		cmbbxGalaxies.setModel(new DefaultComboBoxModel<>(data.universe.galaxies));
+		cmbbxGalaxies.setSelectedItem(currentGalaxy);
+		galaxyMap.setGalaxy(currentRegionData = new RegionData(currentGalaxy));
 	}
 
 	private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int fill) {

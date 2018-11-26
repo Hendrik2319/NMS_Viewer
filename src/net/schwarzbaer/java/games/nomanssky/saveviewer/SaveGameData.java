@@ -12,10 +12,6 @@ import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -31,9 +27,9 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 public class SaveGameData {
 
-	public Error error;
-	public String errorMessage;
-	private boolean isStackTraceEnabled;
+	public static Error error;
+	public static String errorMessage;
+	private static boolean isStackTraceEnabled;
 	
 	public final String filename;
 	public final int index;
@@ -78,7 +74,7 @@ public class SaveGameData {
 		parseKnownBlueprints();
 		parseKnownWords();
 		parseDiscoveryData();
-		parseInventories();
+		inventories = Inventories.parseInventories(this,json_data);
 		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
 		parseStoredInteractions();
@@ -88,7 +84,7 @@ public class SaveGameData {
 		
 		determineAdditionalInfos();
 		
-		GameInfos.readUniverseObjectDataFromDataPool(universe);
+		GameInfos.readUniverseObjectDataFromDataPool(universe,false);
 		GameInfos.saveAllIDsToFiles();
 		return this;
 	}
@@ -99,7 +95,7 @@ public class SaveGameData {
 				if (bbo.galacticAddress==null) continue;
 				if (bbo.objectID==null) continue;
 				if (bbo.objectID.equals("^SUMMON_GARAGE")) {
-					Planet planet = universe.findPlanet(bbo.galacticAddress);
+					Universe.Planet planet = universe.findPlanet(bbo.galacticAddress);
 					if (planet!=null) planet.additionalInfos.hasExocraftSummoningStation = true;
 				}
 			}
@@ -110,21 +106,21 @@ public class SaveGameData {
 				if (base.baseType==null) continue;
 				switch(base.baseType) {
 				case FreighterBase: {
-						SolarSystem system = universe.findSolarSystem(base.galacticAddress);
-						if (system!=null) system.additionalInfos.hasFreighter = true;
-					} break;
+					Universe.SolarSystem system = universe.findSolarSystem(base.galacticAddress);
+					if (system!=null) system.additionalInfos.hasFreighter = true;
+				} break;
 				case HomePlanetBase: {
-						Planet planet = universe.findPlanet(base.galacticAddress);
-						if (planet!=null) {
-							planet.additionalInfos.bases.add(base);
-							for (BuildingObject bbo:base.objects) {
-								if (bbo.objectID==null) continue;
-								if (bbo.objectID.equals("^SUMMON_GARAGE")) {
-									planet.additionalInfos.hasExocraftSummoningStation = true;
-								}
+					Universe.Planet planet = universe.findPlanet(base.galacticAddress);
+					if (planet!=null) {
+						planet.additionalInfos.bases.add(base);
+						for (BuildingObject bbo:base.objects) {
+							if (bbo.objectID==null) continue;
+							if (bbo.objectID.equals("^SUMMON_GARAGE")) {
+								planet.additionalInfos.hasExocraftSummoningStation = true;
 							}
 						}
-					} break;
+					}
+				} break;
 				}
 			}
 		}
@@ -132,11 +128,11 @@ public class SaveGameData {
 			for (TeleportEndpoints tel:teleportEndpoints) {
 				if (tel.universeAddress==null) continue;
 				if (tel.universeAddress.isPlanet()) {
-					Planet planet = universe.findPlanet(tel.universeAddress);
+					Universe.Planet planet = universe.findPlanet(tel.universeAddress);
 					if (planet!=null) planet.additionalInfos.hasTeleportEndPoint=true;
 				}
 				if (tel.universeAddress.isSolarSystem()) {
-					SolarSystem system = universe.findSolarSystem(tel.universeAddress);
+					Universe.SolarSystem system = universe.findSolarSystem(tel.universeAddress);
 					if (system!=null) system.additionalInfos.hasTeleportEndPoint=true;
 				}
 			}
@@ -203,7 +199,7 @@ public class SaveGameData {
 		return null;
 	}
 
-	private UniverseAddress parseUniverseAddressStructure(JSON_Object data, Object... path) {
+	private static UniverseAddress parseUniverseAddressStructure(JSON_Object data, Object... path) {
 		JSON_Object universeAddressObj = getObjectValue(data, path);
 		if (universeAddressObj==null) return null;
 		
@@ -235,7 +231,7 @@ public class SaveGameData {
 		return new UniverseAddress(galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
 	}
 
-	private Position parsePosition(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
+	private static Position parsePosition(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
 		Position position = new Position();
 		position.pos = parseCoordinates(obj, valueName_Pos);
 		position.at  = parseCoordinates(obj, valueName_At);
@@ -265,7 +261,7 @@ public class SaveGameData {
 		}
 	}
 
-	private Coordinates parseCoordinates(JSON_Object obj, String valueName) {
+	private static Coordinates parseCoordinates(JSON_Object obj, String valueName) {
 		JSON_Array arrayValue = getArrayValue(obj, valueName);
 		if (arrayValue==null) return null;
 		
@@ -478,7 +474,7 @@ public class SaveGameData {
 		}
 	}
 
-	private Owner parseOwnerField(JSON_Object parentObj, String valueName) {
+	private static Owner parseOwnerField(JSON_Object parentObj, String valueName) {
 		JSON_Object objectValue = getObjectValue(parentObj, valueName);
 		if (objectValue==null) return null;
 		
@@ -971,62 +967,63 @@ public class SaveGameData {
 	
 	}
 
-	private void parseInventories() {
-		inventories = null;
-		inventories = new Inventories();
-		inventories.player.standard    = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
-		inventories.player.tech        = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
-		inventories.player.cargo       = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
-		inventories.ship_old           = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
-		inventories.multitool          = inventories.parse(getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
-		inventories.grave              = inventories.parse(getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
-		inventories.freighter.standard = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
-		inventories.freighter.tech     = inventories.parse(getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
-		
-		inventories.chests = new Inventory[10];
-		for (int i=0; i<inventories.chests.length; ++i)
-			inventories.chests[i] = inventories.parse(getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-		inventories.magicChest  = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
-		inventories.magicChest2 = inventories.parse(getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
-		
-		String[] vehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", "", "Nautilon"};
-		inventories.vehicles = null;
-		JSON_Array vehicles = getArrayValue(json_data, "PlayerStateData","VehicleOwnership");
-		if (vehicles!=null) {
-			inventories.vehicles = new Vehicle[vehicles.size()];
-			for (int i=0; i<vehicles.size(); ++i) {
-				JSON_Object vehicleData = getObject(vehicles.get(i));
-				inventories.vehicles[i] = new Vehicle();
-				if (vehicleData != null) {
-					String name = getStringValue(vehicleData,"Name");
-					if (name==null) name = "";
-					if (name.isEmpty() && i<vehicleNames.length) name = vehicleNames[i];
-					inventories.vehicles[i].standard = inventories.parse(getObjectValue(vehicleData,"Inventory"         ),"Vehicle "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "VehicleOwnership["+i+"].Inventory");
-					inventories.vehicles[i].tech     = inventories.parse(getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle "+(i+1)+" (Tech)"                            , "VehicleOwnership["+i+"].Inventory_TechOnly");
+	public final static class Inventories {
+
+		private static Inventories parseInventories(SaveGameData source, JSON_Object json_data) {
+			Inventories inventories = new Inventories();
+			inventories.player.standard    = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
+			inventories.player.tech        = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
+			inventories.player.cargo       = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
+			inventories.ship_old           = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
+			inventories.multitool          = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
+			inventories.grave              = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
+			inventories.freighter.standard = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
+			inventories.freighter.tech     = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+			
+			inventories.chests = new Inventory[10];
+			for (int i=0; i<inventories.chests.length; ++i)
+				inventories.chests[i] = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
+			inventories.magicChest  = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+			inventories.magicChest2 = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+			
+			String[] vehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", "", "Nautilon"};
+			inventories.vehicles = null;
+			JSON_Array vehicles = getArrayValue(json_data, "PlayerStateData","VehicleOwnership");
+			if (vehicles!=null) {
+				inventories.vehicles = new Vehicle[vehicles.size()];
+				for (int i=0; i<vehicles.size(); ++i) {
+					JSON_Object vehicleData = getObject(vehicles.get(i));
+					inventories.vehicles[i] = new Vehicle();
+					if (vehicleData != null) {
+						String name = getStringValue(vehicleData,"Name");
+						if (name==null) name = "";
+						if (name.isEmpty() && i<vehicleNames.length) name = vehicleNames[i];
+						inventories.vehicles[i].standard = Inventories.parse(source,getObjectValue(vehicleData,"Inventory"         ),"Vehicle "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "VehicleOwnership["+i+"].Inventory");
+						inventories.vehicles[i].tech     = Inventories.parse(source,getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle "+(i+1)+" (Tech)"                            , "VehicleOwnership["+i+"].Inventory_TechOnly");
+					}
 				}
 			}
+			
+			inventories.ships = null;
+			JSON_Array ships = getArrayValue(json_data, "PlayerStateData","ShipOwnership");
+			if (ships!=null) {
+				inventories.ships = new Vehicle[ships.size()];
+				for (int i=0; i<ships.size(); ++i) {
+					JSON_Object shipData = getObject(ships.get(i));
+					inventories.ships[i] = new Vehicle();
+					if (shipData != null) {
+						String name = getStringValue(shipData,"Name");
+						if (name==null) name = "";
+						inventories.ships[i].standard = Inventories.parse(source,getObjectValue(shipData,"Inventory"         ), "Ship "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "ShipOwnership["+i+"].Inventory");
+						inventories.ships[i].tech     = Inventories.parse(source,getObjectValue(shipData,"Inventory_TechOnly"), "Ship "+(i+1)+" (Tech)"                            , "ShipOwnership["+i+"].Inventory_TechOnly");
+					}
+				}
+			}	
+			
+			return inventories;
 		}
 		
-		inventories.ships = null;
-		JSON_Array ships = getArrayValue(json_data, "PlayerStateData","ShipOwnership");
-		if (ships!=null) {
-			inventories.ships = new Vehicle[ships.size()];
-			for (int i=0; i<ships.size(); ++i) {
-				JSON_Object shipData = getObject(ships.get(i));
-				inventories.ships[i] = new Vehicle();
-				if (shipData != null) {
-					String name = getStringValue(shipData,"Name");
-					if (name==null) name = "";
-					inventories.ships[i].standard = inventories.parse(getObjectValue(shipData,"Inventory"         ), "Ship "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "ShipOwnership["+i+"].Inventory");
-					inventories.ships[i].tech     = inventories.parse(getObjectValue(shipData,"Inventory_TechOnly"), "Ship "+(i+1)+" (Tech)"                            , "ShipOwnership["+i+"].Inventory_TechOnly");
-				}
-			}
-		}		
-	}
-
-	public final class Inventories {
-
-		private Inventory parse(JSON_Object inventoryData, String inventoryLabel, String inventorySourcePath) {
+		private static Inventory parse(SaveGameData source, JSON_Object inventoryData, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
 			
 			Inventory inventory = new Inventory(inventoryLabel);
@@ -1056,9 +1053,9 @@ public class SaveGameData {
 				if (arrSlots           !=null) inventory.usedSlots  = arrSlots.size();
 				if (arrValidSlotIndices!=null) inventory.validSlots = arrValidSlotIndices.size();
 				
-				inventory.slots = inventory.parseSlots((int)(long)inventory.width, (int)(long)inventory.height, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
+				inventory.parseSlots(source, (int)(long)inventory.width, (int)(long)inventory.height, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
 			}
-			inventory.baseStatValues = inventory.parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
+			inventory.parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
 			
 			return inventory;
 		}
@@ -1086,233 +1083,232 @@ public class SaveGameData {
 			this.multitool = null;
 			this.player = new Player();
 		}
-	
-	}
-	
-	public static class Player {
-		public Inventory standard;
-		public Inventory tech;
-		public Inventory cargo;
-		public Player() {
-			this.standard = null;
-			this.tech = null;
-			this.cargo = null;
+		public static class Player {
+			public Inventory standard;
+			public Inventory tech;
+			public Inventory cargo;
+			public Player() {
+				this.standard = null;
+				this.tech = null;
+				this.cargo = null;
+			}
 		}
-	}
-	
-	public static class Vehicle {
-		public Inventory standard;
-		public Inventory tech;
-		public Vehicle() {
-			this.standard = null;
-			this.tech = null;
+		public static class Vehicle {
+			public Inventory standard;
+			public Inventory tech;
+			public Vehicle() {
+				this.standard = null;
+				this.tech = null;
+			}
 		}
-	}
-
-	public final class Inventory {
-
-		private Slot[][] parseSlots(int width, int height, JSON_Array arrSlots, JSON_Array arrValidSlotIndices, JSON_Array arrSpecialSlots, String inventoryLabel, String inventorySourcePath) {
-			Slot[][] slots = new Slot[width][height];
-			for (Slot[] row:slots)
-				Arrays.fill(row, null);
-			
-			if (arrSlots==null) {
-				SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no slots.");
-				return slots;
-			}
-			
-			if (arrValidSlotIndices==null) {
-				SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
-				return slots;
-			}
-			
-			int redundantIndices = 0;
-			JSON_Array wrongIndices = new JSON_Array();
-			for (Value value:arrValidSlotIndices) {
-				JSON_Object indexObj = getObject(value);
-				if (indexObj==null) continue;
-				Long indexX = getIntegerValue(indexObj, "X");
-				Long indexY = getIntegerValue(indexObj, "Y");
-				if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
-				if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
-				if (slots[(int)(long)indexX][(int)(long)indexY]==null) {
-					slots[(int)(long)indexX][(int)(long)indexY] = new Slot(true,indexX,indexY);
-				} else
-					++redundantIndices;
-			}
-			if (!wrongIndices.isEmpty())
-				SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
-			if (redundantIndices>0)
-				SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
-
-			redundantIndices = 0;
-			wrongIndices.clear();
-			for (Value value:arrSpecialSlots) {
-				JSON_Object indexObj = getObject(value);
-				if (indexObj==null) continue;
-				Long   indexX = getIntegerValue(indexObj, "Index","X");
-				Long   indexY = getIntegerValue(indexObj, "Index","Y");
-				String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
-				if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
-				if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
-				if (slots[(int)(long)indexX][(int)(long)indexY]==null) { wrongIndices.add(value); continue; }
-				if (slots[(int)(long)indexX][(int)(long)indexY].specialSlotType==null) {
-					slots[(int)(long)indexX][(int)(long)indexY].specialSlotType = type;
-				} else
-					++redundantIndices;
-			}
-			if (!wrongIndices.isEmpty())
-				SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
-			if (redundantIndices>0)
-				SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
-			
-			redundantIndices = 0;
-			int notValidSlots = 0;
-			JSON_Array wrongSlots = new JSON_Array();
-			for (Value value:arrSlots) {
-				JSON_Object slotObj = getObject(value);
-				if (slotObj==null) { wrongSlots.add(value); continue; }
-				Slot slot = new Slot(false);
-				slot.typeStr      = getStringValue (slotObj, "Type","InventoryType");
-				slot.idStr        = getStringValue (slotObj, "Id");
-				slot.amount       = getIntegerValue(slotObj, "Amount");
-				slot.maxAmount    = getIntegerValue(slotObj, "MaxAmount");
-				slot.damageFactor = getFloatValue  (slotObj, "DamageFactor");
-				slot.indexX       = getIntegerValue(slotObj, "Index","X");
-				slot.indexY       = getIntegerValue(slotObj, "Index","Y");
-				
-				if (slot.typeStr!=null) {
-					switch(slot.typeStr) {
-					case "Product"   : slot.type = SlotType.Product; break;
-					case "Technology": slot.type = SlotType.Technology; break;
-					case "Substance" : slot.type = SlotType.Substance; break;
+		public final static class Inventory {
+		
+				private void parseSlots(SaveGameData source, int width, int height, JSON_Array arrSlots, JSON_Array arrValidSlotIndices, JSON_Array arrSpecialSlots, String inventoryLabel, String inventorySourcePath) {
+					slots = new Slot[width][height];
+					for (Slot[] row:slots)
+						Arrays.fill(row, null);
+					
+					if (arrSlots==null) {
+						SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no slots.");
+						return;
+					}
+					
+					if (arrValidSlotIndices==null) {
+						SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
+						return;
+					}
+					
+					int redundantIndices = 0;
+					JSON_Array wrongIndices = new JSON_Array();
+					for (Value value:arrValidSlotIndices) {
+						JSON_Object indexObj = getObject(value);
+						if (indexObj==null) continue;
+						Long indexX = getIntegerValue(indexObj, "X");
+						Long indexY = getIntegerValue(indexObj, "Y");
+						if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
+						if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
+						if (slots[(int)(long)indexX][(int)(long)indexY]==null) {
+							slots[(int)(long)indexX][(int)(long)indexY] = new Slot(true,indexX,indexY);
+						} else
+							++redundantIndices;
+					}
+					if (!wrongIndices.isEmpty())
+						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
+					if (redundantIndices>0)
+						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
+		
+					redundantIndices = 0;
+					wrongIndices.clear();
+					for (Value value:arrSpecialSlots) {
+						JSON_Object indexObj = getObject(value);
+						if (indexObj==null) continue;
+						Long   indexX = getIntegerValue(indexObj, "Index","X");
+						Long   indexY = getIntegerValue(indexObj, "Index","Y");
+						String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
+						if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
+						if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
+						if (slots[(int)(long)indexX][(int)(long)indexY]==null) { wrongIndices.add(value); continue; }
+						if (slots[(int)(long)indexX][(int)(long)indexY].specialSlotType==null) {
+							slots[(int)(long)indexX][(int)(long)indexY].specialSlotType = type;
+						} else
+							++redundantIndices;
+					}
+					if (!wrongIndices.isEmpty())
+						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
+					if (redundantIndices>0)
+						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
+					
+					redundantIndices = 0;
+					int notValidSlots = 0;
+					JSON_Array wrongSlots = new JSON_Array();
+					for (Value value:arrSlots) {
+						JSON_Object slotObj = getObject(value);
+						if (slotObj==null) { wrongSlots.add(value); continue; }
+						Slot slot = new Slot(false);
+						slot.typeStr      = getStringValue (slotObj, "Type","InventoryType");
+						slot.idStr        = getStringValue (slotObj, "Id");
+						slot.amount       = getIntegerValue(slotObj, "Amount");
+						slot.maxAmount    = getIntegerValue(slotObj, "MaxAmount");
+						slot.damageFactor = getFloatValue  (slotObj, "DamageFactor");
+						slot.indexX       = getIntegerValue(slotObj, "Index","X");
+						slot.indexY       = getIntegerValue(slotObj, "Index","Y");
+						
+						if (slot.typeStr!=null) {
+							switch(slot.typeStr) {
+							case "Product"   : slot.type = SlotType.Product; break;
+							case "Technology": slot.type = SlotType.Technology; break;
+							case "Substance" : slot.type = SlotType.Substance; break;
+							}
+						}
+						if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
+						if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
+						int x = (int)(long)slot.indexX;
+						int y = (int)(long)slot.indexY;
+						if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
+						if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantIndices; continue; }
+						
+						slots[x][y] = slot;
+						
+						if (slot.type!=null && slot.idStr!=null) {
+							IDMap map = null;
+							switch(slot.type) {
+							case Product   : map = GameInfos.productIDs;   break;
+							case Technology: map = GameInfos.techIDs;      break;
+							case Substance : map = GameInfos.substanceIDs; break;
+							}
+							if (map!=null) {
+								slot.id = map.get(slot.idStr,source,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
+								slot.id.getUsage(source).addInventoryUsage(inventoryLabel,x,y);
+							}
+						}
+					}
+					if (!wrongSlots.isEmpty()) SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
+					if (redundantIndices>0   ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
+					if (notValidSlots>0      ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
+				}
+		
+				private void parseBaseStatValues(JSON_Array valueArray, String inventoryLabel, String inventorySourcePath) {
+					baseStatValues = null;
+					if (valueArray==null) return;
+					
+					baseStatValues = new BaseStatValue[valueArray.size()];
+					for (int i=0; i<valueArray.size(); ++i) {
+						JSON_Object obj = getObject(valueArray.get(i));
+						if (obj==null) { baseStatValues[i]=null; continue; }
+						baseStatValues[i] = new BaseStatValue(getStringValue(obj,"BaseStatID"),getFloatValue(obj,"Value"));
 					}
 				}
-				if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
-				if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
-				int x = (int)(long)slot.indexX;
-				int y = (int)(long)slot.indexY;
-				if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
-				if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantIndices; continue; }
+		
+				public final String label;
+				public Long width;
+				public Long height;
+				public Long version;
+				public String inventoryClass;
+				public Boolean isCool;
+				public Long productMaxStorageMultiplier;
+				public Long substanceMaxStorageMultiplier;
+				public Slot[][] slots;
+				public Integer usedSlots;
+				public Integer validSlots;
+				public BaseStatValue[] baseStatValues;
 				
-				slots[x][y] = slot;
-				
-				if (slot.type!=null && slot.idStr!=null) {
-					IDMap map = null;
-					switch(slot.type) {
-					case Product   : map = GameInfos.productIDs;   break;
-					case Technology: map = GameInfos.techIDs;      break;
-					case Substance : map = GameInfos.substanceIDs; break;
+				public Inventory(String label) {
+					this.label = label;
+					this.width = null;
+					this.height = null;
+					this.version = null;
+					this.inventoryClass = null;
+					this.isCool = null;
+					this.productMaxStorageMultiplier = null;
+					this.substanceMaxStorageMultiplier = null;
+					this.slots = null;
+					this.baseStatValues = null;
+					this.usedSlots = null;
+					this.validSlots = null;
+				}
+		
+		//		private SaveGameData getSource2() {
+		//			return SaveGameData.this;
+		//		}
+		
+		//		public SaveGameData getSource() {
+		//			return getSource2();
+		//		}
+		
+				public enum SlotType { Product, Technology, Substance }
+		
+				public final static class Slot {
+					public Long indexX;
+					public Long indexY;
+					public String idStr;
+					public GeneralizedID id;
+					public String typeStr;
+					public SlotType type;
+					public Long amount;
+					public Long maxAmount;
+					public Double damageFactor;
+					public final boolean isEmpty;
+					public String specialSlotType;
+					
+					
+					public Slot(boolean isEmpty) {
+						this.indexX = null;
+						this.indexY = null;
+						this.idStr = null;
+						this.id = null;
+						this.typeStr = null;
+						this.type = null;
+						this.amount = null;
+						this.maxAmount = null;
+						this.damageFactor = null;
+						this.isEmpty = isEmpty;
+						this.specialSlotType = null;
 					}
-					if (map!=null) {
-						slot.id = map.get(slot.idStr,SaveGameData.this,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
-						slot.id.getUsage(SaveGameData.this).addInventoryUsage(inventoryLabel,x,y);
+		
+					public Slot(boolean isEmpty, Long indexX, Long indexY) {
+						this(isEmpty);
+						this.indexX = indexX;
+						this.indexY = indexY;
+					}
+		
+		//			public SaveGameData getSource() {
+		//				return SaveGameData.this;
+		//			}
+				
+				}
+		
+				public final static class BaseStatValue {
+					public final String baseStatID;
+					public final Double value;
+					private BaseStatValue(String baseStatID, Double value) {
+						this.baseStatID = baseStatID;
+						this.value = value;
 					}
 				}
 			}
-			if (!wrongSlots.isEmpty()) SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
-			if (redundantIndices>0   ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
-			if (notValidSlots>0      ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
-		
-			return slots;
-		}
-
-		private BaseStatValue[] parseBaseStatValues(JSON_Array valueArray, String inventoryLabel, String inventorySourcePath) {
-			if (valueArray==null) return null;
-			
-			BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
-			for (int i=0; i<valueArray.size(); ++i) {
-				JSON_Object obj = getObject(valueArray.get(i));
-				if (obj==null) { baseStatValues[i]=null; continue; }
-				baseStatValues[i] = new BaseStatValue(getStringValue(obj,"BaseStatID"),getFloatValue(obj,"Value"));
-			}
-			return baseStatValues;
-		}
-
-		public final String label;
-		public Long width;
-		public Long height;
-		public Long version;
-		public String inventoryClass;
-		public Boolean isCool;
-		public Long productMaxStorageMultiplier;
-		public Long substanceMaxStorageMultiplier;
-		public Slot[][] slots;
-		public Integer usedSlots;
-		public Integer validSlots;
-		public BaseStatValue[] baseStatValues;
-		
-		public Inventory(String label) {
-			this.label = label;
-			this.width = null;
-			this.height = null;
-			this.version = null;
-			this.inventoryClass = null;
-			this.isCool = null;
-			this.productMaxStorageMultiplier = null;
-			this.substanceMaxStorageMultiplier = null;
-			this.slots = null;
-			this.baseStatValues = null;
-			this.usedSlots = null;
-			this.validSlots = null;
-		}
-
-		public SaveGameData getSource() {
-			return SaveGameData.this;
-		}
-
-		public final class Slot {
-			public Long indexX;
-			public Long indexY;
-			public String idStr;
-			public GeneralizedID id;
-			public String typeStr;
-			public SlotType type;
-			public Long amount;
-			public Long maxAmount;
-			public Double damageFactor;
-			public final boolean isEmpty;
-			public String specialSlotType;
-			
-			
-			public Slot(boolean isEmpty) {
-				this.indexX = null;
-				this.indexY = null;
-				this.idStr = null;
-				this.id = null;
-				this.typeStr = null;
-				this.type = null;
-				this.amount = null;
-				this.maxAmount = null;
-				this.damageFactor = null;
-				this.isEmpty = isEmpty;
-				this.specialSlotType = null;
-			}
-
-			public Slot(boolean isEmpty, Long indexX, Long indexY) {
-				this(isEmpty);
-				this.indexX = indexX;
-				this.indexY = indexY;
-			}
-
-			public SaveGameData getSource() {
-				return SaveGameData.this;
-			}
-		
-		}
-
-		public final class BaseStatValue {
-			public final String baseStatID;
-			public final Double value;
-			private BaseStatValue(String baseStatID, Double value) {
-				this.baseStatID = baseStatID;
-				this.value = value;
-			}
-		}
+	
 	}
-
-	public enum SlotType { Product, Technology, Substance }
-
+	
 	private void parseDiscoveryData() {
 		JSON_Array arrayValue_Store     = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
 		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
@@ -1356,7 +1352,7 @@ public class SaveGameData {
 		public void parseJsonArrays(JSON_Array arrStore, JSON_Array arrAvailable) {
 			if (arrStore!=null) {
 				for (Value objValue:arrStore) {
-					JSON_Object object = data.getObject(objValue);
+					JSON_Object object = getObject(objValue);
 					if (object==null) { notParsedAvailableData.add(objValue); continue; }
 					
 					StoreData stData = new StoreData();
@@ -1364,13 +1360,13 @@ public class SaveGameData {
 					// DD.UA  UniverseAddress
 					// DD.DT  String
 					// DD.VP  array of (hex formated Long or direct Long)
-					parseDD(data.getObjectValue(object,"DD"), stData.DD);
+					parseDD(getObjectValue(object,"DD"), stData.DD);
 					
 					// DM  empty object
-					JSON_Object dmObj = data.getObjectValue(object,"DM");
+					JSON_Object dmObj = getObjectValue(object,"DM");
 					if (dmObj!=null && !dmObj.isEmpty()) {
 						stData.DM = "{"+dmObj.size()+"}";
-						stData.DM_CN = data.getStringValue(dmObj,"CN");
+						stData.DM_CN = getStringValue(dmObj,"CN");
 					}
 					
 					// OWS
@@ -1378,10 +1374,10 @@ public class SaveGameData {
 					//    UID  String
 					//    USN  String
 					//    TS   Long
-					stData.OWS = data.parseOwnerField(object, "OWS");
+					stData.OWS = parseOwnerField(object, "OWS");
 					
 					// RID  String (evtl.)
-					stData.RID = data.getStringValue_silent(object,"RID");
+					stData.RID = getStringValue_silent(object,"RID");
 					if (stData.RID!=null) {
 						try {
 							stData.RID_bytes = Base64.getDecoder().decode(stData.RID/*.replace("\\","")*/);
@@ -1392,7 +1388,7 @@ public class SaveGameData {
 					}
 					
 					// PTK  String (evtl.)
-					stData.PTK = data.getStringValue_silent(object,"PTK");
+					stData.PTK = getStringValue_silent(object,"PTK");
 					
 					storeData.add(stData);
 				}
@@ -1400,18 +1396,18 @@ public class SaveGameData {
 			
 			if (arrAvailable!=null) {
 				for (Value objValue:arrAvailable) {
-					JSON_Object object = data.getObject(objValue);
+					JSON_Object object = getObject(objValue);
 					if (object==null) { notParsedAvailableData.add(objValue); continue; }
 					
 					AvailableData availData = new AvailableData();
 					
 					// TSrec  long --> TimeStamp
-					availData.TSrec = TimeStamp.create( data.getIntegerValue(object,"TSrec") );
+					availData.TSrec = TimeStamp.create( getIntegerValue(object,"TSrec") );
 					
 					// DD.UA  UniverseAddress
 					// DD.DT  String
 					// DD.VP  array of (hex formated Long or direct Long)
-					parseDD(data.getObjectValue(object,"DD"), availData.DD);
+					parseDD(getObjectValue(object,"DD"), availData.DD);
 					
 					availableData.add(availData);
 				}
@@ -1425,10 +1421,10 @@ public class SaveGameData {
 			dd.UA = parseUniverseAddressField(ddObj, "UA");
 			
 			// DD.DT  String
-			dd.DT = data.getStringValue(ddObj,"DT");
+			dd.DT = getStringValue(ddObj,"DT");
 			
 			// DD.VP
-			JSON_Array vpArr = data.getArrayValue(ddObj,"VP");
+			JSON_Array vpArr = getArrayValue(ddObj,"VP");
 			if (vpArr!=null) {
 				dd.VP = new Long[vpArr.size()];
 				for (int i=0; i<vpArr.size(); ++i)
@@ -1486,7 +1482,7 @@ public class SaveGameData {
 			if (DD.UA==null) return universeObject;
 			if (DD.UA.isPlanet()) {
 				universeObject = 1;
-				Planet planet = data.universe.findPlanet(DD.UA);
+				Universe.Planet planet = data.universe.findPlanet(DD.UA);
 				if (planet==null)
 					unknownAdresses.add(DD.UA);
 				else
@@ -1494,7 +1490,7 @@ public class SaveGameData {
 			}
 			if (DD.UA.isSolarSystem()) {
 				universeObject = 2;
-				SolarSystem solarSystem = data.universe.findSolarSystem(DD.UA);
+				Universe.SolarSystem solarSystem = data.universe.findSolarSystem(DD.UA);
 				if (solarSystem==null)
 					unknownAdresses.add(DD.UA);
 				else
@@ -1649,33 +1645,27 @@ public class SaveGameData {
 		
 		public void parse() {
 			
-			currentUniverseAddress = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
+			currentUniverseAddress = parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
 			if (currentUniverseAddress!=null) {
-				if(currentUniverseAddress.isPlanet()) {
-					Planet planet = data.universe.getOrCreatePlanet(currentUniverseAddress);
-					planet.isCurrPos = true;
-				}
-				if(currentUniverseAddress.isSolarSystem()) {
-					SolarSystem system = data.universe.getOrCreateSolarSystem(currentUniverseAddress);
-					system.isCurrPos = true;
-				}
+				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress).isCurrPos = true;
+				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress).isCurrPos = true;
 			}
-			freighterUA = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","FreighterUniverseAddress");
-			graveUA     = data.parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
-			freighterPos = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
-			gravePos     = data.parsePosition(data.getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			freighterUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","FreighterUniverseAddress");
+			graveUA     = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
+			freighterPos = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
+			gravePos     = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
-			units           = data.getIntegerValue( data.json_data, "PlayerStateData","Units"           );
-			nanites         = data.getIntegerValue( data.json_data, "PlayerStateData","Nanites"         );
-			playerHealth    = data.getIntegerValue( data.json_data, "PlayerStateData","Health"          );
-			playerShield    = data.getIntegerValue( data.json_data, "PlayerStateData","Shield"          );
-			energy          = data.getIntegerValue( data.json_data, "PlayerStateData","Energy"          );
-			shipHealth      = data.getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      );
-			shipShield      = data.getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      );
-			timeAlive       = data.getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       );
-			totalPlayTime   = data.getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   );
-			hazardTimeAlive = data.getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" );
-			knownGlyphsMask = data.getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes");
+			units           = getIntegerValue( data.json_data, "PlayerStateData","Units"           );
+			nanites         = getIntegerValue( data.json_data, "PlayerStateData","Nanites"         );
+			playerHealth    = getIntegerValue( data.json_data, "PlayerStateData","Health"          );
+			playerShield    = getIntegerValue( data.json_data, "PlayerStateData","Shield"          );
+			energy          = getIntegerValue( data.json_data, "PlayerStateData","Energy"          );
+			shipHealth      = getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      );
+			shipShield      = getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      );
+			timeAlive       = getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       );
+			totalPlayTime   = getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   );
+			hazardTimeAlive = getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" );
+			knownGlyphsMask = getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes");
 		}
 		
 //		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
@@ -1805,27 +1795,27 @@ public class SaveGameData {
 		public Vector<String> getVerboseName(Universe universe) {
 			Vector<String> output = new Vector<>();
 			
-			Galaxy galaxy = universe.findGalaxy(galaxyIndex);
+			Universe.Galaxy galaxy = universe.findGalaxy(galaxyIndex);
 			if (galaxy==null)
-				galaxy = new Galaxy(universe, galaxyIndex);
+				galaxy = new Universe.Galaxy(universe, galaxyIndex);
 			
-			Region region = galaxy.findRegion(voxelX, voxelY, voxelZ);
+			Universe.Region region = galaxy.findRegion(voxelX, voxelY, voxelZ);
 			if (region==null)
-				region = new Region(galaxy, voxelX, voxelY, voxelZ);
+				region = new Universe.Region(galaxy, voxelX, voxelY, voxelZ);
 			
 			if (isRegion())
 				output.add(region.toString());
 			else {
-				SolarSystem sys = region.findSolarSystem(solarSystemIndex);
+				Universe.SolarSystem sys = region.findSolarSystem(solarSystemIndex);
 				if (sys==null)
-					sys = new SolarSystem(region, solarSystemIndex);
+					sys = new Universe.SolarSystem(region, solarSystemIndex);
 				
 				if (isSolarSystem())
 					output.add(sys.toString());
 				else {
-					Planet planet = sys.findPlanet(planetIndex);
+					Universe.Planet planet = sys.findPlanet(planetIndex);
 					if (planet==null)
-						planet = new Planet(sys, planetIndex);
+						planet = new Universe.Planet(sys, planetIndex);
 					
 					if (isPlanet())
 						output.add(planet.toString());
@@ -1848,13 +1838,13 @@ public class SaveGameData {
 				return "Region \""+getCoordinates_Region()+"\"";
 			
 			if (isSolarSystem()) {
-				SolarSystem sys = universe.findSolarSystem(this);
+				Universe.SolarSystem sys = universe.findSolarSystem(this);
 				return "SolarSystem \""+getCoordinates_Region()+" | "+sys.toString()+"\"";
 			}
 			
 			if (isPlanet()) {
-				SolarSystem sys = universe.findSolarSystem(this);
-				Planet pln = universe.findPlanet(this);
+				Universe.SolarSystem sys = universe.findSolarSystem(this);
+				Universe.Planet pln = universe.findPlanet(this);
 				return "Planet \""+getCoordinates_Region()+" | "+sys.toString(true,true,false,true)+" | "+pln.toString()+"\"";
 			}
 			
@@ -1991,16 +1981,22 @@ public class SaveGameData {
 		}
 
 		public SolarSystem getOrCreateSolarSystem(UniverseAddress ua) {
+			Region region = getOrCreateRegion(ua);
+			
+			SolarSystem solarSystem = region.findSolarSystem(ua.solarSystemIndex);
+			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,ua.solarSystemIndex));
+			
+			return solarSystem;
+		}
+
+		public Region getOrCreateRegion(UniverseAddress ua) {
 			Galaxy galaxy = findGalaxy(ua.galaxyIndex);
 			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,ua.galaxyIndex));
 			
 			Region region = galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
 			if (region==null) galaxy.addRegion(region=new Region(galaxy,ua.voxelX,ua.voxelY,ua.voxelZ));
 			
-			SolarSystem solarSystem = region.findSolarSystem(ua.solarSystemIndex);
-			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,ua.solarSystemIndex));
-			
-			return solarSystem;
+			return region;
 		}
 
 		public static final class Galaxy {
@@ -2171,6 +2167,15 @@ public class SaveGameData {
 				if (foundInStats    ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
 				if (foundInDiscStore) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
 				if (isNotUploaded   ) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
+				return "<"+sb.toString()+">";
+			}
+			
+			public String getLongSourceIDStr() {
+				StringBuilder sb = new StringBuilder();
+				if (isCurrPos       ) {                                     sb.append("Current Position"); }
+				if (foundInStats    ) { if (sb.length()>0) sb.append(", "); sb.append("Stats"); }
+				if (foundInDiscStore) { if (sb.length()>0) sb.append(", "); sb.append("DiscStore"); }
+				if (isNotUploaded   ) { if (sb.length()>0) sb.append(", "); sb.append("DiscAvail"); }
 				return "<"+sb.toString()+">";
 			}
 			
@@ -2421,7 +2426,7 @@ public class SaveGameData {
 		if (arrayValue==null)
 			knownWords = null;
 		else {
-			knownWords = new KnownWords(this).parse(arrayValue);
+			knownWords = new KnownWords().parse(arrayValue);
 			if (!knownWords.notParsedKnownWords.isEmpty())
 				SaveViewer.log_error_ln("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
 		}
@@ -2429,13 +2434,11 @@ public class SaveGameData {
 
 	public static final class KnownWords {
 
-		private final SaveGameData data;
 		public Vector<KnownWord> wordList;
 		JSON_Array notParsedKnownWords;
 		public int[] wordCounts;
 
-		public KnownWords(SaveGameData data) {
-			this.data = data;
+		public KnownWords() {
 			this.wordList = new Vector<>();
 			this.wordCounts = null;
 			notParsedKnownWords = new JSON_Array();
@@ -2443,21 +2446,21 @@ public class SaveGameData {
 	
 		public KnownWords parse(JSON_Array knownWordsArray) {
 			for (Value knownWordValue : knownWordsArray) {
-				JSON_Object knownWordObj = data.getObject(knownWordValue);
+				JSON_Object knownWordObj = getObject(knownWordValue);
 				if (knownWordObj==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				
 				KnownWord knownWord = new KnownWord();
 				
-				knownWord.word = data.getStringValue(knownWordObj,"Word");
+				knownWord.word = getStringValue(knownWordObj,"Word");
 				if (knownWord.word==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				
-				JSON_Array races = data.getArrayValue(knownWordObj,"Races");
+				JSON_Array races = getArrayValue(knownWordObj,"Races");
 				if (races==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				knownWord.races = new boolean[races.size()];
 				
 				boolean errorOccured = false;
 				for (int i=0; i<knownWord.races.length; ++i) {
-					Boolean race = data.getBool(races.get(i));
+					Boolean race = getBool(races.get(i));
 					if (race==null) { errorOccured=true; break; }
 					knownWord.races[i] = race;
 				}
@@ -2521,20 +2524,20 @@ public class SaveGameData {
 
 		public void parse(JSON_Array statList) {
 			for (Value groupValue : statList) {
-				JSON_Object group = data.getObject(groupValue);
+				JSON_Object group = getObject(groupValue);
 				if (group==null) { notParsedStats.add(groupValue); continue; }
 				
-				String groupID = data.getStringValue(group,"GroupId");
+				String groupID = getStringValue(group,"GroupId");
 				if (groupID==null) { notParsedStats.add(groupValue); continue; }
 				
-				JSON_Array groupStats = data.getArrayValue(group,"Stats");
+				JSON_Array groupStats = getArrayValue(group,"Stats");
 				if (groupStats==null) { notParsedStats.add(groupValue); continue; }
 				
 				switch(groupID) {
 				case "^GLOBAL_STATS":
 					if (globalStats!=null) { notParsedStats.add(groupValue); continue; }
 					
-					data.getIntegerValue(group,"Address"); // -> wasProcessed
+					getIntegerValue(group,"Address"); // -> wasProcessed
 					globalStats = new Vector<>();
 					fillInto(groupStats,globalStats);
 					
@@ -2592,26 +2595,26 @@ public class SaveGameData {
 			}
 		}
 
-		private void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {
+		private static void fillInto(JSON_Array stats, Vector<StatValue> statsVector) {
 //			StatValue.KnownID[] knownIDs = StatValue.KnownID.values();
 			for (Value value : stats) {
-				JSON_Object statObject = data.getObject(value);
+				JSON_Object statObject = getObject(value);
 				if (statObject==null) continue;
 				
 				StatValue stat = new StatValue();
 				
-				stat.ID = data.getStringValue(statObject,"Id");
+				stat.ID = getStringValue(statObject,"Id");
 				if (stat.ID==null) continue;
 				stat.knownID = StatValue.KnownID.findID(stat.ID);
 //				for (int i=0; i<knownIDs.length; ++i)
 //					if (stat.ID.equals("^"+knownIDs[i]))
 //						stat.knownID = knownIDs[i];
 				
-				JSON_Object statValue = data.getObjectValue(statObject,"Value");
+				JSON_Object statValue = getObjectValue(statObject,"Value");
 				if (statValue!=null) {
-					stat.IntValue    = data.getIntegerValue_silent(statValue,"IntValue");
-					stat.FloatValue  = data.getFloatValue_silent  (statValue,"FloatValue");
-					stat.Denominator = data.getFloatValue_silent  (statValue,"Denominator");
+					stat.IntValue    = getIntegerValue_silent(statValue,"IntValue");
+					stat.FloatValue  = getFloatValue_silent  (statValue,"FloatValue");
+					stat.Denominator = getFloatValue_silent  (statValue,"Denominator");
 				}
 				
 				stat.interpretValues();
@@ -2842,15 +2845,15 @@ public class SaveGameData {
 
 	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
 
-//	private JSON_Array getArray(Value val)   { if (val==null || !(val instanceof ArrayValue  ) || val.type!=Type.Array  ) return null; val.wasProcessed=true; return ((ArrayValue  )val).value;}
-	private JSON_Object getObject(Value val) { if (val==null || !(val instanceof ObjectValue ) || val.type!=Type.Object ) return null; val.wasProcessed=true; return ((ObjectValue )val).value;}
-	private String getString(Value val)      { if (val==null || !(val instanceof StringValue ) || val.type!=Type.String ) return null; val.wasProcessed=true; return ((StringValue )val).value;}
-	private Boolean getBool(Value val)       { if (val==null || !(val instanceof BoolValue   ) || val.type!=Type.Bool   ) return null; val.wasProcessed=true; return ((BoolValue   )val).value;}
-//	private Long getInteger(Value val)       { if (val==null || !(val instanceof IntegerValue) || val.type!=Type.Integer) return null; val.wasProcessed=true; return ((IntegerValue)val).value;}
-	private Double getFloat(Value val)       { if (val==null || !(val instanceof FloatValue  ) || val.type!=Type.Float  ) return null; val.wasProcessed=true; return ((FloatValue  )val).value;}
+//	private static JSON_Array getArray(Value val)   { if (val==null || !(val instanceof ArrayValue  ) || val.type!=Type.Array  ) return null; val.wasProcessed=true; return ((ArrayValue  )val).value;}
+	private static JSON_Object getObject(Value val) { if (val==null || !(val instanceof ObjectValue ) || val.type!=Type.Object ) return null; val.wasProcessed=true; return ((ObjectValue )val).value;}
+	private static String getString(Value val)      { if (val==null || !(val instanceof StringValue ) || val.type!=Type.String ) return null; val.wasProcessed=true; return ((StringValue )val).value;}
+	private static Boolean getBool(Value val)       { if (val==null || !(val instanceof BoolValue   ) || val.type!=Type.Bool   ) return null; val.wasProcessed=true; return ((BoolValue   )val).value;}
+//	private static Long getInteger(Value val)       { if (val==null || !(val instanceof IntegerValue) || val.type!=Type.Integer) return null; val.wasProcessed=true; return ((IntegerValue)val).value;}
+	private static Double getFloat(Value val)       { if (val==null || !(val instanceof FloatValue  ) || val.type!=Type.Float  ) return null; val.wasProcessed=true; return ((FloatValue  )val).value;}
 
-	private void enableStackTrace(boolean isStackTraceEnabled) {
-		this.isStackTraceEnabled = isStackTraceEnabled;
+	private static void enableStackTrace(boolean isStackTraceEnabled_) {
+		isStackTraceEnabled = isStackTraceEnabled_;
 	}
 
 	static boolean hasValue(JSON_Object data, Object... path) {
@@ -2862,7 +2865,7 @@ public class SaveGameData {
 		}
 	}
 
-	private Value getValue(JSON_Object data, Object... path) {
+	private static Value getValue(JSON_Object data, Object... path) {
 		Value value = null;
 		if (path.length==0) throw new IllegalStateException("Calling getValue(JSON_Object data, Object... path) is not allowed with zero length path");
 		try {
@@ -2881,7 +2884,7 @@ public class SaveGameData {
 		return value;
 	}
 
-	private Boolean getBoolValue(JSON_Object data, Object... path) {
+	private static Boolean getBoolValue(JSON_Object data, Object... path) {
 		Value value = getValue(data,path);
 		if (value==null) return null;
 		if (value instanceof BoolValue) {
@@ -2897,7 +2900,7 @@ public class SaveGameData {
 		}
 	}
 
-	private Long getIntegerValue(JSON_Object data, Object... path) {
+	private static Long getIntegerValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
 		if (value instanceof IntegerValue) {
@@ -2913,7 +2916,7 @@ public class SaveGameData {
 		}
 	}
 
-	private Double getFloatValue(JSON_Object data, Object... path) {
+	private static Double getFloatValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
 		if (value instanceof FloatValue) {
@@ -2929,7 +2932,7 @@ public class SaveGameData {
 		}
 	}
 
-	private String getStringValue(JSON_Object data, Object... path) {
+	private static String getStringValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
 		if (value instanceof StringValue) {
@@ -2945,7 +2948,7 @@ public class SaveGameData {
 		}
 	}
 
-	private JSON_Array getArrayValue(JSON_Object data, Object... path) {
+	private static JSON_Array getArrayValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
 		if (value instanceof ArrayValue) {
@@ -2961,7 +2964,7 @@ public class SaveGameData {
 		}
 	}
 
-	private JSON_Object getObjectValue(JSON_Object data, Object... path) {
+	private static JSON_Object getObjectValue(JSON_Object data, Object... path) {
 		Value value = getValue(data, path);
 		if (value==null) return null;
 		if (value instanceof ObjectValue) {
@@ -2977,21 +2980,21 @@ public class SaveGameData {
 		}
 	}
 
-	private Long getIntegerValue_silent(JSON_Object data, Object... path) {
+	private static Long getIntegerValue_silent(JSON_Object data, Object... path) {
 		enableStackTrace(false);
 		Long value = getIntegerValue(data, path);
 		enableStackTrace(true);
 		return value;
 	}
 
-	private Double getFloatValue_silent(JSON_Object data, Object... path) {
+	private static Double getFloatValue_silent(JSON_Object data, Object... path) {
 		enableStackTrace(false);
 		Double value = getFloatValue(data, path);
 		enableStackTrace(true);
 		return value;
 	}
 
-	private String getStringValue_silent(JSON_Object data, Object... path) {
+	private static String getStringValue_silent(JSON_Object data, Object... path) {
 		enableStackTrace(false);
 		String value = getStringValue(data, path);
 		enableStackTrace(true);

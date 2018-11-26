@@ -77,7 +77,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
 	
-	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject, RemoveHighlights }
+	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject, RemoveHighlights, ShowFullDiscoveredUniverseData }
 	private enum UniverseTreeIcons {
 		Universe, Galaxy, Region, SolarSystem, Planet,
 		GekSys, KorvaxSys, VykeenSys, Unexplored,
@@ -387,7 +387,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static abstract class AbstractInfoPanel extends JPanel {
 		private static final long serialVersionUID = 1055278730261206951L;
 		
-		protected JTextArea textArea;
+		private JTextArea textArea;
 		
 		AbstractInfoPanel() {
 			super(new BorderLayout(3,3));
@@ -402,6 +402,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			add(scrollPane,BorderLayout.CENTER);
 		}
 		public abstract void setContent(GenericTreeNode<?> node);
+		
+		protected void setText(String str) { textArea.setText(str); }
+		protected void clearText()         { setText(""); }
+		protected void append  (               String format, Object...objects ) { textArea.append(String.format(        format, objects)); }
+		protected void append  (Locale locale, String format, Object...objects ) { textArea.append(String.format(locale, format, objects)); }
+		protected void appendln(                                               ) { append(               "\r\n"         ); }
+		protected void appendln(               String format, Object...objects ) { append(        format+"\r\n", objects); }
+		protected void appendln(Locale locale, String format, Object...objects ) { append(locale, format+"\r\n", objects); }
 	}
 	
 	private static class InfoPanel_Other extends AbstractInfoPanel {
@@ -409,7 +417,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		@Override
 		public void setContent(GenericTreeNode<?> selectedNode) {
-			textArea.setText("");
+			clearText();
 			
 			if (selectedNode==null)
 				return;
@@ -422,25 +430,25 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			case Region:
 				n = selectedNode.getDataChildrenCount();
-				textArea.append(String.format("%d known solar system%s\r\n", n, n>1?"s":""));
+				appendln("%d known solar system%s", n, n>1?"s":"");
 				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
-				textArea.append(String.format("Universe Coordinates      : %s\r\n", ua.getCoordinates_Region()));
-				textArea.append(String.format("Reduced SignalBoster Code : %s\r\n", ua.getReducedSigBoostCode()));
+				appendln("Universe Coordinates      : %s", ua.getCoordinates_Region());
+				appendln("Reduced SignalBoster Code : %s", ua.getReducedSigBoostCode());
 				
 				distance_reg = ua.getDistToCenter_inRegionUnits();
-				textArea.append("\r\n");
-				textArea.append(                             "Distance to Galaxy Center :\r\n");
-				textArea.append(String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+				appendln();
+				appendln(               "Distance to Galaxy Center :");
+				appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_reg, distance_reg*400);
 				break;
 				
 			case Galaxy:
 				n = selectedNode.getDataChildrenCount();
-				textArea.append(String.format("%d known region%s\r\n", n, n>1?"s":""));
+				appendln("%d known region%s\r\n", n, n>1?"s":"");
 				break;
 				
 			case Universe:
 				n = selectedNode.getDataChildrenCount();
-				textArea.append(String.format("%d known galax%s\r\n", n, n>1?"ies":"y"));
+				appendln("%d known galax%s\r\n", n, n>1?"ies":"y");
 				break;
 			
 			default:
@@ -452,35 +460,65 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static abstract class InfoPanel_UniverseObject extends AbstractInfoPanel {
 		private static final long serialVersionUID = -8235731718380188431L;
 		
-		protected SimplifiedTable extraInfoTable;
-		protected UniversePanel universePanel;
+		private SimplifiedTable extraInfoTable;
+		private UniversePanel universePanel;
+		private JPanel valuePanel;
+		private GridBagLayout valuePanelLayout;
+		private GridBagConstraints c;
 		
-		InfoPanel_UniverseObject(UniversePanel universePanel) {
+		InfoPanel_UniverseObject(UniversePanel universePanel, boolean useValuePanel) {
 			this.universePanel = universePanel;
 			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
+			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			
+			if (useValuePanel) {
+				valuePanel = new JPanel(valuePanelLayout = new GridBagLayout());
+				valuePanel.setBorder(BorderFactory.createTitledBorder("Values"));
+				c = new GridBagConstraints();
+				
+				JPanel southPanel = new JPanel(new BorderLayout(3,3));
+				southPanel.add(valuePanel, BorderLayout.WEST);
+				southPanel.add(new JScrollPane(extraInfoTable), BorderLayout.CENTER);
+				
+				add(southPanel,BorderLayout.SOUTH);
+			} else
+				add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
+		}
+		
+		protected void addCompToValuePanel(Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+			c.weightx=weightx;
+			c.weighty=weighty;
+			c.gridwidth=gridwidth;
+			c.gridheight=gridheight;
+			c.fill = fill;
+			valuePanelLayout.setConstraints(comp, c);
+			valuePanel.add(comp);
 		}
 
 		protected void showDiscNameObj(GenericTreeNode<?> node, Universe.UniverseObject obj) {
-			textArea.append("\r\n");
+			appendln();
 			
 			//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
 			
 			String oldNameLabel = "Old Original Name";
-			if (obj.hasOriginalName   ()) { textArea.append(String.format("Original Name : %s\r\n", obj.getOriginalName())); oldNameLabel = "  -\"-   (old)"; }
-			if (obj.hasOldOriginalName())   textArea.append(String.format(           "%s : %s\r\n", oldNameLabel, obj.getOldOriginalName()));
-			if (obj.hasUploadedName   ())   textArea.append(String.format("Uploaded Name : %s\r\n", obj.getUploadedName()));
-			if (obj.hasDiscoverer     ())   textArea.append(String.format("Discovered by : %s\r\n", obj.getDiscoverer()));
+			if (obj.hasOriginalName   ()) { appendln("Original Name : %s", obj.getOriginalName()); oldNameLabel = "  -\"-   (old)"; }
+			if (obj.hasOldOriginalName())   appendln(           "%s : %s", oldNameLabel, obj.getOldOriginalName());
+			if (obj.hasUploadedName   ())   appendln("Uploaded Name : %s", obj.getUploadedName());
+			if (obj.hasDiscoverer     ())   appendln("Discovered by : %s", obj.getDiscoverer());
+			
+			appendln("Source: %s", obj.getLongSourceIDStr());
+			
 			if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
-				textArea.append("Discovered Items:\r\n");
+				appendln("Discovered Items:");
 				if (!obj.discoveredItems_Avail.isEmpty()) {
-					textArea.append("   available:\r\n");
+					appendln("   available:");
 					for (String item:new TreeSet<>(obj.discoveredItems_Avail.keySet()))
-						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Avail.get(item)));
+						appendln("      %s: %d", item, obj.discoveredItems_Avail.get(item));
 				}
 				if (!obj.discoveredItems_Store.isEmpty()) {
-					textArea.append("   stored:\r\n");
+					appendln("   stored:");
 					for (String item:new TreeSet<>(obj.discoveredItems_Store.keySet()))
-						textArea.append(String.format("      %s: %d\r\n", item, obj.discoveredItems_Store.get(item)));
+						appendln("      %s: %d", item, obj.discoveredItems_Store.get(item));
 				}
 			}
 			extraInfoTable.setModel(new ExtraInfoTableModel(node, obj instanceof Planet, obj.extraInfos));
@@ -488,9 +526,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 
 		private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
-			ShowInParent("", Boolean.class, 10,-1, 20, 20),
-			Label("Label", String.class, 20,-1, 50, 50),
-			Info ("Info" , String.class, 50,-1,500,500);
+			ShowInParent(""     , Boolean.class, 10,-1, 20, 20),
+			Label       ("Label",  String.class, 20,-1,100,100),
+			Info        ("Info" ,  String.class, 50,-1,500,500);
 			
 			private SimplifiedColumnConfig config;
 		
@@ -581,8 +619,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		private SolarSystemNode node;
 
-		private JPanel valuePanel;
-		private GridBagLayout valuePanelLayout;
 		private JCheckBox chkbxAtlasInterface;
 		private JCheckBox chkbxBlackHole;
 		private JPanel blackHoleTargetPanel;
@@ -590,11 +626,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JComboBox<SolarSystem> cmbbxBlackHoleTargetSolarSystem;
 
 		InfoPanel_SolarSystem() {
-			super(UniversePanel.this);
+			super(UniversePanel.this,true);
 			this.node = null;
 			
-			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));
-			chkbxAtlasInterface = SaveViewer.createCheckbox("has atlas interface", e->{ node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected(); this.universePanel.updateTreeNode(node, false); }, false);
+			chkbxAtlasInterface = SaveViewer.createCheckbox("has atlas interface", e->{ node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected(); UniversePanel.this.updateTreeNode(node, false); }, false);
 			chkbxBlackHole      = SaveViewer.createCheckbox("has black hole"     , e->{ setBlackHole(); updateTreeNode(node, false); galaxyMapPanel.updateBlackHoleConnections(); }, false);
 			
 			cmbbxBlackHoleTargetRegion      = new JComboBox<Region>();
@@ -628,19 +663,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
 			
-			valuePanel = new JPanel(valuePanelLayout = new GridBagLayout());
-			valuePanel.setBorder(BorderFactory.createTitledBorder("Values"));
-			
-			GridBagConstraints c = new GridBagConstraints();
-			addCompToValuePanel(c, chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(c, chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(c, blackHoleTargetPanel, 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			
-			JPanel southPanel = new JPanel(new BorderLayout(3,3));
-			southPanel.add(valuePanel, BorderLayout.WEST);
-			southPanel.add(new JScrollPane(extraInfoTable), BorderLayout.CENTER);
-			
-			add(southPanel,BorderLayout.SOUTH);
+			addCompToValuePanel(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(blackHoleTargetPanel, 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 		}
 
 		private void setBlackHole() {
@@ -662,16 +687,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		
-		private void addCompToValuePanel(GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
-			c.weightx=weightx;
-			c.weighty=weighty;
-			c.gridwidth=gridwidth;
-			c.gridheight=gridheight;
-			c.fill = fill;
-			valuePanelLayout.setConstraints(comp, c);
-			valuePanel.add(comp);
-		}
-		
 		@Override
 		public void setContent(GenericTreeNode<?> node) {
 			this.node = (SolarSystemNode)node;
@@ -685,37 +700,37 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			int n = system.planets.size();
 			UniverseAddress ua = system.getUniverseAddress();
 			
-			textArea.setText("");
-			textArea.append(String.format("%d known planet%s\r\n", n, n>1?"s":""));
-			textArea.append(String.format("Universe Coordinates : %s\r\n", ua.getCoordinates_SolarSystem()));
-			textArea.append(String.format("SignalBoster Code    : %s\r\n", ua.getSigBoostCode()));
-			if (system.race     !=null) textArea.append(String.format("Dominant Race        : %s\r\n", system.race.fullName));
-			if (system.starClass!=null) textArea.append(String.format("Star Class           : %s\r\n", system.starClass));
+			clearText();
+			appendln("%d known planet%s", n, n>1?"s":"");
+			appendln("Universe Coordinates : %s", ua.getCoordinates_SolarSystem());
+			appendln("SignalBoster Code    : %s", ua.getSigBoostCode());
+			if (system.race     !=null) appendln("Dominant Race        : %s", system.race.fullName);
+			if (system.starClass!=null) appendln("Star Class           : %s", system.starClass);
 			
 			if (data.general.currentUniverseAddress!=null) {
 				distance_reg = ua.getDistToOther_inRegionUnits( data.general.currentUniverseAddress );
-				textArea.append("\r\n");
-				textArea.append(                             "Distance to current position:\r\n");
-				textArea.append(String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+				appendln();
+				appendln(               "Distance to current position:");
+				appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_reg, distance_reg*400);
 			}
 			
 			distance_reg = ua.getDistToCenter_inRegionUnits();
-			textArea.append("\r\n");
-			textArea.append(                                 "Distance to Galaxy Center :\r\n");
-			textArea.append(    String.format(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly\r\n", distance_reg, distance_reg*400));
+			appendln();
+			appendln(                   "Distance to Galaxy Center :");
+			appendln(    Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_reg, distance_reg*400);
 			if (system.distanceToCenter!=null) {
 				double distance_LY = system.distanceToCenter.doubleValue();
-				textArea.append(String.format(Locale.ENGLISH,"    measured: %1.1f ly\r\n", distance_LY));
-				textArea.append(String.format(Locale.ENGLISH,"    -> Region size: %1.2f ly\r\n", distance_LY/distance_reg));
+				appendln(Locale.ENGLISH,"    measured: %1.1f ly", distance_LY);
+				appendln(Locale.ENGLISH,"    -> Region size: %1.2f ly", distance_LY/distance_reg);
 			}
 			
 			showDiscNameObj(node,system);
 			
 			if (!system.additionalInfos.isEmpty()) {
-				textArea.append("\r\n");
-				textArea.append("Additional Infos:\r\n");
+				appendln();
+				appendln("Additional Infos:");
 				if (system.additionalInfos.hasFreighter)
-					textArea.append("    Freighter in System\r\n");
+					appendln("    Freighter in System");
 			}
 		}
 	}
@@ -726,16 +741,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JLabel portalGlyphs;
 		
 		InfoPanel_Planet() {
-			super(UniversePanel.this);
-			
-			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			super(UniversePanel.this, true);
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
 			portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 			
 			add(portalGlyphs,BorderLayout.NORTH);
-			add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
 		}
 		
 		@Override
@@ -747,21 +759,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 			
-			textArea.setText("");
-			textArea.append(String.format("Universe Coordinates       : %s\r\n", ua.getCoordinates()));
-			textArea.append(String.format("Universe Address           : 0x%014X\r\n", ua.getAddress()));
-			textArea.append(String.format("Portal Glyph Code          : %012X\r\n", portalGlyphCode));
-			textArea.append(String.format("Extended SignalBoster Code : %s\r\n", ua.getExtendedSigBoostCode()));
+			clearText();
+			appendln("Universe Coordinates       : %s"     , ua.getCoordinates());
+			appendln("Universe Address           : 0x%014X", ua.getAddress());
+			appendln("Portal Glyph Code          : %012X"  , portalGlyphCode);
+			appendln("Extended SignalBoster Code : %s"     , ua.getExtendedSigBoostCode());
 			
 			showDiscNameObj(node,planet);
 			
 			if (!planet.additionalInfos.isEmpty()) {
-				textArea.append("\r\n");
-				textArea.append("Additional Infos:\r\n");
+				appendln();
+				appendln("Additional Infos:");
 				if (planet.additionalInfos.hasExocraftSummoningStation)
-					textArea.append("    Exocraft Summoning Station on Planet\r\n");
+					appendln("    Exocraft Summoning Station on Planet");
 				for (PersistentPlayerBase base:planet.additionalInfos.bases)
-					textArea.append(String.format("    Base on Planet: \"%s\"\r\n", base.name));
+					appendln("    Base on Planet: \"%s\"", base.name);
 			}
 		}
 
@@ -791,6 +803,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			addSeparator();
 			add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
+			add(createMenuItem("Show Full Discovered Universe Data",UniverseTreeActionCommand.ShowFullDiscoveredUniverseData));
 		}
 	}
 	
@@ -1122,6 +1135,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 			updateChangedObjects(treeRoot,changedObjects.toArray());
 			} break;
+			
+		case ShowFullDiscoveredUniverseData:
+			GameInfos.readUniverseObjectDataFromDataPool(data.universe, true);
+			data.universe.sort();
+			treeRoot = new UniverseNode(data.universe);
+			treeModel.setRoot(treeRoot);
+			expandFullTree();
+			if (galaxyMapPanel!=null) galaxyMapPanel.updateUniverseData();
+			break;
 		}
 		clickedNode = null;
 		clickedTreePath = null;
@@ -1537,10 +1559,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	static class UniverseTreeCellRenderer extends DefaultTreeCellRenderer {
 
-		private static final Color TEXTCOLOR__HIGHLIGHTED     = Color.RED;
+		private static final Color TEXTCOLOR__HIGHLIGHTED  = Color.RED;
 		private static final Color TEXTCOLOR__CURRENT_POS  = new Color(0x2EA000);
 		private static final Color TEXTCOLOR__WITHOUT_NAME = new Color(0x808080);
-		private static final Color TEXTCOLOR__NOT_UPLOADED  = new Color(0x0000FF); // or 0x1D67AE
+		private static final Color TEXTCOLOR__NOT_UPLOADED = new Color(0x0000FF); // or 0x1D67AE
+		private static final Color TEXTCOLOR__ONLY_IN_DB   = Color.MAGENTA;
 
 		private static final long serialVersionUID = 4733567681038484432L;
 		
@@ -1616,23 +1639,26 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				break;
 			}
 			component.setFont(standardFont);
-			Universe.UniverseObject obj = null;
+			Universe.UniverseObject uniobj = null;
 			Region region = null;
 			if (node instanceof      RegionNode) region = ((  RegionNode)node).value;
-			if (node instanceof SolarSystemNode) obj = ((SolarSystemNode)node).value;
-			if (node instanceof      PlanetNode) obj = ((     PlanetNode)node).value;
-			if (obj != null) {
-				if (!obj.hasOriginalName()) {
+			if (node instanceof SolarSystemNode) uniobj = ((SolarSystemNode)node).value;
+			if (node instanceof      PlanetNode) uniobj = ((     PlanetNode)node).value;
+			if (uniobj != null) {
+				if (!uniobj.hasOriginalName()) {
 					if (!selected) component.setForeground(TEXTCOLOR__WITHOUT_NAME);
 				} else
-				if (obj.isNotUploaded) {
+				if (uniobj.isNotUploaded) {
 					if (!selected) component.setForeground(TEXTCOLOR__NOT_UPLOADED);
 				}
-				if (obj.isCurrPos) {
+				if (!uniobj.hasSourceID()) {
+					if (!selected) component.setForeground(TEXTCOLOR__ONLY_IN_DB);
+				} 
+				if (uniobj.isCurrPos) {
 					if (!selected) component.setForeground(TEXTCOLOR__CURRENT_POS);
 					component.setFont(boldfont);
-				}
-				if (obj.isHighlighted) {
+				} 
+				if (uniobj.isHighlighted) {
 					if (!selected) component.setForeground(TEXTCOLOR__HIGHLIGHTED);
 					component.setFont(boldfont);
 				}

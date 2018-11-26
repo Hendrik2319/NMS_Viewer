@@ -32,6 +32,7 @@ D6b PTK
 q5u CN
 =wD ???[=wD]
 bLr ???[bLr]
+tiH ???[tiH]
 
 brV Available
 kVv TSrec
@@ -83,9 +84,13 @@ bnT Samplers
 NNR GenerationSeed
 ?eS PostMissionIndex
 ;R7 CurrentMissionID
+
 :JX KnownWords
 eZ< KnownProducts
 4kj KnownTech
+24< [KnownQuicksilverSpecials]
+Ddk Known... ??? [Ddk]
+
 dwb MissionProgress
 p0c Mission
 tW6 Progress
@@ -227,7 +232,6 @@ uAt FreighterTransformAt
 S8b GalaxyWaypointType
 SSo EventId
 
-24< Known... ??? [24<]
 yq: ??? [yq:]
 EQt ??? [EQt]
 oF@ ??? [oF@]

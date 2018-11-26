@@ -38,9 +38,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageSelectDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.BaseStatValue;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventory.Slot;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Vehicle;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
@@ -61,7 +60,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		addTab(data.inventories.player.cargo   );
 		addTab(data.inventories.grave          );
 		addTab(data.inventories.multitool      );
-		tabbedPane.addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(new SaveGameData.Vehicle[] {data.inventories.freighter}));
+		tabbedPane.addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(new Vehicle[] {data.inventories.freighter}));
 		//addTab(data.inventories.freighter.standard);
 		//addTab(data.inventories.freighter.tech    );
 		addTab(data.inventories.ship_old          );
@@ -110,7 +109,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private InventoryDisplay inventoryLabel;
 		private JPopupMenu contextMenu;
 
-		private Slot clickedSlot;
+		private Inventory.Slot clickedSlot;
 		private Updatable updateListener;
 
 		private Window mainwindow;
@@ -264,11 +263,11 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					textarea.append("Base Status Values: none\r\n");
 				else {
 					textarea.append("Base Status Values:\r\n");
-					for (BaseStatValue bsv:inventory.baseStatValues)
+					for (Inventory.BaseStatValue bsv:inventory.baseStatValues)
 						textarea.append(String.format("   %s: %s\r\n",bsv.baseStatID,bsv.value));						
 				}
 			} else {
-				Slot slot = inventory.slots[inventoryLabel.hoveredSlot.x][inventoryLabel.hoveredSlot.y];
+				Inventory.Slot slot = inventory.slots[inventoryLabel.hoveredSlot.x][inventoryLabel.hoveredSlot.y];
 				textarea.append("Inventory Slot "+inventoryLabel.hoveredSlot.x+","+inventoryLabel.hoveredSlot.y+"\r\n");
 				if (slot==null) {
 					textarea.append("   is invalid\r\n");
@@ -372,13 +371,13 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private int inventoryHeight;
 			private int imageWidth;
 			private int imageHeight;
-			private Slot[][] slots;
+			private Inventory.Slot[][] slots;
 			private Point hoveredSlot;
 			private InventoryPanel panel;
 
 			private boolean isHoveredSlotFixed;
 
-			public InventoryDisplay(InventoryPanel panel, int inventoryWidth, int inventoryHeight, Slot[][] slots) {
+			public InventoryDisplay(InventoryPanel panel, int inventoryWidth, int inventoryHeight, Inventory.Slot[][] slots) {
 				this.panel = panel;
 				this.inventoryWidth = inventoryWidth;
 				this.inventoryHeight = inventoryHeight;
@@ -418,7 +417,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				for (int indexX=0; indexX<inventoryWidth; ++indexX)
 					for (int indexY=0; indexY<inventoryHeight; ++indexY) {
 						g2.setClip(baseClip);
-						Slot slot = slots[indexX][indexY];
+						Inventory.Slot slot = slots[indexX][indexY];
 						if (slot == null)
 							continue;
 						
@@ -579,7 +578,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				g2.setClip(baseClip);
 			}
 
-			private Color getSlotTextColor(SaveGameData.SlotType type) {
+			private Color getSlotTextColor(Inventory.SlotType type) {
 				switch(type) {
 				case Product: return COLOR__SLOT_TEXT_PRODUCT;
 				case Substance: return COLOR__SLOT_TEXT_SUBSTANCE;
@@ -668,7 +667,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			return this;
 		}
 
-		public InventoryListPanel addInv(SaveGameData.Vehicle[] vehicles) {
+		public InventoryListPanel addInv(Vehicle[] vehicles) {
 			for (int i=0; i<vehicles.length; ++i) {
 				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].standard,true,false,this));
 				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].tech    ,true,false,this));
