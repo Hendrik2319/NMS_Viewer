@@ -64,6 +64,61 @@ aggrSentinels=
 short=DunkelRot
 info=Monochrome und Rot
 
+[Reg000000FE0528FF]
+
+[Sys01FB00FE0528FF]
+name=Hekhac-Kikar
+unexplored
+class=Red
+
+[Pln11FB00FE0528FF]
+name=Nitan III
+biome=Exotic
+short=Community Quest 8/8
+info=
+short=
+info=Cd, Au, NaCl
+short=Biom: rasselnder Planet
+info=
+
+[Pln21FB00FE0528FF]
+name=Ifaxirit
+biome=Exotic
+aggrSentinels=
+short=Biom: metallurgisch
+info=
+short=
+info=Cd, Ag, Na
+short=Grav
+info=Gravitino-Bälle
+
+[Pln31FB00FE0528FF]
+name=Cucrial Primus
+biome=Exotic
+aggrSentinels=
+short=
+info=Cd, Ag, Na
+short=Biom: rasselnder Planet
+info=
+short=Grav
+info=Gravitino-Bälle
+
+[Pln41FB00FE0528FF]
+name=Inusuchri IX
+biome=Scorched
+short=
+info=Cd, P, Na
+
+[Pln51FB00FE0528FF]
+name=Community
+biome=Exotic_Mega
+short=
+info=Cd, P, NaCl
+short=Uralte Knochen
+info=
+short=Monochrom-Rot
+info=
+
 [Reg00000002FDC947]
 name=Eyerand-Nebel
 
@@ -1339,6 +1394,22 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Pln100200FCA45CAF]
+name=Aumonov IX
+biome=Exotic
+short="Metallurgischer Planet"
+info=
+short=
+info=Cu, Au, NaCl
+
+[Pln400200FCA45CAF]
+name=Oruton
+biome=Exotic
+short=
+info=Cu, Au, Fe##
+short="Metallener Planet"
+info=
+
 [Sys007900FCA45CAF]
 name=Dadurer-Iue
 race=Gek
@@ -1522,6 +1593,7 @@ name=Beyblosso
 race=Gek
 conflict=2
 blackhole=true
+blackholetarget=006E0003A861ED
 class=Yellow
 short=5 Planeten
 info=
@@ -1735,6 +1807,7 @@ name=Utionsvar I
 race=Gek
 conflict=3
 blackhole=true
+blackholetarget=001200FDAA4218
 class=Yellow
 short=1 Planet
 info=
@@ -1755,6 +1828,7 @@ name=Rulofti
 race=Korvax
 conflict=2
 blackhole=true
+blackholetarget=001800FEC5345C
 class=Yellow
 short=5 Planeten
 info=
@@ -1816,6 +1890,7 @@ name=Zebarub-Kav XVIII
 race=Vykeen
 conflict=2
 blackhole=true
+blackholetarget=004600FC234ACE
 class=Yellow
 short=2 Planeten
 info=
@@ -1921,19 +1996,47 @@ name=Uapseu-Altay
 race=Vykeen
 conflict=2
 class=Yellow
-short=5 Planeten
-info=
 
 [Pln100B0003CC45B8]
 name=Rutwor
-biome=Airless
-aggrSentinels=
-short=Grav
-info=Gravitino-Bälle
+biome=Exotic
 short=
-info=Ag, Fe#, Cu
+info=Cu, Au, Ag
+short="Schäumender Planet"
+info=Seifenblasen überall
+
+[Pln200B0003CC45B8]
+name=Tamot 81/O9
+biome=Lush
+short.P=Wasser
+info=
+short=
+info=#Cu, Pf, NaCl
+
+[Pln300B0003CC45B8]
+name=Layonesve
+biome=Scorched
+short=
+info=Cu, P, Co
+
+[Pln400B0003CC45B8]
+name=Yetonyan Sago
+biome=Frozen
+short=ExtCold
+info=Stufe 3
+short.P=Wasser
+info=
+short=#Cu
+info=#Cu, CO2, Co
+
+[Pln500B0003CC45B8]
+name=Ceannar III
+biome=Irradiated
+short=
+info=Cu, U, Na
 
 [Sys00790003CC45B8]
+name=Lochiteln
 race=Korvax
 conflict=1
 blackhole=true
@@ -1941,6 +2044,50 @@ blackholetarget=001F0000DBE61C
 class=Yellow
 short=5 Planeten
 info=
+short=Erinnerungs-Terminal
+info=
+
+[Pln10790003CC45B8]
+name=Ound Alpha
+biome=Toxic
+short=
+info=Cu, NH3, Fe##
+short.P=Wasser
+info=
+
+[Pln20790003CC45B8]
+name=Aust Tau
+biome=Exotic
+short=Sporiger Planet
+info=
+short=
+info=Cu, Ag, Fe##
+
+[Pln30790003CC45B8]
+name=Losoniumfi Irash
+biome=Frozen
+aggrSentinels=
+short=
+info=Cu, CO2, Na
+short=Grav
+info=Gravitino-Bälle
+short.P=Wasser
+info=
+
+[Pln40790003CC45B8]
+name=Neu: Lucomne
+biome=Irradiated
+short=Wasser
+info=
+short=
+info=Cu, U, Ag
+
+[Pln50790003CC45B8]
+name=Echi Gamma
+biome=Frozen
+aggrSentinels=
+short=
+info=Cu, CO2, NaCl
 
 [Reg00000002C825D1]
 name=Leonist-Quadrant
