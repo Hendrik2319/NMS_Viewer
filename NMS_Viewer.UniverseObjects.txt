@@ -37,8 +37,7 @@ info=Fe#, Py, Cu
 [Pln50010000801801]
 name=Alpha Polaris 3
 biome=Frozen
-short.P=Wasser
-info=
+with water
 short=ExtCold
 info=Stufe 3
 short=
@@ -60,7 +59,7 @@ class=Green
 [Pln10B800231C1823]
 name=Kofu 31/J2
 biome=Toxic
-aggrSentinels=
+aggrSentinels
 short=DunkelRot
 info=Monochrome und Rot
 
@@ -78,30 +77,28 @@ short=Community Quest 8/8
 info=
 short=
 info=Cd, Au, NaCl
-short=Biom: rasselnder Planet
+short=Biom: "Rasselnder Planet"
 info=
 
 [Pln21FB00FE0528FF]
 name=Ifaxirit
 biome=Exotic
-aggrSentinels=
-short=Biom: metallurgisch
+aggrSentinels
+gravitino balls
+short=Biom: "Metallurgischer Planet"
 info=
 short=
 info=Cd, Ag, Na
-short=Grav
-info=Gravitino-Bälle
 
 [Pln31FB00FE0528FF]
 name=Cucrial Primus
 biome=Exotic
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=
 info=Cd, Ag, Na
-short=Biom: rasselnder Planet
+short=Biom: "Rasselnder Planet"
 info=
-short=Grav
-info=Gravitino-Bälle
 
 [Pln41FB00FE0528FF]
 name=Inusuchri IX
@@ -167,7 +164,7 @@ name=Ranarfi-Ste XIV
 race=Gek
 conflict=1
 class=Yellow
-short=florierend
+short=W: florierend
 info=Wirtschaft 3
 
 [Pln10160004E7D981]
@@ -179,18 +176,16 @@ info=Ag, CO2, Cu
 [Pln20160004E7D981]
 name=Pusc XVIII
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=Co, Pf, Cu, Eiweißperle
 
 [Pln30160004E7D981]
 name=Atsuy 17/P1
 biome=Barren
+with water
 short=
 info=Fe#, Py, Cu
-short.P=Wasser
-info=
 
 [Sys00790004E7D981]
 name=Vohistnes XII
@@ -326,8 +321,7 @@ class=Yellow
 [Pln107A00F9A8CBC3]
 name=Sakkura
 biome=Frozen
-short.P=Wasser
-info=
+with water
 short=
 info=Co, CO2, Cu
 
@@ -372,30 +366,26 @@ class=Yellow
 [Pln107A00F9A8DBC3]
 name=Allseyci XIV
 biome=Toxic
-aggrSentinels=
+aggrSentinels
+with water
+gravitino balls
 short=
 info=Na, NH3, Cu
-short.P=Wasser
-info=
-short=Grav
-info=Gravitino-Bälle
 
 [Pln207A00F9A8DBC3]
 name=Egemis VI
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, Pf, Cu, Eiweißperle
 
 [Pln307A00F9A8DBC3]
 name=Hisom 60/H8
 biome=Barren
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=
 info=Ag, Py, Cu
-short=Grav
-info=Gravitino-Bälle
 
 [Pln407A00F9A8DBC3]
 name=Igglenae Delta
@@ -406,10 +396,9 @@ info=Co, NH3, Cu
 [Pln507A00F9A8DBC3]
 name=Kuton Sigma
 biome=Lush
+with water
 short=
 info=NaCl, Pf, Cu, Eiweißperle
-short.P=Wasser
-info=
 
 [Reg000000FAA8CBC4]
 name=Gaentam-Rand
@@ -438,8 +427,7 @@ info=Na, P, #Cu
 [Pln300800FAA8CBC4]
 name=Urbi
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=Na, Pf, Cu, Eiweißperle
 
@@ -452,8 +440,7 @@ info=NaCl, Re#, Cu
 [Pln500800FAA8CBC4]
 name=Jevo
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, Pf, Cu, Eiweißperle
 
@@ -493,11 +480,10 @@ class=Yellow
 [Pln101200FAA8CBC4]
 name=Vulptone VII
 biome=Airless
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=
 info=NaCl, Fe#, Cu
-short=Grav
-info=Gravitino-Bälle
 
 [Pln201200FAA8CBC4]
 name=Rerok
@@ -514,8 +500,7 @@ info=Na, Fe#, Cu
 [Pln401200FAA8CBC4]
 name=Neu: Aron
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=Ag, Pf, Cu
 short=
@@ -549,16 +534,14 @@ class=Yellow
 [Pln102700FAA8CBC4]
 name=Neu: Ochdal
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=Na, Pf, Cu, Eiweißperle
 
 [Pln202700FAA8CBC4]
 name=Lusingf R4
 biome=Frozen
-short.P=Wasser
-info=
+with water
 short=ExtCold
 info=Stufe 3
 short=
@@ -579,19 +562,17 @@ class=Yellow
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
 biome=Airless
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=
 info=Cu, Fe#, Na
-short=Grav
-info=Gravitino-Bälle
 
 [Pln202F00FAA8CBC4]
 name=Icoll XIV
 biome=Toxic
+with water
 short=
 info=Na, NH3, Cu
-short.P=Wasser
-info=
 
 [Pln302F00FAA8CBC4]
 name=Oann ...
@@ -619,8 +600,7 @@ info=Ag, P, Cu
 [Pln203F00FAA8CBC4]
 name=Nocerius Somag
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, Pf, Cu, Eiweißperle
 
@@ -723,12 +703,11 @@ class=Yellow
 [Pln105700FAA8CBC4]
 name=Naeanggu VI
 biome=Scorched
+with water
 short=ExtHot
 info=Stufe 2
 short.P=#Cu
 info=Aktiviertes Kupfer
-short.P=Wasser
-info=
 
 [Pln205700FAA8CBC4]
 name=Hiyad Tau
@@ -743,13 +722,12 @@ info=Co, Pf, Cu, Eiweißperle
 [Pln405700FAA8CBC4]
 name=Neu: Ralottawa
 biome=Toxic
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=Extrem ?
 info=
 short.P=#Cu
 info=Aktiviertes Kupfer
-short.P=Grav
-info=Gravitino-Bälle
 
 [Pln505700FAA8CBC4]
 name=Oroz 92/B2
@@ -768,10 +746,9 @@ class=Yellow
 name=Luypsongh XIV
 oldname=Miyama Opogaets
 biome=Lush
+with water
 short=
 info=Na, Pf, Cu. Eiweißperle
-short.P=Wasser
-info=
 
 [Pln205D00FAA8CBC4]
 name=Pipis IV
@@ -806,8 +783,7 @@ info=Na, CO2, Cu
 name=Drushya II
 oldname=Magnandram Ilioc
 biome=Lush
-short.P=Wasser
-info=
+with water
 
 [Pln306D00FAA8CBC4]
 name=Leuthow IV
@@ -828,8 +804,7 @@ class=Yellow
 name=Axellenboe Ummi
 oldname=Axellenboe Ummi
 biome=Scorched
-short.P=Wasser
-info=
+with water
 short=
 info=Na, P, Cu
 
@@ -837,9 +812,8 @@ info=Na, P, Cu
 name=Tisluitsoch
 oldname=Tisluitsoch
 biome=Barren
-aggrSentinels=
-short.P=Grav
-info=Gravitino-Bälle
+aggrSentinels
+gravitino balls
 short=
 info=Ag, Py, Cu
 
@@ -847,12 +821,11 @@ info=Ag, Py, Cu
 name=Dessilaum Ramm
 oldname=Dessilaum Ramm
 biome=Irradiated
+with water
 short=ExtRad
 info=Stufe 3
 short=
 info=Na, U, #Cu
-short.P=Wasser
-info=
 short.P=#Cu
 info=Aktiviertes Kupfer
 
@@ -960,9 +933,11 @@ class=Yellow
 [Pln116500FAA8CBC4]
 name=Vanahei IX
 biome=Irradiated
-aggrSentinels=
+aggrSentinels
 short=
 info=Co, U, Cu
+short=Grav??
+info=
 
 [Pln216500FAA8CBC4]
 name=Esveg Primus
@@ -1002,8 +977,7 @@ info=
 [Pln116A00FAA8CBC4]
 name=Daymaireth Ganei
 biome=Exotic_Mega
-short.P=Wasser
-info=
+with water
 short=
 info=Co, Fe#, #In
 
@@ -1046,13 +1020,12 @@ class=Green
 [Pln118200FAA8CBC4]
 name=Thdakoma
 biome=Exotic_Mega
+with water
 short=
 info="Verdammter Jade-Planet"
 short=
 info=Na, Fe#, #Em
 short.P=#Em
-info=
-short.P=Wasser
 info=
 short=Extrem ?
 info=Biom: Säure Echos
@@ -1091,8 +1064,7 @@ info=Extrem kalter Planet
 
 [Pln31EA00FAA8CBC4]
 oldname=Ikokstelmh Gronis
-short.P=Grav
-info=Gravitino-Bälle
+gravitino balls
 
 [Pln41EA00FAA8CBC4]
 oldname=Omoriyamama
@@ -1137,8 +1109,7 @@ class=Yellow
 [Pln107A00F8A8DBC4]
 name=Oproby Hachi
 biome=Irradiated
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, U, Cu
 
@@ -1161,11 +1132,10 @@ class=Blue
 [Pln10AD00F8A8DBC4]
 name=Evizes IX
 biome=Toxic
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=
 info=NaCl, NH3, In
-short=Grav
-info=Gravitino-Bälle
 
 [Sys00CD00F8A8DBC4]
 name=Qigegy-Qingo
@@ -1178,10 +1148,9 @@ info=
 [Pln10CD00F8A8DBC4]
 name=Eybrie
 biome=Barren
+with water
 short=
 info=Co, Py, Em
-short.P=Wasser
-info=
 
 [Reg000000F9A8DBC4]
 name=Aokipg-Quadrant
@@ -1196,8 +1165,7 @@ class=Yellow
 [Pln107A00F9A8DBC4]
 name=Leyunthio Minoris
 biome=Irradiated
-short.P=Wasser
-info=
+with water
 short=
 info=Na, U, Cu
 
@@ -1210,8 +1178,7 @@ info=Fe#, NH3, Cu
 [Pln307A00F9A8DBC4]
 name=Nidsey Sigma
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=Fe#, Pf, Cu, Eiweißperle
 
@@ -1235,8 +1202,7 @@ class=Red
 [Pln112200F9A8DBC4]
 name=Ongham Teya
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, Pf, #Cd, Eiweißperle
 short.P=#Cd
@@ -1258,8 +1224,7 @@ info=Na, Fe#, Cd
 [Pln213A00F9A8DBC4]
 name=Taplebys Ouchi
 biome=Barren
-short.P=Wasser
-info=
+with water
 short=
 info=Co, Py, #Cd
 short.P=#Cd
@@ -1313,16 +1278,14 @@ class=Yellow
 [Pln107900F8A8DBC6]
 name=Azzav Minoris
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, Pf, Cu, Eiweißperle
 
 [Pln207900F8A8DBC6]
 name=Raxa Omega
 biome=Irradiated
-short.P=Wasser
-info=
+with water
 short=ExtRad
 info=Stufe 3
 short=
@@ -1355,8 +1318,7 @@ class=Yellow
 [Pln109300FAA8DBC6]
 name=Xaborus XI
 biome=Barren
-short.P=Wasser
-info=
+with water
 short=
 info=NaCl, Py, Cu
 
@@ -1397,7 +1359,7 @@ info=
 [Pln100200FCA45CAF]
 name=Aumonov IX
 biome=Exotic
-short="Metallurgischer Planet"
+short=Biom: "Metallurgischer Planet"
 info=
 short=
 info=Cu, Au, NaCl
@@ -1407,7 +1369,7 @@ name=Oruton
 biome=Exotic
 short=
 info=Cu, Au, Fe##
-short="Metallener Planet"
+short=Biom: "Metallener Planet"
 info=
 
 [Sys007900FCA45CAF]
@@ -1440,13 +1402,12 @@ info=Ag, Py, Cu
 [Pln201E0004994DA5]
 name=Gehdadoi Delta
 biome=Lush
-aggrSentinels=
+aggrSentinels
+gravitino balls
 short=ExtLush
 info="Blasen bildende Überflutung"
 short=#Cu
 info=Na, Pf, #Cu
-short=Grav
-info=Gravitino-Bälle
 
 [Pln301E0004994DA5]
 name=Oydona VI
@@ -1457,8 +1418,7 @@ info=Fe#, CO2, Cu
 [Pln401E0004994DA5]
 name=Megasak IV
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=ExtLush
 info=
 short=
@@ -1477,8 +1437,7 @@ class=Yellow
 [Pln10790004994DA5]
 name=Hiydran Daba
 biome=Lush
-short.P=Wasser
-info=
+with water
 short.P=#Cu
 info=Co, Pf, #Cu, Eiweißperle
 short=Extrem
@@ -1494,8 +1453,7 @@ class=Yellow
 [Pln107A0004994DA5]
 name=Sanfor
 biome=Frozen
-short.P=Wasser
-info=
+with water
 short=
 info=Na, CO2, Cu
 
@@ -1507,16 +1465,14 @@ class=Red
 [Pln10BD0004994DA5]
 name=Eirushe Iedat
 biome=Toxic
+with water
 short=
 info=Fe#, NH3, Cd
-short.P=Wasser
-info=
 
 [Pln20BD0004994DA5]
 name=Ricussee Sigma
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=#Cd
 info=Fe#, Pf, #Cd
 
@@ -1665,8 +1621,7 @@ info=Co, CO2, Cu
 [Pln20790003000FF8]
 name=Opiumfor Majoris
 biome=Irradiated
-short.P=Wasser
-info=
+with water
 short=ExtRad
 info=Stufe 3
 short=
@@ -2002,14 +1957,13 @@ name=Rutwor
 biome=Exotic
 short=
 info=Cu, Au, Ag
-short="Schäumender Planet"
+short=Biom: "Schäumender Planet"
 info=Seifenblasen überall
 
 [Pln200B0003CC45B8]
 name=Tamot 81/O9
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=#Cu, Pf, NaCl
 
@@ -2022,10 +1976,9 @@ info=Cu, P, Co
 [Pln400B0003CC45B8]
 name=Yetonyan Sago
 biome=Frozen
+with water
 short=ExtCold
 info=Stufe 3
-short.P=Wasser
-info=
 short=#Cu
 info=#Cu, CO2, Co
 
@@ -2050,15 +2003,14 @@ info=
 [Pln10790003CC45B8]
 name=Ound Alpha
 biome=Toxic
+with water
 short=
 info=Cu, NH3, Fe##
-short.P=Wasser
-info=
 
 [Pln20790003CC45B8]
 name=Aust Tau
 biome=Exotic
-short=Sporiger Planet
+short=Biom: "Sporiger Planet"
 info=
 short=
 info=Cu, Ag, Fe##
@@ -2066,28 +2018,27 @@ info=Cu, Ag, Fe##
 [Pln30790003CC45B8]
 name=Losoniumfi Irash
 biome=Frozen
-aggrSentinels=
+aggrSentinels
+with water
+gravitino balls
 short=
 info=Cu, CO2, Na
-short=Grav
-info=Gravitino-Bälle
-short.P=Wasser
-info=
 
 [Pln40790003CC45B8]
 name=Neu: Lucomne
 biome=Irradiated
-short=Wasser
-info=
+with water
 short=
 info=Cu, U, Ag
 
 [Pln50790003CC45B8]
 name=Echi Gamma
 biome=Frozen
-aggrSentinels=
+aggrSentinels
 short=
 info=Cu, CO2, NaCl
+short=Grav??
+info=
 
 [Reg00000002C825D1]
 name=Leonist-Quadrant
@@ -2102,8 +2053,7 @@ distance=694540.000000
 [Pln102A0002C825D1]
 name=Mitid
 biome=Toxic
-short=Wasser
-info=
+with water
 short=#Cu
 info=Ag, NH3, #Cu
 short=ExtTox
@@ -2145,17 +2095,18 @@ info=NaCl, Fe#, Cu
 [Pln30790002C825D1]
 name=Eroysto
 biome=Lush
-short.P=Wasser
-info=
+with water
 short=
 info=Co, Pf, Cu, Eiweißperle
 
 [Pln40790002C825D1]
 name=Eusiss IV
 biome=Barren
-aggrSentinels=
+aggrSentinels
 short=
 info=Co, Py, Cu
+short=Grav??
+info=
 
 [Pln50790002C825D1]
 name=Neu: Dettoxe
@@ -2192,8 +2143,7 @@ class=Green
 [Pln10B80002C825D1]
 name=Neu: Didymai
 biome=Barren
-short.P=Wasser
-info=
+with water
 short=
 info=Co, Py, Em
 
@@ -2211,8 +2161,7 @@ info=
 [Pln101F0000DBE61C]
 name=Lumiris Majoris
 biome=Irradiated
-short=Wasser
-info=
+with water
 short=ExtRad
 info=Stufe 3
 short=#Cu
