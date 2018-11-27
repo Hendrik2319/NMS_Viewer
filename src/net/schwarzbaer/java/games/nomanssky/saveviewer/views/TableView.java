@@ -577,7 +577,8 @@ public class TableView {
 		
 		public IconTextRenderer(int prefWidth, int prefHeight) {
 			comp = new RendererComponent();
-			comp.setPreferredSize(new Dimension(prefWidth,prefHeight));
+			if (prefWidth>0 && prefHeight>0)
+				comp.setPreferredSize(new Dimension(prefWidth,prefHeight));
 		}
 		
 		protected abstract ValueType cast(Object obj);
@@ -596,7 +597,7 @@ public class TableView {
 		@Override
 		public Component getListCellRendererComponent(JList<? extends ValueType> list, ValueType value, int index, boolean isSelected, boolean cellHasFocus) {
 			if (isSelected) comp.set(value,list.getSelectionBackground(),list.getSelectionForeground());
-			else            comp.set(value,list.getBackground(),list.getForeground());
+			else            comp.set(value,null/*list.getBackground()*/,list.getForeground());
 			return comp;
 		}
 
@@ -607,19 +608,30 @@ public class TableView {
 			
 			private RendererComponent() {
 				iconCache = new HashMap<>();
-				setOpaque(true);
+				//setOpaque(true);
 			}
 			
 			public void set(ValueType value, Color bgColor, Color textColor) {
-				setBackground(bgColor);
+				if (bgColor==null) {
+					setOpaque(false);
+					setBackground(null);
+				} else {
+					setOpaque(true);
+					setBackground(bgColor);
+				}
 				setForeground(textColor);
 				if (value==null) {
 					setIcon(null);
 					setText("");
 				} else {
-					Icon icon = iconCache.get(getIconKey(value));
-					if (icon==null) iconCache.put(getIconKey(value),icon = createIcon(value));
-					setIcon(icon);
+					IconKey iconKey = getIconKey(value);
+					if (iconKey==null) {
+						setIcon(null);
+					} else {
+						Icon icon = iconCache.get(iconKey);
+						if (icon==null) iconCache.put(iconKey,icon = createIcon(value));
+						setIcon(icon);
+					}
 					setText(getLabel(value));
 				}
 			}

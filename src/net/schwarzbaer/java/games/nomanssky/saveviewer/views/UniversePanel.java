@@ -56,6 +56,7 @@ import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.IconComboBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
@@ -377,13 +378,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		this.galaxyMapPanel = galaxyMapPanel;
 	}
 
-	private void updateTreeNode(GenericTreeNode<?> node, boolean isPlanet) {
-		//GenericTreeNode<?> node = selectedNode;
-		treeModel.nodeChanged(node);
-		if (isPlanet) treeModel.nodeChanged(node.parent);
-		GameInfos.saveUniverseObjectDataToFile(data.universe);
-	}
-	
 	private static abstract class AbstractInfoPanel extends JPanel {
 		private static final long serialVersionUID = 1055278730261206951L;
 		
@@ -629,7 +623,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(UniversePanel.this,true);
 			this.node = null;
 			
-			chkbxAtlasInterface = SaveViewer.createCheckbox("has atlas interface", e->{ node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected(); UniversePanel.this.updateTreeNode(node, false); }, false);
+			chkbxAtlasInterface = SaveViewer.createCheckbox("has atlas interface", e->{ node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected(); updateTreeNode(node, false); }, false);
 			chkbxBlackHole      = SaveViewer.createCheckbox("has black hole"     , e->{ setBlackHole(); updateTreeNode(node, false); galaxyMapPanel.updateBlackHoleConnections(); }, false);
 			
 			cmbbxBlackHoleTargetRegion      = new JComboBox<Region>();
@@ -739,24 +733,61 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = -5303591976120968332L;
 		
 		private JLabel portalGlyphs;
+		private PlanetNode node;
+
+		private JCheckBox chkbxAggrSent;
+		private JCheckBox chkbxWater;
+		private JCheckBox chkbxGrav;
+
+		private IconComboBox<Universe.Planet.Biome> cmbbxBiome;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);
+			this.node = null;
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
 			portalGlyphs.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(3, 3, 3, 3)));
 			
 			add(portalGlyphs,BorderLayout.NORTH);
+			
+			cmbbxBiome = new Gui.IconComboBox<Universe.Planet.Biome>(Universe.Planet.Biome.values(), new Gui.IconComboBox.ExternalFunctionality<Universe.Planet.Biome>() {
+				@Override public Universe.Planet.Biome cast(Object obj) {
+					if (!(obj instanceof Universe.Planet.Biome)) return null;
+					return (Universe.Planet.Biome)obj;
+				}
+				@Override public Icon createIcon(Universe.Planet.Biome value) {
+					return PlanetIcons.BiomeIcons.get(value);
+				}
+				@Override public String getLabel(Universe.Planet.Biome value) {
+					if (value==null) return "";
+					return value.name_EN;
+				}
+			});
+			cmbbxBiome.addActionListener(e->{ node.value.biome = cmbbxBiome.getSelected(); updateTreeNode(node, false);  });
+			
+			chkbxAggrSent = SaveViewer.createCheckbox("Aggressive Sentinels", e->{ node.value.areSentinelsAggressive = chkbxAggrSent.isSelected(); updateTreeNode(node, false); }, false);
+			chkbxWater    = SaveViewer.createCheckbox("with water"          , e->{ node.value.withWater              = chkbxWater   .isSelected(); updateTreeNode(node, true ); }, false);
+			chkbxGrav     = SaveViewer.createCheckbox("with Gravitino Balls", e->{ node.value.withGravitinoBalls     = chkbxGrav    .isSelected(); updateTreeNode(node, false); }, false);
+			
+			addCompToValuePanel(cmbbxBiome   , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxAggrSent, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxWater   , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxGrav    , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 		}
 		
 		@Override
 		public void setContent(GenericTreeNode<?> node) {
+			this.node = (PlanetNode)node;
 			
-			Planet planet = ((PlanetNode)node).value;
+			Planet planet = this.node.value;
 			UniverseAddress ua = planet.getUniverseAddress();
 			long portalGlyphCode = ua.getPortalGlyphCode();
 			
+			cmbbxBiome   .setSelectedItem(planet.biome);
+			chkbxAggrSent.setSelected(planet.areSentinelsAggressive);
+			chkbxWater   .setSelected(planet.withWater);
+			chkbxGrav    .setSelected(planet.withGravitinoBalls);
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 			
 			clearText();
@@ -836,9 +867,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					@Override public void setResult(Race value) {
 						if (clickedNode instanceof SolarSystemNode) {
 							((SolarSystemNode)clickedNode).value.race = value;
-							treeModel.nodeChanged(clickedNode);
-							if (selectedNode==clickedNode) selectionChanged();
-							GameInfos.saveUniverseObjectDataToFile(data.universe);
+							updateTreeNodeAndInfoPanel(clickedNode, false);
 						}
 					}
 					@Override public void configureMenuItem(JMenuItem menuItem, Race value) {
@@ -860,9 +889,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					@Override public void setResult(StarClass value) {
 						if (clickedNode instanceof SolarSystemNode) {
 							((SolarSystemNode)clickedNode).value.starClass = value;
-							treeModel.nodeChanged(clickedNode);
-							if (selectedNode==clickedNode) selectionChanged();
-							GameInfos.saveUniverseObjectDataToFile(data.universe);
+							updateTreeNodeAndInfoPanel(clickedNode, false);
 						}
 					}
 					@Override public void configureMenuItem(JMenuItem menuItem, StarClass value) {
@@ -884,9 +911,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					@Override public void setResult(Integer value) {
 						if (clickedNode instanceof SolarSystemNode) {
 							((SolarSystemNode)clickedNode).value.conflictLevel = value==null?-1:value;
-							treeModel.nodeChanged(clickedNode);
-							if (selectedNode==clickedNode) selectionChanged();
-							GameInfos.saveUniverseObjectDataToFile(data.universe);
+							updateTreeNodeAndInfoPanel(clickedNode, false);
 						}
 					}
 					@Override public void configureMenuItem(JMenuItem menuItem, Integer value) {
@@ -909,9 +934,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					((SolarSystemNode)clickedNode).value.isUnexplored = miUnexplored.isSelected();
 					miSetRace.setEnabled(!miUnexplored.isSelected());
 					miSetConflictLevel.setEnabled(!miUnexplored.isSelected());
-					treeModel.nodeChanged(clickedNode);
-					if (selectedNode==clickedNode) selectionChanged();
-					GameInfos.saveUniverseObjectDataToFile(data.universe);
+					updateTreeNodeAndInfoPanel(clickedNode, false);
 				}
 			});
 			
@@ -949,9 +972,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					@Override public void setResult(Universe.Planet.Biome value) {
 						if (clickedNode instanceof PlanetNode) {
 							((PlanetNode)clickedNode).value.biome = value;
-							treeModel.nodeChanged(clickedNode);
-							if (selectedNode==clickedNode) selectionChanged();
-							GameInfos.saveUniverseObjectDataToFile(data.universe);
+							updateTreeNodeAndInfoPanel(clickedNode,false);
 						}
 					}
 					@Override public void configureMenuItem(JMenuItem menuItem, Universe.Planet.Biome value) {
@@ -972,9 +993,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miAggressiveSentinels.addActionListener(e->{
 				if (clickedNode instanceof PlanetNode) {
 					((PlanetNode)clickedNode).value.areSentinelsAggressive = miAggressiveSentinels.isSelected();
-					treeModel.nodeChanged(clickedNode);
-					if (selectedNode==clickedNode) selectionChanged();
-					GameInfos.saveUniverseObjectDataToFile(data.universe);
+					updateTreeNodeAndInfoPanel(clickedNode,false);
 				}
 			});
 /*			
@@ -1068,8 +1087,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case Region     : region = ((     RegionNode)clickedNode).value; setNameForUniverseAddress(region, "region"      +" "+region.getUniverseAddress().getExtendedSigBoostCode_Region()     ); break;
 				default:break;
 				}
-				treeModel.nodeChanged(clickedNode);
-				if (selectedNode==clickedNode) selectionChanged();
+				updateTreeNodeAndInfoPanel(clickedNode, false, false);
 			}
 			break;
 			
@@ -1173,6 +1191,44 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 
+	private void updateInfoPanel() {
+		AbstractInfoPanel prevInfoPanel = currentInfoPanel;
+		
+		if (selectedNode==null) {
+			currentInfoPanel=infoPanel_Other;
+			currentInfoPanel.setContent(null);
+		} else {
+			switch(selectedNode.type) {
+			case Planet     : currentInfoPanel = infoPanel_Planet;      break;
+			case SolarSystem: currentInfoPanel = infoPanel_SolarSystem; break;
+			default         : currentInfoPanel = infoPanel_Other;       break;
+			}
+			currentInfoPanel.setContent(selectedNode);
+		}
+		
+		remove(prevInfoPanel); 
+		add(currentInfoPanel,BorderLayout.EAST);
+		repaint();
+		revalidate();
+	}
+
+	private void updateTreeNode(GenericTreeNode<?> node, boolean updateParent) {
+		treeModel.nodeChanged(node);
+		if (updateParent) treeModel.nodeChanged(node.parent);
+		GameInfos.saveUniverseObjectDataToFile(data.universe);
+	}
+
+	private void updateTreeNodeAndInfoPanel(GenericTreeNode<?> node, boolean updateParent) {
+		updateTreeNodeAndInfoPanel(node, updateParent, true);
+	}
+
+	private void updateTreeNodeAndInfoPanel(GenericTreeNode<?> node, boolean updateParent, boolean saveDataToFile) {
+		treeModel.nodeChanged(node);
+		if (updateParent) treeModel.nodeChanged(node.parent);
+		if (saveDataToFile) GameInfos.saveUniverseObjectDataToFile(data.universe);
+		if (selectedNode==node) updateInfoPanel();
+	}
+
 	private void updateChangedObjects(LocalTreeNode node, Object[] changedObjects) {
 		for (LocalTreeNode child:node.getChildren()) {
 			if (child instanceof GenericTreeNode<?>) {
@@ -1269,7 +1325,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				selectedNode = null;
 			else
 				selectedNode = (GenericTreeNode<?>)comp;
-			selectionChanged();
+			updateInfoPanel();
 		}
 	}
 	
@@ -1319,27 +1375,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		default:
 			break;
 		}
-	}
-
-	private void selectionChanged() {
-		AbstractInfoPanel prevInfoPanel = currentInfoPanel;
-		
-		if (selectedNode==null) {
-			currentInfoPanel=infoPanel_Other;
-			currentInfoPanel.setContent(null);
-		} else {
-			switch(selectedNode.type) {
-			case Planet     : currentInfoPanel = infoPanel_Planet;      break;
-			case SolarSystem: currentInfoPanel = infoPanel_SolarSystem; break;
-			default         : currentInfoPanel = infoPanel_Other;       break;
-			}
-			currentInfoPanel.setContent(selectedNode);
-		}
-		
-		remove(prevInfoPanel); 
-		add(currentInfoPanel,BorderLayout.EAST);
-		repaint();
-		revalidate();
 	}
 
 	private static class FindObjectDialog extends StandardDialog {

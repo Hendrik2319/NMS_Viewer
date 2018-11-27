@@ -146,15 +146,22 @@ public class GameInfos {
 	private static class UOD_Planet extends UOD_UniverseObject {
 		Universe.Planet.Biome biome;
 		boolean areSentinelsAggressive;
+		boolean withWater;
+		boolean withGravitinoBalls;
+		
 		public UOD_Planet(UniverseAddress ua) {
 			super(ua, Type.Planet);
 			biome = null;
 			areSentinelsAggressive = false;
+			withWater = false;
+			withGravitinoBalls = false;
 		}
 		public UOD_Planet(Planet planet) {
 			super(planet.getUniverseAddress(),Type.Planet,planet);
 			biome = planet.biome;
 			areSentinelsAggressive = planet.areSentinelsAggressive;
+			withWater = planet.withWater;
+			withGravitinoBalls = planet.withGravitinoBalls;
 		}
 	}
 	
@@ -294,8 +301,16 @@ public class GameInfos {
 						catch (Exception e) { planet.biome = null; }
 						continue;
 					}
-					if (str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
+					if (str.equals("aggrSentinels") || str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
 						planet.areSentinelsAggressive = true;
+						continue;
+					}
+					if (str.equals("with water")) {
+						planet.withWater = true;
+						continue;
+					}
+					if (str.equals("gravitino balls")) {
+						planet.withGravitinoBalls = true;
 						continue;
 					}
 				}
@@ -423,6 +438,14 @@ public class GameInfos {
 					planet.areSentinelsAggressive = uod_planet.areSentinelsAggressive;
 					if (withOutput) SaveViewer.log_ln("   Sentinels of %s are aggressive",objName);
 				}
+				if (uod_planet.withWater) {
+					planet.withWater = uod_planet.withWater;
+					if (withOutput) SaveViewer.log_ln("   %s has water",objName);
+				}
+				if (uod_planet.withGravitinoBalls) {
+					planet.withGravitinoBalls = uod_planet.withGravitinoBalls;
+					if (withOutput) SaveViewer.log_ln("   %s has Gravitino Balls",objName);
+				}
 			}
 			
 			
@@ -508,7 +531,9 @@ public class GameInfos {
 				
 				if (uod_planet!=null) {
 					if (uod_planet.biome           !=null) out.printf("biome=%s\r\n",uod_planet.biome);
-					if (uod_planet.areSentinelsAggressive) out.printf("aggrSentinels=\r\n");
+					if (uod_planet.areSentinelsAggressive) out.printf("aggrSentinels\r\n");
+					if (uod_planet.withWater             ) out.printf("with water\r\n");
+					if (uod_planet.withGravitinoBalls    ) out.printf("gravitino balls\r\n");
 				}
 				
 				if (uod_uniObj!=null) {

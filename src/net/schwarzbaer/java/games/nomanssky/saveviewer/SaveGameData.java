@@ -2133,14 +2133,17 @@ public class SaveGameData {
 				isHighlighted = false;
 			}
 
-			protected String getCombinedExtraInfoLabels() {
+			protected String getCombinedExtraInfoLabels(String...extraStrs) {
 				StringBuilder sb = new StringBuilder();
-				boolean sbIsEmpty = true;
 				for (ExtraInfo ei:extraInfos)
 					if (!ei.shortLabel.isEmpty()) {
-						if (!sbIsEmpty) sb.append(", ");
+						if (sb.length()>0) sb.append(", ");
 						sb.append(ei.shortLabel);
-						sbIsEmpty = false;
+					}
+				for (String str:extraStrs)
+					if (str!=null && !str.isEmpty()) {
+						if (sb.length()>0) sb.append(", ");
+						sb.append(str);
 					}
 				return sb.toString();
 			}
@@ -2296,14 +2299,18 @@ public class SaveGameData {
 				if (isUnexplored) strRace = " <Unexplored>";
 				
 				HashSet<String> foundLabels = new HashSet<>();
-				for (Planet p:planets)
+				for (Planet p:planets) {
 					for (ExtraInfo ei:p.extraInfos)
 						if (ei.showInParent && !ei.shortLabel.isEmpty())
 							foundLabels.add(ei.shortLabel);
-				if (hasAtlasInterface) foundLabels.add("<Atlas>");
-				if (hasBlackHole) foundLabels.add("<BlackHole>");
+					if (p.withWater)
+						foundLabels.add("<Water>");
+				}
 				
-				String strExtraInfo=getCombinedExtraInfoLabels();
+				String strExtraInfo = getCombinedExtraInfoLabels(
+					(hasAtlasInterface?"<Atlas>":null),
+					(hasBlackHole?"<BlackHole>":null)
+				);
 				for (String str:foundLabels) {
 					if (!strExtraInfo.isEmpty()) strExtraInfo+=", ";
 					strExtraInfo+=str;
@@ -2373,6 +2380,8 @@ public class SaveGameData {
 			private Stats.PlanetStats stats;
 			public Biome biome;
 			public boolean areSentinelsAggressive;
+			public boolean withWater;
+			public boolean withGravitinoBalls;
 			public AdditionalInfos additionalInfos; 
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
@@ -2380,6 +2389,8 @@ public class SaveGameData {
 				this.planetIndex = planetIndex;
 				this.biome = null;
 				this.areSentinelsAggressive = false;
+				this.withWater = false;
+				this.withGravitinoBalls = false;
 				this.additionalInfos = new AdditionalInfos();
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
@@ -2405,7 +2416,10 @@ public class SaveGameData {
 				
 				String strExtraInfo="";
 				if (!extraInfos.isEmpty()) {
-					strExtraInfo = getCombinedExtraInfoLabels();
+					strExtraInfo = getCombinedExtraInfoLabels(
+						(withWater?"<Water>":null),
+						(withGravitinoBalls?"<Grav>":null)
+					);
 					if (!strExtraInfo.isEmpty()) strExtraInfo = " ("+strExtraInfo+")";
 				}
 				

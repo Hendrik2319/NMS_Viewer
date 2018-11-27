@@ -19,6 +19,7 @@ import java.util.Enumeration;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -39,6 +40,7 @@ import javax.swing.border.Border;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
@@ -581,6 +583,63 @@ public class Gui {
 					menuItem.setIcon(null);
 				}
 			}
+		}
+	}
+
+	public static class IconComboBox<ValueType> extends JComboBox<ValueType> {
+		private static final long serialVersionUID = -5602524657587053852L;
+		
+		private ValueType[] values;
+		private ExternalFunctionality<ValueType> functionality;
+		
+		public IconComboBox(ValueType[] values, ExternalFunctionality<ValueType> functionality) {
+			super(values);
+			this.values = values;
+			this.functionality = functionality;
+			setRenderer(new Renderer());
+		}
+		
+		public ValueType getSelected() {
+			int i = getSelectedIndex();
+			if (i<0) return null;
+			return getItemAt(i);
+		}
+
+		public static interface ExternalFunctionality<T> {
+			public T cast(Object obj);
+			public Icon createIcon(T value);
+			public String getLabel(T value);
+		}
+		
+		private class Renderer extends TableView.IconTextRenderer<ValueType,Integer> {
+
+			public Renderer() {
+				super(-1,-1);
+			}
+
+			@Override
+			protected ValueType cast(Object obj) {
+				return functionality.cast(obj);
+			}
+
+			@Override
+			protected Icon createIcon(ValueType value) {
+				return functionality.createIcon(value);
+			}
+
+			@Override
+			protected Integer getIconKey(ValueType value) {
+				for (int i=0; i<values.length; i++)
+					if (values[i]==value)
+						return i;
+				return null;
+			}
+
+			@Override
+			protected String getLabel(ValueType value) {
+				return functionality.getLabel(value);
+			}
+			
 		}
 	}
 
