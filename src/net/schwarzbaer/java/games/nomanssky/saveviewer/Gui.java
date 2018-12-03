@@ -593,10 +593,13 @@ public class Gui {
 		private ExternalFunctionality<ValueType> functionality;
 		
 		public IconComboBox(ValueType[] values, ExternalFunctionality<ValueType> functionality) {
+			this(values, -1,-1,  functionality);
+		}
+		public IconComboBox(ValueType[] values, int prefWidth, int prefHeight, ExternalFunctionality<ValueType> functionality) {
 			super(values);
 			this.values = values;
 			this.functionality = functionality;
-			setRenderer(new Renderer());
+			setRenderer(new Renderer(prefWidth, prefHeight));
 		}
 		
 		public ValueType getSelected() {
@@ -613,8 +616,8 @@ public class Gui {
 		
 		private class Renderer extends TableView.IconTextRenderer<ValueType,Integer> {
 
-			public Renderer() {
-				super(-1,-1);
+			public Renderer(int prefWidth, int prefHeight) {
+				super(prefWidth, prefHeight);
 			}
 
 			@Override

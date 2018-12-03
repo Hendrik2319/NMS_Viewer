@@ -155,7 +155,9 @@ public class Images {
 		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
 		addColor(colorValuesVec, 0xCCCCCC, "__" );
 		addColor(colorValuesVec, 0x447519, "__Larvenkern" );
-		addColor(colorValuesVec, 0x153250, "Ausgegrabene Knochen" );
+		addColor(colorValuesVec, 0x153250, "Fundstück (gewöhnlich)" );
+		addColor(colorValuesVec, 0x460C34, "Fundstück (ungewöhnlich)" );
+		//addColor(colorValuesVec, 0x460C34, "Fundstück (selten)" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);

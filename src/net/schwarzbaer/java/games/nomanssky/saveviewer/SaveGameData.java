@@ -1891,9 +1891,11 @@ public class SaveGameData {
 	public static final class Universe {
 
 		public final Vector<Galaxy> galaxies;
+		public Object guiComp;
 		
 		Universe() {
 			galaxies = new Vector<>();
+			guiComp = null;
 		}
 		
 		@Override
@@ -2003,14 +2005,17 @@ public class SaveGameData {
 			private final static String[] PREDEFINED_NAMES_EN = {"Euclid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
 			@SuppressWarnings("unused")
 			private final static String[] PREDEFINED_NAMES_DE = {"Euklid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
+			
 			final Universe universe;
 			public final int galaxyIndex;
 			public final Vector<Region> regions;
-			
+			public Object guiComp;
+
 			public Galaxy(Universe universe, int galacticIndex) {
 				this.universe = universe;
 				this.galaxyIndex = galacticIndex;
 				this.regions = new Vector<>();
+				guiComp = null;
 			}
 
 			@Override
@@ -2034,6 +2039,7 @@ public class SaveGameData {
 		
 		public static final class Region {
 			
+			public Object guiComp;
 			final Galaxy galaxy;
 			public final int voxelX;
 			private final int voxelY;
@@ -2041,7 +2047,6 @@ public class SaveGameData {
 			public final Vector<SolarSystem> solarSystems;
 			public String oldname;
 			public String name;
-			public boolean isHighlighted;
 			public double distToCenter;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
@@ -2051,8 +2056,8 @@ public class SaveGameData {
 				this.voxelZ = z;
 				this.solarSystems = new Vector<>();
 				this.setName(null);
-				this.isHighlighted = false;
 				this.distToCenter = getUniverseAddress().getDistToCenter_inRegionUnits();
+				guiComp = null;
 			}
 
 			@Override
@@ -2098,6 +2103,7 @@ public class SaveGameData {
 		
 		public static class UniverseObject {
 			
+			public Object guiComp;
 			private String discoverer;
 			public boolean isCurrPos;
 			boolean foundInStats;
@@ -2112,8 +2118,6 @@ public class SaveGameData {
 			
 			public final HashMap<String,Integer> discoveredItems_Avail;
 			public final HashMap<String,Integer> discoveredItems_Store;
-			
-			public boolean isHighlighted;
 			
 			protected UniverseObject() {
 				discoverer = null;
@@ -2130,7 +2134,7 @@ public class SaveGameData {
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
 				
-				isHighlighted = false;
+				guiComp = null;
 			}
 
 			protected String getCombinedExtraInfoLabels(String...extraStrs) {
