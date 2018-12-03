@@ -77,16 +77,16 @@ short=Community Quest 8/8
 info=
 short=
 info=Cd, Au, NaCl
-short=Biom: "Rasselnder Planet"
-info=
+short=Anormal: "Rasselnder Planet"
+info=-> Wirbelsäulen-Pflanzen
 
 [Pln21FB00FE0528FF]
 name=Ifaxirit
 biome=Exotic
 aggrSentinels
 gravitino balls
-short=Biom: "Metallurgischer Planet"
-info=
+short=Anormal: "Metallurgischer Planet"
+info=-> "Mutter"-Blumen
 short=
 info=Cd, Ag, Na
 
@@ -97,8 +97,8 @@ aggrSentinels
 gravitino balls
 short=
 info=Cd, Ag, Na
-short=Biom: "Rasselnder Planet"
-info=
+short=Anormal: "Rasselnder Planet"
+info=-> Wirbelsäulen-Pflanzen
 
 [Pln41FB00FE0528FF]
 name=Inusuchri IX
@@ -111,7 +111,7 @@ name=Community
 biome=Exotic_Mega
 short=
 info=Cd, P, NaCl
-short=Uralte Knochen
+short="Uralte Knochen"
 info=
 short=Monochrom-Rot
 info=
@@ -637,6 +637,8 @@ name=Nicaro Sigma
 biome=Irradiated
 short=
 info=NaCl, U, Cu
+short="Wiederverwertbarer Schrott"
+info=
 
 [Pln204500FAA8CBC4]
 name=Watfo
@@ -753,9 +755,11 @@ info=Na, Pf, Cu. Eiweißperle
 [Pln205D00FAA8CBC4]
 name=Pipis IV
 oldname=Nozelensk Sano
-biome=Airless
+biome=Exotic
 short=
-info=Na, Fe#, Cu
+info=Cu, Ag, Na
+short=Anormal: "Mit Schirmen übersäter Planet"
+info=-> Pilze
 
 [Pln305D00FAA8CBC4]
 name=Eykjaviu Primus
@@ -788,9 +792,11 @@ with water
 [Pln306D00FAA8CBC4]
 name=Leuthow IV
 oldname=Loyarnaulic
-biome=Airless
+biome=Exotic
 short=
-info=Fe#, Cu
+info=Cu, Ag, Fe##
+short=Anormal: "Stützen-Planet"
+info=-> Vertikale zersplitterte Säulen
 
 [Sys007900FAA8CBC4]
 name=Kihgora-Agyu X
@@ -828,6 +834,8 @@ short=
 info=Na, U, #Cu
 short.P=#Cu
 info=Aktiviertes Kupfer
+short="Uralte Knochen"
+info=
 
 [Pln407900FAA8CBC4]
 name=Biyskogolo
@@ -978,8 +986,10 @@ info=
 name=Daymaireth Ganei
 biome=Exotic_Mega
 with water
-short=
-info=Co, Fe#, #In
+short=#In
+info=#In, CO2, Co
+short=Extrem
+info=
 
 [Sys016F00FAA8CBC4]
 oldname=Esvets
@@ -1023,18 +1033,18 @@ biome=Exotic_Mega
 with water
 short=
 info="Verdammter Jade-Planet"
-short=
-info=Na, Fe#, #Em
 short.P=#Em
-info=
-short=Extrem ?
+info=#Em, NH3, Na
+short=Extrem
 info=Biom: Säure Echos
 
 [Pln218200FAA8CBC4]
 name=Runtwic V
-biome=Airless
+biome=Exotic
 short=
-info=NaCl, Fe#, Em
+info=Em, Ag, NaCl
+short=Anormal: "Pilz-Planet"
+info=-> Pilze
 
 [Sys01C800FAA8CBC4]
 oldname=Xandop-Isuma
@@ -1174,6 +1184,8 @@ name=Uhmanue
 biome=Toxic
 short=
 info=Fe#, NH3, Cu
+short="Uralte Knochen"
+info=
 
 [Pln307A00F9A8DBC4]
 name=Nidsey Sigma
@@ -1219,16 +1231,16 @@ class=Red
 name=Arhunt VI
 biome=Exotic
 short=
-info=Na, Fe#, Cd
+info=Cd, Ag, Na
+short=Anormal: "Zerschmetterter Planet"
+info=-> Bildschirm-Kristalle
 
 [Pln213A00F9A8DBC4]
 name=Taplebys Ouchi
 biome=Barren
 with water
-short=
-info=Co, Py, #Cd
 short.P=#Cd
-info=
+info=Co, Py, #Cd
 short=ExtBar
 info=
 
@@ -1353,23 +1365,44 @@ name=Afzelin-Gumie XIV
 race=Korvax
 conflict=1
 class=Yellow
-short=5 Planeten
-info=
 
 [Pln100200FCA45CAF]
 name=Aumonov IX
 biome=Exotic
-short=Biom: "Metallurgischer Planet"
-info=
+short=Anormal: "Metallurgischer Planet"
+info=-> "Mutter"-Blumen
 short=
 info=Cu, Au, NaCl
+
+[Pln200200FCA45CAF]
+name=Jikirk
+biome=Irradiated
+short=
+info=Cu, U, Co
+
+[Pln300200FCA45CAF]
+name=Druss Primus
+biome=Barren
+short=
+info=Cu, Py, Fe##
 
 [Pln400200FCA45CAF]
 name=Oruton
 biome=Exotic
 short=
 info=Cu, Au, Fe##
-short=Biom: "Metallener Planet"
+short=Anormal: "Metallener Planet"
+info=-> "Mutter"-Blumen
+
+[Pln500200FCA45CAF]
+name=Teosk
+biome=Irradiated
+with water
+short=ExtRad
+info=Stufe 3
+short=#Cu
+info=#Cu, U, NaCl
+short=Sturmkristalle
 info=
 
 [Sys007900FCA45CAF]
@@ -1381,6 +1414,80 @@ blackholetarget=000B0003CC45B8
 class=Yellow
 short=4 Planeten
 info=
+
+[Pln107900FCA45CAF]
+name=Argolga Omega
+biome=Frozen
+with water
+short=ExtCold
+info=Stufe 3
+short=#Cu
+info=#Cu, CO2, Ag
+
+[Pln207900FCA45CAF]
+name=Elpecorpi Mukou
+biome=Scorched
+short=
+info=Cu, P, Fe##
+
+[Pln307900FCA45CAF]
+name=Mins
+biome=Lush
+with water
+short=
+info=Cu, Pf, Ag
+
+[Pln407900FCA45CAF]
+name=Taci F26
+biome=Frozen
+short=
+info=Cu, CO2, Fe##
+
+[Sys017600FCA45CAF]
+name=Vahistoss IX
+unexplored
+class=Red
+
+[Pln117600FCA45CAF]
+name=Grushya B47
+biome=Exotic
+short=Anormal: "Verkalkter Planet"
+info=-> Verknöcherte Sterne
+short=
+info=Cd, Au, NaCl
+
+[Pln217600FCA45CAF]
+name=Mosebyter Tau
+biome=Lush
+short=
+info=Cd, Pf, Na
+
+[Sys017700FCA45CAF]
+name=Keinar-Liski
+unexplored
+class=Blue
+
+[Pln117700FCA45CAF]
+name=Weymonak V
+biome=Lush
+with water
+short=#In
+info=#In, Pf, Na
+
+[Pln217700FCA45CAF]
+name=Oupolly Guyod
+biome=Scorched
+short=ExtHot
+info=Stufe 3
+short=#In
+info=#In, P, Na
+
+[Pln317700FCA45CAF]
+name=Nogaw 92/D8
+biome=Irradiated
+with water
+short=#In
+info=#In, U, Na
 
 [Reg00000004994DA5]
 name=Netegoc
@@ -1957,8 +2064,8 @@ name=Rutwor
 biome=Exotic
 short=
 info=Cu, Au, Ag
-short=Biom: "Schäumender Planet"
-info=Seifenblasen überall
+short=Anormal: "Schäumender Planet"
+info=-> Seifenblasen überall
 
 [Pln200B0003CC45B8]
 name=Tamot 81/O9
@@ -2010,8 +2117,8 @@ info=Cu, NH3, Fe##
 [Pln20790003CC45B8]
 name=Aust Tau
 biome=Exotic
-short=Biom: "Sporiger Planet"
-info=
+short=Anormal: "Sporiger Planet"
+info=-> Pilze
 short=
 info=Cu, Ag, Fe##
 
