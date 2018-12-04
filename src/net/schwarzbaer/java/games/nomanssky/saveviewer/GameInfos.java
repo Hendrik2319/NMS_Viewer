@@ -55,23 +55,24 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
+import net.schwarzbaer.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Type;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.ComboboxCellEditor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.NonStringRenderer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
 public class GameInfos {
@@ -100,7 +101,7 @@ public class GameInfos {
 			super(ua,type);
 			extraInfos = new Vector<>();
 		}
-		public UOD_UniverseObject(UniverseAddress ua, Type type, UniverseObject uo) {
+		public UOD_UniverseObject(UniverseAddress ua, Type type, DiscoverableObject uo) {
 			this(ua,type);
 			this.oldname = uo.getOldOriginalName();
 			this.   name = uo.   getOriginalName();
@@ -350,7 +351,7 @@ public class GameInfos {
 		Region         region;
 		SolarSystem    system;
 		Planet         planet;
-		UniverseObject uniObj;
+		DiscoverableObject uniObj;
 		
 		@SuppressWarnings("unused")
 		UOD_Region         uod_region;
@@ -1350,23 +1351,23 @@ public class GameInfos {
 		
 		private void prepareTable() {
 			ComboboxCellEditor<GeneralizedID.UpgradeClass> upgradeClassCellEditor =
-					new TableView.ComboboxCellEditor<GeneralizedID.UpgradeClass>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values()));
+					new ComboboxCellEditor<GeneralizedID.UpgradeClass>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values()));
 			NonStringRenderer<GeneralizedID.UpgradeClass> upgradeClassRenderer =
-					new TableView.NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; });
+					new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; });
 			upgradeClassCellEditor.setRenderer(upgradeClassRenderer);
 			setCellEditor  (GeneralizedIDColumnID.UpgrCls, upgradeClassCellEditor);
 			setCellRenderer(GeneralizedIDColumnID.UpgrCls, upgradeClassRenderer);
 			
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
-					new TableView.ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
+					new ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			NonStringRenderer<GeneralizedID.Type> typeRenderer =
-					new TableView.NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; });
+					new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; });
 			typeCellEditor.setRenderer(typeRenderer);
 			setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
 			setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
 			
 			ComboboxCellEditor<String> imageCellEditor =
-					new TableView.ComboboxCellEditor<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
+					new ComboboxCellEditor<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
 			SaveViewer.images.addImageListListener(new Images.ImageListListener() {
 				@Override public void imageListChanged() {
 					imageCellEditor.setValues(SaveViewer.addNull(SaveViewer.images.imagesNames));
@@ -1376,7 +1377,7 @@ public class GameInfos {
 			setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
-					new TableView.ComboboxCellEditor<NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues));
+					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues));
 			SaveViewer.images.addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					colorCellEditor.addValue(color);
@@ -1469,7 +1470,7 @@ public class GameInfos {
 			if (cellEditor!=null) cellEditor.stopCellEditing();
 		}
 	
-		private enum GeneralizedIDColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum GeneralizedIDColumnID implements Tables.SimplifiedColumnIDInterface {
 			Obsolete("Obs"          ,                    String.class,  10,-1, 30, 30),
 			ID      ("ID"           ,                    String.class,  80,-1,120,120),
 			Type    ("Type"         ,        GeneralizedID.Type.class, 100,-1,160,160),
@@ -1480,15 +1481,15 @@ public class GameInfos {
 			UpgrCls ("Upgrade Class",GeneralizedID.UpgradeClass.class,  80,-1,100,100),
 			Usage   (""             ,                    String.class,  50,-1, 80, 80);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private Tables.SimplifiedColumnConfig columnConfig;
 			
 			GeneralizedIDColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new Tables.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public Tables.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private static class GeneralizedIDTableModel extends TableView.SimplifiedTableModel<GeneralizedIDColumnID> {
+		private static class GeneralizedIDTableModel extends Tables.SimplifiedTableModel<GeneralizedIDColumnID> {
 	
 			private static final GeneralizedIDColumnID[] COLUMNS = new GeneralizedIDColumnID[]{
 					GeneralizedIDColumnID.Obsolete,
@@ -1750,7 +1751,7 @@ public class GameInfos {
 				id.type = (GeneralizedID.Type)cmbbxTypes.getSelectedItem();
 				dataChanged();
 			});
-			cmbbxTypes.setRenderer(new TableView.NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; }));
+			cmbbxTypes.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; }));
 			
 			JComboBox<String> cmbbxImages = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
 			cmbbxImages.setSelectedItem(id.getImageFileName());
@@ -1780,7 +1781,7 @@ public class GameInfos {
 			};
 			
 			JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeIcon = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
-			cmbbxUpgradeIcon.setRenderer(new TableView.NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
+			cmbbxUpgradeIcon.setRenderer(new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
 			cmbbxUpgradeIcon.setSelectedItem(id.upgradeClass);
 			cmbbxUpgradeIcon.addActionListener(e->{id.upgradeClass=(GeneralizedID.UpgradeClass)cmbbxUpgradeIcon.getSelectedItem(); dataChanged();});
 			

@@ -22,6 +22,9 @@ import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
+import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -52,7 +55,7 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 		
-		private enum StoredInteractionsTableColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum StoredInteractionsTableColumnID implements SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
 			GroupIndex       ("G"               , String.class,  35,-1, 35, 35),
 			InteractionIndex ("I"               , String.class,  35,-1, 35, 35),
@@ -61,15 +64,15 @@ public class SimplePanels {
 			GpsCoords        ("GPS Coords"      , String.class, 150,-1,250,250),
 			Position         ("Position"        , String.class, 150,-1,250,250);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private SimplifiedColumnConfig columnConfig;
 			
 			StoredInteractionsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class StoredInteractionsTableModel extends TableView.SimplifiedTableModel<StoredInteractionsTableColumnID> {
+		private class StoredInteractionsTableModel extends SimplifiedTableModel<StoredInteractionsTableColumnID> {
 			
 			public StoredInteractionsTableModel() {
 				super(StoredInteractionsTableColumnID.values());
@@ -110,7 +113,7 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 		
-		private enum LocalTableColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum LocalTableColumnID implements SimplifiedColumnIDInterface {
 			// [250, 100, 160, 421, 220, 170]
 			// [250, 100, 160, 420, 181, 220, 170]
 			Name           ("Name"            , String.class, 150,-1,250,250),
@@ -121,15 +124,15 @@ public class SimplePanels {
 			Position       ("Position"        , String.class, 100,-1,220,220),
 			LookAt         ("Look At"         , String.class,  90,-1,170,170);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private SimplifiedColumnConfig columnConfig;
 			
 			LocalTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class LocalTableModel extends TableView.SimplifiedTableModel<LocalTableColumnID> {
+		private class LocalTableModel extends SimplifiedTableModel<LocalTableColumnID> {
 			
 			public LocalTableModel() {
 				super(LocalTableColumnID.values());
@@ -281,7 +284,7 @@ public class SimplePanels {
 			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, mainWindow,"BuildingObjects");
 		}
 
-		private enum BBOColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum BBOColumnID implements SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
 			// [140, 160, 160, 420, 130, 80, 172, 250, 150, 150]
 			// [140, 139, 120, 160, 420, 130, 80, 170, 250, 150, 150]
@@ -297,15 +300,15 @@ public class SimplePanels {
 			Up              ("Up"              ,    String.class,  75,-1,150,150),
 			At              ("At"              ,    String.class,  75,-1,150,150);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private SimplifiedColumnConfig columnConfig;
 			
 			BBOColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class BBOTableModel extends TableView.SimplifiedTableModel<BBOColumnID> {
+		private class BBOTableModel extends SimplifiedTableModel<BBOColumnID> {
 	
 			protected BBOTableModel() {
 				super(BBOColumnID.values());
@@ -537,7 +540,7 @@ public class SimplePanels {
 				}
 			}
 
-			private enum BaseObjectsColumnID implements TableView.SimplifiedColumnIDInterface {
+			private enum BaseObjectsColumnID implements SimplifiedColumnIDInterface {
 				// [140, 176, 128, 80, 150, 170, 170]
 				Timestamp("Timestamp", TimeStamp.class, 70,-1,140,140),
 				Name     ("Name"     ,    String.class, 50,-1,180,180),
@@ -547,15 +550,15 @@ public class SimplePanels {
 				Up       ("Up"       ,    String.class, 85,-1,170,170),
 				At       ("At"       ,    String.class, 85,-1,170,170);
 				
-				private TableView.SimplifiedColumnConfig columnConfig;
+				private SimplifiedColumnConfig columnConfig;
 				
 				BaseObjectsColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-					columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+					columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 				}
-				@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+				@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 			}
 			
-			private class BaseObjectsTableModel extends TableView.SimplifiedTableModel<BaseObjectsColumnID> {
+			private class BaseObjectsTableModel extends SimplifiedTableModel<BaseObjectsColumnID> {
 		
 				private BuildingObject[] objects;
 
@@ -625,19 +628,19 @@ public class SimplePanels {
 			tableModel.fireTableUpdate();
 		}
 
-		private enum BlueprintsColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum BlueprintsColumnID implements SimplifiedColumnIDInterface {
 			ID    ("ID"    , String.class, 100,-1,120,120),
 			Label ("Label" , String.class, 200,-1,220,220);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private SimplifiedColumnConfig columnConfig;
 			
 			BlueprintsColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class BlueprintsTableModel extends TableView.SimplifiedTableModel<BlueprintsColumnID> {
+		private class BlueprintsTableModel extends SimplifiedTableModel<BlueprintsColumnID> {
 
 			private GeneralizedID[] blueprints;
 
@@ -681,21 +684,21 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 	
-		private enum DDAColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum DDAColumnID implements SimplifiedColumnIDInterface {
 			TSrec("Timestamp"       , SaveGameData.TimeStamp.class, 50,-1,140,140), //[81, 161, 91, 135, 139]
 			DD_UA("Universe Address", String.class, 50,-1,160,160),
 			DD_DT("Data Type"       , String.class, 50,-1, 90, 90),
 			DD_VP("DD_VP"           , String.class, 50,-1,300,300);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private SimplifiedColumnConfig columnConfig;
 			
 			DDAColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class DDATableModel extends TableView.SimplifiedTableModel<DDAColumnID> {
+		private class DDATableModel extends SimplifiedTableModel<DDAColumnID> {
 	
 			protected DDATableModel() {
 				super(DDAColumnID.values());
@@ -744,7 +747,7 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 	
-		private enum DDSColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum DDSColumnID implements SimplifiedColumnIDInterface {
 			DD_UA  ("DD_UA"  ,    String.class, 50,-1,160,160),
 			DD_DT  ("DD_DT"  ,    String.class, 50,-1, 90, 90),
 			DD_VP  ("DD_VP"  ,    String.class, 50,-1,300,300),
@@ -757,15 +760,15 @@ public class SimplePanels {
 			RID    ("RID"    ,    String.class, 50,-1,350,350),
 			PTK    ("PTK"    ,    String.class, 20,-1, 40, 40);
 			
-			private TableView.SimplifiedColumnConfig columnConfig;
+			private SimplifiedColumnConfig columnConfig;
 			
 			DDSColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new TableView.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
-			@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class DDSTableModel extends TableView.SimplifiedTableModel<DDSColumnID> {
+		private class DDSTableModel extends SimplifiedTableModel<DDSColumnID> {
 	
 			protected DDSTableModel() {
 				super(DDSColumnID.values());

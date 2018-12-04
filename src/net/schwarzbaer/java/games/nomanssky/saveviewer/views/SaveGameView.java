@@ -197,7 +197,7 @@ public class SaveGameView extends JPanel {
 		@Override
 		public void updateContent() {}
 
-		protected void setNameForUniverseAddress(Universe.UniverseObject object, String objectStr) {
+		protected void setNameForUniverseAddress(Universe.DiscoverableObject object, String objectStr) {
 			String initialValue = object.hasOriginalName()?object.getOriginalName():object.getOldOriginalName();
 			String name = JOptionPane.showInputDialog(this, "New name for "+objectStr, initialValue);
 			if (name!=null) {

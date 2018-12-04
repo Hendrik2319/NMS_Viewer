@@ -54,12 +54,18 @@ import javax.swing.tree.TreePath;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
@@ -67,17 +73,15 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Reg
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.StarClass;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.UniverseObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedColumnConfig;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
 	
-	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindObject, RemoveHighlights, ShowFullDiscoveredUniverseData }
+	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindExtraInfo, RemoveHighlights, ShowFullDiscoveredUniverseData }
 	private enum UniverseTreeIcons {
 		Universe, Galaxy, Region, SolarSystem, Planet,
 		GekSys, KorvaxSys, VykeenSys, Unexplored,
@@ -491,7 +495,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			valuePanel.add(comp);
 		}
 
-		protected void showDiscNameObj(GenericTreeNode<?> node, Universe.UniverseObject obj) {
+		protected void showDiscNameObj(GenericTreeNode<?> node, Universe.DiscoverableObject obj) {
 			appendln();
 			
 			//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
@@ -521,7 +525,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	//			extraInfoTableModel.setData(obj.extraInfos);
 		}
 
-		private enum ExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum ExtraInfoColumnID implements SimplifiedColumnIDInterface {
 			ShowInParent(""     , Boolean.class, 10,-1, 20, 20),
 			Label       ("Label",  String.class, 20,-1,100,100),
 			Info        ("Info" ,  String.class, 50,-1,500,500);
@@ -535,7 +539,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			@Override public SimplifiedColumnConfig getColumnConfig() { return config; }
 		}
 
-		private class ExtraInfoTableModel extends TableView.SimplifiedTableModel<ExtraInfoColumnID> {
+		private class ExtraInfoTableModel extends Tables.SimplifiedTableModel<ExtraInfoColumnID> {
 		
 			private Vector<ExtraInfo> tableData;
 	//			private JTable table;
@@ -648,7 +652,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				updateTreeNode(node, false);
 				galaxyMapPanel.updateBlackHoleConnections();
 			});
-			cmbbxBlackHoleTargetSolarSystem.setRenderer(new TableView.NonStringRenderer<SolarSystem>((Object obj)->{
+			cmbbxBlackHoleTargetSolarSystem.setRenderer(new Tables.NonStringRenderer<SolarSystem>((Object obj)->{
 				if (!(obj instanceof SolarSystem)) return "";
 				SolarSystem system = (SolarSystem)obj;
 				return system.toString(true, false, false, true);
@@ -832,7 +836,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 		protected void addDefaultItems() {
 			add(createMenuItem("Remove all Highlights",UniverseTreeActionCommand.RemoveHighlights));
-			add(createMenuItem("Find Solar System or Planet",UniverseTreeActionCommand.FindObject));
+			add(createMenuItem("Find Solar System or Planet via ExtraInfo",UniverseTreeActionCommand.FindExtraInfo));
 			addSeparator();
 			add(createMenuItem("Expand complete tree",UniverseTreeActionCommand.ExpandAll));
 			add(createMenuItem("Collapse remaining tree",UniverseTreeActionCommand.CollapseRemainingTree));
@@ -1124,8 +1128,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				expandPath(clickedTreePath);
 			break;
 			
-		case FindObject: {
-			FindObjectDialog dialog = new FindObjectDialog(mainWindow,data.universe);
+		case FindExtraInfo: {
+			FindExtraInfoDialog dialog = new FindExtraInfoDialog(mainWindow,data.universe);
 			dialog.showDialog();
 			GenericTreeNode<?>[] changedObjects = dialog.getChangedObjects();
 			show(changedObjects);
@@ -1135,34 +1139,34 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 		case RemoveHighlights: {
 			Vector<GenericTreeNode<?>> changedNodes = new Vector<>(); 
-			UniverseNode uNode = (UniverseNode)data.universe.guiComp;
-			if (uNode.isHighlighted) {
-				uNode.isHighlighted = false;
-				changedNodes.addElement(uNode);
+			GenericTreeNode<?> node = (UniverseNode)data.universe.guiComp;
+			if (node.isHighlighted) {
+				node.isHighlighted = false;
+				changedNodes.addElement(node);
 			}
 			for (Galaxy g:data.universe.galaxies) {
-				GalaxyNode gNode = (GalaxyNode)g.guiComp;
-				if (gNode.isHighlighted) {
-					gNode.isHighlighted = false;
-					changedNodes.addElement(gNode);
+				node = (GalaxyNode)g.guiComp;
+				if (node.isHighlighted) {
+					node.isHighlighted = false;
+					changedNodes.addElement(node);
 				}
 				for (Region r:g.regions) {
-					RegionNode rNode = (RegionNode)r.guiComp;
-					if (rNode.isHighlighted) {
-						rNode.isHighlighted = false;
-						changedNodes.addElement(rNode);
+					node = (RegionNode)r.guiComp;
+					if (node.isHighlighted) {
+						node.isHighlighted = false;
+						changedNodes.addElement(node);
 					}
 					for (SolarSystem s:r.solarSystems) {
-						SolarSystemNode sNode = (SolarSystemNode)s.guiComp;
-						if (sNode.isHighlighted) {
-							sNode.isHighlighted = false;
-							changedNodes.addElement(sNode);
+						node = (SolarSystemNode)s.guiComp;
+						if (node.isHighlighted) {
+							node.isHighlighted = false;
+							changedNodes.addElement(node);
 						}
 						for (Planet p:s.planets) {
-							PlanetNode pNode = (PlanetNode)p.guiComp;
-							if (pNode.isHighlighted) {
-								pNode.isHighlighted = false;
-								changedNodes.addElement(pNode);
+							node = (PlanetNode)p.guiComp;
+							if (node.isHighlighted) {
+								node.isHighlighted = false;
+								changedNodes.addElement(node);
 							}
 						}
 					}
@@ -1402,65 +1406,39 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 	private class SearchBar extends JPanel {
 		private static final long serialVersionUID = -322241964276963216L;
-		
-		private GridBagLayout layout;
-		private GridBagConstraints gbc;
-
-		private Gui.IconComboBox<Biome> cmbbxBiome;
 
 		private boolean disableUpdates;
+
+		private PlanetBar planetBar;
 		
 		SearchBar() {
-			super();
-			setLayout(layout = new GridBagLayout());
-			gbc = new GridBagConstraints();
+			super(new BorderLayout(3,3));
 			setBorder(BorderFactory.createTitledBorder("Search"));
 			disableUpdates = false;
 			
-			cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 100,16, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
-				@Override public Biome cast(Object obj) {
-					if (!(obj instanceof Biome)) return null;
-					return (Biome)obj;
-				}
-				@Override public Icon createIcon(Biome value) {
-					return PlanetIcons.BiomeIcons.get(value);
-				}
-				@Override public String getLabel(Biome value) {
-					if (value==null) return "<none>";
-					return value.name_EN;
-				}
-			});
-			cmbbxBiome.addActionListener(e->updateMarkers());
+			planetBar = new PlanetBar();
 			
 			//addComp( SaveViewer.createButton("X", e->{}), 0, GridBagConstraints.BOTH);
-			addComp( SaveViewer.createButton("Clear Markers", e->clearMarkers()), 0, GridBagConstraints.BOTH);
-			addComp( cmbbxBiome, 0, GridBagConstraints.BOTH);
-			
-			addComp( new JLabel(""), 1, GridBagConstraints.BOTH);
+			add( SaveViewer.createButton("Clear Markers", e->clearMarkers()), BorderLayout.WEST);
+			add( planetBar, BorderLayout.CENTER);
 		}
-		
 		
 		private void clearMarkers() {
 			disableUpdates = true;
-			cmbbxBiome.setSelectedItem(null);
+			planetBar.clearMarkers();
 			disableUpdates = false;
 			updateMarkers();
 		}
 
-
 		private void updateMarkers() {
 			if (disableUpdates) return;
-			GenericTreeNode<?> node;
 			int markedPlanets = 0;
-			Biome biome = cmbbxBiome.getSelected();
 			for (Galaxy g:data.universe.galaxies) {
 				for (Region r:g.regions) {
 					for (SolarSystem s:r.solarSystems) {
 						for (Planet p:s.planets) {
-							node = (GenericTreeNode<?>)p.guiComp;
-							boolean isBiome = biome!=null && p.biome==biome;
-							boolean isMarked = isBiome;
-							setMarker( node, isMarked );
+							boolean isMarked = planetBar.shouldBeMarked(p);
+							setMarker( (GenericTreeNode<?>)p.guiComp, isMarked );
 							if (isMarked) ++markedPlanets;
 						}
 					}
@@ -1478,18 +1456,97 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 
 
-		private void addComp(Component comp, double weightx, int fill) {
-			gbc.weightx=weightx;
-			gbc.weighty=0;
-			gbc.gridwidth=1;
-			gbc.gridheight=1;
-			gbc.fill = fill;
-			layout.setConstraints(comp, gbc);
-			add(comp);
+		
+		private abstract class UniObjBar extends JPanel {
+			private static final long serialVersionUID = -4572786436916343840L;
+			
+			protected GridBagLayout layout;
+			protected GridBagConstraints gbc;
+			
+			UniObjBar() {
+				setLayout(layout = new GridBagLayout());
+				gbc = new GridBagConstraints();
+			}
+			
+			public abstract void clearMarkers();
+			
+			protected void addComp(Component comp, double weightx, int fill) {
+				gbc.weightx=weightx;
+				gbc.weighty=0;
+				gbc.gridwidth=1;
+				gbc.gridheight=1;
+				gbc.fill = fill;
+				layout.setConstraints(comp, gbc);
+				add(comp);
+			}
+		}
+		
+		private class PlanetBar extends UniObjBar {
+			private static final long serialVersionUID = -5056089942590204797L;
+			
+			private Gui.IconComboBox<Biome> cmbbxBiome;
+			private TristateCheckBox chkbxAggrSent;
+			private TristateCheckBox chkbxWater;
+			private TristateCheckBox chkbxGrav;
+			
+			PlanetBar() {
+				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 100,20, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
+					@Override public Biome cast(Object obj) {
+						if (!(obj instanceof Biome)) return null;
+						return (Biome)obj;
+					}
+					@Override public Icon createIcon(Biome value) {
+						return PlanetIcons.BiomeIcons.get(value);
+					}
+					@Override public String getLabel(Biome value) {
+						if (value==null) return "<none>";
+						return value.name_EN;
+					}
+				});
+				cmbbxBiome.addActionListener(e->updateMarkers());
+				chkbxAggrSent = SaveViewer.createTristateCheckBox("Aggr. Sentinels" , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxWater    = SaveViewer.createTristateCheckBox("with water"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxGrav     = SaveViewer.createTristateCheckBox("with Grav. Balls", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				
+				addComp( cmbbxBiome   , 0, GridBagConstraints.BOTH);
+				addComp( chkbxAggrSent, 0, GridBagConstraints.BOTH);
+				addComp( chkbxWater   , 0, GridBagConstraints.BOTH);
+				addComp( chkbxGrav    , 0, GridBagConstraints.BOTH);
+				addComp( new JLabel() , 1, GridBagConstraints.BOTH);
+			}
+
+			public boolean shouldBeMarked(Planet p) {
+				if (isUnset()) return false;
+				
+				Biome biome = cmbbxBiome.getSelected();
+				boolean isBiome    = biome==null || p.biome==biome;
+				boolean isAggrSent = chkbxAggrSent.isUndefined() || p.areSentinelsAggressive==chkbxAggrSent.isSelected();
+				boolean isWater    = chkbxWater   .isUndefined() || p.withWater             ==chkbxWater   .isSelected();
+				boolean isGrav     = chkbxGrav    .isUndefined() || p.withGravitinoBalls    ==chkbxGrav    .isSelected();
+				
+				return isBiome && isAggrSent && isWater && isGrav;
+			}
+			
+			public boolean isUnset() {
+				return				
+					cmbbxBiome.getSelectedItem()==null &&
+					chkbxAggrSent.isUndefined() &&
+					chkbxWater   .isUndefined() &&
+					chkbxGrav    .isUndefined();
+			}
+
+			@Override
+			public void clearMarkers() {
+				cmbbxBiome.setSelectedItem(null);
+				chkbxAggrSent.setUndefined();
+				chkbxWater   .setUndefined();
+				chkbxGrav    .setUndefined();
+			}
+			
 		}
 	}
 
-	private static class FindObjectDialog extends StandardDialog {
+	private static class FindExtraInfoDialog extends StandardDialog {
 		private static final long serialVersionUID = -356863578675221086L;
 		
 		private Universe universe;
@@ -1498,7 +1555,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private JButton btnOK;
 
-		public FindObjectDialog(Window parent, Universe universe) {
+		public FindExtraInfoDialog(Window parent, Universe universe) {
 			super(parent, "Find Universe Object", ModalityType.APPLICATION_MODAL);
 			this.universe = universe;
 			
@@ -1554,7 +1611,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super.showDialog();
 		}
 
-		private void addInfos(Vector<FoundExtraInfo> infos, UniverseObject obj, boolean isPlanet) {
+		private void addInfos(Vector<FoundExtraInfo> infos, DiscoverableObject obj, boolean isPlanet) {
 			for (ExtraInfo ei:obj.extraInfos) {
 				FoundExtraInfo existingFEI = null;
 				for (FoundExtraInfo fei:infos) {
@@ -1575,9 +1632,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			String label;
 			String info;
 			Vector<ExtraInfo> sourceEIs;
-			Vector<UniverseObject> sourceObjs;
+			Vector<DiscoverableObject> sourceObjs;
 			
-			public FoundExtraInfo(boolean fromPlanet, UniverseObject obj, ExtraInfo ei) {
+			public FoundExtraInfo(boolean fromPlanet, DiscoverableObject obj, ExtraInfo ei) {
 				this.fromPlanet = fromPlanet;
 				this.label = ei.shortLabel;
 				this.info = ei.info;
@@ -1587,13 +1644,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				add(obj,ei);
 			}
 
-			public void add(UniverseObject obj, ExtraInfo ei) {
+			public void add(DiscoverableObject obj, ExtraInfo ei) {
 				this.sourceEIs.add(ei);
 				this.sourceObjs.add(obj);
 			}
 		}
 
-		private enum FoundExtraInfoColumnID implements TableView.SimplifiedColumnIDInterface {
+		private enum FoundExtraInfoColumnID implements SimplifiedColumnIDInterface {
 			Selected(""      , Boolean.class, 10,-1, 30, 30),
 			Source  ("Source", String .class, 20,-1, 90, 90),
 			Label   ("Label" , String .class, 20,-1, 70, 70),
@@ -1608,15 +1665,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			@Override public SimplifiedColumnConfig getColumnConfig() { return config; }
 		}
 		
-		private static class FoundExtraInfoTableModel extends TableView.SimplifiedTableModel<FoundExtraInfoColumnID> {
+		private static class FoundExtraInfoTableModel extends Tables.SimplifiedTableModel<FoundExtraInfoColumnID> {
 
-			private FindObjectDialog dialog;
+			private FindExtraInfoDialog dialog;
 			private FoundExtraInfo[] data;
 			private HashSet<GenericTreeNode<?>> changedObj;
 			private boolean allowEditing;
 			private Universe universe;
 
-			protected FoundExtraInfoTableModel(FindObjectDialog dialog, Universe universe, FoundExtraInfo[] data) {
+			protected FoundExtraInfoTableModel(FindExtraInfoDialog dialog, Universe universe, FoundExtraInfo[] data) {
 				super(FoundExtraInfoColumnID.values());
 				this.dialog = dialog;
 				this.universe = universe;
@@ -1638,8 +1695,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 			public void setSelected() {
 				//changedObj.clear();
-				HashSet<UniverseObject> notSelectedObjs = new HashSet<>();
-				HashSet<UniverseObject> selectedObjs = new HashSet<>();
+				HashSet<DiscoverableObject> notSelectedObjs = new HashSet<>();
+				HashSet<DiscoverableObject> selectedObjs = new HashSet<>();
 				for (FoundExtraInfo fei:data)
 					if (fei.isSelected)
 						selectedObjs.addAll(fei.sourceObjs);
@@ -1647,11 +1704,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						notSelectedObjs.addAll(fei.sourceObjs);
 				notSelectedObjs.removeAll(selectedObjs);
 				
-				for (UniverseObject obj:   selectedObjs) setHighlighted(obj, true );
-				for (UniverseObject obj:notSelectedObjs) setHighlighted(obj, false);
+				for (DiscoverableObject obj:   selectedObjs) setHighlighted(obj, true );
+				for (DiscoverableObject obj:notSelectedObjs) setHighlighted(obj, false);
 			}
 
-			private void setHighlighted(UniverseObject obj, boolean highlighted) {
+			private void setHighlighted(DiscoverableObject obj, boolean highlighted) {
 				GenericTreeNode<?> node = (GenericTreeNode<?>)obj.guiComp;
 				if (node.isHighlighted!=highlighted) {
 					changedObj.add(node);
@@ -1695,14 +1752,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case Label   :
 					data[rowIndex].label = (String)aValue;
 					for (     ExtraInfo  ei:data[rowIndex].sourceEIs ) ei.shortLabel = (String)aValue;
-					for (UniverseObject obj:data[rowIndex].sourceObjs) changedObj.add((GenericTreeNode<?>)obj.guiComp);
+					for (DiscoverableObject obj:data[rowIndex].sourceObjs) changedObj.add((GenericTreeNode<?>)obj.guiComp);
 					GameInfos.saveUniverseObjectDataToFile(universe);
 					break;
 					
 				case Info    :
 					data[rowIndex].info = (String)aValue;
 					for (     ExtraInfo  ei:data[rowIndex].sourceEIs ) ei.info = (String)aValue;
-					for (UniverseObject obj:data[rowIndex].sourceObjs) changedObj.add((GenericTreeNode<?>)obj.guiComp);
+					for (DiscoverableObject obj:data[rowIndex].sourceObjs) changedObj.add((GenericTreeNode<?>)obj.guiComp);
 					GameInfos.saveUniverseObjectDataToFile(universe);
 					break;
 				}
@@ -1794,7 +1851,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				break;
 			}
 			component.setFont(standardFont);
-			Universe.UniverseObject uniobj = null;
+			Universe.DiscoverableObject uniobj = null;
 			Region region = null;
 			if (node instanceof      RegionNode) region = ((     RegionNode)node).value;
 			if (node instanceof SolarSystemNode) uniobj = ((SolarSystemNode)node).value;
@@ -1858,7 +1915,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 	}
 	
-	static abstract class GenericTreeNode<V> extends LocalTreeNode {
+	static abstract class GenericTreeNode<V extends UniverseObject> extends LocalTreeNode {
 		
 		NodeType type;
 		V value;
@@ -1869,21 +1926,23 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			this.value = value;
 			this.type = type;
 			isHighlighted = false;
+			value.guiComp = this;
+			createChildren();
 		}
 
-		@Override public boolean getAllowsChildren() { return true; /*except Planet*/ }
+		@Override public boolean getAllowsChildren() { return type!=NodeType.Planet; }
 		@Override protected String getLabel() { return value.toString(); }
 		@Override protected Comparator<Integer> getSorter() { return null; }
 		
 	}
 	
 	static class UniverseNode extends GenericTreeNode<Universe> {
-		private UniverseNode(Universe value) { super(null, NodeType.Universe, value); value.guiComp=this; }
+		private UniverseNode(Universe value) { super(null, NodeType.Universe, value); }
 		@Override protected int getDataChildrenCount() { return value.galaxies.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new GalaxyNode(this,value.galaxies.get(i)); }
 	}
 	static class GalaxyNode extends GenericTreeNode<Galaxy> {
-		private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, NodeType.Galaxy, value); value.guiComp=this; }
+		private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, NodeType.Galaxy, value); }
 		@Override protected int getDataChildrenCount() { return value.regions.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new RegionNode(this,value.regions.get(i)); }
 //		@Override protected Comparator<Integer> getSorter() { return new Comparator<Integer>() {
@@ -1898,14 +1957,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 //		}; }
 	}
 	static class RegionNode extends GenericTreeNode<Region> {
-		private RegionNode(GalaxyNode parent, Region value) { super(parent, NodeType.Region, value); value.guiComp=this; }
+		private RegionNode(GalaxyNode parent, Region value) { super(parent, NodeType.Region, value); }
 		@Override protected int getDataChildrenCount() { return value.solarSystems.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new SolarSystemNode(this,value.solarSystems.get(i)); }
 		@Override protected String getLabel() { return String.format(Locale.ENGLISH, "%s [%1.1f ly]", value.toString(), value.getUniverseAddress().getDistToCenter_inRegionUnits()*400); }
 	}
 	static class SolarSystemNode extends GenericTreeNode<SolarSystem> {
 		CachedCustomIcon cachedCustomIcon;
-		private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); value.guiComp=this; cachedCustomIcon = null; }
+		private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); cachedCustomIcon = null; }
 		@Override protected int getDataChildrenCount() { return value.planets.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new PlanetNode(this,value.planets.get(i)); }
 		//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
@@ -1938,11 +1997,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 	static class PlanetNode extends GenericTreeNode<Planet> {
 		CachedCustomIcon cachedCustomIcon;
-		private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); value.guiComp=this; cachedCustomIcon = null; }
+		private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); cachedCustomIcon = null; }
 		@Override protected int getDataChildrenCount() { return 0; }
 		@Override protected LocalTreeNode createTreeChild(int i) { throw new UnsupportedOperationException("Can't create a TreeChild from a PlanetNode."); }
 		//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
-		@Override public boolean getAllowsChildren() { return false; }
 		
 		static class CachedCustomIcon {
 			private final Icon icon;

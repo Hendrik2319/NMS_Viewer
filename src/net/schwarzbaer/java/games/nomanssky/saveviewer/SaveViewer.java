@@ -68,6 +68,7 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
+import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageEditDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
@@ -1128,6 +1129,12 @@ public class SaveViewer implements ActionListener {
 
 	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
 		JCheckBox button = new JCheckBox(title,isSelected);
+		if (l!=null) button.addActionListener(l);
+		return button;
+	}
+	
+	public static TristateCheckBox createTristateCheckBox(String title, ActionListener l, TristateCheckBox.State state) {
+		TristateCheckBox button = new TristateCheckBox(title,null,state);
 		if (l!=null) button.addActionListener(l);
 		return button;
 	}

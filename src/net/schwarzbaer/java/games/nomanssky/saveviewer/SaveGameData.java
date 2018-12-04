@@ -1500,7 +1500,7 @@ public class SaveGameData {
 		}
 
 		public void findPlanetsAndSolarSystems() {
-			Universe.UniverseObject obj;
+			Universe.DiscoverableObject obj;
 			
 			for (StoreData data:storeData)
 				if ((obj = getDiscNameObj(data.DD))!=null) {
@@ -1525,10 +1525,10 @@ public class SaveGameData {
 					obj.isNotUploaded = true;
 		}
 
-		private Universe.UniverseObject getDiscNameObj(DDblock dd) {
+		private Universe.DiscoverableObject getDiscNameObj(DDblock dd) {
 			if (dd.DT==null || dd.UA==null) return null;
 				
-			Universe.UniverseObject discnameObj = null;
+			Universe.DiscoverableObject discnameObj = null;
 			
 			if (dd.DT.equals("Planet") && dd.UA.isPlanet())
 				discnameObj = data.universe.getOrCreatePlanet(dd.UA);
@@ -1888,14 +1888,19 @@ public class SaveGameData {
 		
 	}
 	
-	public static final class Universe {
+	public static class UniverseObject {
+		public Object guiComp;
+		protected UniverseObject() {
+			guiComp = null;
+		}
+	}
+	
+	public static final class Universe extends UniverseObject {
 
 		public final Vector<Galaxy> galaxies;
-		public Object guiComp;
 		
 		Universe() {
 			galaxies = new Vector<>();
-			guiComp = null;
 		}
 		
 		@Override
@@ -2001,7 +2006,7 @@ public class SaveGameData {
 			return region;
 		}
 
-		public static final class Galaxy {
+		public static final class Galaxy extends UniverseObject {
 			private final static String[] PREDEFINED_NAMES_EN = {"Euclid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
 			@SuppressWarnings("unused")
 			private final static String[] PREDEFINED_NAMES_DE = {"Euklid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
@@ -2009,13 +2014,11 @@ public class SaveGameData {
 			final Universe universe;
 			public final int galaxyIndex;
 			public final Vector<Region> regions;
-			public Object guiComp;
 
 			public Galaxy(Universe universe, int galacticIndex) {
 				this.universe = universe;
 				this.galaxyIndex = galacticIndex;
 				this.regions = new Vector<>();
-				guiComp = null;
 			}
 
 			@Override
@@ -2037,9 +2040,8 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class Region {
+		public static final class Region extends UniverseObject {
 			
-			public Object guiComp;
 			final Galaxy galaxy;
 			public final int voxelX;
 			private final int voxelY;
@@ -2057,7 +2059,6 @@ public class SaveGameData {
 				this.solarSystems = new Vector<>();
 				this.setName(null);
 				this.distToCenter = getUniverseAddress().getDistToCenter_inRegionUnits();
-				guiComp = null;
 			}
 
 			@Override
@@ -2101,9 +2102,8 @@ public class SaveGameData {
 			}
 		}
 		
-		public static class UniverseObject {
+		public static class DiscoverableObject extends UniverseObject {
 			
-			public Object guiComp;
 			private String discoverer;
 			public boolean isCurrPos;
 			boolean foundInStats;
@@ -2119,7 +2119,7 @@ public class SaveGameData {
 			public final HashMap<String,Integer> discoveredItems_Avail;
 			public final HashMap<String,Integer> discoveredItems_Store;
 			
-			protected UniverseObject() {
+			protected DiscoverableObject() {
 				discoverer = null;
 				isCurrPos        = false;
 				foundInStats     = false;
@@ -2133,8 +2133,6 @@ public class SaveGameData {
 				
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
-				
-				guiComp = null;
 			}
 
 			protected String getCombinedExtraInfoLabels(String...extraStrs) {
@@ -2218,7 +2216,7 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class SolarSystem extends UniverseObject {
+		public static final class SolarSystem extends DiscoverableObject {
 			
 			public enum StarClass {
 				Yellow("G"), Red("K"), Green, Blue;
@@ -2343,7 +2341,7 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class Planet extends UniverseObject {
+		public static final class Planet extends DiscoverableObject {
 			
 			public enum Biome {
 				Lush       ("lush","erdähnlich"),

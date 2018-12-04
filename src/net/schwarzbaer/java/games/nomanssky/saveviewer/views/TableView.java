@@ -3,40 +3,28 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Vector;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
-import javax.swing.AbstractCellEditor;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListCellRenderer;
-import javax.swing.RowSorter;
 import javax.swing.SortOrder;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.LabelRendererComponent;
+import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
@@ -118,6 +106,7 @@ public class TableView {
 	public static class SimplifiedTable extends JTable {
 		private static final long serialVersionUID = 6963749333892762675L;
 		private boolean useRowSorter;
+		@SuppressWarnings("unused")
 		private String name;
 		private DebugTableContextMenu contextMenu;
 		private TableCellRenderer overallCellRenderer;
@@ -149,7 +138,7 @@ public class TableView {
 			super.setModel(dataModel);
 			dataModel.setColumnWidths(this);
 			if (useRowSorter)
-				setRowSorter(new SimplifiedRowSorter(name,dataModel));
+				setRowSorter(new NewRowSorter(dataModel));
 			if (overallCellRenderer!=null)
 				setCellRendererForAllColumns(overallCellRenderer, false);
 		}
@@ -168,17 +157,35 @@ public class TableView {
 		}
 	}
 	
+	static class NewRowSorter extends Tables.SimplifiedRowSorter {
+
+		public NewRowSorter(SimplifiedTableModel<?> model) {
+			super(model);
+		}
+
+		@Override
+		protected boolean isNewClass(Class<?> columnClass) {
+			return
+				(columnClass == TimeStamp         .class) ||
+				(columnClass == GeneralizedID.Type.class);
+		}
+
+		@Override
+		protected Comparator<Integer> addComparatorForNewClass(Comparator<Integer> comparator, SortOrder sortOrder, int column) {
+			if      (model.getColumnClass(column) == TimeStamp         .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(TimeStamp         )model.getValueAt(row,column));
+			else if (model.getColumnClass(column) == GeneralizedID.Type.class) comparator = addComparator(comparator,sortOrder,(Integer row)->(GeneralizedID.Type)model.getValueAt(row,column));
+			return comparator;
+		}
+	}
+/*	
 	static class SimplifiedRowSorter extends RowSorter<SimplifiedTableModel<?>> {
 
 		private SimplifiedTableModel<?> model;
 		private LinkedList<RowSorter.SortKey> keys;
-		@SuppressWarnings("unused")
-		private String name;
 		private Integer[] modelRowIndexes;
 		private int[] viewRowIndexes;
 
-		SimplifiedRowSorter(String name, SimplifiedTableModel<?> model) {
-			this.name = name;
+		SimplifiedRowSorter(SimplifiedTableModel<?> model) {
 			this.model = model;
 			this.keys = new LinkedList<RowSorter.SortKey>();
 			this.modelRowIndexes = null;
@@ -344,33 +351,9 @@ public class TableView {
 		}
 		
 	}
-
-	public static class SimplifiedColumnConfig {
-		public String name;
-		public int minWidth;
-		public int maxWidth;
-		public int prefWidth;
-		public int currentWidth;
-		public Class<?> columnClass;
-		
-		SimplifiedColumnConfig() {
-			this("",String.class,-1,-1,-1,-1);
-		}
-		public SimplifiedColumnConfig(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			this.name = name;
-			this.columnClass = columnClass;
-			this.minWidth = minWidth;
-			this.maxWidth = maxWidth;
-			this.prefWidth = prefWidth;
-			this.currentWidth = currentWidth;
-		}
-	}
-
-	public static interface SimplifiedColumnIDInterface {
-		public SimplifiedColumnConfig getColumnConfig();
-	}
-
-	public static abstract class SimplifiedTableModel<ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> implements TableModel {
+*/
+/*	
+	public static abstract class SimplifiedTableModel<ColumnID extends Enum<ColumnID> & Tables.SimplifiedColumnIDInterface> implements TableModel {
 		
 		protected ColumnID[] columns;
 		private Vector<TableModelListener> tableModelListeners;
@@ -480,7 +463,7 @@ public class TableView {
 			for (int i=0; i<columnModel.getColumnCount(); ++i) {
 				ColumnID columnID = getColumnID(i);
 				if (columnID!=null) {
-					SimplifiedColumnConfig config = columnID.getColumnConfig();
+					Tables.SimplifiedColumnConfig config = columnID.getColumnConfig();
 					setColumnWidth(columnModel.getColumn(i), config.minWidth, config.maxWidth, config.prefWidth, config.currentWidth);
 				}
 			}
@@ -493,7 +476,8 @@ public class TableView {
 			if (width    >=0) column.setWidth(width);
 		}
 	}
-	
+*/	
+/*	
 	public static class NonStringRenderer<T> implements ListCellRenderer<T>, TableCellRenderer {
 		
 		private RendererComponent comp;
@@ -536,13 +520,13 @@ public class TableView {
 			}
 		}
 	}
-	
-	public static class UpgradeCategoryRenderer extends IconTextRenderer<Images.UpgradeCategory,Images.UpgradeCategory> {
+*/	
+	public static class UpgradeCategoryRenderer extends IconTextRenderer<UpgradeCategory,UpgradeCategory> {
 		
 		public UpgradeCategoryRenderer() { super(50,16); }
 		
 		@Override protected UpgradeCategory cast(Object obj) {
-			if (obj instanceof Images.UpgradeCategory) return (Images.UpgradeCategory)obj;
+			if (obj instanceof UpgradeCategory) return (UpgradeCategory)obj;
 			return null;
 		}
 
@@ -638,7 +622,7 @@ public class TableView {
 		}
 	}
 
-	private static class LabelRendererComponent extends JLabel {
+/*	private static class LabelRendererComponent extends JLabel {
 		private static final long serialVersionUID = -695854080940136137L;
 		
 		@Override public void revalidate() {}
@@ -660,7 +644,8 @@ public class TableView {
 		@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
 		@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
 	}
-	
+*/	
+/*
 	public static class SimpleColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {
 		
 		private RendererComponent comp;
@@ -730,9 +715,9 @@ public class TableView {
 			@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
 			@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
 		}
-		
 	}
-	
+*/	
+/*	
 	public static class ComboboxCellEditor<T> extends AbstractCellEditor implements TableCellEditor {
 		private static final long serialVersionUID = -346693108757882917L;
 		
@@ -783,5 +768,5 @@ public class TableView {
 		}
 		
 	}
-
+*/
 }

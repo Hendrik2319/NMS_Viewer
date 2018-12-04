@@ -519,6 +519,8 @@ public class Images {
 			pd.setTaskTitle("Read Images");
 			pd.setValue(0, imagesNames.length);
 		}
+		
+		int listChunkIndex = 0;
 		images.clear();
 		for (int i=0; i<imagesNames.length; ++i) {
 			File file = new File(folder,imagesNames[i]);
@@ -533,7 +535,16 @@ public class Images {
 			
 			if (pd!=null)
 				pd.setValue(i+1);
+			else {
+				int n= i*6/imagesNames.length;
+				if (listChunkIndex != n) {
+					listChunkIndex = n;
+					SaveViewer.log(" .. %d",images.size());
+				}
+			}
 		}
+		if (pd==null)
+			SaveViewer.log_ln(" .. %d",images.size());
 		
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}

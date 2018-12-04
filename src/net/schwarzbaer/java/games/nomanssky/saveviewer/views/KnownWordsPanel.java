@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import javax.swing.JScrollPane;
 
+import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords.KnownWord;
@@ -25,23 +26,23 @@ class KnownWordsPanel extends SaveGameViewTabPanel {
 		add(tableScrollPane,BorderLayout.CENTER);
 	}
 
-	private enum KnownWordsTableColumnID implements TableView.SimplifiedColumnIDInterface {
+	private enum KnownWordsTableColumnID implements Tables.SimplifiedColumnIDInterface {
 		WordID        ("ID"  , 50,-1,120,120),
 		TranslatedWord("Word", 50,-1,100,100),
 		Race          (""    , 20,-1, 70, 70);
 	
-		private TableView.SimplifiedColumnConfig columnConfig;
+		private Tables.SimplifiedColumnConfig columnConfig;
 		
 		KnownWordsTableColumnID() {
-			columnConfig = new TableView.SimplifiedColumnConfig();
+			columnConfig = new Tables.SimplifiedColumnConfig();
 		}
 		KnownWordsTableColumnID(String name, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			columnConfig = new TableView.SimplifiedColumnConfig(name, String.class, minWidth, maxWidth, prefWidth, currentWidth);
+			columnConfig = new Tables.SimplifiedColumnConfig(name, String.class, minWidth, maxWidth, prefWidth, currentWidth);
 		}
-		@Override public TableView.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		@Override public Tables.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 
-	private static class KnownWordsTableModel extends TableView.SimplifiedTableModel<KnownWordsPanel.KnownWordsTableColumnID> {
+	private static class KnownWordsTableModel extends Tables.SimplifiedTableModel<KnownWordsPanel.KnownWordsTableColumnID> {
 	
 		private static final int ADDITIONAL_ROWS = 2;
 		private KnownWords knownWords;
