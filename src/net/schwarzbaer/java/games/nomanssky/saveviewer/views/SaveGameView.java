@@ -65,6 +65,9 @@ public class SaveGameView extends JPanel {
 
 	private void addAllTabs() {
 		if (isNEXT) {
+			SaveGameViewTabGroupingPanel rawDataPanel = new SaveGameViewTabGroupingPanel(data);
+			rawDataPanel.addPanel("DeObfuscator Usage", new SimplePanels.DeObfuscatorUsagePanel(data));
+			
 			UniversePanel universePanel = new UniversePanel(data,mainWindow);
 			GalaxyMapPanel galaxyMapPanel = new GalaxyMapPanel(data,mainWindow);
 			galaxyMapPanel.setUniversePanel(universePanel);
@@ -83,18 +86,18 @@ public class SaveGameView extends JPanel {
 			if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases"       , new SimplePanels.PersistentPlayerBasesPanel(data,mainWindow));
 			if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects", new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
 			
-			SaveGameViewTabGroupingPanel discoveredDataPanel = new SaveGameViewTabGroupingPanel(data);
-			discoveredDataPanel.addPanel("Available", new SimplePanels.DiscoveredDataAvailablePanel(data));
-			discoveredDataPanel.addPanel("Stored", new SimplePanels.DiscoveredDataStoredPanel(data));
+			rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data));
+			rawDataPanel.addPanel("DiscoveryData (Stored)", new SimplePanels.DiscoveredDataStoredPanel(data));
 			
 			SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
 			blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
 			blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
 			
 			tabbedPane.addTab("Blueprints",blueprintsPanel);
-			tabbedPane.addTab("DiscoveryData",discoveredDataPanel);
 			
-			if (data.storedInteractions!=null) tabbedPane.addTab("Stored Interactions",new SimplePanels.StoredInteractionsPanel(data));
+			if (data.storedInteractions!=null) rawDataPanel.addPanel("Stored Interactions",new SimplePanels.StoredInteractionsPanel(data));
+			
+			tabbedPane.addTab("Raw Data",rawDataPanel);
 		}
 		
 //		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));

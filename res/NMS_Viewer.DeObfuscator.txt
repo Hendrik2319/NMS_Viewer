@@ -89,7 +89,7 @@ NNR GenerationSeed
 eZ< KnownProducts
 4kj KnownTech
 24< [KnownQuicksilverSpecials]
-Ddk Known... ??? [Ddk]
+Ddk [KnownRefinerRecipes]
 
 dwb MissionProgress
 p0c Mission
@@ -235,7 +235,7 @@ SSo EventId
 yq: ??? [yq:]
 EQt ??? [EQt]
 oF@ ??? [oF@]
-kN; ??? [kN;]
+kN; [Quicksilver]
 cid ??? [cid]
 
 A1f MarkerStack
@@ -365,3 +365,4 @@ TD8 ??? [TD8]
 Y5p ??? [Y5p]
 WX8 ??? [WX8]
 
+rk3 ??? [rk3]

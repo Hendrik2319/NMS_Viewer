@@ -89,7 +89,7 @@ public class SaveViewer implements ActionListener {
 	public static IconSource<ToolbarIcons> toolbarIS;
 	public static Images images;
 	public static Config config;
-	private static DeObfuscator deObfuscator;
+	public static DeObfuscator deObfuscator;
 	
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
@@ -461,10 +461,12 @@ public class SaveViewer implements ActionListener {
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
 		log_ln(" done");
 		
+		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isNEXT = false;
 		if (!SaveGameData.hasValue(new_json_data, "Version")) {
 			if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
 			new_json_data = deObfuscator.deObfuscate(new_json_data);
+			deObfuscatorUsage = deObfuscator.getUsage();
 			isNEXT = true;
 		}
 		
@@ -475,6 +477,7 @@ public class SaveViewer implements ActionListener {
 			
 		} else {
 			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex);
+			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			
 			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(2); }
 			saveGameData.parse(isNEXT);
@@ -507,10 +510,12 @@ public class SaveViewer implements ActionListener {
 			JSON_Object new_json_data = new JSON_Parser(view.file).parse();
 			log_ln(" done");
 			
+			HashMap<String, Vector<String>> deObfuscatorUsage = null;
 			boolean isNEXT = false;
 			if (!SaveGameData.hasValue(new_json_data, "Version")) {
 				if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
 				new_json_data = deObfuscator.deObfuscate(new_json_data);
+				deObfuscatorUsage = deObfuscator.getUsage();
 				isNEXT = true;
 			}
 			
@@ -518,6 +523,7 @@ public class SaveViewer implements ActionListener {
 				if (pd!=null) { pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); }
 				GameInfos.removeUsages(view.data);
 				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index);
+				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 				if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(3); }
 				saveGameData.parse(isNEXT);
 				if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
@@ -694,21 +700,42 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
-	static class DeObfuscator {
+	public static class DeObfuscator {
 
 		private HashMap<String, String> replacements;
+		private HashMap<String, Vector<String>> usage;
 
 		DeObfuscator() {
 			replacements = new HashMap<>();
+			usage = null;
 		}
 		
+		//public void getReplacement()
+		
+		public HashMap<String,Vector<String>> getUsage() {
+			return usage;
+		}
+
+		public String getReplacement(String originalStr) {
+			return replacements.get(originalStr);
+		}
+
 		public JSON_Object deObfuscate(JSON_Object data) {
+			
+			usage = new HashMap<>();
 			Result res = new Result();
-			JSON_Data.traverseNamedValues(data, nv->{
-				String newName = replacements.get(nv.name);
+			
+			JSON_Data.traverseNamedValues(data, (path,nv)->{
+				String originalStr = nv.name;
+				
+				Vector<String> u = usage.get(originalStr);
+				if (u==null) usage.put(originalStr, u = new Vector<>());
+				u.add(path);
+				
+				String newStr = getReplacement(originalStr);
 				res.all++;
-				if (newName!=null) {
-					nv.name = newName;
+				if (newStr!=null) {
+					nv.name = newStr;
 					nv.wasDeObfuscated = true;
 					res.known++;
 				} else
@@ -722,7 +749,7 @@ public class SaveViewer implements ActionListener {
 			
 			return data;
 		}
-		
+
 		private static class Result {
 			int known;
 			int all;

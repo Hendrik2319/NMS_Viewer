@@ -34,6 +34,7 @@ public class SaveGameData {
 	public final String filename;
 	public final int index;
 	public final JSON_Object json_data;
+	public HashMap<String, Vector<String>> deObfuscatorUsage;
 	
 	public final General general;
 	public final Universe universe;
@@ -55,6 +56,8 @@ public class SaveGameData {
 		this.filename = filename;
 		this.index = index;
 		this.json_data = json_data;
+		this.deObfuscatorUsage = null;
+		
 		this.general = new General(this);
 		this.universe = new Universe();
 		this.stats = null;
@@ -64,6 +67,10 @@ public class SaveGameData {
 		this.baseBuildingObjects = null;
 		this.persistentPlayerBases = null;
 		this.teleportEndpoints = null;
+	}
+
+	public void setDeObfuscatorUsage(HashMap<String, Vector<String>> deObfuscatorUsage) {
+		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
 	public SaveGameData parse(boolean isNEXT) {
@@ -1611,6 +1618,7 @@ public class SaveGameData {
 		public Position gravePos;
 		public Long units;
 		public Long nanites;
+		public Long quicksilver;
 		public Long playerHealth;
 		public Long playerShield;
 		public Long energy;
@@ -1632,14 +1640,18 @@ public class SaveGameData {
 			
 			units        = null;
 			nanites      = null;
+			quicksilver  = null;
+			
 			playerHealth = null;
 			playerShield = null;
 			energy       = null;
 			shipHealth   = null;
 			shipShield   = null;
+			
 			timeAlive       = null;
 			totalPlayTime   = null;
 			hazardTimeAlive = null;
+			
 			knownGlyphsMask = null;
 		}
 		
@@ -1657,14 +1669,18 @@ public class SaveGameData {
 			
 			units           = getIntegerValue( data.json_data, "PlayerStateData","Units"           );
 			nanites         = getIntegerValue( data.json_data, "PlayerStateData","Nanites"         );
+			quicksilver     = getIntegerValue( data.json_data, "PlayerStateData","[Quicksilver]"   );
+			
 			playerHealth    = getIntegerValue( data.json_data, "PlayerStateData","Health"          );
 			playerShield    = getIntegerValue( data.json_data, "PlayerStateData","Shield"          );
 			energy          = getIntegerValue( data.json_data, "PlayerStateData","Energy"          );
 			shipHealth      = getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      );
 			shipShield      = getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      );
+			
 			timeAlive       = getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       );
 			totalPlayTime   = getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   );
 			hazardTimeAlive = getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" );
+			
 			knownGlyphsMask = getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes");
 		}
 		

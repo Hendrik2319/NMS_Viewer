@@ -53,16 +53,17 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			for (JTextArea t:textAreas) t.setText("");
 			
 			currentTextArea = 0;
-			appendValueT("Current Units    ", data.general.units );
-			appendValueT("Current Nanites  ", data.general.nanites );
-			appendValue ("Player Health    ", data.general.playerHealth );
-			appendValue ("Player Shield    ", data.general.playerShield );
-			appendValue ("Energy           ", data.general.energy );
-			appendValue ("Ship Health      ", data.general.shipHealth );
-			appendValue ("Ship Shield      ", data.general.shipShield );
-			appendValue ("Time Alive       ", Duration.toString(data.general.timeAlive) );
-			appendValue ("Total PlayTime   ", Duration.toString(data.general.totalPlayTime) );
-			appendValue ("Hazard Time Alive", Duration.toString(data.general.hazardTimeAlive) );
+			appendValueT("Current Units      ", data.general.units );
+			appendValueT("Current Nanites    ", data.general.nanites );
+			appendValueT("Current Quicksilver", data.general.quicksilver );
+			appendValue ("Player Health      ", data.general.playerHealth );
+			appendValue ("Player Shield      ", data.general.playerShield );
+			appendValue ("Energy             ", data.general.energy );
+			appendValue ("Ship Health        ", data.general.shipHealth );
+			appendValue ("Ship Shield        ", data.general.shipShield );
+			appendValue ("Time Alive         ", Duration.toString(data.general.timeAlive) );
+			appendValue ("Total PlayTime     ", Duration.toString(data.general.totalPlayTime) );
+			appendValue ("Hazard Time Alive  ", Duration.toString(data.general.hazardTimeAlive) );
 			
 			currentTextArea = 1;
 			UniverseAddress currentUA = data.general.currentUniverseAddress;

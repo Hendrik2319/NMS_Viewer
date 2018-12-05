@@ -19,6 +19,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
@@ -42,6 +43,78 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGa
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
 public class SimplePanels {
+	
+	public static class DeObfuscatorUsagePanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = -1827760869937255459L;
+
+		public DeObfuscatorUsagePanel(SaveGameData data) {
+			super(data);
+			
+			JTextArea textArea = new JTextArea();
+			textArea.setEditable(false);
+			
+			ReplacementsTableModel tableModel = new ReplacementsTableModel();
+			SimplifiedTable table = new SimplifiedTable("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			table.getSelectionModel().addListSelectionListener(e->{
+				textArea.setText("");
+				String originalStr = tableModel.getValue(table.convertRowIndexToModel(table.getSelectedRow()));
+				Vector<String> paths = data.deObfuscatorUsage.get(originalStr);
+				if (paths!=null)
+					for (String str:paths)
+						textArea.append(str+"\r\n");
+			});
+			
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			tableScrollPane.setPreferredSize(new Dimension(270, 100));
+			add(tableScrollPane,BorderLayout.WEST);
+			
+			JScrollPane textAreaScrollPane = new JScrollPane(textArea);
+			add(textAreaScrollPane,BorderLayout.CENTER);
+			
+		}
+		
+		private enum ColumnID implements SimplifiedColumnIDInterface {
+			Original    ("Original"   , String.class,  35,-1,  60,  60),
+			Replacement ("Replacement", String.class,  35,-1, 180, 180);
+			
+			private SimplifiedColumnConfig columnConfig;
+			
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class ReplacementsTableModel extends SimplifiedTableModel<ColumnID> {
+			
+			private Vector<String> values;
+
+			public ReplacementsTableModel() {
+				super(ColumnID.values());
+				values = new Vector<>(data.deObfuscatorUsage.keySet());
+			}
+
+			@Override
+			public int getRowCount() {
+				return values.size();
+			}
+			
+			public String getValue(int rowIndex) {
+				return values.get(rowIndex);
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
+				String originalStr = values.get(rowIndex);
+				switch(columnID) {
+				case Original   : return originalStr;
+				case Replacement: return SaveViewer.deObfuscator.getReplacement(originalStr);
+				}
+				return null;
+			}
+		}
+	}
 	
 	public static class StoredInteractionsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 1017824861605442560L;
