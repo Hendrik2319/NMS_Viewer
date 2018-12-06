@@ -62,6 +62,8 @@ biome=Toxic
 aggrSentinels
 short=DunkelRot
 info=Monochrome und Rot
+short=Grav??
+info=
 
 [Reg000000FE0528FF]
 
@@ -429,20 +431,22 @@ name=Urbi
 biome=Lush
 with water
 short=
-info=Na, Pf, Cu, Eiweißperle
+info=Na, Pf, Cu
 
 [Pln400800FAA8CBC4]
 name=Nurtn
-biome=Airless
+biome=Exotic
 short=
-info=NaCl, Re#, Cu
+info=NaCl, Au, Cu
+short=Anormal: "Metallüberzogener Planet"
+info=
 
 [Pln500800FAA8CBC4]
 name=Jevo
 biome=Lush
 with water
 short=
-info=NaCl, Pf, Cu, Eiweißperle
+info=NaCl, Pf, Cu
 
 [Sys000A00FAA8CBC4]
 name=Lograt
@@ -471,6 +475,8 @@ info=
 short=
 info=NaCl, CO2, #Cu
 
+[Sys001100FAA8CBC4]
+
 [Sys001200FAA8CBC4]
 name=Muzhel-Erk XVI
 race=Gek
@@ -479,11 +485,11 @@ class=Yellow
 
 [Pln101200FAA8CBC4]
 name=Vulptone VII
-biome=Airless
-aggrSentinels
-gravitino balls
+biome=Exotic
 short=
-info=NaCl, Fe#, Cu
+info=NaCl, Au, Cu
+short=Anormal: "Verkalkter Planet"
+info=
 
 [Pln201200FAA8CBC4]
 name=Rerok
@@ -493,9 +499,11 @@ info=Ag, NH3, Cu
 
 [Pln301200FAA8CBC4]
 name=Pacalloy XIX
-biome=Airless
+biome=Exotic
 short=
-info=Na, Fe#, Cu
+info=Na, Au, Cu
+short=Anormal: "Rasselnder Planet"
+info=
 
 [Pln401200FAA8CBC4]
 name=Neu: Aron
@@ -503,8 +511,6 @@ biome=Lush
 with water
 short=
 info=Ag, Pf, Cu
-short=
-info=Eiweißperle
 short=U
 info=Uran ("Metall-Finger")
 
@@ -512,7 +518,9 @@ info=Uran ("Metall-Finger")
 name=Kewesterd Yugaw
 biome=Airless
 short=
-info=Na, Fe#, Cu
+info=Na, Sr_Rost, Cu
+short="Katastrophales Terraforming"
+info=
 
 [Sys001300FAA8CBC4]
 oldname=Ankovsky XV
@@ -558,14 +566,16 @@ name=Party Town
 race=Gek
 conflict=1
 class=Yellow
+short=Erinnerungs-Terminal
+info=
 
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
-biome=Airless
-aggrSentinels
-gravitino balls
+biome=Exotic
 short=
-info=Cu, Fe#, Na
+info=Cu, Au, Na
+short=Anormal: "Schalenübersäter Planet"
+info=
 
 [Pln202F00FAA8CBC4]
 name=Icoll XIV
