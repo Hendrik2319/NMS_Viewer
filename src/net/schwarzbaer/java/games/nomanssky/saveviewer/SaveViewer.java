@@ -701,7 +701,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	public static class DeObfuscator {
-
+		
 		private HashMap<String, String> replacements;
 		private HashMap<String, Vector<String>> usage;
 
@@ -709,8 +709,6 @@ public class SaveViewer implements ActionListener {
 			replacements = new HashMap<>();
 			usage = null;
 		}
-		
-		//public void getReplacement()
 		
 		public HashMap<String,Vector<String>> getUsage() {
 			return usage;

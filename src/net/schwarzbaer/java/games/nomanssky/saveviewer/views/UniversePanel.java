@@ -1860,7 +1860,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (!uniobj.hasOriginalName()) {
 					if (!selected) component.setForeground(TEXTCOLOR__WITHOUT_NAME);
 				} else
-				if (uniobj.isNotUploaded) {
+				if (uniobj.isNotUploaded()) {
 					if (!selected) component.setForeground(TEXTCOLOR__NOT_UPLOADED);
 				}
 				if (!uniobj.hasSourceID()) {
@@ -1882,8 +1882,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 	}
-	
-	enum NodeType { Universe, Galaxy, Region, SolarSystem, Planet }
 	
 	static abstract class LocalTreeNode extends TreeView.AbstractTreeNode<LocalTreeNode> {
 		
@@ -1917,11 +1915,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	static abstract class GenericTreeNode<V extends UniverseObject> extends LocalTreeNode {
 		
-		NodeType type;
+		SaveGameData.UniverseObject.Type type;
 		V value;
 		boolean isHighlighted;
 
-		protected GenericTreeNode(LocalTreeNode parent, NodeType type, V value) {
+		protected GenericTreeNode(LocalTreeNode parent, SaveGameData.UniverseObject.Type type, V value) {
 			super(parent);
 			this.value = value;
 			this.type = type;
@@ -1930,19 +1928,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			createChildren();
 		}
 
-		@Override public boolean getAllowsChildren() { return type!=NodeType.Planet; }
+		@Override public boolean getAllowsChildren() { return type!=SaveGameData.UniverseObject.Type.Planet; }
 		@Override protected String getLabel() { return value.toString(); }
 		@Override protected Comparator<Integer> getSorter() { return null; }
 		
 	}
 	
 	static class UniverseNode extends GenericTreeNode<Universe> {
-		private UniverseNode(Universe value) { super(null, NodeType.Universe, value); }
+		private UniverseNode(Universe value) { super(null, SaveGameData.UniverseObject.Type.Universe, value); }
 		@Override protected int getDataChildrenCount() { return value.galaxies.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new GalaxyNode(this,value.galaxies.get(i)); }
 	}
 	static class GalaxyNode extends GenericTreeNode<Galaxy> {
-		private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, NodeType.Galaxy, value); }
+		private GalaxyNode(UniverseNode parent, Galaxy value) { super(parent, SaveGameData.UniverseObject.Type.Galaxy, value); }
 		@Override protected int getDataChildrenCount() { return value.regions.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new RegionNode(this,value.regions.get(i)); }
 //		@Override protected Comparator<Integer> getSorter() { return new Comparator<Integer>() {
@@ -1957,14 +1955,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 //		}; }
 	}
 	static class RegionNode extends GenericTreeNode<Region> {
-		private RegionNode(GalaxyNode parent, Region value) { super(parent, NodeType.Region, value); }
+		private RegionNode(GalaxyNode parent, Region value) { super(parent, SaveGameData.UniverseObject.Type.Region, value); }
 		@Override protected int getDataChildrenCount() { return value.solarSystems.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new SolarSystemNode(this,value.solarSystems.get(i)); }
 		@Override protected String getLabel() { return String.format(Locale.ENGLISH, "%s [%1.1f ly]", value.toString(), value.getUniverseAddress().getDistToCenter_inRegionUnits()*400); }
 	}
 	static class SolarSystemNode extends GenericTreeNode<SolarSystem> {
 		CachedCustomIcon cachedCustomIcon;
-		private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, NodeType.SolarSystem, value); cachedCustomIcon = null; }
+		private SolarSystemNode(RegionNode parent, SolarSystem value) { super(parent, SaveGameData.UniverseObject.Type.SolarSystem, value); cachedCustomIcon = null; }
 		@Override protected int getDataChildrenCount() { return value.planets.size(); }
 		@Override protected LocalTreeNode createTreeChild(int i) { return new PlanetNode(this,value.planets.get(i)); }
 		//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }
@@ -1997,7 +1995,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 	static class PlanetNode extends GenericTreeNode<Planet> {
 		CachedCustomIcon cachedCustomIcon;
-		private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, NodeType.Planet, value); cachedCustomIcon = null; }
+		private PlanetNode(SolarSystemNode parent, Planet value) { super(parent, SaveGameData.UniverseObject.Type.Planet, value); cachedCustomIcon = null; }
 		@Override protected int getDataChildrenCount() { return 0; }
 		@Override protected LocalTreeNode createTreeChild(int i) { throw new UnsupportedOperationException("Can't create a TreeChild from a PlanetNode."); }
 		//@Override protected String getLabel() { return value.hasName()?value.getName():super.getLabel(); }

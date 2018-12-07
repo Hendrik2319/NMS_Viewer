@@ -34,6 +34,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.Modification;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
@@ -53,7 +55,7 @@ public class SimplePanels {
 			JTextArea textArea = new JTextArea();
 			textArea.setEditable(false);
 			
-			ReplacementsTableModel tableModel = new ReplacementsTableModel();
+			LocalTableModel tableModel = new LocalTableModel();
 			SimplifiedTable table = new SimplifiedTable("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			table.getSelectionModel().addListSelectionListener(e->{
@@ -86,11 +88,11 @@ public class SimplePanels {
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class ReplacementsTableModel extends SimplifiedTableModel<ColumnID> {
+		private class LocalTableModel extends SimplifiedTableModel<ColumnID> {
 			
 			private Vector<String> values;
 
-			public ReplacementsTableModel() {
+			public LocalTableModel() {
 				super(ColumnID.values());
 				values = new Vector<>(data.deObfuscatorUsage.keySet());
 			}
@@ -116,19 +118,144 @@ public class SimplePanels {
 		}
 	}
 	
+	public static class FrigatesPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 1017824861605442560L;
+		private JTextArea textArea;
+
+		public FrigatesPanel(SaveGameData data) {
+			super(data);
+			textArea = new JTextArea();
+			
+			LocalTableModel tableModel = new LocalTableModel();
+			SimplifiedTable table = new SimplifiedTable("FrigatesTable",tableModel,true,SaveViewer.DEBUG,true);
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			table.getSelectionModel().addListSelectionListener(e->{
+				int rowIndex = table.convertRowIndexToModel(table.getSelectedRow());
+				showValues(data.frigates.get(rowIndex),rowIndex);
+			});
+			
+			JScrollPane tableScrollPane = new JScrollPane(table);
+			add(tableScrollPane,BorderLayout.CENTER);
+			
+			JScrollPane textareaScrollPane = new JScrollPane(textArea);
+			textareaScrollPane.setPreferredSize(new Dimension(400,50));
+			add(textareaScrollPane,BorderLayout.EAST);
+			
+		}
+		
+		private void showValues(Frigate fr, int rowIndex) {
+			textArea.setText("");
+			if (fr==null) return;
+			
+			appendln();
+			appendln("Name      : %s", fr.name    ==null?"":(fr.name!=null && fr.name.isEmpty()?("<Frigate "+(rowIndex+1)+">"):fr.name));
+			appendln("Ship Type : %s", fr.shipType==null?"":fr.shipType);
+			appendln("Crew Race : %s", fr.crewRace==null?"":fr.crewRace);
+			appendln();
+			appendln("When Aquired     : %s", fr.aquired         ==null?"":fr.aquired          );
+			appendln("Expeditions      : %s", fr.expeditions     ==null?"":fr.expeditions      );
+			appendln("Successful Fights: %s", fr.successfulFights==null?"":fr.successfulFights );
+			appendln("Damages          : %s", fr.damages         ==null?"":fr.damages          );
+			appendln("Fuel Consumption : %s", fr.fuelConsumption ==null?"":String.format("%d t / 250 ly", fr.fuelConsumption) );
+			appendln();
+			appendln("Combat      : %s ", fr.combatValue     ==null?"":fr.combatValue      );
+			appendln("Exploration : %s ", fr.explorationValue==null?"":fr.explorationValue );
+			appendln("Mining      : %s ", fr.miningValue     ==null?"":fr.miningValue      );
+			appendln("Diplomacy   : %s ", fr.diplomacyValue  ==null?"":fr.diplomacyValue   );
+			appendln();
+			appendln("Modifications :");
+			for (Modification mod:fr.modifications) {
+				appendln("    %s:", mod.getLabel());
+				appendln("        %s", mod.getValue() );
+			}
+			appendln();
+			appendln("Unidentified Values : %s | %s, %s, %s, %s, %s | %s, %s", fr.unidentifiedVal1_5VG, fr.unidentifiedStatVal5, fr.unidentifiedStatVal6, fr.unidentifiedStatVal7, fr.unidentifiedStatVal8, fr.unidentifiedStatVal9, fr.unidentifiedVal2_yJC, fr.unidentifiedVal3_7hK);
+		}
+		
+		private void appendln() {
+			appendln("");
+		}
+		private void appendln(String format, Object...objects) {
+			textArea.append(String.format(format+"\r\n", objects));
+		}
+
+		private enum ColumnID implements SimplifiedColumnIDInterface {
+			// [80, 80, 80, 120, 70, 70, 70, 93, 40, 40, 40, 40, 90, 150]
+			Name          ("Name"               ,    String.class, 35, -1,  80,  80),
+			ShipType      ("Ship Type"          ,    String.class, 35, -1,  80,  80),
+			CrewRace      ("Crew Race"          ,    String.class, 35, -1,  80,  80),
+			Aquired       ("Aquired"            , TimeStamp.class, 35, -1, 120, 120),
+			Fights        ("Fights"             ,      Long.class, 35, -1,  70,  70),
+			Expeditions   ("Expeditions"        ,      Long.class, 35, -1,  70,  70),
+			Damages       ("Damages"            ,      Long.class, 35, -1,  70,  70),
+			FuelCons      ("Fuel Consumption"   ,    String.class, 35, -1,  80,  80),
+			Combat        ("Combat"             ,      Long.class, 35, -1,  50,  50),
+			Exploration   ("Exploration"        ,      Long.class, 35, -1,  50,  50),
+			Mining        ("Mining"             ,      Long.class, 35, -1,  50,  50),
+			Diplomacy     ("Diplomacy"          ,      Long.class, 35, -1,  50,  50),
+			Modifications ("Modifications"      ,      Long.class, 35, -1,  60,  60),
+			UnidentValues ("Unidentified Values",    String.class, 35, -1, 150, 150);
+			
+			private SimplifiedColumnConfig columnConfig;
+			
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class LocalTableModel extends SimplifiedTableModel<ColumnID> {
+			
+			public LocalTableModel() {
+				super(ColumnID.values());
+			}
+
+			@Override
+			public int getRowCount() {
+				return data.frigates.size();
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
+				SaveGameData.Frigate fr = data.frigates.get(rowIndex);
+				if (fr==null) return null;
+				switch(columnID) {
+				case Name    : if (fr.name!=null && fr.name.isEmpty()) return "<Frigate "+(rowIndex+1)+">"; return fr.name;
+				case ShipType: return fr.shipType;
+				case CrewRace: return fr.crewRace;
+					
+				case FuelCons   : if (fr.fuelConsumption==null) return ""; return fr.fuelConsumption+" t / 250 ly";
+				case Aquired    : return fr.aquired;
+				case Expeditions: return fr.expeditions;
+				case Fights     : return fr.successfulFights;
+				case Damages    : return fr.damages;
+					
+				case Combat     : return fr.combatValue;
+				case Exploration: return fr.explorationValue;
+				case Mining     : return fr.miningValue;
+				case Diplomacy  : return fr.diplomacyValue;
+					
+				case Modifications: return fr.modifications.size();
+				case UnidentValues: return String.format("%s | %s, %s, %s, %s, %s | %s, %s", fr.unidentifiedVal1_5VG, fr.unidentifiedStatVal5, fr.unidentifiedStatVal6, fr.unidentifiedStatVal7, fr.unidentifiedStatVal8, fr.unidentifiedStatVal9, fr.unidentifiedVal2_yJC, fr.unidentifiedVal3_7hK);
+				}
+				return null;
+			}
+		}
+	}
+	
 	public static class StoredInteractionsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 1017824861605442560L;
 
 		public StoredInteractionsPanel(SaveGameData data) {
 			super(data);
 			
-			StoredInteractionsTableModel tableModel = new StoredInteractionsTableModel();
+			LocalTableModel tableModel = new LocalTableModel();
 			SimplifiedTable table = new SimplifiedTable("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 		
-		private enum StoredInteractionsTableColumnID implements SimplifiedColumnIDInterface {
+		private enum ColumnID implements SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
 			GroupIndex       ("G"               , String.class,  35,-1, 35, 35),
 			InteractionIndex ("I"               , String.class,  35,-1, 35, 35),
@@ -139,16 +266,16 @@ public class SimplePanels {
 			
 			private SimplifiedColumnConfig columnConfig;
 			
-			StoredInteractionsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class StoredInteractionsTableModel extends SimplifiedTableModel<StoredInteractionsTableColumnID> {
+		private class LocalTableModel extends SimplifiedTableModel<ColumnID> {
 			
-			public StoredInteractionsTableModel() {
-				super(StoredInteractionsTableColumnID.values());
+			public LocalTableModel() {
+				super(ColumnID.values());
 			}
 
 			@Override
@@ -157,7 +284,7 @@ public class SimplePanels {
 			}
 
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, StoredInteractionsTableColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 				SaveGameData.StoredInteraction si = data.storedInteractions.get(rowIndex);
 				if (si==null) return null;
 				switch(columnID) {
@@ -186,7 +313,7 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 		
-		private enum LocalTableColumnID implements SimplifiedColumnIDInterface {
+		private enum ColumnID implements SimplifiedColumnIDInterface {
 			// [250, 100, 160, 421, 220, 170]
 			// [250, 100, 160, 420, 181, 220, 170]
 			Name           ("Name"            , String.class, 150,-1,250,250),
@@ -199,16 +326,16 @@ public class SimplePanels {
 			
 			private SimplifiedColumnConfig columnConfig;
 			
-			LocalTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class LocalTableModel extends SimplifiedTableModel<LocalTableColumnID> {
+		private class LocalTableModel extends SimplifiedTableModel<ColumnID> {
 			
 			public LocalTableModel() {
-				super(LocalTableColumnID.values());
+				super(ColumnID.values());
 			}
 	
 			@Override
@@ -217,7 +344,7 @@ public class SimplePanels {
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, LocalTableColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 				SaveGameData.TeleportEndpoints te = data.teleportEndpoints.get(rowIndex);
 				if (te==null) return null;
 				switch(columnID) {
@@ -276,7 +403,7 @@ public class SimplePanels {
 			TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
 			contextMenu.addSeparator();
 			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
-			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BBOColumnID.ObjectID)));
+			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(ColumnID.ObjectID)));
 			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML(),null,SaveViewer.ToolbarIcons.SaveAs));
 			
 			add(tableScrollPane,BorderLayout.CENTER);
@@ -357,7 +484,7 @@ public class SimplePanels {
 			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, mainWindow,"BuildingObjects");
 		}
 
-		private enum BBOColumnID implements SimplifiedColumnIDInterface {
+		private enum ColumnID implements SimplifiedColumnIDInterface {
 			// [70, 160, 160, 130, 80, 190, 150, 150]
 			// [140, 160, 160, 420, 130, 80, 172, 250, 150, 150]
 			// [140, 139, 120, 160, 420, 130, 80, 170, 250, 150, 150]
@@ -375,16 +502,16 @@ public class SimplePanels {
 			
 			private SimplifiedColumnConfig columnConfig;
 			
-			BBOColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 		
-		private class BBOTableModel extends SimplifiedTableModel<BBOColumnID> {
+		private class BBOTableModel extends SimplifiedTableModel<ColumnID> {
 	
 			protected BBOTableModel() {
-				super(BBOColumnID.values());
+				super(ColumnID.values());
 			}
 	
 			@Override
@@ -393,7 +520,7 @@ public class SimplePanels {
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, BBOColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 				UnboundBuildingObject bbo = data.baseBuildingObjects[rowIndex];
 				if (bbo==null) return null;
 				switch(columnID) {
@@ -701,29 +828,29 @@ public class SimplePanels {
 			tableModel.fireTableUpdate();
 		}
 
-		private enum BlueprintsColumnID implements SimplifiedColumnIDInterface {
+		private enum ColumnID implements SimplifiedColumnIDInterface {
 			ID    ("ID"    , String.class, 100,-1,120,120),
 			Label ("Label" , String.class, 200,-1,220,220);
 			
 			private SimplifiedColumnConfig columnConfig;
 			
-			BlueprintsColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class BlueprintsTableModel extends SimplifiedTableModel<BlueprintsColumnID> {
+		private class BlueprintsTableModel extends SimplifiedTableModel<ColumnID> {
 
 			private GeneralizedID[] blueprints;
 
 			protected BlueprintsTableModel(GeneralizedID[] blueprints) {
-				super(BlueprintsColumnID.values());
+				super(ColumnID.values());
 				this.blueprints = blueprints;
 			}
 
 			@Override public int getRowCount() { return blueprints.length; }
-			@Override public Object getValueAt(int rowIndex, int columnIndex, BlueprintsColumnID columnID) {
+			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 				switch(columnID) {
 				case ID   : return blueprints[rowIndex].id;
 				case Label: return blueprints[rowIndex].label;
@@ -731,9 +858,9 @@ public class SimplePanels {
 				return null;
 			}
 
-			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, BlueprintsColumnID columnID) { return columnID == BlueprintsColumnID.Label; }
-			@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, BlueprintsColumnID columnID) {
-				if (columnID == BlueprintsColumnID.Label) {
+			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) { return columnID == ColumnID.Label; }
+			@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ColumnID columnID) {
+				if (columnID == ColumnID.Label) {
 					blueprints[rowIndex].setLabel(aValue==null?"":aValue.toString());
 					switch(type) {
 					case KnownProductBlueprints: GameInfos.saveProductIDsToFile(); break;
@@ -757,7 +884,7 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 	
-		private enum DDAColumnID implements SimplifiedColumnIDInterface {
+		private enum ColumnID implements SimplifiedColumnIDInterface {
 			TSrec("Timestamp"       , SaveGameData.TimeStamp.class, 50,-1,140,140), //[81, 161, 91, 135, 139]
 			DD_UA("Universe Address", String.class, 50,-1,160,160),
 			DD_DT("Data Type"       , String.class, 50,-1, 90, 90),
@@ -765,16 +892,16 @@ public class SimplePanels {
 			
 			private SimplifiedColumnConfig columnConfig;
 			
-			DDAColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class DDATableModel extends SimplifiedTableModel<DDAColumnID> {
+		private class DDATableModel extends SimplifiedTableModel<ColumnID> {
 	
 			protected DDATableModel() {
-				super(DDAColumnID.values());
+				super(ColumnID.values());
 			}
 	
 			@Override
@@ -783,7 +910,7 @@ public class SimplePanels {
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, DDAColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 				AvailableData availableData = data.discoveryData.availableData.get(rowIndex);
 				if (availableData==null) return null;
 				switch(columnID) {
@@ -820,7 +947,7 @@ public class SimplePanels {
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
 	
-		private enum DDSColumnID implements SimplifiedColumnIDInterface {
+		private enum ColumnID implements SimplifiedColumnIDInterface {
 			DD_UA  ("DD_UA"  ,    String.class, 50,-1,160,160),
 			DD_DT  ("DD_DT"  ,    String.class, 50,-1, 90, 90),
 			DD_VP  ("DD_VP"  ,    String.class, 50,-1,300,300),
@@ -835,16 +962,16 @@ public class SimplePanels {
 			
 			private SimplifiedColumnConfig columnConfig;
 			
-			DDSColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 			}
 			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 		}
 	
-		private class DDSTableModel extends SimplifiedTableModel<DDSColumnID> {
+		private class DDSTableModel extends SimplifiedTableModel<ColumnID> {
 	
 			protected DDSTableModel() {
-				super(DDSColumnID.values());
+				super(ColumnID.values());
 			}
 	
 			@Override
@@ -853,7 +980,7 @@ public class SimplePanels {
 			}
 	
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex, DDSColumnID columnID) {
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 				StoreData storeData = data.discoveryData.storeData.get(rowIndex);
 				if (storeData==null) return null;
 				switch(columnID) {

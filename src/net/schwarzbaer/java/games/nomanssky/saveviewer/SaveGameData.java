@@ -12,6 +12,7 @@ import java.util.Vector;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -47,6 +48,7 @@ public class SaveGameData {
 	public Vector<PersistentPlayerBase> persistentPlayerBases;
 	public Vector<StoredInteraction> storedInteractions;
 	public Vector<TeleportEndpoints> teleportEndpoints;
+	public Vector<Frigate> frigates;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -67,6 +69,7 @@ public class SaveGameData {
 		this.baseBuildingObjects = null;
 		this.persistentPlayerBases = null;
 		this.teleportEndpoints = null;
+		this.frigates = null;
 	}
 
 	public void setDeObfuscatorUsage(HashMap<String, Vector<String>> deObfuscatorUsage) {
@@ -86,6 +89,7 @@ public class SaveGameData {
 		parsePersistentPlayerBases();
 		parseStoredInteractions();
 		parseTeleportEndpoints();
+		parseFrigates();
 		universe.sort();
 		//universe.writeToConsole();
 		
@@ -579,6 +583,11 @@ public class SaveGameData {
 			te.teleportHost     = TeleportEndpoints.TeleportHost.parseValue(te.teleportHostStr);
 			te.name             = getStringValue(objectValue, "Name");
 			
+			if (te.universeAddress!=null) {
+				ObjectWithSource obj = universe.getOrCreate(te.universeAddress);
+				obj.foundInTeleportEndpoints.add(teleportEndpoints.size());
+			}
+			
 			teleportEndpoints.add(te);
 		}
 		
@@ -713,6 +722,11 @@ public class SaveGameData {
 			pb.value__wx7      = getIntegerValue_silent(objectValue, "??? [wx7]");
 			
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
+			
+			if (pb.galacticAddress!=null) {
+				ObjectWithSource obj = universe.getOrCreate(pb.galacticAddress);
+				obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size());
+			}
 			
 			persistentPlayerBases.add(pb);
 //			persistentPlayerBases.set(i,pb);
@@ -855,6 +869,11 @@ public class SaveGameData {
 			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
 			parseBuildingObject(objectValue, bbo, "BaseBuildingObjects", i);
+			
+			if (bbo.galacticAddress!=null) {
+				ObjectWithSource obj = universe.getOrCreate(bbo.galacticAddress);
+				obj.foundInBaseBuildingObjects.add(vector.size());
+			}
 			
 			vector.add(bbo);
 		}
@@ -1316,6 +1335,166 @@ public class SaveGameData {
 	
 	}
 	
+	private void parseFrigates() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","[Frigates]");
+		if (arrayValue==null) return;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		frigates = new Vector<Frigate>();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			JSON_Object objectValue = getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			
+			Frigate fr = new Frigate();
+			fr.name             = getStringValue (objectValue, "[?Name?]");
+			fr.shipType         = getStringValue (objectValue, "[ShipType]", "[ShipType]");
+			fr.crewRace         = getStringValue (objectValue, "[?CrewRace?]", "[?CrewRaceStr?]");
+			fr.aquired          = TimeStamp.create(getIntegerValue(objectValue, "[?aquired?]"));
+			fr.successfulFights = getIntegerValue(objectValue, "[Progress]");
+			fr.expeditions      = getIntegerValue(objectValue, "[Expeditions]");
+			fr.damages          = getIntegerValue(objectValue, "[Damages]");
+			
+			fr.combatValue      = getIntegerValue(objectValue, "Stats",0);
+			fr.explorationValue = getIntegerValue(objectValue, "Stats",1);
+			fr.miningValue      = getIntegerValue(objectValue, "Stats",2);
+			fr.diplomacyValue   = getIntegerValue(objectValue, "Stats",3);
+			fr.fuelConsumption  = getIntegerValue(objectValue, "Stats",4);
+			fr.unidentifiedStatVal5 = getIntegerValue(objectValue, "Stats",5);
+			fr.unidentifiedStatVal6 = getIntegerValue(objectValue, "Stats",6);
+			fr.unidentifiedStatVal7 = getIntegerValue(objectValue, "Stats",7);
+			fr.unidentifiedStatVal8 = getIntegerValue(objectValue, "Stats",8);
+			fr.unidentifiedStatVal9 = getIntegerValue(objectValue, "Stats",9);
+			
+			fr.unidentifiedVal1_5VG = getIntegerValue(objectValue, "??? [5VG]");
+			fr.unidentifiedVal2_yJC = getIntegerValue(objectValue, "??? [yJC]");
+			fr.unidentifiedVal3_7hK = getIntegerValue(objectValue, "??? [7hK]");
+			
+			JSON_Array modArr = getArrayValue(objectValue,"[Modifications]");
+			if (modArr!=null) {
+				fr.modifications = new Vector<>();
+				for (Value modVal:modArr) {
+					String modStr = getString(modVal);
+					if (modStr==null) { notParsableObjects.add(modVal); continue; }
+					if (modStr.equals("^")) continue;
+					Frigate.KnownModification mod = Frigate.KnownModification.getMod(modStr);
+					fr.modifications.add( mod!=null ? mod : new Frigate.UnknownModification(modStr) );
+				}
+			}
+			
+			frigates.add(fr);
+		}
+		
+		if (!notParsableObjects.isEmpty())
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
+	}
+	
+	public static class Frigate {
+		
+		public interface Modification {
+			public String getLabel();
+			public String getValue();
+		}
+
+		enum KnownModification implements Modification {
+			EXPLORE_PRI  ("Erkundungsspezialist"     ,"Erkundung: +15"),
+			EXPLORE_SEC_1("Anomalienscanner"         ,"Erkundung: +2"),
+			MINING_PRI   ("Industriespezialist"      ,"Industrie: +15"),
+			MINING_SEC_4 ("Erzverarbeitungseinheit"  ,"Industrie: +2"),
+			COMBAT_PRI   ("Kampfspezialist"          ,"Kampf: +15"),
+			TRADING_PRI  ("Handelspezialist"         ,"Handel: +15"),
+			
+			SPEED_TER_4  ("Warp-Antrieb"             ,"-2% Expeditionsdauer"),
+			
+			FUEL_TER_4   ("Photonensegel"            ,"Treibstoffkosten der Expedition: -2"),
+			FUEL_TER_2   ("Abgestimmte Antriebe"     ,"Treibstoffkosten der Expedition: -4"),
+			FUEL_TER_6   ("Solarmodule"              ,"Treibstoffkosten der Expedition: -6"),
+			
+			INVULN_TER_3 ("Holografische Komponenten","Schadensreduzierung"),
+			;
+			
+			private String label;
+			private String value;
+		
+			KnownModification(String label, String value) {
+				this.label = label;
+				this.value = value;
+			}
+		
+			@Override public String getLabel() { return label; }
+			@Override public String getValue() { return value; }
+		
+			public static KnownModification getMod(String modStr) {
+				for (KnownModification mod:KnownModification.values())
+					if (("^"+mod).equals(modStr))
+						return mod;
+				return null;
+			}
+		}
+
+		public static class UnknownModification implements Modification {
+			private String modStr;
+			UnknownModification(String modStr) { this.modStr = modStr; }
+			@Override public String getLabel() { return "\""+modStr+"\""; }
+			@Override public String getValue() { return "???"; }
+		}
+
+		public String name;
+		public String shipType;
+		public String crewRace;
+		public TimeStamp aquired;
+		
+		public Long successfulFights;
+		public Long expeditions;
+		public Long damages;
+		public Long fuelConsumption;
+		
+		public Long combatValue;
+		public Long explorationValue;
+		public Long miningValue;
+		public Long diplomacyValue;
+		
+		public Vector<Modification> modifications;
+		
+		public Long unidentifiedStatVal5;
+		public Long unidentifiedStatVal6;
+		public Long unidentifiedStatVal7;
+		public Long unidentifiedStatVal8;
+		public Long unidentifiedStatVal9;
+		
+		public Long unidentifiedVal1_5VG;
+		public Long unidentifiedVal2_yJC;
+		public Long unidentifiedVal3_7hK;
+		
+		public Frigate() {
+			this.name = null;
+			this.shipType = null;
+			this.crewRace = null;
+			this.aquired = null;
+			this.successfulFights = null;
+			this.expeditions = null;
+			this.damages = null;
+			this.fuelConsumption = null;
+			this.combatValue = null;
+			this.explorationValue = null;
+			this.miningValue = null;
+			this.diplomacyValue = null;
+			this.modifications = new Vector<>();
+			this.unidentifiedStatVal5 = null;
+			this.unidentifiedStatVal6 = null;
+			this.unidentifiedStatVal7 = null;
+			this.unidentifiedStatVal8 = null;
+			this.unidentifiedStatVal9 = null;
+			this.unidentifiedVal1_5VG = null;
+			this.unidentifiedVal2_yJC = null;
+			this.unidentifiedVal3_7hK = null;
+		}
+		
+	}
+	
 	private void parseDiscoveryData() {
 		JSON_Array arrayValue_Store     = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
 		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
@@ -1447,22 +1626,26 @@ public class SaveGameData {
 			storedDiscoveredItemInSolarSystms = 0;
 			
 			for (StoreData stData:storeData) {
-				int universeObject = processDDblock(stData.DD, SourceArray.StoreData, unknownAdresses, knownTypes);
-				switch(universeObject) {
-				case 1: ++storedDiscoveredItemOnPlanets; break;
-				case 2: ++storedDiscoveredItemInSolarSystms; break;
-				}
+				UniverseObject.Type universeObject = processDDblock(stData.DD, SourceArray.StoreData, unknownAdresses, knownTypes);
+				if (universeObject!=null)
+					switch(universeObject) {
+					case Planet     : ++storedDiscoveredItemOnPlanets; break;
+					case SolarSystem: ++storedDiscoveredItemInSolarSystms; break;
+					default: break;
+					}
 			}
 			
 			availDiscoveredItemOnPlanets = 0;
 			availDiscoveredItemInSolarSystms = 0;
 			
 			for (AvailableData avData:availableData) {
-				int universeObject = processDDblock(avData.DD, SourceArray.AvailableData, unknownAdresses, knownTypes);
-				switch(universeObject) {
-				case 1: ++availDiscoveredItemOnPlanets; break;
-				case 2: ++availDiscoveredItemInSolarSystms; break;
-				}
+				UniverseObject.Type universeObject = processDDblock(avData.DD, SourceArray.AvailableData, unknownAdresses, knownTypes);
+				if (universeObject!=null)
+					switch(universeObject) {
+					case Planet     : ++availDiscoveredItemOnPlanets; break;
+					case SolarSystem: ++availDiscoveredItemInSolarSystms; break;
+					default: break;
+					}
 			}
 			
 //			System.out.println("Known Types ["+knownTypes.size()+"]");
@@ -1476,42 +1659,43 @@ public class SaveGameData {
 			}
 		}
 		
-		private int processDDblock(DDblock DD, SourceArray sourceArray, HashSet<UniverseAddress> unknownAdresses, HashSet<String> knownTypes) {
-			int universeObject = 0;
-			
-			if (DD==null) return universeObject;
+		private UniverseObject.Type processDDblock(DDblock DD, SourceArray sourceArray, HashSet<UniverseAddress> unknownAdresses, HashSet<String> knownTypes) {
+			if (DD==null) return null;
 			if (DD.DT!=null) {
-				if (DD.DT.equals("Planet")) return universeObject;
-				if (DD.DT.equals("SolarSystem")) return universeObject;
+				if (DD.DT.equals("Planet"     )) return null;
+				if (DD.DT.equals("SolarSystem")) return null;
 				knownTypes.add(DD.DT);
 			}
 			
-			if (DD.UA==null) return universeObject;
+			if (DD.UA==null) return null;
+			
 			if (DD.UA.isPlanet()) {
-				universeObject = 1;
 				Universe.Planet planet = data.universe.findPlanet(DD.UA);
 				if (planet==null)
 					unknownAdresses.add(DD.UA);
 				else
 					planet.addDiscoveredItem(DD.DT,sourceArray);
+				return UniverseObject.Type.Planet;
 			}
+			
 			if (DD.UA.isSolarSystem()) {
-				universeObject = 2;
 				Universe.SolarSystem solarSystem = data.universe.findSolarSystem(DD.UA);
 				if (solarSystem==null)
 					unknownAdresses.add(DD.UA);
 				else
 					solarSystem.addDiscoveredItem(DD.DT,sourceArray);
+				return UniverseObject.Type.SolarSystem;
 			}
-			return universeObject;
+			return null;
 		}
 
 		public void findPlanetsAndSolarSystems() {
 			Universe.DiscoverableObject obj;
 			
-			for (StoreData data:storeData)
+			for (int i=0; i<storeData.size(); i++) {
+				StoreData data = storeData.get(i);
 				if ((obj = getDiscNameObj(data.DD))!=null) {
-					obj.foundInDiscStore = true;
+					obj.foundInDiscStore.add(i);
 					
 					if (data.OWS.USN!=null) {
 						if (obj.hasDiscoverer())
@@ -1526,10 +1710,13 @@ public class SaveGameData {
 							obj.setUploadedName(data.DM_CN);
 					}
 				}
+			}
 			
-			for (AvailableData data:availableData)
+			for (int i=0; i<availableData.size(); i++) {
+				AvailableData data = availableData.get(i);
 				if ((obj = getDiscNameObj(data.DD))!=null)
-					obj.isNotUploaded = true;
+					obj.foundInDiscAvail.add(i);
+			}
 		}
 
 		private Universe.DiscoverableObject getDiscNameObj(DDblock dd) {
@@ -1905,9 +2092,14 @@ public class SaveGameData {
 	}
 	
 	public static class UniverseObject {
+		public enum Type { Universe, Galaxy, Region, SolarSystem, Planet }
+		
+		public final Type type;
 		public Object guiComp;
-		protected UniverseObject() {
-			guiComp = null;
+		
+		protected UniverseObject(Type type) {
+			this.type = type;
+			this.guiComp = null;
 		}
 	}
 	
@@ -1916,6 +2108,7 @@ public class SaveGameData {
 		public final Vector<Galaxy> galaxies;
 		
 		Universe() {
+			super(Type.Universe);
 			galaxies = new Vector<>();
 		}
 		
@@ -1990,6 +2183,13 @@ public class SaveGameData {
 			return null;
 		}
 
+		public ObjectWithSource getOrCreate(UniverseAddress ua) {
+			if (ua.isPlanet     ()) return getOrCreatePlanet     (ua);
+			if (ua.isSolarSystem()) return getOrCreateSolarSystem(ua);
+			if (ua.isRegion     ()) return getOrCreateRegion     (ua);
+			return getOrCreateGalaxy(ua);
+		}
+
 		public Planet getOrCreatePlanet(long address) {
 			return getOrCreatePlanet(new UniverseAddress(address));
 		}
@@ -2013,8 +2213,7 @@ public class SaveGameData {
 		}
 
 		public Region getOrCreateRegion(UniverseAddress ua) {
-			Galaxy galaxy = findGalaxy(ua.galaxyIndex);
-			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,ua.galaxyIndex));
+			Galaxy galaxy = getOrCreateGalaxy(ua);
 			
 			Region region = galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
 			if (region==null) galaxy.addRegion(region=new Region(galaxy,ua.voxelX,ua.voxelY,ua.voxelZ));
@@ -2022,7 +2221,84 @@ public class SaveGameData {
 			return region;
 		}
 
-		public static final class Galaxy extends UniverseObject {
+		private Galaxy getOrCreateGalaxy(UniverseAddress ua) {
+			Galaxy galaxy = findGalaxy(ua.galaxyIndex);
+			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,ua.galaxyIndex));
+			
+			return galaxy;
+		}
+
+		public static class ObjectWithSource extends UniverseObject {
+			
+			public boolean isCurrPos;
+			public boolean foundInStats;
+			public HashSet<Integer> foundInDiscStore;
+			public HashSet<Integer> foundInDiscAvail;
+			public HashSet<Integer> foundInPersistentPlayerBases;
+			public HashSet<Integer> foundInBaseBuildingObjects;
+			public HashSet<Integer> foundInTeleportEndpoints;
+			
+			protected ObjectWithSource(Type type) {
+				super(type);
+				isCurrPos        = false;
+				foundInStats     = false;
+				foundInDiscStore = new HashSet<>();
+				foundInDiscAvail = new HashSet<>();
+				foundInPersistentPlayerBases = new HashSet<>();
+				foundInBaseBuildingObjects = new HashSet<>();
+				foundInTeleportEndpoints = new HashSet<>();
+			}
+			
+			public boolean isNotUploaded() {
+				return !foundInDiscAvail.isEmpty();
+			}
+			
+			public boolean hasSourceID() {
+				return isCurrPos ||
+						foundInStats ||
+						!foundInDiscAvail            .isEmpty() ||
+						!foundInDiscStore            .isEmpty() ||
+						!foundInPersistentPlayerBases.isEmpty() ||
+						!foundInBaseBuildingObjects  .isEmpty() ||
+						!foundInTeleportEndpoints    .isEmpty()    
+						;
+			}
+			
+			public String getSourceIDStr() {
+				StringBuilder sb = new StringBuilder();
+				if (isCurrPos                              ) {                                    sb.append("CP"); }
+				if (foundInStats                           ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
+				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
+				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
+				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("PB"); }
+				if (!foundInBaseBuildingObjects  .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("BBO"); }
+				if (!foundInTeleportEndpoints    .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("TE"); }
+				return "<"+sb.toString()+">";
+			}
+			
+			public String getLongSourceIDStr() {
+				StringBuilder sb = new StringBuilder();
+				if (isCurrPos                              ) {                                     sb.append("Current Position"); }
+				if (foundInStats                           ) { if (sb.length()>0) sb.append(", "); sb.append("Status Values"); }
+				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Store"+toString(foundInDiscStore)); }
+				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Avail."+toString(foundInDiscAvail)); }
+				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("PlayerBase"+toString(foundInPersistentPlayerBases)); }
+				if (!foundInBaseBuildingObjects  .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("BaseBuildingObject("+toString(foundInBaseBuildingObjects)); }
+				if (!foundInTeleportEndpoints    .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("TeleportEndpoint"+toString(foundInTeleportEndpoints)); }
+				return "<"+sb.toString()+">";
+			}
+
+			private String toString(HashSet<Integer> intSet) {
+				String str="";
+				for (int i: intSet) {
+					if (!str.isEmpty()) str+=",";
+					str+=(i+1);
+				}
+				return "("+str+")";
+			}
+		}
+
+		public static final class Galaxy extends ObjectWithSource {
 			private final static String[] PREDEFINED_NAMES_EN = {"Euclid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
 			@SuppressWarnings("unused")
 			private final static String[] PREDEFINED_NAMES_DE = {"Euklid","Hilbert Dimension","Calypso","Hesperius Dimension","Hyades","Ickjamatew","Budullangr","Kikolgallr","Eltiensleen","Eissentam","Elkupalos","Aptarkaba","Ontiniangp","Odiwagiri","Ogtialabi","Muhacksonto","Hitonskyer","Rerasmutul","Isdoraijung","Doctinawyra","Loychazinq","Zukasizawa","Ekwathore","Yeberhahne","Twerbetek","Sivarates","Eajerandal","Aldukesci","Wotyarogii","Sudzerbal","Maupenzhay","Sugueziume","Brogoweldian","Ehbogdenbu","Ijsenufryos","Nipikulha","Autsurabin","Lusontrygiamh","Rewmanawa","Ethiophodhe","Urastrykle","Xobeurindj","Oniijialdu","Wucetosucc","Ebyeloofdud","Odyavanta","Milekistri","Waferganh","Agnusopwit","Teyaypilny"}; 
@@ -2032,6 +2308,7 @@ public class SaveGameData {
 			public final Vector<Region> regions;
 
 			public Galaxy(Universe universe, int galacticIndex) {
+				super(Type.Galaxy);
 				this.universe = universe;
 				this.galaxyIndex = galacticIndex;
 				this.regions = new Vector<>();
@@ -2056,7 +2333,7 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class Region extends UniverseObject {
+		public static final class Region extends ObjectWithSource {
 			
 			final Galaxy galaxy;
 			public final int voxelX;
@@ -2068,6 +2345,7 @@ public class SaveGameData {
 			public double distToCenter;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
+				super(Type.Region);
 				this.galaxy = galaxy;
 				this.voxelX = x;
 				this.voxelY = y;
@@ -2118,34 +2396,29 @@ public class SaveGameData {
 			}
 		}
 		
-		public static class DiscoverableObject extends UniverseObject {
-			
-			private String discoverer;
-			public boolean isCurrPos;
-			boolean foundInStats;
-			boolean foundInDiscStore;
-			public boolean isNotUploaded;
-			
-			public final Vector<ExtraInfo> extraInfos;
+		public static class DiscoverableObject extends ObjectWithSource {
 			
 			private String oldOriginalName; // defined by universe generator before NEXT update
 			private String originalName; // defined by universe generator
 			private String uploadedName; // defined by uploading player  
 			
+			private String discoverer;
+			
+			public final Vector<ExtraInfo> extraInfos;
+			
 			public final HashMap<String,Integer> discoveredItems_Avail;
 			public final HashMap<String,Integer> discoveredItems_Store;
 			
-			protected DiscoverableObject() {
-				discoverer = null;
-				isCurrPos        = false;
-				foundInStats     = false;
-				foundInDiscStore = false;
-				isNotUploaded    = false;
+			protected DiscoverableObject(Type type) {
+				super(type);
 				
-				this.extraInfos = new Vector<>();
-				
+				oldOriginalName = null;
 				originalName = null;
 				uploadedName = null;
+				
+				discoverer = null;
+				
+				this.extraInfos = new Vector<>();
 				
 				discoveredItems_Avail = new HashMap<>();
 				discoveredItems_Store = new HashMap<>();
@@ -2177,28 +2450,6 @@ public class SaveGameData {
 				else             map.put(itemLabel, value+1);
 			}
 
-			
-			public boolean hasSourceID() {
-				return isCurrPos || foundInStats || isNotUploaded || foundInDiscStore;
-			}
-			
-			public String getSourceIDStr() {
-				StringBuilder sb = new StringBuilder();
-				if (isCurrPos       ) {                                    sb.append("CP"); }
-				if (foundInStats    ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
-				if (foundInDiscStore) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
-				if (isNotUploaded   ) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
-				return "<"+sb.toString()+">";
-			}
-			
-			public String getLongSourceIDStr() {
-				StringBuilder sb = new StringBuilder();
-				if (isCurrPos       ) {                                     sb.append("Current Position"); }
-				if (foundInStats    ) { if (sb.length()>0) sb.append(", "); sb.append("Stats"); }
-				if (foundInDiscStore) { if (sb.length()>0) sb.append(", "); sb.append("DiscStore"); }
-				if (isNotUploaded   ) { if (sb.length()>0) sb.append(", "); sb.append("DiscAvail"); }
-				return "<"+sb.toString()+">";
-			}
 			
 			public boolean hasDiscoverer() { return discoverer!=null; }
 			public String getDiscoverer() { return discoverer; }
@@ -2280,6 +2531,7 @@ public class SaveGameData {
 			public AdditionalInfos additionalInfos;
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
+				super(Type.SolarSystem);
 				this.region = region;
 				this.solarSystemIndex = solarSystemIndex;
 				this.planets = new Vector<>();
@@ -2403,6 +2655,7 @@ public class SaveGameData {
 			public AdditionalInfos additionalInfos; 
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
+				super(Type.Planet);
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
 				this.biome = null;
