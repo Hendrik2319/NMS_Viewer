@@ -79,16 +79,16 @@ short=Community Quest 8/8
 info=
 short=
 info=Cd, Au, NaCl
-short=Anormal: "Rasselnder Planet"
-info=-> Wirbelsäulen-Pflanzen
+short=Anormal: "Knochen"
+info="Rasselnder Planet"
 
 [Pln21FB00FE0528FF]
 name=Ifaxirit
 biome=Exotic
 aggrSentinels
 gravitino balls
-short=Anormal: "Metallurgischer Planet"
-info=-> "Mutter"-Blumen
+short=Anormal: "Metall-Blumen"
+info="Metallurgischer Planet"
 short=
 info=Cd, Ag, Na
 
@@ -99,8 +99,8 @@ aggrSentinels
 gravitino balls
 short=
 info=Cd, Ag, Na
-short=Anormal: "Rasselnder Planet"
-info=-> Wirbelsäulen-Pflanzen
+short=Anormal: "Knochen"
+info="Rasselnder Planet"
 
 [Pln41FB00FE0528FF]
 name=Inusuchri IX
@@ -310,6 +310,16 @@ class=Yellow
 short=6 Planeten
 info=
 
+[Sys007900FC234ACE]
+name=Iyuangde
+race=Vykeen
+conflict=1
+blackhole=true
+blackholetarget=003C0000BF1C2A
+class=Yellow
+short=6 Planeten
+info=
+
 [Reg000000F9A8CBC3]
 name=Meer von Idgewo
 
@@ -326,12 +336,20 @@ biome=Frozen
 with water
 short=
 info=Co, CO2, Cu
+short="Wiederverwertbarer Schrott"
+info=
 
 [Pln207A00F9A8CBC3]
 name=Gilycity XVII
-biome=Airless
+biome=Exotic
+aggrSentinels
+gravitino balls
 short=
-info=Fe#, Cu
+info=Cu, Au, Fe##
+short=Anormal: "Blasen"
+info="Sprudelnder Mond"
+short=
+info=Gebäude: "Grenzüberschreitung"
 
 [Reg000000FAA8CBC3]
 name=Cuvits-Untiefe
@@ -438,8 +456,8 @@ name=Nurtn
 biome=Exotic
 short=
 info=NaCl, Au, Cu
-short=Anormal: "Metallüberzogener Planet"
-info=
+short=Anormal: "Metall-Blumen"
+info="Metallüberzogener Planet"
 
 [Pln500800FAA8CBC4]
 name=Jevo
@@ -488,8 +506,8 @@ name=Vulptone VII
 biome=Exotic
 short=
 info=NaCl, Au, Cu
-short=Anormal: "Verkalkter Planet"
-info=
+short=Anormal: "Kalk-Sterne"
+info="Verkalkter Planet"
 
 [Pln201200FAA8CBC4]
 name=Rerok
@@ -502,8 +520,8 @@ name=Pacalloy XIX
 biome=Exotic
 short=
 info=Na, Au, Cu
-short=Anormal: "Rasselnder Planet"
-info=
+short=Anormal: "Knochen"
+info="Rasselnder Planet"
 
 [Pln401200FAA8CBC4]
 name=Neu: Aron
@@ -574,8 +592,8 @@ name=Idnaeanr Sigma
 biome=Exotic
 short=
 info=Cu, Au, Na
-short=Anormal: "Schalenübersäter Planet"
-info=
+short=Anormal: "Muscheln"
+info="Schalenübersäter Planet"
 
 [Pln202F00FAA8CBC4]
 name=Icoll XIV
@@ -612,13 +630,15 @@ name=Nocerius Somag
 biome=Lush
 with water
 short=
-info=NaCl, Pf, Cu, Eiweißperle
+info=NaCl, Pf, Cu
 
 [Pln303F00FAA8CBC4]
 name=Tagir Delta
-biome=Airless
+biome=Exotic
 short=
 info=Co, Fe#, Cu
+short=Anormal: "Metall-Blumen"
+info="Mechanischer Planet"
 
 [Sys004000FAA8CBC4]
 oldname=Azrants VIII
@@ -768,8 +788,8 @@ oldname=Nozelensk Sano
 biome=Exotic
 short=
 info=Cu, Ag, Na
-short=Anormal: "Mit Schirmen übersäter Planet"
-info=-> Pilze
+short=Anormal: "Pilze"
+info="Mit Schirmen übersäter Planet"
 
 [Pln305D00FAA8CBC4]
 name=Eykjaviu Primus
@@ -777,6 +797,8 @@ oldname=Kiwalhontr-Menes Egor
 biome=Frozen
 short=
 info=Na, CO2, Cu
+
+[Sys006900FAA8CBC4]
 
 [Sys006D00FAA8CBC4]
 name=Naibolsk
@@ -805,8 +827,8 @@ oldname=Loyarnaulic
 biome=Exotic
 short=
 info=Cu, Ag, Fe##
-short=Anormal: "Stützen-Planet"
-info=-> Vertikale zersplitterte Säulen
+short=Anormal: "Zersplitterte Säulen"
+info="Stützen-Planet" -> Vertikale zersplitterte Säulen
 
 [Sys007900FAA8CBC4]
 name=Kihgora-Agyu X
@@ -952,28 +974,33 @@ class=Yellow
 name=Vanahei IX
 biome=Irradiated
 aggrSentinels
+gravitino balls
 short=
 info=Co, U, Cu
-short=Grav??
-info=
 
 [Pln216500FAA8CBC4]
 name=Esveg Primus
-biome=Airless
+biome=Exotic
+aggrSentinels
+gravitino balls
 short=
 info=Na, Fe#, Cu
+short=Anormal: "Knochen"
+info="Skelettartiger Planet"
+short=
+info=Gebäude: "Grenzüberschreitung"
 
 [Pln316500FAA8CBC4]
 name=Iago Delta
 biome=Toxic
 short=
-info=Fe#, NH3, Cu
+info=Fe##, NH3, Cu
 
 [Pln416500FAA8CBC4]
 name=Pedro IV
 biome=Scorched
 short=
-info=Fe#, P, Cu
+info=Fe##, P, Cu
 
 [Pln516500FAA8CBC4]
 name=Oebenja R48
@@ -1053,8 +1080,8 @@ name=Runtwic V
 biome=Exotic
 short=
 info=Em, Ag, NaCl
-short=Anormal: "Pilz-Planet"
-info=-> Pilze
+short=Anormal: "Pilze"
+info="Pilz-Planet"
 
 [Sys01C800FAA8CBC4]
 oldname=Xandop-Isuma
@@ -1242,8 +1269,8 @@ name=Arhunt VI
 biome=Exotic
 short=
 info=Cd, Ag, Na
-short=Anormal: "Zerschmetterter Planet"
-info=-> Bildschirm-Kristalle
+short=Anormal: "Bildschirm-Kristalle"
+info="Zerschmetterter Planet" -> Bildschirm-Kristalle
 
 [Pln213A00F9A8DBC4]
 name=Taplebys Ouchi
@@ -1367,6 +1394,50 @@ class=Yellow
 
 [Sys012D00FAA90BC8]
 
+[Reg000000FF3CEC12]
+name=Jijusterp
+
+[Sys004700FF3CEC12]
+name=Okayas-Kokoe
+race=Gek
+conflict=2
+class=Yellow
+short=5 Planeten
+info=
+
+[Reg00000000BF1C2A]
+name=Pipere-Anomalie
+
+[Sys00230000BF1C2A]
+
+[Sys003C0000BF1C2A]
+name=Ajorteb-Yag XIX
+race=Korvax
+conflict=2
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln303C0000BF1C2A]
+name=Xanna XIX
+biome=Exotic
+short=Anormal: "Knochen"
+info="Stacheliger Planet"
+short=
+info=Cu, Ag, NaCl
+
+[Sys00520000BF1C2A]
+
+[Sys00790000BF1C2A]
+name=Lodinugts
+race=Korvax
+conflict=3
+blackhole=true
+blackholetarget=00360000BAC370
+class=Yellow
+short=2 Planeten
+info=
+
 [Reg000000FCA45CAF]
 name=Nayluman-Cluster
 
@@ -1379,8 +1450,8 @@ class=Yellow
 [Pln100200FCA45CAF]
 name=Aumonov IX
 biome=Exotic
-short=Anormal: "Metallurgischer Planet"
-info=-> "Mutter"-Blumen
+short=Anormal: "Metall-Blumen"
+info="Metallurgischer Planet" -> "Mutter"-Blumen
 short=
 info=Cu, Au, NaCl
 
@@ -1401,8 +1472,8 @@ name=Oruton
 biome=Exotic
 short=
 info=Cu, Au, Fe##
-short=Anormal: "Metallener Planet"
-info=-> "Mutter"-Blumen
+short=Anormal: "Metall-Blumen"
+info="Metallener Planet" -> "Mutter"-Blumen
 
 [Pln500200FCA45CAF]
 name=Teosk
@@ -1461,8 +1532,8 @@ class=Red
 [Pln117600FCA45CAF]
 name=Grushya B47
 biome=Exotic
-short=Anormal: "Verkalkter Planet"
-info=-> Verknöcherte Sterne
+short=Anormal: "Kalk-Sterne"
+info="Verkalkter Planet" -> Verknöcherte Sterne
 short=
 info=Cd, Au, NaCl
 
@@ -1936,6 +2007,50 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Reg00000000BAC370]
+name=Rizunut-Nebel
+
+[Sys00360000BAC370]
+name=Moqukanni
+race=Vykeen
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+short=Erinnerungs-Terminal
+info=
+
+[Pln20360000BAC370]
+name=Sasosol
+biome=Lush
+with water
+short=
+info=Cu, Pf, NaCl
+
+[Sys005B0000BAC370]
+name=Botourdi
+race=Korvax
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+
+[Sys00790000BAC370]
+name=Odonoc-Gunag
+race=Korvax
+conflict=1
+blackhole=true
+blackholetarget=004700FF3CEC12
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln50790000BAC370]
+name=Kievert Delta
+biome=Exotic
+short=Anormal: "Muscheln"
+info="Messerscharfer Planet"
+
 [Reg00000000444444]
 
 [Sys00010000444444]
@@ -2074,8 +2189,8 @@ name=Rutwor
 biome=Exotic
 short=
 info=Cu, Au, Ag
-short=Anormal: "Schäumender Planet"
-info=-> Seifenblasen überall
+short=Anormal: "Blasen"
+info="Schäumender Planet" -> Seifenblasen überall
 
 [Pln200B0003CC45B8]
 name=Tamot 81/O9
@@ -2127,8 +2242,8 @@ info=Cu, NH3, Fe##
 [Pln20790003CC45B8]
 name=Aust Tau
 biome=Exotic
-short=Anormal: "Sporiger Planet"
-info=-> Pilze
+short=Anormal: "Pilze"
+info="Sporiger Planet" -> Pilze
 short=
 info=Cu, Ag, Fe##
 
@@ -2175,12 +2290,16 @@ short=#Cu
 info=Ag, NH3, #Cu
 short=ExtTox
 info=Stufe 3
+short="Uralte Knochen"
+info=
 
 [Pln202A0002C825D1]
 name=Ekio Alpha
 biome=Airless
 short=
-info=NaCl, Fe#, Cu
+info=NaCl, Sr_Rost, Cu
+short=
+info="Unbelebter Planet"
 
 [Pln302A0002C825D1]
 name=Esotapi
@@ -2207,23 +2326,26 @@ info=NaCl, NH3, Cu
 name=Bewdlewis Totto
 biome=Airless
 short=
-info=NaCl, Fe#, Cu
+info=NaCl, Sr_Rost, Cu
+short=
+info="Einsamer Planet"
 
 [Pln30790002C825D1]
 name=Eroysto
 biome=Lush
 with water
 short=
-info=Co, Pf, Cu, Eiweißperle
+info=Co, Pf, Cu
+short="Wiederverwertbarer Schrott"
+info=
 
 [Pln40790002C825D1]
 name=Eusiss IV
 biome=Barren
 aggrSentinels
+gravitino balls
 short=
 info=Co, Py, Cu
-short=Grav??
-info=
 
 [Pln50790002C825D1]
 name=Neu: Dettoxe
@@ -2238,6 +2360,8 @@ short=#Cu
 info=NaCl, NH3, #Cu
 short=ExtTox
 info=Stufe 3
+short="Uralte Knochen"
+info=
 
 [Sys00A00002C825D1]
 name=Aguchi
@@ -2263,6 +2387,17 @@ biome=Barren
 with water
 short=
 info=Co, Py, Em
+
+[Sys01790002C825D1]
+name=Meokaka-Luk
+unexplored
+class=Red
+
+[Pln11790002C825D1]
+name=Lovisto
+biome=Barren
+short=
+info=Cd, Py, Na
 
 [Reg00000000DBE61C]
 name=Ibiluro-Weite
