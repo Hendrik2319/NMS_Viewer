@@ -1,5 +1,15 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Base64;
@@ -1381,12 +1391,14 @@ public class SaveGameData {
 					if (modStr==null) { notParsableObjects.add(modVal); continue; }
 					if (modStr.equals("^")) continue;
 					Frigate.KnownModification mod = Frigate.KnownModification.getMod(modStr);
-					fr.modifications.add( mod!=null ? mod : new Frigate.UnknownModification(modStr) );
+					fr.modifications.add( mod!=null ? mod : Frigate.EditableModification.getMod(modStr) );
 				}
 			}
 			
 			frigates.add(fr);
 		}
+		
+		Frigate.EditableModification.saveKnownEditableModsToFile();
 		
 		if (!notParsableObjects.isEmpty())
 			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
@@ -1399,21 +1411,41 @@ public class SaveGameData {
 			public String getValue();
 		}
 
-		enum KnownModification implements Modification {
-			EXPLORE_PRI  ("Erkundungsspezialist"     ,"Erkundung: +15"),
-			EXPLORE_SEC_1("Anomalienscanner"         ,"Erkundung: +2"),
-			MINING_PRI   ("Industriespezialist"      ,"Industrie: +15"),
-			MINING_SEC_4 ("Erzverarbeitungseinheit"  ,"Industrie: +2"),
-			COMBAT_PRI   ("Kampfspezialist"          ,"Kampf: +15"),
-			TRADING_PRI  ("Handelspezialist"         ,"Handel: +15"),
+		public enum KnownModification implements Modification {
+			EXPLORE_PRI   ("Erkundungsspezialist"        ,"Erkundung: +15"),
+			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
+			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
-			SPEED_TER_4  ("Warp-Antrieb"             ,"-2% Expeditionsdauer"),
+			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
+			MINING_SEC_3  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
+			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
+			MINING_TER_1  ("Mineralienextraktoren"        ,"Industrie: +1"),
+			MINING_TER_3  ("Asteroidenscanner"            ,"Industrie: +3"),
+			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
 			
-			FUEL_TER_4   ("Photonensegel"            ,"Treibstoffkosten der Expedition: -2"),
-			FUEL_TER_2   ("Abgestimmte Antriebe"     ,"Treibstoffkosten der Expedition: -4"),
-			FUEL_TER_6   ("Solarmodule"              ,"Treibstoffkosten der Expedition: -6"),
+			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
+			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
+			COMBAT_BAD_1  ("Feige Schützen"                ,"Kampf: -2"),
+			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
 			
-			INVULN_TER_3 ("Holografische Komponenten","Schadensreduzierung"),
+			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
+			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
+			TRADING_TER_3 ("Roboterdiener"               ,"Handel: +3"),
+			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),
+			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
+			
+			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
+			SPEED_TER_4   ("Warp-Antrieb"                 ,"-2% Expeditionsdauer"),
+			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
+			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
+			
+			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
+			FUEL_TER_4    ("Photonensegel"               ,"Treibstoffkosten der Expedition: -2"),
+			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
+			FUEL_BAD_1    ("Durstige Crew"               ,"Kosten pro Warp: +1"),
+			
+			INVULN_TER_1  ("Sich selbst reparierender Rumpf","Schadensreduzierung"),
+			INVULN_TER_3  ("Holografische Komponenten"      ,"Schadensreduzierung"),
 			;
 			
 			private String label;
@@ -1435,11 +1467,90 @@ public class SaveGameData {
 			}
 		}
 
-		public static class UnknownModification implements Modification {
-			private String modStr;
-			UnknownModification(String modStr) { this.modStr = modStr; }
-			@Override public String getLabel() { return "\""+modStr+"\""; }
-			@Override public String getValue() { return "???"; }
+		public static class EditableModification implements Modification {
+			
+			private static final String FILE_KNOWN_EDITABLE_MODS = "NMS_Viewer.KnownEditableMods.txt";;
+			private static HashMap<String,EditableModification> values = new HashMap<>();
+			
+			public static EditableModification getMod(String modStr) {
+				EditableModification mod = values.get(modStr);
+				if (mod==null) values.put(modStr, mod = new EditableModification(modStr));
+				return mod;
+			}
+
+			public static void loadKnownEditableModsFromFile() {
+				File file = new File(FILE_KNOWN_EDITABLE_MODS);
+				if (!file.isFile()) return;
+				
+				long start = System.currentTimeMillis();
+				SaveViewer.log_ln("Read known Editable Frigate Modifications from file \"%s\" ...", file.getPath());
+				
+				boolean somethingChanged = false;
+				EditableModification mod = null;
+				String str;
+				try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+					while ((str=in.readLine())!=null) {
+						
+						if (str.startsWith("[") && str.endsWith("]")) {
+							String modStr = str.substring(1, str.length()-1);
+							KnownModification knownMod = KnownModification.getMod(modStr);
+							if (knownMod!=null) mod = null;
+							else { mod = getMod(modStr); somethingChanged = true; }
+							
+						} else if (str.startsWith("label=")) {
+							if (mod!=null) mod.label = str.substring("label=".length());
+							
+						} else if (str.startsWith("value=")) {
+							if (mod!=null) mod.value = str.substring("value=".length());
+							
+						} else if (str.isEmpty()) {
+							if (mod!=null) SaveViewer.log_warn_ln("   %-15s(%-30s,%s)", mod.modStr, '"'+mod.label+'"', '"'+mod.value+'"');
+							
+						}
+					}
+				}
+				catch (FileNotFoundException e) { e.printStackTrace(); }
+				catch (IOException e) { e.printStackTrace(); }
+				
+				if (!somethingChanged) SaveViewer.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
+				SaveViewer.log_ln("   done (in %1.3fs)", (System.currentTimeMillis()-start)/1000.0f);
+			}
+
+			public static void saveKnownEditableModsToFile() {
+				File file = new File(FILE_KNOWN_EDITABLE_MODS);
+				long start = System.currentTimeMillis();
+				SaveViewer.log_ln("Write known Editable Frigate Modifications to file \""+file.getPath()+"\" ...");
+				
+				Vector<String> modStrs = new Vector<>(values.keySet());
+				modStrs.sort(null);
+				
+				try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+					for (String modStr:modStrs) {
+						EditableModification mod = values.get(modStr);
+						out.printf("[%s]%n", mod.modStr);
+						out.printf("label=%s%n", mod.label);
+						out.printf("value=%s%n", mod.value);
+						out.println();
+					}
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+				
+				SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			}
+			
+			private final String modStr;
+			public String label;
+			public String value;
+			
+			private EditableModification(String modStr) {
+				this.modStr = modStr;
+				label = "\""+modStr+"\"";
+				value = "???";
+			}
+			@Override public String getLabel() { return label; }
+			@Override public String getValue() { return value; }
+			@Override public String toString() { return modStr; }
 		}
 
 		public String name;

@@ -51,11 +51,7 @@ public class TableView {
 		}
 	
 		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
-			JMenuItem menuItem = new JMenuItem(label);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand(actionCommand.toString());
-			if (icon!=null) menuItem.setIcon(SaveViewer.toolbarIS.getIcon(icon));
-			return menuItem;
+			return SaveViewer.createMenuItem(label, this, actionCommand, icon);
 		}
 	
 		@Override

@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Window;
+import java.awt.event.MouseEvent;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -12,17 +15,22 @@ import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 
+import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
@@ -120,9 +128,10 @@ public class SimplePanels {
 	
 	public static class FrigatesPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 1017824861605442560L;
+		
 		private JTextArea textArea;
 
-		public FrigatesPanel(SaveGameData data) {
+		public FrigatesPanel(SaveGameData data, Window mainWindow) {
 			super(data);
 			textArea = new JTextArea();
 			
@@ -132,6 +141,35 @@ public class SimplePanels {
 			table.getSelectionModel().addListSelectionListener(e->{
 				int rowIndex = table.convertRowIndexToModel(table.getSelectedRow());
 				showValues(data.frigates.get(rowIndex),rowIndex);
+			});
+			
+			JPopupMenu contextMenu = new JPopupMenu();
+			contextMenu.add(SaveViewer.createMenuItem("Edit Modicifations", e->{
+				Vector<Frigate.EditableModification> editableMods = new Vector<>();
+				
+				int rowIndex = table.convertRowIndexToModel(table.getSelectedRow());
+				Frigate fr = data.frigates.get(rowIndex);
+				for (Frigate.Modification mod:fr.modifications) {
+					if (mod instanceof Frigate.EditableModification)
+						editableMods.add((Frigate.EditableModification)mod);
+				}
+				if (!editableMods.isEmpty()) {
+					EditNewMods dlg = new EditNewMods(mainWindow, "Edit Modifications", editableMods, ()->showValues(fr,rowIndex));
+					new Thread(new Runnable() {
+						@Override public void run() {
+							dlg.showDialog();
+							Frigate.EditableModification.saveKnownEditableModsToFile();
+						}
+					}).start();
+				} else {
+					JOptionPane.showMessageDialog(mainWindow, "No editable modifications in current frigate.", "No Editable Modifications", JOptionPane.INFORMATION_MESSAGE);
+				}
+			}));
+			textArea.addMouseListener(new MouseInputAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					if (e.getButton()==MouseEvent.BUTTON3)
+						contextMenu.show(textArea, e.getX(), e.getY());
+				}
 			});
 			
 			JScrollPane tableScrollPane = new JScrollPane(table);
@@ -239,6 +277,69 @@ public class SimplePanels {
 				case UnidentValues: return String.format("%s | %s, %s, %s, %s, %s | %s, %s", fr.unidentifiedVal1_5VG, fr.unidentifiedStatVal5, fr.unidentifiedStatVal6, fr.unidentifiedStatVal7, fr.unidentifiedStatVal8, fr.unidentifiedStatVal9, fr.unidentifiedVal2_yJC, fr.unidentifiedVal3_7hK);
 				}
 				return null;
+			}
+		}
+		
+		private static class EditNewMods extends StandardDialog {
+			private static final long serialVersionUID = -6893651224062554261L;
+
+			public EditNewMods(Window parent, String title, Vector<Frigate.EditableModification> editableMods, Runnable updateTask) {
+				super(parent, title);
+				
+				JComboBox<Frigate.EditableModification> cmbBxEditableMods = new JComboBox<>(editableMods);
+				JTextField txtfldLabel = SaveViewer.createTextField("", (String str)->{int i=cmbBxEditableMods.getSelectedIndex(); if (i>=0) { editableMods.get(i).label = str; if (updateTask!=null) updateTask.run(); } });
+				JTextField txtfldValue = SaveViewer.createTextField("", (String str)->{int i=cmbBxEditableMods.getSelectedIndex(); if (i>=0) { editableMods.get(i).value = str; if (updateTask!=null) updateTask.run(); } });
+				txtfldLabel.setColumns(40);
+				txtfldValue.setColumns(40); //setPreferredSize(new Dimension(200,16));
+				
+				cmbBxEditableMods.addActionListener(e->{
+					int i=cmbBxEditableMods.getSelectedIndex();
+					txtfldLabel.setEnabled(i>=0);
+					txtfldValue.setEnabled(i>=0);
+					if (i>=0) {
+						Frigate.EditableModification mod = editableMods.get(i);
+						txtfldLabel.setText(mod.label);
+						txtfldValue.setText(mod.value);
+					} else {
+						txtfldLabel.setText("");
+						txtfldValue.setText("");
+					}
+				});
+				cmbBxEditableMods.setSelectedItem(editableMods.get(0));
+				
+				GridBagLayout layout = new GridBagLayout();
+				JPanel inputPanel = new JPanel(layout);
+				GridBagConstraints gbc = new GridBagConstraints();
+				
+				addComp(inputPanel,layout,gbc, new JLabel("Label :"), 1, 0, GridBagConstraints.BOTH);
+				addComp(inputPanel,layout,gbc, txtfldLabel, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+				addComp(inputPanel,layout,gbc, new JLabel("Value :"), 1, 0, GridBagConstraints.BOTH);
+				addComp(inputPanel,layout,gbc, txtfldValue, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+				
+				JPanel buttonPanel = new JPanel(new BorderLayout(10,10));
+				buttonPanel.add(SaveViewer.createButton("Close", e->closeDialog()),BorderLayout.EAST);
+				buttonPanel.add(new JLabel(""),BorderLayout.CENTER);
+				
+				JPanel contentPane = new JPanel(new BorderLayout(10,10));
+				contentPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+				
+				contentPane.add(cmbBxEditableMods,BorderLayout.NORTH);
+				contentPane.add(inputPanel,BorderLayout.CENTER);
+				contentPane.add(buttonPanel,BorderLayout.SOUTH);
+				
+				createGUI(contentPane);
+				setSizeAsMinSize();
+			}
+			
+			
+			protected void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints gbc, Component comp, int gridwidth, double weightx, int fill) {
+				gbc.weightx=weightx;
+				gbc.weighty=0;
+				gbc.gridwidth=gridwidth;
+				gbc.gridheight=1;
+				gbc.fill = fill;
+				layout.setConstraints(comp, gbc);
+				panel.add(comp);
 			}
 		}
 	}

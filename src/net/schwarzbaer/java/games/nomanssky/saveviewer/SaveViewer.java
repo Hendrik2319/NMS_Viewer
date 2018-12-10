@@ -13,6 +13,8 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,6 +55,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.UIDefaults;
@@ -106,6 +109,7 @@ public class SaveViewer implements ActionListener {
 		GameInfos.loadKnownStatIDsFromFile();
 		GameInfos.loadAllIDsFromFiles();
 		GameInfos.loadUniverseObjectDataFromFile();
+		SaveGameData.Frigate.EditableModification.loadKnownEditableModsFromFile();
 		
 		if (args.length>0) {
 			processCommands(args);
@@ -1162,5 +1166,29 @@ public class SaveViewer implements ActionListener {
 		TristateCheckBox button = new TristateCheckBox(title,null,state);
 		if (l!=null) button.addActionListener(l);
 		return button;
+	}
+
+	public static JTextField createTextField(String txt, Consumer<String> setInput) {
+		JTextField obj = new JTextField(txt);
+		if (setInput!=null) {
+			obj.addActionListener(e->setInput.accept(obj.getText()));
+			obj.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) { setInput.accept(obj.getText()); }
+			});
+		}
+		return obj;
+	}
+
+	public static JTextField createTextField(String txt, ActionListener l) {
+		JTextField obj = new JTextField(txt);
+		if (l!=null) {
+			obj.addActionListener(l);
+			obj.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) { l.actionPerformed(new ActionEvent(obj, ActionEvent.ACTION_FIRST, null)); }
+			});
+		}
+		return obj;
 	}
 }
