@@ -40,6 +40,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
@@ -81,7 +82,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
 	
-	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindExtraInfo, RemoveHighlights, ShowFullDiscoveredUniverseData }
+	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindExtraInfo, RemoveHighlights, ShowFullDiscoveredUniverseData, ScrollToCurrentPosition }
 	private enum UniverseTreeIcons {
 		Universe, Galaxy, Region, SolarSystem, Planet,
 		GekSys, KorvaxSys, VykeenSys, Unexplored,
@@ -327,6 +328,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private JTree tree;
 	private DefaultTreeModel treeModel;
 	private UniverseNode treeRoot;
+	private JScrollPane treeScrollPane;
 	
 	private GenericTreeNode<?> selectedNode;
 	private GenericTreeNode<?> clickedNode;
@@ -353,10 +355,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		selectedNode = null;
 		TreeListener listener = new TreeListener();
 		
-		treeRoot = new UniverseNode(data.universe);
-		treeModel = new DefaultTreeModel(treeRoot);
-		tree = new JTree(treeModel);
-		JScrollPane treeScrollPane = new JScrollPane(tree);
+		treeModel = new DefaultTreeModel(treeRoot = new UniverseNode(data.universe));
+		treeScrollPane = new JScrollPane(tree = new JTree(treeModel));
 		tree.addTreeSelectionListener(listener);
 		tree.addMouseListener(listener);
 		tree.setCellRenderer(new UniverseTreeCellRenderer());
@@ -835,6 +835,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(name);
 		}
 		protected void addDefaultItems() {
+			add(createMenuItem("Scroll to Current Position",UniverseTreeActionCommand.ScrollToCurrentPosition));
 			add(createMenuItem("Remove all Highlights",UniverseTreeActionCommand.RemoveHighlights));
 			add(createMenuItem("Find Solar System or Planet via ExtraInfo",UniverseTreeActionCommand.FindExtraInfo));
 			addSeparator();
@@ -1183,9 +1184,39 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			expandFullTree();
 			if (galaxyMapPanel!=null) galaxyMapPanel.updateUniverseData();
 			break;
+			
+		case ScrollToCurrentPosition: {
+			int currentPosRow = getCurrentPosNode();
+			if (currentPosRow>=0) {
+				JScrollBar scrollBar = treeScrollPane.getVerticalScrollBar();
+				int bar = scrollBar.getVisibleAmount();
+				int max = scrollBar.getMaximum();
+				int min = scrollBar.getMinimum();
+				int value = (currentPosRow*(max-min))/tree.getRowCount() + min - bar/2;
+				value = Math.max(value, min);
+				value = Math.min(value, max-bar);
+				scrollBar.setValue(value);
+			}
+			} break;
 		}
 		clickedNode = null;
 		clickedTreePath = null;
+	}
+
+	private int getCurrentPosNode() {
+		for (int i=0; i<tree.getRowCount(); ++i) {
+			TreePath path = tree.getPathForRow(i);
+			if (path != null) {
+				Object comp = path.getLastPathComponent();
+				if (comp instanceof GenericTreeNode<?>) {
+					GenericTreeNode<?> node = (GenericTreeNode<?>)comp;
+					if (node.value instanceof Universe.ObjectWithSource)
+						if (((Universe.ObjectWithSource)node.value).isCurrPos)
+							return i;
+				}
+			}
+		}
+		return -1;
 	}
 
 	public void highlightRegions(int galaxyIndex, int voxelX, int voxelZ) {
