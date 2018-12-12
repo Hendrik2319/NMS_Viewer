@@ -92,7 +92,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 	private enum PlanetTreeIcons {
 		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless, BiomeExotic, BiomeExoticMega,
-		SentinelAggressive;
+		BiomeAnomMetalFlowers, BiomeAnomShells, BiomeAnomBones, BiomeAnomMushrooms, BiomeAnomScreenCrystals, BiomeAnomFragmColumns, BiomeAnomBubbles, BiomeAnomLimeStars,
+		SentinelAggressive,
+		;
 	}
 	private enum AdditionalTreeIcons {
 		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20), BlackHole(20), Atlas(17);
@@ -266,6 +268,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case Airless    : return PlanetTreeIcons.BiomeAirless;
 				case Exotic     : return PlanetTreeIcons.BiomeExotic;
 				case Exotic_Mega: return PlanetTreeIcons.BiomeExoticMega;
+				case AnomMetalFlowers  : return PlanetTreeIcons.BiomeAnomMetalFlowers  ;
+				case AnomShells        : return PlanetTreeIcons.BiomeAnomShells        ;
+				case AnomBones         : return PlanetTreeIcons.BiomeAnomBones         ;
+				case AnomMushrooms     : return PlanetTreeIcons.BiomeAnomMushrooms     ;
+				case AnomScreenCrystals: return PlanetTreeIcons.BiomeAnomScreenCrystals;
+				case AnomFragmColumns  : return PlanetTreeIcons.BiomeAnomFragmColumns  ;
+				case AnomBubbles       : return PlanetTreeIcons.BiomeAnomBubbles       ;
+				case AnomLimeStars     : return PlanetTreeIcons.BiomeAnomLimeStars     ;
 				}
 				return null;
 			};
@@ -318,8 +328,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		PlanetIcons = new PlanetIcons(UncachedPlanetIcons.cacheIcons(PlanetTreeIcons.values()));
 		PlanetIcons.createValues();
 		
-		int offsetX = PlanetTreeIcons.values().length*20;
-		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<AdditionalTreeIcons>(offsetX,TreeIconHeight,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
+		int offsetX = 0;
+		int offsetY = TreeIconHeight*2;
+		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<AdditionalTreeIcons>(offsetX,offsetY,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
 		UncachedAdditionalIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
 		AdditionalIcons = UncachedAdditionalIcons.cacheIcons(AdditionalTreeIcons.values());
 		
@@ -1521,7 +1532,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxGrav;
 			
 			PlanetBar() {
-				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 100,20, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
+				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
 					@Override public Biome cast(Object obj) {
 						if (!(obj instanceof Biome)) return null;
 						return (Biome)obj;

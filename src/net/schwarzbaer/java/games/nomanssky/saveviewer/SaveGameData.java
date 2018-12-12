@@ -2727,15 +2727,24 @@ public class SaveGameData {
 		public static final class Planet extends DiscoverableObject {
 			
 			public enum Biome {
-				Lush       ("lush","erd‰hnlich"),
-				Barren     ("barren","trocken"),
-				Scorched   ("scorched","trocken"),
-				Frozen     ("frozen","gefroren"),
-				Toxic      ("toxic","giftig"),
-				Irradiated ("irradiated","verstrahlt"),
-				Airless    ("airless","trostlos, ohne Atmosph‰re"),
-				Exotic     ("exotic","exotisch"),
-				Exotic_Mega("exotic (Mega)","exotisch, mit Riesenpflanzen"),
+				Lush       ("Lush"         ,"Erd‰hnlich"),
+				Barren     ("Barren"       ,"Trocken"),
+				Scorched   ("Scorched"     ,"heiﬂ"),
+				Frozen     ("Frozen"       ,"Gefroren"),
+				Toxic      ("Toxic"        ,"Giftig"),
+				Irradiated ("Irradiated"   ,"Verstrahlt"),
+				Airless    ("Airless"      ,"Trostlos, ohne Atmosph‰re"),
+				Exotic     ("Exotic"       ,"Exotisch"),
+				Exotic_Mega("Exotic (Mega)","Exotisch, mit Riesenpflanzen"),
+				
+				AnomMetalFlowers  ("Anomalous (Metal Flowers)"     ,"Anomal (Metall-Blumen)"),
+				AnomShells        ("Anomalous (Shells)"            ,"Anomal (Muscheln)"),
+				AnomBones         ("Anomalous (Bones)"             ,"Anomal (Knochen)"),
+				AnomMushrooms     ("Anomalous (Mushrooms)"         ,"Anomal (Pilze)"),
+				AnomScreenCrystals("Anomalous (Screen Crystals)"   ,"Anomal (Bildschirm-Kristalle)"),
+				AnomFragmColumns  ("Anomalous (Fragmented Columns)","Anomal (Zersplitterte S‰ulen)"),
+				AnomBubbles       ("Anomalous (Bubbles)"           ,"Anomal (Seifenblasen)"),
+				AnomLimeStars     ("Anomalous (Lime Stars)"        ,"Anomal (Kalk-Sterne)"),
 				;
 
 				public final String name_EN;
