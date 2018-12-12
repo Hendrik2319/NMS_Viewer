@@ -63,6 +63,11 @@
 ^EX_GREEN.symbol=Em
 ^EX_GREEN.image=SUBSTANCE.EXGREEN.2.png
 ^EX_GREEN.imageBG=386118
+^EX_RED=Aktiviertes Cadmium
+^EX_RED.type=Resource
+^EX_RED.symbol=Cd
+^EX_RED.image=SUBSTANCE.EXRED.2.png
+^EX_RED.imageBG=7E0100
 ^EX_YELLOW=Aktiviertes Kupfer
 ^EX_YELLOW.type=Resource
 ^EX_YELLOW.symbol=Cu

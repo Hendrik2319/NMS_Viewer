@@ -74,7 +74,7 @@ class=Red
 
 [Pln11FB00FE0528FF]
 name=Nitan III
-biome=Exotic
+biome=AnomBones
 short=Community Quest 8/8
 info=
 short=
@@ -84,7 +84,7 @@ info="Rasselnder Planet"
 
 [Pln21FB00FE0528FF]
 name=Ifaxirit
-biome=Exotic
+biome=AnomMetalFlowers
 aggrSentinels
 gravitino balls
 short=Anormal: "Metall-Blumen"
@@ -94,7 +94,7 @@ info=Cd, Ag, Na
 
 [Pln31FB00FE0528FF]
 name=Cucrial Primus
-biome=Exotic
+biome=AnomBones
 aggrSentinels
 gravitino balls
 short=
@@ -341,7 +341,7 @@ info=
 
 [Pln207A00F9A8CBC3]
 name=Gilycity XVII
-biome=Exotic
+biome=AnomBubbles
 aggrSentinels
 gravitino balls
 short=
@@ -453,7 +453,7 @@ info=Na, Pf, Cu
 
 [Pln400800FAA8CBC4]
 name=Nurtn
-biome=Exotic
+biome=AnomMetalFlowers
 short=
 info=NaCl, Au, Cu
 short=Anormal: "Metall-Blumen"
@@ -503,7 +503,7 @@ class=Yellow
 
 [Pln101200FAA8CBC4]
 name=Vulptone VII
-biome=Exotic
+biome=AnomLimeStars
 short=
 info=NaCl, Au, Cu
 short=Anormal: "Kalk-Sterne"
@@ -517,7 +517,7 @@ info=Ag, NH3, Cu
 
 [Pln301200FAA8CBC4]
 name=Pacalloy XIX
-biome=Exotic
+biome=AnomBones
 short=
 info=Na, Au, Cu
 short=Anormal: "Knochen"
@@ -589,7 +589,7 @@ info=
 
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
-biome=Exotic
+biome=AnomShells
 short=
 info=Cu, Au, Na
 short=Anormal: "Muscheln"
@@ -634,7 +634,7 @@ info=NaCl, Pf, Cu
 
 [Pln303F00FAA8CBC4]
 name=Tagir Delta
-biome=Exotic
+biome=AnomMetalFlowers
 short=
 info=Co, Fe#, Cu
 short=Anormal: "Metall-Blumen"
@@ -785,7 +785,7 @@ info=Na, Pf, Cu. Eiweißperle
 [Pln205D00FAA8CBC4]
 name=Pipis IV
 oldname=Nozelensk Sano
-biome=Exotic
+biome=AnomMushrooms
 short=
 info=Cu, Ag, Na
 short=Anormal: "Pilze"
@@ -824,7 +824,7 @@ with water
 [Pln306D00FAA8CBC4]
 name=Leuthow IV
 oldname=Loyarnaulic
-biome=Exotic
+biome=AnomFragmColumns
 short=
 info=Cu, Ag, Fe##
 short=Anormal: "Zersplitterte Säulen"
@@ -980,7 +980,7 @@ info=Co, U, Cu
 
 [Pln216500FAA8CBC4]
 name=Esveg Primus
-biome=Exotic
+biome=AnomBones
 aggrSentinels
 gravitino balls
 short=
@@ -1077,7 +1077,7 @@ info=Biom: Säure Echos
 
 [Pln218200FAA8CBC4]
 name=Runtwic V
-biome=Exotic
+biome=AnomMushrooms
 short=
 info=Em, Ag, NaCl
 short=Anormal: "Pilze"
@@ -1266,7 +1266,7 @@ class=Red
 
 [Pln113A00F9A8DBC4]
 name=Arhunt VI
-biome=Exotic
+biome=AnomScreenCrystals
 short=
 info=Cd, Ag, Na
 short=Anormal: "Bildschirm-Kristalle"
@@ -1405,6 +1405,16 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Sys007900FF3CEC12]
+name=Otawari-Juro
+race=Vykeen
+conflict=3
+blackhole=true
+blackholetarget=005E00FE452CC0
+class=Yellow
+short=2 Planeten
+info=
+
 [Reg00000000BF1C2A]
 name=Pipere-Anomalie
 
@@ -1420,7 +1430,7 @@ info=
 
 [Pln303C0000BF1C2A]
 name=Xanna XIX
-biome=Exotic
+biome=AnomBones
 short=Anormal: "Knochen"
 info="Stacheliger Planet"
 short=
@@ -1449,7 +1459,7 @@ class=Yellow
 
 [Pln100200FCA45CAF]
 name=Aumonov IX
-biome=Exotic
+biome=AnomMetalFlowers
 short=Anormal: "Metall-Blumen"
 info="Metallurgischer Planet" -> "Mutter"-Blumen
 short=
@@ -1469,7 +1479,7 @@ info=Cu, Py, Fe##
 
 [Pln400200FCA45CAF]
 name=Oruton
-biome=Exotic
+biome=AnomMetalFlowers
 short=
 info=Cu, Au, Fe##
 short=Anormal: "Metall-Blumen"
@@ -1531,7 +1541,7 @@ class=Red
 
 [Pln117600FCA45CAF]
 name=Grushya B47
-biome=Exotic
+biome=AnomLimeStars
 short=Anormal: "Kalk-Sterne"
 info="Verkalkter Planet" -> Verknöcherte Sterne
 short=
@@ -1569,6 +1579,36 @@ biome=Irradiated
 with water
 short=#In
 info=#In, U, Na
+
+[Reg000000FE452CC0]
+name=Itutsc
+
+[Sys005E00FE452CC0]
+name=Obbiellah XV
+race=Gek
+conflict=2
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln505E00FE452CC0]
+name=Enuscu Kisa
+biome=Airless
+aggrSentinels
+gravitino balls
+short="Uralte Knochen"
+info=
+
+[Sys007900FE452CC0]
+name=Roskea-Tato XVIII
+race=Vykeen
+conflict=1
+blackhole=true
+class=Yellow
+short=W: reich
+info=
+short=5 Planeten
+info=
 
 [Reg00000004994DA5]
 name=Netegoc
@@ -2047,7 +2087,7 @@ info=
 
 [Pln50790000BAC370]
 name=Kievert Delta
-biome=Exotic
+biome=AnomShells
 short=Anormal: "Muscheln"
 info="Messerscharfer Planet"
 
@@ -2186,7 +2226,7 @@ class=Yellow
 
 [Pln100B0003CC45B8]
 name=Rutwor
-biome=Exotic
+biome=AnomBubbles
 short=
 info=Cu, Au, Ag
 short=Anormal: "Blasen"
@@ -2241,7 +2281,7 @@ info=Cu, NH3, Fe##
 
 [Pln20790003CC45B8]
 name=Aust Tau
-biome=Exotic
+biome=AnomMushrooms
 short=Anormal: "Pilze"
 info="Sporiger Planet" -> Pilze
 short=
