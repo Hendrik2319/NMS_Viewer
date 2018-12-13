@@ -79,7 +79,7 @@ short=Community Quest 8/8
 info=
 short=
 info=Cd, Au, NaCl
-short=Anormal: "Knochen"
+short=
 info="Rasselnder Planet"
 
 [Pln21FB00FE0528FF]
@@ -87,7 +87,7 @@ name=Ifaxirit
 biome=AnomMetalFlowers
 aggrSentinels
 gravitino balls
-short=Anormal: "Metall-Blumen"
+short=
 info="Metallurgischer Planet"
 short=
 info=Cd, Ag, Na
@@ -99,7 +99,7 @@ aggrSentinels
 gravitino balls
 short=
 info=Cd, Ag, Na
-short=Anormal: "Knochen"
+short=
 info="Rasselnder Planet"
 
 [Pln41FB00FE0528FF]
@@ -111,10 +111,9 @@ info=Cd, P, Na
 [Pln51FB00FE0528FF]
 name=Community
 biome=Exotic_Mega
+buriedTreasure=AncientBones
 short=
 info=Cd, P, NaCl
-short="Uralte Knochen"
-info=
 short=Monochrom-Rot
 info=
 
@@ -334,10 +333,9 @@ class=Yellow
 name=Sakkura
 biome=Frozen
 with water
+buriedTreasure=SalvageableScrap
 short=
 info=Co, CO2, Cu
-short="Wiederverwertbarer Schrott"
-info=
 
 [Pln207A00F9A8CBC3]
 name=Gilycity XVII
@@ -346,7 +344,7 @@ aggrSentinels
 gravitino balls
 short=
 info=Cu, Au, Fe##
-short=Anormal: "Blasen"
+short=
 info="Sprudelnder Mond"
 short=
 info=Gebäude: "Grenzüberschreitung"
@@ -456,7 +454,7 @@ name=Nurtn
 biome=AnomMetalFlowers
 short=
 info=NaCl, Au, Cu
-short=Anormal: "Metall-Blumen"
+short=
 info="Metallüberzogener Planet"
 
 [Pln500800FAA8CBC4]
@@ -506,7 +504,7 @@ name=Vulptone VII
 biome=AnomLimeStars
 short=
 info=NaCl, Au, Cu
-short=Anormal: "Kalk-Sterne"
+short=
 info="Verkalkter Planet"
 
 [Pln201200FAA8CBC4]
@@ -520,7 +518,7 @@ name=Pacalloy XIX
 biome=AnomBones
 short=
 info=Na, Au, Cu
-short=Anormal: "Knochen"
+short=
 info="Rasselnder Planet"
 
 [Pln401200FAA8CBC4]
@@ -592,7 +590,7 @@ name=Idnaeanr Sigma
 biome=AnomShells
 short=
 info=Cu, Au, Na
-short=Anormal: "Muscheln"
+short=
 info="Schalenübersäter Planet"
 
 [Pln202F00FAA8CBC4]
@@ -637,7 +635,7 @@ name=Tagir Delta
 biome=AnomMetalFlowers
 short=
 info=Co, Fe#, Cu
-short=Anormal: "Metall-Blumen"
+short=
 info="Mechanischer Planet"
 
 [Sys004000FAA8CBC4]
@@ -665,10 +663,9 @@ class=Yellow
 [Pln104500FAA8CBC4]
 name=Nicaro Sigma
 biome=Irradiated
+buriedTreasure=SalvageableScrap
 short=
 info=NaCl, U, Cu
-short="Wiederverwertbarer Schrott"
-info=
 
 [Pln204500FAA8CBC4]
 name=Watfo
@@ -788,7 +785,7 @@ oldname=Nozelensk Sano
 biome=AnomMushrooms
 short=
 info=Cu, Ag, Na
-short=Anormal: "Pilze"
+short=
 info="Mit Schirmen übersäter Planet"
 
 [Pln305D00FAA8CBC4]
@@ -827,7 +824,7 @@ oldname=Loyarnaulic
 biome=AnomFragmColumns
 short=
 info=Cu, Ag, Fe##
-short=Anormal: "Zersplitterte Säulen"
+short=
 info="Stützen-Planet" -> Vertikale zersplitterte Säulen
 
 [Sys007900FAA8CBC4]
@@ -860,14 +857,13 @@ name=Dessilaum Ramm
 oldname=Dessilaum Ramm
 biome=Irradiated
 with water
+buriedTreasure=AncientBones
 short=ExtRad
 info=Stufe 3
 short=
 info=Na, U, #Cu
 short.P=#Cu
 info=Aktiviertes Kupfer
-short="Uralte Knochen"
-info=
 
 [Pln407900FAA8CBC4]
 name=Biyskogolo
@@ -985,7 +981,7 @@ aggrSentinels
 gravitino balls
 short=
 info=Na, Fe#, Cu
-short=Anormal: "Knochen"
+short=
 info="Skelettartiger Planet"
 short=
 info=Gebäude: "Grenzüberschreitung"
@@ -1080,7 +1076,7 @@ name=Runtwic V
 biome=AnomMushrooms
 short=
 info=Em, Ag, NaCl
-short=Anormal: "Pilze"
+short=
 info="Pilz-Planet"
 
 [Sys01C800FAA8CBC4]
@@ -1219,10 +1215,9 @@ info=Na, U, Cu
 [Pln207A00F9A8DBC4]
 name=Uhmanue
 biome=Toxic
+buriedTreasure=AncientBones
 short=
 info=Fe#, NH3, Cu
-short="Uralte Knochen"
-info=
 
 [Pln307A00F9A8DBC4]
 name=Nidsey Sigma
@@ -1269,7 +1264,7 @@ name=Arhunt VI
 biome=AnomScreenCrystals
 short=
 info=Cd, Ag, Na
-short=Anormal: "Bildschirm-Kristalle"
+short=
 info="Zerschmetterter Planet" -> Bildschirm-Kristalle
 
 [Pln213A00F9A8DBC4]
@@ -1431,7 +1426,7 @@ info=
 [Pln303C0000BF1C2A]
 name=Xanna XIX
 biome=AnomBones
-short=Anormal: "Knochen"
+short=
 info="Stacheliger Planet"
 short=
 info=Cu, Ag, NaCl
@@ -1460,7 +1455,7 @@ class=Yellow
 [Pln100200FCA45CAF]
 name=Aumonov IX
 biome=AnomMetalFlowers
-short=Anormal: "Metall-Blumen"
+short=
 info="Metallurgischer Planet" -> "Mutter"-Blumen
 short=
 info=Cu, Au, NaCl
@@ -1482,7 +1477,7 @@ name=Oruton
 biome=AnomMetalFlowers
 short=
 info=Cu, Au, Fe##
-short=Anormal: "Metall-Blumen"
+short=
 info="Metallener Planet" -> "Mutter"-Blumen
 
 [Pln500200FCA45CAF]
@@ -1493,8 +1488,6 @@ short=ExtRad
 info=Stufe 3
 short=#Cu
 info=#Cu, U, NaCl
-short=Sturmkristalle
-info=
 
 [Sys007900FCA45CAF]
 name=Dadurer-Iue
@@ -1542,7 +1535,7 @@ class=Red
 [Pln117600FCA45CAF]
 name=Grushya B47
 biome=AnomLimeStars
-short=Anormal: "Kalk-Sterne"
+short=
 info="Verkalkter Planet" -> Verknöcherte Sterne
 short=
 info=Cd, Au, NaCl
@@ -1596,8 +1589,7 @@ name=Enuscu Kisa
 biome=Airless
 aggrSentinels
 gravitino balls
-short="Uralte Knochen"
-info=
+buriedTreasure=AncientBones
 
 [Sys007900FE452CC0]
 name=Roskea-Tato XVIII
@@ -2088,7 +2080,7 @@ info=
 [Pln50790000BAC370]
 name=Kievert Delta
 biome=AnomShells
-short=Anormal: "Muscheln"
+short=
 info="Messerscharfer Planet"
 
 [Reg00000000444444]
@@ -2229,7 +2221,7 @@ name=Rutwor
 biome=AnomBubbles
 short=
 info=Cu, Au, Ag
-short=Anormal: "Blasen"
+short=
 info="Schäumender Planet" -> Seifenblasen überall
 
 [Pln200B0003CC45B8]
@@ -2282,7 +2274,7 @@ info=Cu, NH3, Fe##
 [Pln20790003CC45B8]
 name=Aust Tau
 biome=AnomMushrooms
-short=Anormal: "Pilze"
+short=
 info="Sporiger Planet" -> Pilze
 short=
 info=Cu, Ag, Fe##
@@ -2326,12 +2318,11 @@ distance=694540.000000
 name=Mitid
 biome=Toxic
 with water
+buriedTreasure=AncientBones
 short=#Cu
 info=Ag, NH3, #Cu
 short=ExtTox
 info=Stufe 3
-short="Uralte Knochen"
-info=
 
 [Pln202A0002C825D1]
 name=Ekio Alpha
@@ -2374,10 +2365,9 @@ info="Einsamer Planet"
 name=Eroysto
 biome=Lush
 with water
+buriedTreasure=SalvageableScrap
 short=
 info=Co, Pf, Cu
-short="Wiederverwertbarer Schrott"
-info=
 
 [Pln40790002C825D1]
 name=Eusiss IV
@@ -2396,12 +2386,11 @@ info=Co, U, Cu
 [Pln60790002C825D1]
 name=Yavaccacok Tamo
 biome=Toxic
+buriedTreasure=AncientBones
 short=#Cu
 info=NaCl, NH3, #Cu
 short=ExtTox
 info=Stufe 3
-short="Uralte Knochen"
-info=
 
 [Sys00A00002C825D1]
 name=Aguchi
