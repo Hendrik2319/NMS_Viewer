@@ -2601,13 +2601,14 @@ public class SaveGameData {
 		public static final class SolarSystem extends DiscoverableObject {
 			
 			public enum StarClass {
-				Yellow("G"), Red("K"), Green, Blue;
+				Yellow("G","F"), Red("K"), Green, Blue("B");
 				
-				@SuppressWarnings("unused")
 				private String[] letters;
-				
 				StarClass(String... letters) {
 					this.letters = letters;
+				}
+				public String getLabel() {
+					return toString()+" Class"+(letters.length==0?"":" "+Arrays.toString(letters));
 				}
 			}
 			
@@ -2755,6 +2756,19 @@ public class SaveGameData {
 				}
 			}
 			
+			public enum BuriedTreasure {
+				AncientBones    ("Ancient Bones"    ,"Uralte Knochen"),
+				SalvageableScrap("Salvageable Scrap","Wiederverwertbarer Schrott"),
+				;
+
+				public final String name_EN;
+				public final String name_DE;
+				private BuriedTreasure(String name_EN, String name_DE) {
+					this.name_EN = name_EN;
+					this.name_DE = name_DE;
+				}
+			}
+			
 			public static class AdditionalInfos {
 				public Vector<PersistentPlayerBase> bases;
 				public boolean hasExocraftSummoningStation;
@@ -2776,6 +2790,7 @@ public class SaveGameData {
 			public boolean areSentinelsAggressive;
 			public boolean withWater;
 			public boolean withGravitinoBalls;
+			public BuriedTreasure buriedTreasure;
 			public AdditionalInfos additionalInfos; 
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
@@ -2786,6 +2801,7 @@ public class SaveGameData {
 				this.areSentinelsAggressive = false;
 				this.withWater = false;
 				this.withGravitinoBalls = false;
+				this.buriedTreasure = null;
 				this.additionalInfos = new AdditionalInfos();
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
@@ -2813,7 +2829,8 @@ public class SaveGameData {
 				if (!extraInfos.isEmpty()) {
 					strExtraInfo = getCombinedExtraInfoLabels(
 						(withWater?"<Water>":null),
-						(withGravitinoBalls?"<Grav>":null)
+						(withGravitinoBalls?"<Grav>":null),
+						(buriedTreasure==null?null:"<"+buriedTreasure.name_EN+">")
 					);
 					if (!strExtraInfo.isEmpty()) strExtraInfo = " ("+strExtraInfo+")";
 				}

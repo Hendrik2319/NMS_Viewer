@@ -70,6 +70,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Dis
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.BuriedTreasure;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
@@ -399,10 +400,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = 1055278730261206951L;
 		
 		private JTextArea textArea;
+		protected boolean isSettingContent;
 		
 		AbstractInfoPanel() {
 			super(new BorderLayout(3,3));
 			setPreferredSize(new Dimension(650,500));
+			isSettingContent = false;
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
@@ -412,7 +415,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			add(scrollPane,BorderLayout.CENTER);
 		}
-		public abstract void setContent(GenericTreeNode<?> node);
+		public void setContent(GenericTreeNode<?> node) {
+			isSettingContent = true;
+			setContent_intern(node);
+			isSettingContent = false;
+		}
+		protected abstract void setContent_intern(GenericTreeNode<?> node);
 		
 		protected void setText(String str) { textArea.setText(str); }
 		protected void clearText()         { setText(""); }
@@ -427,7 +435,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = 4133259332387200850L;
 
 		@Override
-		public void setContent(GenericTreeNode<?> selectedNode) {
+		protected void setContent_intern(GenericTreeNode<?> selectedNode) {
 			clearText();
 			
 			if (selectedNode==null)
@@ -539,7 +547,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private enum ExtraInfoColumnID implements SimplifiedColumnIDInterface {
 			ShowInParent(""     , Boolean.class, 10,-1, 20, 20),
 			Label       ("Label",  String.class, 20,-1,100,100),
-			Info        ("Info" ,  String.class, 50,-1,500,500);
+			Info        ("Info" ,  String.class, 50,-1,290,290);
 			
 			private SimplifiedColumnConfig config;
 		
@@ -630,6 +638,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		private SolarSystemNode node;
 
+		private JComboBox<Race> cmbbxRace;
+		private JComboBox<StarClass> cmbbxStarClass;
+		private Gui.IconComboBox<Integer> cmbbxConflictLevel;
+
+		private JCheckBox chkbxUnexplored;
+
 		private JCheckBox chkbxAtlasInterface;
 		private JCheckBox chkbxBlackHole;
 		private JPanel blackHoleTargetPanel;
@@ -640,8 +654,71 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(UniversePanel.this,true);
 			this.node = null;
 			
-			chkbxAtlasInterface = SaveViewer.createCheckbox("has atlas interface", e->{ node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected(); updateTreeNode(node, false); }, false);
-			chkbxBlackHole      = SaveViewer.createCheckbox("has black hole"     , e->{ setBlackHole(); updateTreeNode(node, false); galaxyMapPanel.updateBlackHoleConnections(); }, false);
+			cmbbxRace = new Gui.IconComboBox<Race>(Race.values(), new Gui.IconComboBox.ExternalFunctionality<Race>() {
+				@Override public Race cast(Object obj) {
+					if (!(obj instanceof StarClass)) return null;
+					return (Race)obj;
+				}
+				@Override public Icon createIcon(Race value) {
+					return SolarSystemIcons.RaceIcons.get(value);
+				}
+				@Override public String getLabel(Race value) {
+					if (value==null) return "";
+					return value.fullName;
+				}
+			});
+			cmbbxStarClass = new Gui.IconComboBox<StarClass>(StarClass.values(), new Gui.IconComboBox.ExternalFunctionality<StarClass>() {
+				@Override public StarClass cast(Object obj) {
+					if (!(obj instanceof StarClass)) return null;
+					return (StarClass)obj;
+				}
+				@Override public Icon createIcon(StarClass value) {
+					return SolarSystemIcons.StarClassIcons.get(value);
+				}
+				@Override public String getLabel(StarClass value) {
+					if (value==null) return "";
+					return value.getLabel();
+				}
+			});
+			cmbbxConflictLevel = new Gui.IconComboBox<Integer>(new Integer[]{1,2,3}, new Gui.IconComboBox.ExternalFunctionality<Integer>() {
+				@Override public Integer cast(Object obj) {
+					if (!(obj instanceof Integer)) return null;
+					return (Integer)obj;
+				}
+				@Override public Icon createIcon(Integer value) {
+					if (value==null || value<=0 || 3<value) return null;
+					return SolarSystemIcons.ConflictLevelIcons[value-1];
+				}
+				@Override public String getLabel(Integer value) {
+					if (value==null || value<=0 || 3<value) return "";
+					return "Conflict Level "+value;
+				}
+			});
+			cmbbxRace         .addActionListener(e->{ if (isSettingContent) return; node.value.race      = (Race     )cmbbxRace     .getSelectedItem(); updateTreeNode(node, false); });
+			cmbbxStarClass    .addActionListener(e->{ if (isSettingContent) return; node.value.starClass = (StarClass)cmbbxStarClass.getSelectedItem(); updateTreeNode(node, false); });
+			cmbbxConflictLevel.addActionListener(e->{ if (isSettingContent) return; Integer val = cmbbxConflictLevel.getSelected(); node.value.conflictLevel = val==null?-1:val; updateTreeNode(node, false); });
+			
+			chkbxUnexplored = SaveViewer.createCheckbox("is Unexplored", e->{
+				if (isSettingContent) return;
+				node.value.isUnexplored = chkbxUnexplored.isSelected();
+				cmbbxRace         .setEnabled(!node.value.isUnexplored);
+				cmbbxConflictLevel.setEnabled(!node.value.isUnexplored);
+				updateTreeNode(node, false);
+			}, false);
+			
+			chkbxAtlasInterface = SaveViewer.createCheckbox("has Atlas Interface", e->{
+				if (isSettingContent) return;
+				node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected();
+				updateTreeNode(node, false);
+			}, false);
+			
+			chkbxBlackHole = SaveViewer.createCheckbox("has Black Hole", e->{
+				if (isSettingContent) return;
+				node.value.hasBlackHole = chkbxBlackHole.isSelected();
+				updateBlackHoleTargetPanel();
+				updateTreeNode(node, false);
+				galaxyMapPanel.updateBlackHoleConnections();
+			}, false);
 			
 			cmbbxBlackHoleTargetRegion      = new JComboBox<Region>();
 			cmbbxBlackHoleTargetSolarSystem = new JComboBox<SolarSystem>();
@@ -653,11 +730,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 			}
 			cmbbxBlackHoleTargetRegion.addActionListener(e->{
+				if (isSettingContent) return;
 				Region region = (Region)cmbbxBlackHoleTargetRegion.getSelectedItem();
 				if (region==null) cmbbxBlackHoleTargetSolarSystem.setModel(new DefaultComboBoxModel<>());
 				else              cmbbxBlackHoleTargetSolarSystem.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(region.solarSystems)));
 			});
 			cmbbxBlackHoleTargetSolarSystem.addActionListener(e->{
+				if (isSettingContent) return;
 				SolarSystem system = (SolarSystem)cmbbxBlackHoleTargetSolarSystem.getSelectedItem();
 				node.value.blackHoleTarget = system==null?null:system.getUniverseAddress();
 				updateTreeNode(node, false);
@@ -674,14 +753,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
 			
+			addCompToValuePanel(cmbbxRace           , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxStarClass      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxConflictLevel  , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxUnexplored     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToValuePanel(blackHoleTargetPanel, 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-		}
-
-		private void setBlackHole() {
-			node.value.hasBlackHole = chkbxBlackHole.isSelected();
-			updateBlackHoleTargetPanel();
 		}
 
 		private void updateBlackHoleTargetPanel() {
@@ -699,14 +777,28 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 		
 		@Override
-		public void setContent(GenericTreeNode<?> node) {
+		protected void setContent_intern(GenericTreeNode<?> node) {
 			this.node = (SolarSystemNode)node;
-			double distance_reg;
 			
 			SolarSystem system = this.node.value;
+			
+			cmbbxRace          .setSelectedItem(system.race         );
+			cmbbxStarClass     .setSelectedItem(system.starClass    );
+			cmbbxConflictLevel .setSelectedItem(system.conflictLevel);
+			chkbxUnexplored    .setSelected(system.isUnexplored     );
 			chkbxAtlasInterface.setSelected(system.hasAtlasInterface);
 			chkbxBlackHole     .setSelected(system.hasBlackHole     );
 			updateBlackHoleTargetPanel();
+			
+			cmbbxRace         .setEnabled(!system.isUnexplored);
+			cmbbxConflictLevel.setEnabled(!system.isUnexplored);
+			
+			showInfos();
+		}
+
+		private void showInfos() {
+			double distance_reg;
+			SolarSystem system = this.node.value;
 			
 			int n = system.planets.size();
 			UniverseAddress ua = system.getUniverseAddress();
@@ -757,6 +849,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JCheckBox chkbxGrav;
 
 		private Gui.IconComboBox<Biome> cmbbxBiome;
+		private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);
@@ -781,20 +874,25 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					return value.name_EN;
 				}
 			});
-			cmbbxBiome.addActionListener(e->{ node.value.biome = cmbbxBiome.getSelected(); updateTreeNode(node, false);  });
+			cmbbxBiome.addActionListener(e->{ if (isSettingContent) return; node.value.biome = cmbbxBiome.getSelected(); updateTreeNode(node, false);  });
 			
-			chkbxAggrSent = SaveViewer.createCheckbox("Aggressive Sentinels", e->{ node.value.areSentinelsAggressive = chkbxAggrSent.isSelected(); updateTreeNode(node, false); }, false);
-			chkbxWater    = SaveViewer.createCheckbox("with water"          , e->{ node.value.withWater              = chkbxWater   .isSelected(); updateTreeNode(node, true ); }, false);
-			chkbxGrav     = SaveViewer.createCheckbox("with Gravitino Balls", e->{ node.value.withGravitinoBalls     = chkbxGrav    .isSelected(); updateTreeNode(node, false); }, false);
+			cmbbxBuriedTreasure = new JComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()));
+			cmbbxBuriedTreasure.setRenderer(new Tables.NonStringRenderer<BuriedTreasure>(value->value==null?"":((BuriedTreasure)value).name_EN));
+			cmbbxBuriedTreasure.addActionListener(e->{ if (isSettingContent) return; node.value.buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem(); updateTreeNode(node, false);  });
 			
-			addCompToValuePanel(cmbbxBiome   , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxAggrSent, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxWater   , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxGrav    , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			chkbxAggrSent = SaveViewer.createCheckbox("Aggressive Sentinels", e->{ if (isSettingContent) return; node.value.areSentinelsAggressive = chkbxAggrSent.isSelected(); updateTreeNode(node, false); }, false);
+			chkbxWater    = SaveViewer.createCheckbox("with Water"          , e->{ if (isSettingContent) return; node.value.withWater              = chkbxWater   .isSelected(); updateTreeNode(node, true ); }, false);
+			chkbxGrav     = SaveViewer.createCheckbox("with Gravitino Balls", e->{ if (isSettingContent) return; node.value.withGravitinoBalls     = chkbxGrav    .isSelected(); updateTreeNode(node, false); }, false);
+			
+			addCompToValuePanel(cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxAggrSent      , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxWater         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxGrav          , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxBuriedTreasure, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 		}
 		
 		@Override
-		public void setContent(GenericTreeNode<?> node) {
+		protected void setContent_intern(GenericTreeNode<?> node) {
 			this.node = (PlanetNode)node;
 			
 			Planet planet = this.node.value;
@@ -805,6 +903,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			chkbxAggrSent.setSelected(planet.areSentinelsAggressive);
 			chkbxWater   .setSelected(planet.withWater);
 			chkbxGrav    .setSelected(planet.withGravitinoBalls);
+			cmbbxBuriedTreasure.setSelectedItem(planet.buriedTreasure);
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 			
 			clearText();
@@ -916,7 +1015,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							menuItem.setText("<none>");
 						} else {
 							menuItem.setIcon(SolarSystemIcons.StarClassIcons.get(value));
-							menuItem.setText(value.toString()+" Class");
+							menuItem.setText(value.getLabel());
 						}
 					}
 				}
@@ -1530,6 +1629,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxAggrSent;
 			private TristateCheckBox chkbxWater;
 			private TristateCheckBox chkbxGrav;
+			private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
 			
 			PlanetBar() {
 				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
@@ -1546,6 +1646,23 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				});
 				cmbbxBiome.addActionListener(e->updateMarkers());
+				
+				cmbbxBuriedTreasure = new JComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()));
+//				cmbbxBuriedTreasure = new Gui.IconComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()), 170,20, new Gui.IconComboBox.ExternalFunctionality<BuriedTreasure>() {
+//					@Override public BuriedTreasure cast(Object obj) {
+//						if (!(obj instanceof BuriedTreasure)) return null;
+//						return (BuriedTreasure)obj;
+//					}
+//					@Override public Icon createIcon(BuriedTreasure value) {
+//						return null; // PlanetIcons.BiomeIcons.get(value);
+//					}
+//					@Override public String getLabel(BuriedTreasure value) {
+//						if (value==null) return "<none>";
+//						return value.name_EN;
+//					}
+//				});
+				cmbbxBuriedTreasure.addActionListener(e->updateMarkers());
+				
 				chkbxAggrSent = SaveViewer.createTristateCheckBox("Aggr. Sentinels" , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxWater    = SaveViewer.createTristateCheckBox("with water"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxGrav     = SaveViewer.createTristateCheckBox("with Grav. Balls", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
@@ -1562,16 +1679,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				
 				Biome biome = cmbbxBiome.getSelected();
 				boolean isBiome    = biome==null || p.biome==biome;
+				
+				BuriedTreasure buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem();
+				boolean isBuriedTreasure = buriedTreasure==null || p.buriedTreasure==buriedTreasure;
+				
 				boolean isAggrSent = chkbxAggrSent.isUndefined() || p.areSentinelsAggressive==chkbxAggrSent.isSelected();
 				boolean isWater    = chkbxWater   .isUndefined() || p.withWater             ==chkbxWater   .isSelected();
 				boolean isGrav     = chkbxGrav    .isUndefined() || p.withGravitinoBalls    ==chkbxGrav    .isSelected();
 				
-				return isBiome && isAggrSent && isWater && isGrav;
+				return isBiome && isAggrSent && isWater && isGrav && isBuriedTreasure;
 			}
 			
 			public boolean isUnset() {
 				return				
 					cmbbxBiome.getSelectedItem()==null &&
+					cmbbxBuriedTreasure.getSelectedItem()==null &&
 					chkbxAggrSent.isUndefined() &&
 					chkbxWater   .isUndefined() &&
 					chkbxGrav    .isUndefined();
@@ -1580,6 +1702,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			@Override
 			public void clearMarkers() {
 				cmbbxBiome.setSelectedItem(null);
+				cmbbxBuriedTreasure.setSelectedItem(null);
 				chkbxAggrSent.setUndefined();
 				chkbxWater   .setUndefined();
 				chkbxGrav    .setUndefined();

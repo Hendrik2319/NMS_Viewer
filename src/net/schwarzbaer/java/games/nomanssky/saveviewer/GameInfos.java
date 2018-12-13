@@ -149,6 +149,7 @@ public class GameInfos {
 		boolean areSentinelsAggressive;
 		boolean withWater;
 		boolean withGravitinoBalls;
+		Universe.Planet.BuriedTreasure buriedTreasure;
 		
 		public UOD_Planet(UniverseAddress ua) {
 			super(ua, Type.Planet);
@@ -156,6 +157,7 @@ public class GameInfos {
 			areSentinelsAggressive = false;
 			withWater = false;
 			withGravitinoBalls = false;
+			buriedTreasure = null;
 		}
 		public UOD_Planet(Planet planet) {
 			super(planet.getUniverseAddress(),Type.Planet,planet);
@@ -163,6 +165,7 @@ public class GameInfos {
 			areSentinelsAggressive = planet.areSentinelsAggressive;
 			withWater = planet.withWater;
 			withGravitinoBalls = planet.withGravitinoBalls;
+			buriedTreasure = planet.buriedTreasure;
 		}
 	}
 	
@@ -213,7 +216,7 @@ public class GameInfos {
 			String nextShortLabel = null;
 			Boolean showInParent = null;
 			
-			String str;
+			String str, valueStr;
 			while ((str=in.readLine())!=null) {
 				if (str.isEmpty()) continue;
 				if ((str.startsWith("[Reg") || str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
@@ -251,8 +254,8 @@ public class GameInfos {
 				}
 				if (system!=null) {
 					if (str.startsWith("race=")) {
-						String race = str.substring("race=".length());
-						try { system.race = Universe.SolarSystem.Race.valueOf(race); }
+						valueStr = str.substring("race=".length());
+						try { system.race = Universe.SolarSystem.Race.valueOf(valueStr); }
 						catch (Exception e) { system.race = null; }
 						continue;
 					}
@@ -261,44 +264,44 @@ public class GameInfos {
 						continue;
 					}
 					if (str.startsWith("atlasinterface=")) {
-						String valueStr = str.substring("atlasinterface=".length());
+						valueStr = str.substring("atlasinterface=".length());
 						system.hasAtlasInterface = valueStr.equalsIgnoreCase("true");
 						continue;
 					}
 					if (str.startsWith("blackhole=")) {
-						String valueStr = str.substring("blackhole=".length());
+						valueStr = str.substring("blackhole=".length());
 						system.hasBlackHole = valueStr.equalsIgnoreCase("true");
 						continue;
 					}
 					if (str.startsWith("blackholetarget=")) {
-						String valueStr = str.substring("blackholetarget=".length());
+						valueStr = str.substring("blackholetarget=".length());
 						try { system.blackHoleTarget = Long.parseLong(valueStr, 16); }
 						catch (NumberFormatException e) { system.blackHoleTarget = null; }
 						continue;
 					}
 					if (str.startsWith("class=")) {
-						String starClass = str.substring("class=".length());
-						try { system.starClass = Universe.SolarSystem.StarClass.valueOf(starClass); }
+						valueStr = str.substring("class=".length());
+						try { system.starClass = Universe.SolarSystem.StarClass.valueOf(valueStr); }
 						catch (Exception e) { system.starClass = null; }
 						continue;
 					}
 					if (str.startsWith("distance=")) {
-						String distance = str.substring("distance=".length());
-						try { system.distanceToCenter = Double.parseDouble(distance); }
+						valueStr = str.substring("distance=".length());
+						try { system.distanceToCenter = Double.parseDouble(valueStr); }
 						catch (NumberFormatException e) { system.distanceToCenter = null; }
 						continue;
 					}
 					if (str.startsWith("conflict=")) {
-						String conflictLevel = str.substring("conflict=".length());
-						try { system.conflictLevel = Integer.parseInt(conflictLevel); }
+						valueStr = str.substring("conflict=".length());
+						try { system.conflictLevel = Integer.parseInt(valueStr); }
 						catch (NumberFormatException e) { system.conflictLevel = -1; }
 						continue;
 					}
 				}
 				if (planet!=null) {
 					if (str.startsWith("biome=")) {
-						String biome = str.substring("biome=".length());
-						try { planet.biome = Universe.Planet.Biome.valueOf(biome); }
+						valueStr = str.substring("biome=".length());
+						try { planet.biome = Universe.Planet.Biome.valueOf(valueStr); }
 						catch (Exception e) { planet.biome = null; }
 						continue;
 					}
@@ -314,6 +317,12 @@ public class GameInfos {
 						planet.withGravitinoBalls = true;
 						continue;
 					}
+					if (str.startsWith("buriedTreasure=")) {
+						valueStr = str.substring("buriedTreasure=".length());
+						try { planet.buriedTreasure = Universe.Planet.BuriedTreasure.valueOf(valueStr); }
+						catch (Exception e) { planet.buriedTreasure = null; }
+						continue;
+					}
 				}
 				if (uniObj!=null) {
 					if (str.startsWith("short=")) {
@@ -327,9 +336,9 @@ public class GameInfos {
 						continue;
 					}
 					if (str.startsWith("info=")) {
-						String info = str.substring("info=".length());
+						valueStr = str.substring("info=".length());
 						if (nextShortLabel!=null && showInParent!=null)
-							uniObj.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,info));
+							uniObj.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,valueStr));
 						nextShortLabel=null;
 						showInParent=null;
 						continue;
@@ -447,8 +456,11 @@ public class GameInfos {
 					planet.withGravitinoBalls = uod_planet.withGravitinoBalls;
 					if (withOutput) SaveViewer.log_ln("   %s has Gravitino Balls",objName);
 				}
+				if (uod_planet.buriedTreasure!=null) {
+					planet.buriedTreasure = uod_planet.buriedTreasure;
+					if (withOutput) SaveViewer.log_ln("   Buried Treasure of %s was defined: %s",objName,planet.buriedTreasure);
+				}
 			}
-			
 			
 			if (uniObj!=null) {
 				uniObj.extraInfos.clear();
@@ -535,6 +547,7 @@ public class GameInfos {
 					if (uod_planet.areSentinelsAggressive) out.printf("aggrSentinels\r\n");
 					if (uod_planet.withWater             ) out.printf("with water\r\n");
 					if (uod_planet.withGravitinoBalls    ) out.printf("gravitino balls\r\n");
+					if (uod_planet.buriedTreasure  !=null) out.printf("buriedTreasure=%s\r\n",uod_planet.buriedTreasure);
 				}
 				
 				if (uod_uniObj!=null) {
