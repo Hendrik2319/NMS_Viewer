@@ -3,10 +3,15 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -15,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.Enumeration;
+import java.util.function.Function;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -661,6 +667,15 @@ public class Gui {
 			this.showSelectedValue = false;
 			this.listMenuItems = listMenuItems;
 			this.listMenuItems.addTo(this);
+			
+			GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+			int maxHeight = gd.getDisplayMode().getHeight();
+			
+			JPopupMenu pm = getPopupMenu();
+			pm.setLayout(new LongMenuLayout(maxHeight));
+//			pm.setLayout(new GridLayout(20,0));
+//			setLayout(new GridLayout(0,2));
+//			SaveViewer.log_ln("ListMenu(\"%s\"): %s", title, pm.getSize());
 		}
 
 		public void updateValues(ValueType[] values) {
@@ -765,6 +780,122 @@ public class Gui {
 			public void configureMenuItem(JMenuItem menuItem, T value) { menuItem.setText(value==null?"<none>":value.toString()); }
 		}
 		
+	}
+
+	public static class LongMenuLayout implements LayoutManager {
+
+		private Dimension preferredSize;
+		private Dimension minSize;
+		private int maxHeight;
+		
+		public LongMenuLayout(int maxHeight) {
+			this.maxHeight = maxHeight;
+			preferredSize = null;
+	        minSize = null;
+		}
+		
+		@Override public void addLayoutComponent(String name, Component comp) {
+			preferredSize = null;
+	        minSize = null;
+		}
+		@Override public void removeLayoutComponent(Component comp) {
+			preferredSize = null;
+	        minSize = null;
+		}
+	    
+	    private Dimension computeSizes(Container parent, Function<Component,Dimension> getSize ) {
+	        Dimension d = null, size = new Dimension(0,0);
+	        Insets insets = parent.getInsets();
+	        
+	        int columnWidth  = 0;
+	        int columnHeight = 0;
+	        
+	        int nComps = parent.getComponentCount();
+	        for (int i=0; i<nComps; i++) {
+	            Component c = parent.getComponent(i);
+	            if (c.isVisible()) {
+	                d  = getSize.apply(c);
+	                
+	                if (maxHeight-insets.top-insets.bottom < columnHeight+d.height) {
+	                	size.height = Math.max(size.height, columnHeight);
+	                	size.width += columnWidth;
+	        	        columnWidth  = 0;
+	        	        columnHeight = 0;
+	                }
+	                
+	                columnWidth = Math.max(d.width, columnWidth);
+	                columnHeight += d.height;
+	            }
+	        }
+            if (columnWidth>0) {
+            	size.height = Math.max(size.height, columnHeight);
+            	size.width += columnWidth;
+            }
+            
+            return size;
+	    }
+
+		@Override
+		public Dimension preferredLayoutSize(Container parent) {
+			if (preferredSize==null)
+		    	preferredSize = computeSizes(parent, c->c.getPreferredSize() );
+			
+	        Insets insets = parent.getInsets();
+	        Dimension size = new Dimension(0,0);
+	        size.width  = insets.left + preferredSize.width  + insets.right; 
+	        size.height = insets.top  + preferredSize.height + insets.bottom; 
+			
+			return size;
+		}
+
+		@Override
+		public Dimension minimumLayoutSize(Container parent) {
+			if (minSize==null)
+				minSize = computeSizes(parent, c->c.getMinimumSize() );
+			
+	        Insets insets = parent.getInsets();
+	        Dimension size = new Dimension(0,0);
+	        size.width  = insets.left + minSize.width  + insets.right; 
+	        size.height = insets.top  + minSize.height + insets.bottom; 
+			
+			return size;
+		}
+
+		@Override
+		public void layoutContainer(Container parent) {
+            Dimension d;
+	        Insets insets = parent.getInsets();
+	        int parentWidth  = parent.getWidth () - (insets.left + insets.right);
+	        int parentHeight = parent.getHeight() - (insets.top + insets.bottom);
+	        
+			if (preferredSize==null)
+		    	preferredSize = computeSizes(parent, c->c.getPreferredSize() );
+			if (minSize==null)
+				minSize = computeSizes(parent, c->c.getMinimumSize() );
+			
+	        boolean layoutToMinSize = (parentWidth > preferredSize.width || parentHeight > preferredSize.height);
+	        
+	        int columnWidth=0, x=insets.left, y=insets.top;
+	        int nComps = parent.getComponentCount();
+	        for (int i=0; i<nComps; i++) {
+	            Component c = parent.getComponent(i);
+	            if (c.isVisible()) {
+	            	if (layoutToMinSize) d = c.getMinimumSize();
+	            	else                 d = c.getPreferredSize();
+	                
+	                if (maxHeight-insets.top-insets.bottom < y+d.height) {
+	                	x += columnWidth;
+	                	y = insets.top;
+	        	        columnWidth = 0;
+	                }
+	                
+	                c.setBounds(x, y, d.width, d.height);
+	                
+	                columnWidth = Math.max(d.width, columnWidth);
+	                y += d.height;
+	            }
+	        }
+		}
 	}
 
 	public static class ContextMenuInvoker implements MouseListener {

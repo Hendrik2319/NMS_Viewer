@@ -60,6 +60,7 @@ import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -116,6 +117,7 @@ public class SaveViewer implements ActionListener {
 			return;
 		}
 		
+//		selectLookAndFeel();
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		
@@ -174,6 +176,55 @@ public class SaveViewer implements ActionListener {
 //		System.out.println("LookAndFeelDefaults(Tree.font):"+UIManager.getLookAndFeelDefaults().getFont("Tree.font"));
 		
 		new SaveViewer().createGUI();
+	}
+
+	@SuppressWarnings("unused")
+	private static void selectLookAndFeel() {
+		System.out.println("Installed Look&Feels:");
+		String formatStr = "    [%d]  %-15s  %s%n";
+		System.out.printf(formatStr, 0, "use default Look&Feel", "");
+		System.out.printf(formatStr, 1, "<System>", UIManager.getSystemLookAndFeelClassName());
+		System.out.printf(formatStr, 2, "<CrossPlatform>",UIManager.getCrossPlatformLookAndFeelClassName());
+		LookAndFeelInfo[] lookAndFeelInfos = UIManager.getInstalledLookAndFeels();
+		for (int i=0; i<lookAndFeelInfos.length; i++) {
+			UIManager.LookAndFeelInfo lf = lookAndFeelInfos[i];
+			System.out.printf(formatStr, i+3, lf.getName(), lf.getClassName());
+		}
+		
+		String text = "Select Look&Feel";
+		int value = readInt(text, 0, lookAndFeelInfos.length+2);
+		System.out.printf("Value: %d%n", value);
+		
+		if (value>0)
+			try {
+				if      (value==1) UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				else if (value==2) UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+				else UIManager.setLookAndFeel(lookAndFeelInfos[value-3].getClassName());
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
+	}
+
+	private static int readInt(String text, int min, int max) {
+		while (true) {
+			System.out.print(text+": ");
+			String result = "";
+			
+			int ch;
+			try {
+				while ( (ch = System.in.read()) != 0xA ) {
+					if (ch!=0xD)
+						result += (char)ch;
+				}
+			} catch (IOException e) {}
+			
+			try {
+				int val = Integer.parseInt(result);
+				if (min<=val && val<=max)
+					return val;
+				else
+					System.out.printf("Allowed Range: %d..%d%n", min,max);
+			}
+			catch (NumberFormatException e) {}
+		}
 	}
 
 	private static void processCommands(String[] args) {
