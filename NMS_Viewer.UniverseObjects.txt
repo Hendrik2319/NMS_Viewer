@@ -1596,9 +1596,28 @@ name=Roskea-Tato XVIII
 race=Vykeen
 conflict=1
 blackhole=true
+blackholetarget=007000FE45ACE7
 class=Yellow
 short=W: reich
 info=
+short=5 Planeten
+info=
+
+[Pln107900FE452CC0]
+name=Tadcara Gamma
+biome=Lush
+with water
+short=
+info=Cu, Pf, NaCl
+
+[Reg000000FE45ACE7]
+name=Eolullp-Leere
+
+[Sys007000FE45ACE7]
+name=Unokuc XIII
+race=Gek
+conflict=2
+class=Yellow
 short=5 Planeten
 info=
 
