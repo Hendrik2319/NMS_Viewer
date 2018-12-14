@@ -812,7 +812,6 @@
 ^NAV_DATA_DROP.image=NmsProduct_CryogenicChamber_Icon.png
 ^NAV_DATA_DROP.imageBG=CCCCCC
 ^NIPNIPBUDS=NipNip-Knospen
-^NIPNIPBUDS.obsolete=
 ^NIPNIPBUDS.type=PlantProduct
 ^NIPNIPBUDS.image=NmsFarming_NipNip_Icon.png
 ^NIPNIPBUDS.imageBG=085C78
@@ -1022,6 +1021,14 @@
 ^PROC_SEA#89426.type=Special
 ^PROC_SEA#89426.image=TREASUREPROD.WATERLOOT.png
 ^PROC_SEA#89426.imageBG=1EB808
+^PROC_TOOL#91169=Vergessenes Artefakt (ungewöhnlich) 
+^PROC_TOOL#91169.type=Special
+^PROC_TOOL#91169.image=Artifact.LostArtifact.png
+^PROC_TOOL#91169.imageBG=460C34
+^PROC_TOOL#94823=Vergessenes Artefakt (selten)
+^PROC_TOOL#94823.type=Special
+^PROC_TOOL#94823.image=Artifact.LostArtifact.png
+^PROC_TOOL#94823.imageBG=DC9401
 ^PRODFUEL1=Sauerstoffkapsel
 ^PRODFUEL1.type=Energy
 ^PRODFUEL1.image=Product.gel2.Energiekanister.png

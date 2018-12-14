@@ -1573,6 +1573,19 @@ with water
 short=#In
 info=#In, U, Na
 
+[Reg00000004425CBA]
+name=Iczantsuk-Grenze
+
+[Sys00540004425CBA]
+name=Ovosok X
+race=Korvax
+conflict=2
+class=Yellow
+short=3 Planeten
+info=
+short=
+info=W: Zufriedenstellend
+
 [Reg000000FE452CC0]
 name=Itutsc
 
@@ -1620,6 +1633,18 @@ conflict=2
 class=Yellow
 short=5 Planeten
 info=
+
+[Sys007900FE45ACE7]
+name=Abirak
+race=Gek
+conflict=3
+blackhole=true
+blackholetarget=00540004425CBA
+class=Yellow
+short=2 Planeten
+info=
+short=
+info=W: Komfortabel
 
 [Reg00000004994DA5]
 name=Netegoc
