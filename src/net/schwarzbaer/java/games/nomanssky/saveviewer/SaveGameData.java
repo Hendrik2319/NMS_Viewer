@@ -1414,6 +1414,7 @@ public class SaveGameData {
 		public enum KnownModification implements Modification {
 			EXPLORE_PRI   ("Erkundungsspezialist"        ,"Erkundung: +15"),
 			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
+			EXPLORE_SEC_3 ("Kartografiedrohnen"          ,"Erkundung: +6"),
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
 			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
@@ -1428,6 +1429,7 @@ public class SaveGameData {
 			COMBAT_TER_1  ("Versteckte Waffen"           ,"Kampf: +1"),
 			COMBAT_TER_2  ("Munitionshersteller"         ,"Kampf: +2"),
 			COMBAT_TER_4  ("Aggressive Sonden"           ,"Kampf: +1"),
+			COMBAT_TER_5  ("Wütender Kapitän"            ,"Kampf: +2"),
 			COMBAT_BAD_1  ("Feige Schützen"              ,"Kampf: -2"),
 			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
 			
@@ -1443,6 +1445,7 @@ public class SaveGameData {
 			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
 			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
 			
+			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_4    ("Photonensegel"               ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
@@ -2746,6 +2749,7 @@ public class SaveGameData {
 				AnomFragmColumns  ("Anomalous (Fragmented Columns)","Anomal (Zersplitterte Säulen)"),
 				AnomBubbles       ("Anomalous (Bubbles)"           ,"Anomal (Seifenblasen)"),
 				AnomLimeStars     ("Anomalous (Lime Stars)"        ,"Anomal (Kalk-Sterne)"),
+				AnomHexagons       ("Anomalous (Hexagons)"          ,"Anomal (Sechecke)"),
 				;
 
 				public final String name_EN;

@@ -93,7 +93,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 	private enum PlanetTreeIcons {
 		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless, BiomeExotic, BiomeExoticMega,
-		BiomeAnomMetalFlowers, BiomeAnomShells, BiomeAnomBones, BiomeAnomMushrooms, BiomeAnomScreenCrystals, BiomeAnomFragmColumns, BiomeAnomBubbles, BiomeAnomLimeStars,
+		BiomeAnomMetalFlowers, BiomeAnomShells, BiomeAnomBones, BiomeAnomMushrooms, BiomeAnomScreenCrystals, BiomeAnomFragmColumns, BiomeAnomBubbles, BiomeAnomLimeStars, BiomeAnomHexagons,
 		SentinelAggressive,
 		;
 	}
@@ -277,6 +277,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case AnomFragmColumns  : return PlanetTreeIcons.BiomeAnomFragmColumns  ;
 				case AnomBubbles       : return PlanetTreeIcons.BiomeAnomBubbles       ;
 				case AnomLimeStars     : return PlanetTreeIcons.BiomeAnomLimeStars     ;
+				case AnomHexagons      : return PlanetTreeIcons.BiomeAnomHexagons      ;
 				}
 				return null;
 			};
@@ -374,6 +375,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		tree.setCellRenderer(new UniverseTreeCellRenderer());
 		tree.setRowHeight(TreeIconHeight+1);
 		expandFullTree();
+		scrollToCurrentPosition();
 		
 		contextMenu_Other       = new Contextmenu_Other();
 		contextMenu_SolarSystem = new Contextmenu_SolarSystem();
@@ -784,7 +786,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			cmbbxRace          .setSelectedItem(system.race         );
 			cmbbxStarClass     .setSelectedItem(system.starClass    );
-			cmbbxConflictLevel .setSelectedItem(system.conflictLevel);
+			cmbbxConflictLevel .setSelectedItem(1>system.conflictLevel?null:system.conflictLevel);
 			chkbxUnexplored    .setSelected(system.isUnexplored     );
 			chkbxAtlasInterface.setSelected(system.hasAtlasInterface);
 			chkbxBlackHole     .setSelected(system.hasBlackHole     );
@@ -1295,22 +1297,26 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			if (galaxyMapPanel!=null) galaxyMapPanel.updateUniverseData();
 			break;
 			
-		case ScrollToCurrentPosition: {
-			int currentPosRow = getCurrentPosNode();
-			if (currentPosRow>=0) {
-				JScrollBar scrollBar = treeScrollPane.getVerticalScrollBar();
-				int bar = scrollBar.getVisibleAmount();
-				int max = scrollBar.getMaximum();
-				int min = scrollBar.getMinimum();
-				int value = (currentPosRow*(max-min))/tree.getRowCount() + min - bar/2;
-				value = Math.max(value, min);
-				value = Math.min(value, max-bar);
-				scrollBar.setValue(value);
-			}
-			} break;
+		case ScrollToCurrentPosition:
+			scrollToCurrentPosition();
+			break;
 		}
 		clickedNode = null;
 		clickedTreePath = null;
+	}
+
+	private void scrollToCurrentPosition() {
+		int currentPosRow = getCurrentPosNode();
+		if (currentPosRow>=0) {
+			JScrollBar scrollBar = treeScrollPane.getVerticalScrollBar();
+			int bar = scrollBar.getVisibleAmount();
+			int max = scrollBar.getMaximum();
+			int min = scrollBar.getMinimum();
+			int value = (currentPosRow*(max-min))/tree.getRowCount() + min - bar/2;
+			value = Math.max(value, min);
+			value = Math.min(value, max-bar);
+			scrollBar.setValue(value);
+		}
 	}
 
 	private int getCurrentPosNode() {

@@ -1617,8 +1617,8 @@ info=W: In Entwicklung
 
 [Pln10790004425CBA]
 name=Esveto-Dovin
-biome=Exotic
-short=Anomal: "Sechsecke"
+biome=AnomHexagons
+short=
 info="Sechseckiger Planet"
 short=
 info=Cu, Au, NaCl
