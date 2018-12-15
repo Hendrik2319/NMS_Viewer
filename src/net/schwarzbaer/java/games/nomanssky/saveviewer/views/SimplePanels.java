@@ -45,6 +45,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryDat
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.Modification;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.SeedValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
@@ -207,7 +208,10 @@ public class SimplePanels {
 				appendln("        %s", mod.getValue() );
 			}
 			appendln();
-			appendln("Unidentified Values : %s | %s, %s, %s, %s, %s | %s, %s", fr.unidentifiedVal1_5VG, fr.unidentifiedStatVal5, fr.unidentifiedStatVal6, fr.unidentifiedStatVal7, fr.unidentifiedStatVal8, fr.unidentifiedStatVal9, fr.unidentifiedVal2_yJC, fr.unidentifiedVal3_7hK);
+			appendln("Unidentified Values :");
+			appendln("    %s", fr.unidentified.getUnidentifiedLongs());
+			appendln("    Seed 1: %s", fr.unidentified.seed1==null?"":fr.unidentified.seed1);
+			appendln("    Seed 2: %s", fr.unidentified.seed2==null?"":fr.unidentified.seed2);
 		}
 		
 		private void appendln() {
@@ -219,6 +223,7 @@ public class SimplePanels {
 
 		private enum ColumnID implements SimplifiedColumnIDInterface {
 			// [80, 80, 80, 120, 70, 70, 70, 93, 40, 40, 40, 40, 90, 150]
+			// [80, 80, 80, 120, 70, 70, 70, 80, 50, 50, 50, 50, 60, 150, 163, 167]
 			Name          ("Name"               ,    String.class, 35, -1,  80,  80),
 			ShipType      ("Ship Type"          ,    String.class, 35, -1,  80,  80),
 			CrewRace      ("Crew Race"          ,    String.class, 35, -1,  80,  80),
@@ -231,8 +236,11 @@ public class SimplePanels {
 			Exploration   ("Exploration"        ,      Long.class, 35, -1,  50,  50),
 			Mining        ("Mining"             ,      Long.class, 35, -1,  50,  50),
 			Diplomacy     ("Diplomacy"          ,      Long.class, 35, -1,  50,  50),
-			Modifications ("Modifications"      ,      Long.class, 35, -1,  60,  60),
-			UnidentValues ("Unidentified Values",    String.class, 35, -1, 150, 150);
+			Modifications ("Modifications"      ,      Long.class, 35, -1,  50,  50),
+			UnidentValues ("Unidentified Values",    String.class, 35, -1, 150, 150),
+			Seed1         ("Seed 1"             , SeedValue.class, 35, -1, 170, 170),
+			Seed2         ("Seed 2"             , SeedValue.class, 35, -1, 170, 170),
+			;
 			
 			private SimplifiedColumnConfig columnConfig;
 			
@@ -274,7 +282,9 @@ public class SimplePanels {
 				case Diplomacy  : return fr.diplomacyValue;
 					
 				case Modifications: return fr.modifications.size();
-				case UnidentValues: return String.format("%s | %s, %s, %s, %s, %s | %s, %s", fr.unidentifiedVal1_5VG, fr.unidentifiedStatVal5, fr.unidentifiedStatVal6, fr.unidentifiedStatVal7, fr.unidentifiedStatVal8, fr.unidentifiedStatVal9, fr.unidentifiedVal2_yJC, fr.unidentifiedVal3_7hK);
+				case UnidentValues: return fr.unidentified.getUnidentifiedLongs();
+				case Seed1        : return fr.unidentified.seed1;
+				case Seed2        : return fr.unidentified.seed2;
 				}
 				return null;
 			}

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.function.Supplier;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
@@ -568,6 +569,32 @@ public class SaveGameData {
 		public String UID;
 		public String USN;
 		public TimeStamp TS;
+	}
+	
+	public static class SeedValue {
+		
+		private Boolean boolVal;
+		private Long longVal;
+
+		public SeedValue(Boolean boolVal, Long longVal) {
+			super();
+			this.boolVal = boolVal;
+			this.longVal = longVal;
+		}
+
+		public static SeedValue parse(JSON_Array json_Array) {
+			if (json_Array==null) return null;
+			return new SeedValue(
+				getBoolValue(json_Array, 0),
+				parseHexFormatedNumber(getValue(json_Array, 1))
+			);
+		}
+
+		@Override public String toString() {
+			if (longVal==null)
+				return String.format("<%s> <null>", boolVal, longVal);
+			return     String.format("<%s> 0x%016X", boolVal, longVal);
+		}
 	}
 
 	private void parseTeleportEndpoints() {
@@ -1373,15 +1400,19 @@ public class SaveGameData {
 			fr.miningValue      = getIntegerValue(objectValue, "Stats",2);
 			fr.diplomacyValue   = getIntegerValue(objectValue, "Stats",3);
 			fr.fuelConsumption  = getIntegerValue(objectValue, "Stats",4);
-			fr.unidentifiedStatVal5 = getIntegerValue(objectValue, "Stats",5);
-			fr.unidentifiedStatVal6 = getIntegerValue(objectValue, "Stats",6);
-			fr.unidentifiedStatVal7 = getIntegerValue(objectValue, "Stats",7);
-			fr.unidentifiedStatVal8 = getIntegerValue(objectValue, "Stats",8);
-			fr.unidentifiedStatVal9 = getIntegerValue(objectValue, "Stats",9);
 			
-			fr.unidentifiedVal1_5VG = getIntegerValue(objectValue, "??? [5VG]");
-			fr.unidentifiedVal2_yJC = getIntegerValue(objectValue, "??? [yJC]");
-			fr.unidentifiedVal3_7hK = getIntegerValue(objectValue, "??? [7hK]");
+			fr.unidentified.seed1 = SeedValue.parse( getArrayValue(objectValue, "[?Seed1?]") );
+			fr.unidentified.seed2 = SeedValue.parse( getArrayValue(objectValue, "[?Seed2/UniverseAddress?]") );
+			
+			fr.unidentified.statVal5 = getIntegerValue(objectValue, "Stats",5);
+			fr.unidentified.statVal6 = getIntegerValue(objectValue, "Stats",6);
+			fr.unidentified.statVal7 = getIntegerValue(objectValue, "Stats",7);
+			fr.unidentified.statVal8 = getIntegerValue(objectValue, "Stats",8);
+			fr.unidentified.statVal9 = getIntegerValue(objectValue, "Stats",9);
+			
+			fr.unidentified.val1_5VG = getIntegerValue(objectValue, "??? [5VG]");
+			fr.unidentified.val2_yJC = getIntegerValue(objectValue, "??? [yJC]");
+			fr.unidentified.val3_7hK = getIntegerValue(objectValue, "??? [7hK]");
 			
 			JSON_Array modArr = getArrayValue(objectValue,"[Modifications]");
 			if (modArr!=null) {
@@ -1405,7 +1436,7 @@ public class SaveGameData {
 	}
 	
 	public static class Frigate {
-		
+
 		public interface Modification {
 			public String getLabel();
 			public String getValue();
@@ -1415,11 +1446,14 @@ public class SaveGameData {
 			EXPLORE_PRI   ("Erkundungsspezialist"        ,"Erkundung: +15"),
 			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
 			EXPLORE_SEC_3 ("Kartografiedrohnen"          ,"Erkundung: +6"),
+			EXPLORE_SEC_4 ("Echtzeit-Archivierungsgerät" ,"Erkundung: +2"),
+			EXPLORE_TER_5 ("Holographische Anzeigen"     ,"Erkundung: +2"),
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
 			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
 			MINING_SEC_3  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
 			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
+			MINING_SEC_5  ("Terraforming-Strahlen"        ,"Industrie: +4"),
 			MINING_TER_1  ("Mineralienextraktoren"        ,"Industrie: +1"),
 			MINING_TER_3  ("Asteroidenscanner"            ,"Industrie: +3"),
 			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
@@ -1436,12 +1470,14 @@ public class SaveGameData {
 			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
 			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
 			TRADING_SEC_6 ("Teleportationsgerät"         ,"Handel: +6"),
+			TRADING_TER_1 ("Wirtschaftsscanner"          ,"Handel: +1"),
 			TRADING_TER_3 ("Roboterdiener"               ,"Handel: +3"),
 			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),
 			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
 			
 			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
 			SPEED_TER_4   ("Warp-Antrieb"                 ,"-2% Expeditionsdauer"),
+			SPEED_TER_5   ("Wurmlochgenerator"            ,"-3% Expeditionsdauer"),
 			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
 			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
 			
@@ -1453,6 +1489,7 @@ public class SaveGameData {
 			
 			INVULN_TER_1  ("Sich selbst reparierender Rumpf","Schadensreduzierung"),
 			INVULN_TER_3  ("Holografische Komponenten"      ,"Schadensreduzierung"),
+			
 			;
 			
 			private String label;
@@ -1559,6 +1596,40 @@ public class SaveGameData {
 			@Override public String getValue() { return value; }
 			@Override public String toString() { return modStr; }
 		}
+		
+		public static class Unidentified {
+			
+			public SeedValue seed1;
+			public SeedValue seed2;
+			
+			public Long val1_5VG;
+			
+			public Long statVal5;
+			public Long statVal6;
+			public Long statVal7;
+			public Long statVal8;
+			public Long statVal9;
+			
+			public Long val2_yJC;
+			public Long val3_7hK;
+			
+			Unidentified() {
+				this.seed1 = null;
+				this.seed2 = null;
+				this.val1_5VG = null;
+				this.statVal5 = null;
+				this.statVal6 = null;
+				this.statVal7 = null;
+				this.statVal8 = null;
+				this.statVal9 = null;
+				this.val2_yJC = null;
+				this.val3_7hK = null;
+			}
+
+			public String getUnidentifiedLongs() {
+				return String.format("%s | %s, %s, %s, %s, %s | %s, %s", val1_5VG, statVal5, statVal6, statVal7, statVal8, statVal9, val2_yJC, val3_7hK);
+			}
+		}
 
 		public String name;
 		public String shipType;
@@ -1577,15 +1648,7 @@ public class SaveGameData {
 		
 		public Vector<Modification> modifications;
 		
-		public Long unidentifiedStatVal5;
-		public Long unidentifiedStatVal6;
-		public Long unidentifiedStatVal7;
-		public Long unidentifiedStatVal8;
-		public Long unidentifiedStatVal9;
-		
-		public Long unidentifiedVal1_5VG;
-		public Long unidentifiedVal2_yJC;
-		public Long unidentifiedVal3_7hK;
+		public Unidentified unidentified;
 		
 		public Frigate() {
 			this.name = null;
@@ -1601,14 +1664,7 @@ public class SaveGameData {
 			this.miningValue = null;
 			this.diplomacyValue = null;
 			this.modifications = new Vector<>();
-			this.unidentifiedStatVal5 = null;
-			this.unidentifiedStatVal6 = null;
-			this.unidentifiedStatVal7 = null;
-			this.unidentifiedStatVal8 = null;
-			this.unidentifiedStatVal9 = null;
-			this.unidentifiedVal1_5VG = null;
-			this.unidentifiedVal2_yJC = null;
-			this.unidentifiedVal3_7hK = null;
+			this.unidentified = new Unidentified();
 		}
 		
 	}
@@ -3273,7 +3329,7 @@ public class SaveGameData {
 		return true;
 	}
 
-	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull }
+	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull, ArrayIndexOutOfBounds }
 
 //	private static JSON_Array getArray(Value val)   { if (val==null || !(val instanceof ArrayValue  ) || val.type!=Type.Array  ) return null; val.wasProcessed=true; return ((ArrayValue  )val).value;}
 	private static JSON_Object getObject(Value val) { if (val==null || !(val instanceof ObjectValue ) || val.type!=Type.Object ) return null; val.wasProcessed=true; return ((ObjectValue )val).value;}
@@ -3314,101 +3370,97 @@ public class SaveGameData {
 		return value;
 	}
 
-	private static Boolean getBoolValue(JSON_Object data, Object... path) {
-		Value value = getValue(data,path);
+	private static Value getValue(JSON_Array arr, int index) {
+		Value value = null;
+		if (0<=index && index<arr.size()) {
+			value = arr.get(index);
+			error = Error.NoError;
+			errorMessage = "";
+			if (value==null) {
+				error = Error.ValueIsNull;
+				errorMessage = String.format("Value is null. (Array Index: %d)", index);
+			}
+		} else {
+			error = Error.ArrayIndexOutOfBounds;
+			errorMessage = String.format("Array Index (%d) is out of bounds [0..%d].", index, arr.size());
+		}
+		return value;
+	}
+
+	private static <V> V generic_convert(GetValueHelper<V> helper, Value value, Supplier<String> source) {
 		if (value==null) return null;
-		if (value instanceof BoolValue) {
-			BoolValue realValue = (BoolValue)value;
+		if (helper.isInstance(value)) {
 			error = Error.NoError;
 			errorMessage = "";
 			value.wasProcessed = true;
-			return realValue.value;
+			return helper.getValue(value);
 		} else {
 			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Bool, value.type, Arrays.toString(path));
+			errorMessage = String.format("Value has not the expected type (%s). %s type found. %s", helper.getType(), value.type, source.get());
 			return null;
 		}
 	}
 
-	private static Long getIntegerValue(JSON_Object data, Object... path) {
-		Value value = getValue(data, path);
-		if (value==null) return null;
-		if (value instanceof IntegerValue) {
-			IntegerValue realValue = (IntegerValue)value;
-			error = Error.NoError;
-			errorMessage = "";
-			value.wasProcessed = true;
-			return realValue.value;
-		} else {
-			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Integer, value.type, Arrays.toString(path));
-			return null;
+	private static abstract class GetValueHelper<V> {
+		private Value.Type type;
+		public GetValueHelper(Value.Type type) { this.type = type;}
+		public Value.Type getType() { return type; }
+		public abstract boolean isInstance(Value value);
+		public abstract V getValue(Value value);
+		
+		private static final class GVH_Object extends GetValueHelper<JSON_Object> {
+			private GVH_Object() { super(Type.Object); }
+			@Override public boolean     isInstance(Value value) { return value instanceof ObjectValue; }
+			@Override public JSON_Object getValue  (Value value) { return ((ObjectValue)value).value; }
+		}
+		private static final class GVH_Array extends GetValueHelper<JSON_Array> {
+			private GVH_Array() { super(Type.Array); }
+			@Override public boolean    isInstance(Value value) { return value instanceof ArrayValue; }
+			@Override public JSON_Array getValue  (Value value) { return ((ArrayValue)value).value; }
+		}
+		private static final class GVH_String extends GetValueHelper<String> {
+			private GVH_String() { super(Type.String); }
+			@Override public boolean isInstance(Value value) { return value instanceof StringValue; }
+			@Override public String  getValue  (Value value) { return ((StringValue)value).value; }
+		}
+		private static final class GVH_Double extends GetValueHelper<Double> {
+			private GVH_Double() { super(Type.Float); }
+			@Override public boolean isInstance(Value value) { return value instanceof FloatValue; }
+			@Override public Double  getValue  (Value value) { return ((FloatValue)value).value; }
+		}
+		private static final class GVH_Integer extends GetValueHelper<Long> {
+			private GVH_Integer() { super(Type.Integer); }
+			@Override public boolean isInstance(Value value) { return value instanceof IntegerValue; }
+			@Override public Long    getValue  (Value value) { return ((IntegerValue)value).value; }
+		}
+		private static final class GVH_Bool extends GetValueHelper<Boolean> {
+			private GVH_Bool() { super(Type.Bool); }
+			@Override public boolean isInstance(Value value) { return value instanceof BoolValue; }
+			@Override public Boolean getValue  (Value value) { return ((BoolValue)value).value; }
 		}
 	}
 
-	private static Double getFloatValue(JSON_Object data, Object... path) {
-		Value value = getValue(data, path);
-		if (value==null) return null;
-		if (value instanceof FloatValue) {
-			FloatValue realValue = (FloatValue)value;
-			error = Error.NoError;
-			errorMessage = "";
-			value.wasProcessed = true;
-			return realValue.value;
-		} else {
-			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Float, value.type, Arrays.toString(path));
-			return null;
-		}
+	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Array arr, int index) {
+		return generic_convert(helper, getValue(arr, index), ()->"(Array Index: "+index+")");
 	}
 
-	private static String getStringValue(JSON_Object data, Object... path) {
-		Value value = getValue(data, path);
-		if (value==null) return null;
-		if (value instanceof StringValue) {
-			StringValue realValue = (StringValue)value;
-			error = Error.NoError;
-			errorMessage = "";
-			value.wasProcessed = true;
-			return realValue.value;
-		} else {
-			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.String, value.type, Arrays.toString(path));
-			return null;
-		}
+	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Object data, Object... path) {
+		return generic_convert(helper, getValue(data, path), ()->"(path: "+Arrays.toString(path)+")");
 	}
 
-	private static JSON_Array getArrayValue(JSON_Object data, Object... path) {
-		Value value = getValue(data, path);
-		if (value==null) return null;
-		if (value instanceof ArrayValue) {
-			ArrayValue realValue = (ArrayValue)value;
-			error = Error.NoError;
-			errorMessage = "";
-			value.wasProcessed = true;
-			return realValue.value;
-		} else {
-			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Array, value.type, Arrays.toString(path));
-			return null;
-		}
-	}
+	private static Boolean     getBoolValue   (JSON_Object data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Bool   (), data, path); }
+	private static Long        getIntegerValue(JSON_Object data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Integer(), data, path); }
+	private static Double      getFloatValue  (JSON_Object data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Double (), data, path); }
+	private static String      getStringValue (JSON_Object data, Object... path) { return generic_getValue(new GetValueHelper.GVH_String (), data, path); }
+	private static JSON_Array  getArrayValue  (JSON_Object data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Array  (), data, path); }
+	private static JSON_Object getObjectValue (JSON_Object data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Object (), data, path); }
 
-	private static JSON_Object getObjectValue(JSON_Object data, Object... path) {
-		Value value = getValue(data, path);
-		if (value==null) return null;
-		if (value instanceof ObjectValue) {
-			ObjectValue realValue = (ObjectValue)value;
-			error = Error.NoError;
-			errorMessage = "";
-			value.wasProcessed = true;
-			return realValue.value;
-		} else {
-			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. (path: %s)", Type.Object, value.type, Arrays.toString(path));
-			return null;
-		}
-	}
+	private static Boolean     getBoolValue   (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Bool   (), arr, index); }
+	@SuppressWarnings("unused") private static Long        getIntegerValue(JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Integer(), arr, index); }
+	@SuppressWarnings("unused") private static Double      getFloatValue  (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Double (), arr, index); }
+	@SuppressWarnings("unused") private static String      getStringValue (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_String (), arr, index); }
+	@SuppressWarnings("unused") private static JSON_Array  getArrayValue  (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Array  (), arr, index); }
+	@SuppressWarnings("unused") private static JSON_Object getObjectValue (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Object (), arr, index); }
 
 	private static Long getIntegerValue_silent(JSON_Object data, Object... path) {
 		enableStackTrace(false);
