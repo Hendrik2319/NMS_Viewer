@@ -1586,6 +1586,62 @@ info=
 short=
 info=W: Zufriedenstellend
 
+[Pln10540004425CBA]
+name=Zapolest
+biome=Scorched
+short=
+info=Cu, P, Co
+
+[Pln20540004425CBA]
+name=Ikin Delta
+biome=Toxic
+with water
+buriedTreasure=AncientBones
+short=
+info=Cu, NH3, Na
+
+[Pln30540004425CBA]
+name=Nukih 52/X4
+biome=Scorched
+short=
+info=Cu, P, Na
+
+[Sys00790004425CBA]
+name=Esveto-Dovin
+race=Korvax
+conflict=1
+blackhole=true
+class=Yellow
+short=
+info=W: In Entwicklung
+
+[Pln10790004425CBA]
+name=Esveto-Dovin
+biome=Exotic
+short=Anomal: "Sechsecke"
+info="Sechseckiger Planet"
+short=
+info=Cu, Au, NaCl
+short=
+info=Gebäude: "Grenzüberschreitung"
+
+[Pln20790004425CBA]
+name=Wakingt Diar
+biome=Lush
+with water
+short=#Cu
+info=#Cu, Pf, Ag
+short=Extrem
+info=
+
+[Pln30790004425CBA]
+name=Lineho S35
+biome=Frozen
+aggrSentinels
+gravitino balls
+short=
+info=Cu, CO2, Na
+
 [Reg000000FE452CC0]
 name=Itutsc
 
