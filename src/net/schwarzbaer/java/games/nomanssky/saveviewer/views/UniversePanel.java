@@ -1677,6 +1677,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				addComp( chkbxAggrSent, 0, GridBagConstraints.BOTH);
 				addComp( chkbxWater   , 0, GridBagConstraints.BOTH);
 				addComp( chkbxGrav    , 0, GridBagConstraints.BOTH);
+				addComp( cmbbxBuriedTreasure, 0, GridBagConstraints.BOTH);
 				addComp( new JLabel() , 1, GridBagConstraints.BOTH);
 			}
 
