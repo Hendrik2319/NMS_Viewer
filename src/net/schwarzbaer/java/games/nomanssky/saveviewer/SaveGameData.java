@@ -1611,7 +1611,7 @@ public class SaveGameData {
 			public Long statVal9;
 			
 			public Long val2_yJC;
-			public Long val3_7hK;
+			public Long val3_7hK; // !=0 bei Schaden an Fregatte
 			
 			Unidentified() {
 				this.seed1 = null;
