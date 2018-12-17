@@ -2847,6 +2847,7 @@ public class SaveGameData {
 			final int planetIndex;
 			private Stats.PlanetStats stats;
 			public Biome biome;
+			public boolean hasExtremeBiome;
 			public boolean areSentinelsAggressive;
 			public boolean withWater;
 			public boolean withGravitinoBalls;
@@ -2858,6 +2859,7 @@ public class SaveGameData {
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
 				this.biome = null;
+				this.hasExtremeBiome = false;
 				this.areSentinelsAggressive = false;
 				this.withWater = false;
 				this.withGravitinoBalls = false;
@@ -2888,6 +2890,7 @@ public class SaveGameData {
 				String strExtraInfo="";
 				if (!extraInfos.isEmpty()) {
 					strExtraInfo = getCombinedExtraInfoLabels(
+						(hasExtremeBiome?"<Extr>":null),
 						(withWater?"<Water>":null),
 						(withGravitinoBalls?"<Grav>":null),
 						(buriedTreasure==null?null:"<"+buriedTreasure.name_EN+">")

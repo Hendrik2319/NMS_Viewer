@@ -1214,7 +1214,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	public static TristateCheckBox createTristateCheckBox(String title, ActionListener l, TristateCheckBox.State state) {
-		TristateCheckBox button = new TristateCheckBox(title,null,state);
+		TristateCheckBox button = new TristateCheckBox(title,state);
 		if (l!=null) button.addActionListener(l);
 		return button;
 	}

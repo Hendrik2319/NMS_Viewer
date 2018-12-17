@@ -852,6 +852,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private Gui.IconComboBox<Biome> cmbbxBiome;
 		private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
+
+		private JCheckBox chkbxExtreme;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);
@@ -882,11 +884,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			cmbbxBuriedTreasure.setRenderer(new Tables.NonStringRenderer<BuriedTreasure>(value->value==null?"":((BuriedTreasure)value).name_EN));
 			cmbbxBuriedTreasure.addActionListener(e->{ if (isSettingContent) return; node.value.buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem(); updateTreeNode(node, false);  });
 			
+			chkbxExtreme  = SaveViewer.createCheckbox("is Extreme"          , e->{ if (isSettingContent) return; node.value.hasExtremeBiome        = chkbxExtreme .isSelected(); updateTreeNode(node, true ); }, false);
 			chkbxAggrSent = SaveViewer.createCheckbox("Aggressive Sentinels", e->{ if (isSettingContent) return; node.value.areSentinelsAggressive = chkbxAggrSent.isSelected(); updateTreeNode(node, false); }, false);
 			chkbxWater    = SaveViewer.createCheckbox("with Water"          , e->{ if (isSettingContent) return; node.value.withWater              = chkbxWater   .isSelected(); updateTreeNode(node, true ); }, false);
 			chkbxGrav     = SaveViewer.createCheckbox("with Gravitino Balls", e->{ if (isSettingContent) return; node.value.withGravitinoBalls     = chkbxGrav    .isSelected(); updateTreeNode(node, false); }, false);
 			
 			addCompToValuePanel(cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxExtreme       , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxAggrSent      , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxWater         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxGrav          , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
@@ -902,6 +906,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			long portalGlyphCode = ua.getPortalGlyphCode();
 			
 			cmbbxBiome   .setSelectedItem(planet.biome);
+			chkbxExtreme .setSelected(planet.hasExtremeBiome);
 			chkbxAggrSent.setSelected(planet.areSentinelsAggressive);
 			chkbxWater   .setSelected(planet.withWater);
 			chkbxGrav    .setSelected(planet.withGravitinoBalls);
@@ -1632,10 +1637,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private static final long serialVersionUID = -5056089942590204797L;
 			
 			private Gui.IconComboBox<Biome> cmbbxBiome;
+			private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
+			
+			private TristateCheckBox chkbxExtreme;
 			private TristateCheckBox chkbxAggrSent;
 			private TristateCheckBox chkbxWater;
 			private TristateCheckBox chkbxGrav;
-			private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
+
+			private TristateCheckBox chkbxVehicleSummoner;
+			private TristateCheckBox chkbxBase;
+			private TristateCheckBox chkbxTeleporter;
 			
 			PlanetBar() {
 				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
@@ -1669,15 +1680,23 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 //				});
 				cmbbxBuriedTreasure.addActionListener(e->updateMarkers());
 				
-				chkbxAggrSent = SaveViewer.createTristateCheckBox("Aggr. Sentinels" , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxWater    = SaveViewer.createTristateCheckBox("with water"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxGrav     = SaveViewer.createTristateCheckBox("with Grav. Balls", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxExtreme         = SaveViewer.createTristateCheckBox("Extreme"         , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxAggrSent        = SaveViewer.createTristateCheckBox("Aggr. Sentinels" , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxWater           = SaveViewer.createTristateCheckBox("with Water"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxGrav            = SaveViewer.createTristateCheckBox("with Grav. Balls", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox(null, e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxBase            = SaveViewer.createTristateCheckBox(null, e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxTeleporter      = SaveViewer.createTristateCheckBox(null, e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
 				addComp( cmbbxBiome   , 0, GridBagConstraints.BOTH);
+				addComp( chkbxExtreme , 0, GridBagConstraints.BOTH);
 				addComp( chkbxAggrSent, 0, GridBagConstraints.BOTH);
 				addComp( chkbxWater   , 0, GridBagConstraints.BOTH);
 				addComp( chkbxGrav    , 0, GridBagConstraints.BOTH);
 				addComp( cmbbxBuriedTreasure, 0, GridBagConstraints.BOTH);
+				addComp( chkbxVehicleSummoner, 0, GridBagConstraints.BOTH); addComp( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner)), 0, GridBagConstraints.BOTH);
+				addComp( chkbxBase           , 0, GridBagConstraints.BOTH); addComp( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom)), 0, GridBagConstraints.BOTH);
+				addComp( chkbxTeleporter     , 0, GridBagConstraints.BOTH); addComp( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)), 0, GridBagConstraints.BOTH);
 				addComp( new JLabel() , 1, GridBagConstraints.BOTH);
 			}
 
@@ -1688,31 +1707,43 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				boolean isBiome    = biome==null || p.biome==biome;
 				
 				BuriedTreasure buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem();
-				boolean isBuriedTreasure = buriedTreasure==null || p.buriedTreasure==buriedTreasure;
+				boolean hasBuriedTreasure = buriedTreasure==null || p.buriedTreasure==buriedTreasure;
 				
-				boolean isAggrSent = chkbxAggrSent.isUndefined() || p.areSentinelsAggressive==chkbxAggrSent.isSelected();
-				boolean isWater    = chkbxWater   .isUndefined() || p.withWater             ==chkbxWater   .isSelected();
-				boolean isGrav     = chkbxGrav    .isUndefined() || p.withGravitinoBalls    ==chkbxGrav    .isSelected();
+				boolean hasExtremeBiome    = chkbxExtreme        .isUndefined() || p.hasExtremeBiome       ==chkbxExtreme .isSelected();
+				boolean hasAggrSent        = chkbxAggrSent       .isUndefined() || p.areSentinelsAggressive==chkbxAggrSent.isSelected();
+				boolean hasWater           = chkbxWater          .isUndefined() || p.withWater             ==chkbxWater   .isSelected();
+				boolean hasGrav            = chkbxGrav           .isUndefined() || p.withGravitinoBalls    ==chkbxGrav    .isSelected();
+				boolean hasVehicleSummoner = chkbxVehicleSummoner.isUndefined() || p.additionalInfos.hasExocraftSummoningStation == chkbxVehicleSummoner.isSelected();
+				boolean hasBase            = chkbxBase           .isUndefined() || p.additionalInfos.bases.isEmpty()             != chkbxBase           .isSelected();
+				boolean hasTeleporter      = chkbxTeleporter     .isUndefined() || p.additionalInfos.hasTeleportEndPoint         == chkbxTeleporter     .isSelected();
 				
-				return isBiome && isAggrSent && isWater && isGrav && isBuriedTreasure;
+				return isBiome && hasBuriedTreasure && hasExtremeBiome && hasAggrSent && hasWater && hasGrav && hasVehicleSummoner && hasBase && hasTeleporter;
 			}
 			
 			public boolean isUnset() {
 				return				
 					cmbbxBiome.getSelectedItem()==null &&
 					cmbbxBuriedTreasure.getSelectedItem()==null &&
-					chkbxAggrSent.isUndefined() &&
-					chkbxWater   .isUndefined() &&
-					chkbxGrav    .isUndefined();
+					chkbxExtreme        .isUndefined() &&
+					chkbxAggrSent       .isUndefined() &&
+					chkbxWater          .isUndefined() &&
+					chkbxGrav           .isUndefined() &&
+					chkbxVehicleSummoner.isUndefined() &&
+					chkbxBase           .isUndefined() &&
+					chkbxTeleporter     .isUndefined();
 			}
 
 			@Override
 			public void clearMarkers() {
 				cmbbxBiome.setSelectedItem(null);
 				cmbbxBuriedTreasure.setSelectedItem(null);
-				chkbxAggrSent.setUndefined();
-				chkbxWater   .setUndefined();
-				chkbxGrav    .setUndefined();
+				chkbxExtreme        .setUndefined();
+				chkbxAggrSent       .setUndefined();
+				chkbxWater          .setUndefined();
+				chkbxGrav           .setUndefined();
+				chkbxVehicleSummoner.setUndefined();
+				chkbxBase           .setUndefined();
+				chkbxTeleporter     .setUndefined();
 			}
 			
 		}

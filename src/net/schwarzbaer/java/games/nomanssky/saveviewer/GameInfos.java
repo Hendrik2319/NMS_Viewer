@@ -150,10 +150,12 @@ public class GameInfos {
 		boolean withWater;
 		boolean withGravitinoBalls;
 		Universe.Planet.BuriedTreasure buriedTreasure;
+		public boolean hasExtremeBiome;
 		
 		public UOD_Planet(UniverseAddress ua) {
 			super(ua, Type.Planet);
 			biome = null;
+			hasExtremeBiome = false;
 			areSentinelsAggressive = false;
 			withWater = false;
 			withGravitinoBalls = false;
@@ -162,6 +164,7 @@ public class GameInfos {
 		public UOD_Planet(Planet planet) {
 			super(planet.getUniverseAddress(),Type.Planet,planet);
 			biome = planet.biome;
+			hasExtremeBiome = planet.hasExtremeBiome;
 			areSentinelsAggressive = planet.areSentinelsAggressive;
 			withWater = planet.withWater;
 			withGravitinoBalls = planet.withGravitinoBalls;
@@ -305,6 +308,10 @@ public class GameInfos {
 						catch (Exception e) { planet.biome = null; }
 						continue;
 					}
+					if (str.equals("is extreme")) {
+						planet.hasExtremeBiome = true;
+						continue;
+					}
 					if (str.equals("aggrSentinels") || str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
 						planet.areSentinelsAggressive = true;
 						continue;
@@ -444,6 +451,10 @@ public class GameInfos {
 					planet.biome = uod_planet.biome;
 					if (withOutput) SaveViewer.log_ln("   Biome of %s was defined: %s",objName,planet.biome);
 				}
+				if (uod_planet.hasExtremeBiome) {
+					planet.hasExtremeBiome = uod_planet.hasExtremeBiome;
+					if (withOutput) SaveViewer.log_ln("   %s has extreme biome",objName);
+				}
 				if (uod_planet.areSentinelsAggressive) {
 					planet.areSentinelsAggressive = uod_planet.areSentinelsAggressive;
 					if (withOutput) SaveViewer.log_ln("   Sentinels of %s are aggressive",objName);
@@ -544,6 +555,7 @@ public class GameInfos {
 				
 				if (uod_planet!=null) {
 					if (uod_planet.biome           !=null) out.printf("biome=%s\r\n",uod_planet.biome);
+					if (uod_planet.hasExtremeBiome       ) out.printf("is extreme\r\n");
 					if (uod_planet.areSentinelsAggressive) out.printf("aggrSentinels\r\n");
 					if (uod_planet.withWater             ) out.printf("with water\r\n");
 					if (uod_planet.withGravitinoBalls    ) out.printf("gravitino balls\r\n");
