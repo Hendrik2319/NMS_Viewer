@@ -136,6 +136,7 @@ info=Fe#, Pf, Cu, Eiweißperle
 [Pln204A0002FDC947]
 name=Torio 53/S1
 biome=Frozen
+is extreme
 short=ExtCold
 info=Stufe 3
 short.P=#Cu
@@ -486,6 +487,7 @@ info=NaCl, Pf, Cu, Eiweißperle
 [Pln300A00FAA8CBC4]
 name=Kieve Minoris
 biome=Frozen
+is extreme
 short=Extrem 3
 info=
 short=
@@ -565,6 +567,7 @@ info=Na, Pf, Cu, Eiweißperle
 [Pln202700FAA8CBC4]
 name=Lusingf R4
 biome=Frozen
+is extreme
 with water
 short=ExtCold
 info=Stufe 3
@@ -682,6 +685,7 @@ info=NaCl, NH3, Cu
 [Pln404500FAA8CBC4]
 name=Neswick II
 biome=Irradiated
+is extreme
 short=ExtRad
 info=Stufe 3
 short=
@@ -732,6 +736,7 @@ class=Yellow
 [Pln105700FAA8CBC4]
 name=Naeanggu VI
 biome=Scorched
+is extreme
 with water
 short=ExtHot
 info=Stufe 2
@@ -751,6 +756,7 @@ info=Co, Pf, Cu, Eiweißperle
 [Pln405700FAA8CBC4]
 name=Neu: Ralottawa
 biome=Toxic
+is extreme
 aggrSentinels
 gravitino balls
 short=Extrem ?
@@ -856,6 +862,7 @@ info=Ag, Py, Cu
 name=Dessilaum Ramm
 oldname=Dessilaum Ramm
 biome=Irradiated
+is extreme
 with water
 buriedTreasure=AncientBones
 short=ExtRad
@@ -869,6 +876,7 @@ info=Aktiviertes Kupfer
 name=Biyskogolo
 oldname=Biyskogolo Unzhe
 biome=Toxic
+is extreme
 short=ExtTox
 info=Stufe 3
 short=
@@ -942,6 +950,7 @@ class=Green
 name=Reolousall Nosh
 oldname=Eikkeerhodov
 biome=Scorched
+is extreme
 short=Extrem 3
 info=
 short=
@@ -1018,6 +1027,7 @@ info=
 [Pln116A00FAA8CBC4]
 name=Daymaireth Ganei
 biome=Exotic_Mega
+is extreme
 with water
 short=#In
 info=#In, CO2, Co
@@ -1050,6 +1060,7 @@ class=Red
 name=Dawa 69/W9
 oldname=Yanentunent-Obyt
 biome=Barren
+is extreme
 short=ExtBar
 info=Extrem 
 short.P=#Cd
@@ -1063,6 +1074,7 @@ class=Green
 [Pln118200FAA8CBC4]
 name=Thdakoma
 biome=Exotic_Mega
+is extreme
 with water
 short=
 info="Verdammter Jade-Planet"
@@ -1100,6 +1112,7 @@ oldname=Uagetuhuals
 
 [Pln21EA00FAA8CBC4]
 oldname=Belevskom SX986
+is extreme
 short.P=Ra
 info=Radnox
 short=ExtCold
@@ -1159,6 +1172,7 @@ info=NaCl, U, Cu
 [Pln207A00F8A8DBC4]
 name=Gaapopp
 biome=Barren
+is extreme
 short=ExtBar
 info=
 short=
@@ -1246,6 +1260,7 @@ class=Red
 [Pln112200F9A8DBC4]
 name=Ongham Teya
 biome=Lush
+is extreme
 with water
 short=
 info=NaCl, Pf, #Cd, Eiweißperle
@@ -1270,6 +1285,7 @@ info="Zerschmetterter Planet" -> Bildschirm-Kristalle
 [Pln213A00F9A8DBC4]
 name=Taplebys Ouchi
 biome=Barren
+is extreme
 with water
 short.P=#Cd
 info=Co, Py, #Cd
@@ -1289,6 +1305,7 @@ class=Yellow
 [Pln107A00F8A8DBC5]
 name=Noom 17/Q2
 biome=Toxic
+is extreme
 short=ExtTox
 info=
 short=
@@ -1329,6 +1346,7 @@ info=NaCl, Pf, Cu, Eiweißperle
 [Pln207900F8A8DBC6]
 name=Raxa Omega
 biome=Irradiated
+is extreme
 with water
 short=ExtRad
 info=Stufe 3
@@ -1483,6 +1501,7 @@ info="Metallener Planet" -> "Mutter"-Blumen
 [Pln500200FCA45CAF]
 name=Teosk
 biome=Irradiated
+is extreme
 with water
 short=ExtRad
 info=Stufe 3
@@ -1502,6 +1521,7 @@ info=
 [Pln107900FCA45CAF]
 name=Argolga Omega
 biome=Frozen
+is extreme
 with water
 short=ExtCold
 info=Stufe 3
@@ -1561,6 +1581,7 @@ info=#In, Pf, Na
 [Pln217700FCA45CAF]
 name=Oupolly Guyod
 biome=Scorched
+is extreme
 short=ExtHot
 info=Stufe 3
 short=#In
@@ -1628,6 +1649,7 @@ info=Gebäude: "Grenzüberschreitung"
 [Pln20790004425CBA]
 name=Wakingt Diar
 biome=Lush
+is extreme
 with water
 short=#Cu
 info=#Cu, Pf, Ag
@@ -1714,6 +1736,7 @@ class=Yellow
 [Pln101E0004994DA5]
 name=Neohitne A20
 biome=Barren
+is extreme
 short=Extrem
 info=
 short=
@@ -1722,6 +1745,7 @@ info=Ag, Py, Cu
 [Pln201E0004994DA5]
 name=Gehdadoi Delta
 biome=Lush
+is extreme
 aggrSentinels
 gravitino balls
 short=ExtLush
@@ -1738,6 +1762,7 @@ info=Fe#, CO2, Cu
 [Pln401E0004994DA5]
 name=Megasak IV
 biome=Lush
+is extreme
 with water
 short=ExtLush
 info=
@@ -1757,6 +1782,7 @@ class=Yellow
 [Pln10790004994DA5]
 name=Hiydran Daba
 biome=Lush
+is extreme
 with water
 short.P=#Cu
 info=Co, Pf, #Cu, Eiweißperle
@@ -1941,6 +1967,7 @@ info=Co, CO2, Cu
 [Pln20790003000FF8]
 name=Opiumfor Majoris
 biome=Irradiated
+is extreme
 with water
 short=ExtRad
 info=Stufe 3
@@ -2018,6 +2045,7 @@ info=Viridium
 
 [Pln30010010000000]
 oldname=Urneferi Fukiha
+is extreme
 short.P=Vi
 info=Viridium
 short=ExtRad
@@ -2302,6 +2330,7 @@ class=Yellow
 
 [Pln107200FEB7F529]
 oldname=Naarhurdorcan
+is extreme
 short=ExtHot
 info=Extrem heißer Planet
 short=Grav??
@@ -2340,6 +2369,7 @@ info=Cu, P, Co
 [Pln400B0003CC45B8]
 name=Yetonyan Sago
 biome=Frozen
+is extreme
 with water
 short=ExtCold
 info=Stufe 3
@@ -2417,6 +2447,7 @@ distance=694540.000000
 [Pln102A0002C825D1]
 name=Mitid
 biome=Toxic
+is extreme
 with water
 buriedTreasure=AncientBones
 short=#Cu
@@ -2486,6 +2517,7 @@ info=Co, U, Cu
 [Pln60790002C825D1]
 name=Yavaccacok Tamo
 biome=Toxic
+is extreme
 buriedTreasure=AncientBones
 short=#Cu
 info=NaCl, NH3, #Cu
@@ -2496,14 +2528,15 @@ info=Stufe 3
 name=Aguchi
 unexplored
 class=Blue
-short=#In
-info=Ag, P, #In
-short=ExtHot
-info=Stufe 3
 
 [Pln10A00002C825D1]
 name=Galiu
 biome=Scorched
+is extreme
+short=ExtHot
+info=Stufe 3
+short=#In
+info=Ag, P, #In
 
 [Sys00B80002C825D1]
 name=Yokazumi
@@ -2542,6 +2575,7 @@ info=
 [Pln101F0000DBE61C]
 name=Lumiris Majoris
 biome=Irradiated
+is extreme
 with water
 short=ExtRad
 info=Stufe 3
