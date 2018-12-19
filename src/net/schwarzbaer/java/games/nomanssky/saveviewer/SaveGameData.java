@@ -60,6 +60,7 @@ public class SaveGameData {
 	public Vector<StoredInteraction> storedInteractions;
 	public Vector<TeleportEndpoints> teleportEndpoints;
 	public Vector<Frigate> frigates;
+	public Vector<FrigateMission> frigateMissions;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -81,6 +82,7 @@ public class SaveGameData {
 		this.persistentPlayerBases = null;
 		this.teleportEndpoints = null;
 		this.frigates = null;
+		this.frigateMissions = null;
 	}
 
 	public void setDeObfuscatorUsage(HashMap<String, Vector<String>> deObfuscatorUsage) {
@@ -101,6 +103,7 @@ public class SaveGameData {
 		parseStoredInteractions();
 		parseTeleportEndpoints();
 		parseFrigates();
+		parseFrigateMissions();
 		universe.sort();
 		//universe.writeToConsole();
 		
@@ -1387,7 +1390,7 @@ public class SaveGameData {
 			}
 			
 			Frigate fr = new Frigate();
-			fr.name             = getStringValue (objectValue, "[?Name?]");
+			fr.name             = getStringValue (objectValue, "[UserDefinedName]");
 			fr.shipType         = getStringValue (objectValue, "[ShipType]", "[ShipType]");
 			fr.crewRace         = getStringValue (objectValue, "[?CrewRace?]", "[?CrewRaceStr?]");
 			fr.aquired          = TimeStamp.create(getIntegerValue(objectValue, "[?aquired?]"));
@@ -1432,7 +1435,7 @@ public class SaveGameData {
 		Frigate.EditableModification.saveKnownEditableModsToFile();
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
 	}
 	
 	public static class Frigate {
@@ -1665,6 +1668,129 @@ public class SaveGameData {
 			this.diplomacyValue = null;
 			this.modifications = new Vector<>();
 			this.unidentified = new Unidentified();
+		}
+		
+	}
+	
+	private void parseFrigateMissions() {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","[RunningFrigateMissions]");
+		if (arrayValue==null) return;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		JSON_Array array;
+		frigateMissions = new Vector<>();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			JSON_Object objectValue = getObject(value);
+			if (objectValue==null) {
+				notParsableObjects.add(value);
+				continue;
+			}
+			
+			FrigateMission frm = new FrigateMission();
+			frigateMissions.add(frm);
+			
+			frm.seed             = SeedValue.parse( getArrayValue(objectValue, "Seed") );
+			frm.universeAddress  = parseUniverseAddressField(objectValue, "UA");
+			frm.name             = getStringValue (objectValue, "[UserDefinedName]");
+			frm.missionTime1     = TimeStamp.create(getIntegerValue(objectValue, "[??? bc< MissionTime1]"));
+			frm.missionTime2     = TimeStamp.create(getIntegerValue(objectValue, "[??? dfZ MissionTime2]"));
+			frm.missionType      = getStringValue (objectValue, "[MissionType]", "[MissionType]");
+			frm.missionDistance  = getStringValue (objectValue, "[MissionDistance]", "[MissionDistance]");
+			
+			array = getArrayValue(objectValue,"[??? sbg MissionValues1]"); frm.missionValues1 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Integer));
+			array = getArrayValue(objectValue,"[??? lD@ MissionValues2]"); frm.missionValues2 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Integer));
+			
+			array = getArrayValue(objectValue,"[??? o@4 Position1]"); frm.position1 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Float,"%1.3f"));
+			array = getArrayValue(objectValue,"[??? 4j2 Position2]"); frm.position2 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Float,"%1.3f"));
+			
+			array = getArrayValue(objectValue,"[??? hea Some IDs]"); frm.someIDs = (String)(array==null?"<NotFound>":array.toString(Value.Type.String));
+			frm.progress         = getFloatValue(objectValue, "[??? b>d Progress in %]");
+			
+			frm.ID1_3oW          = getStringValue (objectValue, "[??? 3oW An ID]");
+			frm.int1__DC         = getIntegerValue(objectValue, "[??? ?DC Int:0]");
+			frm.int2_U87         = getIntegerValue(objectValue, "[??? U87 Int:14]");
+			frm.int3_G_H         = getIntegerValue(objectValue, "[??? G;H Int:0]");
+			frm.int4_omN         = getIntegerValue(objectValue, "[??? omN Int:14]");
+			frm.bool1_b78        = getBoolValue   (objectValue, "[??? b78 Bool:false]");
+			
+			array = getArrayValue(objectValue,"[??? WZs Arr:[]]"); frm.array1_WZs = (String)(array==null?"<NotFound>":array.toString(null));
+			array = getArrayValue(objectValue,"[??? 1xe Arr:[]]"); frm.array2_1xe = (String)(array==null?"<NotFound>":array.toString(null));
+			
+			JSON_Array missionTasks = getArrayValue(objectValue,"[??? tUs MissionTasks]");
+			if (missionTasks!=null) {
+				frm.missionTasks.clear();
+				for (int m=0; m<missionTasks.size(); ++m) {
+					Value mtValue = missionTasks.get(m);
+					JSON_Object mtObject = getObject(mtValue);
+					if (mtObject==null) {
+						notParsableObjects.add(mtValue);
+						continue;
+					}
+					
+					FrigateMission.FrigateMissionTask frmt = new FrigateMission.FrigateMissionTask();
+					frm.missionTasks.add(frmt);
+					
+					frmt.seed            = SeedValue.parse( getArrayValue(mtObject, "Seed") );
+					frmt.universeAddress = parseUniverseAddressField(mtObject, "UA");
+					frmt.missionTaskType = getStringValue(mtObject, "[??? Mx@ MissionTasksTypeID]");
+					frmt.otherID         = getStringValue(mtObject, "[??? 7Q; An ID]");
+					
+					array = getArrayValue(mtObject,"[??? iaH Arr:[]]"); frmt.array1_iaH = array==null?"<NotFound>":array.toString(null);
+					array = getArrayValue(mtObject,"[??? QJG Arr:[]]"); frmt.array2_QJG = array==null?"<NotFound>":array.toString(null);
+					array = getArrayValue(mtObject,"[??? fe2 Arr:[]]"); frmt.array3_fe2 = array==null?"<NotFound>":array.toString(null);
+					
+					frmt.bool1_bbB = getBoolValue(mtObject, "[??? bbB Bool:true]");
+					frmt.bool2_fvN = getBoolValue(mtObject, "[??? fvN Bool:false]");
+					frmt.bool3_8GD = getBoolValue(mtObject, "[??? 8GD Bool:false]");
+				}
+			}
+		}
+		
+		Frigate.EditableModification.saveKnownEditableModsToFile();
+		
+		if (!notParsableObjects.isEmpty())
+			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable RunningFrigateMissions.");
+	}
+
+	public static class FrigateMission {
+
+		public SeedValue seed = null;
+		public UniverseAddress universeAddress = null;
+		public String name = null;
+		public String missionType = null;
+		public String missionDistance = null;
+		public Vector<FrigateMissionTask> missionTasks = new Vector<>();
+		
+		public TimeStamp missionTime1 = null;
+		public TimeStamp missionTime2 = null;
+		public String missionValues1 = null;
+		public String missionValues2 = null;
+		public String position1 = null;
+		public String position2 = null;
+		public String someIDs = null;
+		public Double progress = null;
+		
+		public String ID1_3oW = null;
+		public Long int1__DC = null;
+		public Long int2_U87 = null;
+		public Long int3_G_H = null;
+		public Long int4_omN = null;
+		public Boolean bool1_b78 = null;
+		public String array1_WZs = null;
+		public String array2_1xe = null;
+
+		public static class FrigateMissionTask {
+			public SeedValue seed = null;
+			public UniverseAddress universeAddress = null;
+			public String missionTaskType = null;
+			public String otherID = null;
+			public String array1_iaH = null;
+			public String array2_QJG = null;
+			public String array3_fe2 = null;
+			public Boolean bool1_bbB = null;
+			public Boolean bool2_fvN = null;
+			public Boolean bool3_8GD = null;
 		}
 		
 	}

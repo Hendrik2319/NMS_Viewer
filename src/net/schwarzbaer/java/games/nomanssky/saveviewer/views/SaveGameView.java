@@ -79,6 +79,7 @@ public class SaveGameView extends JPanel {
 			
 			if (data.inventories!=null) tabbedPane.addTab("Inventories",new InventoriesPanel(data,mainWindow));
 			if (data.frigates   !=null) tabbedPane.addTab("Frigates"   ,new SimplePanels.FrigatesPanel(data,mainWindow));
+			if (data.frigateMissions!=null) tabbedPane.addTab("Frigate Missions",new SimplePanels.FrigateMissionsPanel(data,mainWindow));
 			
 			if (data.teleportEndpoints    !=null) tabbedPane.addTab("Teleport Endpoints" , new SimplePanels.TeleportEndpointsPanel(data));
 			if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases"       , new SimplePanels.PersistentPlayerBasesPanel(data,mainWindow));

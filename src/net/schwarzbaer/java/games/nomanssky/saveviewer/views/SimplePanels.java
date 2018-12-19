@@ -44,6 +44,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryDat
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.Modification;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission.FrigateMissionTask;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.SeedValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
@@ -350,6 +352,243 @@ public class SimplePanels {
 				gbc.fill = fill;
 				layout.setConstraints(comp, gbc);
 				panel.add(comp);
+			}
+		}
+	}
+	
+	
+	public static class FrigateMissionsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = -2373140421444054954L;
+		
+		private JTextArea textArea;
+
+		public FrigateMissionsPanel(SaveGameData data, Window mainWindow) {
+			super(data);
+			textArea = new JTextArea();
+			
+			MissionTasksTableModel missionTasksTableModel = new MissionTasksTableModel();
+			SimplifiedTable missionTasksTable = new SimplifiedTable("FrigateMissionTasksTable",missionTasksTableModel,true,SaveViewer.DEBUG,true);
+			
+			MissionsTableModel missionsTableModel = new MissionsTableModel();
+			SimplifiedTable missionsTable = new SimplifiedTable("FrigateMissionsTable",missionsTableModel,true,SaveViewer.DEBUG,true);
+			missionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			missionsTable.getSelectionModel().addListSelectionListener(e->{
+				int rowIndex = missionsTable.convertRowIndexToModel(missionsTable.getSelectedRow());
+				FrigateMission frigateMission = data.frigateMissions.get(rowIndex);
+				showValues(frigateMission,rowIndex);
+				missionTasksTableModel.setFrigateMission(frigateMission);
+			});
+			
+			JScrollPane missionsTableScrollPane = new JScrollPane(missionsTable);
+			missionsTableScrollPane.setPreferredSize(new Dimension(100,150));
+			
+			JScrollPane textareaScrollPane = new JScrollPane(textArea);
+			textareaScrollPane.setPreferredSize(new Dimension(300,50));
+			
+			JScrollPane missionsTasksTableScrollPane = new JScrollPane(missionTasksTable);
+			missionsTasksTableScrollPane.setPreferredSize(new Dimension(50,50));
+			
+			add(missionsTableScrollPane,BorderLayout.NORTH);
+			add(textareaScrollPane,BorderLayout.WEST);
+			add(missionsTasksTableScrollPane,BorderLayout.CENTER);
+			
+		}
+		
+		private void showValues(FrigateMission frm, int rowIndex) {
+			textArea.setText("");
+			if (frm==null) return;
+			
+			appendln("Name     : %s", frm.name           ==null?"":(frm.name!=null && frm.name.isEmpty()?("<FrigateMission "+(rowIndex+1)+">"):frm.name));
+			appendln("Type     : %s", frm.missionType    ==null?"":frm.missionType);
+			appendln("Distance : %s", frm.missionDistance==null?"":frm.missionDistance);
+			appendln();
+			appendln("Start : %s", frm.missionTime1==null?"":frm.missionTime1);
+			appendln("End   : %s", frm.missionTime2==null?"":frm.missionTime2);
+			appendln();
+			appendln("Universe Address:");
+			appendln("    %s", frm.universeAddress==null?"":frm.universeAddress.getCoordinates() );
+			appendln("    %s", getPlanetOrSystem(frm.universeAddress) );
+			appendln("Seed : %s ", frm.seed==null?"":frm.seed );
+			appendln();
+			appendln("Mission Values:");
+			appendln("    %s", frm.missionValues1==null?"":frm.missionValues1 );
+			appendln("    %s", frm.missionValues2==null?"":frm.missionValues2 );
+			appendln("Positions:");
+			appendln("    %s", frm.position1==null?"":frm.position1 );
+			appendln("    %s", frm.position2==null?"":frm.position2 );
+			appendln("Some IDs : %s ", frm.someIDs==null?"":frm.someIDs );
+			appendln("Progress : %s", frm.progress );
+			appendln();
+			appendln("Unidentified Values:");
+			appendln("    ID1    : %s", frm.ID1_3oW   ==null?"":frm.ID1_3oW    );
+			appendln("    Int1   : %s", frm.int1__DC  ==null?"":frm.int1__DC   );
+			appendln("    Int2   : %s", frm.int2_U87  ==null?"":frm.int2_U87   );
+			appendln("    Int3   : %s", frm.int3_G_H  ==null?"":frm.int3_G_H   );
+			appendln("    Int4   : %s", frm.int4_omN  ==null?"":frm.int4_omN   );
+			appendln("    Bool1  : %s", frm.bool1_b78 ==null?"":frm.bool1_b78  );
+			appendln("    Array1 : %s", frm.array1_WZs==null?"":frm.array1_WZs );
+			appendln("    Array2 : %s", frm.array2_1xe==null?"":frm.array2_1xe );
+		}
+		
+		private void appendln() {
+			appendln("");
+		}
+		private void appendln(String format, Object...objects) {
+			textArea.append(String.format(format+"\r\n", objects));
+		}
+
+		private String getPlanetOrSystem(UniverseAddress universeAddress) {
+			if (universeAddress ==null) return "";
+			String strOut = "";
+			Vector<String> verboseName = universeAddress.getVerboseName(data.universe);
+			for (int i=0; i<verboseName.size() && i<2; i++)
+				strOut += " "+verboseName.get(i);
+			return strOut;
+		}
+
+		private enum MissionsColumnID implements SimplifiedColumnIDInterface {
+			// [105, 59, 56, 120, 120, 160, 420, 160, 88, 90, 124, 130, 89, 56, 36, 35, 35, 35, 35, 43, 48, 35]
+			Name            ("Name"           ,    String.class, 35, -1, 105, 105),
+			MissionType     ("Type"           ,    String.class, 35, -1,  60,  60),
+			MissionDistance ("Distance"       ,    String.class, 35, -1,  60,  60),
+			MissionTime1    ("Time 1"         , TimeStamp.class, 35, -1, 120, 120),
+			MissionTime2    ("Time 2"         , TimeStamp.class, 35, -1, 120, 120),
+			UniverseAddress ("UniverseAddress",    String.class, 35, -1, 160, 160),
+			PlanetOrSystem  ("Planet / System",    String.class, 35, -1, 420, 420),
+			Seed            ("Seed"           , SeedValue.class, 35, -1, 160, 160),
+			MissionValues1  ("Values 1"       ,    String.class, 35, -1,  90,  90),
+			MissionValues2  ("Values 2"       ,    String.class, 35, -1,  90,  90),
+			Position1       ("Position 1"     ,    String.class, 35, -1, 130, 130),
+			Position2       ("Position 2"     ,    String.class, 35, -1, 130, 130),
+			SomeIDs         ("Some IDs"       ,    String.class, 35, -1,  90,  90),
+			Progress        ("Progress"       ,    Double.class, 35, -1,  60,  60),
+			
+			ID1    ("ID1"   ,  String.class, 35, -1,  35,  35),
+			Int1   ("Int1"  ,    Long.class, 35, -1,  35,  35),
+			Int2   ("Int2"  ,    Long.class, 35, -1,  35,  35),
+			Int3   ("Int3"  ,    Long.class, 35, -1,  35,  35),
+			Int4   ("Int4"  ,    Long.class, 35, -1,  35,  35),
+			Bool1  ("Bool1" , Boolean.class, 35, -1,  50,  50),
+			Array1 ("Array1",  String.class, 35, -1,  50,  50),
+			Array2 ("Array2",  String.class, 35, -1,  50,  50),
+			;
+			
+			private SimplifiedColumnConfig columnConfig;
+			
+			MissionsColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class MissionsTableModel extends SimplifiedTableModel<MissionsColumnID> {
+			
+			public MissionsTableModel() {
+				super(MissionsColumnID.values());
+			}
+
+			@Override
+			public int getRowCount() {
+				return data.frigateMissions.size();
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, MissionsColumnID columnID) {
+				SaveGameData.FrigateMission frm = data.frigateMissions.get(rowIndex);
+				if (frm==null) return null;
+				switch(columnID) {
+				case Name           : if (frm.name!=null && frm.name.isEmpty()) return "<Frigate Mission "+(rowIndex+1)+">"; return frm.name;
+				case Seed           : return frm.seed;
+				case UniverseAddress: if (frm.universeAddress==null) return ""; return frm.universeAddress.getCoordinates();
+				case PlanetOrSystem : return getPlanetOrSystem(frm.universeAddress);
+				case MissionType    : return frm.missionType;
+				case MissionDistance: return frm.missionDistance;
+				case MissionTime1   : return frm.missionTime1;
+				case MissionTime2   : return frm.missionTime2;
+				case MissionValues1 : return frm.missionValues1;
+				case MissionValues2 : return frm.missionValues2;
+				case Position1      : return frm.position1;
+				case Position2      : return frm.position2;
+				case SomeIDs        : return frm.someIDs;
+				case Progress       : return frm.progress;
+				case ID1   : return frm.ID1_3oW;
+				case Int1  : return frm.int1__DC;
+				case Int2  : return frm.int2_U87;
+				case Int3  : return frm.int3_G_H;
+				case Int4  : return frm.int4_omN;
+				case Bool1 : return frm.bool1_b78;
+				case Array1: return frm.array1_WZs;
+				case Array2: return frm.array2_1xe;
+				
+				}
+				return null;
+			}
+		}
+		
+		private enum MissionTasksColumnID implements SimplifiedColumnIDInterface {
+			// [114, 62, 160, 420, 160, 50, 50, 50, 50, 50, 50]
+			Index           ("#"              ,   Integer.class, 35, -1,  35,  35),
+			MissionTaskType ("Type"           ,    String.class, 35, -1, 120, 120),
+			OtherID         ("Other ID"       ,    String.class, 35, -1,  60,  60),
+			UniverseAddress ("UniverseAddress",    String.class, 35, -1, 160, 160),
+			PlanetOrSystem  ("Planet / System",    String.class, 35, -1, 420, 420),
+			Seed            ("Seed"           , SeedValue.class, 35, -1, 160, 160),
+			Array1          ("Array1"         ,    String.class, 35, -1,  50,  50),
+			Array2          ("Array2"         ,    String.class, 35, -1,  50,  50),
+			Array3          ("Array3"         ,    String.class, 35, -1,  50,  50),
+			Bool1           ("Bool1"          ,   Boolean.class, 35, -1,  50,  50),
+			Bool2           ("Bool2"          ,   Boolean.class, 35, -1,  50,  50),
+			Bool3           ("Bool3"          ,   Boolean.class, 35, -1,  50,  50),
+			;
+			
+			private SimplifiedColumnConfig columnConfig;
+			
+			MissionTasksColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class MissionTasksTableModel extends SimplifiedTableModel<MissionTasksColumnID> {
+			
+			private Vector<FrigateMissionTask> values;
+
+			public MissionTasksTableModel() {
+				super(MissionTasksColumnID.values());
+				values = new Vector<>();
+			}
+
+			public void setFrigateMission(FrigateMission frigateMission) {
+				values = frigateMission.missionTasks;
+				fireTableUpdate();
+			}
+
+			@Override
+			public int getRowCount() {
+				return values.size();
+			}
+
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, MissionTasksColumnID columnID) {
+				FrigateMissionTask frmt = values.get(rowIndex);
+				switch(columnID) {
+				case Index: return rowIndex+1;
+				
+				case MissionTaskType: return frmt.missionTaskType;
+				case OtherID        : return frmt.otherID;
+				case UniverseAddress: if (frmt.universeAddress==null) return ""; return frmt.universeAddress.getCoordinates();
+				case PlanetOrSystem : return getPlanetOrSystem(frmt.universeAddress);
+				case Seed           : return frmt.seed;
+				
+				case Array1: return frmt.array1_iaH;
+				case Array2: return frmt.array2_QJG;
+				case Array3: return frmt.array3_fe2;
+				case Bool1 : return frmt.bool1_bbB;
+				case Bool2 : return frmt.bool2_fvN;
+				case Bool3 : return frmt.bool3_8GD;
+				
+				}
+				return null;
 			}
 		}
 	}
