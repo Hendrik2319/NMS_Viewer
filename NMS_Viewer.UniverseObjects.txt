@@ -846,6 +846,7 @@ name=Axellenboe Ummi
 oldname=Axellenboe Ummi
 biome=Scorched
 with water
+buriedTreasure=AncientBones
 short=
 info=Na, P, Cu
 
@@ -1632,6 +1633,7 @@ name=Esveto-Dovin
 race=Korvax
 conflict=1
 blackhole=true
+blackholetarget=0026000253AFFC
 class=Yellow
 short=
 info=W: In Entwicklung
@@ -1879,6 +1881,61 @@ class=Yellow
 short=6 Planeten
 info=
 
+[Reg00000003B09ED6]
+name=Rauise-Zufluss
+
+[Sys006B0003B09ED6]
+name=Evkarsen III
+race=Gek
+conflict=3
+class=Yellow
+short=
+info=W: Erfolgversprechend
+
+[Pln106B0003B09ED6]
+name=Adyavan Tau
+biome=Barren
+is extreme
+short=
+info=Extr: Stufe 3
+short=#Cu
+info=#Cu, Py, Na
+
+[Pln206B0003B09ED6]
+name=Dworthi
+biome=Lush
+aggrSentinels
+with water
+gravitino balls
+short=
+info=Cu, Pf, Fe##
+
+[Pln306B0003B09ED6]
+name=Uieta Sigma
+biome=Toxic
+with water
+short=
+info=Cu, NH3, NaCl
+
+[Pln406B0003B09ED6]
+name=Okuts 37/W7
+biome=AnomShells
+
+[Pln506B0003B09ED6]
+name=Visty
+biome=Irradiated
+buriedTreasure=AncientBones
+short=
+info=Cu, U, Co
+
+[Pln606B0003B09ED6]
+name=Royalal G17
+biome=AnomHexagons
+short=
+info="Sechseckiger Planet"
+short=
+info=Cu, Au, NaCl
+
 [Reg000000FE5CAF06]
 name=Hoveli-Cluster
 
@@ -2025,6 +2082,31 @@ oldname=Lutieneralat
 
 [Pln30010008008FF8]
 oldname=Perthymeng Avndas
+
+[Reg0000000253AFFC]
+name=Uutare-Band
+
+[Sys0026000253AFFC]
+name=Yignusc-Zeta XIII
+race=Gek
+conflict=1
+class=Yellow
+short=6 Planeten
+info=
+short=
+info=W: Gedeihend
+
+[Sys0079000253AFFC]
+name=Fanney-Nemur
+race=Gek
+conflict=3
+blackhole=true
+blackholetarget=006700021A84E4
+class=Yellow
+short=6 Planeten
+info=
+short=
+info=W: In Entwicklung
 
 [Reg00000010000000]
 
@@ -2283,6 +2365,41 @@ oldname=Huvshi Ohashi
 
 [Pln407200024F14BB]
 oldname=Miplinga Dazaw
+
+[Reg000000021A84E4]
+name=Thwarl-Zufluss
+
+[Sys006700021A84E4]
+name=Japaeumat IV
+race=Vykeen
+conflict=3
+class=Yellow
+short=4 Planeten
+info=
+short=
+info=W: Reich
+
+[Sys007900021A84E4]
+name=Brencest
+race=Vykeen
+conflict=3
+blackhole=true
+class=Yellow
+short=
+info=W: Mühevoll
+
+[Pln107900021A84E4]
+name=Ipswin Gamma
+biome=Lush
+with water
+short=
+info=Cu, Pf, NaCl
+
+[Pln207900021A84E4]
+name=Paylo Tau
+biome=Scorched
+short=
+info=Cu, P, NaCl
 
 [Reg00000004C074F0]
 name=Sagroa-Instabilität
