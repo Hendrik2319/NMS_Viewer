@@ -1005,6 +1005,10 @@
 ^PROC_HIST#06864.type=Special
 ^PROC_HIST#06864.image=Artifact.HistoricalDocument.png
 ^PROC_HIST#06864.imageBG=1EB808
+^PROC_LOOT#15229=Ausgegrabener Schatz (gewöhnlich)
+^PROC_LOOT#15229.type=Special
+^PROC_LOOT#15229.image=Artifact.UnearthedTreasure.png
+^PROC_LOOT#15229.imageBG=153250
 ^PROC_LOOT#18657=Ausgegrabener Schatz (selten)
 ^PROC_LOOT#18657.type=Special
 ^PROC_LOOT#18657.image=Artifact.UnearthedTreasure.png
@@ -1052,6 +1056,10 @@
 ^PROC_SEA#89426.type=Special
 ^PROC_SEA#89426.image=TREASUREPROD.WATERLOOT.png
 ^PROC_SEA#89426.imageBG=1EB808
+^PROC_TOOL#88879=Vergessenes Artefakt (gewöhnlich)
+^PROC_TOOL#88879.type=Special
+^PROC_TOOL#88879.image=Artifact.LostArtifact.png
+^PROC_TOOL#88879.imageBG=153250
 ^PROC_TOOL#91169=Vergessenes Artefakt (ungewöhnlich) 
 ^PROC_TOOL#91169.type=Special
 ^PROC_TOOL#91169.image=Artifact.LostArtifact.png
