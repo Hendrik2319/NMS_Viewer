@@ -24,6 +24,7 @@ import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.LabelRendererComponent;
+import net.schwarzbaer.gui.Tables.SimplifiedRowSorter.RowSorterListener;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
@@ -106,11 +107,17 @@ public class TableView {
 		private String name;
 		private DebugTableContextMenu contextMenu;
 		private TableCellRenderer overallCellRenderer;
+		private NewRowSorter rowSorter;
+		private RowSorterListener rowSorterListener;
+		private int[] selectedRowsM;
 		
-		SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
+		public SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super();
 			this.name = name;
 			this.useRowSorter = useRowSorter;
+			this.rowSorter = null;
+			this.selectedRowsM = null;
+			this.rowSorterListener = null;
 			this.overallCellRenderer = null;
 			if (disableAutoResize)
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -121,20 +128,74 @@ public class TableView {
 			//setAutoCreateRowSorter(useRowSorter);
 		}
 		
-		public DebugTableContextMenu getDebugTableContextMenu() {
-			return contextMenu;
-		}
-		
 		public SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
 			setModel(dataModel);
+		}
+		
+		public DebugTableContextMenu getDebugTableContextMenu() {
+			return contextMenu;
+		}
+
+		public void setSelectionMode(int selectionMode, boolean keepSelectionWhileRowSort) {
+			setSelectionMode(selectionMode);
+			if (keepSelectionWhileRowSort) {
+				getSelectionModel().addListSelectionListener(e->{
+					int[] rowsV = getSelectedRows();
+					selectedRowsM = new int[rowsV.length];
+					for (int i = 0; i < rowsV.length; i++)
+						selectedRowsM[i] = convertRowIndexToModel(rowsV[i]);
+				});
+				setRowSorterListener(()->{
+					if (selectedRowsM!=null && selectedRowsM.length>0) {
+						SaveViewer.log_ln("Selected Rows (Model): %s", Arrays.toString(selectedRowsM));
+						
+						int[] rowsV = new int[selectedRowsM.length];
+						for (int i = 0; i < rowsV.length; i++)
+							rowsV[i] = convertRowIndexToView(selectedRowsM[i]);
+						SaveViewer.log_ln("Selected Rows (View) : %s", Arrays.toString(rowsV));
+						Arrays.sort(rowsV);
+						SaveViewer.log_ln("Selected Rows (View) : %s (sorted)", Arrays.toString(rowsV));
+						
+						clearSelection();
+						int firstRow, lastRow;
+						for (int i=0; i<rowsV.length; i++) {
+							firstRow = lastRow = rowsV[i];
+							boolean endReached = true;
+							for (int j=i+1; j<rowsV.length; j++) {
+								if (lastRow+1 == rowsV[j]) {
+									lastRow = rowsV[j];
+								} else {
+									i = j-1; // --> lastRow == rowsV[i]
+									addRowSelectionInterval(firstRow, rowsV[i]);
+									SaveViewer.log_ln("addRowSelectionInterval: %d..%d", firstRow, rowsV[i]);
+									endReached = false;
+									break;
+								}
+							}
+							if (endReached) {
+								addRowSelectionInterval(firstRow, rowsV[rowsV.length-1]);
+								SaveViewer.log_ln("addRowSelectionInterval: %d..%d (e)", firstRow, rowsV[rowsV.length-1]);
+								break;
+							}
+						}
+					}
+				});
+			}
+		}
+
+		private void setRowSorterListener(RowSorterListener rowSorterListener) {
+			this.rowSorterListener = rowSorterListener;
+			if (rowSorter!=null && rowSorterListener!=null) rowSorter.addListener(rowSorterListener);
 		}
 
 		public void setModel(SimplifiedTableModel<?> dataModel) {
 			super.setModel(dataModel);
 			dataModel.setColumnWidths(this);
-			if (useRowSorter)
-				setRowSorter(new NewRowSorter(dataModel));
+			if (useRowSorter) {
+				setRowSorter(rowSorter = new NewRowSorter(dataModel));
+				if (rowSorterListener!=null) rowSorter.addListener(rowSorterListener);
+			}
 			if (overallCellRenderer!=null)
 				setCellRendererForAllColumns(overallCellRenderer, false);
 		}

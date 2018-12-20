@@ -1029,7 +1029,7 @@ public class GameInfos {
 			clickedCell = null;
 			tableModel = new GeneralizedIDTableModel(this,idMap);
 			table = new SimplifiedTable(tableLabel,tableModel,true,false,true);
-			table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION, true);
 			table.getSelectionModel().addListSelectionListener(e->{
 				if (table.getSelectedRowCount()==1)
 					showID(tableModel.getValue(table.convertRowIndexToModel(table.getSelectedRow())));

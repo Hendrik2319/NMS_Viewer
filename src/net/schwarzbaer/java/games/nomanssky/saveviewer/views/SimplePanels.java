@@ -68,10 +68,13 @@ public class SimplePanels {
 			
 			LocalTableModel tableModel = new LocalTableModel();
 			SimplifiedTable table = new SimplifiedTable("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
-			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 			table.getSelectionModel().addListSelectionListener(e->{
 				textArea.setText("");
-				String originalStr = tableModel.getValue(table.convertRowIndexToModel(table.getSelectedRow()));
+				int selectedRowV = table.getSelectedRow();
+				if (selectedRowV<0) return;
+				
+				String originalStr = tableModel.getValue(table.convertRowIndexToModel(selectedRowV));
 				Vector<String> paths = data.deObfuscatorUsage.get(originalStr);
 				if (paths!=null)
 					for (String str:paths)
@@ -140,24 +143,33 @@ public class SimplePanels {
 			
 			LocalTableModel tableModel = new LocalTableModel();
 			SimplifiedTable table = new SimplifiedTable("FrigatesTable",tableModel,true,SaveViewer.DEBUG,true);
-			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 			table.getSelectionModel().addListSelectionListener(e->{
-				int rowIndex = table.convertRowIndexToModel(table.getSelectedRow());
-				showValues(data.frigates.get(rowIndex),rowIndex);
+				int rowV = table.getSelectedRow();
+				if (rowV<0) {
+					showValues(null,-1);
+					return;
+				}
+				
+				int rowM = table.convertRowIndexToModel(rowV);
+				showValues(data.frigates.get(rowM),rowM);
 			});
 			
 			JPopupMenu contextMenu = new JPopupMenu();
 			contextMenu.add(SaveViewer.createMenuItem("Edit Modicifations", e->{
 				Vector<Frigate.EditableModification> editableMods = new Vector<>();
 				
-				int rowIndex = table.convertRowIndexToModel(table.getSelectedRow());
-				Frigate fr = data.frigates.get(rowIndex);
+				int rowV = table.getSelectedRow();
+				if (rowV<0) return;
+				
+				int rowM = table.convertRowIndexToModel(rowV);
+				Frigate fr = data.frigates.get(rowM);
 				for (Frigate.Modification mod:fr.modifications) {
 					if (mod instanceof Frigate.EditableModification)
 						editableMods.add((Frigate.EditableModification)mod);
 				}
 				if (!editableMods.isEmpty()) {
-					EditNewMods dlg = new EditNewMods(mainWindow, "Edit Modifications", editableMods, ()->showValues(fr,rowIndex));
+					EditNewMods dlg = new EditNewMods(mainWindow, "Edit Modifications", editableMods, ()->showValues(fr,rowM));
 					new Thread(new Runnable() {
 						@Override public void run() {
 							dlg.showDialog();
@@ -226,6 +238,7 @@ public class SimplePanels {
 		private enum ColumnID implements SimplifiedColumnIDInterface {
 			// [80, 80, 80, 120, 70, 70, 70, 93, 40, 40, 40, 40, 90, 150]
 			// [80, 80, 80, 120, 70, 70, 70, 80, 50, 50, 50, 50, 60, 150, 163, 167]
+			Index         ("#"                  ,   Integer.class, 35, -1,  35,  35),
 			Name          ("Name"               ,    String.class, 35, -1,  80,  80),
 			ShipType      ("Ship Type"          ,    String.class, 35, -1,  80,  80),
 			CrewRace      ("Crew Race"          ,    String.class, 35, -1,  80,  80),
@@ -268,6 +281,8 @@ public class SimplePanels {
 				SaveGameData.Frigate fr = data.frigates.get(rowIndex);
 				if (fr==null) return null;
 				switch(columnID) {
+				case Index : return rowIndex+1;
+				
 				case Name    : if (fr.name!=null && fr.name.isEmpty()) return "<Frigate "+(rowIndex+1)+">"; return fr.name;
 				case ShipType: return fr.shipType;
 				case CrewRace: return fr.crewRace;
@@ -371,9 +386,15 @@ public class SimplePanels {
 			
 			MissionsTableModel missionsTableModel = new MissionsTableModel();
 			SimplifiedTable missionsTable = new SimplifiedTable("FrigateMissionsTable",missionsTableModel,true,SaveViewer.DEBUG,true);
-			missionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			missionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 			missionsTable.getSelectionModel().addListSelectionListener(e->{
-				int rowIndex = missionsTable.convertRowIndexToModel(missionsTable.getSelectedRow());
+				int selectedRowV = missionsTable.getSelectedRow();
+				if (selectedRowV<0) {
+					showValues(null,-1);
+					return;
+				}
+				
+				int rowIndex = missionsTable.convertRowIndexToModel(selectedRowV);
 				FrigateMission frigateMission = data.frigateMissions.get(rowIndex);
 				showValues(frigateMission,rowIndex);
 				missionTasksTableModel.setFrigateMission(frigateMission);

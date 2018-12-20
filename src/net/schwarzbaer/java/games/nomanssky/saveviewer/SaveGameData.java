@@ -1450,6 +1450,8 @@ public class SaveGameData {
 			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
 			EXPLORE_SEC_3 ("Kartografiedrohnen"          ,"Erkundung: +6"),
 			EXPLORE_SEC_4 ("Echtzeit-Archivierungsgerät" ,"Erkundung: +2"),
+			EXPLORE_SEC_6 ("Raumzeitanomalienschild"     ,"Erkundung: +6"),
+			EXPLORE_TER_4 ("Fauna-Analysegerät"          ,"Kampf: +1"),
 			EXPLORE_TER_5 ("Holographische Anzeigen"     ,"Erkundung: +2"),
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
@@ -1457,17 +1459,19 @@ public class SaveGameData {
 			MINING_SEC_3  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
 			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
 			MINING_SEC_5  ("Terraforming-Strahlen"        ,"Industrie: +4"),
+			MINING_SEC_6  ("Asteroidenpulverisierer"      ,"Industrie: +6"),
 			MINING_TER_1  ("Mineralienextraktoren"        ,"Industrie: +1"),
 			MINING_TER_3  ("Asteroidenscanner"            ,"Industrie: +3"),
+			MINING_TER_4  ("Erntedrohnen"                 ,"Kampf: +1"),
 			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
 			
-			COMBAT_PRI    ("Kampfspezialist"             ,"Kampf: +15"),
-			COMBAT_SEC_5  ("Experimentelle Waffen"       ,"Kampf: +4"),
-			COMBAT_TER_1  ("Versteckte Waffen"           ,"Kampf: +1"),
-			COMBAT_TER_2  ("Munitionshersteller"         ,"Kampf: +2"),
-			COMBAT_TER_4  ("Aggressive Sonden"           ,"Kampf: +1"),
-			COMBAT_TER_5  ("Wütender Kapitän"            ,"Kampf: +2"),
-			COMBAT_BAD_1  ("Feige Schützen"              ,"Kampf: -2"),
+			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
+			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
+			COMBAT_TER_1  ("Versteckte Waffen"             ,"Kampf: +1"),
+			COMBAT_TER_2  ("Munitionshersteller"           ,"Kampf: +2"),
+			COMBAT_TER_4  ("Aggressive Sonden"             ,"Kampf: +1"),
+			COMBAT_TER_5  ("Wütender Kapitän"              ,"Kampf: +2"),
+			COMBAT_BAD_1  ("Feige Schützen"                ,"Kampf: -2"),
 			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
 			
 			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
@@ -1479,6 +1483,7 @@ public class SaveGameData {
 			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
 			
 			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
+			SPEED_TER_2   ("Masseantrieb"                ,"-1% Expeditionsdauer"),
 			SPEED_TER_4   ("Warp-Antrieb"                 ,"-2% Expeditionsdauer"),
 			SPEED_TER_5   ("Wurmlochgenerator"            ,"-3% Expeditionsdauer"),
 			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
@@ -1490,8 +1495,9 @@ public class SaveGameData {
 			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
 			FUEL_BAD_1    ("Durstige Crew"               ,"Kosten pro Warp: +1"),
 			
-			INVULN_TER_1  ("Sich selbst reparierender Rumpf","Schadensreduzierung"),
-			INVULN_TER_3  ("Holografische Komponenten"      ,"Schadensreduzierung"),
+			INVULN_TER_1  ("Sich selbst reparierender Rumpf" ,"Schadensreduzierung"),
+			INVULN_TER_2  ("Fortgeschrittene Wartungsdrohnen","Schadensreduzierung"),
+			INVULN_TER_3  ("Holografische Komponenten"       ,"Schadensreduzierung"),
 			
 			;
 			
