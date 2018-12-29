@@ -93,7 +93,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 	private enum PlanetTreeIcons {
 		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless, BiomeExotic, BiomeExoticMega,
-		BiomeAnomMetalFlowers, BiomeAnomShells, BiomeAnomBones, BiomeAnomMushrooms, BiomeAnomScreenCrystals, BiomeAnomFragmColumns, BiomeAnomBubbles, BiomeAnomLimeStars, BiomeAnomHexagons,
+		BiomeAnomMetalFlowers, BiomeAnomShells, BiomeAnomBones, BiomeAnomMushrooms, BiomeAnomScreenCrystals, BiomeAnomFragmColumns, BiomeAnomBubbles, BiomeAnomLimeStars, BiomeAnomHexagons, BiomeAnomBeams, BiomeAnomContour,
 		SentinelAggressive,
 		;
 	}
@@ -278,6 +278,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case AnomBubbles       : return PlanetTreeIcons.BiomeAnomBubbles       ;
 				case AnomLimeStars     : return PlanetTreeIcons.BiomeAnomLimeStars     ;
 				case AnomHexagons      : return PlanetTreeIcons.BiomeAnomHexagons      ;
+				case AnomBeams         : return PlanetTreeIcons.BiomeAnomBeams         ;
+				case AnomContour       : return PlanetTreeIcons.BiomeAnomContour       ;
 				}
 				return null;
 			};

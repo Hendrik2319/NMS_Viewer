@@ -828,24 +828,29 @@ public class GameInfos {
 			BaseExternal              ("Basis-Außenanlage"),
 			BaseComponentFreighter    ("Basis-Komponente (Frachter)"),
 			BaseDekorationFreighter   ("Basis-Dekoration (Frachter)"),
+			BaseComponentUnderWater   ("Basis-Komponente (Unterwasser)"),
 			Resource                  ("Rohstoff"),
 			ResourceCrystal           ("Rohstoff-Kristall"),
 			Alloy                     ("Legierung"),
 			AtlasSeed                 ("Atlas-Samen"),
-			Product                   ("Allgemeines Produkt"),
+			Product                   ("Produkt"),
 			ProductExpensive          ("Teures Produkt"),
+			TradeProduct              ("Reines Handels-Produkt"),
 			Energy                    ("Energie-Produkt"),
 			Ammunition                ("Munition"),
 			Plant                     ("Pflanze"),
 			PlantProduct              ("Frucht"),
 			RaceGift                  ("Völker-Geschenk"),
-			Special                   ("Speziell");
+			Special                   ("Speziell"),
+			Treasure                  ("Schatz"),
+			PlanetTrophy              ("Planeten-Trophäe"),
+			;
 			
 			private String label;
-			public boolean isUpgrade;
+			//public boolean isUpgrade;
 			
 			Type(String label) { this(label,false); }
-			Type(String label, boolean isUpgrade) { this.label = label; this.isUpgrade = isUpgrade; }
+			Type(String label, boolean isUpgrade) { this.label = label; /*this.isUpgrade = isUpgrade;*/ }
 			
 			public String getLabel() { return label; }
 			public static Type getType(String str) {

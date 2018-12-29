@@ -1450,13 +1450,14 @@ public class SaveGameData {
 			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
 			EXPLORE_SEC_3 ("Kartografiedrohnen"          ,"Erkundung: +6"),
 			EXPLORE_SEC_4 ("Echtzeit-Archivierungsger‰t" ,"Erkundung: +2"),
+			EXPLORE_SEC_5 ("Gravitations-Visualisierer"  ,"Erkundung: +4"),
 			EXPLORE_SEC_6 ("Raumzeitanomalienschild"     ,"Erkundung: +6"),
 			EXPLORE_TER_4 ("Fauna-Analyseger‰t"          ,"Kampf: +1"),
 			EXPLORE_TER_5 ("Holographische Anzeigen"     ,"Erkundung: +2"),
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
 			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
-			MINING_SEC_3  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
+			MINING_SEC_3  ("Ultraschallschweiﬂer"         ,"Industrie: +6"),
 			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
 			MINING_SEC_5  ("Terraforming-Strahlen"        ,"Industrie: +4"),
 			MINING_SEC_6  ("Asteroidenpulverisierer"      ,"Industrie: +6"),
@@ -1492,6 +1493,7 @@ public class SaveGameData {
 			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_4    ("Photonensegel"               ,"Treibstoffkosten der Expedition: -2"),
+			FUEL_TER_5    ("‹bertakteter Stromverteiler" ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
 			FUEL_BAD_1    ("Durstige Crew"               ,"Kosten pro Warp: +1"),
 			
@@ -2937,7 +2939,9 @@ public class SaveGameData {
 				AnomFragmColumns  ("Anomalous (Fragmented Columns)","Anomal (Zersplitterte S‰ulen)"),
 				AnomBubbles       ("Anomalous (Bubbles)"           ,"Anomal (Seifenblasen)"),
 				AnomLimeStars     ("Anomalous (Lime Stars)"        ,"Anomal (Kalk-Sterne)"),
-				AnomHexagons       ("Anomalous (Hexagons)"          ,"Anomal (Sechecke)"),
+				AnomHexagons      ("Anomalous (Hexagons)"          ,"Anomal (Sechsecke)"),
+				AnomBeams         ("Anomalous (Beams)"             ,"Anomal (Beams)"),
+				AnomContour       ("Anomalous (Contour)"           ,"Anomal (Kontur)"),
 				;
 
 				public final String name_EN;
