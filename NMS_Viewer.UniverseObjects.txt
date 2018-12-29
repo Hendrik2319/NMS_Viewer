@@ -886,28 +886,60 @@ short.P=#Cu
 info=Aktiviertes Kupfer
 
 [Sys007A00FAA8CBC4]
+name=Sibirsky
 oldname=Sibirsky
 race=Vykeen
+conflict=1
 atlasinterface=true
 class=Yellow
+short=
+info=W: Angemessen
 
 [Pln107A00FAA8CBC4]
+name=Appl
 oldname=Guyohldemigla
+biome=Lush
+short=
+info=Cu, Pf, Fe##
 
 [Pln207A00FAA8CBC4]
+name=Arzaw Q30
 oldname=Obinzhichi Udamad
+biome=Scorched
+with water
+buriedTreasure=SalvageableScrap
+short=
+info=Cu, P, Co
 
 [Pln307A00FAA8CBC4]
+name=Agjyo X
 oldname=Yecheveli Kawari
+biome=AnomContour
+short=
+info="Konturierter Planet"
+short=
+info=Cu, Au, Co
 
 [Pln407A00FAA8CBC4]
+name=Tiffal V
 oldname=Oansum Inleug
+biome=Barren
+short=
+info=Cu, Py, Fe##
 
 [Pln507A00FAA8CBC4]
+name=Yezanthax IV
 oldname=Kipatjil Kagog
+biome=Scorched
+short=
+info=Cu, P, Fe##
 
 [Pln607A00FAA8CBC4]
+name=Uneapo
 oldname=Gautumis Hobar
+biome=Lush
+short=
+info=Cu, Pf, Na
 
 [Sys00CA00FAA8CBC4]
 name=Anskit-Abad
