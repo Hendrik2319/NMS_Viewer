@@ -1398,6 +1398,8 @@ public class SaveGameData {
 			fr.expeditions      = getIntegerValue(objectValue, "[Expeditions]");
 			fr.damages          = getIntegerValue(objectValue, "[Damages]");
 			
+			fr.damageValue      = getIntegerValue(objectValue, "[DamageValue]");
+			
 			fr.combatValue      = getIntegerValue(objectValue, "Stats",0);
 			fr.explorationValue = getIntegerValue(objectValue, "Stats",1);
 			fr.miningValue      = getIntegerValue(objectValue, "Stats",2);
@@ -1415,7 +1417,6 @@ public class SaveGameData {
 			
 			fr.unidentified.val1_5VG = getIntegerValue(objectValue, "??? [5VG]");
 			fr.unidentified.val2_yJC = getIntegerValue(objectValue, "??? [yJC]");
-			fr.unidentified.val3_7hK = getIntegerValue(objectValue, "??? [7hK]");
 			
 			JSON_Array modArr = getArrayValue(objectValue,"[Modifications]");
 			if (modArr!=null) {
@@ -1448,15 +1449,18 @@ public class SaveGameData {
 		public enum KnownModification implements Modification {
 			EXPLORE_PRI   ("Erkundungsspezialist"        ,"Erkundung: +15"),
 			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
+			EXPLORE_SEC_2 ("Spektrum für interstellare Signale","Kampf: +4"),
 			EXPLORE_SEC_3 ("Kartografiedrohnen"          ,"Erkundung: +6"),
 			EXPLORE_SEC_4 ("Echtzeit-Archivierungsgerät" ,"Erkundung: +2"),
 			EXPLORE_SEC_5 ("Gravitations-Visualisierer"  ,"Erkundung: +4"),
 			EXPLORE_SEC_6 ("Raumzeitanomalienschild"     ,"Erkundung: +6"),
+			EXPLORE_TER_1 ("Planetendaten-Schöpfer"      ,"Erkundung: +1"),
 			EXPLORE_TER_4 ("Fauna-Analysegerät"          ,"Kampf: +1"),
 			EXPLORE_TER_5 ("Holographische Anzeigen"     ,"Erkundung: +2"),
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
 			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
+			MINING_SEC_2  ("Traktorstrahl"                ,"Kampf: +4"),
 			MINING_SEC_3  ("Ultraschallschweißer"         ,"Industrie: +6"),
 			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
 			MINING_SEC_5  ("Terraforming-Strahlen"        ,"Industrie: +4"),
@@ -1464,14 +1468,17 @@ public class SaveGameData {
 			MINING_TER_1  ("Mineralienextraktoren"        ,"Industrie: +1"),
 			MINING_TER_3  ("Asteroidenscanner"            ,"Industrie: +3"),
 			MINING_TER_4  ("Erntedrohnen"                 ,"Kampf: +1"),
+			MINING_TER_5  ("Metalldetektor"               ,"Industrie: +2"),
 			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
 			
 			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
+			COMBAT_SEC_4  ("Ultraschallwaffe"              ,"Kampf: +2"),
 			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
 			COMBAT_TER_1  ("Versteckte Waffen"             ,"Kampf: +1"),
 			COMBAT_TER_2  ("Munitionshersteller"           ,"Kampf: +2"),
 			COMBAT_TER_4  ("Aggressive Sonden"             ,"Kampf: +1"),
 			COMBAT_TER_5  ("Wütender Kapitän"              ,"Kampf: +2"),
+			COMBAT_TER_6  ("Nachgerüstete Geschütze"       ,"Kampf: +3"),
 			COMBAT_BAD_1  ("Feige Schützen"                ,"Kampf: -2"),
 			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
 			
@@ -1484,7 +1491,8 @@ public class SaveGameData {
 			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
 			
 			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
-			SPEED_TER_2   ("Masseantrieb"                ,"-1% Expeditionsdauer"),
+			SPEED_TER_2   ("Masseantrieb"                 ,"-1% Expeditionsdauer"),
+			SPEED_TER_3   ("Navigationsexperte"           ,"-2% Expeditionsdauer"),
 			SPEED_TER_4   ("Warp-Antrieb"                 ,"-2% Expeditionsdauer"),
 			SPEED_TER_5   ("Wurmlochgenerator"            ,"-3% Expeditionsdauer"),
 			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
@@ -1492,6 +1500,7 @@ public class SaveGameData {
 			
 			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
+			FUEL_TER_3    ("Robotercrew"                 ,"Treibstoffkosten der Expedition: -6"),
 			FUEL_TER_4    ("Photonensegel"               ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_5    ("Übertakteter Stromverteiler" ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
@@ -1606,6 +1615,8 @@ public class SaveGameData {
 			@Override public String getLabel() { return label; }
 			@Override public String getValue() { return value; }
 			@Override public String toString() { return modStr; }
+
+			public boolean isUndefined() { return label.startsWith("\"^"); }
 		}
 		
 		public static class Unidentified {
@@ -1622,7 +1633,7 @@ public class SaveGameData {
 			public Long statVal9;
 			
 			public Long val2_yJC;
-			public Long val3_7hK; // !=0 bei Schaden an Fregatte
+			//public Long val3_7hK; // !=0 bei Schaden an Fregatte
 			
 			Unidentified() {
 				this.seed1 = null;
@@ -1634,11 +1645,11 @@ public class SaveGameData {
 				this.statVal8 = null;
 				this.statVal9 = null;
 				this.val2_yJC = null;
-				this.val3_7hK = null;
+				//this.val3_7hK = null;
 			}
 
 			public String getUnidentifiedLongs() {
-				return String.format("%s | %s, %s, %s, %s, %s | %s, %s", val1_5VG, statVal5, statVal6, statVal7, statVal8, statVal9, val2_yJC, val3_7hK);
+				return String.format("%s | %s, %s, %s, %s, %s | %s", val1_5VG, statVal5, statVal6, statVal7, statVal8, statVal9, val2_yJC/*, val3_7hK*/);
 			}
 		}
 
@@ -1658,6 +1669,7 @@ public class SaveGameData {
 		public Long diplomacyValue;
 		
 		public Vector<Modification> modifications;
+		public Long damageValue;
 		
 		public Unidentified unidentified;
 		
@@ -1701,10 +1713,10 @@ public class SaveGameData {
 			frm.seed             = SeedValue.parse( getArrayValue(objectValue, "Seed") );
 			frm.universeAddress  = parseUniverseAddressField(objectValue, "UA");
 			frm.name             = getStringValue (objectValue, "[UserDefinedName]");
-			frm.missionTime1     = TimeStamp.create(getIntegerValue(objectValue, "[??? bc< MissionTime1]"));
-			frm.missionTime2     = TimeStamp.create(getIntegerValue(objectValue, "[??? dfZ MissionTime2]"));
+			frm.startTime        = TimeStamp.create(getIntegerValue(objectValue, "[MissionStartTime]"));
+			frm.timeOfLastEvent  = TimeStamp.create(getIntegerValue(objectValue, "[MissionTimeOfLastEvent]"));
 			frm.missionType      = getStringValue (objectValue, "[MissionType]", "[MissionType]");
-			frm.missionDistance  = getStringValue (objectValue, "[MissionDistance]", "[MissionDistance]");
+			frm.distance         = getStringValue (objectValue, "[MissionDistance]", "[MissionDistance]");
 			
 			array = getArrayValue(objectValue,"[??? sbg MissionValues1]"); frm.missionValues1 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Integer));
 			array = getArrayValue(objectValue,"[??? lD@ MissionValues2]"); frm.missionValues2 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Integer));
@@ -1725,7 +1737,7 @@ public class SaveGameData {
 			array = getArrayValue(objectValue,"[??? WZs Arr:[]]"); frm.array1_WZs = (String)(array==null?"<NotFound>":array.toString(null));
 			array = getArrayValue(objectValue,"[??? 1xe Arr:[]]"); frm.array2_1xe = (String)(array==null?"<NotFound>":array.toString(null));
 			
-			JSON_Array missionTasks = getArrayValue(objectValue,"[??? tUs MissionTasks]");
+			JSON_Array missionTasks = getArrayValue(objectValue,"[MissionTasks]");
 			if (missionTasks!=null) {
 				frm.missionTasks.clear();
 				for (int m=0; m<missionTasks.size(); ++m) {
@@ -1741,14 +1753,14 @@ public class SaveGameData {
 					
 					frmt.seed            = SeedValue.parse( getArrayValue(mtObject, "Seed") );
 					frmt.universeAddress = parseUniverseAddressField(mtObject, "UA");
-					frmt.missionTaskType = getStringValue(mtObject, "[??? Mx@ MissionTasksTypeID]");
+					frmt.missionTaskType = getStringValue(mtObject, "[MissionTaskTypeID]");
 					frmt.otherID         = getStringValue(mtObject, "[??? 7Q; An ID]");
+					frmt.completed = getBoolValue(mtObject, "[MissionTaskCompleted]");
 					
 					array = getArrayValue(mtObject,"[??? iaH Arr:[]]"); frmt.array1_iaH = array==null?"<NotFound>":array.toString(null);
 					array = getArrayValue(mtObject,"[??? QJG Arr:[]]"); frmt.array2_QJG = array==null?"<NotFound>":array.toString(null);
 					array = getArrayValue(mtObject,"[??? fe2 Arr:[]]"); frmt.array3_fe2 = array==null?"<NotFound>":array.toString(null);
 					
-					frmt.bool1_bbB = getBoolValue(mtObject, "[??? bbB Bool:true]");
 					frmt.bool2_fvN = getBoolValue(mtObject, "[??? fvN Bool:false]");
 					frmt.bool3_8GD = getBoolValue(mtObject, "[??? 8GD Bool:false]");
 				}
@@ -1767,11 +1779,11 @@ public class SaveGameData {
 		public UniverseAddress universeAddress = null;
 		public String name = null;
 		public String missionType = null;
-		public String missionDistance = null;
+		public String distance = null;
 		public Vector<FrigateMissionTask> missionTasks = new Vector<>();
 		
-		public TimeStamp missionTime1 = null;
-		public TimeStamp missionTime2 = null;
+		public TimeStamp startTime = null;
+		public TimeStamp timeOfLastEvent = null;
 		public String missionValues1 = null;
 		public String missionValues2 = null;
 		public String position1 = null;
@@ -1793,10 +1805,11 @@ public class SaveGameData {
 			public UniverseAddress universeAddress = null;
 			public String missionTaskType = null;
 			public String otherID = null;
+			public Boolean completed = null;
+			
 			public String array1_iaH = null;
 			public String array2_QJG = null;
 			public String array3_fe2 = null;
-			public Boolean bool1_bbB = null;
 			public Boolean bool2_fvN = null;
 			public Boolean bool3_8GD = null;
 		}

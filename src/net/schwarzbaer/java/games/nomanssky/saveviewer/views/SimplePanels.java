@@ -43,6 +43,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObje
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.AvailableData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.DiscoveryData.StoreData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.Modification;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission.FrigateMissionTask;
@@ -251,7 +252,8 @@ public class SimplePanels {
 			Exploration   ("Exploration"        ,      Long.class, 35, -1,  50,  50),
 			Mining        ("Mining"             ,      Long.class, 35, -1,  50,  50),
 			Diplomacy     ("Diplomacy"          ,      Long.class, 35, -1,  50,  50),
-			Modifications ("Modifications"      ,      Long.class, 35, -1,  50,  50),
+			Modifications ("Modifications"      ,    String.class, 35, -1,  50,  50),
+			CurrDamage    ("Cur.Dam."           ,    String.class, 35, -1,  50,  50),
 			UnidentValues ("Unidentified Values",    String.class, 35, -1, 150, 150),
 			Seed1         ("Seed 1"             , SeedValue.class, 35, -1, 170, 170),
 			Seed2         ("Seed 2"             , SeedValue.class, 35, -1, 170, 170),
@@ -298,12 +300,21 @@ public class SimplePanels {
 				case Mining     : return fr.miningValue;
 				case Diplomacy  : return fr.diplomacyValue;
 					
-				case Modifications: return fr.modifications.size();
+				case Modifications: return showValue(fr.modifications);
+				case CurrDamage   : return fr.damageValue==null || fr.damageValue==0?"":"damaged ("+fr.damageValue+")";
+				
 				case UnidentValues: return fr.unidentified.getUnidentifiedLongs();
 				case Seed1        : return fr.unidentified.seed1;
 				case Seed2        : return fr.unidentified.seed2;
 				}
 				return null;
+			}
+
+			private String showValue(Vector<Modification> modifications) {
+				int i=0;
+				for (Modification mod:modifications)
+					if (mod instanceof EditableModification && ((EditableModification)mod).isUndefined()) i++;
+				return modifications.size()+(i==0?"":(" ("+i+")"));
 			}
 		}
 		
@@ -419,12 +430,12 @@ public class SimplePanels {
 			textArea.setText("");
 			if (frm==null) return;
 			
-			appendln("Name     : %s", frm.name           ==null?"":(frm.name!=null && frm.name.isEmpty()?("<FrigateMission "+(rowIndex+1)+">"):frm.name));
-			appendln("Type     : %s", frm.missionType    ==null?"":frm.missionType);
-			appendln("Distance : %s", frm.missionDistance==null?"":frm.missionDistance);
+			appendln("Name     : %s", frm.name       ==null?"":(frm.name!=null && frm.name.isEmpty()?("<FrigateMission "+(rowIndex+1)+">"):frm.name));
+			appendln("Type     : %s", frm.missionType==null?"":frm.missionType);
+			appendln("Distance : %s", frm.distance   ==null?"":frm.distance);
 			appendln();
-			appendln("Start : %s", frm.missionTime1==null?"":frm.missionTime1);
-			appendln("End   : %s", frm.missionTime2==null?"":frm.missionTime2);
+			appendln("Start      : %s", frm.startTime      ==null?"":frm.startTime);
+			appendln("Last Event : %s", frm.timeOfLastEvent==null?"":frm.timeOfLastEvent);
 			appendln();
 			appendln("Universe Address:");
 			appendln("    %s", frm.universeAddress==null?"":frm.universeAddress.getCoordinates() );
@@ -471,9 +482,9 @@ public class SimplePanels {
 			// [105, 59, 56, 120, 120, 160, 420, 160, 88, 90, 124, 130, 89, 56, 36, 35, 35, 35, 35, 43, 48, 35]
 			Name            ("Name"           ,    String.class, 35, -1, 105, 105),
 			MissionType     ("Type"           ,    String.class, 35, -1,  60,  60),
-			MissionDistance ("Distance"       ,    String.class, 35, -1,  60,  60),
-			MissionTime1    ("Time 1"         , TimeStamp.class, 35, -1, 120, 120),
-			MissionTime2    ("Time 2"         , TimeStamp.class, 35, -1, 120, 120),
+			Distance        ("Distance"       ,    String.class, 35, -1,  60,  60),
+			StartTime       ("Start Time"     , TimeStamp.class, 35, -1, 120, 120),
+			TimeOfLastEvent ("Last Event"     , TimeStamp.class, 35, -1, 120, 120),
 			UniverseAddress ("UniverseAddress",    String.class, 35, -1, 160, 160),
 			PlanetOrSystem  ("Planet / System",    String.class, 35, -1, 420, 420),
 			Seed            ("Seed"           , SeedValue.class, 35, -1, 160, 160),
@@ -523,9 +534,9 @@ public class SimplePanels {
 				case UniverseAddress: if (frm.universeAddress==null) return ""; return frm.universeAddress.getCoordinates();
 				case PlanetOrSystem : return getPlanetOrSystem(frm.universeAddress);
 				case MissionType    : return frm.missionType;
-				case MissionDistance: return frm.missionDistance;
-				case MissionTime1   : return frm.missionTime1;
-				case MissionTime2   : return frm.missionTime2;
+				case Distance       : return frm.distance;
+				case StartTime      : return frm.startTime;
+				case TimeOfLastEvent: return frm.timeOfLastEvent;
 				case MissionValues1 : return frm.missionValues1;
 				case MissionValues2 : return frm.missionValues2;
 				case Position1      : return frm.position1;
@@ -548,16 +559,17 @@ public class SimplePanels {
 		
 		private enum MissionTasksColumnID implements SimplifiedColumnIDInterface {
 			// [114, 62, 160, 420, 160, 50, 50, 50, 50, 50, 50]
+			// [35, 120, 60, 62, 160, 420, 160, 50, 50, 50, 50, 50]
 			Index           ("#"              ,   Integer.class, 35, -1,  35,  35),
 			MissionTaskType ("Type"           ,    String.class, 35, -1, 120, 120),
 			OtherID         ("Other ID"       ,    String.class, 35, -1,  60,  60),
+			Completed       ("Completed"      ,   Boolean.class, 35, -1,  65,  65),
 			UniverseAddress ("UniverseAddress",    String.class, 35, -1, 160, 160),
 			PlanetOrSystem  ("Planet / System",    String.class, 35, -1, 420, 420),
 			Seed            ("Seed"           , SeedValue.class, 35, -1, 160, 160),
 			Array1          ("Array1"         ,    String.class, 35, -1,  50,  50),
 			Array2          ("Array2"         ,    String.class, 35, -1,  50,  50),
 			Array3          ("Array3"         ,    String.class, 35, -1,  50,  50),
-			Bool1           ("Bool1"          ,   Boolean.class, 35, -1,  50,  50),
 			Bool2           ("Bool2"          ,   Boolean.class, 35, -1,  50,  50),
 			Bool3           ("Bool3"          ,   Boolean.class, 35, -1,  50,  50),
 			;
@@ -597,6 +609,7 @@ public class SimplePanels {
 				
 				case MissionTaskType: return frmt.missionTaskType;
 				case OtherID        : return frmt.otherID;
+				case Completed      : return frmt.completed;
 				case UniverseAddress: if (frmt.universeAddress==null) return ""; return frmt.universeAddress.getCoordinates();
 				case PlanetOrSystem : return getPlanetOrSystem(frmt.universeAddress);
 				case Seed           : return frmt.seed;
@@ -604,7 +617,6 @@ public class SimplePanels {
 				case Array1: return frmt.array1_iaH;
 				case Array2: return frmt.array2_QJG;
 				case Array3: return frmt.array3_fe2;
-				case Bool1 : return frmt.bool1_bbB;
 				case Bool2 : return frmt.bool2_fvN;
 				case Bool3 : return frmt.bool3_8GD;
 				
