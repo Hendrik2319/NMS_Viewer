@@ -5,20 +5,15 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -38,6 +33,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.function.Function;
 
@@ -50,11 +46,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.event.MouseInputAdapter;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.IconSource;
@@ -701,64 +695,31 @@ public class Images {
 			return image;
 		}
 	}
+	
+	public static class ImageGridPanel extends net.schwarzbaer.gui.ImageGridPanel {
+		private static final long serialVersionUID = -5485402060151977360L;
+		private Iterable<ImageData> images;
 
-	public static class ImageGridPanel extends JPanel {
-		private static final long serialVersionUID = -189481388341606323L;
-		private static Color   COLOR_BACKGROUND = null;
-		private static Color   COLOR_BACKGROUND_SELECTED = null;
-		private static Color   COLOR_BACKGROUND_PRESELECTED = null;
-		private static Color[] COLOR_BACKGROUND_MARKED = null;
-		private static Color   COLOR_FOREGROUND = null;
-		private static Color   COLOR_FOREGROUND_SELECTED = null;
-		
-		private Vector<SelectionListener> selectionListeners;
-		private Vector<RightClickListener> rightClickListener;
-		private int cols;
-		private int selectedIndex;
-		public Vector<ImageLabel> imageLabels;
-		
 		public ImageGridPanel(int cols, String preselectedImageFileName) {
-			super(new GridLayout(0,cols,0,0));
-			this.cols = cols;
-			this.selectionListeners = new Vector<>();
-			this.rightClickListener = new Vector<>();
-			this.imageLabels = new Vector<ImageLabel>();
+			super(cols, preselectedImageFileName, null);
 			
-			ImageLabel.defaultFont = new JLabel().getFont();
-			JTextArea dummy = new JTextArea();
-			COLOR_BACKGROUND = dummy.getBackground();
-			COLOR_FOREGROUND = dummy.getForeground();
-			COLOR_BACKGROUND_SELECTED = dummy.getSelectionColor();
-			COLOR_FOREGROUND_SELECTED = dummy.getSelectedTextColor();
-			COLOR_BACKGROUND_PRESELECTED = Gui.brighter(COLOR_BACKGROUND_SELECTED,0.7f);
-			COLOR_BACKGROUND_MARKED = new Color[] { Color.LIGHT_GRAY, new Color(0xDCB9F2) };
-			
-			createImageLabels(preselectedImageFileName,null);
-			
-			//setBorder(BorderFactory.createEtchedBorder());
-			setBackground(COLOR_BACKGROUND);
-		}
-
-		private void createImageLabels(String preselectedImageFileName, ProgressDialog pd) {
-			if (pd!=null) {
-				pd.setTaskTitle("Create new image grid");
-				pd.setValue(0, SaveViewer.images.imagesNames.length);
-			}
-			selectedIndex = -1;
-			imageLabels.clear();
-			int index = 0;
-			for (String name : SaveViewer.images.imagesNames) {
-				BufferedImage image = SaveViewer.images.getImage(name,null,64,64);
-				if (image!=null) {
-					boolean isSelected = name.equals(preselectedImageFileName);
-					if (isSelected) selectedIndex=index;
-					ImageLabel imageLabel = new ImageLabel(this,name,index,image,isSelected);
-					imageLabels.add(imageLabel);
-					add(imageLabel);
-					++index;
-					if (pd!=null) pd.setValue(index);
+			images = new Iterable<ImageGridPanel.ImageData>() {
+				@Override public Iterator<ImageData> iterator() {
+					return new Iterator<ImageGridPanel.ImageData>() {
+						private int index = 0;
+						@Override public boolean hasNext() {
+							return index<SaveViewer.images.imagesNames.length;
+						}
+						@Override public ImageData next() {
+							String imageName = SaveViewer.images.imagesNames[index++];
+							BufferedImage image = SaveViewer.images.getImage(imageName,null,64,64);
+							return new ImageData(imageName, imageName, image);
+						}
+					};
 				}
-			}
+			};
+			
+			createImageLabels(preselectedImageFileName,images,null);
 		}
 		
 		public void resetImages(ProgressDialog pd) {
@@ -766,71 +727,14 @@ public class Images {
 				pd.setTaskTitle("Remove images from grid");
 				pd.setIndeterminate(true);
 			}
-			String selectedImageFileName = null;
-			if (selectedIndex>=0)
-				selectedImageFileName = imageLabels.get(selectedIndex).name;
+			String selectedImageID = getSelectedImageID();
 			removeAll();
-			createImageLabels(selectedImageFileName,pd);
-		}
-
-		public void setImageName(int index, String newName) {
-			imageLabels.get(index).changeName(newName);
-		}
-
-		public void    addSelectionListener( SelectionListener l ) { selectionListeners.   add(l); }
-		public void removeSelectionListener( SelectionListener l ) { selectionListeners.remove(l); }
-		
-		protected void setSelectedImage(String name, int index) {
-			if (selectedIndex>=0)
-				imageLabels.get(selectedIndex).setSelected(false,false);
 			
-			selectedIndex=index;
-			for (SelectionListener l:selectionListeners)
-				l.imageWasSelected(name);
-			
-			if (selectedIndex>=0)
-				imageLabels.get(selectedIndex).setSelected(true,true);
-		}
-
-		public static interface SelectionListener {
-			public void imageWasSelected(String name);
-		}
-		
-		public void    addRightClickListener( RightClickListener l ) { rightClickListener.   add(l); }
-		public void removeRightClickListener( RightClickListener l ) { rightClickListener.remove(l); }
-		
-		protected void processRightClick(String name, int index, Component source, int x, int y) {
-			for (RightClickListener l:rightClickListener)
-				l.imageWasRightClicked(name, index, source, x, y);
-		}
-
-		public static interface RightClickListener {
-			public void imageWasRightClicked(String name, int index, Component source, int x, int y);
-		}
-		
-		public void scrollToPreselectedImage(JScrollPane imageScrollPane) {
-			if (selectedIndex>=0) {
-				int row = selectedIndex/cols;
-				int rowCount = Math.round((float)Math.ceil(imageLabels.size()/(double)cols));
-				//System.out.printf("Row %d/%d was preselected\r\n",row,rowCount);
-				
-				JScrollBar scrollBar = imageScrollPane.getVerticalScrollBar();
-				int val = scrollBar.getValue();
-				int max = scrollBar.getMaximum();
-				int min = scrollBar.getMinimum();
-				int ext = scrollBar.getVisibleAmount();
-				//System.out.printf("VerticalScrollBar is at %d..%d(%d)..%d \r\n",min,val,ext,max);
-				
-				int h = (max-min)/rowCount;
-				//System.out.printf("h = %d \r\n",h);
-				val = row*h - (ext-h)/2 + min;
-				//System.out.printf("val = %d \r\n",val);
-				val = Math.max(min,val);
-				val = Math.min(max-ext,val);
-				
-				scrollBar.setValue(val);
-				//System.out.printf("VerticalScrollBar set to %d..%d(%d)..%d \r\n",min,val,ext,max);
+			if (pd!=null) {
+				pd.setTaskTitle("Create new image grid");
+				pd.setValue(0, SaveViewer.images.imagesNames.length);
 			}
+			createImageLabels(selectedImageID, images, i->{ if (pd!=null) pd.setValue(i); });
 		}
 
 		public void markUsedImages(boolean markUsedImages) {
@@ -841,8 +745,8 @@ public class Images {
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.productIDs);
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.substanceIDs);
 			}
-			for (ImageLabel il:imageLabels)
-				il.setMark( markUsedImages && usedImages.contains(il.name), markUsedImages && usedImagesObsolete.contains(il.name) );
+			for (ImageGridPanel.ImageLabel il:imageLabels)
+				il.setMark( markUsedImages && usedImages.contains(il.ID), markUsedImages && usedImagesObsolete.contains(il.ID) );
 		}
 
 		private void addImageNames(HashSet<String> usedImages, HashSet<String> usedImagesObsolete, IDMap idMap) {
@@ -852,84 +756,6 @@ public class Images {
 					else               usedImages        .add(id.getImageFileName());
 				}
 		}
-
-		public static final class ImageLabel extends JPanel {
-			private static final long serialVersionUID = 4629632101041946456L;
-			public static Font defaultFont;
-			private JTextArea textArea;
-			private boolean isSelected;
-			private int markerIndex;
-			private String name;
-	
-			public ImageLabel(ImageGridPanel parent, String name, int index, BufferedImage image, boolean isSelected) {
-				super(new BorderLayout(3,3));
-				setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-				
-				this.name = name;
-				this.isSelected = isSelected;
-				this.markerIndex = 0;
-				
-				textArea = new JTextArea(name);
-				textArea.setPreferredSize(new Dimension(100,60));
-				textArea.setLineWrap(true);
-				textArea.setWrapStyleWord(false);
-				textArea.setEditable(false);
-				textArea.setFont(defaultFont);
-				textArea.setBackground(null);
-				MouseListener[] mouseListeners = textArea.getMouseListeners();
-				MouseMotionListener[] mouseMotionListeners = textArea.getMouseMotionListeners();
-				for (MouseListener l:mouseListeners) textArea.removeMouseListener(l);
-				for (MouseMotionListener l:mouseMotionListeners) textArea.removeMouseMotionListener(l);
-				
-				
-				add(new JLabel(new ImageIcon(image)),BorderLayout.NORTH);
-				add(textArea,BorderLayout.CENTER);
-				
-				MouseInputAdapter m = new MouseInputAdapter() {
-					@Override public void mouseClicked(MouseEvent e) {
-						if (e.getButton()==MouseEvent.BUTTON3) parent.processRightClick(ImageLabel.this.name, index, ImageLabel.this, e.getX(), e.getY());
-						else parent.setSelectedImage(ImageLabel.this.name,index);
-					}
-					@Override public void mouseEntered(MouseEvent e) { setColors(true); }
-					@Override public void mouseExited (MouseEvent e) { setColors(false); }
-				};
-				
-				setColors(false);
-				addMouseListener(m);
-				addMouseMotionListener(m);
-				textArea.addMouseListener(m);
-				textArea.addMouseMotionListener(m);
-			}
-			
-			public void changeName(String newName) {
-				this.name = newName;
-				textArea.setText(newName);
-			}
-
-			public void setSelected(boolean isSelected, boolean hasFocus) {
-				this.isSelected = isSelected;
-				//SaveViewer.log_ln("Image: %s -> %sselected", name, isSelected?"":"not ");
-				setColors(hasFocus);
-				//repaint();
-			}
-
-			public void setMark(boolean isMarkedP1, boolean isMarkedP2) {
-				this.markerIndex = isMarkedP1?1:isMarkedP2?2:0;
-				setColors(false);
-				//repaint();
-			}
-
-			private void setColors(boolean hasFocus) {
-				if      (hasFocus     ) setBackground(COLOR_BACKGROUND_SELECTED);
-				else if (isSelected   ) setBackground(COLOR_BACKGROUND_PRESELECTED);
-				else if (markerIndex>0) setBackground(COLOR_BACKGROUND_MARKED[markerIndex-1]);
-				else                    setBackground(COLOR_BACKGROUND);
-				if (hasFocus) textArea.setForeground(COLOR_FOREGROUND_SELECTED);
-				else          textArea.setForeground(COLOR_FOREGROUND);
-			}
-		
-		}
-	
 	}
 
 	public static class ImageEditDialog extends StandardDialog {
