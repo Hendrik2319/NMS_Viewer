@@ -719,6 +719,7 @@ public class Images {
 				}
 			};
 			
+			setMarkerColors(new Color[] { Color.LIGHT_GRAY, new Color(0xDCB9F2) });
 			createImageLabels(preselectedImageFileName,images,null);
 		}
 		
@@ -746,7 +747,7 @@ public class Images {
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.substanceIDs);
 			}
 			for (ImageGridPanel.ImageLabel il:imageLabels)
-				il.setMark( markUsedImages && usedImages.contains(il.ID), markUsedImages && usedImagesObsolete.contains(il.ID) );
+				il.setMarkerIndex( !markUsedImages?0:usedImages.contains(il.ID)?1:usedImagesObsolete.contains(il.ID)?2:0 );
 		}
 
 		private void addImageNames(HashSet<String> usedImages, HashSet<String> usedImagesObsolete, IDMap idMap) {
