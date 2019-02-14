@@ -746,7 +746,7 @@ public class Images {
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.productIDs);
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.substanceIDs);
 			}
-			for (ImageGridPanel.ImageLabel il:imageLabels)
+			for (ImageGridPanel.ImageItem il:imageItems)
 				il.setMarkerIndex( !markUsedImages?0:usedImages.contains(il.ID)?1:usedImagesObsolete.contains(il.ID)?2:0 );
 		}
 
