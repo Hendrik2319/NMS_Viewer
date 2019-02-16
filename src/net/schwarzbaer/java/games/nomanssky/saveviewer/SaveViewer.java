@@ -611,13 +611,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static void runWithProgressDialog(Window parent, String title, Consumer<ProgressDialog> useProgressDialog) {
-		ProgressDialog pd = new ProgressDialog(parent,title,400);
-		new Thread(()->{
-			pd.waitUntilDialogIsVisible();
-			useProgressDialog.accept(pd);
-			pd.closeDialog();
-		}).start();
-		pd.showDialog();
+		ProgressDialog.runWithProgressDialog(parent, title, 400, useProgressDialog);
 	}
 	
 	public static class FrequentlyTask implements Runnable {
