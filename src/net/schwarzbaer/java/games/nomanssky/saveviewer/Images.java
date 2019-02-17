@@ -701,7 +701,7 @@ public class Images {
 		private Iterable<ImageData> images;
 
 		public ImageGridPanel(int cols, String preselectedImageFileName) {
-			super(cols, preselectedImageFileName, null);
+			super(cols, preselectedImageFileName, false, null);
 			
 			images = new Iterable<ImageGridPanel.ImageData>() {
 				@Override public Iterator<ImageData> iterator() {
@@ -720,7 +720,7 @@ public class Images {
 			};
 			
 			setMarkerColors(new Color[] { Color.LIGHT_GRAY, new Color(0xDCB9F2) });
-			createImageLabels(preselectedImageFileName,images,null);
+			createImageItems(preselectedImageFileName,images,null);
 		}
 		
 		public void resetImages(ProgressDialog pd) {
@@ -735,7 +735,7 @@ public class Images {
 				pd.setTaskTitle("Create new image grid");
 				pd.setValue(0, SaveViewer.images.imagesNames.length);
 			}
-			createImageLabels(selectedImageID, images, i->{ if (pd!=null) pd.setValue(i); });
+			createImageItems(selectedImageID, images, i->{ if (pd!=null) pd.setValue(i); });
 		}
 
 		public void markUsedImages(boolean markUsedImages) {
