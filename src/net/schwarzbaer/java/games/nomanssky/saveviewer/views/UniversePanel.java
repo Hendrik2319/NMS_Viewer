@@ -734,7 +734,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 			}
 			cmbbxBlackHoleTargetRegion.addActionListener(e->{
-				if (isSettingContent) return;
 				Region region = (Region)cmbbxBlackHoleTargetRegion.getSelectedItem();
 				if (region==null) cmbbxBlackHoleTargetSolarSystem.setModel(new DefaultComboBoxModel<>());
 				else              cmbbxBlackHoleTargetSolarSystem.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(region.solarSystems)));
