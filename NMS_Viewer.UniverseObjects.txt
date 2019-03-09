@@ -320,6 +320,69 @@ class=Yellow
 short=6 Planeten
 info=
 
+[Reg000000FEE1BB85]
+name=Iyomin-Quadrant
+
+[Sys006700FEE1BB85]
+name=Ezhichi
+race=Korvax
+conflict=2
+class=Yellow
+short=3 Planeten
+info=
+
+[Sys007900FEE1BB85]
+name=Bayink XI
+race=Vykeen
+conflict=2
+blackhole=true
+blackholetarget=00390003C88354
+class=Yellow
+short=4 Planeten
+info=
+
+[Reg000000FF197B86]
+name=Aucosi
+
+[Sys003400FF197B86]
+name=Urasago-Azdni
+race=Korvax
+conflict=3
+class=Yellow
+short=4 Planeten
+info=
+
+[Sys007900FF197B86]
+name=Aishil-Opal
+race=Gek
+conflict=2
+blackhole=true
+blackholetarget=00560004393CF7
+class=Yellow
+short=4 Planeten
+info=
+
+[Reg00000004254BA8]
+name=Der Arm von Yenlavo
+
+[Sys00310004254BA8]
+name=Nibayor-Arlu
+race=Korvax
+conflict=3
+class=Yellow
+short=4 Planeten
+info=
+
+[Sys00790004254BA8]
+name=Ranizush II
+race=Vykeen
+conflict=1
+blackhole=true
+blackholetarget=006700FEE1BB85
+class=Yellow
+short=5 Planeten
+info=
+
 [Reg000000F9A8CBC3]
 name=Meer von Idgewo
 
@@ -1440,6 +1503,29 @@ class=Yellow
 
 [Sys012D00FAA90BC8]
 
+[Reg000000FFE39BC9]
+name=Toppen-Untiefe
+
+[Sys003F00FFE39BC9]
+name=Sochinsk
+race=Korvax
+conflict=3
+conflict_label=riskant
+class=Yellow
+short=3 Planeten
+info=
+
+[Sys007900FFE39BC9]
+name=Mavits
+race=Korvax
+conflict=1
+conflict_label=belanglos
+blackhole=true
+blackholetarget=00240000041483
+class=Yellow
+short=2 Planeten
+info=
+
 [Reg000000FF3CEC12]
 name=Jijusterp
 
@@ -1492,6 +1578,29 @@ blackhole=true
 blackholetarget=00360000BAC370
 class=Yellow
 short=2 Planeten
+info=
+
+[Reg00000000CD6C9E]
+name=Iczand-Weite
+
+[Sys003B0000CD6C9E]
+name=Oukonq-Lavf
+race=Korvax
+conflict=1
+conflict_label=ruhig
+class=Yellow
+short=5 Planeten
+info=
+
+[Sys00790000CD6C9E]
+name=Nacerineb V
+race=Gek
+conflict=2
+conflict_label=sporadisch
+blackhole=true
+blackholetarget=003F00FFE39BC9
+class=Yellow
+short=5 Planeten
 info=
 
 [Reg000000FCA45CAF]
@@ -1758,6 +1867,51 @@ info=
 short=
 info=W: Komfortabel
 
+[Reg00000004393CF7]
+name=Ongillenq-Grenze
+
+[Sys00560004393CF7]
+name=Akkeld-Sumaa
+race=Gek
+conflict=3
+class=Yellow
+short=3 Planeten
+info=
+
+[Sys00790004393CF7]
+name=Lungba-Ijoit III
+race=Gek
+conflict=2
+conflict_label=reizbar
+blackhole=true
+blackholetarget=003B0000CD6C9E
+class=Yellow
+short=1 Planet
+info=
+
+[Reg00000004432D33]
+name=Ovgoro-Arm
+
+[Sys002D0004432D33]
+name=Loongf-Ataea
+race=Vykeen
+conflict=2
+conflict_label=unbändig
+class=Yellow
+short=4 Planeten
+info=
+
+[Sys00790004432D33]
+name=Ecangd VI
+race=Vykeen
+conflict=2
+conflict_label=mittel
+blackhole=true
+blackholetarget=0043000236B3A1
+class=Yellow
+short=3 Planeten
+info=
+
 [Reg00000004994DA5]
 name=Netegoc
 
@@ -1967,6 +2121,17 @@ short=
 info="Sechseckiger Planet"
 short=
 info=Cu, Au, NaCl
+
+[Sys00790003B09ED6]
+name=Abalago
+race=Korvax
+conflict=2
+conflict_label=gereizt
+blackhole=true
+blackholetarget=002D0004432D33
+class=Yellow
+short=4 Planeten
+info=
 
 [Reg000000FE5CAF06]
 name=Hoveli-Cluster
@@ -2281,6 +2446,27 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Reg00000003C88354]
+name=Yarbaco-Wolke
+
+[Sys00390003C88354]
+name=Naossipu
+race=Gek
+conflict=2
+class=Yellow
+short=3 Planeten
+info=
+
+[Sys00790003C88354]
+name=Roniso-Shr
+race=Gek
+conflict=3
+blackhole=true
+blackholetarget=003400FF197B86
+class=Yellow
+short=6 Planeten
+info=
+
 [Reg00000000BAC370]
 name=Rizunut-Nebel
 
@@ -2325,6 +2511,28 @@ biome=AnomShells
 short=
 info="Messerscharfer Planet"
 
+[Reg0000000236B3A1]
+name=Yaleoni-Adjunkt
+
+[Sys0043000236B3A1]
+name=Dawukoun
+race=Vykeen
+conflict=3
+conflict_label=hoch
+class=Yellow
+short=5 Planeten
+info=
+
+[Sys0079000236B3A1]
+name=Abkaud
+race=Vykeen
+conflict=3
+blackhole=true
+blackholetarget=00310004254BA8
+class=Yellow
+short=2 Planeten
+info=
+
 [Reg00000000444444]
 
 [Sys00010000444444]
@@ -2354,6 +2562,41 @@ blackhole=true
 blackholetarget=004600FC234ACE
 class=Yellow
 short=2 Planeten
+info=
+
+[Reg000000020F245C]
+name=Makhvat-Wolke
+
+[Sys004300020F245C]
+name=Tograngal II
+race=Korvax
+conflict=2
+conflict_label=gereizt
+class=Yellow
+short=4 Planeten
+info=
+
+[Reg00000000041483]
+name=Itrett
+
+[Sys00240000041483]
+name=Ikiurail
+race=Korvax
+conflict=3
+conflict_label=zerstörerisch
+class=Yellow
+short=5 Planeten
+info=
+
+[Sys00790000041483]
+name=Eseogw-Maber
+race=Gek
+conflict=2
+conflict_label=gereizt
+blackhole=true
+blackholetarget=004300020F245C
+class=Yellow
+short=1 Planet
 info=
 
 [Reg000000024F14BB]
@@ -2416,6 +2659,7 @@ name=Brencest
 race=Vykeen
 conflict=3
 blackhole=true
+blackholetarget=006B0003B09ED6
 class=Yellow
 short=
 info=W: Mühevoll
