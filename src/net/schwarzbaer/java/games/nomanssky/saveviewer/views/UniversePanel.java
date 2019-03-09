@@ -44,6 +44,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -645,6 +646,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JComboBox<Race> cmbbxRace;
 		private JComboBox<StarClass> cmbbxStarClass;
 		private Gui.IconComboBox<Integer> cmbbxConflictLevel;
+		private JComboBox<String> cmbbxConflictLevelLabels;
+		private JButton btnAddConflictLevelLabel;
 
 		private JCheckBox chkbxUnexplored;
 
@@ -700,7 +703,43 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			});
 			cmbbxRace         .addActionListener(e->{ if (isSettingContent) return; node.value.race      = (Race     )cmbbxRace     .getSelectedItem(); updateTreeNode(node, false); });
 			cmbbxStarClass    .addActionListener(e->{ if (isSettingContent) return; node.value.starClass = (StarClass)cmbbxStarClass.getSelectedItem(); updateTreeNode(node, false); });
-			cmbbxConflictLevel.addActionListener(e->{ if (isSettingContent) return; Integer val = cmbbxConflictLevel.getSelected(); node.value.conflictLevel = val==null?-1:val; updateTreeNode(node, false); });
+			cmbbxConflictLevel.addActionListener(e->{
+				if (isSettingContent) return;
+				
+				Integer val = cmbbxConflictLevel.getSelected();
+				node.value.conflictLevel = val==null?-1:val;
+				updateTreeNode(node, false);
+				
+				GameInfos.updateConflictLevelLabels();
+				updateCmbbxConflictLevelLabels();
+			});
+			
+			cmbbxConflictLevelLabels = new JComboBox<String>();
+			cmbbxConflictLevelLabels.addActionListener(e->{
+				if (isSettingContent) return;
+				
+				int index = cmbbxConflictLevelLabels.getSelectedIndex();
+				String label = index<0?null:cmbbxConflictLevelLabels.getItemAt(index);
+				node.value.conflictLevelLabel = label;
+				updateTreeNode(node, false);
+				
+				if (node.value.conflictLevel<1) {
+					int conflictLevel = GameInfos.getConflictLevel(label);
+					SwingUtilities.invokeLater(()->{
+						cmbbxConflictLevel.setSelectedItem(conflictLevel<1?null:(Integer)conflictLevel);
+					});
+				}
+			});
+			btnAddConflictLevelLabel = SaveViewer.createButton("Add",e->{
+				String label = JOptionPane.showInputDialog(this, "message", "title", JOptionPane.PLAIN_MESSAGE);
+				if (label!=null) {
+					node.value.conflictLevelLabel = label;
+					updateTreeNode(node, false);
+					
+					GameInfos.updateConflictLevelLabels();
+					updateCmbbxConflictLevelLabels();
+				}
+			});
 			
 			chkbxUnexplored = SaveViewer.createCheckbox("is Unexplored", e->{
 				if (isSettingContent) return;
@@ -756,13 +795,22 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
 			
-			addCompToValuePanel(cmbbxRace           , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(cmbbxStarClass      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(cmbbxConflictLevel  , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxUnexplored     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(blackHoleTargetPanel, 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxRace               , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxStarClass          , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxConflictLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(cmbbxConflictLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(btnAddConflictLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxUnexplored         , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxAtlasInterface     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(chkbxBlackHole          , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToValuePanel(blackHoleTargetPanel    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+		}
+
+		private void updateCmbbxConflictLevelLabels() {
+			String[] labels = GameInfos.getConflictLevelLabels(node.value.conflictLevel);
+			cmbbxConflictLevelLabels.setModel(new DefaultComboBoxModel<>(labels));
+			cmbbxConflictLevelLabels.setSelectedItem(node.value.conflictLevelLabel);
+			btnAddConflictLevelLabel.setEnabled(node.value.conflictLevel>=1);
 		}
 
 		private void updateBlackHoleTargetPanel() {
@@ -787,7 +835,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			cmbbxRace          .setSelectedItem(system.race         );
 			cmbbxStarClass     .setSelectedItem(system.starClass    );
-			cmbbxConflictLevel .setSelectedItem(1>system.conflictLevel?null:system.conflictLevel);
+			cmbbxConflictLevel .setSelectedItem(system.conflictLevel<1?null:system.conflictLevel);
+			updateCmbbxConflictLevelLabels();
+			
 			chkbxUnexplored    .setSelected(system.isUnexplored     );
 			chkbxAtlasInterface.setSelected(system.hasAtlasInterface);
 			chkbxBlackHole     .setSelected(system.hasBlackHole     );

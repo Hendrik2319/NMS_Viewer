@@ -2443,7 +2443,7 @@ public class SaveGameData {
 			for (Galaxy g:galaxies) {
 				g.regions.sort(
 						Comparator
-						.comparing((Region r) -> -r.distToCenter)
+						.comparing((Region r) -> -r.distToCenter_RU)
 						.thenComparing((Region r) -> r.voxelX)
 						.thenComparing((Region r) -> r.voxelY)
 						.thenComparing((Region r) -> r.voxelZ)
@@ -2663,7 +2663,7 @@ public class SaveGameData {
 			public final Vector<SolarSystem> solarSystems;
 			public String oldname;
 			public String name;
-			public double distToCenter;
+			public double distToCenter_RU;
 			
 			public Region(Galaxy galaxy, int x, int y, int z) {
 				super(Type.Region);
@@ -2673,7 +2673,7 @@ public class SaveGameData {
 				this.voxelZ = z;
 				this.solarSystems = new Vector<>();
 				this.setName(null);
-				this.distToCenter = getUniverseAddress().getDistToCenter_inRegionUnits();
+				this.distToCenter_RU = getUniverseAddress().getDistToCenter_inRegionUnits();
 			}
 
 			@Override
@@ -2844,6 +2844,7 @@ public class SaveGameData {
 			public Race race;
 			public StarClass starClass;
 			public int conflictLevel;
+			public String conflictLevelLabel;
 			public boolean isUnexplored; 
 			public Double distanceToCenter;
 			public boolean hasAtlasInterface; 

@@ -15,6 +15,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
@@ -110,31 +111,49 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				if (galaxy!=null) {
 					double min = Double.POSITIVE_INFINITY; Vector<Region> minRegions = new Vector<>();
 					double max = Double.NEGATIVE_INFINITY; Vector<Region> maxRegions = new Vector<>();
+					double avgBlackHoleDist2C = 0, blackHoleDist2C;
+					int numberOfBlackHoles = 0;
 					for (Region r:galaxy.regions) {
+						for (SolarSystem sys:r.solarSystems) {
+							if (sys.hasBlackHole && sys.blackHoleTarget!=null) {
+								Region bhtRegion = data.universe.findRegion(sys.blackHoleTarget);
+								blackHoleDist2C = r.distToCenter_RU-bhtRegion.distToCenter_RU;
+								if (numberOfBlackHoles==0) avgBlackHoleDist2C = blackHoleDist2C;
+								else avgBlackHoleDist2C = avgBlackHoleDist2C*numberOfBlackHoles + blackHoleDist2C;
+								avgBlackHoleDist2C /= (++numberOfBlackHoles);
+							}
+						}
 						if (!r.isReachableByTeleport()) continue;
 						
-						if (min>r.distToCenter) {
+						if (min>r.distToCenter_RU) {
 							minRegions.clear();
 							minRegions.add(r);
-							min = r.distToCenter;
-						} else if (min==r.distToCenter)
+							min = r.distToCenter_RU;
+						} else if (min==r.distToCenter_RU)
 							minRegions.add(r);
 						
-						if (max<r.distToCenter) {
+						if (max<r.distToCenter_RU) {
 							maxRegions.clear();
 							maxRegions.add(r);
-							max = r.distToCenter;
-						} else if (max==r.distToCenter)
+							max = r.distToCenter_RU;
+						} else if (max==r.distToCenter_RU)
 							maxRegions.add(r);
 					}
+					
+					if (!textAreaIsEmpty()) appendEmptyLine();
+					appendLine(Locale.ENGLISH, "Average Black Hole Jump Distance:  (%d black hole jumps)", numberOfBlackHoles);
+					appendLine(Locale.ENGLISH, "   %1.1f ly", avgBlackHoleDist2C*400);
 					
 					if (!maxRegions.isEmpty() && !minRegions.isEmpty()) {
 						if (!textAreaIsEmpty()) appendEmptyLine();
 						appendLine("Way to Galactic Center:    ( = Teleport Range )");
-						appendLine(String.format(Locale.ENGLISH, "   max: %1.1f ly  %s", max*400, maxRegions.toString()));
-						appendLine(String.format(Locale.ENGLISH, "   min: %1.1f ly  %s", min*400, minRegions.toString()));
-						appendLine(String.format(Locale.ENGLISH, "        = %1.1f%% of max", min/max*100));
-						appendLine(String.format(Locale.ENGLISH, "-> Way to Galactic Center: %1.1f%% passed", (1-min/max)*100));
+						appendLine(Locale.ENGLISH, "   max: %1.1f ly  %s", max*400, maxRegions.toString());
+						appendLine(Locale.ENGLISH, "   min: %1.1f ly  %s", min*400, minRegions.toString());
+						appendLine("   passed distance:");
+						appendLine(Locale.ENGLISH, "      %1.1f ly  (%1.1f%%)", (max-min)*400, (1-min/max)*100);
+						appendLine("   remaining distance:");
+						appendLine(Locale.ENGLISH, "      %1.1f ly  (%1.1f%%)", min*400, min/max*100);
+						appendLine(Locale.ENGLISH, "      %1.1f black hole jumps", min/avgBlackHoleDist2C);
 					}
 				}
 			}
@@ -165,6 +184,10 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			}
 			appendLine(indent+address.getCoordinates());
 			appendLine(indent+address.getExtendedSigBoostCode());
+		}
+		
+		private void appendLine(Locale locale, String format, Object... values) {
+			appendLine(String.format(locale, format, values));
 		}
 		
 		private void appendLine(String line) {

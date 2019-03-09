@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -83,6 +84,7 @@ public class GameInfos {
 	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 	
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
+	private static HashMap<Integer,HashSet<String>> conflictLevelLabels;
 	
 	private static class UOD_Region extends UniverseObjectData {
 		public UOD_Region(UniverseAddress ua) {
@@ -115,6 +117,7 @@ public class GameInfos {
 		Universe.SolarSystem.StarClass starClass;
 		Double distanceToCenter;
 		int conflictLevel;
+		String conflictLevelLabel;
 		Boolean isUnexplored;
 		Boolean hasAtlasInterface; 
 		Boolean hasBlackHole;
@@ -127,6 +130,7 @@ public class GameInfos {
 			starClass = null;
 			distanceToCenter = null;
 			conflictLevel = -1;
+			conflictLevelLabel = null;
 			hasAtlasInterface = null;
 			hasBlackHole = null;
 			blackHoleTarget = null;
@@ -138,6 +142,7 @@ public class GameInfos {
 			starClass = sys.starClass;
 			distanceToCenter = sys.distanceToCenter;
 			conflictLevel = sys.conflictLevel;
+			conflictLevelLabel = sys.conflictLevelLabel;
 			hasAtlasInterface = sys.hasAtlasInterface;
 			hasBlackHole = sys.hasBlackHole;
 			blackHoleTarget = (sys.blackHoleTarget==null || !sys.hasBlackHole)?null:sys.blackHoleTarget.getAddress();
@@ -194,6 +199,43 @@ public class GameInfos {
 		}
 		
 		
+	}
+	
+	public static void updateConflictLevelLabels() {
+		conflictLevelLabels = new HashMap<>();
+		for (UniverseObjectData uoData:universeObjectDataArr.values()) {
+			if (!(uoData instanceof UOD_SolarSystem)) continue;
+			UOD_SolarSystem system = (UOD_SolarSystem)uoData;
+			if (system.conflictLevelLabel!=null) {
+				HashSet<String> labels = conflictLevelLabels.get(system.conflictLevel);
+				if (labels==null) conflictLevelLabels.put(system.conflictLevel, labels = new HashSet<>());
+				labels.add(system.conflictLevelLabel);
+			}
+		}
+	}
+	
+	public static String[] getConflictLevelLabels(int conflictLevel) {
+		HashSet<String> labels;
+		if (conflictLevel<1) {
+			labels = new HashSet<>();
+			for (HashSet<String> set:conflictLevelLabels.values())
+				labels.addAll(set);
+			
+		} else
+			labels = conflictLevelLabels.get(conflictLevel);
+		
+		if (labels==null || labels.isEmpty()) return new String[0];
+		String[] arr = labels.toArray(new String[0]);
+		Arrays.sort(arr);
+		return arr;
+	}
+
+	public static int getConflictLevel(String label) {
+		for (Integer level:conflictLevelLabels.keySet()) {
+			HashSet<String> labels = conflictLevelLabels.get(level);
+			if (labels.contains(label)) return level;
+		}
+		return -1;
 	}
 
 	public static void loadUniverseObjectDataFromFile() {
@@ -300,6 +342,11 @@ public class GameInfos {
 						catch (NumberFormatException e) { system.conflictLevel = -1; }
 						continue;
 					}
+					if (str.startsWith("conflict_label=")) {
+						valueStr = str.substring("conflict_label=".length());
+						system.conflictLevelLabel = valueStr;
+						continue;
+					}
 				}
 				if (planet!=null) {
 					if (str.startsWith("biome=")) {
@@ -355,6 +402,9 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
+		
+		updateConflictLevelLabels();
+		
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
@@ -414,35 +464,39 @@ public class GameInfos {
 			if (system!=null) {
 				if (uod_system.race!=null) {
 					system.race = uod_system.race;
-					if (withOutput) SaveViewer.log_ln("   Race of %s was defined: %s",objName,system.race);
+					if (withOutput) SaveViewer.log_ln("   Race of %s was defined: %s", objName, system.race);
 				}
 				if (uod_system.starClass!=null) {
 					system.starClass = uod_system.starClass;
-					if (withOutput) SaveViewer.log_ln("   Star Class of %s was defined: %s",objName,system.starClass);
+					if (withOutput) SaveViewer.log_ln("   Star Class of %s was defined: %s", objName, system.starClass);
 				}
 				if (uod_system.distanceToCenter!=null) {
 					system.distanceToCenter = uod_system.distanceToCenter;
-					if (withOutput) SaveViewer.log_ln("   Distance to galactic center of %s was defined: %s",objName,system.distanceToCenter);
+					if (withOutput) SaveViewer.log_ln("   Distance to galactic center of %s was defined: %s", objName, system.distanceToCenter);
 				}
 				if (uod_system.conflictLevel>=0) {
 					system.conflictLevel = uod_system.conflictLevel;
-					if (withOutput) SaveViewer.log_ln("   Conflict Level of %s was defined: %s",objName,system.starClass);
+					if (withOutput) SaveViewer.log_ln("   Conflict Level of %s was defined: %d", objName, system.conflictLevel);
+				}
+				if (uod_system.conflictLevelLabel!=null) {
+					system.conflictLevelLabel = uod_system.conflictLevelLabel;
+					if (withOutput) SaveViewer.log_ln("   Conflict Level Label of %s was defined: \"%s\"", objName, system.conflictLevelLabel);
 				}
 				if (uod_system.isUnexplored!=null) {
 					system.isUnexplored = uod_system.isUnexplored;
-					if (withOutput) SaveViewer.log_ln("   %s was defined as unexplored: %s",objName);
+					if (withOutput) SaveViewer.log_ln("   %s was defined as unexplored: %s", objName, system.isUnexplored);
 				}
 				if (uod_system.hasAtlasInterface!=null) {
 					system.hasAtlasInterface = uod_system.hasAtlasInterface;
-					if (withOutput) SaveViewer.log_ln("   %s has an Atlas Interface: %s",objName,system.hasAtlasInterface);
+					if (withOutput) SaveViewer.log_ln("   %s has an Atlas Interface: %s", objName, system.hasAtlasInterface);
 				}
 				if (uod_system.hasBlackHole!=null) {
 					system.hasBlackHole = uod_system.hasBlackHole;
-					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole: %s",objName,system.hasBlackHole);
+					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole: %s", objName, system.hasBlackHole);
 				}
 				if (uod_system.blackHoleTarget!=null) {
 					system.blackHoleTarget = new UniverseAddress(uod_system.blackHoleTarget);
-					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole Target: %s",objName,system.blackHoleTarget);
+					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole Target: %s", objName, system.blackHoleTarget);
 				}
 			}
 			
@@ -537,8 +591,9 @@ public class GameInfos {
 					if (uod_system.isUnexplored!=null && uod_system.isUnexplored)
 						out.printf("unexplored\r\n");
 					else {
-						if (uod_system.race         !=null) out.printf("race=%s\r\n",uod_system.race);
-						if (uod_system.conflictLevel>=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
+						if (uod_system.race              !=null) out.printf("race=%s\r\n",uod_system.race);
+						if (uod_system.conflictLevel     >=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
+						if (uod_system.conflictLevelLabel!=null) out.printf("conflict_label=%s\r\n",uod_system.conflictLevelLabel);
 					}
 					if (uod_system.hasAtlasInterface!=null) {
 						if (uod_system.hasAtlasInterface || SolarSystem.shouldHaveAtlasInterface(uod_system.universeAddress.solarSystemIndex))
