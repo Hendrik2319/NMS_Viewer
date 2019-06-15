@@ -114,6 +114,7 @@
 ^BASE_AQUARIUM.type=BaseDekoration
 ^BASE_BARNACLE=
 ^BASE_BARNACLE.type=BaseDekoration
+^BASE_BEAMSTONE=
 ^BASE_BONEGARDEN=Klapperwirbelsäule
 ^BASE_BONEGARDEN.type=PlanetTrophy
 ^BASE_BONEGARDEN.image=BUILDABLE.BONEGARDEN.png
