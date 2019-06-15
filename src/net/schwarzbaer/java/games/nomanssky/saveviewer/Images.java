@@ -351,15 +351,15 @@ public class Images {
 				repaint();
 			}
 
-			@Override protected void paintCanvas(Graphics g, int width, int height) {
+			@Override protected void paintCanvas(Graphics g, int x, int y, int width, int height) {
 				g.setColor(Color.GRAY);
-				g.drawRect(0, 0, width-1, height-1);
+				g.drawRect(x, y, width-1, height-1);
 				if (color==null) {
-					g.drawLine(0, 0, width-1, height-1);
-					g.drawLine(width-1, 0, 0, height-1);
+					g.drawLine(x, y, x+width-1, y+height-1);
+					g.drawLine(x+width-1, y, x, y+height-1);
 				} else {
 					g.setColor(color);
-					g.fillRect(1, 1, width-2, height-2);
+					g.fillRect(x+1, y+1, width-2, height-2);
 				}
 			}
 		}

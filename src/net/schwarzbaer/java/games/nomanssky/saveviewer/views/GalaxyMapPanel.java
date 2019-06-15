@@ -808,7 +808,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		}
 		
 		@Override
-		protected void paintCanvas(Graphics g, int width, int height) {
+		protected void paintCanvas(Graphics g, int x__, int y__, int width, int height) {
 //				if (isMapImageNull()) return;
 			if (!(g instanceof Graphics2D)) return;
 			Graphics2D g2 = (Graphics2D)g;
