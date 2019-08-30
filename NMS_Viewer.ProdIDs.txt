@@ -104,6 +104,7 @@
 ^ATLAS_SEED_9.type=AtlasSeed
 ^ATLAS_SEED_9.image=ATLASSEED.9.png
 ^ATLAS_SEED_9.imageBG=CCCCCC
+^BAIT_BASIC=
 ^BARRENPLANT=Echinokaktus
 ^BARRENPLANT.type=Plant
 ^BARRENPLANT.image=NmsFarming_Cucrassula_Icon.Echinokaktus.png
@@ -114,7 +115,10 @@
 ^BASE_AQUARIUM.type=BaseDekoration
 ^BASE_BARNACLE=
 ^BASE_BARNACLE.type=BaseDekoration
-^BASE_BEAMSTONE=
+^BASE_BEAMSTONE=Lichtbruch
+^BASE_BEAMSTONE.type=PlanetTrophy
+^BASE_BEAMSTONE.image=BUILDABLE.BEAMSTONE.png
+^BASE_BEAMSTONE.imageBG=2C7C9F
 ^BASE_BONEGARDEN=Klapperwirbelsäule
 ^BASE_BONEGARDEN.type=PlanetTrophy
 ^BASE_BONEGARDEN.image=BUILDABLE.BONEGARDEN.png
@@ -196,7 +200,7 @@
 ^BP_ANALYSER.type=BaseExternal
 ^BP_ANALYSER.image=BUILDABLE.BLUEPRINTAN.NEXT.png
 ^BP_ANALYSER.imageBG=2C7C9F
-^BP_SALVAGE=Wiederhergestellte Technologie
+^BP_SALVAGE=Geborgene Daten
 ^BP_SALVAGE.type=Special
 ^BP_SALVAGE.image=PRODUCT.SALVAGE.NEXT.png
 ^BP_SALVAGE.imageBG=0063B6
@@ -204,6 +208,7 @@
 ^BRIDGECONNECTOR.type=BaseComponentFreighter
 ^BUILDAMCRATE=
 ^BUILDAMCRATE.type=BaseDekoration
+^BUILDANTIMATTER=
 ^BUILDBEACON=Signal
 ^BUILDBEACON.type=BaseExternal
 ^BUILDBEACON.image=NmsTech_Beacon_Icon.png
@@ -556,6 +561,8 @@
 ^C_FLOOR.type=BaseComponent_FertigTeil
 ^C_FLOOR_Q=
 ^C_FLOOR_Q.type=BaseComponent_FertigTeil
+^C_GDOOR=
+^C_GDOOR_D=
 ^C_GFLOOR=
 ^C_GFLOOR.type=BaseComponent_FertigTeil
 ^C_RAMP=
@@ -566,6 +573,7 @@
 ^C_ROOF.type=BaseComponent_FertigTeil
 ^C_ROOF_C=
 ^C_ROOF_C.type=BaseComponent_FertigTeil
+^C_ROOF_IC=
 ^C_ROOF_M=
 ^C_ROOF_M.type=BaseComponent_FertigTeil
 ^C_SDOOR=
@@ -656,6 +664,22 @@
 ^FLAG4.type=BaseDekoration
 ^FLOORMAT1=Bodenmatte
 ^FLOORMAT1.type=BaseDekoration
+^FOOD_P_ALL1=Heptaploid-Weizen
+^FOOD_P_ALL1.type=PlantProduct
+^FOOD_P_ALL1.image=PRODUCT.PLANT.ALL1WILD.png
+^FOOD_P_ALL1.imageBG=10805C
+^FOOD_P_ALL2=Süsswurzel
+^FOOD_P_ALL2.type=PlantProduct
+^FOOD_P_ALL2.image=PRODUCT.PLANT.ALL2WILD.png
+^FOOD_P_ALL2.imageBG=10805C
+^FOOD_P_ALL3=Fleischige Wurzeln
+^FOOD_P_ALL3.type=PlantProduct
+^FOOD_P_ALL3.image=PRODUCT.PLANT.ALL3WILD.png
+^FOOD_P_ALL3.imageBG=10805C
+^FOOD_P_LUSHWILD=Impulsbohnen
+^FOOD_P_LUSHWILD.type=PlantProduct
+^FOOD_P_LUSHWILD.image=PRODUCT.PLANT.LUSHWILD.png
+^FOOD_P_LUSHWILD.imageBG=10805C
 ^FOUNDATION=Fundament für Zylindrischem Raum
 ^FOUNDATION.type=BaseComponent
 ^FOUNDATION.image=Buildable.foundation.png
@@ -716,6 +740,12 @@
 ^GARAGE_SUB=Nautilon
 ^GARAGE_SUB.type=BaseExternal
 ^GARAGE_SUB.image=BUILDABLE.VEHICLEGARAGEH.png
+^GEODE_CRYSTAL=Kristallfragment
+^GEODE_CRYSTAL.image=PRODUCT.GEODE.CRYSTAL.png
+^GEODE_CRYSTAL.imageBG=0063B6
+^GEODE_LAND=Geode
+^GEODE_LAND.image=Product.metallic.8.Iridesite.png
+^GEODE_LAND.imageBG=8B7E75
 ^GLASSCORRIDOR=Korridor m. Glasdach
 ^GLASSCORRIDOR.type=BaseComponent
 ^GLASSCORRIDOR.image=Buildable.glasscorridor.png
@@ -1289,6 +1319,7 @@
 ^SNOWPLANT=Frostwurz
 ^SNOWPLANT.type=Plant
 ^SNOWPLANT.image=NmsFarming_Skywort_Icon.Frostwurz.png
+^SOUL_ENGINE=
 ^SPEC_DECAL01=
 ^SPEC_DECAL02=
 ^SPEC_DECAL03=
@@ -1347,7 +1378,7 @@
 ^S_CONTAINER9.type=BaseComponentFreighter
 ^TECHPANEL=
 ^TECHPANEL.type=BaseDekoration
-^TECH_COMP=Technologiemodul
+^TECH_COMP=Kabelbaum
 ^TECH_COMP.type=Product
 ^TECH_COMP.image=PRODUCT.TECHMODULE.png
 ^TECH_COMP.imageBG=0063B6
@@ -1421,6 +1452,8 @@
 ^ULTRAPROD2.type=ProductExpensive
 ^ULTRAPROD2.image=NmsProduct_StasisDevice_Icon.png
 ^ULTRAPROD2.imageBG=F0A92B
+^U_BATTERY_S=
+^U_BIOGENERATOR=
 ^U_BOLT1=Blitzwerfer-Modul (C)
 ^U_BOLT1.type=MultitoolWeaponUpgradeM
 ^U_BOLT1.image=MAINTTECH.FUEL2.NEXT.png
@@ -1448,6 +1481,8 @@
 ^U_EXO_SUB4=Humboldt-Antriebsmodul (S)
 ^U_EXO_SUB4.type=ExocraftExtensionUpgradeM
 ^U_EXO_SUB4.imageBG=F0A92B
+^U_EXTRACTOR_S=
+^U_GENERATOR_S=
 ^U_HOTPROT2=Hitzeschutz-Modul (A)
 ^U_HOTPROT2.type=ExosuitExtensionUpgradeM
 ^U_HOTPROT2.image=NmsProduct_QuantumProcessor_Icon.png
@@ -1484,6 +1519,9 @@
 ^U_LASER4.type=MultitoolWeaponUpgradeM
 ^U_LASER4.image=MAINTTECH.FUEL2.NEXT.png
 ^U_LASER4.imageBG=F0A92B
+^U_MINIPORTAL=
+^U_PIPELINE=
+^U_POWERLINE=
 ^U_PULSE1=Impulsantrieb-Modul (C)
 ^U_PULSE1.type=ShipExtensionUpgradeM
 ^U_PULSE1.image=NmsCommodity_QuantumAccelerator_icon.png
@@ -1566,10 +1604,16 @@
 ^U_SHOTGUN3.type=MultitoolWeaponUpgradeM
 ^U_SHOTGUN3.image=MAINTTECH.FUEL2.NEXT.png
 ^U_SHOTGUN3.imageBG=7C4562
+^U_SILO_S=
 ^U_SMG4=Impulswerfer-Modul (S)
 ^U_SMG4.type=MultitoolWeaponUpgradeM
 ^U_SMG4.image=MAINTTECH.FUEL2.NEXT.png
 ^U_SMG4.imageBG=F0A92B
+^U_SOLAR_S=
+^U_SWITCHBUTTON=
+^U_SWITCHPRESS=
+^U_SWITCHPROX=
+^U_SWITCHWALL=
 ^U_TGRENADE2=Geologiekanonen-Modul (B)
 ^U_TGRENADE2.type=MultitoolWeaponUpgradeM
 ^U_TGRENADE2.image=MAINTTECH.FUEL2.NEXT.png
@@ -1582,6 +1626,7 @@
 ^U_TOX3.type=ExosuitExtensionUpgradeM
 ^U_TOX3.image=NmsProduct_QuantumProcessor_Icon.png
 ^U_TOX3.imageBG=F0A92B
+^U_TRANSISTOR1=
 ^U_UNW1=Unterwasserschutz-Modul (B?)
 ^U_UNW1.type=ExosuitExtensionUpgradeM
 ^U_UNW1.image=NmsProduct_QuantumProcessor_Icon.png
@@ -1595,6 +1640,7 @@
 ^VENTGEM.imageBG=10805C
 ^VIEWSPHERE=Aussichtskuppel
 ^VIEWSPHERE.type=BaseComponent
+^VIEWSPHERE.image=BUILDABLE.VIEWSPHERE.png
 ^WALKER_PROD=Kampfläufergehirn
 ^WALKER_PROD.type=Special
 ^WALKER_PROD.image=PRODUCT.WALKERBRAIN.png

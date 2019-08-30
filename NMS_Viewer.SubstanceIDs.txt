@@ -163,9 +163,9 @@
 ^PLANT_LUSH.symbol=Sd
 ^PLANT_LUSH.image=NmsResource_Star_Bulb_icon.Sternenknolle.png
 ^PLANT_LUSH.imageBG=218CAC
-^PLANT_POOP=Coprit
+^PLANT_POOP=Faecium
 ^PLANT_POOP.type=PlantProduct
-^PLANT_POOP.symbol=Cr
+^PLANT_POOP.symbol=Fa
 ^PLANT_POOP.image=Substance.neutral.rare14.Coprit.png
 ^PLANT_POOP.imageBG=78502D
 ^PLANT_RADIO=Gammawurzel
@@ -208,6 +208,10 @@
 ^ROCKETSUB.symbol=H3
 ^ROCKETSUB.image=SUBSTANCE.ROCKETSUB.png
 ^ROCKETSUB.imageBG=DEDCD0
+^SAND1=Silikatpulver
+^SAND1.symbol=Si
+^SAND1.image=SUBSTANCE.SAND.1.png
+^SAND1.imageBG=8B7E75
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.type=Resource
 ^SPACEGUNK1.symbol=Sr
