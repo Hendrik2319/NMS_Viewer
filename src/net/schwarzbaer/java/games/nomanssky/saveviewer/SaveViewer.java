@@ -819,7 +819,7 @@ public class SaveViewer implements ActionListener {
 				HashSet<String> valueSet = new HashSet<>();
 				String str;
 				while ((str=in.readLine())!=null) {
-					if (!str.isEmpty()) {
+					if (!str.isEmpty() && !str.startsWith("//")) {
 						String key = str.substring(0,3);
 						String value = str.substring(4);
 						String oldValue = deObfuscator.replacements.put(key, value);

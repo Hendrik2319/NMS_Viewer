@@ -1025,7 +1025,7 @@ public class SimplePanels {
 				return suggestFileName(type, data, playerbase);
 			}
 			public static String suggestFileName(Type type, SaveGameData data, PersistentPlayerBase playerbase) {
-				String prefix = String.format("Base_%s.%d", data.index>=0?(""+(data.index+1)):"#", playerbase.baseIndex+1);
+				String prefix = String.format("Base_S%s_B%d", data.index>=0?(""+(data.index+1)):"#", playerbase.baseIndex+1);
 				switch (type) {
 				case Simple: return prefix+"_simple.wrl";
 				case Models: return prefix+".wrl";

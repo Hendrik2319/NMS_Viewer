@@ -54,17 +54,17 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			for (JTextArea t:textAreas) t.setText("");
 			
 			currentTextArea = 0;
-			appendValueT("Current Units      ", data.general.units );
-			appendValueT("Current Nanites    ", data.general.nanites );
-			appendValueT("Current Quicksilver", data.general.quicksilver );
-			appendValue ("Player Health      ", data.general.playerHealth );
-			appendValue ("Player Shield      ", data.general.playerShield );
-			appendValue ("Energy             ", data.general.energy );
-			appendValue ("Ship Health        ", data.general.shipHealth );
-			appendValue ("Ship Shield        ", data.general.shipShield );
-			appendValue ("Time Alive         ", Duration.toString(data.general.timeAlive) );
-			appendValue ("Total PlayTime     ", Duration.toString(data.general.totalPlayTime) );
-			appendValue ("Hazard Time Alive  ", Duration.toString(data.general.hazardTimeAlive) );
+			appendValueO("Current Units      ", data.general.units );
+			appendValue ("Current Nanites    ", 10, data.general.nanites );
+			appendValue ("Current Quicksilver", 10, data.general.quicksilver );
+			appendValue ("Player Health      ", 10, data.general.playerHealth );
+			appendValue ("Player Shield      ", 10, data.general.playerShield );
+			appendValue ("Energy             ", 10, data.general.energy );
+			appendValue ("Ship Health        ", 10, data.general.shipHealth );
+			appendValue ("Ship Shield        ", 10, data.general.shipShield );
+			appendValue ("Time Alive         ", 10, Duration.toString(data.general.timeAlive) );
+			appendValue ("Total PlayTime     ", 10, Duration.toString(data.general.totalPlayTime) );
+			appendValue ("Hazard Time Alive  ", 10, Duration.toString(data.general.hazardTimeAlive) );
 			
 			currentTextArea = 1;
 			UniverseAddress currentUA = data.general.currentUniverseAddress;
@@ -204,10 +204,10 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			textAreas[currentTextArea].append("\r\n");
 		}
 
-		private void appendValue (String label, int     value) { appendStatement(label, ""+value); }
-		private void appendValueT(String label, Long    value) { appendStatement(label, value==null?"":String.format(Locale.ENGLISH, "%,d", value)); }
-		private void appendValue (String label, Long    value) { appendStatement(label, value==null?"":(""+value)); }
-		private void appendValue (String label, String  value) { appendStatement(label, value==null?"":(   value)); }
+		private void appendValue (String label, int  value) { appendStatement(label, ""+value); }
+		private void appendValueO(String label, Long value) { appendStatement(label, value==null?"":String.format(Locale.ENGLISH, "%,d%s", value, value>=0?"":String.format(Locale.ENGLISH, " (%,d)", (1L<<32)+value))); }
+		private void appendValue (String label, int length, Long   value) { appendStatement(label, value==null?"":String.format(Locale.ENGLISH, "%,"+length+"d", value)); }
+		private void appendValue (String label, int length, String value) { appendStatement(label, value==null?"":String.format(Locale.ENGLISH, "%" +length+"s", value)); }
 
 		private void appendStatement(String label, String statement) {
 			appendLine(label+": "+statement);

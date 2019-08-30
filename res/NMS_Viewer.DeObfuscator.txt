@@ -32,6 +32,7 @@ D6b PTK
 q5u CN
 =wD ???[=wD]
 bLr ???[bLr]
+V?r ???[V?r] [Beyond]
 tiH ???[tiH]
 
 brV Available
@@ -86,6 +87,11 @@ NNR GenerationSeed
 ;R7 CurrentMissionID
 
 :JX KnownWords
+9wn Word
+D;o Races
+MF2 [KnownWords2]
+MYl [Word]
+
 eZ< KnownProducts
 4kj KnownTech
 24< [KnownQuicksilverSpecials]
@@ -99,8 +105,6 @@ eZ7 Participants
 5L6 UA
 5bU BuildingSeed
 M?f ParticipantType
-9wn Word
-D;o Races
 k?G CurrentMissionSeed
 Mg< PreviousMissionID
 rej PreviousMissionSeed
@@ -395,3 +399,27 @@ Mx@ [MissionTaskTypeID]
 bbB [MissionTaskCompleted]
 fvN [??? fvN Bool:false]
 8GD [??? 8GD Bool:false]
+
+
+// Fields added by Beyond
+QQp [??? QQp PlayerStateData Int:0]
+Bur [??? Bur PlayerStateData Bool:false]
+Ue9 [??? Ue9 PlayerStateData Bool:true]
+Fk@ [??? Fk@ PlayerStateData Direction Z+]
+d72 [??? d72 PlayerStateData Direction Y+]
+Yel [??? Yel PlayerStateData Position 0,0,0]
+9hR [??? 9hR PlayerStateData Int:11]
+8DG [??? 8DG PlayerStateData Int:18]
+lmE [??? lmE PlayerStateData Int:13]
+qFl [??? qFl PlayerStateData Int:2]
+wb: [??? wb: PlayerStateData Bool:true]
+
+hiE [??? hiE UniverseAddress of ?? (SpaceAnomalie/MyFreighter)]
+b76 [??? b76 InventorySlot Bool:true]
+BpT [??? BpT SubVersion]
+J=S [??? J=S OwnerID]
+vyN [??? vyN OwnerName]
+a>; [??? a>; TeleportEndpoints Bool:false]
+30s [??? 30s Last or Special TeleportEndpoint?]
+RiP [??? RiP ChestMagic3Layout?]
+Kha [??? Kha ChestMagic3Inventory?]

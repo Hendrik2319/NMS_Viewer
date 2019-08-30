@@ -86,7 +86,8 @@ public class SaveGameView extends JPanel {
 			if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects", new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow));
 			
 			if (data.stats      !=null) tabbedPane.addTab("Status Values",new StatsPanel(data));
-			if (data.knownWords !=null) tabbedPane.addTab("KnownWords",new KnownWordsPanel(data));
+			if (data.knownWords !=null) tabbedPane.addTab("KnownWords"   ,new KnownWordsPanel(data,data.knownWords ));
+			if (data.knownWords2!=null) tabbedPane.addTab("KnownWords II",new KnownWordsPanel(data,data.knownWords2));
 			
 			rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data));
 			rawDataPanel.addPanel("DiscoveryData (Stored)", new SimplePanels.DiscoveredDataStoredPanel(data));

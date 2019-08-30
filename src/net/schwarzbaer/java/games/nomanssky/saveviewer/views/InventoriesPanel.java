@@ -9,7 +9,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -22,6 +21,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -36,6 +36,7 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageSelectDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
@@ -67,7 +68,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships));
 		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
 		tabbedPane.addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
-		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2));
+		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2).addInv(data.inventories.magicChest3));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -296,18 +297,18 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_EDGE          = Color.BLACK;
 			
 			private static final Color COLOR__SLOT_TITLE        = Color.BLACK;
-			private static final Paint COLOR__SLOT_TITLE_IDONLY = Color.RED;
+			private static final Color COLOR__SLOT_TITLE_IDONLY = Color.RED;
 			@SuppressWarnings("unused")
-			private static final Paint COLOR__SLOT_TITLE_MARKER = Color.GREEN;
+			private static final Color COLOR__SLOT_TITLE_MARKER = Color.GREEN;
 
 			private static final Color COLOR__SLOT_GAUGE        = Color.WHITE;
 			private static final Color COLOR__SLOT_GAUGE_EMPTY  = new Color(255,255,255,128);
 
-			private static final Paint COLOR__SLOT_TEXT_AMOUNT  = Color.WHITE;
-			private static final Paint COLOR__SLOT_TEXT_SYMBOL  = Color.BLACK;
-			private static final Paint COLOR__SLOT_BG_SYMBOL    = new Color(255,255,255,192);
+			private static final Color COLOR__SLOT_TEXT_AMOUNT  = Color.WHITE;
+			private static final Color COLOR__SLOT_TEXT_SYMBOL  = Color.BLACK;
+			private static final Color COLOR__SLOT_BG_SYMBOL    = new Color(255,255,255,192);
 			
-			private static final Paint COLOR__SLOT_TEXT_LABEL     = Color.RED;
+			private static final Color COLOR__SLOT_TEXT_LABEL     = Color.RED;
 			
 			private static final Color COLOR__SLOT_TEXT           = Color.BLUE;
 			private static final Color COLOR__SLOT_TEXT_PRODUCT   = new Color(0x4040FF);
@@ -319,7 +320,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 			private static final Color COLOR__UPGRCLS_BG     = new Color(0,0,0,160);
 			private static final Color COLOR__UPGRCLS_BORDER = new Color(255,255,255,192);
-			private static final Paint COLOR__UPGRCLS_TEXT   = Color.WHITE;
+			private static final Color COLOR__UPGRCLS_TEXT   = Color.WHITE;
 
 			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
 			
@@ -474,89 +475,19 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 							
 							//g2.setPaint(getSlotTextColor(slot.type));
 							
-							g2.drawImage(image, x1+innerOffsetX+imageBorder,y1+innerOffsetY+innerHeight-imageBorder-imageSize, null);
+							int imageX = x1+innerOffsetX+imageBorder;
+							int imageY = y1+innerOffsetY+innerHeight-imageBorder-imageSize;
+							g2.drawImage(image, imageX,imageY, null);
 							
-							if (slot.id.upgradeClass!=null) {
-								UpgrCls upgrCls = UpgrCls.get(slot.id.upgradeClass);
-								int iconX = x1+innerOffsetX+imageBorder+UPGRCLS_BORDER;
-								int iconY = y1+innerOffsetY+innerHeight-imageBorder-UPGRCLS_BORDER-UPGRCLS_HEIGHT;
-								g2.setPaint(COLOR__UPGRCLS_BG);
-								g2.fillRoundRect(iconX,iconY, UPGRCLS_WIDTH, UPGRCLS_HEIGHT, UPGRCLS_CORNER_RADIUS*2, UPGRCLS_CORNER_RADIUS*2);
-								g2.setPaint(COLOR__UPGRCLS_BORDER);
-								g2.drawRoundRect(iconX,iconY, UPGRCLS_WIDTH-1, UPGRCLS_HEIGHT-1, UPGRCLS_CORNER_RADIUS*2, UPGRCLS_CORNER_RADIUS*2);
-								
-								int UPGRCLS_ICON_WIDTH  = 18;
-								int UPGRCLS_ICON_HEIGHT = 28;
-								g2.setPaint(upgrCls.color);
-								g2.fillPolygon(
-										new int[]{
-												iconX+UPGRCLS_WIDTH/2-UPGRCLS_ICON_WIDTH/2,
-												iconX+UPGRCLS_WIDTH/2+UPGRCLS_ICON_WIDTH/2,
-												iconX+UPGRCLS_WIDTH/2+UPGRCLS_ICON_WIDTH/2,
-												iconX+UPGRCLS_WIDTH/2,
-												iconX+UPGRCLS_WIDTH/2-UPGRCLS_ICON_WIDTH/2,
-										},
-										new int[]{
-												iconY+UPGRCLS_HEIGHT/2-UPGRCLS_ICON_HEIGHT/2,
-												iconY+UPGRCLS_HEIGHT/2-UPGRCLS_ICON_HEIGHT/2,
-												iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/4,
-												iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/2,
-												iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/4,
-										}, 5);
-								//Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
-								//g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
-
-								g2.setPaint(COLOR__UPGRCLS_TEXT);
-								g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCLS_STR_FONT_SCALE) );
-								int strX = iconX+UPGRCLS_WIDTH/2-g2.getFontMetrics().stringWidth(upgrCls.letter)/2+upgrCls.offsetX;
-								int strY = iconY+UPGRCLS_HEIGHT/2+UPGRCLS_STR_OFFSET_Y;
-								g2.drawString(upgrCls.letter, strX, strY);
-								g2.setFont( stdBoldFont );
-							}
+							if (slot.id.upgradeClass!=null)
+								//drawUpgradeClass_old(g2, slot.id.upgradeClass, x1, y1, innerHeight, innerOffsetX, innerOffsetY, imageBorder, stdBoldFont);
+								drawUpgradeClass(g2, slot.id.upgradeClass, imageX,imageY, stdBoldFont);
 							
+							if (slot.amount!=null && slot.maxAmount!=null)
+								drawAmount(g2, slot, imageX,imageY, imageSize);
 							
-							int amount    = -1;
-							int maxAmount = -1;
-							if (slot.amount!=null && slot.maxAmount!=null) {
-								amount    = (int)(long)slot.amount;
-								maxAmount = (int)(long)slot.maxAmount;
-							}
-								
-							if (amount>=0 && maxAmount>1) {
-								int gaugeBorder = 3;
-								int gaugeWidth  = imageSize-2*gaugeBorder;
-								int gaugeHeight = 5;
-								int gaugeXOffset = innerOffsetX+imageBorder+gaugeBorder;
-								int gaugeYOffset = innerOffsetY+innerHeight-imageBorder-gaugeBorder-gaugeHeight;
-								int full = (amount*gaugeWidth)/maxAmount;
-								int empty = gaugeWidth-full;
-								
-								if (full>0) {
-									g2.setPaint(COLOR__SLOT_GAUGE);
-									g2.fillRect(x1+gaugeXOffset,y1+gaugeYOffset,full,gaugeHeight);
-								}
-								if (empty>0) {
-									g2.setPaint(COLOR__SLOT_GAUGE_EMPTY);
-									g2.fillRect(x1+gaugeXOffset+full,y1+gaugeYOffset,empty,gaugeHeight);
-								}
-								String str = String.format("%d/%d",amount,maxAmount);
-								int textWidth = g2.getFontMetrics().stringWidth(str);
-								g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
-								g2.drawString(str, x1+gaugeXOffset+full+empty-textWidth, y1+gaugeYOffset-4);
-							}
-							
-							if (slot.id.hasSymbol()) {
-								int bgRecW = 35;
-								int bgRecX = x1+innerOffsetX+2*imageBorder;
-								int bgRecY = y1+innerOffsetY+innerHeight-imageBorder-imageSize+imageBorder;
-								Rectangle2D bounds = stdBoldFont.getStringBounds(slot.id.symbol, g2.getFontRenderContext());
-								float strX = bgRecX+bgRecW/2.0f-(float)bounds.getWidth()/2;
-								float strY = bgRecY+11;
-								g2.setPaint(COLOR__SLOT_BG_SYMBOL);
-								g2.fillRoundRect( bgRecX,bgRecY, bgRecW,14, 12,12 );
-								g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
-								g2.drawString(slot.id.symbol, strX,strY );
-							}
+							if (slot.id.hasSymbol())
+								drawSymbol(g2, slot, imageX,imageY, imageBorder, stdBoldFont);
 							
 							g2.setFont( standardFont );
 						} else {
@@ -576,6 +507,125 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						}
 					}
 				g2.setClip(baseClip);
+			}
+
+			private void drawAmount(Graphics2D g2, Inventory.Slot slot, int imageX, int imageY, int imageSize) {
+				int amount    = slot.amount.intValue();
+				int maxAmount = slot.maxAmount.intValue();
+					
+				if (amount>=0 && maxAmount>1) {
+					int gaugeBorder = 3;
+					int gaugeWidth  = imageSize-2*gaugeBorder;
+					int gaugeHeight = 5;
+					int gaugeX = imageX+gaugeBorder;
+					int gaugeY = imageY+imageSize-gaugeBorder-gaugeHeight;
+					int full = (amount*gaugeWidth)/maxAmount;
+					int empty = gaugeWidth-full;
+					
+					if (full>0) {
+						g2.setPaint(COLOR__SLOT_GAUGE);
+						g2.fillRect(gaugeX,gaugeY,full,gaugeHeight);
+					}
+					if (empty>0) {
+						g2.setPaint(COLOR__SLOT_GAUGE_EMPTY);
+						g2.fillRect(gaugeX+full,gaugeY,empty,gaugeHeight);
+					}
+					String str = String.format("%d/%d",amount,maxAmount);
+					int textWidth = g2.getFontMetrics().stringWidth(str);
+					g2.setPaint(COLOR__SLOT_TEXT_AMOUNT);
+					g2.drawString(str, gaugeX+full+empty-textWidth, gaugeY-4);
+				}
+			}
+
+			private void drawSymbol(Graphics2D g2, Inventory.Slot slot, int imageX, int imageY, int imageBorder, Font stdBoldFont) {
+				int bgRecW = 35;
+				int bgRecX = imageX+imageBorder;
+				int bgRecY = imageY+imageBorder;
+				Rectangle2D bounds = stdBoldFont.getStringBounds(slot.id.symbol, g2.getFontRenderContext());
+				float strX = bgRecX+bgRecW/2.0f-(float)bounds.getWidth()/2;
+				float strY = bgRecY+11;
+				g2.setPaint(COLOR__SLOT_BG_SYMBOL);
+				g2.fillRoundRect( bgRecX,bgRecY, bgRecW,14, 12,12 );
+				g2.setPaint(COLOR__SLOT_TEXT_SYMBOL);
+				g2.drawString(slot.id.symbol, strX,strY );
+			}
+
+			@SuppressWarnings("unused")
+			private void drawUpgradeClass_old(Graphics2D g2, UpgradeClass upgradeClass, int x1, int y1, final int innerHeight,
+					final int innerOffsetX, final int innerOffsetY, int imageBorder, Font stdBoldFont) {
+				UpgrCls upgrCls = UpgrCls.get(upgradeClass);
+				int iconX = x1+innerOffsetX+imageBorder+UPGRCLS_BORDER;
+				int iconY = y1+innerOffsetY+innerHeight-imageBorder-UPGRCLS_BORDER-UPGRCLS_HEIGHT;
+				g2.setPaint(COLOR__UPGRCLS_BG);
+				g2.fillRoundRect(iconX,iconY, UPGRCLS_WIDTH, UPGRCLS_HEIGHT, UPGRCLS_CORNER_RADIUS*2, UPGRCLS_CORNER_RADIUS*2);
+				g2.setPaint(COLOR__UPGRCLS_BORDER);
+				g2.drawRoundRect(iconX,iconY, UPGRCLS_WIDTH-1, UPGRCLS_HEIGHT-1, UPGRCLS_CORNER_RADIUS*2, UPGRCLS_CORNER_RADIUS*2);
+				
+				int UPGRCLS_ICON_WIDTH  = 18;
+				int UPGRCLS_ICON_HEIGHT = 28;
+				int[] xPoints = new int[]{
+						iconX+UPGRCLS_WIDTH/2-UPGRCLS_ICON_WIDTH/2,
+						iconX+UPGRCLS_WIDTH/2+UPGRCLS_ICON_WIDTH/2,
+						iconX+UPGRCLS_WIDTH/2+UPGRCLS_ICON_WIDTH/2,
+						iconX+UPGRCLS_WIDTH/2,
+						iconX+UPGRCLS_WIDTH/2-UPGRCLS_ICON_WIDTH/2,
+				};
+				int[] yPoints = new int[]{
+						iconY+UPGRCLS_HEIGHT/2-UPGRCLS_ICON_HEIGHT/2,
+						iconY+UPGRCLS_HEIGHT/2-UPGRCLS_ICON_HEIGHT/2,
+						iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/4,
+						iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/2,
+						iconY+UPGRCLS_HEIGHT/2+UPGRCLS_ICON_HEIGHT/4,
+				};
+				g2.setPaint(upgrCls.color);
+				g2.fillPolygon(xPoints, yPoints, 5);
+				//Image img = Images.UpgradeCategoryImages.getCachedImage(slot.id.upgradeCat, UPGRCAT_IMG_SIZE,UPGRCAT_IMG_SIZE);
+				//g2.drawImage(img, iconX+UPGRCAT_IMG_OFFSET_X, iconY+UPGRCAT_IMG_OFFSET_Y, null);
+
+				g2.setPaint(COLOR__UPGRCLS_TEXT);
+				g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCLS_STR_FONT_SCALE) );
+				int strX = iconX+UPGRCLS_WIDTH/2-g2.getFontMetrics().stringWidth(upgrCls.letter)/2+upgrCls.offsetX;
+				int strY = iconY+UPGRCLS_HEIGHT/2+UPGRCLS_STR_OFFSET_Y;
+				g2.drawString(upgrCls.letter, strX, strY);
+				g2.setFont( stdBoldFont );
+			}
+
+			private void drawUpgradeClass(Graphics2D g2, UpgradeClass upgradeClass, int imageX, int imageY, Font stdBoldFont) {
+				UpgrCls upgrCls = UpgrCls.get(upgradeClass);
+				int iconX = imageX+UPGRCLS_BORDER;
+				int iconY = imageY+UPGRCLS_BORDER;
+				
+				int UPGRCLS_ICON_WIDTH  = 18;
+				int UPGRCLS_ICON_HEIGHT = 28;
+				int[] xPoints = new int[]{
+						iconX,
+						iconX+UPGRCLS_ICON_WIDTH,
+						iconX+UPGRCLS_ICON_WIDTH,
+						iconX+UPGRCLS_ICON_WIDTH/2,
+						iconX,
+				};
+				int[] yPoints = new int[]{
+						iconY,
+						iconY,
+						iconY+UPGRCLS_ICON_HEIGHT*3/4,
+						iconY+UPGRCLS_ICON_HEIGHT,
+						iconY+UPGRCLS_ICON_HEIGHT*3/4,
+				};
+				g2.setPaint(upgrCls.color);
+				g2.fillPolygon(xPoints, yPoints, 5);
+				g2.setPaint(upgrCls.color.darker());
+				g2.fillPolygon(Arrays.copyOfRange(xPoints,1,5), Arrays.copyOfRange(yPoints,1,5), 4);
+				g2.setPaint(Color.BLACK);
+				g2.drawPolygon(xPoints, yPoints, 5);
+				g2.drawLine( xPoints[2],yPoints[2]-4, xPoints[3],yPoints[3]-4 );
+				g2.drawLine( xPoints[4],yPoints[4]-4, xPoints[3],yPoints[3]-4 );
+
+				g2.setPaint(COLOR__UPGRCLS_TEXT);
+				g2.setFont( stdBoldFont.deriveFont(stdBoldFont.getSize()*UPGRCLS_STR_FONT_SCALE) );
+				int strX = iconX+UPGRCLS_ICON_WIDTH /2-g2.getFontMetrics().stringWidth(upgrCls.letter)/2+upgrCls.offsetX+1;
+				int strY = iconY+UPGRCLS_ICON_HEIGHT/2+UPGRCLS_STR_OFFSET_Y-3;
+				g2.drawString(upgrCls.letter, strX, strY);
+				g2.setFont( stdBoldFont );
 			}
 
 			private Color getSlotTextColor(Inventory.SlotType type) {

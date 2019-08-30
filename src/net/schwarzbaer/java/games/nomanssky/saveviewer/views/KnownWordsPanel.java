@@ -16,10 +16,10 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 class KnownWordsPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = 7096092479075372171L;
 	
-	public KnownWordsPanel(SaveGameData data) {
+	public KnownWordsPanel(SaveGameData data, KnownWords knownWords) {
 		super(data);
 		
-		KnownWordsPanel.KnownWordsTableModel tableModel = new KnownWordsTableModel(data.knownWords);
+		KnownWordsPanel.KnownWordsTableModel tableModel = new KnownWordsTableModel(knownWords);
 		SimplifiedTable table = new SimplifiedTable("KnownWords",tableModel,true,SaveViewer.DEBUG,true);
 		JScrollPane tableScrollPane = new JScrollPane(table);
 		

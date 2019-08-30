@@ -52,6 +52,7 @@ public class SaveGameData {
 	public final Universe universe;
 	public Stats stats;
 	public KnownWords knownWords;
+	public KnownWords knownWords2;
 	public final DiscoveryData discoveryData;
 	public Inventories inventories;
 	public KnownBlueprints knownBlueprints;
@@ -95,7 +96,8 @@ public class SaveGameData {
 		general.parse();
 		parseStats();
 		parseKnownBlueprints();
-		parseKnownWords();
+		knownWords  = parseKnownWords("KnownWords","Word","Races");
+		knownWords2 = parseKnownWords("[KnownWords2]","[Word]","Races");
 		parseDiscoveryData();
 		inventories = Inventories.parseInventories(this,json_data);
 		parseBaseBuildingObjects();
@@ -1051,6 +1053,7 @@ public class SaveGameData {
 				inventories.chests[i] = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
 			inventories.magicChest  = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
 			inventories.magicChest2 = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+			inventories.magicChest3 = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "[??? Kha ChestMagic3Inventory?]"), "Magic Chest 3 (?)", "[??? Kha ChestMagic3Inventory?]");
 			
 			String[] vehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", "", "Nautilon"};
 			inventories.vehicles = null;
@@ -1131,11 +1134,13 @@ public class SaveGameData {
 		public Vehicle[] ships;
 		public Vehicle[] vehicles;
 		public Inventory[] chests;
-		public Inventory magicChest2;
 		public Inventory magicChest;
+		public Inventory magicChest2;
+		public Inventory magicChest3;
 		public Vehicle   freighter;
 		public Inventory ship_old;
 		public Inventory grave;
+		
 		public Inventories() {
 			super();
 			this.ship_old = null;
@@ -3060,15 +3065,17 @@ public class SaveGameData {
 		}
 	}
 
-	private void parseKnownWords() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","KnownWords");
+	private KnownWords parseKnownWords(String arrLabel, String wordLabel, String racesLabel) {
+		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData",arrLabel);
+		KnownWords array;
 		if (arrayValue==null)
-			knownWords = null;
+			array = null;
 		else {
-			knownWords = new KnownWords().parse(arrayValue);
-			if (!knownWords.notParsedKnownWords.isEmpty())
-				SaveViewer.log_error_ln("Found "+knownWords.notParsedKnownWords.size()+" not parseable KnownWords.");
+			array = new KnownWords().parse(arrayValue, wordLabel, racesLabel);
+			if (!array.notParsedKnownWords.isEmpty())
+				SaveViewer.log_error_ln("Found "+array.notParsedKnownWords.size()+" not parseable KnownWords.");
 		}
+		return array; 
 	}
 
 	public static final class KnownWords {
@@ -3083,17 +3090,17 @@ public class SaveGameData {
 			notParsedKnownWords = new JSON_Array();
 		}
 	
-		public KnownWords parse(JSON_Array knownWordsArray) {
+		public KnownWords parse(JSON_Array knownWordsArray, String wordLabel, String racesLabel) {
 			for (Value knownWordValue : knownWordsArray) {
 				JSON_Object knownWordObj = getObject(knownWordValue);
 				if (knownWordObj==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				
 				KnownWord knownWord = new KnownWord();
 				
-				knownWord.word = getStringValue(knownWordObj,"Word");
+				knownWord.word = getStringValue(knownWordObj,wordLabel);
 				if (knownWord.word==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				
-				JSON_Array races = getArrayValue(knownWordObj,"Races");
+				JSON_Array races = getArrayValue(knownWordObj,racesLabel);
 				if (races==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				knownWord.races = new boolean[races.size()];
 				
