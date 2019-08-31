@@ -209,6 +209,7 @@
 ^ROCKETSUB.image=SUBSTANCE.ROCKETSUB.png
 ^ROCKETSUB.imageBG=DEDCD0
 ^SAND1=Silikatpulver
+^SAND1.type=Resource
 ^SAND1.symbol=Si
 ^SAND1.image=SUBSTANCE.SAND.1.png
 ^SAND1.imageBG=8B7E75
