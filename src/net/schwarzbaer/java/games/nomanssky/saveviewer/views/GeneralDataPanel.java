@@ -76,6 +76,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			}
 			
 			showUAddressAndPosition(data.general.freighterUA, data.general.freighterPos,"Position of Freighter");
+			showUAddressAndPosition(data.general.anomalyUA, data.general.anomalyPos,"Position of Anomaly");
 			showUAddressAndPosition(data.general.graveUA, data.general.gravePos,"Position of Grave");
 			
 			currentTextArea = 0;

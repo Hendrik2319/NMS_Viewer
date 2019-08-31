@@ -1051,9 +1051,9 @@ public class SaveGameData {
 			inventories.chests = new Inventory[10];
 			for (int i=0; i<inventories.chests.length; ++i)
 				inventories.chests[i] = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-			inventories.magicChest  = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
-			inventories.magicChest2 = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
-			inventories.magicChest3 = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "[??? Kha ChestMagic3Inventory?]"), "Magic Chest 3 (?)", "[??? Kha ChestMagic3Inventory?]");
+			inventories.magicChest        = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+			inventories.magicChest2       = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+			inventories.ingredientStorage = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
 			
 			String[] vehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", "", "Nautilon"};
 			inventories.vehicles = null;
@@ -1136,7 +1136,7 @@ public class SaveGameData {
 		public Inventory[] chests;
 		public Inventory magicChest;
 		public Inventory magicChest2;
-		public Inventory magicChest3;
+		public Inventory ingredientStorage;
 		public Vehicle   freighter;
 		public Inventory ship_old;
 		public Inventory grave;
@@ -2126,8 +2126,10 @@ public class SaveGameData {
 		private SaveGameData data;
 		public UniverseAddress currentUniverseAddress;
 		public UniverseAddress freighterUA;
+		public UniverseAddress anomalyUA;
 		public UniverseAddress graveUA;
 		public Position freighterPos;
+		public Position anomalyPos;
 		public Position gravePos;
 		public Long units;
 		public Long nanites;
@@ -2176,9 +2178,12 @@ public class SaveGameData {
 				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress).isCurrPos = true;
 			}
 			freighterUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","FreighterUniverseAddress");
+			anomalyUA   = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
 			graveUA     = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
 			freighterPos = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
+			anomalyPos   = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
 			gravePos     = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			
 			
 			units           = getIntegerValue( data.json_data, "PlayerStateData","Units"           );
 			nanites         = getIntegerValue( data.json_data, "PlayerStateData","Nanites"         );

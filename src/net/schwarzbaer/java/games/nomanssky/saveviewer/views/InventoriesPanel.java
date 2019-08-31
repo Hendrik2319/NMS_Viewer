@@ -55,20 +55,20 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
-		tabbedPane.addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard).addInv(data.inventories.player.tech));
+		tabbedPane.addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech));
 		//addTab(data.inventories.player.standard);
 		//addTab(data.inventories.player.tech    );
 		addTab(data.inventories.player.cargo   );
 		addTab(data.inventories.grave          );
 		addTab(data.inventories.multitool      );
-		tabbedPane.addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(new Vehicle[] {data.inventories.freighter}));
+		tabbedPane.addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(data.inventories.freighter));
 		//addTab(data.inventories.freighter.standard);
 		//addTab(data.inventories.freighter.tech    );
 		addTab(data.inventories.ship_old          );
 		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships));
 		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
 		tabbedPane.addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
-		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.magicChest).addInv(data.inventories.magicChest2).addInv(data.inventories.magicChest3));
+		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.magicChest,data.inventories.magicChest2));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -705,20 +705,17 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				if (comp instanceof Updatable)
 					((Updatable)comp).updateContent();
 		}
-		
-		protected InventoryListPanel addInv(Inventory inventory) {
-			contentPanel.add(new InventoryPanel(mainwindow,inventory,true,false,this));
-			return this;
-		}
 
-		public InventoryListPanel addInv(Inventory[] inventories) {
+		public InventoryListPanel addInv(Inventory... inventories) {
 			for (int i=0; i<inventories.length; ++i)
-				contentPanel.add(new InventoryPanel(mainwindow,inventories[i],true,false,this));
+				if (inventories[i]!=null)
+					contentPanel.add(new InventoryPanel(mainwindow,inventories[i],true,false,this));
 			return this;
 		}
 
-		public InventoryListPanel addInv(Vehicle[] vehicles) {
-			for (int i=0; i<vehicles.length; ++i) {
+		public InventoryListPanel addInv(Vehicle... vehicles) {
+			for (int i=0; i<vehicles.length; ++i)
+				if (vehicles[i]!=null) {
 				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].standard,true,false,this));
 				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].tech    ,true,false,this));
 			}

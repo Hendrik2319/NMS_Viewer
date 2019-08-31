@@ -402,24 +402,25 @@ fvN [??? fvN Bool:false]
 
 
 // Fields added by Beyond
+hiE AnomalyUniverseAddress
+Fk@ AnomalyMatrixLookAt
+d72 AnomalyMatrixUp
+Yel AnomalyPosition
+
 QQp [??? QQp PlayerStateData Int:0]
 Bur [??? Bur PlayerStateData Bool:false]
 Ue9 [??? Ue9 PlayerStateData Bool:true]
-Fk@ [??? Fk@ PlayerStateData Direction Z+]
-d72 [??? d72 PlayerStateData Direction Y+]
-Yel [??? Yel PlayerStateData Position 0,0,0]
 9hR [??? 9hR PlayerStateData Int:11]
 8DG [??? 8DG PlayerStateData Int:18]
 lmE [??? lmE PlayerStateData Int:13]
 qFl [??? qFl PlayerStateData Int:2]
 wb: [??? wb: PlayerStateData Bool:true]
 
-hiE [??? hiE UniverseAddress of ?? (SpaceAnomalie/MyFreighter)]
 b76 [??? b76 InventorySlot Bool:true]
 BpT [??? BpT SubVersion]
 J=S [??? J=S OwnerID]
 vyN [??? vyN OwnerName]
 a>; [??? a>; TeleportEndpoints Bool:false]
 30s [??? 30s Last or Special TeleportEndpoint?]
-RiP [??? RiP ChestMagic3Layout?]
-Kha [??? Kha ChestMagic3Inventory?]
+RiP IngredientStorageLayout
+Kha IngredientStorageInventory
