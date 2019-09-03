@@ -73,7 +73,7 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.TristateCheckBox;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageEditDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
@@ -465,7 +465,7 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case ShowExtraImages:
-			new ImageEditDialog(mainWindow,"Extra Images").showDialog();
+			new ShowImagesDialog(mainWindow,"Extra Images").showDialog();
 			break;
 		}
 	}

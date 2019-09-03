@@ -699,9 +699,11 @@ public class Images {
 	public static class ImageGridPanel extends net.schwarzbaer.gui.ImageGridPanel {
 		private static final long serialVersionUID = -5485402060151977360L;
 		private Iterable<ImageData> images;
+		private boolean markUsedImages;
 
 		public ImageGridPanel(int cols, String preselectedImageFileName) {
 			super(cols, preselectedImageFileName, false, null);
+			markUsedImages = false;
 			
 			images = new Iterable<ImageGridPanel.ImageData>() {
 				@Override public Iterator<ImageData> iterator() {
@@ -736,9 +738,12 @@ public class Images {
 				pd.setValue(0, SaveViewer.images.imagesNames.length);
 			}
 			createImageItems(selectedImageID, images, i->{ if (pd!=null) pd.setValue(i); });
+			if (markUsedImages)
+				markUsedImages(markUsedImages);
 		}
 
 		public void markUsedImages(boolean markUsedImages) {
+			this.markUsedImages = markUsedImages;
 			HashSet<String> usedImages = new HashSet<String>();
 			HashSet<String> usedImagesObsolete = new HashSet<String>();
 			if (markUsedImages) {
@@ -759,7 +764,7 @@ public class Images {
 		}
 	}
 
-	public static class ImageEditDialog extends StandardDialog {
+	public static class ShowImagesDialog extends StandardDialog {
 		private static final long serialVersionUID = 2440132074027157283L;
 		
 		private HashMap<String, IdUsage> usage;
@@ -771,10 +776,12 @@ public class Images {
 		private String clickedName;
 		private int clickedIndex;
 		
-		public ImageEditDialog(Window parent, String title) {
+		public ShowImagesDialog(Window parent, String title) {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
+			boolean markUsedImagesByDefault = true;
 			
 			imageGridPanel = new ImageGridPanel(8,null);
+			imageGridPanel.markUsedImages(markUsedImagesByDefault);
 			imageGridPanel.addSelectionListener(this::showValuesofSelected);
 			imageGridPanel.addRightClickListener((name, index, source, x, y) -> {
 				clickedName  = name;
@@ -785,7 +792,7 @@ public class Images {
 			clickedIndex = -1;
 			
 			imageScrollPane = new JScrollPane(imageGridPanel);
-			imageScrollPane.setPreferredSize(new Dimension(950,700));
+			imageScrollPane.setPreferredSize(new Dimension(930,700));
 			imageScrollPane.getVerticalScrollBar().setUnitIncrement(10);
 			
 			imageField = new JLabel();
@@ -799,9 +806,10 @@ public class Images {
 			
 			JCheckBox chkbxMarkUsedImages;
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, false));
+			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, markUsedImagesByDefault));
 			buttonPanel.add(SaveViewer.createButton("Close",e->closeDialog()));
 			chkbxMarkUsedImages.addActionListener(e->imageGridPanel.markUsedImages(chkbxMarkUsedImages.isSelected()));
+			
 						
 			JPanel rightPanel = new JPanel(new BorderLayout(3,3));
 			rightPanel.add(imageField, BorderLayout.NORTH);
@@ -976,26 +984,28 @@ public class Images {
 		}
 	}
 
-	public static class ImageSelectDialog extends StandardDialog {
+	public static class SelectImageDialog extends StandardDialog {
 		private static final long serialVersionUID = -3724853350437145460L;
 		
 		private String selected;
 		private JScrollPane imageScrollPane;
 		private ImageGridPanel imageGridPanel;
 	
-		public ImageSelectDialog(Window parent, String title, String initialValue) {
+		public SelectImageDialog(Window parent, String title, String initialValue) {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
 			selected = null;
+			boolean markUsedImagesByDefault = true;
 			
-			imageGridPanel = new ImageGridPanel(6,initialValue);
+			imageGridPanel = new ImageGridPanel(8,initialValue);
 			imageGridPanel.addSelectionListener(this::setResult);
+			imageGridPanel.markUsedImages(markUsedImagesByDefault);
 			imageScrollPane = new JScrollPane(imageGridPanel);
-			imageScrollPane.setPreferredSize(new Dimension(700,600));
+			imageScrollPane.setPreferredSize(new Dimension(930,600));
 			imageScrollPane.getVerticalScrollBar().setUnitIncrement(10);
 			
 			JCheckBox chkbxMarkUsedImages;
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, false));
+			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, markUsedImagesByDefault));
 			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
 			buttonPanel.add(SaveViewer.createButton("Cancel",e->closeDialog()));
 			chkbxMarkUsedImages.addActionListener(e->imageGridPanel.markUsedImages(chkbxMarkUsedImages.isSelected()));

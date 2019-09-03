@@ -1333,7 +1333,7 @@ public class GameInfos {
 			} break;
 			
 			case SelectImage: {
-				Images.ImageSelectDialog dlg = new Images.ImageSelectDialog(mainwindow,"Select image of "+clickedID.getName(),clickedID.getImageFileName());
+				Images.SelectImageDialog dlg = new Images.SelectImageDialog(mainwindow,"Select image of "+clickedID.getName(),clickedID.getImageFileName());
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					table.stopCellEditing();
@@ -1343,7 +1343,7 @@ public class GameInfos {
 				}
 			} break;
 			case SelectImage4AllSelected: {
-				Images.ImageSelectDialog dlg = new Images.ImageSelectDialog(mainwindow, "Select image of seleted IDs", null);
+				Images.SelectImageDialog dlg = new Images.SelectImageDialog(mainwindow, "Select image of seleted IDs", null);
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					table.stopCellEditing();
@@ -1942,7 +1942,7 @@ public class GameInfos {
 		}
 	
 		private void showImageList(JComboBox<String> cmbbxImages) {
-			Images.ImageSelectDialog dlg = new Images.ImageSelectDialog(this,"Select image of "+id.getName(),id.getImageFileName());
+			Images.SelectImageDialog dlg = new Images.SelectImageDialog(this,"Select image of "+id.getName(),id.getImageFileName());
 			dlg.showDialog();
 			if (dlg.hasChoosen()) {
 				String result = dlg.getImageFileName();

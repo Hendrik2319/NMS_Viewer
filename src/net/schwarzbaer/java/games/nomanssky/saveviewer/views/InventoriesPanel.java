@@ -37,7 +37,7 @@ import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageSelectDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Vehicle;
@@ -181,7 +181,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			} break;
 				
 			case SelectImageFile: {
-				ImageSelectDialog dlg = new ImageSelectDialog(mainwindow,"Select image of "+clickedSlot.id.getName(),clickedSlot.id.getImageFileName());
+				SelectImageDialog dlg = new SelectImageDialog(mainwindow,"Select image of "+clickedSlot.id.getName(),clickedSlot.id.getImageFileName());
 				dlg.showDialog();
 				if (dlg.hasChoosen()) {
 					String result = dlg.getImageFileName();
