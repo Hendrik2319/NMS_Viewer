@@ -124,27 +124,8 @@ public class SaveViewer implements ActionListener {
 		images = new Images();
 		images.init();
 		
-		tabheaderIS = new IconSource<TabHeaderIcons>(10,10);
-		tabheaderIS.readIconsFromResource(IMAGES_TAB_HEADER_PNG);
-		
-		toolbarIS = new IconSource<ToolbarIcons>(16,16){
-			@Override protected int getIconIndexInImage(ToolbarIcons key) {
-				switch(key) {
-				case SwitchFolder: return 1;
-				case Open        : return 1;
-				case Compare     : return 0;
-				case SaveAs      : return 3;
-				case Close       : return 5;
-				case Reload      : return 4;
-				case ComputePortalGlyphs: return 6;
-				case Cut   : return 7;
-				case Copy  : return 8;
-				case Paste : return 9;
-				case Delete: return 10;
-				}
-			 	throw new IllegalArgumentException("Unknown icon key: "+key);
-			}};
-		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
+		loadTabHeaderIcons();
+		loadToolbarIcons();
 		
 //		GameInfos.createFilesWithObsoleteIDs();
 
@@ -176,6 +157,32 @@ public class SaveViewer implements ActionListener {
 //		System.out.println("LookAndFeelDefaults(Tree.font):"+UIManager.getLookAndFeelDefaults().getFont("Tree.font"));
 		
 		new SaveViewer().createGUI();
+	}
+
+	static void loadTabHeaderIcons() {
+		tabheaderIS = new IconSource<TabHeaderIcons>(10,10);
+		tabheaderIS.readIconsFromResource(IMAGES_TAB_HEADER_PNG);
+	}
+
+	static void loadToolbarIcons() {
+		toolbarIS = new IconSource<ToolbarIcons>(16,16){
+			@Override protected int getIconIndexInImage(ToolbarIcons key) {
+				switch(key) {
+				case SwitchFolder: return 1;
+				case Open        : return 1;
+				case Compare     : return 0;
+				case SaveAs      : return 3;
+				case Close       : return 5;
+				case Reload      : return 4;
+				case ComputePortalGlyphs: return 6;
+				case Cut   : return 7;
+				case Copy  : return 8;
+				case Paste : return 9;
+				case Delete: return 10;
+				}
+			 	throw new IllegalArgumentException("Unknown icon key: "+key);
+			}};
+		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
 	}
 
 	@SuppressWarnings("unused")
@@ -347,7 +354,7 @@ public class SaveViewer implements ActionListener {
 		 save8_hg( 7, "save8.hg","..8"    ),
 		 save9_hg( 8, "save9.hg","..9"    ),
 		save10_hg( 9,"save10.hg","..10"   ),
-		RefreshExtraImages, ShowExtraImages, SelectCoordinates;
+		RefreshExtraImages, ShowExtraImages, SelectCoordinates, OpenRecipeAnalyser;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
 		private String filename;
@@ -466,6 +473,10 @@ public class SaveViewer implements ActionListener {
 			
 		case ShowExtraImages:
 			new ShowImagesDialog(mainWindow,"Extra Images").showDialog();
+			break;
+			
+		case OpenRecipeAnalyser:
+			RecipeAnalyser.start(false);
 			break;
 		}
 	}
@@ -965,6 +976,8 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
+			extraMenu.add(createMenuItem("Open RecipeAnalyser", ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
+			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
 			extraMenu.add(createMenuItem("Switch to Backup Folder"      , ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
 			extraMenu.add(createMenuItem("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));

@@ -197,12 +197,11 @@ public class TableView {
 				if (rowSorterListener!=null) rowSorter.addListener(rowSorterListener);
 			}
 			if (overallCellRenderer!=null)
-				setCellRendererForAllColumns(overallCellRenderer, false);
+				setCellRendererForAllColumns(overallCellRenderer, true);
 		}
 
 		public void setCellRendererForAllColumns(TableCellRenderer renderer, boolean resetAfterModelChange) {
-			if (resetAfterModelChange)
-				this.overallCellRenderer = renderer;
+			this.overallCellRenderer = resetAfterModelChange?renderer:null;
 			TableColumnModel tableColumnModel = getColumnModel();
 			for (int i=0; i<tableColumnModel.getColumnCount(); ++i)
 				tableColumnModel.getColumn(i).setCellRenderer(renderer);
