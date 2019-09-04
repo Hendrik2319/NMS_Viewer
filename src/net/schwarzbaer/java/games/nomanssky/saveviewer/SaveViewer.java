@@ -45,6 +45,7 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -1192,25 +1193,32 @@ public class SaveViewer implements ActionListener {
 	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
 		return createMenuItem(title, l, null, enabled, null);
 	}
-
 	public static JMenuItem createMenuItem(String title, ActionListener l) {
 		return createMenuItem(title, l, null);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
 		return createMenuItem(title, l, actionCommand, null);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
 		return createMenuItem(title, l, actionCommand, true, icon);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
 		menuItem.setEnabled(enabled);
 		if (l!=null) menuItem.addActionListener(l);
 		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
 		if (icon!=null) menuItem.setIcon(toolbarIS.getIcon(icon));
+		return menuItem;
+	}
+	
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand) {
+		return createCheckBoxMenuItem(title, l, actionCommand, true);
+	}
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand, boolean enabled) {
+		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
+		menuItem.setEnabled(enabled);
+		if (l!=null) menuItem.addActionListener(l);
+		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
 		return menuItem;
 	}
 

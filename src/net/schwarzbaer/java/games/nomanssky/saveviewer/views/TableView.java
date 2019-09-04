@@ -3,11 +3,13 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Vector;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -100,7 +102,7 @@ public class TableView {
 	
 	}
 
-	public static class SimplifiedTable extends JTable {
+	public static class SimplifiedTable extends JTable implements Gui.ContextMenuInvoker.ContextMenuInvokeListener {
 		private static final long serialVersionUID = 6963749333892762675L;
 		private boolean useRowSorter;
 		@SuppressWarnings("unused")
@@ -110,6 +112,7 @@ public class TableView {
 		private NewRowSorter rowSorter;
 		private RowSorterListener rowSorterListener;
 		private int[] selectedRowsM;
+		private Vector<ContextMenuInvokeListener> cmiListeners;
 		
 		public SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super();
@@ -123,9 +126,11 @@ public class TableView {
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			if (installDebugContextMenu) {
 				contextMenu = new DebugTableContextMenu(this);
-				new Gui.ContextMenuInvoker(this, contextMenu);
+				Gui.ContextMenuInvoker menuInvoker = new Gui.ContextMenuInvoker(this, contextMenu);
+				menuInvoker.addContextMenuInvokeListener(this);
 			} else contextMenu=null;
 			//setAutoCreateRowSorter(useRowSorter);
+			cmiListeners = new Vector<>();
 		}
 		
 		public SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
@@ -136,6 +141,21 @@ public class TableView {
 		public DebugTableContextMenu getDebugTableContextMenu() {
 			return contextMenu;
 		}
+
+		@Override public void contextMenuWillBeInvoked(int x, int y) {
+			Point point = new Point(x,y);
+			int row = rowAtPoint(point);
+			int column = columnAtPoint(point);
+			for (ContextMenuInvokeListener cmiListener:cmiListeners)
+				cmiListener.contextMenuWillBeInvoked(row, column);
+		}
+		
+		public interface ContextMenuInvokeListener {
+			public void contextMenuWillBeInvoked(int row, int column);
+		}
+		
+		public void    addContextMenuInvokeListener( ContextMenuInvokeListener listener ) { cmiListeners.   add(listener); } 
+		public void removeContextMenuInvokeListener( ContextMenuInvokeListener listener ) { cmiListeners.remove(listener); } 
 
 		public void setSelectionMode(int selectionMode, boolean keepSelectionWhileRowSort) {
 			setSelectionMode(selectionMode);

@@ -20,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.Enumeration;
+import java.util.Vector;
 import java.util.function.Function;
 
 import javax.swing.AbstractButton;
@@ -902,12 +903,17 @@ public class Gui {
 		
 		private Component invoker;
 		private JPopupMenu contextMenu;
+		private Vector<ContextMenuInvokeListener> listeners;
 		
 		public ContextMenuInvoker(Component invoker, JPopupMenu contextMenu) {
 			this.invoker = invoker;
 			this.contextMenu = contextMenu;
 			invoker.addMouseListener(this);
+			listeners = new Vector<>();
 		}
+		
+		public void    addContextMenuInvokeListener( ContextMenuInvokeListener listener ) { listeners.   add(listener); } 
+		public void removeContextMenuInvokeListener( ContextMenuInvokeListener listener ) { listeners.remove(listener); } 
 		
 		@Override public void mousePressed(MouseEvent e) {}
 		@Override public void mouseReleased(MouseEvent e) {}
@@ -915,8 +921,14 @@ public class Gui {
 		@Override public void mouseExited(MouseEvent e) {}
 		@Override public void mouseClicked(MouseEvent e) {
 			if (e.getButton()==MouseEvent.BUTTON3) {
+				for (ContextMenuInvokeListener listener:listeners)
+					listener.contextMenuWillBeInvoked(e.getX(), e.getY());
 				contextMenu.show(invoker, e.getX(), e.getY());
 			}
+		}
+		
+		public interface ContextMenuInvokeListener {
+			public void contextMenuWillBeInvoked(int x, int y);
 		}
 	}
 }
