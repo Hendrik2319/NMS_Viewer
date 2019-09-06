@@ -13,41 +13,47 @@ info=Wirtschaft: mittellos
 [Pln10010000801801]
 name=Alpha Polaris 1
 biome=Airless
+resources=Cu,Fe_
 short=
-info=Fe#, Cu
+info=<ParsedPlanetaryResources> Fe#, Cu
 
 [Pln20010000801801]
 name=Dinae
 biome=Frozen
+resources=Cu,CO2,Ag
 short=
-info=Ag, CO2, Cu
+info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Pln30010000801801]
 name=Alpha Polaris Prime
 biome=Lush
+resources=Cu,Pf,Fe_
 short=
-info=Fe#, Pf, Cu
+info=<ParsedPlanetaryResources> Fe#, Pf, Cu
 
 [Pln40010000801801]
 name=Ebashane
 biome=Barren
+resources=Cu,Py,Fe_
 short=
-info=Fe#, Py, Cu
+info=<ParsedPlanetaryResources> Fe#, Py, Cu
 
 [Pln50010000801801]
 name=Alpha Polaris 3
 biome=Frozen
 with water
+resources=Cu_,CO2,Co
 short=ExtCold
 info=Stufe 3
 short=
-info=Co, CO2, #Cu
+info=<ParsedPlanetaryResources> Co, CO2, #Cu
 
 [Pln60010000801801]
 name=Aturin
 biome=Irradiated
+resources=Cu,U,Fe_
 short=
-info=Fe#, U, Cu
+info=<ParsedPlanetaryResources> Fe#, U, Cu
 
 [Reg000000231C1823]
 
@@ -75,10 +81,11 @@ class=Red
 [Pln11FB00FE0528FF]
 name=Nitan III
 biome=AnomBones
+resources=Cd,Au,NaCl
 short=Community Quest 8/8
 info=
 short=
-info=Cd, Au, NaCl
+info=<ParsedPlanetaryResources> Cd, Au, NaCl
 short=
 info="Rasselnder Planet"
 
@@ -87,33 +94,37 @@ name=Ifaxirit
 biome=AnomMetalFlowers
 aggrSentinels
 gravitino balls
+resources=Cd,Ag,Na
 short=
 info="Metallurgischer Planet"
 short=
-info=Cd, Ag, Na
+info=<ParsedPlanetaryResources> Cd, Ag, Na
 
 [Pln31FB00FE0528FF]
 name=Cucrial Primus
 biome=AnomBones
 aggrSentinels
 gravitino balls
+resources=Cd,Ag,Na
 short=
-info=Cd, Ag, Na
+info=<ParsedPlanetaryResources> Cd, Ag, Na
 short=
 info="Rasselnder Planet"
 
 [Pln41FB00FE0528FF]
 name=Inusuchri IX
 biome=Scorched
+resources=Cd,P,Na
 short=
-info=Cd, P, Na
+info=<ParsedPlanetaryResources> Cd, P, Na
 
 [Pln51FB00FE0528FF]
 name=Community
 biome=Exotic_Mega
 buriedTreasure=AncientBones
+resources=Cd,P,NaCl
 short=
-info=Cd, P, NaCl
+info=<ParsedPlanetaryResources> Cd, P, NaCl
 short=Monochrom-Rot
 info=
 
@@ -130,23 +141,26 @@ distance=688533.000000
 [Pln104A0002FDC947]
 name=Yunnesit Tau
 biome=Lush
+resources=Cu,Pf,Fe_,Eiweißperle
 short=
-info=Fe#, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Fe#, Pf, Cu, Eiweißperle
 
 [Pln204A0002FDC947]
 name=Torio 53/S1
 biome=Frozen
 is extreme
+resources=Cu_,CO2,Na
 short=ExtCold
 info=Stufe 3
 short.P=#Cu
-info=Na, CO2, #Cu
+info=<ParsedPlanetaryResources> Na, CO2, #Cu
 
 [Pln304A0002FDC947]
 name=Ennsylv
 biome=Scorched
+resources=Cu,P,Ag
 short=
-info=Ag, P, Cu
+info=<ParsedPlanetaryResources> Ag, P, Cu
 
 [Sys00790002FDC947]
 name=Akirnaf
@@ -172,22 +186,25 @@ info=Wirtschaft 3
 [Pln10160004E7D981]
 name=Aguc 14/H3
 biome=Frozen
+resources=Cu,CO2,Ag
 short=
-info=Ag, CO2, Cu
+info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Pln20160004E7D981]
 name=Pusc XVIII
 biome=Lush
 with water
+resources=Cu,Pf,Co,Eiweißperle
 short=
-info=Co, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Co, Pf, Cu, Eiweißperle
 
 [Pln30160004E7D981]
 name=Atsuy 17/P1
 biome=Barren
 with water
+resources=Cu,Py,Fe_
 short=
-info=Fe#, Py, Cu
+info=<ParsedPlanetaryResources> Fe#, Py, Cu
 
 [Sys00790004E7D981]
 name=Vohistnes XII
@@ -202,8 +219,9 @@ info=
 [Pln10790004E7D981]
 name=Esvega Tau
 biome=Frozen
+resources=Cu,CO2,Ag
 short=
-info=Ag, CO2, Cu
+info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Reg000000FE2BA98C]
 
@@ -294,8 +312,9 @@ info=
 [Pln102B0004369A84]
 name=Aizun 56/P7
 biome=Irradiated
+resources=Cu,U,Fe_
 short=
-info=Fe#, U, Cu
+info=<ParsedPlanetaryResources> Fe#, U, Cu
 
 [Sys00790004369A84]
 name=Ittorid-Enbas VIII
@@ -428,16 +447,18 @@ name=Sakkura
 biome=Frozen
 with water
 buriedTreasure=SalvageableScrap
+resources=Cu,CO2,Co
 short=
-info=Co, CO2, Cu
+info=<ParsedPlanetaryResources> Co, CO2, Cu
 
 [Pln207A00F9A8CBC3]
 name=Gilycity XVII
 biome=AnomBubbles
 aggrSentinels
 gravitino balls
+resources=Cu,Au,Fe__
 short=
-info=Cu, Au, Fe##
+info=<ParsedPlanetaryResources> Cu, Au, Fe##
 short=
 info="Sprudelnder Mond"
 short=
@@ -456,14 +477,16 @@ class=Yellow
 [Pln107A00FAA8CBC3]
 name=Lukeswo
 biome=Irradiated
+resources=Cu,U,NaCl
 short=
-info=NaCl, U, Cu
+info=<ParsedPlanetaryResources> NaCl, U, Cu
 
 [Pln207A00FAA8CBC3]
 name=Flori
 biome=Frozen
+resources=Cu,CO2,Fe_
 short=
-info=Fe#, CO2, Cu
+info=<ParsedPlanetaryResources> Fe#, CO2, Cu
 
 [Reg000000F9A8DBC3]
 name=Rasdemit
@@ -481,36 +504,41 @@ biome=Toxic
 aggrSentinels
 with water
 gravitino balls
+resources=Cu,NH3,Na
 short=
-info=Na, NH3, Cu
+info=<ParsedPlanetaryResources> Na, NH3, Cu
 
 [Pln207A00F9A8DBC3]
 name=Egemis VI
 biome=Lush
 with water
+resources=Cu,Pf,NaCl,Eiweißperle
 short=
-info=NaCl, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Pln307A00F9A8DBC3]
 name=Hisom 60/H8
 biome=Barren
 aggrSentinels
 gravitino balls
+resources=Cu,Py,Ag
 short=
-info=Ag, Py, Cu
+info=<ParsedPlanetaryResources> Ag, Py, Cu
 
 [Pln407A00F9A8DBC3]
 name=Igglenae Delta
 biome=Toxic
+resources=Cu,NH3,Co
 short=
-info=Co, NH3, Cu
+info=<ParsedPlanetaryResources> Co, NH3, Cu
 
 [Pln507A00F9A8DBC3]
 name=Kuton Sigma
 biome=Lush
 with water
+resources=Cu,Pf,NaCl,Eiweißperle
 short=
-info=NaCl, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Reg000000FAA8CBC4]
 name=Gaentam-Rand
@@ -525,29 +553,33 @@ class=Yellow
 [Pln100800FAA8CBC4]
 name=Ucsones Beta
 biome=Irradiated
+resources=Cu,U,Ag
 short=
-info=Ag, U, Cu
+info=<ParsedPlanetaryResources> Ag, U, Cu
 
 [Pln200800FAA8CBC4]
 name=Neu: Durha
 biome=Scorched
+resources=Cu_,P,Na
 short=ExtHot
 info=Stufe 2
 short=
-info=Na, P, #Cu
+info=<ParsedPlanetaryResources> Na, P, #Cu
 
 [Pln300800FAA8CBC4]
 name=Urbi
 biome=Lush
 with water
+resources=Cu,Pf,Na
 short=
-info=Na, Pf, Cu
+info=<ParsedPlanetaryResources> Na, Pf, Cu
 
 [Pln400800FAA8CBC4]
 name=Nurtn
 biome=AnomMetalFlowers
+resources=Cu,Au,NaCl
 short=
-info=NaCl, Au, Cu
+info=<ParsedPlanetaryResources> NaCl, Au, Cu
 short=
 info="Metallüberzogener Planet"
 
@@ -555,8 +587,9 @@ info="Metallüberzogener Planet"
 name=Jevo
 biome=Lush
 with water
+resources=Cu,Pf,NaCl
 short=
-info=NaCl, Pf, Cu
+info=<ParsedPlanetaryResources> NaCl, Pf, Cu
 
 [Sys000A00FAA8CBC4]
 name=Lograt
@@ -568,23 +601,26 @@ class=Yellow
 [Pln100A00FAA8CBC4]
 name=Aeumo VII
 biome=Toxic
+resources=Cu,NH3,Fe_
 short=
-info=Fe#, NH3, Cu
+info=<ParsedPlanetaryResources> Fe#, NH3, Cu
 
 [Pln200A00FAA8CBC4]
 name=Idor 41/U6
 biome=Lush
+resources=Cu,Pf,NaCl,Eiweißperle
 short=
-info=NaCl, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Pln300A00FAA8CBC4]
 name=Kieve Minoris
 biome=Frozen
 is extreme
+resources=Cu_,CO2,NaCl
 short=Extrem 3
 info=
 short=
-info=NaCl, CO2, #Cu
+info=<ParsedPlanetaryResources> NaCl, CO2, #Cu
 
 [Sys001100FAA8CBC4]
 
@@ -597,22 +633,25 @@ class=Yellow
 [Pln101200FAA8CBC4]
 name=Vulptone VII
 biome=AnomLimeStars
+resources=Cu,Au,NaCl
 short=
-info=NaCl, Au, Cu
+info=<ParsedPlanetaryResources> NaCl, Au, Cu
 short=
 info="Verkalkter Planet"
 
 [Pln201200FAA8CBC4]
 name=Rerok
 biome=Toxic
+resources=Cu,NH3,Ag
 short=
-info=Ag, NH3, Cu
+info=<ParsedPlanetaryResources> Ag, NH3, Cu
 
 [Pln301200FAA8CBC4]
 name=Pacalloy XIX
 biome=AnomBones
+resources=Cu,Au,Na
 short=
-info=Na, Au, Cu
+info=<ParsedPlanetaryResources> Na, Au, Cu
 short=
 info="Rasselnder Planet"
 
@@ -620,16 +659,18 @@ info="Rasselnder Planet"
 name=Neu: Aron
 biome=Lush
 with water
+resources=Cu,Pf,Ag
 short=
-info=Ag, Pf, Cu
+info=<ParsedPlanetaryResources> Ag, Pf, Cu
 short=U
 info=Uran ("Metall-Finger")
 
 [Pln501200FAA8CBC4]
 name=Kewesterd Yugaw
 biome=Airless
+resources=Cu,Na,Sr_Rost
 short=
-info=Na, Sr_Rost, Cu
+info=<ParsedPlanetaryResources> Na, Sr_Rost, Cu
 short="Katastrophales Terraforming"
 info=
 
@@ -654,24 +695,27 @@ class=Yellow
 name=Neu: Ochdal
 biome=Lush
 with water
+resources=Cu,Pf,Na,Eiweißperle
 short=
-info=Na, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Na, Pf, Cu, Eiweißperle
 
 [Pln202700FAA8CBC4]
 name=Lusingf R4
 biome=Frozen
 is extreme
 with water
+resources=Cu_,CO2,NaCl
 short=ExtCold
 info=Stufe 3
 short=
-info=NaCl, CO2, #Cu
+info=<ParsedPlanetaryResources> NaCl, CO2, #Cu
 
 [Pln302700FAA8CBC4]
 name=Boeoti V
 biome=Scorched
+resources=Cu,P,Na
 short=
-info=Na, P, Cu
+info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Sys002F00FAA8CBC4]
 name=Party Town
@@ -684,8 +728,9 @@ info=
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
 biome=AnomShells
+resources=Cu,Au,Na
 short=
-info=Cu, Au, Na
+info=<ParsedPlanetaryResources> Cu, Au, Na
 short=
 info="Schalenübersäter Planet"
 
@@ -693,14 +738,16 @@ info="Schalenübersäter Planet"
 name=Icoll XIV
 biome=Toxic
 with water
+resources=Cu,NH3,Na
 short=
-info=Na, NH3, Cu
+info=<ParsedPlanetaryResources> Na, NH3, Cu
 
 [Pln302F00FAA8CBC4]
 name=Oann ...
 biome=Frozen
+resources=Cu,CO2,Ag
 short=
-info=Ag, CO2, Cu
+info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Sys003000FAA8CBC4]
 oldname=Zuhcher X
@@ -716,21 +763,24 @@ class=Yellow
 [Pln103F00FAA8CBC4]
 name=Ilad
 biome=Scorched
+resources=Cu,P,Ag
 short=
-info=Ag, P, Cu
+info=<ParsedPlanetaryResources> Ag, P, Cu
 
 [Pln203F00FAA8CBC4]
 name=Nocerius Somag
 biome=Lush
 with water
+resources=Cu,Pf,NaCl
 short=
-info=NaCl, Pf, Cu
+info=<ParsedPlanetaryResources> NaCl, Pf, Cu
 
 [Pln303F00FAA8CBC4]
 name=Tagir Delta
 biome=AnomMetalFlowers
+resources=Cu,Co,Fe_
 short=
-info=Co, Fe#, Cu
+info=<ParsedPlanetaryResources> Co, Fe#, Cu
 short=
 info="Mechanischer Planet"
 
@@ -760,37 +810,42 @@ class=Yellow
 name=Nicaro Sigma
 biome=Irradiated
 buriedTreasure=SalvageableScrap
+resources=Cu,U,NaCl
 short=
-info=NaCl, U, Cu
+info=<ParsedPlanetaryResources> NaCl, U, Cu
 
 [Pln204500FAA8CBC4]
 name=Watfo
 biome=Frozen
+resources=Cu,CO2,NaCl
 short=
-info=NaCl, CO2, Cu
+info=<ParsedPlanetaryResources> NaCl, CO2, Cu
 
 [Pln304500FAA8CBC4]
 name=Oburydon
 biome=Toxic
+resources=Cu,NH3,NaCl
 short=
-info=NaCl, NH3, Cu
+info=<ParsedPlanetaryResources> NaCl, NH3, Cu
 
 [Pln404500FAA8CBC4]
 name=Neswick II
 biome=Irradiated
 is extreme
+resources=Cu_,U,Fe_
 short=ExtRad
 info=Stufe 3
 short=
-info=Fe#, U, #Cu
+info=<ParsedPlanetaryResources> Fe#, U, #Cu
 short.P=#Cu
 info=
 
 [Pln504500FAA8CBC4]
 name=Abasill
 biome=Toxic
+resources=Cu,NH3,Ag
 short=
-info=Ag, NH3, Cu
+info=<ParsedPlanetaryResources> Ag, NH3, Cu
 
 [Sys004600FAA8CBC4]
 name=Tusevoz-Kiku
@@ -802,14 +857,16 @@ distance=706847.000000
 [Pln104600FAA8CBC4]
 name=Bucky
 biome=Scorched
+resources=Cu,P,Na
 short=
-info=Na, P, Cu
+info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Pln204600FAA8CBC4]
 name=Interen
 biome=Irradiated
+resources=Cu,U,Ag
 short=
-info=Ag, U, Cu
+info=<ParsedPlanetaryResources> Ag, U, Cu
 
 [Pln304600FAA8CBC4]
 name=Oolef VIII
@@ -843,8 +900,9 @@ biome=Barren
 [Pln305700FAA8CBC4]
 name=Epenniazus Totsu
 biome=Lush
+resources=Cu,Pf,Co,Eiweißperle
 short=
-info=Co, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Co, Pf, Cu, Eiweißperle
 
 [Pln405700FAA8CBC4]
 name=Neu: Ralottawa
@@ -860,8 +918,9 @@ info=Aktiviertes Kupfer
 [Pln505700FAA8CBC4]
 name=Oroz 92/B2
 biome=Scorched
+resources=Cu,P,Na
 short=
-info=Na, P, Cu
+info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Sys005D00FAA8CBC4]
 name=Tionovk-Exand
@@ -875,15 +934,17 @@ name=Luypsongh XIV
 oldname=Miyama Opogaets
 biome=Lush
 with water
+resources=Cu,Pf,Na,Eiweißperle
 short=
-info=Na, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Na, Pf, Cu, Eiweißperle
 
 [Pln205D00FAA8CBC4]
 name=Pipis IV
 oldname=Nozelensk Sano
 biome=AnomMushrooms
+resources=Cu,Ag,Na
 short=
-info=Cu, Ag, Na
+info=<ParsedPlanetaryResources> Cu, Ag, Na
 short=
 info="Mit Schirmen übersäter Planet"
 
@@ -891,8 +952,9 @@ info="Mit Schirmen übersäter Planet"
 name=Eykjaviu Primus
 oldname=Kiwalhontr-Menes Egor
 biome=Frozen
+resources=Cu,CO2,Na
 short=
-info=Na, CO2, Cu
+info=<ParsedPlanetaryResources> Na, CO2, Cu
 
 [Sys006900FAA8CBC4]
 
@@ -908,8 +970,9 @@ distance=707016.000000
 name=Ebbie Primus
 oldname=Syamnonerger
 biome=Frozen
+resources=Cu,CO2,Na
 short=
-info=Na, CO2, Cu
+info=<ParsedPlanetaryResources> Na, CO2, Cu
 
 [Pln206D00FAA8CBC4]
 name=Drushya II
@@ -921,8 +984,9 @@ with water
 name=Leuthow IV
 oldname=Loyarnaulic
 biome=AnomFragmColumns
+resources=Cu,Ag,Fe__
 short=
-info=Cu, Ag, Fe##
+info=<ParsedPlanetaryResources> Cu, Ag, Fe##
 short=
 info="Stützen-Planet" -> Vertikale zersplitterte Säulen
 
@@ -940,8 +1004,9 @@ oldname=Axellenboe Ummi
 biome=Scorched
 with water
 buriedTreasure=AncientBones
+resources=Cu,P,Na
 short=
-info=Na, P, Cu
+info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Pln207900FAA8CBC4]
 name=Tisluitsoch
@@ -949,8 +1014,9 @@ oldname=Tisluitsoch
 biome=Barren
 aggrSentinels
 gravitino balls
+resources=Cu,Py,Ag
 short=
-info=Ag, Py, Cu
+info=<ParsedPlanetaryResources> Ag, Py, Cu
 
 [Pln307900FAA8CBC4]
 name=Dessilaum Ramm
@@ -959,10 +1025,11 @@ biome=Irradiated
 is extreme
 with water
 buriedTreasure=AncientBones
+resources=Cu_,U,Na
 short=ExtRad
 info=Stufe 3
 short=
-info=Na, U, #Cu
+info=<ParsedPlanetaryResources> Na, U, #Cu
 short.P=#Cu
 info=Aktiviertes Kupfer
 
@@ -971,10 +1038,11 @@ name=Biyskogolo
 oldname=Biyskogolo Unzhe
 biome=Toxic
 is extreme
+resources=Cu_,NH3,Fe_
 short=ExtTox
 info=Stufe 3
 short=
-info=Fe#, NH3, #Cu
+info=<ParsedPlanetaryResources> Fe#, NH3, #Cu
 short.P=#Cu
 info=Aktiviertes Kupfer
 
@@ -992,8 +1060,9 @@ info=W: Angemessen
 name=Appl
 oldname=Guyohldemigla
 biome=Lush
+resources=Cu,Pf,Fe__
 short=
-info=Cu, Pf, Fe##
+info=<ParsedPlanetaryResources> Cu, Pf, Fe##
 
 [Pln207A00FAA8CBC4]
 name=Arzaw Q30
@@ -1001,38 +1070,43 @@ oldname=Obinzhichi Udamad
 biome=Scorched
 with water
 buriedTreasure=SalvageableScrap
+resources=Cu,P,Co
 short=
-info=Cu, P, Co
+info=<ParsedPlanetaryResources> Cu, P, Co
 
 [Pln307A00FAA8CBC4]
 name=Agjyo X
 oldname=Yecheveli Kawari
 biome=AnomContour
+resources=Cu,Au,Co
 short=
 info="Konturierter Planet"
 short=
-info=Cu, Au, Co
+info=<ParsedPlanetaryResources> Cu, Au, Co
 
 [Pln407A00FAA8CBC4]
 name=Tiffal V
 oldname=Oansum Inleug
 biome=Barren
+resources=Cu,Py,Fe__
 short=
-info=Cu, Py, Fe##
+info=<ParsedPlanetaryResources> Cu, Py, Fe##
 
 [Pln507A00FAA8CBC4]
 name=Yezanthax IV
 oldname=Kipatjil Kagog
 biome=Scorched
+resources=Cu,P,Fe__
 short=
-info=Cu, P, Fe##
+info=<ParsedPlanetaryResources> Cu, P, Fe##
 
 [Pln607A00FAA8CBC4]
 name=Uneapo
 oldname=Gautumis Hobar
 biome=Lush
+resources=Cu,Pf,Na
 short=
-info=Cu, Pf, Na
+info=<ParsedPlanetaryResources> Cu, Pf, Na
 
 [Sys00CA00FAA8CBC4]
 name=Anskit-Abad
@@ -1043,14 +1117,16 @@ class=Blue
 [Pln10CA00FAA8CBC4]
 name=Aika III
 biome=Scorched
+resources=In,P,Fe_
 short=
-info=Fe#, P, In
+info=<ParsedPlanetaryResources> Fe#, P, In
 
 [Pln20CA00FAA8CBC4]
 name=Lagordiw X21
 biome=Lush
+resources=In_,Pf,Na,Eiweißperle
 short=
-info=Na, Pf, #In, Eiweißperle
+info=<ParsedPlanetaryResources> Na, Pf, #In, Eiweißperle
 
 [Sys013200FAA8CBC4]
 oldname=Rakaspo XVII
@@ -1077,17 +1153,19 @@ name=Reolousall Nosh
 oldname=Eikkeerhodov
 biome=Scorched
 is extreme
+resources=Em_,P,Co
 short=Extrem 3
 info=
 short=
-info=Co, P, #Em
+info=<ParsedPlanetaryResources> Co, P, #Em
 
 [Pln214F00FAA8CBC4]
 name=Uceston XIV
 oldname=Dihruva Oband
 biome=Toxic
+resources=Em,NH3,NaCl
 short=
-info=NaCl, NH3, Em
+info=<ParsedPlanetaryResources> NaCl, NH3, Em
 
 [Sys015200FAA8CBC4]
 
@@ -1106,16 +1184,18 @@ name=Vanahei IX
 biome=Irradiated
 aggrSentinels
 gravitino balls
+resources=Cu,U,Co
 short=
-info=Co, U, Cu
+info=<ParsedPlanetaryResources> Co, U, Cu
 
 [Pln216500FAA8CBC4]
 name=Esveg Primus
 biome=AnomBones
 aggrSentinels
 gravitino balls
+resources=Cu,Fe_,Na
 short=
-info=Na, Fe#, Cu
+info=<ParsedPlanetaryResources> Na, Fe#, Cu
 short=
 info="Skelettartiger Planet"
 short=
@@ -1124,20 +1204,23 @@ info=Gebäude: "Grenzüberschreitung"
 [Pln316500FAA8CBC4]
 name=Iago Delta
 biome=Toxic
+resources=Cu,NH3,Fe__
 short=
-info=Fe##, NH3, Cu
+info=<ParsedPlanetaryResources> Fe##, NH3, Cu
 
 [Pln416500FAA8CBC4]
 name=Pedro IV
 biome=Scorched
+resources=Cu,P,Fe__
 short=
-info=Fe##, P, Cu
+info=<ParsedPlanetaryResources> Fe##, P, Cu
 
 [Pln516500FAA8CBC4]
 name=Oebenja R48
 biome=Irradiated
+resources=Cu,U,Ag
 short=
-info=Ag, U, Cu
+info=<ParsedPlanetaryResources> Ag, U, Cu
 
 [Sys016A00FAA8CBC4]
 name=Uduton
@@ -1155,8 +1238,9 @@ name=Daymaireth Ganei
 biome=Exotic_Mega
 is extreme
 with water
+resources=In_,CO2,Co
 short=#In
-info=#In, CO2, Co
+info=<ParsedPlanetaryResources> #In, CO2, Co
 short=Extrem
 info=
 
@@ -1202,18 +1286,20 @@ name=Thdakoma
 biome=Exotic_Mega
 is extreme
 with water
+resources=Em_,NH3,Na
 short=
 info="Verdammter Jade-Planet"
 short.P=#Em
-info=#Em, NH3, Na
+info=<ParsedPlanetaryResources> #Em, NH3, Na
 short=Extrem
 info=Biom: Säure Echos
 
 [Pln218200FAA8CBC4]
 name=Runtwic V
 biome=AnomMushrooms
+resources=Em,Ag,NaCl
 short=
-info=Em, Ag, NaCl
+info=<ParsedPlanetaryResources> Em, Ag, NaCl
 short=
 info="Pilz-Planet"
 
@@ -1292,17 +1378,19 @@ class=Yellow
 name=Oproby Hachi
 biome=Irradiated
 with water
+resources=Cu,U,NaCl
 short=
-info=NaCl, U, Cu
+info=<ParsedPlanetaryResources> NaCl, U, Cu
 
 [Pln207A00F8A8DBC4]
 name=Gaapopp
 biome=Barren
 is extreme
+resources=Cu_,Py,Fe_
 short=ExtBar
 info=
 short=
-info=Fe#, Py, #Cu
+info=<ParsedPlanetaryResources> Fe#, Py, #Cu
 short.P=#Cu
 info=
 
@@ -1317,8 +1405,9 @@ name=Evizes IX
 biome=Toxic
 aggrSentinels
 gravitino balls
+resources=In,NH3,NaCl
 short=
-info=NaCl, NH3, In
+info=<ParsedPlanetaryResources> NaCl, NH3, In
 
 [Sys00CD00F8A8DBC4]
 name=Qigegy-Qingo
@@ -1332,8 +1421,9 @@ info=
 name=Eybrie
 biome=Barren
 with water
+resources=Em,Py,Co
 short=
-info=Co, Py, Em
+info=<ParsedPlanetaryResources> Co, Py, Em
 
 [Reg000000F9A8DBC4]
 name=Aokipg-Quadrant
@@ -1349,34 +1439,39 @@ class=Yellow
 name=Leyunthio Minoris
 biome=Irradiated
 with water
+resources=Cu,U,Na
 short=
-info=Na, U, Cu
+info=<ParsedPlanetaryResources> Na, U, Cu
 
 [Pln207A00F9A8DBC4]
 name=Uhmanue
 biome=Toxic
 buriedTreasure=AncientBones
+resources=Cu,NH3,Fe_
 short=
-info=Fe#, NH3, Cu
+info=<ParsedPlanetaryResources> Fe#, NH3, Cu
 
 [Pln307A00F9A8DBC4]
 name=Nidsey Sigma
 biome=Lush
 with water
+resources=Cu,Pf,Fe_,Eiweißperle
 short=
-info=Fe#, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Fe#, Pf, Cu, Eiweißperle
 
 [Pln407A00F9A8DBC4]
 name=Kasa 57/T1
 biome=Toxic
+resources=Cu,NH3,Ag
 short=
-info=Ag, NH3, Cu
+info=<ParsedPlanetaryResources> Ag, NH3, Cu
 
 [Pln507A00F9A8DBC4]
 name=Cell Omega
 biome=Scorched
+resources=Cu,P,Na
 short=
-info=Na, P, Cu
+info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Sys012200F9A8DBC4]
 name=Dakjala-Uis IV
@@ -1388,8 +1483,9 @@ name=Ongham Teya
 biome=Lush
 is extreme
 with water
+resources=Cd_,Pf,NaCl,Eiweißperle
 short=
-info=NaCl, Pf, #Cd, Eiweißperle
+info=<ParsedPlanetaryResources> NaCl, Pf, #Cd, Eiweißperle
 short.P=#Cd
 info=
 short=Extrem ??
@@ -1403,8 +1499,9 @@ class=Red
 [Pln113A00F9A8DBC4]
 name=Arhunt VI
 biome=AnomScreenCrystals
+resources=Cd,Ag,Na
 short=
-info=Cd, Ag, Na
+info=<ParsedPlanetaryResources> Cd, Ag, Na
 short=
 info="Zerschmetterter Planet" -> Bildschirm-Kristalle
 
@@ -1413,8 +1510,9 @@ name=Taplebys Ouchi
 biome=Barren
 is extreme
 with water
+resources=Cd_,Py,Co
 short.P=#Cd
-info=Co, Py, #Cd
+info=<ParsedPlanetaryResources> Co, Py, #Cd
 short=ExtBar
 info=
 
@@ -1432,10 +1530,11 @@ class=Yellow
 name=Noom 17/Q2
 biome=Toxic
 is extreme
+resources=Cu_,NH3,Co
 short=ExtTox
 info=
 short=
-info=Co, NH3, #Cu
+info=<ParsedPlanetaryResources> Co, NH3, #Cu
 short=#Cu
 info=
 short.P=Erinnerungs-Terminal (Pl) (besucht)
@@ -1466,18 +1565,20 @@ class=Yellow
 name=Azzav Minoris
 biome=Lush
 with water
+resources=Cu,Pf,NaCl,Eiweißperle
 short=
-info=NaCl, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Pln207900F8A8DBC6]
 name=Raxa Omega
 biome=Irradiated
 is extreme
 with water
+resources=Cu_,U,Na
 short=ExtRad
 info=Stufe 3
 short=
-info=Na, U, #Cu
+info=<ParsedPlanetaryResources> Na, U, #Cu
 short=#Cu
 info=
 
@@ -1491,8 +1592,9 @@ class=Yellow
 [Pln107A00F8A8DBC6]
 name=Misbiyteus
 biome=Lush
+resources=Cu,Pf,Fe_,Eiweißperle
 short=
-info=Fe#, Pf, Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Fe#, Pf, Cu, Eiweißperle
 
 [Reg000000FAA8DBC6]
 name=Tagosag-Anomalie
@@ -1507,8 +1609,9 @@ class=Yellow
 name=Xaborus XI
 biome=Barren
 with water
+resources=Cu,Py,NaCl
 short=
-info=NaCl, Py, Cu
+info=<ParsedPlanetaryResources> NaCl, Py, Cu
 
 [Reg000000FAA8EBC7]
 
@@ -1593,10 +1696,11 @@ info=
 [Pln303C0000BF1C2A]
 name=Xanna XIX
 biome=AnomBones
+resources=Cu,Ag,NaCl
 short=
 info="Stacheliger Planet"
 short=
-info=Cu, Ag, NaCl
+info=<ParsedPlanetaryResources> Cu, Ag, NaCl
 
 [Sys00520000BF1C2A]
 
@@ -1691,28 +1795,32 @@ class=Yellow
 [Pln100200FCA45CAF]
 name=Aumonov IX
 biome=AnomMetalFlowers
+resources=Cu,Au,NaCl
 short=
 info="Metallurgischer Planet" -> "Mutter"-Blumen
 short=
-info=Cu, Au, NaCl
+info=<ParsedPlanetaryResources> Cu, Au, NaCl
 
 [Pln200200FCA45CAF]
 name=Jikirk
 biome=Irradiated
+resources=Cu,U,Co
 short=
-info=Cu, U, Co
+info=<ParsedPlanetaryResources> Cu, U, Co
 
 [Pln300200FCA45CAF]
 name=Druss Primus
 biome=Barren
+resources=Cu,Py,Fe__
 short=
-info=Cu, Py, Fe##
+info=<ParsedPlanetaryResources> Cu, Py, Fe##
 
 [Pln400200FCA45CAF]
 name=Oruton
 biome=AnomMetalFlowers
+resources=Cu,Au,Fe__
 short=
-info=Cu, Au, Fe##
+info=<ParsedPlanetaryResources> Cu, Au, Fe##
 short=
 info="Metallener Planet" -> "Mutter"-Blumen
 
@@ -1721,10 +1829,11 @@ name=Teosk
 biome=Irradiated
 is extreme
 with water
+resources=Cu_,U,NaCl
 short=ExtRad
 info=Stufe 3
 short=#Cu
-info=#Cu, U, NaCl
+info=<ParsedPlanetaryResources> #Cu, U, NaCl
 
 [Sys007900FCA45CAF]
 name=Dadurer-Iue
@@ -1741,29 +1850,33 @@ name=Argolga Omega
 biome=Frozen
 is extreme
 with water
+resources=Cu_,CO2,Ag
 short=ExtCold
 info=Stufe 3
 short=#Cu
-info=#Cu, CO2, Ag
+info=<ParsedPlanetaryResources> #Cu, CO2, Ag
 
 [Pln207900FCA45CAF]
 name=Elpecorpi Mukou
 biome=Scorched
+resources=Cu,P,Fe__
 short=
-info=Cu, P, Fe##
+info=<ParsedPlanetaryResources> Cu, P, Fe##
 
 [Pln307900FCA45CAF]
 name=Mins
 biome=Lush
 with water
+resources=Cu,Pf,Ag
 short=
-info=Cu, Pf, Ag
+info=<ParsedPlanetaryResources> Cu, Pf, Ag
 
 [Pln407900FCA45CAF]
 name=Taci F26
 biome=Frozen
+resources=Cu,CO2,Fe__
 short=
-info=Cu, CO2, Fe##
+info=<ParsedPlanetaryResources> Cu, CO2, Fe##
 
 [Sys017600FCA45CAF]
 name=Vahistoss IX
@@ -1773,16 +1886,18 @@ class=Red
 [Pln117600FCA45CAF]
 name=Grushya B47
 biome=AnomLimeStars
+resources=Cd,Au,NaCl
 short=
 info="Verkalkter Planet" -> Verknöcherte Sterne
 short=
-info=Cd, Au, NaCl
+info=<ParsedPlanetaryResources> Cd, Au, NaCl
 
 [Pln217600FCA45CAF]
 name=Mosebyter Tau
 biome=Lush
+resources=Cd,Pf,Na
 short=
-info=Cd, Pf, Na
+info=<ParsedPlanetaryResources> Cd, Pf, Na
 
 [Sys017700FCA45CAF]
 name=Keinar-Liski
@@ -1793,24 +1908,27 @@ class=Blue
 name=Weymonak V
 biome=Lush
 with water
+resources=In_,Pf,Na
 short=#In
-info=#In, Pf, Na
+info=<ParsedPlanetaryResources> #In, Pf, Na
 
 [Pln217700FCA45CAF]
 name=Oupolly Guyod
 biome=Scorched
 is extreme
+resources=In_,P,Na
 short=ExtHot
 info=Stufe 3
 short=#In
-info=#In, P, Na
+info=<ParsedPlanetaryResources> #In, P, Na
 
 [Pln317700FCA45CAF]
 name=Nogaw 92/D8
 biome=Irradiated
 with water
+resources=In_,U,Na
 short=#In
-info=#In, U, Na
+info=<ParsedPlanetaryResources> #In, U, Na
 
 [Reg00000004425CBA]
 name=Iczantsuk-Grenze
@@ -1828,22 +1946,25 @@ info=W: Zufriedenstellend
 [Pln10540004425CBA]
 name=Zapolest
 biome=Scorched
+resources=Cu,P,Co
 short=
-info=Cu, P, Co
+info=<ParsedPlanetaryResources> Cu, P, Co
 
 [Pln20540004425CBA]
 name=Ikin Delta
 biome=Toxic
 with water
 buriedTreasure=AncientBones
+resources=Cu,NH3,Na
 short=
-info=Cu, NH3, Na
+info=<ParsedPlanetaryResources> Cu, NH3, Na
 
 [Pln30540004425CBA]
 name=Nukih 52/X4
 biome=Scorched
+resources=Cu,P,Na
 short=
-info=Cu, P, Na
+info=<ParsedPlanetaryResources> Cu, P, Na
 
 [Sys00790004425CBA]
 name=Esveto-Dovin
@@ -1858,10 +1979,11 @@ info=W: In Entwicklung
 [Pln10790004425CBA]
 name=Esveto-Dovin
 biome=AnomHexagons
+resources=Cu,Au,NaCl
 short=
 info="Sechseckiger Planet"
 short=
-info=Cu, Au, NaCl
+info=<ParsedPlanetaryResources> Cu, Au, NaCl
 short=
 info=Gebäude: "Grenzüberschreitung"
 
@@ -1870,8 +1992,9 @@ name=Wakingt Diar
 biome=Lush
 is extreme
 with water
+resources=Cu_,Pf,Ag
 short=#Cu
-info=#Cu, Pf, Ag
+info=<ParsedPlanetaryResources> #Cu, Pf, Ag
 short=Extrem
 info=
 
@@ -1880,8 +2003,9 @@ name=Lineho S35
 biome=Frozen
 aggrSentinels
 gravitino balls
+resources=Cu,CO2,Na
 short=
-info=Cu, CO2, Na
+info=<ParsedPlanetaryResources> Cu, CO2, Na
 
 [Reg000000FE452CC0]
 name=Itutsc
@@ -1917,8 +2041,9 @@ info=
 name=Tadcara Gamma
 biome=Lush
 with water
+resources=Cu,Pf,NaCl
 short=
-info=Cu, Pf, NaCl
+info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
 [Reg000000FE45ACE7]
 name=Eolullp-Leere
@@ -2005,8 +2130,9 @@ info=
 [Pln303C00FCDCFD1A]
 name=Hught XVII
 biome=AnomBeams
+resources=Cu,Au,Na
 short=
-info=Cu, Au, Na
+info=<ParsedPlanetaryResources> Cu, Au, Na
 
 [Sys007900FCDCFD1A]
 name=Heyste-Stagy XIV
@@ -2149,10 +2275,11 @@ class=Yellow
 name=Neohitne A20
 biome=Barren
 is extreme
+resources=Cu,Py,Ag
 short=Extrem
 info=
 short=
-info=Ag, Py, Cu
+info=<ParsedPlanetaryResources> Ag, Py, Cu
 
 [Pln201E0004994DA5]
 name=Gehdadoi Delta
@@ -2160,26 +2287,29 @@ biome=Lush
 is extreme
 aggrSentinels
 gravitino balls
+resources=Cu_,Pf,Na
 short=ExtLush
 info="Blasen bildende Überflutung"
 short=#Cu
-info=Na, Pf, #Cu
+info=<ParsedPlanetaryResources> Na, Pf, #Cu
 
 [Pln301E0004994DA5]
 name=Oydona VI
 biome=Frozen
+resources=Cu,CO2,Fe_
 short=
-info=Fe#, CO2, Cu
+info=<ParsedPlanetaryResources> Fe#, CO2, Cu
 
 [Pln401E0004994DA5]
 name=Megasak IV
 biome=Lush
 is extreme
 with water
+resources=Cu_,Pf,Ag
 short=ExtLush
 info=
 short=
-info=Ag, Pf, #Cu
+info=<ParsedPlanetaryResources> Ag, Pf, #Cu
 short=#Cu
 info=
 
@@ -2196,8 +2326,9 @@ name=Hiydran Daba
 biome=Lush
 is extreme
 with water
+resources=Cu_,Pf,Co,Eiweißperle
 short.P=#Cu
-info=Co, Pf, #Cu, Eiweißperle
+info=<ParsedPlanetaryResources> Co, Pf, #Cu, Eiweißperle
 short=Extrem
 info=
 
@@ -2212,8 +2343,9 @@ class=Yellow
 name=Sanfor
 biome=Frozen
 with water
+resources=Cu,CO2,Na
 short=
-info=Na, CO2, Cu
+info=<ParsedPlanetaryResources> Na, CO2, Cu
 
 [Sys00BD0004994DA5]
 name=Seloma-Ame
@@ -2224,15 +2356,17 @@ class=Red
 name=Eirushe Iedat
 biome=Toxic
 with water
+resources=Cd,NH3,Fe_
 short=
-info=Fe#, NH3, Cd
+info=<ParsedPlanetaryResources> Fe#, NH3, Cd
 
 [Pln20BD0004994DA5]
 name=Ricussee Sigma
 biome=Lush
 with water
+resources=Cd_,Pf,Fe_
 short=#Cd
-info=Fe#, Pf, #Cd
+info=<ParsedPlanetaryResources> Fe#, Pf, #Cd
 
 [Sys01770004994DA5]
 name=Murskog
@@ -2242,10 +2376,11 @@ class=Red
 [Pln11770004994DA5]
 name=Rifforto
 biome=Scorched
+resources=Cd_,P,Na
 short=ExtHot
 info=
 short=#Cd
-info=Na, P, #Cd
+info=<ParsedPlanetaryResources> Na, P, #Cd
 
 [Reg00000002E0FDC9]
 name=Boissia-Instabilität
@@ -2472,10 +2607,11 @@ info=W: Erfolgversprechend
 name=Adyavan Tau
 biome=Barren
 is extreme
+resources=Cu_,Py,Na
 short=
 info=Extr: Stufe 3
 short=#Cu
-info=#Cu, Py, Na
+info=<ParsedPlanetaryResources> #Cu, Py, Na
 
 [Pln206B0003B09ED6]
 name=Dworthi
@@ -2483,15 +2619,17 @@ biome=Lush
 aggrSentinels
 with water
 gravitino balls
+resources=Cu,Pf,Fe__
 short=
-info=Cu, Pf, Fe##
+info=<ParsedPlanetaryResources> Cu, Pf, Fe##
 
 [Pln306B0003B09ED6]
 name=Uieta Sigma
 biome=Toxic
 with water
+resources=Cu,NH3,NaCl
 short=
-info=Cu, NH3, NaCl
+info=<ParsedPlanetaryResources> Cu, NH3, NaCl
 
 [Pln406B0003B09ED6]
 name=Okuts 37/W7
@@ -2501,16 +2639,18 @@ biome=AnomShells
 name=Visty
 biome=Irradiated
 buriedTreasure=AncientBones
+resources=Cu,U,Co
 short=
-info=Cu, U, Co
+info=<ParsedPlanetaryResources> Cu, U, Co
 
 [Pln606B0003B09ED6]
 name=Royalal G17
 biome=AnomHexagons
+resources=Cu,Au,NaCl
 short=
 info="Sechseckiger Planet"
 short=
-info=Cu, Au, NaCl
+info=<ParsedPlanetaryResources> Cu, Au, NaCl
 
 [Sys00790003B09ED6]
 name=Abalago
@@ -2963,36 +3103,41 @@ class=Yellow
 [Pln10790003000FF8]
 name=Xiazusc M44
 biome=Frozen
+resources=Cu,CO2,Co
 short=
-info=Co, CO2, Cu
+info=<ParsedPlanetaryResources> Co, CO2, Cu
 
 [Pln20790003000FF8]
 name=Opiumfor Majoris
 biome=Irradiated
 is extreme
 with water
+resources=Cu_,U,Co
 short=ExtRad
 info=Stufe 3
 short=
-info=Co, U, #Cu
+info=<ParsedPlanetaryResources> Co, U, #Cu
 
 [Pln30790003000FF8]
 name=Daka 55/Y4
 biome=Barren
+resources=Cu,Py,Co
 short=
-info=Co, Py, Cu
+info=<ParsedPlanetaryResources> Co, Py, Cu
 
 [Pln40790003000FF8]
 name=Naslo D10
 biome=Scorched
+resources=Cu,P,NaCl
 short=
-info=NaCl, P, Cu
+info=<ParsedPlanetaryResources> NaCl, P, Cu
 
 [Pln50790003000FF8]
 name=Neu: Wastosho
 biome=Toxic
+resources=Cu,NH3,Na
 short=
-info=Na, NH3, Cu
+info=<ParsedPlanetaryResources> Na, NH3, Cu
 
 [Reg000000F8008FF8]
 
@@ -3139,22 +3284,25 @@ info=W: Hohe Versorgung
 [Pln11E100FFFF8001]
 name=Yumusca R43
 biome=Toxic
+resources=Cu,NH3,Ag
 short=
-info=Cu, NH3, Ag
+info=<ParsedPlanetaryResources> Cu, NH3, Ag
 
 [Pln21E100FFFF8001]
 name=Yusthew G46
 biome=Lush
+resources=Cu,Pf,Na
 short=
-info=Cu, Pf, Na
+info=<ParsedPlanetaryResources> Cu, Pf, Na
 
 [Pln31E100FFFF8001]
 name=Tenstas Tau
 biome=Barren
 aggrSentinels
 with water
+resources=Cu,Py,NaCl
 short=
-info=Cu, Py, NaCl
+info=<ParsedPlanetaryResources> Cu, Py, NaCl
 
 [Sys01E600FFFF8001]
 
@@ -3222,22 +3370,25 @@ info=
 [Pln106600FEFE2004]
 name=Adhak
 biome=Airless
+resources=Em,Ag,Sr_Rost
 short=
-info=Em, Sr_Rost, Ag
+info=<ParsedPlanetaryResources> Em, Sr_Rost, Ag
 
 [Pln206600FEFE2004]
 name=Zabderest Hidak
 biome=Toxic
+resources=Em,NH3,NaCl
 short=
-info=Em, NH3, NaCl
+info=<ParsedPlanetaryResources> Em, NH3, NaCl
 
 [Pln306600FEFE2004]
 name=Eenste Minoris
 biome=AnomHexagons
+resources=Em,Au,Co
 short=
 info="Schuppiger Planet"
 short=
-info=Em, Au, Co
+info=<ParsedPlanetaryResources> Em, Au, Co
 
 [Reg000000FEFDC005]
 name=Hudsto-Band
@@ -4203,8 +4354,9 @@ info=
 name=Sasosol
 biome=Lush
 with water
+resources=Cu,Pf,NaCl
 short=
-info=Cu, Pf, NaCl
+info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
 [Sys005B0000BAC370]
 name=Botourdi
@@ -4466,14 +4618,16 @@ info=W: Mühevoll
 name=Ipswin Gamma
 biome=Lush
 with water
+resources=Cu,Pf,NaCl
 short=
-info=Cu, Pf, NaCl
+info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
 [Pln207900021A84E4]
 name=Paylo Tau
 biome=Scorched
+resources=Cu,P,NaCl
 short=
-info=Cu, P, NaCl
+info=<ParsedPlanetaryResources> Cu, P, NaCl
 
 [Reg00000004C074F0]
 name=Sagroa-Instabilität
@@ -4539,8 +4693,9 @@ class=Yellow
 [Pln100B0003CC45B8]
 name=Rutwor
 biome=AnomBubbles
+resources=Cu,Ag,Au
 short=
-info=Cu, Au, Ag
+info=<ParsedPlanetaryResources> Cu, Au, Ag
 short=
 info="Schäumender Planet" -> Seifenblasen überall
 
@@ -4548,30 +4703,34 @@ info="Schäumender Planet" -> Seifenblasen überall
 name=Tamot 81/O9
 biome=Lush
 with water
+resources=Cu_,Pf,NaCl
 short=
-info=#Cu, Pf, NaCl
+info=<ParsedPlanetaryResources> #Cu, Pf, NaCl
 
 [Pln300B0003CC45B8]
 name=Layonesve
 biome=Scorched
+resources=Cu,P,Co
 short=
-info=Cu, P, Co
+info=<ParsedPlanetaryResources> Cu, P, Co
 
 [Pln400B0003CC45B8]
 name=Yetonyan Sago
 biome=Frozen
 is extreme
 with water
+resources=Cu_,CO2,Co
 short=ExtCold
 info=Stufe 3
 short=#Cu
-info=#Cu, CO2, Co
+info=<ParsedPlanetaryResources> #Cu, CO2, Co
 
 [Pln500B0003CC45B8]
 name=Ceannar III
 biome=Irradiated
+resources=Cu,U,Na
 short=
-info=Cu, U, Na
+info=<ParsedPlanetaryResources> Cu, U, Na
 
 [Sys00790003CC45B8]
 name=Lochiteln
@@ -4589,16 +4748,18 @@ info=
 name=Ound Alpha
 biome=Toxic
 with water
+resources=Cu,NH3,Fe__
 short=
-info=Cu, NH3, Fe##
+info=<ParsedPlanetaryResources> Cu, NH3, Fe##
 
 [Pln20790003CC45B8]
 name=Aust Tau
 biome=AnomMushrooms
+resources=Cu,Ag,Fe__
 short=
 info="Sporiger Planet" -> Pilze
 short=
-info=Cu, Ag, Fe##
+info=<ParsedPlanetaryResources> Cu, Ag, Fe##
 
 [Pln30790003CC45B8]
 name=Losoniumfi Irash
@@ -4606,22 +4767,25 @@ biome=Frozen
 aggrSentinels
 with water
 gravitino balls
+resources=Cu,CO2,Na
 short=
-info=Cu, CO2, Na
+info=<ParsedPlanetaryResources> Cu, CO2, Na
 
 [Pln40790003CC45B8]
 name=Neu: Lucomne
 biome=Irradiated
 with water
+resources=Cu,U,Ag
 short=
-info=Cu, U, Ag
+info=<ParsedPlanetaryResources> Cu, U, Ag
 
 [Pln50790003CC45B8]
 name=Echi Gamma
 biome=Frozen
 aggrSentinels
+resources=Cu,CO2,NaCl
 short=
-info=Cu, CO2, NaCl
+info=<ParsedPlanetaryResources> Cu, CO2, NaCl
 short=Grav??
 info=
 
@@ -4641,24 +4805,27 @@ biome=Toxic
 is extreme
 with water
 buriedTreasure=AncientBones
+resources=Cu_,NH3,Ag
 short=#Cu
-info=Ag, NH3, #Cu
+info=<ParsedPlanetaryResources> Ag, NH3, #Cu
 short=ExtTox
 info=Stufe 3
 
 [Pln202A0002C825D1]
 name=Ekio Alpha
 biome=Airless
+resources=Cu,NaCl,Sr_Rost
 short=
-info=NaCl, Sr_Rost, Cu
+info=<ParsedPlanetaryResources> NaCl, Sr_Rost, Cu
 short=
 info="Unbelebter Planet"
 
 [Pln302A0002C825D1]
 name=Esotapi
 biome=Irradiated
+resources=Cu,U,Co
 short=
-info=Co, U, Cu
+info=<ParsedPlanetaryResources> Co, U, Cu
 
 [Sys00790002C825D1]
 name=Iderag-Esaud XIX
@@ -4672,14 +4839,16 @@ distance=694811.000000
 [Pln10790002C825D1]
 name=Retsey XV
 biome=Toxic
+resources=Cu,NH3,NaCl
 short=
-info=NaCl, NH3, Cu
+info=<ParsedPlanetaryResources> NaCl, NH3, Cu
 
 [Pln20790002C825D1]
 name=Bewdlewis Totto
 biome=Airless
+resources=Cu,NaCl,Sr_Rost
 short=
-info=NaCl, Sr_Rost, Cu
+info=<ParsedPlanetaryResources> NaCl, Sr_Rost, Cu
 short=
 info="Einsamer Planet"
 
@@ -4688,30 +4857,34 @@ name=Eroysto
 biome=Lush
 with water
 buriedTreasure=SalvageableScrap
+resources=Cu,Pf,Co
 short=
-info=Co, Pf, Cu
+info=<ParsedPlanetaryResources> Co, Pf, Cu
 
 [Pln40790002C825D1]
 name=Eusiss IV
 biome=Barren
 aggrSentinels
 gravitino balls
+resources=Cu,Py,Co
 short=
-info=Co, Py, Cu
+info=<ParsedPlanetaryResources> Co, Py, Cu
 
 [Pln50790002C825D1]
 name=Neu: Dettoxe
 biome=Irradiated
+resources=Cu,U,Co
 short=
-info=Co, U, Cu
+info=<ParsedPlanetaryResources> Co, U, Cu
 
 [Pln60790002C825D1]
 name=Yavaccacok Tamo
 biome=Toxic
 is extreme
 buriedTreasure=AncientBones
+resources=Cu_,NH3,NaCl
 short=#Cu
-info=NaCl, NH3, #Cu
+info=<ParsedPlanetaryResources> NaCl, NH3, #Cu
 short=ExtTox
 info=Stufe 3
 
@@ -4724,10 +4897,11 @@ class=Blue
 name=Galiu
 biome=Scorched
 is extreme
+resources=In_,P,Ag
 short=ExtHot
 info=Stufe 3
 short=#In
-info=Ag, P, #In
+info=<ParsedPlanetaryResources> Ag, P, #In
 
 [Sys00B80002C825D1]
 name=Yokazumi
@@ -4738,8 +4912,9 @@ class=Green
 name=Neu: Didymai
 biome=Barren
 with water
+resources=Em,Py,Co
 short=
-info=Co, Py, Em
+info=<ParsedPlanetaryResources> Co, Py, Em
 
 [Sys01790002C825D1]
 name=Meokaka-Luk
@@ -4749,8 +4924,9 @@ class=Red
 [Pln11790002C825D1]
 name=Lovisto
 biome=Barren
+resources=Cd,Py,Na
 short=
-info=Cd, Py, Na
+info=<ParsedPlanetaryResources> Cd, Py, Na
 
 [Reg00000000DBE61C]
 name=Ibiluro-Weite
@@ -4768,10 +4944,11 @@ name=Lumiris Majoris
 biome=Irradiated
 is extreme
 with water
+resources=Cu_,U,Na
 short=ExtRad
 info=Stufe 3
 short=#Cu
-info=Na, U, #Cu
+info=<ParsedPlanetaryResources> Na, U, #Cu
 
 [Sys00790000DBE61C]
 name=Apulygi IX
@@ -4798,20 +4975,23 @@ info=
 name=Emur 51/I4
 biome=Irradiated
 with water
+resources=Cu,U,Ag
 short=
-info=Cu, U, Ag
+info=<ParsedPlanetaryResources> Cu, U, Ag
 
 [Pln206E00FCD7F684]
 name=Eminglen Alpha
 biome=AnomLimeStars
+resources=Cu,Au,NaCl
 short=
-info=Cu, Au, NaCl
+info=<ParsedPlanetaryResources> Cu, Au, NaCl
 
 [Pln306E00FCD7F684]
 name=Kiddl Gamma
 biome=Irradiated
+resources=Cu,U,NaCl
 short=
-info=Cu, U, NaCl
+info=<ParsedPlanetaryResources> Cu, U, NaCl
 
 [Sys007000FCD7F684]
 name=Magogal
@@ -4830,8 +5010,9 @@ info=Cu, CO2, ??
 name=Suso 90/F7
 biome=Lush
 with water
+resources=Cu,Pf,Na
 short=
-info=Cu, Pf, Na
+info=<ParsedPlanetaryResources> Cu, Pf, Na
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
