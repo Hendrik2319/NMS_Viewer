@@ -77,11 +77,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTabl
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 
 public class GameInfos {
-	private static final String FILE_KNOWN_STAT_ID = "NMS_Viewer.KnownStatID.txt";
-	private static final String FILE_PRODUCT_ID    = "NMS_Viewer.ProdIDs.txt";
-	private static final String FILE_TECH_ID       = "NMS_Viewer.TechIDs.txt";
-	private static final String FILE_SUBSTANCE_ID  = "NMS_Viewer.SubstanceIDs.txt";
-	private static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 	
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	private static HashMap<Integer,HashSet<String>> conflictLevelLabels;
@@ -240,10 +235,10 @@ public class GameInfos {
 
 	public static void loadUniverseObjectDataFromFile() {
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read data of universe objects from file \""+FILE_UNIVERSE_OBJECT_DATA+"\"...");
+		SaveViewer.log_ln("Read data of universe objects from file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\"...");
 		universeObjectDataArr = new HashMap<>();
 		
-		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
+		File file = new File(FileExport.FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) {
 			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			return;
@@ -561,8 +556,8 @@ public class GameInfos {
 		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
 		Collections.sort(values);
 		
-		SaveViewer.log("Write data pool to file \""+FILE_UNIVERSE_OBJECT_DATA+"\" ...");
-		File file = new File(FILE_UNIVERSE_OBJECT_DATA);
+		SaveViewer.log("Write data pool to file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\" ...");
+		File file = new File(FileExport.FILE_UNIVERSE_OBJECT_DATA);
 		boolean isFirst = true;
 		@SuppressWarnings("unused")
 		UOD_Region         uod_region = null;
@@ -634,7 +629,7 @@ public class GameInfos {
 	}
 
 	public static void loadKnownStatIDsFromFile() {
-		File file = new File(FILE_KNOWN_STAT_ID);
+		File file = new File(FileExport.FILE_KNOWN_STAT_ID);
 		if (!file.isFile()) return;
 		
 		boolean somethingChanged = false;
@@ -667,7 +662,7 @@ public class GameInfos {
 	}
 
 	public static void saveKnownStatIDsToFile() {
-		File file = new File(FILE_KNOWN_STAT_ID);
+		File file = new File(FileExport.FILE_KNOWN_STAT_ID);
 		long start = System.currentTimeMillis();
 		SaveViewer.log_ln("Write known StatIDs to file \""+file.getPath()+"\" ...");
 		
@@ -742,9 +737,9 @@ public class GameInfos {
 	}
 
 	public static void loadAllIDsFromFiles() {
-		loadIDsFromFile(FILE_PRODUCT_ID  ,productIDs  ,"product"   );
-		loadIDsFromFile(FILE_TECH_ID     ,techIDs     ,"technology");
-		loadIDsFromFile(FILE_SUBSTANCE_ID,substanceIDs,"substance" );
+		loadIDsFromFile(FileExport.FILE_PRODUCT_ID  ,productIDs  ,"product"   );
+		loadIDsFromFile(FileExport.FILE_TECH_ID     ,techIDs     ,"technology");
+		loadIDsFromFile(FileExport.FILE_SUBSTANCE_ID,substanceIDs,"substance" );
 	}
 	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
 		File file = new File(filePath);
@@ -824,9 +819,9 @@ public class GameInfos {
 		saveTechIDsToFile     ();
 		saveSubstanceIDsToFile();
 	}
-	public static void saveProductIDsToFile  () { saveIDsToFile(FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
-	public static void saveTechIDsToFile     () { saveIDsToFile(FILE_TECH_ID     ,techIDs     ,"technologie"); }
-	public static void saveSubstanceIDsToFile() { saveIDsToFile(FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
+	public static void saveProductIDsToFile  () { saveIDsToFile(FileExport.FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
+	public static void saveTechIDsToFile     () { saveIDsToFile(FileExport.FILE_TECH_ID     ,techIDs     ,"technologie"); }
+	public static void saveSubstanceIDsToFile() { saveIDsToFile(FileExport.FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
 
 	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
 		long start = System.currentTimeMillis();

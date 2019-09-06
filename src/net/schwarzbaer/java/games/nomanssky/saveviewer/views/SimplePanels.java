@@ -1099,8 +1099,8 @@ public class SimplePanels {
 				
 				if (playerbase.owner!=null) {
 					textArea.append("\r\nOwner :\r\n");
-					textArea.append("   LID : "+(playerbase.owner.LID==null?"":playerbase.owner.LID)+"\r\n");
-					textArea.append("   UID (User ID  ) : "+(playerbase.owner.UID==null?"":playerbase.owner.UID)+"\r\n");
+					textArea.append("   LID : "            +(playerbase.owner.LID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.LID))+"\r\n");
+					textArea.append("   UID (User ID  ) : "+(playerbase.owner.UID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.UID))+"\r\n");
 					textArea.append("   USN (User Name) : "+(playerbase.owner.USN==null?"":playerbase.owner.USN)+"\r\n");
 					textArea.append("   TS  (Timestamp) : "+(playerbase.owner.TS ==null?"":playerbase.owner.TS.toString())+"\r\n");
 				}

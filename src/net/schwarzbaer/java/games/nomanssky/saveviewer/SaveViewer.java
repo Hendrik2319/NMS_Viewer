@@ -75,6 +75,7 @@ import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
@@ -95,6 +96,7 @@ public class SaveViewer implements ActionListener {
 	public static Images images;
 	public static Config config;
 	public static DeObfuscator deObfuscator;
+	public static KnownSteamIDs steamIDs;
 	
 	private JFileChooser inputFileChooser;
 	private JFileChooser htmlFileChooser;
@@ -107,6 +109,8 @@ public class SaveViewer implements ActionListener {
 		
 		config = Config.readFromFile();
 		deObfuscator = DeObfuscator.readFromFile();
+		steamIDs = new KnownSteamIDs();
+		steamIDs.readFromFile();
 		
 		GameInfos.loadKnownStatIDsFromFile();
 		GameInfos.loadAllIDsFromFiles();

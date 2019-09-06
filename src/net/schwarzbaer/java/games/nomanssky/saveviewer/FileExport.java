@@ -45,6 +45,16 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 
 public class FileExport {
+	static final String EXTRA_IMAGES_PATH = "extra/resource_icons";
+	
+	static final String FILE_COLORS               = "NMS_Viewer.Colors.txt";
+	static final String FILE_KNOWN_STAT_ID        = "NMS_Viewer.KnownStatID.txt";
+	static final String FILE_PRODUCT_ID           = "NMS_Viewer.ProdIDs.txt";
+	static final String FILE_TECH_ID              = "NMS_Viewer.TechIDs.txt";
+	static final String FILE_SUBSTANCE_ID         = "NMS_Viewer.SubstanceIDs.txt";
+	static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
+	static final String FILE_KNOWN_EDITABLE_MODS  = "NMS_Viewer.KnownEditableMods.txt";;
+	static final String FILE_KNOWN_STEAM_ID       = "NMS_Viewer.KnownSteamIDs.txt";
 	
 	static {
 		VRMLoutput.vrmlFileChooser = new JFileChooser("./");

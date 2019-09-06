@@ -58,9 +58,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 
 public class Images {
-	private static final String EXTRA_IMAGES_PATH = "extra/resource_icons";
-
-	private static final String FILE_COLORS = "NMS_Viewer.Colors.txt";
 	
 	public NamedColor[] colorValues;
 	private final HashMap<Integer,NamedColor> colorMap; 
@@ -152,13 +149,14 @@ public class Images {
 		addColor(colorValuesVec, 0x153250, "Fundstück (gewöhnlich)" );
 		addColor(colorValuesVec, 0x460C34, "Fundstück (ungewöhnlich)" );
 		addColor(colorValuesVec, 0xDC9401, "Fundstück (selten)" );
+		addColor(colorValuesVec, 0xFFFFFF, "Weiß" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
 	}
 
 	private void loadColorsFromFile(Vector<NamedColor> colorValuesVec) {
-		File file = new File(FILE_COLORS);
+		File file = new File(FileExport.FILE_COLORS);
 		if (!file.isFile()) return;
 		
 		boolean noNewColorAdded = true;
@@ -199,7 +197,7 @@ public class Images {
 
 	private void saveColorsToFile() {
 		long start = System.currentTimeMillis();
-		File file = new File(FILE_COLORS);
+		File file = new File(FileExport.FILE_COLORS);
 		SaveViewer.log_ln("Write background colors to file \""+file.getPath()+"\"...");
 		
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
@@ -384,7 +382,7 @@ public class Images {
 		int other = findImage(newName);
 		if (other!=-1 && other!=index) { SaveViewer.log_error_ln("Can't rename image: Another image with the new name \"%s\" was found in image list.", newName); return false; }
 		
-		File folder = new File(EXTRA_IMAGES_PATH);
+		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
 		if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't rename image: Image folder \"%s\" does not exist.", folder); return false; }
 		
 		File source = new File(folder,oldName);
@@ -429,7 +427,7 @@ public class Images {
 		int index = findImage(imageFileName);
 		if (index == -1) { SaveViewer.log_error_ln("Can't delete image: Image \"%s\" was not found in image list.", imageFileName); return false; }
 		
-		File folder = new File(EXTRA_IMAGES_PATH);
+		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
 		if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't delete image: Image folder \"%s\" does not exist.", folder); return false; }
 		
 		File source = new File(folder,imageFileName);
@@ -489,7 +487,7 @@ public class Images {
 			pd.setIndeterminate(true);
 		}
 		long start = System.currentTimeMillis();
-		File folder = new File(EXTRA_IMAGES_PATH);
+		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
 		SaveViewer.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
 		if (!folder.isDirectory()) {
 			SaveViewer.log_error_ln("   ... abort reading. Can't open folder.");

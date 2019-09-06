@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.AssignmentExistsException;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
@@ -113,6 +114,7 @@ public class SaveGameData {
 		
 		GameInfos.readUniverseObjectDataFromDataPool(universe,false);
 		GameInfos.saveAllIDsToFiles();
+		SaveViewer.steamIDs.writeToFile();
 		return this;
 	}
 
@@ -501,19 +503,6 @@ public class SaveGameData {
 		}
 	}
 
-	private static Owner parseOwnerField(JSON_Object parentObj, String valueName) {
-		JSON_Object objectValue = getObjectValue(parentObj, valueName);
-		if (objectValue==null) return null;
-		
-		Owner owner = new Owner();
-		owner.LID = getStringValue(objectValue, "LID");
-		owner.UID = getStringValue(objectValue, "UID");
-		owner.USN = getStringValue(objectValue, "USN");
-		owner.TS  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
-		
-		return owner;
-	}
-
 	public static class TimeStamp implements Comparable<TimeStamp>{
 		public final long value_s;
 		private TimeStamp(long value_s) {
@@ -569,13 +558,33 @@ public class SaveGameData {
 		}
 	}
 
+	private static Owner parseOwnerField(JSON_Object parentObj, String valueName) {
+		JSON_Object objectValue = getObjectValue(parentObj, valueName);
+		if (objectValue==null) return null;
+		
+		Owner owner = new Owner();
+		owner.LID = getStringValue(objectValue, "LID");
+		owner.UID = getStringValue(objectValue, "UID");
+		owner.USN = getStringValue(objectValue, "USN");
+		owner.TS  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
+		
+		if (owner.USN!=null && !owner.USN.isEmpty() && owner.UID!=null && !owner.UID.isEmpty())
+			try {
+				SaveViewer.steamIDs.set(owner.UID, owner.USN);
+			} catch (AssignmentExistsException e) {
+				e.printConflict();
+			}
+		
+		return owner;
+	}
+
 	public static class Owner {
 		public String LID;
 		public String UID;
 		public String USN;
 		public TimeStamp TS;
 	}
-	
+
 	public static class SeedValue {
 		
 		private Boolean boolVal;
@@ -757,7 +766,7 @@ public class SaveGameData {
 			pb.userData        = getIntegerValue (objectValue, "UserData");
 			pb.lastUpdateTS    = TimeStamp.create(getIntegerValue (objectValue, "LastUpdateTimestamp"));
 			pb.rid             = getStringValue  (objectValue, "RID");
-			pb.owner           = parseOwnerField(objectValue, "Owner");
+			pb.owner           = parseOwnerField (objectValue, "Owner");
 			pb.name            = getStringValue  (objectValue, "Name");
 			pb.baseTypeStr     = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.baseType        = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
@@ -1538,7 +1547,6 @@ public class SaveGameData {
 
 		public static class EditableModification implements Modification {
 			
-			private static final String FILE_KNOWN_EDITABLE_MODS = "NMS_Viewer.KnownEditableMods.txt";;
 			private static HashMap<String,EditableModification> values = new HashMap<>();
 			
 			public static EditableModification getMod(String modStr) {
@@ -1548,7 +1556,7 @@ public class SaveGameData {
 			}
 
 			public static void loadKnownEditableModsFromFile() {
-				File file = new File(FILE_KNOWN_EDITABLE_MODS);
+				File file = new File(FileExport.FILE_KNOWN_EDITABLE_MODS);
 				if (!file.isFile()) return;
 				
 				long start = System.currentTimeMillis();
@@ -1586,7 +1594,7 @@ public class SaveGameData {
 			}
 
 			public static void saveKnownEditableModsToFile() {
-				File file = new File(FILE_KNOWN_EDITABLE_MODS);
+				File file = new File(FileExport.FILE_KNOWN_EDITABLE_MODS);
 				long start = System.currentTimeMillis();
 				SaveViewer.log_ln("Write known Editable Frigate Modifications to file \""+file.getPath()+"\" ...");
 				
@@ -1833,6 +1841,76 @@ public class SaveGameData {
 			SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
 		if (!discoveryData.notParsedAvailableData.isEmpty())
 			SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+	}
+
+	public final static class KnownSteamIDs {
+		private HashMap<String,String> data;
+		
+		KnownSteamIDs() {
+			data = new HashMap<>();
+		}
+		
+		public String get(String steamID) {
+			return data.get(steamID);
+		}
+		public void set(String steamID, String steamName) throws AssignmentExistsException {
+			String prevValue = data.putIfAbsent(steamID, steamName);
+			if (prevValue!=null && !prevValue.equals(steamName))
+				throw new AssignmentExistsException(steamID, steamName, prevValue);
+		}
+		
+		public static class AssignmentExistsException extends Exception {
+			private static final long serialVersionUID = -9040442552016222917L;
+			final String steamID,newName,oldName;
+			public AssignmentExistsException(String steamID, String newName, String oldName) {
+				this.steamID = steamID;
+				this.newName = newName;
+				this.oldName = oldName;
+			}
+			public void printConflict() {
+				SaveViewer.log_error_ln("KnownSteamIDs:  [ID]%s  [Old]\"%s\" -> [New]\"%s\"", steamID,oldName,newName);
+			}
+		}
+		
+		void writeToFile() {
+			long start = System.currentTimeMillis();
+			SaveViewer.log_ln("Write KnownSteamIDs to file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
+			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_KNOWN_STEAM_ID),StandardCharsets.UTF_8))) {
+				Vector<String> ids = new Vector<String>(data.keySet());
+				ids.sort(null);
+				for (String steamID:ids) {
+					String steamName = data.get(steamID);
+					out.printf("%s=%s%n", steamID,steamName);
+				}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		}
+		void readFromFile() {
+			long start = System.currentTimeMillis();
+			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_KNOWN_STEAM_ID),StandardCharsets.UTF_8))) {
+				SaveViewer.log_ln("Read KnownSteamIDs from file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
+				String line;
+				while ( (line=in.readLine())!=null ) {
+					int pos = line.indexOf('=');
+					if (pos<0) continue;
+					String steamID   = line.substring(0,pos);
+					String steamName = line.substring(pos+1);
+					data.put(steamID, steamName);
+				}
+				SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			} catch (FileNotFoundException e) {
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		public String getNameReplacement(String str) {
+			String steamName = get(str);
+			if (steamName==null) return str;
+			return "[SteamID of \""+steamName+"\"]";
+		}
 	}
 
 	public final static class DiscoveryData {
