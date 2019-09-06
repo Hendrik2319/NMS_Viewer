@@ -4775,6 +4775,28 @@ class=Yellow
 short=2 Planeten
 info=
 
+[Reg000000FCD7F684]
+
+[Sys007000FCD7F684]
+name=Magogal
+race=Gek
+conflict=1
+conflict_label=gesetzlos
+class=Yellow
+
+[Pln107000FCD7F684]
+name=Napecule Beta
+biome=Frozen
+short=
+info=Cu, CO2, ??
+
+[Pln207000FCD7F684]
+name=Suso 90/F7
+biome=Lush
+with water
+short=
+info=Cu, Pf, Na
+
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
 
