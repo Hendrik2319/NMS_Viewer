@@ -10,7 +10,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 
-import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -23,6 +22,7 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
@@ -176,9 +176,6 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		@Override public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean isSelected, boolean isExpanded, boolean isLeaf, int row, boolean hasFocus) {
 			Component component = super.getTreeCellRendererComponent(tree, obj, isSelected, isExpanded, isLeaf, row, hasFocus);
 			
-			JLabel label = null;
-			if (component instanceof JLabel) label = (JLabel)component;
-			
 			boolean wasProcessed = false;
 			boolean wasDeObfuscated = true;
 			boolean hasObfuscatedChildren = true;
@@ -195,18 +192,17 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 				case Float  : icon = RawDataTreeIcons.Number; break;
 				case Integer: icon = RawDataTreeIcons.Number; break;
 				case Object : icon = RawDataTreeIcons.Object; break;
-				case String : icon = RawDataTreeIcons.String; break;
+				case String : icon = RawDataTreeIcons.String; setText( SaveViewer.steamIDs.getNameReplacement(((StringValue)value).value) ); break;
 				}
 			}
 			
-			if (label != null)
-				label.setIcon(icon==null?null:rawDataTreeIS.getCachedIcon(icon));
+			setIcon(icon==null?null:rawDataTreeIS.getCachedIcon(icon));
 			
-			if (isSelected)                                      component.setForeground(getTextSelectionColor());
-			else if (showDeObfuscation && hasObfuscatedChildren) component.setForeground(COLOR_HAS_OBFUSCATED_CHILDREN);
-			else if (showDeObfuscation && !wasDeObfuscated)      component.setForeground(COLOR_WAS_NOT_DEOBFUSCATED);
-			else if (wasProcessed)                               component.setForeground(Color.GRAY);
-			else                                                 component.setForeground(getTextNonSelectionColor());
+			if (isSelected)                                      setForeground(getTextSelectionColor());
+			else if (showDeObfuscation && hasObfuscatedChildren) setForeground(COLOR_HAS_OBFUSCATED_CHILDREN);
+			else if (showDeObfuscation && !wasDeObfuscated)      setForeground(COLOR_WAS_NOT_DEOBFUSCATED);
+			else if (wasProcessed)                               setForeground(Color.GRAY);
+			else                                                 setForeground(getTextNonSelectionColor());
 			
 			return component;
 		}
