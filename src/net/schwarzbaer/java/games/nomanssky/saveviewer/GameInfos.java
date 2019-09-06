@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -150,7 +151,8 @@ public class GameInfos {
 		boolean withWater;
 		boolean withGravitinoBalls;
 		Universe.Planet.BuriedTreasure buriedTreasure;
-		public boolean hasExtremeBiome;
+		boolean hasExtremeBiome;
+		EnumSet<Universe.Planet.Resources> resources;
 		
 		public UOD_Planet(UniverseAddress ua) {
 			super(ua, Type.Planet);
@@ -160,6 +162,7 @@ public class GameInfos {
 			withWater = false;
 			withGravitinoBalls = false;
 			buriedTreasure = null;
+			resources = EnumSet.noneOf(Universe.Planet.Resources.class);
 		}
 		public UOD_Planet(Planet planet) {
 			super(planet.getUniverseAddress(),Type.Planet,planet);
@@ -169,6 +172,7 @@ public class GameInfos {
 			withWater = planet.withWater;
 			withGravitinoBalls = planet.withGravitinoBalls;
 			buriedTreasure = planet.buriedTreasure;
+			resources = EnumSet.copyOf(planet.resources);
 		}
 	}
 	
@@ -231,6 +235,24 @@ public class GameInfos {
 			if (labels.contains(label)) return level;
 		}
 		return -1;
+	}
+
+	public static void findPlanetResources() {
+		HashSet<String> resources = new HashSet<>();
+		universeObjectDataArr.forEach((address, uoData)->{
+			if (uoData instanceof UOD_Planet) {
+				UOD_Planet planet = (UOD_Planet) uoData;
+				for (ExtraInfo exi:planet.extraInfos) {
+					String[] parts = exi.info.split(",");
+					for (String str:parts)
+						resources.add(str.trim());
+				}
+			}
+		});
+		Vector<String> vec = new Vector<>(resources);
+		vec.sort(null);
+		for (String str:vec)
+			SaveViewer.log_ln("Resource: \"%s\"", str);
 	}
 
 	public static void loadUniverseObjectDataFromFile() {
@@ -370,6 +392,15 @@ public class GameInfos {
 						valueStr = str.substring("buriedTreasure=".length());
 						try { planet.buriedTreasure = Universe.Planet.BuriedTreasure.valueOf(valueStr); }
 						catch (Exception e) { planet.buriedTreasure = null; }
+						continue;
+					}
+					if (str.startsWith("resources=")) {
+						valueStr = str.substring("resources=".length());
+						planet.resources.clear();
+						for (String resStr:valueStr.split(",")) {
+							try { planet.resources.add(Universe.Planet.Resources.valueOf(resStr)); }
+							catch (Exception e) {}
+						}
 						continue;
 					}
 				}
@@ -520,6 +551,11 @@ public class GameInfos {
 					planet.buriedTreasure = uod_planet.buriedTreasure;
 					if (withOutput) SaveViewer.log_ln("   Buried Treasure of %s was defined: %s",objName,planet.buriedTreasure);
 				}
+				if (!uod_planet.resources.isEmpty()) {
+					planet.resources.clear();
+					planet.resources.addAll(uod_planet.resources);
+					if (withOutput) SaveViewer.log_ln("   Resources of %s were defined: %s",objName,planet.resources);
+				}
 			}
 			
 			if (uniObj!=null) {
@@ -604,12 +640,13 @@ public class GameInfos {
 				}
 				
 				if (uod_planet!=null) {
-					if (uod_planet.biome           !=null) out.printf("biome=%s\r\n",uod_planet.biome);
-					if (uod_planet.hasExtremeBiome       ) out.printf("is extreme\r\n");
-					if (uod_planet.areSentinelsAggressive) out.printf("aggrSentinels\r\n");
-					if (uod_planet.withWater             ) out.printf("with water\r\n");
-					if (uod_planet.withGravitinoBalls    ) out.printf("gravitino balls\r\n");
-					if (uod_planet.buriedTreasure  !=null) out.printf("buriedTreasure=%s\r\n",uod_planet.buriedTreasure);
+					if ( uod_planet.biome           !=null) out.printf("biome=%s%n",uod_planet.biome);
+					if ( uod_planet.hasExtremeBiome       ) out.printf("is extreme%n");
+					if ( uod_planet.areSentinelsAggressive) out.printf("aggrSentinels%n");
+					if ( uod_planet.withWater             ) out.printf("with water%n");
+					if ( uod_planet.withGravitinoBalls    ) out.printf("gravitino balls%n");
+					if ( uod_planet.buriedTreasure  !=null) out.printf("buriedTreasure=%s%n",uod_planet.buriedTreasure);
+					if (!uod_planet.resources.isEmpty()   ) out.printf("resources=%s%n",String.join(",", Universe.Planet.Resources.getStringIterable(uod_planet.resources)));
 				}
 				
 				if (uod_uniObj!=null) {

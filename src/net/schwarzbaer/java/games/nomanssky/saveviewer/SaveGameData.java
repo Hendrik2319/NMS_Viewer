@@ -13,8 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -3067,6 +3069,44 @@ public class SaveGameData {
 				}
 			}
 			
+			public enum Resources {
+				Cu_    ("#Cu","^EX_YELLOW"),
+				Cd_    ("#Cd","^EX_RED"),
+				Em_    ("#Em","^EX_GREEN"),
+				In_    ("#In","^EX_BLUE"),
+				Cu     ("Cu","^YELLOW2"),
+				Cd     ("Cd","^RED2"),
+				Em     ("Em","^GREEN2"),
+				In     ("In","^BLUE2"),
+				
+				NH3    ("NH3","^TOXIC1"),
+				U      ("U","^RADIO1"),
+				P      ("P","^HOT1"),
+				Pf     ("Pf","^LUSH1"),
+				Py     ("Py","^DUSTY1"),
+				CO2    ("CO2","^COLD1"),
+				
+				Ag     ("Ag","^ASTEROID1"),
+				Au     ("Au","^ASTEROID2"),
+				Co     ("Co","^CAVE1"),
+				Fe_    ("Fe#","^LAND2"),
+				Fe__   ("Fe##","^LAND3"),
+				Na     ("Na","^CATALYST1"),
+				NaCl   ("NaCl","^WATER1"),
+				Sr_Rost("Sr_Rost","^SPACEGUNK3"),
+				Eiweiﬂperle("Eiweiﬂperle","^ALBUMENPEARL"),
+				;
+				private String label;
+				private String ID;
+				Resources(String label, String ID) {
+					this.label = label;
+					this.ID = ID;
+				}
+				public static Iterable<String> getStringIterable(Collection<Resources> resources) {
+					return () -> resources.stream().map(res->res.toString()).iterator();
+				}
+			}
+			
 			public static class AdditionalInfos {
 				public Vector<PersistentPlayerBase> bases;
 				public boolean hasExocraftSummoningStation;
@@ -3090,7 +3130,8 @@ public class SaveGameData {
 			public boolean withWater;
 			public boolean withGravitinoBalls;
 			public BuriedTreasure buriedTreasure;
-			public AdditionalInfos additionalInfos; 
+			public AdditionalInfos additionalInfos;
+			public EnumSet<Resources> resources;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				super(Type.Planet);
@@ -3103,6 +3144,7 @@ public class SaveGameData {
 				this.withGravitinoBalls = false;
 				this.buriedTreasure = null;
 				this.additionalInfos = new AdditionalInfos();
+				this.resources = EnumSet.noneOf(Resources.class);
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;

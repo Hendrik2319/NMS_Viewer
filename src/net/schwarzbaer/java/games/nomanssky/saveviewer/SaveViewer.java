@@ -115,6 +115,7 @@ public class SaveViewer implements ActionListener {
 		GameInfos.loadKnownStatIDsFromFile();
 		GameInfos.loadAllIDsFromFiles();
 		GameInfos.loadUniverseObjectDataFromFile();
+		GameInfos.findPlanetResources();
 		SaveGameData.Frigate.EditableModification.loadKnownEditableModsFromFile();
 		
 		if (args.length>0) {

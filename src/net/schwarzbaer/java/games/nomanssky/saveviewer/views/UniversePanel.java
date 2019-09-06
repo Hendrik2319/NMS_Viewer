@@ -43,6 +43,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -905,6 +906,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
 
 		private JCheckBox chkbxExtreme;
+
+		private JTextField txtfldResources;
+
+		private JButton btnSetResources;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);
@@ -940,12 +945,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			chkbxWater    = SaveViewer.createCheckbox("with Water"          , e->{ if (isSettingContent) return; node.value.withWater              = chkbxWater   .isSelected(); updateTreeNode(node, true ); }, false);
 			chkbxGrav     = SaveViewer.createCheckbox("with Gravitino Balls", e->{ if (isSettingContent) return; node.value.withGravitinoBalls     = chkbxGrav    .isSelected(); updateTreeNode(node, false); }, false);
 			
+			txtfldResources = new JTextField();
+			txtfldResources.setEditable(false);
+			btnSetResources = SaveViewer.createButton("Change", e->{
+				//TODO
+			});
+			
 			addCompToValuePanel(cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxExtreme       , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxAggrSent      , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxWater         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(chkbxGrav          , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToValuePanel(cmbbxBuriedTreasure, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(txtfldResources    , 1, 0, 1, 1, GridBagConstraints.BOTH);
+			addCompToValuePanel(btnSetResources    , 0, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 		}
 		
 		@Override
@@ -963,6 +976,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			chkbxGrav    .setSelected(planet.withGravitinoBalls);
 			cmbbxBuriedTreasure.setSelectedItem(planet.buriedTreasure);
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
+			
+			txtfldResources.setText(String.join(", ", Universe.Planet.Resources.getStringIterable(planet.resources)));
 			
 			clearText();
 			appendln("Universe Coordinates       : %s"     , ua.getCoordinates());
