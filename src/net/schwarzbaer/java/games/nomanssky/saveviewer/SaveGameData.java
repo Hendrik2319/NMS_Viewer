@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -3096,14 +3097,39 @@ public class SaveGameData {
 				Sr_Rost("Sr_Rost","^SPACEGUNK3"),
 				Eiweiﬂperle("Eiweiﬂperle","^ALBUMENPEARL"),
 				;
-				private String label;
-				private String ID;
+				public final String label;
+				public final String ID;
 				Resources(String label, String ID) {
 					this.label = label;
 					this.ID = ID;
 				}
 				public static Iterable<String> getStringIterable(Collection<Resources> resources) {
-					return () -> resources.stream().map(res->res.toString()).iterator();
+					return getStringIterable(resources, Resources::toString);
+				}
+				public static Iterable<String> getStringIterable(Collection<Resources> resources, Function<Resources,String> convert) {
+					return () -> resources.stream().map(convert).iterator();
+				}
+				public static Resources getViaLabel(String label) {
+					for (Resources res:values())
+						if (res.label.equals(label))
+							return res;
+					return null;
+				}
+				public GeneralizedID getGeneralizedID() {
+					GeneralizedID id = null;
+					if (id==null) id = GameInfos.productIDs  .getIfContains(ID);
+					if (id==null) id = GameInfos.substanceIDs.getIfContains(ID);
+					return id;
+				}
+				public String getShortLabel() {
+					return label;
+				}
+				public String getLongLabel() {
+					GeneralizedID id = getGeneralizedID();
+					if (id!=null) {
+						if (id.hasLabel ()) return id.getLabel ();
+					}
+					return label;
 				}
 			}
 			

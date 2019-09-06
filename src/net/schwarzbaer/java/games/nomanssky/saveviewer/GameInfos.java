@@ -69,6 +69,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Dis
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Resources;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
@@ -238,21 +239,24 @@ public class GameInfos {
 	}
 
 	public static void findPlanetResources() {
-		HashSet<String> resources = new HashSet<>();
+		EnumSet<Resources> resources = EnumSet.noneOf(Universe.Planet.Resources.class);
 		universeObjectDataArr.forEach((address, uoData)->{
 			if (uoData instanceof UOD_Planet) {
 				UOD_Planet planet = (UOD_Planet) uoData;
 				for (ExtraInfo exi:planet.extraInfos) {
-					String[] parts = exi.info.split(",");
-					for (String str:parts)
-						resources.add(str.trim());
-				}
+					if (exi.info.startsWith("<ParsedPlanetaryResources>")) continue;
+					resources.clear();
+					for (String str:exi.info.split(",")) {
+						Resources res = Universe.Planet.Resources.getViaLabel(str.trim());
+						if (res!=null) resources.add(res);
+						else { resources.clear(); break; }
+					}
+					if (!resources.isEmpty()) {
+						exi.info = "<ParsedPlanetaryResources> "+exi.info;
+						planet.resources.addAll(resources);
+					}				}
 			}
 		});
-		Vector<String> vec = new Vector<>(resources);
-		vec.sort(null);
-		for (String str:vec)
-			SaveViewer.log_ln("Resource: \"%s\"", str);
 	}
 
 	public static void loadUniverseObjectDataFromFile() {
@@ -723,6 +727,14 @@ public class GameInfos {
 		for (GeneralizedID id:techIDs     .getValues()) id.usage.remove(oldData);
 		for (GeneralizedID id:substanceIDs.getValues()) id.usage.remove(oldData);
 	}
+	
+	public static GeneralizedID getGeneralizedID(String id) {
+		GeneralizedID generalizedID = null;
+		if (generalizedID==null) generalizedID = productIDs  .getIfContains(id);
+		if (generalizedID==null) generalizedID = techIDs     .getIfContains(id);
+		if (generalizedID==null) generalizedID = substanceIDs.getIfContains(id);
+		return generalizedID;
+	}
 
 	public static class IDMap {
 		private HashMap<String, GeneralizedID> map;
@@ -766,6 +778,10 @@ public class GameInfos {
 			GeneralizedID newID = new GeneralizedID(id);
 			GeneralizedID existingID = map.putIfAbsent(id, newID);
 			return existingID==null ? newID : existingID;
+		}
+		
+		public GeneralizedID getIfContains(String id) {
+			return map.get(id);
 		}
 
 		public void remove(GeneralizedID id) {

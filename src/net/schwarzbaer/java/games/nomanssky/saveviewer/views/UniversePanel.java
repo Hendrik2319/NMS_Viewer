@@ -73,6 +73,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Gal
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.BuriedTreasure;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Resources;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
@@ -948,7 +949,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			txtfldResources = new JTextField();
 			txtfldResources.setEditable(false);
 			btnSetResources = SaveViewer.createButton("Change", e->{
-				//TODO
+				//TODO Dialog for setting planetary resources
 			});
 			
 			addCompToValuePanel(cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
@@ -977,7 +978,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			cmbbxBuriedTreasure.setSelectedItem(planet.buriedTreasure);
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 			
-			txtfldResources.setText(String.join(", ", Universe.Planet.Resources.getStringIterable(planet.resources)));
+			String txtfldStr = String.join(", ", Universe.Planet.Resources.getStringIterable(planet.resources, Resources::getShortLabel));
+			txtfldResources.setText(txtfldStr);
 			
 			clearText();
 			appendln("Universe Coordinates       : %s"     , ua.getCoordinates());
