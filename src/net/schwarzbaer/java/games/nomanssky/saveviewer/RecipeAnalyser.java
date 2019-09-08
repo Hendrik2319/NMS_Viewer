@@ -67,10 +67,10 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTabl
 public class RecipeAnalyser implements ActionListener {
 	private static final String RECIPE_ANALYSER_CFG = "NMS_Viewer.RecipeAnalyser.cfg";
 
-	private static final Color COLOR_NAME_MARKER = new Color(0,213,255);
-	private static final Color COLOR_NAME_PRODUCIBLE = new Color(0,255,102);
-	private static final Color COLOR_NAME_INPUT  = new Color(255,204,153);
-	private static final Color COLOR_NAME_OUTPUT = new Color(204,255,0);
+	private static final Color COLOR_INGREDIENT_MARKER = new Color(0,213,255);
+	private static final Color COLOR_INGREDIENT_PRODUCIBLE = new Color(0,255,102);
+	private static final Color COLOR_INGREDIENT_INPUT  = new Color(255,204,153);
+	private static final Color COLOR_INGREDIENT_OUTPUT = new Color(204,255,0);
 
 	private static final Color COLOR_RECIPE_ODD  = new Color(1.0f,1.0f,0.8f);
 	private static final Color COLOR_RECIPE_EVEN = Color.WHITE;
@@ -92,31 +92,32 @@ public class RecipeAnalyser implements ActionListener {
 
 	private FileChooser               fileChooser = null;
 	private StandardMainWindow        mainwindow = null;
-	private TableView.SimplifiedTable namesTable = null;
-	private NamesTableModel           namesTableModel = null;
+	private TableView.SimplifiedTable ingredientsTable = null;
+	private IngredientsTableModel     ingredientsTableModel = null;
 	private TableView.SimplifiedTable recipesTable = null;
 	private RecipesTableModel         recipesTableModel = null;
 	private RecipesTableRenderer      recipesTableRenderer = null;
-	private JTable                    rawNamesTable = null;
+	private JTable                    rawIngredientsTable = null;
 	private JTable                    rawRecipesTable = null;
 	
-	private JCheckBoxMenuItem miHighlightProducibleInNamesTable = null;
+	private JCheckBoxMenuItem miHighlightProducibleInIngredientsTable = null;
 	
 	private File currentOpenDataFile = null;
-	private Vector<String[]> rawNamesData   = null;
+	private Vector<String[]> rawIngredientsData   = null;
 	private Vector<String[]> rawRecipesData = null;
+	private RecipeListConfig recipeListConfig = null;
 
 	private StatusFields statusFields;
 
-	private Name getName(Integer nameIndex) {
-		if (nameIndex==null) return null;
-		if (namesTableModel==null) return null;
-		return namesTableModel.getName(nameIndex);
+	private Ingredient getIngredient(Integer ingredientIndex) {
+		if (ingredientIndex==null) return null;
+		if (ingredientsTableModel==null) return null;
+		return ingredientsTableModel.getIngredient(ingredientIndex);
 	}
-	private String getNameStr(Integer nameIndex) {
-		if (nameIndex==null) return "";
-		if (namesTableModel==null) return "<"+nameIndex+">";
-		return namesTableModel.getNameStr(nameIndex);
+	private String getIngredientName(Integer ingredientIndex) {
+		if (ingredientIndex==null) return "";
+		if (ingredientsTableModel==null) return "<"+ingredientIndex+">";
+		return ingredientsTableModel.getIngredientName(ingredientIndex);
 	}
 
 	private RecipeAnalyser readConfig() {
@@ -154,15 +155,15 @@ public class RecipeAnalyser implements ActionListener {
 
 	enum ActionCommand {
 		CopyRecipesFromClipBoard,
-		CopyNamesFromClipBoard,
+		CopyIngredientsFromClipBoard,
 		OpenDataFile,
 		SaveDataFile,
 		SaveDataFileAs,
 		FindConflictingRecipes,
 		FindBasicRecipes,
-		FindCombinableInputs,
-		ClearMarkersInNamesTable,
-		HighlightProducibleInNamesTable,
+		FindCombinableIngredients,
+		ClearMarkersInIngredientsTable,
+		HighlightProducibleInIngredientsTable,
 		FindRecipes, SetInStock, UnsetInStock,
 		;
 	}
@@ -170,47 +171,47 @@ public class RecipeAnalyser implements ActionListener {
 	private RecipeAnalyser createGUI(boolean standalone) {
 		fileChooser = new FileChooser("RecipeAnalyser Data File", "recipes");
 		
-		NamesTableRenderer namesTableRenderer = new NamesTableRenderer();
-		namesTable = new TableView.SimplifiedTable("RecipesTable", true, true, false);
-		namesTable.setCellRendererForAllColumns(namesTableRenderer, true);
-		namesTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+		IngredientsTableRenderer ingredientsTableRenderer = new IngredientsTableRenderer();
+		ingredientsTable = new TableView.SimplifiedTable("IngredientsTable", true, true, false);
+		ingredientsTable.setCellRendererForAllColumns(ingredientsTableRenderer, true);
+		ingredientsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JCheckBox()));
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new Boolean[] {true, false})));
-		namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new String[] {"In Stock","---"})));
+		ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new String[] {"In Stock","---"})));
 		
-		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, ActionCommand.HighlightProducibleInNamesTable);
-		JMenuItem miFindCombinableInputs = SaveViewer.createMenuItem("Mark all inputs, that are combinable (#,#) with ####", this, ActionCommand.FindCombinableInputs);
+		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, ActionCommand.HighlightProducibleInIngredientsTable);
+		JMenuItem miFindCombinableIngredients = SaveViewer.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, ActionCommand.FindCombinableIngredients);
 		JMenuItem miFindRecipes = SaveViewer.createMenuItem("Find recipe chain for ####", this, ActionCommand.FindRecipes);
 		
-		namesTable.addContextMenuInvokeListener((rowV, columnV)->{
-			if (namesTableModel==null) return;
+		ingredientsTable.addContextMenuInvokeListener((rowV, columnV)->{
+			if (ingredientsTableModel==null) return;
 			
-			int rowM = namesTable.convertRowIndexToModel(rowV);
-			Name name = namesTableModel.getNameAtRow(rowM);
-			String nameStr = name==null?null:name.getName();
-			boolean hasName = nameStr != null;
-			String nameStr2 = hasName ? ("\""+nameStr+"\"") : "<???>";
-			namesTableModel.clickedName = hasName ? name : null;
+			int rowM = ingredientsTable.convertRowIndexToModel(rowV);
+			Ingredient ingredient = ingredientsTableModel.getIngredientAtRow(rowM);
+			String name = ingredient==null?null:ingredient.getName();
+			boolean hasName = name != null;
+			String name2 = hasName ? ("\""+name+"\"") : "<???>";
+			ingredientsTableModel.clickedIngredient = hasName ? ingredient : null;
 
-			miFindCombinableInputs.setText(String.format("Mark all inputs, that are combinable (#,#) with %s", nameStr2));
-			miFindCombinableInputs.setEnabled(hasName);
+			miFindCombinableIngredients.setText(String.format("Mark all ingredients, that are combinable (#,#) with %s", name2));
+			miFindCombinableIngredients.setEnabled(hasName);
 			
-			miHighlightProducible.setSelected(namesTableModel.highlightProducible);
+			miHighlightProducible.setSelected(ingredientsTableModel.highlightProducible);
 			
-			boolean isProducible = hasName && name.isOutputValue && namesTableModel.producible.contains(name.nameIndex);
-			miFindRecipes.setText(String.format("Find recipe chain for %s", nameStr2));
+			boolean isProducible = hasName && ingredient.isOutputValue && ingredientsTableModel.producible.contains(ingredient.ingredientIndex);
+			miFindRecipes.setText(String.format("Find recipe chain for %s", name2));
 			miFindRecipes.setEnabled(isProducible);
 		});
 		
-		DebugTableContextMenu contextMenu = namesTable.getDebugTableContextMenu();
+		DebugTableContextMenu contextMenu = ingredientsTable.getDebugTableContextMenu();
 		contextMenu.addSeparator();
-		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected inputs", this, ActionCommand.FindBasicRecipes));
+		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, ActionCommand.FindBasicRecipes));
 		contextMenu.addSeparator();
-		contextMenu.add(miFindCombinableInputs);
-		contextMenu.add(SaveViewer.createMenuItem("Clear markers", this, ActionCommand.ClearMarkersInNamesTable));
+		contextMenu.add(miFindCombinableIngredients);
+		contextMenu.add(SaveViewer.createMenuItem("Clear markers", this, ActionCommand.ClearMarkersInIngredientsTable));
 		contextMenu.addSeparator();
-		contextMenu.add(SaveViewer.createMenuItem("Set InStock for selected inputs", this, ActionCommand.SetInStock));
-		contextMenu.add(SaveViewer.createMenuItem("Unset InStock for selected inputs", this, ActionCommand.UnsetInStock));
+		contextMenu.add(SaveViewer.createMenuItem("Set InStock for selected ingredients", this, ActionCommand.SetInStock));
+		contextMenu.add(SaveViewer.createMenuItem("Unset InStock for selected ingredients", this, ActionCommand.UnsetInStock));
 		contextMenu.add(miHighlightProducible);
 		contextMenu.add(miFindRecipes);
 		
@@ -219,18 +220,18 @@ public class RecipeAnalyser implements ActionListener {
 		recipesTable.setCellRendererForAllColumns(recipesTableRenderer, true);
 		recipesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
-		rawNamesTable = new JTable();
-		rawNamesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		rawNamesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		rawIngredientsTable = new JTable();
+		rawIngredientsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		rawIngredientsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
 		rawRecipesTable = new JTable();
 		rawRecipesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		rawRecipesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
 		JTabbedPane tableTabs = new JTabbedPane();
-		tableTabs.addTab("Names", new JScrollPane(namesTable));
+		tableTabs.addTab("Ingredients", new JScrollPane(ingredientsTable));
 		tableTabs.addTab("Recipes", new JScrollPane(recipesTable));
-		tableTabs.addTab("Names (Raw Data)", new JScrollPane(rawNamesTable));
+		tableTabs.addTab("Ingredients (Raw Data)", new JScrollPane(rawIngredientsTable));
 		tableTabs.addTab("Recipes (Raw Data)", new JScrollPane(rawRecipesTable));
 		tableTabs.setPreferredSize(new Dimension(1100,800));
 		
@@ -241,19 +242,19 @@ public class RecipeAnalyser implements ActionListener {
 		
 		JMenu menuData = new JMenu("Data");
 		menuData.add(SaveViewer.createMenuItem("Get recipe data from clipboard", this, ActionCommand.CopyRecipesFromClipBoard));
-		menuData.add(SaveViewer.createMenuItem("Get table of names from clipboard", this, ActionCommand.CopyNamesFromClipBoard));
+		menuData.add(SaveViewer.createMenuItem("Get ingredients data from clipboard", this, ActionCommand.CopyIngredientsFromClipBoard));
 		menuData.addSeparator();
 		menuData.add(SaveViewer.createMenuItem("Read data from file ..."   , this, ActionCommand.OpenDataFile));
 		menuData.add(SaveViewer.createMenuItem("Write data to file"        , this, ActionCommand.SaveDataFile));
 		menuData.add(SaveViewer.createMenuItem("Write data to new file ...", this, ActionCommand.SaveDataFileAs));
 		
-		miHighlightProducibleInNamesTable = SaveViewer.createCheckBoxMenuItem("Highlight producible in names table", this, ActionCommand.HighlightProducibleInNamesTable);
+		miHighlightProducibleInIngredientsTable = SaveViewer.createCheckBoxMenuItem("Highlight producible in ingredients table", this, ActionCommand.HighlightProducibleInIngredientsTable);
 		JMenu menuAnalyse = new JMenu("Analyse");
-		menuAnalyse.add(SaveViewer.createMenuItem("Clear markers in names table", this, ActionCommand.ClearMarkersInNamesTable));
-		menuAnalyse.add(miHighlightProducibleInNamesTable);
+		menuAnalyse.add(SaveViewer.createMenuItem("Clear markers in ingredients table", this, ActionCommand.ClearMarkersInIngredientsTable));
+		menuAnalyse.add(miHighlightProducibleInIngredientsTable);
 		menuAnalyse.addSeparator();
-		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same input but different output", this, ActionCommand.FindConflictingRecipes));
-		menuAnalyse.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected names", this, ActionCommand.FindBasicRecipes));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same ingredient but different result", this, ActionCommand.FindConflictingRecipes));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, ActionCommand.FindBasicRecipes));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -301,8 +302,8 @@ public class RecipeAnalyser implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		switch(ActionCommand.valueOf(e.getActionCommand())) {
 		
-		case CopyNamesFromClipBoard  : parseNamesTable  (parseTabTable(SaveViewer.pasteFromClipBoard())); break;
-		case CopyRecipesFromClipBoard: parseRecipesTable(parseTabTable(SaveViewer.pasteFromClipBoard())); break;
+		case CopyIngredientsFromClipBoard: parseIngredientsTable(parseTabTable(SaveViewer.pasteFromClipBoard())); break;
+		case CopyRecipesFromClipBoard    : parseRecipesTable    (parseTabTable(SaveViewer.pasteFromClipBoard())); break;
 		
 		case OpenDataFile:
 			if (fileChooser.showOpenDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
@@ -338,8 +339,8 @@ public class RecipeAnalyser implements ActionListener {
 							messages.append(
 									String.format(
 											"Found conflicting recipes: Recipe %d (%s) and %d (%s) for inputs (%s)%n",
-											recipe    .index, getNameStr(recipe    .outputValue),
-											lastRecipe.index, getNameStr(lastRecipe.outputValue),
+											recipe    .index, getIngredientName(recipe    .outputValue),
+											lastRecipe.index, getIngredientName(lastRecipe.outputValue),
 											combi.toString()
 									)
 							);
@@ -354,11 +355,11 @@ public class RecipeAnalyser implements ActionListener {
 			break;
 			
 		case FindBasicRecipes:
-			if (namesTableModel!=null) {
+			if (ingredientsTableModel!=null) {
 				StringBuilder messages = new StringBuilder();
-				Integer[] selectedNames = namesTableModel.getSelectedNames();
+				Integer[] selectedIngredients = ingredientsTableModel.getSelected();
 				HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
-				for (int value:selectedNames) {
+				for (int value:selectedIngredients) {
 					InputValueCombination singleCombi = new InputValueCombination(value);
 					InputValueCombination doubleCombi = new InputValueCombination(value,value);
 					if (!allCombis.contains(singleCombi)) messages.append( String.format( "Can't find a recipes for (%s)%n", singleCombi.toString() ) );
@@ -373,13 +374,13 @@ public class RecipeAnalyser implements ActionListener {
 			break;
 			
 		case FindRecipes:
-			if (namesTableModel!=null && namesTableModel.clickedName!=null && recipesTableModel!=null) {
+			if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipesTableModel!=null) {
 				HashMap<Integer,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
-				for (Integer n:namesTableModel.producible)
+				for (Integer n:ingredientsTableModel.producible)
 					allProdRecipe.put(n, new HashSet<InputValueCombination>());
 				for (Recipe recipe:recipesTableModel.recipes) {
-					if (namesTableModel.producible.contains(recipe.outputValue)) {
-						HashSet<InputValueCombination> allowedCombis = recipe.expand(namesTableModel.producible::contains);
+					if (ingredientsTableModel.producible.contains(recipe.outputValue)) {
+						HashSet<InputValueCombination> allowedCombis = recipe.expand(ingredientsTableModel.producible::contains);
 						allProdRecipe.get(recipe.outputValue).addAll(allowedCombis);
 					}
 				}
@@ -388,7 +389,7 @@ public class RecipeAnalyser implements ActionListener {
 				//		System.out.printf("%s <-- %s%n", getNameStr(output), combi.toString());
 				
 				//HashSet<InputValueCombination> allowedCombis = allProdRecipe.get( namesTableModel.clickedName.nameIndex );
-				RecipeChainFinder recipeChainFinder = new RecipeChainFinder(namesTableModel.clickedName.nameIndex,allProdRecipe,this::getNameStr);
+				RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredientsTableModel.clickedIngredient.ingredientIndex,allProdRecipe,this::getIngredientName);
 				recipeChainFinder.printTree(System.out);
 				//recipeChainFinder.getShortestRecipeChain();
 				
@@ -396,47 +397,47 @@ public class RecipeAnalyser implements ActionListener {
 			}
 			break;
 			
-		case FindCombinableInputs:
-			if (namesTableModel!=null && namesTableModel.clickedName!=null) {
+		case FindCombinableIngredients:
+			if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null) {
 				HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
-				namesTableModel.highlighted.clear();
-				namesTableModel.forEachName(name -> {
-					InputValueCombination combi = new InputValueCombination(namesTableModel.clickedName.nameIndex,name.nameIndex);
+				ingredientsTableModel.highlighted.clear();
+				ingredientsTableModel.forEach(ingredient -> {
+					InputValueCombination combi = new InputValueCombination(ingredientsTableModel.clickedIngredient.ingredientIndex,ingredient.ingredientIndex);
 					if (allCombis.contains(combi))
-						namesTableModel.highlighted.add(name.nameIndex);
+						ingredientsTableModel.highlighted.add(ingredient.ingredientIndex);
 				});
-				namesTableModel.fireTableUpdate();
+				ingredientsTableModel.fireTableUpdate();
 			}
 			break;
 			
-		case ClearMarkersInNamesTable:
-			if (namesTableModel!=null) {
-				namesTableModel.highlighted.clear();
-				namesTableModel.fireTableUpdate();
+		case ClearMarkersInIngredientsTable:
+			if (ingredientsTableModel!=null) {
+				ingredientsTableModel.highlighted.clear();
+				ingredientsTableModel.fireTableUpdate();
 			}
 			break;
 			
-		case HighlightProducibleInNamesTable:
-			if (namesTableModel!=null) {
-				namesTableModel.highlightProducible = !namesTableModel.highlightProducible;
-				miHighlightProducibleInNamesTable.setSelected(namesTableModel.highlightProducible);
-				namesTableModel.fireTableUpdate();
+		case HighlightProducibleInIngredientsTable:
+			if (ingredientsTableModel!=null) {
+				ingredientsTableModel.highlightProducible = !ingredientsTableModel.highlightProducible;
+				miHighlightProducibleInIngredientsTable.setSelected(ingredientsTableModel.highlightProducible);
+				ingredientsTableModel.fireTableUpdate();
 			}
 			break;
 			
 		case SetInStock:
-			if (namesTableModel!=null) {
-				namesTableModel.forEachSelectedName(name->name.isInStock = true);
-				namesTableModel.updateProducibility();
-				namesTableModel.fireTableUpdate();
+			if (ingredientsTableModel!=null) {
+				ingredientsTableModel.forEachSelected(ingredient->ingredient.isInStock = true);
+				ingredientsTableModel.updateProducibility();
+				ingredientsTableModel.fireTableUpdate();
 			}
 			break;
 			
 		case UnsetInStock:
-			if (namesTableModel!=null) {
-				namesTableModel.forEachSelectedName(name->name.isInStock = false);
-				namesTableModel.updateProducibility();
-				namesTableModel.fireTableUpdate();
+			if (ingredientsTableModel!=null) {
+				ingredientsTableModel.forEachSelected(ingredient->ingredient.isInStock = false);
+				ingredientsTableModel.updateProducibility();
+				ingredientsTableModel.fireTableUpdate();
 			}
 			break;
 			
@@ -452,12 +453,46 @@ public class RecipeAnalyser implements ActionListener {
 			}
 		return allCombis;
 	}
+	
+	private static class RecipeListConfig {
+		enum Type { NutrientProcessor, Refiner }
+		Type type;
+		
+		private RecipeListConfig() {
+			this.type = Type.NutrientProcessor;
+		}
+		
+		public static RecipeListConfig readFromZIP(ZipFile zipin, String entryName) throws IOException {
+			RecipeListConfig cfg = new RecipeListConfig();
+			
+			ZipEntry entry = zipin.getEntry(entryName);
+			if (entry == null) return cfg; // no config
+			
+			BufferedReader in = new BufferedReader( new InputStreamReader(zipin.getInputStream(entry), StandardCharsets.UTF_8));
+			String line;
+			while ( (line=in.readLine())!=null ) {
+				if (line.startsWith("type=")) {
+					try { cfg.type = Type.valueOf( line.substring("type=".length()) ); }
+					catch (Exception e) {}
+				}
+			}
+			return cfg;
+		}
+		public void writeToZIP(ZipOutputStream zipout, PrintWriter out, String entryName) throws IOException {
+			zipout.putNextEntry(new ZipEntry(entryName));
+			out.printf("type=%s%n",type);
+			out.flush();
+			zipout.closeEntry();
+		}
+	}
 
 	private void readDataFromFile(File file) {
 		try (ZipFile zipin = new ZipFile(file)) {
-			rawNamesData   = readTabTableFromZIP(zipin, "names"  );
-			rawRecipesData = readTabTableFromZIP(zipin, "recipes");
-			parseNamesTable  (rawNamesData  );
+			recipeListConfig = RecipeListConfig.readFromZIP(zipin, "RecipeListConfig");
+			rawIngredientsData = readTabTableFromZIP(zipin, "ingredients");
+			if (rawIngredientsData==null) rawIngredientsData = readTabTableFromZIP(zipin, "names"  ); // TODO
+			rawRecipesData     = readTabTableFromZIP(zipin, "recipes");
+			parseIngredientsTable  (rawIngredientsData  );
 			parseRecipesTable(rawRecipesData);
 		} catch (ZipException e) {
 			e.printStackTrace();
@@ -471,8 +506,9 @@ public class RecipeAnalyser implements ActionListener {
 				ZipOutputStream zipout = new ZipOutputStream(new FileOutputStream(file));
 				PrintWriter out = new PrintWriter(new OutputStreamWriter(zipout, StandardCharsets.UTF_8));
 		) {
-			writeTabTableToZIP(zipout, out, "names"  , rawNamesData  );
-			writeTabTableToZIP(zipout, out, "recipes", rawRecipesData);
+			recipeListConfig.writeToZIP(zipout, out, "RecipeListConfig");
+			writeTabTableToZIP(zipout, out, "ingredients", rawIngredientsData  );
+			writeTabTableToZIP(zipout, out, "recipes"    , rawRecipesData);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -517,21 +553,21 @@ public class RecipeAnalyser implements ActionListener {
 		return rawTabTable;
 	}
 
-	private void parseNamesTable(Vector<String[]> rawTabTable) {
+	private void parseIngredientsTable(Vector<String[]> rawTabTable) {
 		if (rawTabTable==null) return;
 		
-		rawNamesData = rawTabTable;
-		rawNamesTable.setModel(new RawdataModel(rawTabTable));
+		rawIngredientsData = rawTabTable;
+		rawIngredientsTable.setModel(new RawdataModel(rawTabTable));
 		
-		Name[] nameIndexes = new Name[rawTabTable.size()];
-		Arrays.fill(nameIndexes, null);
+		Ingredient[] indexedIngredients = new Ingredient[rawTabTable.size()];
+		Arrays.fill(indexedIngredients, null);
 		try {
-			Vector<Name> names = parseNames(rawTabTable, nameIndexes);
-			namesTableModel = new NamesTableModel(names, nameIndexes);
-			namesTable.setModel(namesTableModel);
+			Vector<Ingredient> ingredients = parseIngredients(rawTabTable, indexedIngredients);
+			ingredientsTableModel = new IngredientsTableModel(ingredients, indexedIngredients);
+			ingredientsTable.setModel(ingredientsTableModel);
 			if (recipesTableModel!=null) recipesTableModel.fireTableUpdate();
 			checkInputOutput();
-			namesTableModel.updateProducibility();
+			ingredientsTableModel.updateProducibility();
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
@@ -548,8 +584,8 @@ public class RecipeAnalyser implements ActionListener {
 			recipesTableModel = new RecipesTableModel(recipes);
 			recipesTable.setModel(recipesTableModel);
 			checkInputOutput();
-			if (namesTableModel!=null)
-				namesTableModel.updateProducibility();
+			if (ingredientsTableModel!=null)
+				ingredientsTableModel.updateProducibility();
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
@@ -557,33 +593,33 @@ public class RecipeAnalyser implements ActionListener {
 
 	private void checkInputOutput() {
 		if (recipesTableModel==null) return;
-		if (namesTableModel==null) return;
+		if (ingredientsTableModel==null) return;
 		
-		for (Name name:namesTableModel.names) {
-			if (name!=null) {
-				name.isOutputValue = false;
-				name.isInputValue = false;
+		for (Ingredient ingredient:ingredientsTableModel.ingredients) {
+			if (ingredient!=null) {
+				ingredient.isOutputValue = false;
+				ingredient.isInputValue = false;
 			}
 		}
 		
-		Name name;
+		Ingredient ingredient;
 		for (Recipe recipe:recipesTableModel.recipes) {
 			
-			name = getName(recipe.outputValue);
-			if (name!=null) name.isOutputValue = true;
+			ingredient = getIngredient(recipe.outputValue);
+			if (ingredient!=null) ingredient.isOutputValue = true;
 			
 			for (Vector<Integer> inputValues:recipe.inputValues) {
 				for (Integer inputValue:inputValues) {
-					name = getName(inputValue);
-					if (name!=null) name.isInputValue = true;
+					ingredient = getIngredient(inputValue);
+					if (ingredient!=null) ingredient.isInputValue = true;
 				}
 			}
 		}
 	}
 
-	private Vector<Name> parseNames(Vector<String[]> rawTabTable, Name[] nameIndexes) throws ParseException {
-		Vector<Name> names = new Vector<>();
-		Name lastName = null;
+	private Vector<Ingredient> parseIngredients(Vector<String[]> rawTabTable, Ingredient[] indexedIngredients) throws ParseException {
+		Vector<Ingredient> ingredients = new Vector<>();
+		Ingredient last = null;
 		for (int row=0; row<rawTabTable.size(); row++) {
 			String[] rowData = rawTabTable.get(row);
 			
@@ -592,15 +628,15 @@ public class RecipeAnalyser implements ActionListener {
 			String nameEN = rowData.length>2?rowData[2]:"";
 			String desc   = rowData.length>3?rowData[3]:"";
 			
-			Name name = null;
+			Ingredient ingredient = null;
 			if (!type.isEmpty() || !nameDE.isEmpty() || !nameEN.isEmpty() || !desc.isEmpty())
-				name = new Name(row+1,type,nameDE,nameEN,desc);
+				ingredient = new Ingredient(row+1,type,nameDE,nameEN,desc);
 			
-			nameIndexes[row] = name;
-			if (name!=null || lastName!=null)
-				names.add(lastName = name);
+			indexedIngredients[row] = ingredient;
+			if (ingredient!=null || last!=null)
+				ingredients.add(last = ingredient);
 		}
-		return names;
+		return ingredients;
 	}
 
 	private Vector<Recipe> parseRecipes(Vector<String[]> rawTabTable) throws ParseException {
@@ -732,14 +768,14 @@ public class RecipeAnalyser implements ActionListener {
 	
 	}
 
-	private static class Name {
+	private static class Ingredient {
 
-		private enum NameType {
+		private enum Type {
 			IM, IP0, IP1, IP2A, IP2B, IR0, IR1, IR2, IRM, IRX, IAF, IAK, BC, BH, EI, EP
 		}
 
-		private int nameIndex;
-		private NameType type;
+		private int ingredientIndex;
+		private Type type;
 		private String typeStr;
 		private String nameDE;
 		private String nameEN;
@@ -748,10 +784,10 @@ public class RecipeAnalyser implements ActionListener {
 		private boolean isOutputValue = false;
 		private boolean isInStock = false;
 
-		public Name(int nameIndex, String type, String nameDE, String nameEN, String desc) {
-			this.nameIndex = nameIndex;
+		public Ingredient(int ingredientIndex, String type, String nameDE, String nameEN, String desc) {
+			this.ingredientIndex = ingredientIndex;
 			this.typeStr = type;
-			try { this.type = NameType.valueOf(type); }
+			try { this.type = Type.valueOf(type); }
 			catch (Exception e) { this.type = null; }
 			this.nameDE = nameDE;
 			this.nameEN = nameEN;
@@ -766,8 +802,8 @@ public class RecipeAnalyser implements ActionListener {
 
 		@Override
 		public String toString() {
-			String nameStr = getName();
-			return String.format("Name [%d] <%s> \"%s\" %s%s%s", nameIndex, typeStr, nameStr==null?"":nameStr, isInputValue?"I":"-", isOutputValue?"O":"-", isInStock?"S":"-");
+			String name = getName();
+			return String.format("Name [%d] <%s> \"%s\" %s%s%s", ingredientIndex, typeStr, name==null?"":name, isInputValue?"I":"-", isOutputValue?"O":"-", isInStock?"S":"-");
 		}
 		
 	}
@@ -795,7 +831,7 @@ public class RecipeAnalyser implements ActionListener {
 
 		@Override
 		public String toString() {
-			return "Recipe " + index + " (" + getNameStr(outputValue) + ")";
+			return "Recipe " + index + " (" + getIngredientName(outputValue) + ")";
 		}
 
 		public HashSet<InputValueCombination> expand() {
@@ -877,9 +913,9 @@ public class RecipeAnalyser implements ActionListener {
 		@Override
 		public String toString() {
 			switch (values.length) {
-			case 1: return String.format("%s"        , getNameStr(values[0]) );
-			case 2: return String.format("%s, %s"    , getNameStr(values[0]), getNameStr(values[1]));
-			case 3: return String.format("%s, %s, %s", getNameStr(values[0]), getNameStr(values[1]), getNameStr(values[2]) );
+			case 1: return String.format("%s"        , getIngredientName(values[0]) );
+			case 2: return String.format("%s, %s"    , getIngredientName(values[0]), getIngredientName(values[1]));
+			case 3: return String.format("%s, %s, %s", getIngredientName(values[0]), getIngredientName(values[1]), getIngredientName(values[2]) );
 			}
 			return Arrays.toString(values);
 		}
@@ -917,15 +953,15 @@ public class RecipeAnalyser implements ActionListener {
 		}
 	}
 
-	private class NamesTableRenderer extends DefaultTableCellRenderer {
+	private class IngredientsTableRenderer extends DefaultTableCellRenderer {
 		private static final long serialVersionUID = -5822408016974497527L;
 
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 			Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 			
-			if (namesTableModel!=null) {
-				switch (namesTableModel.getColumnID(column)) {
+			if (ingredientsTableModel!=null) {
+				switch (ingredientsTableModel.getColumnID(column)) {
 				case Index:
 				case Type:
 				case InStock:
@@ -937,13 +973,13 @@ public class RecipeAnalyser implements ActionListener {
 					setHorizontalAlignment(LEFT); break;
 				}
 				
-				Name name = namesTableModel.getNameAtRow(row);
+				Ingredient ingredient = ingredientsTableModel.getIngredientAtRow(row);
 				if (!isSelected) {
-					if (name!=null && name.getName()!=null) {
-						if      (namesTableModel.highlighted.contains(name.nameIndex)) setBackground(COLOR_NAME_MARKER);
-						else if (namesTableModel.highlightProducible && namesTableModel.producible .contains(name.nameIndex)) setBackground(COLOR_NAME_PRODUCIBLE);
-						else if (name.isOutputValue) setBackground(COLOR_NAME_OUTPUT);
-						else if (name.isInputValue ) setBackground(COLOR_NAME_INPUT);
+					if (ingredient!=null && ingredient.getName()!=null) {
+						if      (ingredientsTableModel.highlighted.contains(ingredient.ingredientIndex)) setBackground(COLOR_INGREDIENT_MARKER);
+						else if (ingredientsTableModel.highlightProducible && ingredientsTableModel.producible .contains(ingredient.ingredientIndex)) setBackground(COLOR_INGREDIENT_PRODUCIBLE);
+						else if (ingredient.isOutputValue) setBackground(COLOR_INGREDIENT_OUTPUT);
+						else if (ingredient.isInputValue ) setBackground(COLOR_INGREDIENT_INPUT);
 						else setBackground(table.getBackground());
 					} else setBackground(table.getBackground());
 				}
@@ -982,7 +1018,7 @@ public class RecipeAnalyser implements ActionListener {
 		
 	}
 
-	private enum NamesTableColumnID implements SimplifiedColumnIDInterface {
+	private enum IngredientsTableColumnID implements SimplifiedColumnIDInterface {
 		Index      ("#"          , Integer.class, 20,-1, 30, 30),
 		Type       ("Type"       ,  String.class, 20,-1,100,100),
 		InStock    ("In Stock"   , Boolean.class, 20,-1, 60, 60),
@@ -994,31 +1030,31 @@ public class RecipeAnalyser implements ActionListener {
 		
 		private SimplifiedColumnConfig columnConfig;
 		
-		NamesTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+		IngredientsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 			columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 		}
 		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 	
-	private class NamesTableModel extends SimplifiedTableModel<NamesTableColumnID> {
+	private class IngredientsTableModel extends SimplifiedTableModel<IngredientsTableColumnID> {
 
-		private Vector<Name> names;
-		private Name[] nameIndexes;
-		private Name clickedName = null;
+		private Vector<Ingredient> ingredients;
+		private Ingredient[] indexeIngredients;
+		private Ingredient clickedIngredient = null;
 		private HashSet<Integer> highlighted = new HashSet<>();
 		private HashSet<Integer> producible = new HashSet<>();
 		private boolean highlightProducible = false;
 
-		protected NamesTableModel(Vector<Name> names, Name[] nameIndexes) {
-			super(NamesTableColumnID.values());
-			this.names = names;
-			this.nameIndexes = nameIndexes;
+		protected IngredientsTableModel(Vector<Ingredient> ingredients, Ingredient[] indexedIngredients) {
+			super(IngredientsTableColumnID.values());
+			this.ingredients = ingredients;
+			this.indexeIngredients = indexedIngredients;
 		}
 
 		private void updateProducibility() {
 			producible.clear();
-			forEachName(name->{
-				if (name.isInStock) producible.add(name.nameIndex);
+			forEach(ingredient->{
+				if (ingredient.isInStock) producible.add(ingredient.ingredientIndex);
 			});
 			statusFields.setFieldInStock(producible.size());
 			if (recipesTableModel!=null && !producible.isEmpty()) {
@@ -1055,85 +1091,85 @@ public class RecipeAnalyser implements ActionListener {
 			statusFields.setFieldProducible(producible.size());
 		}
 
-		public void forEachName(Consumer<Name> consumer) {
-			for (Name name:names)
-			 if (name!=null && name.getName()!=null)
-				consumer.accept(name);
+		public void forEach(Consumer<Ingredient> consumer) {
+			for (Ingredient ingredient:ingredients)
+			 if (ingredient!=null && ingredient.getName()!=null)
+				consumer.accept(ingredient);
 		}
 
-		public void forEachSelectedName(Consumer<Name> consumer) {
-			int[] selectedRows = namesTable.getSelectedRows();
+		public void forEachSelected(Consumer<Ingredient> consumer) {
+			int[] selectedRows = ingredientsTable.getSelectedRows();
 			for (int i=0; i<selectedRows.length; i++) {
-				Name name = names.get(selectedRows[i]);
-				if (name!=null && name.getName()!=null)
-					consumer.accept(name);
+				Ingredient ingredient = ingredients.get(selectedRows[i]);
+				if (ingredient!=null && ingredient.getName()!=null)
+					consumer.accept(ingredient);
 			}
 		}
 
-		public Integer[] getSelectedNames() {
-			Vector<Integer> selectedNames = new Vector<>();
-			forEachSelectedName((Name name)->selectedNames.add(name.nameIndex));
-			return selectedNames.toArray(new Integer[0]);
+		public Integer[] getSelected() {
+			Vector<Integer> selected = new Vector<>();
+			forEachSelected(ingredient->selected.add(ingredient.ingredientIndex));
+			return selected.toArray(new Integer[0]);
 		}
 
-		@Override public NamesTableColumnID getColumnID(int columnIndex) {
+		@Override public IngredientsTableColumnID getColumnID(int columnIndex) {
 			return super.getColumnID(columnIndex);
 		}
 
 		@Override public int getRowCount() {
-			return names.size();
+			return ingredients.size();
 		}
 
-		public Name getName(int nameIndex) {
-			int listIndex = nameIndex-1;
-			if (listIndex<0 || listIndex>=nameIndexes.length) return null;
-			return nameIndexes[listIndex];
+		public Ingredient getIngredient(int ingredientIndex) {
+			int listIndex = ingredientIndex-1;
+			if (listIndex<0 || listIndex>=indexeIngredients.length) return null;
+			return indexeIngredients[listIndex];
 		}
 
-		public String getNameStr(int nameIndex) {
-			int listIndex = nameIndex-1;
+		public String getIngredientName(int ingredientIndex) {
+			int listIndex = ingredientIndex-1;
 			
-			if (listIndex<0 || listIndex>=nameIndexes.length)
-				return String.format("<%d> OutOfRange(%d..%d)", nameIndex,1,nameIndexes.length);
+			if (listIndex<0 || listIndex>=indexeIngredients.length)
+				return String.format("<%d> OutOfRange(%d..%d)", ingredientIndex,1,indexeIngredients.length);
 			
-			Name name = nameIndexes[listIndex];
-			if (name!=null) {
-				String str = name.getName();
+			Ingredient ingredient = indexeIngredients[listIndex];
+			if (ingredient!=null) {
+				String str = ingredient.getName();
 				if (str!=null) return str;
 			}
 			
-			return String.format("<%d>", nameIndex);
+			return String.format("<%d>", ingredientIndex);
 		}
 
-		public Name getNameAtRow(int rowIndex) {
-			if (0<=rowIndex && rowIndex<names.size())
-				return names.get(rowIndex);
+		public Ingredient getIngredientAtRow(int rowIndex) {
+			if (0<=rowIndex && rowIndex<ingredients.size())
+				return ingredients.get(rowIndex);
 			return null;
 		}
 
-		@Override public Object getValueAt(int rowIndex, int columnIndex, NamesTableColumnID columnID) {
-			Name name = getNameAtRow(rowIndex);
-			boolean isInput = name!=null && name.getName()!=null;
+		@Override public Object getValueAt(int rowIndex, int columnIndex, IngredientsTableColumnID columnID) {
+			Ingredient ingredient = getIngredientAtRow(rowIndex);
+			boolean isInput = ingredient!=null && ingredient.getName()!=null;
 			switch (columnID) {
-			case Index      : return isInput ? name.nameIndex : "";
-			case Type       : return name==null?"":name.type==null?name.typeStr:name.type;
-			case InStock    : return isInput ? (name.isInStock?"In Stock":"---") : null;
-			case Producible : return !isInput ? "" : producible.contains(name.nameIndex)?"producible":"----";
-			case NameDE     : return name==null?"":name.nameDE;
-			case NameEN     : return name==null?"":name.nameEN;
-			case Description: return name==null?"":name.desc;
+			case Index      : return !isInput ? null : ingredient.ingredientIndex;
+			case InStock    : return !isInput ? null : ingredient.isInStock ? "In Stock" : "---";
+			case Producible : return !isInput ? null : producible.contains(ingredient.ingredientIndex) ? "producible" : "----";
+			case Type       : return ingredient==null ? "" : ingredient.type==null ? ingredient.typeStr : ingredient.type;
+			case NameDE     : return ingredient==null ? "" : ingredient.nameDE;
+			case NameEN     : return ingredient==null ? "" : ingredient.nameEN;
+			case Description: return ingredient==null ? "" : ingredient.desc;
 			}
 			return null;
 		}
 
-		@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, NamesTableColumnID columnID) {
-			Name name = getNameAtRow(rowIndex);
-			if (!(name!=null && name.getName()!=null)) return;
+		@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, IngredientsTableColumnID columnID) {
+			Ingredient ingredient = getIngredientAtRow(rowIndex);
+			if (!(ingredient!=null && ingredient.getName()!=null)) return;
 			
 			switch (columnID) {
 			case InStock:
-				if (aValue instanceof Boolean) name.isInStock = (Boolean) aValue;
-				if (aValue instanceof String ) name.isInStock = "In Stock".equals((String) aValue);
+				if (aValue instanceof Boolean) ingredient.isInStock = (Boolean) aValue;
+				if (aValue instanceof String ) ingredient.isInStock = "In Stock".equals((String) aValue);
 				updateProducibility();
 				fireTableUpdate();
 				break;
@@ -1141,10 +1177,10 @@ public class RecipeAnalyser implements ActionListener {
 			}
 		}
 
-		@Override protected boolean isCellEditable(int rowIndex, int columnIndex, NamesTableColumnID columnID) {
-			Name name = getNameAtRow(rowIndex);
-			boolean isInput = name!=null && name.getName()!=null;
-			if (columnID==NamesTableColumnID.InStock) return isInput;
+		@Override protected boolean isCellEditable(int rowIndex, int columnIndex, IngredientsTableColumnID columnID) {
+			Ingredient ingredient = getIngredientAtRow(rowIndex);
+			boolean isInput = ingredient!=null && ingredient.getName()!=null;
+			if (columnID==IngredientsTableColumnID.InStock) return isInput;
 			return false;
 		}
 	}
@@ -1204,10 +1240,10 @@ public class RecipeAnalyser implements ActionListener {
 			RecipeRow recipeRow = recipesRows.get(rowIndex);
 			switch (columnID) {
 			case Index : if (recipeRow.row==0) return recipeRow.index; break;
-			case Output: if (recipeRow.row==0) return getNameStr(recipeRow.recipe.outputValue); break;
-			case Input1: return getNameStr(recipeRow.recipe.getInputValue(0, recipeRow.row));
-			case Input2: return getNameStr(recipeRow.recipe.getInputValue(1, recipeRow.row));
-			case Input3: return getNameStr(recipeRow.recipe.getInputValue(2, recipeRow.row));
+			case Output: if (recipeRow.row==0) return getIngredientName(recipeRow.recipe.outputValue); break;
+			case Input1: return getIngredientName(recipeRow.recipe.getInputValue(0, recipeRow.row));
+			case Input2: return getIngredientName(recipeRow.recipe.getInputValue(1, recipeRow.row));
+			case Input3: return getIngredientName(recipeRow.recipe.getInputValue(2, recipeRow.row));
 			}
 			return null;
 		}
