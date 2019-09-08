@@ -721,6 +721,7 @@
 ^FLAG4.type=BaseDekoration
 ^FLOORMAT1=Bodenmatte
 ^FLOORMAT1.type=BaseDekoration
+^FOOD_M_MEAT=
 ^FOOD_PIE_SCUST=
 ^FOOD_P_ALL1=Heptaploid-Weizen
 ^FOOD_P_ALL1.type=PlantProduct
@@ -1028,6 +1029,7 @@
 ^PLANTPOT2.type=BaseDekoration
 ^PLANTPOT3=Flora-Behälter 3
 ^PLANTPOT3.type=BaseDekoration
+^POLICE_TOKEN=
 ^POOPPLANT=Copritblume
 ^POOPPLANT.type=Plant
 ^POOPPLANT.image=NmsFarming_Coprite_Orb_Icon.Copritblume.png
@@ -1534,6 +1536,7 @@
 ^TRA_CURIO2.type=RaceGift
 ^TRA_CURIO2.image=Product.geknip.png
 ^TRA_CURIO2.imageBG=10805C
+^TRA_ENERGY1=
 ^TRA_EXOTICS1=Nicht mehr duftende Pheromonflasche
 ^TRA_EXOTICS1.obsolete=
 ^TRA_EXOTICS1.image=NmsCommodity_De-Scented_Pheromone_Bottle_icon.png

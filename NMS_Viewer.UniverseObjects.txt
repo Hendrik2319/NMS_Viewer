@@ -4961,6 +4961,7 @@ short=2 Planeten
 info=
 
 [Reg000000FCD7F684]
+name=Nezenka-Arm
 
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
@@ -4968,8 +4969,6 @@ race=Korvax
 conflict=1
 conflict_label=stabil
 class=Yellow
-short=3 Planeten
-info=
 
 [Pln106E00FCD7F684]
 name=Emur 51/I4
@@ -4999,6 +4998,8 @@ race=Gek
 conflict=1
 conflict_label=gesetzlos
 class=Yellow
+short=3 Planeten
+info=
 
 [Pln107000FCD7F684]
 name=Napecule Beta
@@ -5013,6 +5014,21 @@ with water
 resources=Cu,Pf,Na
 short=
 info=<ParsedPlanetaryResources> Cu, Pf, Na
+
+[Sys01DE00FCD7F684]
+name=Songxi
+race=Vykeen
+conflict=3
+conflict_label=hoch
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln11DE00FCD7F684]
+name=Aden
+biome=Barren
+short=
+info=Cu, Py, Fe##
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
