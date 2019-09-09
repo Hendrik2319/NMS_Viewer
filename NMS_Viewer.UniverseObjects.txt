@@ -4963,6 +4963,23 @@ info=
 [Reg000000FCD7F684]
 name=Nezenka-Arm
 
+[Sys002000FCD7F684]
+name=Aitunx-Loe
+race=Gek
+conflict=2
+conflict_label=streitlustig
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln202000FCD7F684]
+name=Hacan D10
+biome=Scorched
+is extreme
+buriedTreasure=SalvageableScrap
+short=
+info=#Cu, P, Ag
+
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
 race=Korvax
@@ -5027,8 +5044,15 @@ info=
 [Pln11DE00FCD7F684]
 name=Aden
 biome=Barren
+resources=Cu,Py,Fe__
 short=
-info=Cu, Py, Fe##
+info=<ParsedPlanetaryResources> Cu, Py, Fe##
+
+[Pln21DE00FCD7F684]
+name=Mipandras XVI
+biome=Toxic
+short=
+info=Cu, NH3, Co
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
