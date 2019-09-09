@@ -787,7 +787,7 @@ public class SimplePanels {
 			contextMenu.addSeparator();
 			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
 			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(ColumnID.ObjectID)));
-			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML(),null,SaveViewer.ToolbarIcons.SaveAs));
+			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML(),SaveViewer.ToolbarIcons.SaveAs));
 			
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
@@ -1035,8 +1035,8 @@ public class SimplePanels {
 			}
 			
 			private void addVRMLtasks(JPopupMenu contextMenu) {
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base"), null, SaveViewer.ToolbarIcons.SaveAs));
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false), null, SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base"), SaveViewer.ToolbarIcons.SaveAs));
+				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false), SaveViewer.ToolbarIcons.SaveAs));
 				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
@@ -1049,7 +1049,7 @@ public class SimplePanels {
 						}
 					
 					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet");
-				}, null, SaveViewer.ToolbarIcons.SaveAs));
+				}, SaveViewer.ToolbarIcons.SaveAs));
 			}
 
 			private void showOtherObjectsOnThisPlanet() {

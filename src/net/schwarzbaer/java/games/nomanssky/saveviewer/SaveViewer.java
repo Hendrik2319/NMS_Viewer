@@ -1196,7 +1196,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
-		return createMenuItem(title, l, null, enabled, null);
+		return createMenuItem(title, l, null, null, enabled, null);
 	}
 	public static JMenuItem createMenuItem(String title, ActionListener l) {
 		return createMenuItem(title, l, null);
@@ -1204,12 +1204,19 @@ public class SaveViewer implements ActionListener {
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
 		return createMenuItem(title, l, actionCommand, null);
 	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
-		return createMenuItem(title, l, actionCommand, true, icon);
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, ToolbarIcons icon) {
+		return createMenuItem(title, l, null, null, true, icon);
 	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, boolean enabled, ToolbarIcons icon) {
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
+		return createMenuItem(title, l, null, actionCommand, true, icon);
+	}
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+		return createMenuItem(title, l, disabler, actionCommand, true, null);
+	}
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
 		menuItem.setEnabled(enabled);
+		if (disabler!=null) disabler.add(actionCommand, menuItem);
 		if (l!=null) menuItem.addActionListener(l);
 		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
 		if (icon!=null) menuItem.setIcon(toolbarIS.getIcon(icon));
@@ -1217,11 +1224,15 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand) {
-		return createCheckBoxMenuItem(title, l, actionCommand, true);
+		return createCheckBoxMenuItem(title, l, null, actionCommand, true);
 	}
-	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand, boolean enabled) {
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+		return createCheckBoxMenuItem(title, l, disabler, actionCommand, true);
+	}
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
 		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
 		menuItem.setEnabled(enabled);
+		if (disabler!=null) disabler.add(actionCommand, menuItem);
 		if (l!=null) menuItem.addActionListener(l);
 		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
 		return menuItem;
