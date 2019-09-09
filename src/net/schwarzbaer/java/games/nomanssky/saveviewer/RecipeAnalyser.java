@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -52,6 +51,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Disabler;
@@ -256,6 +256,7 @@ public class RecipeAnalyser implements ActionListener {
 		mainwindow.startGUI(contentPane,menuBar);
 		
 		updateGuiAccess();
+		updateWindowTitle();
 		return this;
 	}
 
@@ -310,21 +311,21 @@ public class RecipeAnalyser implements ActionListener {
 			dataModel = null;
 			currentOpenDataFile = null;
 			
-			recipesTable.setModel(null);
-			ingredientsTable.setModel(null);
-			rawRecipesTable.setModel(null);
-			rawIngredientsTable.setModel(null);
+			recipesTable.setModel(new DefaultTableModel());
+			ingredientsTable.setModel(new DefaultTableModel());
+			rawRecipesTable.setModel(new DefaultTableModel());
+			rawIngredientsTable.setModel(new DefaultTableModel());
 			
 			statusFields.clear();
 			
 			updateGuiAccess();
+			updateWindowTitle();
 			break;
 		case OpenDataFile:
 			if (fileChooser.showOpenDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
 				currentOpenDataFile = fileChooser.getSelectedFile();
 				readDataFromFile(currentOpenDataFile);
 				writeConfig();
-				updateGuiAccess();
 			}
 			break;
 		case SaveDataFile:
@@ -397,14 +398,32 @@ public class RecipeAnalyser implements ActionListener {
 		}
 	}
 
+	private void updateWindowTitle() {
+		String str = "";
+		if (dataModel == null)
+			str += " - <No Data>";
+		else {
+			if (currentOpenDataFile==null) str += "  -  <unsaved>";
+			else str += "  -  "+currentOpenDataFile.getName();
+			switch (dataModel.type) {
+			case NutrientProcessor: str += "  [NutrientProcessor Recipes]"; break;
+			case Refiner          : str += "  [Refiner Recipes]"; break;
+			}
+		}
+		mainwindow.setTitle("Recipe Analyser"+str);
+		
+	}
+
 	private void setDataModelType(DataModel.Type type) {
 		if (dataModel == null) {
 			dataModel = DataModel.create(type);
+			dataModel.setGui(this);
 		} else {
 			if (dataModel.type != type)
 				throw new IllegalStateException(String.format("Can't set type of RecipeListConfig to \"%s\". It is currently set to \"%s\".", type, dataModel.type));
 		}
 		updateGuiAccess();
+		updateWindowTitle();
 	}
 
 	private void updateGuiAccess() {
@@ -451,6 +470,8 @@ public class RecipeAnalyser implements ActionListener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		updateGuiAccess();
+		updateWindowTitle();
 	}
 
 	private void saveDataToFile(File file) {
@@ -466,6 +487,7 @@ public class RecipeAnalyser implements ActionListener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		updateWindowTitle();
 	}
 
 	private void writeTabTableToZIP(ZipOutputStream zipout, PrintWriter out, String entryName, Vector<String[]> rawTabTable) throws IOException {
@@ -518,11 +540,15 @@ public class RecipeAnalyser implements ActionListener {
 
 		@Override protected RecipeIngredient parseRecipeIngredient(int row, String[] rowData, int i) {
 			int amountCol = i*2, idCol = i*2+1;
-			if (rowData.length<=idCol)
-				return null;
+			if (rowData.length<=idCol)return null;
 			
-			int amount = Integer.parseInt(rowData[amountCol]);
 			String id = rowData[idCol];
+			if (id.isEmpty()) return null;
+			
+			Integer amount;
+			try { amount = Integer.parseInt(rowData[amountCol]); }
+			catch (NumberFormatException e) { amount = null; }
+			
 			return new RecipeIngredient(amount,id);
 		}
 
@@ -548,21 +574,22 @@ public class RecipeAnalyser implements ActionListener {
 			private String id;
 			private String type;
 			private String name;
-			@SuppressWarnings("unused")
-			private String price;
+			private Float price;
 
-			public Ingredient(String id, String type, String name, String price) {
+			public Ingredient(String id, String type, String name, String priceStr) {
 				this.id = id;
 				this.type = type;
 				this.name = name==null || name.isEmpty() ? null : name;
-				this.price = price;
+				try { this.price = Float.parseFloat(priceStr.replace(",","")); }
+				catch (NumberFormatException e) { this.price = null; }
 			}
 
-			@Override String getID  () { return id; }
-			@Override String getName() { return name; }
-			@Override String getType() { return type; }
-			@Override String getName(Lang language) { return name; }
-			@Override String getDesc() { return null; }
+			@Override String getID   () { return id; }
+			@Override String getName () { return name; }
+			@Override String getType () { return type; }
+			@Override String getName (Lang language) { return name; }
+			@Override String getDesc () { return null; }
+			@Override Float  getPrice() { return price; }
 		}
 	}
 	
@@ -617,7 +644,6 @@ public class RecipeAnalyser implements ActionListener {
 			IM, IP0, IP1, IP2A, IP2B, IR0, IR1, IR2, IRM, IRX, IAF, IAK, BC, BH, EI, EP
 		}
 		private class Ingredient extends DataModel<Integer>.Ingredient {
-			
 		
 			private int ingredientIndex;
 			@SuppressWarnings("unused")
@@ -637,13 +663,10 @@ public class RecipeAnalyser implements ActionListener {
 				this.desc = desc;
 			}
 		
-			@Override Integer getID() {
-				return ingredientIndex;
-			}
-
-			@Override String getType() {
-				return typeStr;
-			}
+			@Override Integer getID   () { return ingredientIndex; }
+			@Override String  getType () { return typeStr; }
+			@Override String  getDesc () { return desc; }
+			@Override Float   getPrice() { return null; }
 
 			@Override public String getName() {
 				if (!nameDE.isEmpty()) return nameDE;
@@ -657,10 +680,6 @@ public class RecipeAnalyser implements ActionListener {
 				case En: if (!nameEN.isEmpty()) return nameEN; break;
 				}
 				return null;
-			}
-
-			@Override String getDesc() {
-				return desc;
 			}
 		}
 
@@ -745,7 +764,7 @@ public class RecipeAnalyser implements ActionListener {
 		
 		private String getIngredientName(RecipeIngredient recipeIngredient) {
 			if (recipeIngredient==null) return null;
-			return getIngredientName(recipeIngredient.ingredient);
+			return getIngredientName(recipeIngredient.id);
 		}
 		private String getIngredientName(IDType id) {
 			if (id==null) return "";
@@ -813,12 +832,12 @@ public class RecipeAnalyser implements ActionListener {
 			Ingredient ingredient;
 			for (Recipe recipe:recipes) {
 				
-				ingredient = getIngredient(recipe.outputValue.ingredient);
+				ingredient = getIngredient(recipe.outputValue.id);
 				if (ingredient!=null) ingredient.isOutputValue = true;
 				
 				for (Vector<RecipeIngredient> inputValues:recipe.inputValues) {
 					for (RecipeIngredient inputValue:inputValues) {
-						ingredient = getIngredient(inputValue.ingredient);
+						ingredient = getIngredient(inputValue.id);
 						if (ingredient!=null) ingredient.isInputValue = true;
 					}
 				}
@@ -849,14 +868,6 @@ public class RecipeAnalyser implements ActionListener {
 				RecipeIngredient inputValue1 = parseRecipeIngredient(row, rowData, 1);
 				RecipeIngredient inputValue2 = parseRecipeIngredient(row, rowData, 2);
 				RecipeIngredient inputValue3 = parseRecipeIngredient(row, rowData, 3);
-				//if (rowData.length!=7) throw new ParseException("Row %d with wrong number (%d) of entries", row, rowData.length);
-				//checkEmptyCell(rowData, row, 1);
-				//checkEmptyCell(rowData, row, 3);
-				//checkEmptyCell(rowData, row, 5);
-				//Integer outputValue = parseCell(rowData, row, 0);
-				//Integer inputValue1 = parseCell(rowData, row, 2);
-				//Integer inputValue2 = parseCell(rowData, row, 4);
-				//Integer inputValue3 = parseCell(rowData, row, 6);
 				if (outputValue!=null) recipes.add(recipe = new Recipe(recipes.size(),outputValue));
 				if (inputValue1!=null) recipe.addInputValue(0,inputValue1);
 				if (inputValue2!=null) recipe.addInputValue(1,inputValue2);
@@ -906,8 +917,8 @@ public class RecipeAnalyser implements ActionListener {
 								messages.append(
 										String.format(
 												"Found conflicting recipes: Recipe %d (%s) and %d (%s) for inputs (%s)%n",
-												recipe    .index, getIngredientName(recipe    .outputValue.ingredient),
-												lastRecipe.index, getIngredientName(lastRecipe.outputValue.ingredient),
+												recipe    .index, getIngredientName(recipe    .outputValue.id),
+												lastRecipe.index, getIngredientName(lastRecipe.outputValue.id),
 												combi.toString()
 										)
 								);
@@ -939,16 +950,22 @@ public class RecipeAnalyser implements ActionListener {
 					HashMap<IDType,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
 					ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<InputValueCombination>()));
 					for (Recipe recipe:recipes) {
-						if (ingredientsTableModel.isProducible(recipe.outputValue.ingredient)) {
+						if (ingredientsTableModel.isProducible(recipe.outputValue.id)) {
 							HashSet<InputValueCombination> allowedCombis = recipe.expand(ingredientsTableModel::isProducible);
-							allProdRecipe.get(recipe.outputValue.ingredient).addAll(allowedCombis);
+							allProdRecipe.get(recipe.outputValue.id).addAll(allowedCombis);
 						}
 					}
-					//for (Integer output:allProdRecipe.keySet())
-					//	for (InputValueCombination combi:allProdRecipe.get(output))
-					//		System.out.printf("%s <-- %s%n", getNameStr(output), combi.toString());
 					
-					RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredientsTableModel.clickedIngredient.getID(),allProdRecipe, (IDType id)->getIngredientName(id));
+					SaveViewer.log_ln("All Producible Recipes:");
+					for (IDType output:allProdRecipe.keySet())
+						for (InputValueCombination combi:allProdRecipe.get(output))
+							SaveViewer.log_ln("%s <-- %s", getIngredientName(output), combi.toString());
+					
+					SaveViewer.log_ln("All Producible Recipes for  %s:",getIngredientName(ingredientsTableModel.clickedIngredient.getID()));
+					for (InputValueCombination combi:allProdRecipe.get(ingredientsTableModel.clickedIngredient.getID()))
+						SaveViewer.log_ln("%s <-- %s", getIngredientName(ingredientsTableModel.clickedIngredient.getID()), combi.toString());
+					
+					RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredientsTableModel.clickedIngredient,allProdRecipe);
 					recipeChainFinder.printTree(System.out);
 				}
 			}
@@ -985,7 +1002,7 @@ public class RecipeAnalyser implements ActionListener {
 			
 			@Override
 			public String toString() {
-				return String.join(", ", (Iterable<String>)() -> values.stream().map(DataModel.this::getIngredientName).iterator());
+				return String.join(" + ", (Iterable<String>)() -> values.stream().map(DataModel.this::getIngredientName).iterator());
 			}
 		
 			@Override
@@ -1013,37 +1030,38 @@ public class RecipeAnalyser implements ActionListener {
 
 		private class RecipeChainFinder {
 			
-			private IDType finalOutput;
+			private Ingredient finalOutput;
 			private HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe;
 			private RecipeOutput baseRecipeOutput;
-			private Function<IDType, String> nameSource;
 		
-			public RecipeChainFinder(IDType finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe, Function<IDType,String> nameSource) {
+			public RecipeChainFinder(Ingredient finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe) {
 				this.finalOutput = finalOutput;
 				this.allProdRecipe = allProdRecipe;
-				this.nameSource = nameSource;
 				baseRecipeOutput = new RecipeOutput(null,this.finalOutput);
 			}
 			
 			public void printTree(PrintStream out) {
-				out.printf("Possible Recipe Chains for \"%s\"%n", nameSource.apply(finalOutput));
+				out.printf("Possible Recipe Chains for \"%s\"%n", getIngredientName(finalOutput.getID()));
 				baseRecipeOutput.printTree(out,"      ","      ");
+				out.printf("<end>%n");
 			}
 		
 			private class RecipeOutput {
 		
 				private final AllowedRecipe parentRecipe;
-				private final IDType output;
+				private final Ingredient output;
+				private final IDType outputID;
 				private final Vector<AllowedRecipe> allowedRecipes;
 				private final boolean isBaseInput;
 		
-				public RecipeOutput(AllowedRecipe parentRecipe, IDType output) {
+				public RecipeOutput(AllowedRecipe parentRecipe, Ingredient output) {
 					this.parentRecipe = parentRecipe;
 					this.output = output;
+					this.outputID = output.getID();
 					this.allowedRecipes = new Vector<>();
-					HashSet<InputValueCombination> allowed = allProdRecipe.get( this.output );
-					this.isBaseInput = allowed.isEmpty();
-					if (!isBaseInput) {
+					HashSet<InputValueCombination> allowed = allProdRecipe.get( outputID );
+					this.isBaseInput = this.output.isInStock;
+					if (!isBaseInput && !allowed.isEmpty()) {
 						for (InputValueCombination recipe:allowed) {
 							if (!recipeContainsParent(recipe)) {
 								AllowedRecipe allowedRecipe = new AllowedRecipe(this,recipe);
@@ -1054,8 +1072,20 @@ public class RecipeAnalyser implements ActionListener {
 					}
 				}
 		
+				public RecipeOutput(AllowedRecipe parentRecipe, IDType unknownID) {
+					this.parentRecipe = parentRecipe;
+					this.output = null;
+					this.outputID = unknownID;
+					this.allowedRecipes = null;
+					this.isBaseInput = false;
+				}
+
 				public void printTree(PrintStream out, String firstIndent, String nextIndent) {
-					out.printf("%s%s%s", firstIndent, nameSource.apply(output), isBaseInput?"  [BaseInput]":"");
+					if (output == null) {
+						out.printf("%s%s%s is unknown", firstIndent, getIngredientName(outputID));
+						return;
+					}
+					out.printf("%s%s%s", firstIndent, getIngredientName(outputID), isBaseInput?"  [BaseInput]":"");
 					if (allowedRecipes.size() == 1) {
 						allowedRecipes.get(0).printTree(out, " ", nextIndent);
 					} else {
@@ -1066,7 +1096,7 @@ public class RecipeAnalyser implements ActionListener {
 				}
 		
 				private boolean recipeContainsParent(InputValueCombination recipe) {
-					if (recipe.contains(output)) return true;
+					if (recipe.contains(output.getID())) return true;
 					if (parentRecipe==null) return false;
 					return parentRecipe.parentRecipeOutput.recipeContainsParent(recipe);
 				}
@@ -1087,9 +1117,14 @@ public class RecipeAnalyser implements ActionListener {
 					this.inputs = new Vector<>();// new RecipeOutput[this.recipe.values.size()];
 					RecipeOutput recipeOutput;
 					for (IDType val:this.recipe.values) {
-						inputs.add(recipeOutput = new RecipeOutput(this,val));
-						if (recipeOutput.allowedRecipes.isEmpty() && !recipeOutput.isBaseInput)
-							isExecutable = false;
+						Ingredient input = getIngredient(val);
+						if (input==null) {
+							inputs.add(new RecipeOutput(this,val));
+						} else {
+							inputs.add(recipeOutput = new RecipeOutput(this,input));
+							if (recipeOutput.allowedRecipes.isEmpty() && !recipeOutput.isBaseInput)
+								isExecutable = false;
+						}
 					}
 				}
 		
@@ -1114,12 +1149,6 @@ public class RecipeAnalyser implements ActionListener {
 			protected boolean isOutputValue = false;
 			protected boolean isInStock     = false;
 			
-			abstract IDType getID();
-			abstract String getType();
-			abstract String getName();
-			abstract String getName(Lang language);
-			abstract String getDesc();
-			
 			boolean isProducible() {
 				return ingredientsTableModel.isProducible(getID());
 			}
@@ -1128,16 +1157,21 @@ public class RecipeAnalyser implements ActionListener {
 				String name = getName();
 				return String.format("Ingredient [%s] <%s> \"%s\" %s%s%s", getID(), getType(), name==null?"":name, isInputValue?"I":"-", isOutputValue?"O":"-", isInStock?"S":"-");
 			}
-
+			
+			abstract IDType getID();
+			abstract String getType();
+			abstract String getName();
+			abstract String getName(Lang language);
+			abstract String getDesc();
+			abstract Float  getPrice();
 		}
 
 		protected class RecipeIngredient {
-			@SuppressWarnings("unused")
-			int amount;
-			IDType ingredient;
-			RecipeIngredient(int amount, IDType ingredient) {
+			Integer amount;
+			IDType id;
+			RecipeIngredient(Integer amount, IDType id) {
 				this.amount = amount;
-				this.ingredient = ingredient;
+				this.id = id;
 			}
 		}
 
@@ -1164,7 +1198,7 @@ public class RecipeAnalyser implements ActionListener {
 		
 			@Override
 			public String toString() {
-				return "Recipe " + index + " (" + getIngredientName(outputValue.ingredient) + ")";
+				return "Recipe " + index + " (" + getIngredientName(outputValue.id) + ")";
 			}
 		
 			public HashSet<InputValueCombination> expand() {
@@ -1178,18 +1212,18 @@ public class RecipeAnalyser implements ActionListener {
 				if (!inputValues3.isEmpty()) nonEmptyArrays.add(inputValues3);
 				if (nonEmptyArrays.size()>0) {
 					for (RecipeIngredient in0:nonEmptyArrays.get(0)) {
-						if (isInputAllowed.test(in0.ingredient)) {
+						if (isInputAllowed.test(in0.id)) {
 							if (nonEmptyArrays.size() <= 1)
-								combis.add(new InputValueCombination(in0.ingredient));
+								combis.add(new InputValueCombination(in0.id));
 							else {
 								for (RecipeIngredient in1:nonEmptyArrays.get(1)) {
-									if (isInputAllowed.test(in1.ingredient)) {
+									if (isInputAllowed.test(in1.id)) {
 										if (nonEmptyArrays.size() <= 2)
-											combis.add(new InputValueCombination(in0.ingredient,in1.ingredient));
+											combis.add(new InputValueCombination(in0.id,in1.id));
 										else {
 											for (RecipeIngredient in2:nonEmptyArrays.get(2)) {
-												if (isInputAllowed.test(in2.ingredient)) {
-													combis.add(new InputValueCombination(in0.ingredient,in1.ingredient,in2.ingredient));
+												if (isInputAllowed.test(in2.id)) {
+													combis.add(new InputValueCombination(in0.id,in1.id,in2.id));
 												}
 											}
 										}
@@ -1226,9 +1260,13 @@ public class RecipeAnalyser implements ActionListener {
 
 		private enum RecipesTableColumnID implements SimplifiedColumnIDInterface {
 			Index    ("#"       , Integer.class, 20,-1, 30, 50),
+			OutputAm ("O"       , Integer.class, 20,-1, 30, 50),
 			Output   ("Output"  ,  String.class, 20,-1,150,150),
+			Input1Am ("I1"      , Integer.class, 20,-1, 30, 50),
 			Input1   ("Input 1" ,  String.class, 20,-1,150,150),
+			Input2Am ("I2"      , Integer.class, 20,-1, 30, 50),
 			Input2   ("Input 2" ,  String.class, 20,-1,150,150),
+			Input3Am ("I3"      , Integer.class, 20,-1, 30, 50),
 			Input3   ("Input 3" ,  String.class, 20,-1,150,150),
 			;
 			
@@ -1276,13 +1314,22 @@ public class RecipeAnalyser implements ActionListener {
 			public Object getValueAt(int rowIndex, int columnIndex, RecipesTableColumnID columnID) {
 				RecipeRow recipeRow = recipesRows.get(rowIndex);
 				switch (columnID) {
-				case Index : if (recipeRow.row==0) return recipeRow.index; break;
-				case Output: if (recipeRow.row==0) return getIngredientName(recipeRow.recipe.outputValue); break;
-				case Input1: return getIngredientName(recipeRow.recipe.getInputValue(0, recipeRow.row));
-				case Input2: return getIngredientName(recipeRow.recipe.getInputValue(1, recipeRow.row));
-				case Input3: return getIngredientName(recipeRow.recipe.getInputValue(2, recipeRow.row));
+				case Index   : if (recipeRow.row==0) return recipeRow.index; break;
+				case Output  : if (recipeRow.row==0) return getIngredientName(recipeRow.recipe.outputValue); break;
+				case OutputAm: if (recipeRow.row==0) return getAmount(recipeRow.recipe.outputValue); break;
+				case Input1  : return getIngredientName(recipeRow.recipe.getInputValue(0, recipeRow.row));
+				case Input2  : return getIngredientName(recipeRow.recipe.getInputValue(1, recipeRow.row));
+				case Input3  : return getIngredientName(recipeRow.recipe.getInputValue(2, recipeRow.row));
+				case Input1Am: return getAmount(recipeRow.recipe.getInputValue(0, recipeRow.row));
+				case Input2Am: return getAmount(recipeRow.recipe.getInputValue(1, recipeRow.row));
+				case Input3Am: return getAmount(recipeRow.recipe.getInputValue(2, recipeRow.row));
 				}
 				return null;
+			}
+
+			private Integer getAmount(RecipeIngredient ingredient) {
+				if (ingredient==null) return null;
+				return ingredient.amount;
 			}
 		
 		}
@@ -1294,6 +1341,7 @@ public class RecipeAnalyser implements ActionListener {
 			Producible ("Producible" ,  String.class, 20,-1, 60, 60),
 			NameDE     ("Name (DE)"  ,  String.class, 20,-1,150,150),
 			NameEN     ("Name (EN)"  ,  String.class, 20,-1,150,150),
+			Price      ("Price"      ,  String.class, 20,-1,150,150),
 			Description("Description",  String.class, 20,-1,450,450),
 			;
 			
@@ -1329,6 +1377,28 @@ public class RecipeAnalyser implements ActionListener {
 				clickedIngredient = ingredient==null || ingredient.getName()==null ? null : ingredient;
 			}
 
+			public void forEach(Consumer<Ingredient> consumer) {
+				for (Ingredient ingredient:ingredients)
+					if (ingredient!=null && ingredient.getName()!=null)
+						consumer.accept(ingredient);
+			}
+
+			public void forEachSelected(Consumer<Ingredient> consumer) {
+				int[] selectedRows = ingredientsTable.getSelectedRows();
+				for (int i=0; i<selectedRows.length; i++) {
+					Ingredient ingredient = ingredients.get(selectedRows[i]);
+					if (ingredient!=null && ingredient.getName()!=null)
+						consumer.accept(ingredient);
+				}
+			}
+
+			public void forEachProducible(Consumer<Ingredient> consumer) {
+				forEach(ingredient->{
+					if (isProducible(ingredient.getID()))
+						consumer.accept(ingredient);
+				});
+			}
+
 			private boolean isProducible(IDType id) {
 				return producible.contains(id);
 			}
@@ -1339,13 +1409,17 @@ public class RecipeAnalyser implements ActionListener {
 					if (ingredient.isInStock) producible.add(ingredient.getID());
 				});
 				statusFields.setFieldInStock(producible.size());
-				if (recipesTableModel!=null && !producible.isEmpty()) {
+				if (ingredientsMap!=null && recipes!=null && !producible.isEmpty()) {
 					boolean foundNew = true;
 					while (foundNew) {
 						foundNew = false;
 						for (Recipe recipe:recipes) {
 							
-							if (isProducible(recipe.outputValue.ingredient))
+							if (isProducible(recipe.outputValue.id))
+								continue;
+							
+							Ingredient ingredient = getIngredient(recipe.outputValue.id);
+							if (ingredient==null || ingredient.getName()==null)
 								continue;
 							
 							boolean recipeIsProducible = true;
@@ -1353,7 +1427,7 @@ public class RecipeAnalyser implements ActionListener {
 								if (!inputValues.isEmpty()) {
 									boolean found = false;
 									for (RecipeIngredient inputValue:inputValues)
-										if (isProducible(inputValue.ingredient)) {
+										if (isProducible(inputValue.id)) {
 											found = true;
 											break;
 										}
@@ -1364,7 +1438,7 @@ public class RecipeAnalyser implements ActionListener {
 								}
 							
 							if (recipeIsProducible) {
-								producible.add(recipe.outputValue.ingredient);
+								producible.add(recipe.outputValue.id);
 								foundNew = true;
 							}
 						}
@@ -1373,28 +1447,6 @@ public class RecipeAnalyser implements ActionListener {
 				statusFields.setFieldProducible(producible.size());
 			}
 		
-			public void forEach(Consumer<Ingredient> consumer) {
-				for (Ingredient ingredient:ingredients)
-					if (ingredient!=null && ingredient.getName()!=null)
-						consumer.accept(ingredient);
-			}
-		
-			public void forEachSelected(Consumer<Ingredient> consumer) {
-				int[] selectedRows = ingredientsTable.getSelectedRows();
-				for (int i=0; i<selectedRows.length; i++) {
-					Ingredient ingredient = ingredients.get(selectedRows[i]);
-					if (ingredient!=null && ingredient.getName()!=null)
-						consumer.accept(ingredient);
-				}
-			}
-		
-			public void forEachProducible(Consumer<Ingredient> consumer) {
-				forEach(ingredient->{
-					if (isProducible(ingredient.getID()))
-						consumer.accept(ingredient);
-				});
-			}
-
 			public Vector<IDType> getSelected() {
 				Vector<IDType> selected = new Vector<>();
 				forEachSelected(ingredient->selected.add(ingredient.getID()));
@@ -1437,10 +1489,11 @@ public class RecipeAnalyser implements ActionListener {
 				case Index      : return !isInput ? null : ingredient.getID();
 				case InStock    : return !isInput ? null : ingredient.isInStock ? "In Stock" : "---";
 				case Producible : return !isInput ? null : isProducible(ingredient.getID()) ? "producible" : "----";
-				case Type       : return ingredient==null ? "" : ingredient.getType();
-				case NameDE     : return ingredient==null ? "" : ingredient.getName(Lang.De);
-				case NameEN     : return ingredient==null ? "" : ingredient.getName(Lang.En);
-				case Description: return ingredient==null ? "" : ingredient.getDesc();
+				case Type       : return ingredient==null ? null : ingredient.getType();
+				case NameDE     : return ingredient==null ? null : ingredient.getName(Lang.De);
+				case NameEN     : return ingredient==null ? null : ingredient.getName(Lang.En);
+				case Description: return ingredient==null ? null : ingredient.getDesc();
+				case Price      : return ingredient==null || ingredient.getPrice()==null ? null : String.format(Locale.ENGLISH, "%,1.1f", ingredient.getPrice());
 				}
 				return null;
 			}
@@ -1476,11 +1529,18 @@ public class RecipeAnalyser implements ActionListener {
 				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 				if (recipesTableModel!=null && row<recipesTableModel.recipesRows.size()) {
 					switch (recipesTableModel.getColumnID(column)) {
-					case Index: setHorizontalAlignment(CENTER); break;
+					case Index:
+						setHorizontalAlignment(CENTER); break;
 					case Output:
 					case Input1:
 					case Input2:
-					case Input3: setHorizontalAlignment(LEFT); break;
+					case Input3:
+						setHorizontalAlignment(LEFT); break;
+					case OutputAm:
+					case Input1Am:
+					case Input2Am:
+					case Input3Am:
+						setHorizontalAlignment(RIGHT); break;
 					}
 					RecipesTableModel.RecipeRow recipeRow = recipesTableModel.recipesRows.get(row);
 					if (!isSelected) {
@@ -1514,6 +1574,8 @@ public class RecipeAnalyser implements ActionListener {
 					case NameEN:
 					case Description:
 						setHorizontalAlignment(LEFT); break;
+					case Price:
+						setHorizontalAlignment(RIGHT); break;
 					}
 					
 					Ingredient ingredient = ingredientsTableModel.getIngredientAtRow(row);
