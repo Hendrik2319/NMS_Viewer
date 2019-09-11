@@ -4963,6 +4963,24 @@ info=
 [Reg000000FCD7F684]
 name=Nezenka-Arm
 
+[Sys001400FCD7F684]
+name=Meseogw-Rip
+race=Vykeen
+conflict=3
+conflict_label=aggressiv
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln201400FCD7F684]
+name=Akhargol Primus
+biome=Irradiated
+is extreme
+with water
+resources=Cu,U,Ag
+short=
+info=<ParsedPlanetaryResources> Cu, U, Ag
+
 [Sys002000FCD7F684]
 name=Aitunx-Loe
 race=Gek
@@ -4977,8 +4995,9 @@ name=Hacan D10
 biome=Scorched
 is extreme
 buriedTreasure=SalvageableScrap
+resources=Cu_,P,Ag
 short=
-info=#Cu, P, Ag
+info=<ParsedPlanetaryResources> #Cu, P, Ag
 
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
@@ -5012,7 +5031,7 @@ info=<ParsedPlanetaryResources> Cu, U, NaCl
 [Sys007000FCD7F684]
 name=Magogal
 race=Gek
-conflict=1
+conflict=3
 conflict_label=gesetzlos
 class=Yellow
 short=3 Planeten
@@ -5051,8 +5070,31 @@ info=<ParsedPlanetaryResources> Cu, Py, Fe##
 [Pln21DE00FCD7F684]
 name=Mipandras XVI
 biome=Toxic
+resources=Cu,NH3,Co
 short=
-info=Cu, NH3, Co
+info=<ParsedPlanetaryResources> Cu, NH3, Co
+
+[Pln31DE00FCD7F684]
+name=Uietuslous Ankok
+biome=Lush
+with water
+buriedTreasure=AncientBones
+short=
+info=Cu, Pf, Na
+
+[Pln41DE00FCD7F684]
+name=Ewqu XV
+biome=Scorched
+is extreme
+short=
+info=#Cu, P, Ag
+
+[Pln51DE00FCD7F684]
+name=Dasta
+biome=Irradiated
+with water
+short=
+info=Cu, U, Co
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
