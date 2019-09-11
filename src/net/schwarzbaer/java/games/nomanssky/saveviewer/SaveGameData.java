@@ -1501,6 +1501,7 @@ public class SaveGameData {
 			
 			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
 			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
+			TRADING_SEC_5 ("Propagandagerät"             ,"Handel: +4"),
 			TRADING_SEC_6 ("Teleportationsgerät"         ,"Handel: +6"),
 			TRADING_TER_1 ("Wirtschaftsscanner"          ,"Handel: +1"),
 			TRADING_TER_3 ("Roboterdiener"               ,"Handel: +3"),

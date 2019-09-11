@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -34,8 +35,8 @@ import java.util.zip.ZipOutputStream;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultCellEditor;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -58,6 +59,7 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
+import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
@@ -105,7 +107,12 @@ public class RecipeAnalyser implements ActionListener {
 	private JCheckBoxMenuItem miHighlightProducibleInIngredientsTable = null;
 	
 	private File currentOpenDataFile = null;
-	private DataModel<?> dataModel   = null; 
+	private DataModel<?> dataModel   = null;
+
+	private boolean saveInStockIngredients = false;
+	private EnumMap<DataModel.Type,String> ingredientsInStock = new EnumMap<>(DataModel.Type.class);
+
+	private JCheckBoxMenuItem miSaveInStockIngredients;
 
 	private RecipeAnalyser readConfig() {
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(RECIPE_ANALYSER_CFG), StandardCharsets.UTF_8))) {
@@ -114,6 +121,23 @@ public class RecipeAnalyser implements ActionListener {
 				if (line.startsWith("OpenDataFile=")) {
 					String valueStr = line.substring("OpenDataFile=".length());
 					currentOpenDataFile = new File( valueStr );
+				}
+				if (line.equals("SaveInStockIngredients")) {
+					saveInStockIngredients = true;
+				}
+				if (line.startsWith("IngredientsInStock.")) {
+					String valueStr = line.substring("IngredientsInStock.".length());
+					int pos = valueStr.indexOf('=');
+					String typeStr;
+					if (pos<0) {
+						typeStr = valueStr;
+						valueStr = "";
+					} else {
+						typeStr = valueStr.substring(0,pos);
+						valueStr = valueStr.substring(pos+1);
+						try { ingredientsInStock.put(DataModel.Type.valueOf(typeStr),valueStr); }
+						catch (Exception e) {}
+					}
 				}
 			}
 		} catch (FileNotFoundException e) {
@@ -128,6 +152,13 @@ public class RecipeAnalyser implements ActionListener {
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(RECIPE_ANALYSER_CFG), StandardCharsets.UTF_8))) {
 			if (currentOpenDataFile!=null)
 				out.printf("OpenDataFile=%s%n", currentOpenDataFile.getAbsolutePath());
+			if (saveInStockIngredients) {
+				out.printf("SaveInStockIngredients%n");
+				for (DataModel.Type type:DataModel.Type.values()) {
+					String str = ingredientsInStock.get(type);
+					if (str!=null) out.printf("IngredientsInStock.%s=%s%n", type, str);
+				}
+			}
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -149,11 +180,14 @@ public class RecipeAnalyser implements ActionListener {
 		FindCombinableIngredients,
 		ClearMarkersInIngredientsTable,
 		HighlightProducibleInIngredientsTable,
-		FindRecipes, SetInStock, UnsetInStock,
+		FindRecipes,
 		CopyRefinerRecipesFromClipBoard,
 		CopyRefinerIngredientsFromClipBoard,
 		CopyNutrientProcessorRecipesFromClipBoard,
-		CopyNutrientProcessorIngredientsFromClipBoard, ClearData,
+		CopyNutrientProcessorIngredientsFromClipBoard,
+		ClearData,
+		SaveInStockIngredients,
+		SetInStock, UnsetInStock,
 		;
 	}
 
@@ -167,7 +201,7 @@ public class RecipeAnalyser implements ActionListener {
 		ingredientsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JCheckBox()));
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new Boolean[] {true, false})));
-		ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new String[] {"In Stock","---"})));
+		//ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new String[] {"In Stock","---"})));
 		
 		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
 		JMenuItem miFindCombinableIngredients = SaveViewer.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients);
@@ -241,7 +275,11 @@ public class RecipeAnalyser implements ActionListener {
 		menuData.add(SaveViewer.createMenuItem("Write data to new file ...", this, disabler, ActionCommand.SaveDataFileAs));
 		
 		miHighlightProducibleInIngredientsTable = SaveViewer.createCheckBoxMenuItem("Highlight producible in ingredients table", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
+		miSaveInStockIngredients = SaveViewer.createCheckBoxMenuItem("Save InStock ingredients", this, disabler, ActionCommand.SaveInStockIngredients);
+		miSaveInStockIngredients.setSelected(saveInStockIngredients);
 		JMenu menuAnalyse = new JMenu("Analyse");
+		menuAnalyse.add(miSaveInStockIngredients);
+		menuAnalyse.addSeparator();
 		menuAnalyse.add(SaveViewer.createMenuItem("Clear markers in ingredients table", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
 		menuAnalyse.add(miHighlightProducibleInIngredientsTable);
 		menuAnalyse.addSeparator();
@@ -273,9 +311,9 @@ public class RecipeAnalyser implements ActionListener {
 			c.insets = new Insets(0,5,0,0);
 			
 			add(new JLabel(" In Stock:"), c);
-			add(fieldInStock    = new JTextField("0",10), c);
+			add(fieldInStock    = new JTextField("0",3), c);
 			add(new JLabel(" Producible:"), c);
-			add(fieldProducible = new JTextField("0",10), c);
+			add(fieldProducible = new JTextField("0",3), c);
 			fieldInStock   .setEditable(false);
 			fieldProducible.setEditable(false);
 			
@@ -392,9 +430,25 @@ public class RecipeAnalyser implements ActionListener {
 			}
 			break;
 			
-		case SetInStock  : if (dataModel!=null) dataModel.serviceFunctions.SetSelectedIngredientsInStock(true); break;
-		case UnsetInStock: if (dataModel!=null) dataModel.serviceFunctions.SetSelectedIngredientsInStock(false); break;
-			
+		case SetInStock  : setInStock(true ); break;
+		case UnsetInStock: setInStock(false); break;
+		case SaveInStockIngredients:
+			saveInStockIngredients = !saveInStockIngredients;
+			miSaveInStockIngredients.setSelected(saveInStockIngredients);
+			if (saveInStockIngredients)
+				ingredientsInStock.put( dataModel.type, dataModel.getInStockIngredients() );
+			writeConfig();
+			break;
+		}
+	}
+
+	private void setInStock(boolean isInStock) {
+		if (dataModel!=null) {
+			dataModel.serviceFunctions.SetSelectedIngredientsInStock(isInStock);
+			if (saveInStockIngredients) {
+				ingredientsInStock.put( dataModel.type, dataModel.getInStockIngredients() );
+				writeConfig();
+			}
 		}
 	}
 
@@ -418,12 +472,23 @@ public class RecipeAnalyser implements ActionListener {
 		if (dataModel == null) {
 			dataModel = DataModel.create(type);
 			dataModel.setGui(this);
+			dataModel.setStockListener(this::ingredientsStockHasChanged);
+			if (saveInStockIngredients)
+				dataModel.setInStockIngredients(ingredientsInStock.get(dataModel.type));
+			else
+				ingredientsInStock.clear();
 		} else {
 			if (dataModel.type != type)
 				throw new IllegalStateException(String.format("Can't set type of RecipeListConfig to \"%s\". It is currently set to \"%s\".", type, dataModel.type));
 		}
 		updateGuiAccess();
 		updateWindowTitle();
+	}
+
+	private void ingredientsStockHasChanged(String str) {
+		ingredientsInStock.put(dataModel.type,str);
+		if (saveInStockIngredients)
+			writeConfig();
 	}
 
 	private void updateGuiAccess() {
@@ -443,15 +508,18 @@ public class RecipeAnalyser implements ActionListener {
 			case SaveDataFileAs:
 				return dataModel!=null;
 				
-			case ClearMarkersInIngredientsTable:
 			case FindBasicRecipes:
 			case FindCombinableIngredients:
 			case FindConflictingRecipes:
 			case FindRecipes:
+				return dataModel!=null && dataModel.recipes!=null;
+				
+			case ClearMarkersInIngredientsTable:
 			case HighlightProducibleInIngredientsTable:
 			case SetInStock:
 			case UnsetInStock:
-				return null;
+			case SaveInStockIngredients:
+				return dataModel!=null && dataModel.ingredientsTableModel!=null;
 			}
 			return null;
 		});
@@ -461,6 +529,11 @@ public class RecipeAnalyser implements ActionListener {
 		try (ZipFile zipin = new ZipFile(file)) {
 			dataModel = DataModel.readDataCfgFromZIP(zipin, "RecipeListConfig");
 			dataModel.setGui(this);
+			dataModel.setStockListener(this::ingredientsStockHasChanged);
+			if (saveInStockIngredients)
+				dataModel.setInStockIngredients(ingredientsInStock.get(dataModel.type));
+			else
+				ingredientsInStock.clear();
 			dataModel.rawIngredientsData = readTabTableFromZIP(zipin, "ingredients");
 			dataModel.rawRecipesData     = readTabTableFromZIP(zipin, "recipes");
 			dataModel.parseIngredientsTable();
@@ -532,6 +605,10 @@ public class RecipeAnalyser implements ActionListener {
 			super(Type.Refiner);
 		}
 
+		@Override protected String parseID(String str) {
+			return str;
+		}
+
 		@Override protected boolean areIDsEqual(String id1, String id2) {
 			if (id1==null && id2==null) return true;
 			if (id1==null || id2==null) return false;
@@ -596,6 +673,11 @@ public class RecipeAnalyser implements ActionListener {
 	private static class NutrientProcessorDataModel extends DataModel<Integer> {
 		NutrientProcessorDataModel() {
 			super(Type.NutrientProcessor);
+		}
+
+		@Override protected Integer parseID(String str) {
+			try { return Integer.parseInt(str); }
+			catch (NumberFormatException e) { return null; }
 		}
 
 		@Override protected boolean areIDsEqual(Integer id1, Integer id2) {
@@ -685,7 +767,7 @@ public class RecipeAnalyser implements ActionListener {
 
 	}
 	
-	private static abstract class DataModel<IDType> {
+	private static abstract class DataModel<IDType extends Comparable<IDType>> {
 		
 		private StatusFields              statusFields = null;
 		
@@ -702,6 +784,9 @@ public class RecipeAnalyser implements ActionListener {
 		private Vector<String[]> rawRecipesData = null;
 		
 		private Vector<Recipe> recipes = null;
+		private HashSet<IDType> producible = new HashSet<>();
+		private HashSet<IDType> inStock = new HashSet<>();
+		private StockListener stockListener = null;
 		
 		enum Type { NutrientProcessor, Refiner }
 		private Type type;
@@ -712,6 +797,8 @@ public class RecipeAnalyser implements ActionListener {
 			this.type = type;
 			this.serviceFunctions = new ServiceFunctions();
 		}
+
+		protected abstract IDType parseID(String str);
 
 		public void setGui(RecipeAnalyser recipeAnalyser) {
 			statusFields        = recipeAnalyser.statusFields       ;
@@ -756,6 +843,85 @@ public class RecipeAnalyser implements ActionListener {
 			zipout.closeEntry();
 		}
 
+		public String getInStockIngredients() {
+			Iterable<String> iterable = () -> inStock.stream().sorted().map(id->id.toString()).iterator();
+			return String.join(",", iterable);
+		}
+
+		public void setInStockIngredients(String str) {
+			inStock.clear();
+			if (str==null) return;
+			String[] parts = str.split(",");
+			for (String p:parts) {
+				IDType id = parseID(p);
+				if (id!=null) inStock.add(id);
+			}
+		}
+		
+		public interface StockListener {
+			void stockHasChanged(String inStockIngredients);
+		}
+		
+		public void setStockListener(StockListener stockListener) {
+			this.stockListener = stockListener;
+		}
+		
+		private void setInStock(boolean isInStock, IDType id) {
+			if (isInStock) inStock.add(id);
+			else inStock.remove(id);
+			stockListener.stockHasChanged(getInStockIngredients());
+		}
+
+		private boolean isInStock(IDType id) {
+			return inStock.contains(id);
+		}
+
+		private boolean isProducible(IDType id) {
+			return producible.contains(id);
+		}
+
+		private void updateProducibility() {
+			producible.clear();
+			producible.addAll(inStock);
+			statusFields.setFieldInStock(producible.size());
+			if (recipes!=null && !producible.isEmpty()) {
+				boolean foundNew = true;
+				while (foundNew) {
+					foundNew = false;
+					for (Recipe recipe:recipes) {
+						
+						if (isProducible(recipe.outputValue.id))
+							continue;
+						
+						Ingredient ingredient = getIngredient(recipe.outputValue.id);
+						if (ingredient==null || ingredient.getName()==null)
+							continue;
+						
+						boolean recipeIsProducible = true;
+						for (Vector<RecipeIngredient> inputValues:recipe.inputValues)
+							if (!inputValues.isEmpty()) {
+								boolean found = false;
+								for (RecipeIngredient inputValue:inputValues)
+									if (isProducible(inputValue.id)) {
+										found = true;
+										break;
+									}
+								if (!found) {
+									recipeIsProducible = false;
+									break;
+								}
+							}
+						
+						if (recipeIsProducible) {
+							producible.add(recipe.outputValue.id);
+							foundNew = true;
+						}
+					}
+				}
+			}
+			statusFields.setFieldProducible(producible.size());
+		}
+
 		private Ingredient getIngredient(IDType id) {
 			if (id==null) return null;
 			if (ingredientsTableModel==null) return null;
@@ -787,9 +953,12 @@ public class RecipeAnalyser implements ActionListener {
 				ingredientsTableModel = new IngredientsTableModel(ingredients);
 				ingredientsTable.setModel(ingredientsTableModel);
 				ingredientsTable.setCellRendererForAllColumns(new IngredientsTableRenderer(), true);
+				JCheckBox rendererCheckBox = new JCheckBox();
+				rendererCheckBox.setHorizontalAlignment(JCheckBox.CENTER);
+				ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(rendererCheckBox));
 				if (recipesTableModel!=null) recipesTableModel.fireTableUpdate();
 				checkInputOutput();
-				ingredientsTableModel.updateProducibility();
+				updateProducibility();
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
@@ -811,8 +980,7 @@ public class RecipeAnalyser implements ActionListener {
 				recipesTable.setModel(recipesTableModel);
 				recipesTable.setCellRendererForAllColumns(new RecipesTableRenderer(), true);
 				checkInputOutput();
-				if (ingredientsTableModel!=null)
-					ingredientsTableModel.updateProducibility();
+				updateProducibility();
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
@@ -950,8 +1118,8 @@ public class RecipeAnalyser implements ActionListener {
 					HashMap<IDType,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
 					ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<InputValueCombination>()));
 					for (Recipe recipe:recipes) {
-						if (ingredientsTableModel.isProducible(recipe.outputValue.id)) {
-							HashSet<InputValueCombination> allowedCombis = recipe.expand(ingredientsTableModel::isProducible);
+						if (isProducible(recipe.outputValue.id)) {
+							HashSet<InputValueCombination> allowedCombis = recipe.expand(DataModel.this::isProducible);
 							allProdRecipe.get(recipe.outputValue.id).addAll(allowedCombis);
 						}
 					}
@@ -972,8 +1140,8 @@ public class RecipeAnalyser implements ActionListener {
 
 			public void SetSelectedIngredientsInStock(boolean isInStock) {
 				if (ingredientsTableModel!=null) {
-					ingredientsTableModel.forEachSelected(ingredient -> ingredient.isInStock = isInStock);
-					ingredientsTableModel.updateProducibility();
+					ingredientsTableModel.forEachSelected(ingredient -> setInStock(isInStock, ingredient.getID()));
+					updateProducibility();
 					ingredientsTableModel.fireTableUpdate();
 				}
 			}
@@ -1060,7 +1228,7 @@ public class RecipeAnalyser implements ActionListener {
 					this.outputID = output.getID();
 					this.allowedRecipes = new Vector<>();
 					HashSet<InputValueCombination> allowed = allProdRecipe.get( outputID );
-					this.isBaseInput = this.output.isInStock;
+					this.isBaseInput = isInStock(outputID);
 					if (!isBaseInput && !allowed.isEmpty()) {
 						for (InputValueCombination recipe:allowed) {
 							if (!recipeContainsParent(recipe)) {
@@ -1147,15 +1315,18 @@ public class RecipeAnalyser implements ActionListener {
 		private abstract class Ingredient {
 			protected boolean isInputValue  = false;
 			protected boolean isOutputValue = false;
-			protected boolean isInStock     = false;
+			//protected boolean isInStock     = false;
 			
 			boolean isProducible() {
-				return ingredientsTableModel.isProducible(getID());
+				return DataModel.this.isProducible(getID());
+			}
+			boolean isInStock() {
+				return DataModel.this.isInStock(getID());
 			}
 			
 			@Override public String toString() {
 				String name = getName();
-				return String.format("Ingredient [%s] <%s> \"%s\" %s%s%s", getID(), getType(), name==null?"":name, isInputValue?"I":"-", isOutputValue?"O":"-", isInStock?"S":"-");
+				return String.format("Ingredient [%s] <%s> \"%s\" %s%s%s", getID(), getType(), name==null?"":name, isInputValue?"I":"-", isOutputValue?"O":"-", isInStock()?"S":"-", isProducible()?"P":"-");
 			}
 			
 			abstract IDType getID();
@@ -1360,7 +1531,6 @@ public class RecipeAnalyser implements ActionListener {
 			
 			private Ingredient clickedIngredient = null;
 			private HashSet<IDType> highlighted = new HashSet<>();
-			private HashSet<IDType> producible = new HashSet<>();
 			private boolean highlightProducible = false;
 		
 			protected IngredientsTableModel(Vector<Ingredient> ingredients) {
@@ -1397,54 +1567,6 @@ public class RecipeAnalyser implements ActionListener {
 					if (isProducible(ingredient.getID()))
 						consumer.accept(ingredient);
 				});
-			}
-
-			private boolean isProducible(IDType id) {
-				return producible.contains(id);
-			}
-
-			private void updateProducibility() {
-				producible.clear();
-				forEach(ingredient->{
-					if (ingredient.isInStock) producible.add(ingredient.getID());
-				});
-				statusFields.setFieldInStock(producible.size());
-				if (ingredientsMap!=null && recipes!=null && !producible.isEmpty()) {
-					boolean foundNew = true;
-					while (foundNew) {
-						foundNew = false;
-						for (Recipe recipe:recipes) {
-							
-							if (isProducible(recipe.outputValue.id))
-								continue;
-							
-							Ingredient ingredient = getIngredient(recipe.outputValue.id);
-							if (ingredient==null || ingredient.getName()==null)
-								continue;
-							
-							boolean recipeIsProducible = true;
-							for (Vector<RecipeIngredient> inputValues:recipe.inputValues)
-								if (!inputValues.isEmpty()) {
-									boolean found = false;
-									for (RecipeIngredient inputValue:inputValues)
-										if (isProducible(inputValue.id)) {
-											found = true;
-											break;
-										}
-									if (!found) {
-										recipeIsProducible = false;
-										break;
-									}
-								}
-							
-							if (recipeIsProducible) {
-								producible.add(recipe.outputValue.id);
-								foundNew = true;
-							}
-						}
-					}
-				}
-				statusFields.setFieldProducible(producible.size());
 			}
 		
 			public Vector<IDType> getSelected() {
@@ -1487,7 +1609,7 @@ public class RecipeAnalyser implements ActionListener {
 				boolean isInput = ingredient!=null && ingredient.getName()!=null;
 				switch (columnID) {
 				case Index      : return !isInput ? null : ingredient.getID();
-				case InStock    : return !isInput ? null : ingredient.isInStock ? "In Stock" : "---";
+				case InStock    : return !isInput ? null : isInStock(ingredient.getID()); // ? "In Stock" : "---";
 				case Producible : return !isInput ? null : isProducible(ingredient.getID()) ? "producible" : "----";
 				case Type       : return ingredient==null ? null : ingredient.getType();
 				case NameDE     : return ingredient==null ? null : ingredient.getName(Lang.De);
@@ -1502,12 +1624,17 @@ public class RecipeAnalyser implements ActionListener {
 				Ingredient ingredient = getIngredientAtRow(rowIndex);
 				if (ingredient==null || ingredient.getName()==null) return;
 				
+				Boolean isInStock = null;
 				switch (columnID) {
 				case InStock:
-					if (aValue instanceof Boolean) ingredient.isInStock = (Boolean) aValue;
-					if (aValue instanceof String ) ingredient.isInStock = "In Stock".equals((String) aValue);
-					updateProducibility();
-					fireTableUpdate();
+					if (aValue instanceof Boolean) isInStock = (Boolean) aValue;
+					if (aValue instanceof String ) isInStock = "In Stock".equals((String) aValue);
+					if (isInStock!=null) {
+						IDType id = ingredient.getID();
+						setInStock(isInStock, id);
+						updateProducibility();
+						fireTableUpdate(); 
+					}
 					break;
 				default: break;
 				}
@@ -1558,12 +1685,25 @@ public class RecipeAnalyser implements ActionListener {
 
 		private class IngredientsTableRenderer extends DefaultTableCellRenderer {
 			private static final long serialVersionUID = -5822408016974497527L;
-		
+			
+			CheckBoxRendererComponent checkBox;
+			IngredientsTableRenderer() {
+				checkBox = new CheckBoxRendererComponent();
+			}
+			
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 				
 				if (ingredientsTableModel!=null) {
+					if (Boolean.class.isAssignableFrom(ingredientsTableModel.getColumnID(column).columnConfig.columnClass)) {
+						component = checkBox;
+						checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+						checkBox.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+						checkBox.setSelected(value instanceof Boolean ? (Boolean) value : false);
+						checkBox.setHorizontalAlignment(CENTER);
+					}
+					
 					switch (ingredientsTableModel.getColumnID(column)) {
 					case Index:
 					case Type:
@@ -1580,12 +1720,14 @@ public class RecipeAnalyser implements ActionListener {
 					
 					Ingredient ingredient = ingredientsTableModel.getIngredientAtRow(row);
 					if (!isSelected) {
-						if (ingredient==null || ingredient.getName()==null) setBackground(table.getBackground());
-						else if (ingredientsTableModel.highlighted.contains(ingredient.getID())) setBackground(COLOR_INGREDIENT_MARKER);
-						else if (ingredientsTableModel.highlightProducible && ingredientsTableModel.isProducible(ingredient.getID())) setBackground(COLOR_INGREDIENT_PRODUCIBLE);
-						else if (ingredient.isOutputValue) setBackground(COLOR_INGREDIENT_OUTPUT);
-						else if (ingredient.isInputValue ) setBackground(COLOR_INGREDIENT_INPUT);
-						else setBackground(table.getBackground());
+						Color background = table.getBackground();
+						if (ingredient != null && ingredient.getName() != null) {
+							if (ingredientsTableModel.highlighted.contains(ingredient.getID())) background = COLOR_INGREDIENT_MARKER;
+							else if (ingredientsTableModel.highlightProducible && isProducible(ingredient.getID())) background = COLOR_INGREDIENT_PRODUCIBLE;
+							else if (ingredient.isOutputValue) background = COLOR_INGREDIENT_OUTPUT;
+							else if (ingredient.isInputValue ) background = COLOR_INGREDIENT_INPUT;
+						}
+						component.setBackground(background);
 					}
 				}
 				

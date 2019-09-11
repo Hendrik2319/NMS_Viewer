@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.function.Predicate;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -225,6 +226,14 @@ public class TableView {
 			TableColumnModel tableColumnModel = getColumnModel();
 			for (int i=0; i<tableColumnModel.getColumnCount(); ++i)
 				tableColumnModel.getColumn(i).setCellRenderer(renderer);
+		}
+
+		public void setCellRenderer(TableCellRenderer renderer, Predicate<Integer> forThisColumn) {
+			this.overallCellRenderer = null;
+			TableColumnModel tableColumnModel = getColumnModel();
+			for (int i=0; i<tableColumnModel.getColumnCount(); ++i)
+				if (forThisColumn.test(i))
+					tableColumnModel.getColumn(i).setCellRenderer(renderer);
 		}
 
 		public void stopCellEditing() {
