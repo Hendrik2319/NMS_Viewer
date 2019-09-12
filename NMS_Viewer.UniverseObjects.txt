@@ -4987,8 +4987,12 @@ race=Gek
 conflict=2
 conflict_label=streitlustig
 class=Yellow
-short=3 Planeten
-info=
+
+[Pln102000FCD7F684]
+name=Neu: Ulver
+biome=Frozen
+short=
+info=Cu, CO2, Co
 
 [Pln202000FCD7F684]
 name=Hacan D10
@@ -4998,6 +5002,13 @@ buriedTreasure=SalvageableScrap
 resources=Cu_,P,Ag
 short=
 info=<ParsedPlanetaryResources> #Cu, P, Ag
+
+[Pln302000FCD7F684]
+name=Ogorgi
+biome=Frozen
+buriedTreasure=SalvageableScrap
+short=
+info=Cu, CO2, NaCl
 
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
@@ -5034,8 +5045,6 @@ race=Gek
 conflict=3
 conflict_label=gesetzlos
 class=Yellow
-short=3 Planeten
-info=
 
 [Pln107000FCD7F684]
 name=Napecule Beta
@@ -5051,14 +5060,18 @@ resources=Cu,Pf,Na
 short=
 info=<ParsedPlanetaryResources> Cu, Pf, Na
 
+[Pln307000FCD7F684]
+name=Nehoul Iash
+biome=AnomMetalFlowers
+short=
+info=Cu, Au, Fe##
+
 [Sys01DE00FCD7F684]
 name=Songxi
 race=Vykeen
 conflict=3
 conflict_label=hoch
 class=Yellow
-short=5 Planeten
-info=
 
 [Pln11DE00FCD7F684]
 name=Aden
@@ -5079,22 +5092,25 @@ name=Uietuslous Ankok
 biome=Lush
 with water
 buriedTreasure=AncientBones
+resources=Cu,Pf,Na
 short=
-info=Cu, Pf, Na
+info=<ParsedPlanetaryResources> Cu, Pf, Na
 
 [Pln41DE00FCD7F684]
 name=Ewqu XV
 biome=Scorched
 is extreme
+resources=Cu_,P,Ag
 short=
-info=#Cu, P, Ag
+info=<ParsedPlanetaryResources> #Cu, P, Ag
 
 [Pln51DE00FCD7F684]
 name=Dasta
 biome=Irradiated
 with water
+resources=Cu,U,Co
 short=
-info=Cu, U, Co
+info=<ParsedPlanetaryResources> Cu, U, Co
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
