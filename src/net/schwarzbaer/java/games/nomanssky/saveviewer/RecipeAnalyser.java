@@ -7,9 +7,11 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,6 +22,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -46,6 +50,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
@@ -57,6 +62,7 @@ import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
+import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
@@ -97,6 +103,7 @@ public class RecipeAnalyser implements ActionListener {
 	
 	private FileChooser               fileChooser = null;
 	private StatusFields              statusFields = null;
+	private ResultDialog              resultDialog = null;
 	
 	private TableView.SimplifiedTable ingredientsTable = null;
 	private TableView.SimplifiedTable recipesTable = null;
@@ -178,9 +185,10 @@ public class RecipeAnalyser implements ActionListener {
 		FindConflictingRecipes,
 		FindBasicRecipes,
 		FindCombinableIngredients,
+		FindGrowingCycles,
 		ClearMarkersInIngredientsTable,
 		HighlightProducibleInIngredientsTable,
-		FindRecipes,
+		FindRecipes, FindRecipes2,
 		CopyRefinerRecipesFromClipBoard,
 		CopyRefinerIngredientsFromClipBoard,
 		CopyNutrientProcessorRecipesFromClipBoard,
@@ -205,7 +213,8 @@ public class RecipeAnalyser implements ActionListener {
 		
 		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
 		JMenuItem miFindCombinableIngredients = SaveViewer.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients);
-		JMenuItem miFindRecipes = SaveViewer.createMenuItem("Find recipe chain for ####", this, disabler, ActionCommand.FindRecipes);
+		JMenuItem miFindRecipes  = SaveViewer.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipes);
+		JMenuItem miFindRecipes2 = SaveViewer.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipes2);
 		
 		ingredientsTable.addContextMenuInvokeListener((rowV, columnV)->{
 			if (dataModel==null || dataModel.ingredientsTableModel==null) return;
@@ -223,13 +232,17 @@ public class RecipeAnalyser implements ActionListener {
 			miHighlightProducible.setSelected(dataModel.ingredientsTableModel.highlightProducible);
 			
 			boolean isProducible = hasName && ingredient.isOutputValue && ingredient.isProducible();
-			miFindRecipes.setText(String.format("Find recipe chain for %s", name));
-			miFindRecipes.setEnabled(isProducible);
+			miFindRecipes .setText(String.format("Find recipe chain for %s", name));
+			miFindRecipes .setEnabled(isProducible);
+			miFindRecipes2.setText(String.format("Find recipe chain (2) for %s", name));
+			miFindRecipes2.setEnabled(isProducible);
 		});
 		
 		DebugTableContextMenu contextMenu = ingredientsTable.getDebugTableContextMenu();
 		contextMenu.addSeparator();
 		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
+		contextMenu.add(miFindRecipes);
+		contextMenu.add(miFindRecipes2);
 		contextMenu.addSeparator();
 		contextMenu.add(miFindCombinableIngredients);
 		contextMenu.add(SaveViewer.createMenuItem("Clear markers", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
@@ -237,7 +250,6 @@ public class RecipeAnalyser implements ActionListener {
 		contextMenu.add(SaveViewer.createMenuItem("Set InStock for selected ingredients", this, disabler, ActionCommand.SetInStock));
 		contextMenu.add(SaveViewer.createMenuItem("Unset InStock for selected ingredients", this, disabler, ActionCommand.UnsetInStock));
 		contextMenu.add(miHighlightProducible);
-		contextMenu.add(miFindRecipes);
 		
 		recipesTable = new TableView.SimplifiedTable("RecipesTable", true, true, false);
 		recipesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -285,6 +297,7 @@ public class RecipeAnalyser implements ActionListener {
 		menuAnalyse.addSeparator();
 		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same ingredient but different result", this, disabler, ActionCommand.FindConflictingRecipes));
 		menuAnalyse.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes cycles where amount of at least one ingredient is growing", this, disabler, ActionCommand.FindGrowingCycles));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -410,6 +423,16 @@ public class RecipeAnalyser implements ActionListener {
 				dataModel.serviceFunctions.FindRecipeChains();
 			break;
 			
+		case FindRecipes2:
+			if (dataModel!=null)
+				dataModel.serviceFunctions.FindRecipeChains2();
+			break;
+			
+		case FindGrowingCycles:
+			if (dataModel!=null)
+				dataModel.serviceFunctions.FindGrowingCycles();
+			break;
+			
 		case FindCombinableIngredients:
 			if (dataModel!=null)
 				dataModel.serviceFunctions.FindCombinableIngredients();
@@ -512,6 +535,8 @@ public class RecipeAnalyser implements ActionListener {
 			case FindCombinableIngredients:
 			case FindConflictingRecipes:
 			case FindRecipes:
+			case FindRecipes2:
+			case FindGrowingCycles:
 				return dataModel!=null && dataModel.recipes!=null;
 				
 			case ClearMarkersInIngredientsTable:
@@ -600,6 +625,50 @@ public class RecipeAnalyser implements ActionListener {
 		return rawTabTable;
 	}
 	
+	private static class ResultDialog extends StandardDialog {
+		private static final long serialVersionUID = -2869012153535397866L;
+		private JTextArea outputTextArea;
+	
+		public ResultDialog(Window parent, String title) {
+			super(parent, title, ModalityType.MODELESS);
+			setPreferredSize(new Dimension(600,900));
+			
+			outputTextArea = new JTextArea();
+			outputTextArea.setEditable(false);
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+			
+			this.createGUI(contentPane);
+		}
+		
+		public void setText_Stream(Consumer<PrintStream> print) {
+			try {
+				ByteArrayOutputStream strOut = new ByteArrayOutputStream();
+				PrintStream printOut = new PrintStream(strOut,true,StandardCharsets.UTF_8.toString());
+				print.accept(printOut);
+				printOut.flush();
+				setText(strOut.toString(StandardCharsets.UTF_8.toString()));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		@SuppressWarnings("unused")
+		public void setText_Writer(Consumer<PrintWriter> print) {
+			StringWriter strOut = new StringWriter();
+			PrintWriter printOut = new PrintWriter(strOut);
+			print.accept(printOut);
+			printOut.flush();
+			setText(strOut.toString());
+		}
+
+		public void setText(String str) {
+			outputTextArea.setText(str);
+		}
+	}
+
 	private static class RefinerDataModel extends DataModel<String> {
 		RefinerDataModel() {
 			super(Type.Refiner);
@@ -769,6 +838,7 @@ public class RecipeAnalyser implements ActionListener {
 	
 	private static abstract class DataModel<IDType extends Comparable<IDType>> {
 		
+		private RecipeAnalyser gui = null;
 		private StatusFields              statusFields = null;
 		
 		private TableView.SimplifiedTable ingredientsTable = null;
@@ -792,20 +862,20 @@ public class RecipeAnalyser implements ActionListener {
 		private Type type;
 
 		private ServiceFunctions serviceFunctions;
+
 		
 		DataModel(Type type) {
 			this.type = type;
 			this.serviceFunctions = new ServiceFunctions();
 		}
 
-		protected abstract IDType parseID(String str);
-
-		public void setGui(RecipeAnalyser recipeAnalyser) {
-			statusFields        = recipeAnalyser.statusFields       ;
-			ingredientsTable    = recipeAnalyser.ingredientsTable   ;
-			recipesTable        = recipeAnalyser.recipesTable       ;
-			rawIngredientsTable = recipeAnalyser.rawIngredientsTable;
-			rawRecipesTable     = recipeAnalyser.rawRecipesTable    ;
+		public void setGui(RecipeAnalyser gui) {
+			this.gui = gui;
+			statusFields        = gui.statusFields       ;
+			ingredientsTable    = gui.ingredientsTable   ;
+			recipesTable        = gui.recipesTable       ;
+			rawIngredientsTable = gui.rawIngredientsTable;
+			rawRecipesTable     = gui.rawRecipesTable    ;
 		}
 
 		public static DataModel<?> create(Type type) {
@@ -858,6 +928,8 @@ public class RecipeAnalyser implements ActionListener {
 			}
 		}
 		
+		protected abstract IDType parseID(String str);
+
 		public interface StockListener {
 			void stockHasChanged(String inStockIngredients);
 		}
@@ -1025,8 +1097,6 @@ public class RecipeAnalyser implements ActionListener {
 			return ingredients;
 		}
 		
-		protected abstract Ingredient parseIngredient(int row, String[] rowData) throws ParseException;
-
 		private Vector<Recipe> parseRecipes() throws ParseException {
 			Vector<Recipe> recipes = new Vector<>();
 			Recipe recipe = null;
@@ -1044,18 +1114,8 @@ public class RecipeAnalyser implements ActionListener {
 			return recipes;
 		}
 
+		protected abstract Ingredient       parseIngredient      (int row, String[] rowData) throws ParseException;
 		protected abstract RecipeIngredient parseRecipeIngredient(int row, String[] rowData, int i) throws ParseException;
-
-		private HashSet<InputValueCombination> getSetOfAllCombis() {
-			HashSet<InputValueCombination> allCombis = new HashSet<>();
-			if (recipesTableModel!=null)
-				for (Recipe recipe:recipes) {
-					HashSet<InputValueCombination> recipeCombis = recipe.expand();
-					allCombis.addAll(recipeCombis);
-				}
-			return allCombis;
-		}
-		
 		protected abstract boolean areIDsEqual(IDType id1,IDType id2);
 		
 		private class ServiceFunctions {
@@ -1073,8 +1133,94 @@ public class RecipeAnalyser implements ActionListener {
 				}
 			}
 
+			public void FindGrowingCycles() {
+				// TODO Auto-generated method stub
+				if (recipes!=null) {
+					SaveViewer.runWithProgressDialog(gui.mainwindow, "Find GrowingCycles", pd->{
+						pd.setTaskTitle("Search for Growing Cycles");
+						pd.setIndeterminate(true);
+						
+						HashMap<IDType,Vector<Recipe>> allRecipes = new HashMap<>();
+						for (Recipe recipe:recipes) {
+							Vector<Recipe> recipes = allRecipes.get(recipe.outputValue.id);
+							if (recipes==null) allRecipes.put(recipe.outputValue.id, recipes = new Vector<>());
+							recipes.add(recipe);
+						}
+						
+						Vector<GrowingCycle> growingCycles = new Vector<>();
+						allRecipes.forEach((id1,recipes1)->{
+							
+							HashSet<IDType> inputs = new HashSet<>();
+							for (Recipe r:recipes1)
+								inputs.addAll(r.getSetOfInputs());
+							
+							for (IDType id2:inputs) {
+								if (id1.compareTo(id2)<=0) continue;
+								
+								Vector<Recipe> recipes2 = allRecipes.get(id2);
+								if (recipes2==null) continue;
+								
+								boolean noCycle = true;
+								for (Recipe r:recipes2) if (r.hasInput(id1)) { noCycle = false; break; }
+								if (noCycle) continue;
+								
+								Vector<SpecificRecipe> recipesID1fromID2 = new Vector<>();
+								Vector<SpecificRecipe> recipesID2fromID1 = new Vector<>();
+								for (Recipe r1:recipes1) recipesID1fromID2.addAll(r1.getSpecificRecipes(id2));
+								for (Recipe r2:recipes2) recipesID2fromID1.addAll(r2.getSpecificRecipes(id1));
+								
+								float maxRatioID1fromID2 = 0;
+								for (SpecificRecipe r1:recipesID1fromID2) {
+									float ratio = r1.getRatio(id1,id2);
+									if (!Float.isNaN(ratio) && ratio>maxRatioID1fromID2)
+										maxRatioID1fromID2 = ratio;
+								}
+								float maxRatioID2fromID1 = 0;
+								for (SpecificRecipe r2:recipesID2fromID1) {
+									float ratio = r2.getRatio(id2,id1);
+									if (!Float.isNaN(ratio) && ratio>maxRatioID2fromID1)
+										maxRatioID2fromID1 = ratio;
+								}
+								if (maxRatioID1fromID2*maxRatioID2fromID1 > 1)
+									growingCycles.add(new GrowingCycle(id1,id2,recipesID1fromID2,recipesID2fromID1));
+							}
+						});
+						
+						pd.setTaskTitle("Generate Output");
+						pd.setIndeterminate(true);
+						
+						showinResultDialog(out->{
+							for (GrowingCycle gc:growingCycles) {
+								out.printf("( %s , %s )%n", getIngredientName(gc.id1), getIngredientName(gc.id2));
+								for (SpecificRecipe r:gc.recipesID1fromID2)
+									out.printf("     %s%n", r.toString());
+								for (SpecificRecipe r:gc.recipesID2fromID1)
+									out.printf("     %s%n", r.toString());
+								out.println();
+							}
+						});
+					});
+				}
+			}
+
+			private class GrowingCycle {
+
+				private IDType id1;
+				private IDType id2;
+				private Vector<SpecificRecipe> recipesID1fromID2;
+				private Vector<SpecificRecipe> recipesID2fromID1;
+
+				public GrowingCycle(IDType id1, IDType id2, Vector<SpecificRecipe> recipesID1fromID2, Vector<SpecificRecipe> recipesID2fromID1) {
+					this.id1 = id1;
+					this.id2 = id2;
+					this.recipesID1fromID2 = recipesID1fromID2;
+					this.recipesID2fromID1 = recipesID2fromID1;
+				}
+				
+			}
+
 			public String FindConflictingRecipes() {
-				if (recipesTableModel!=null) {
+				if (recipes!=null) {
 					StringBuilder messages = new StringBuilder();
 					HashMap<InputValueCombination,Recipe> allCombis = new HashMap<>();
 					for (Recipe recipe:recipes) {
@@ -1113,29 +1259,68 @@ public class RecipeAnalyser implements ActionListener {
 				return null;
 			}
 
+			public void FindRecipeChains2() {
+				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipes!=null) {
+					HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe = getAllProducibleRecipes();
+					RecipeChainFinder2 recipeChainFinder = new RecipeChainFinder2(ingredientsTableModel.clickedIngredient,allProdRecipe);
+					recipeChainFinder.search();
+					showinResultDialog(recipeChainFinder::printTree);
+				}
+			}
+
 			public void FindRecipeChains() {
-				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipesTableModel!=null) {
-					HashMap<IDType,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
-					ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<InputValueCombination>()));
-					for (Recipe recipe:recipes) {
-						if (isProducible(recipe.outputValue.id)) {
-							HashSet<InputValueCombination> allowedCombis = recipe.expand(DataModel.this::isProducible);
-							allProdRecipe.get(recipe.outputValue.id).addAll(allowedCombis);
-						}
-					}
+				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipes!=null) {
+					HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe = getAllProducibleRecipes();
 					
-					SaveViewer.log_ln("All Producible Recipes:");
-					for (IDType output:allProdRecipe.keySet())
-						for (InputValueCombination combi:allProdRecipe.get(output))
-							SaveViewer.log_ln("%s <-- %s", getIngredientName(output), combi.toString());
+					//SaveViewer.log_ln("All Producible Recipes:");
+					//for (IDType output:allProdRecipe.keySet())
+					//	for (InputValueCombination combi:allProdRecipe.get(output))
+					//		SaveViewer.log_ln("%s <-- %s", getIngredientName(output), combi.toString());
 					
-					SaveViewer.log_ln("All Producible Recipes for  %s:",getIngredientName(ingredientsTableModel.clickedIngredient.getID()));
-					for (InputValueCombination combi:allProdRecipe.get(ingredientsTableModel.clickedIngredient.getID()))
-						SaveViewer.log_ln("%s <-- %s", getIngredientName(ingredientsTableModel.clickedIngredient.getID()), combi.toString());
+					//SaveViewer.log_ln("All Producible Recipes for  %s:",getIngredientName(ingredientsTableModel.clickedIngredient.getID()));
+					//for (InputValueCombination combi:allProdRecipe.get(ingredientsTableModel.clickedIngredient.getID()))
+					//	SaveViewer.log_ln("%s <-- %s", getIngredientName(ingredientsTableModel.clickedIngredient.getID()), combi.toString());
 					
 					RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredientsTableModel.clickedIngredient,allProdRecipe);
-					recipeChainFinder.printTree(System.out);
+					recipeChainFinder.search();
+					//recipeChainFinder.printTree(System.out);
+					showinResultDialog(recipeChainFinder::printTree);
 				}
+			}
+
+			private HashSet<InputValueCombination> getSetOfAllCombis() {
+				HashSet<InputValueCombination> allCombis = new HashSet<>();
+				if (recipesTableModel!=null)
+					for (Recipe recipe:recipes) {
+						HashSet<InputValueCombination> recipeCombis = recipe.expand();
+						allCombis.addAll(recipeCombis);
+					}
+				return allCombis;
+			}
+
+			private HashMap<IDType, HashSet<InputValueCombination>> getAllProducibleRecipes() {
+				HashMap<IDType,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
+				ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<InputValueCombination>()));
+				for (Recipe recipe:recipes) {
+					if (isProducible(recipe.outputValue.id)) {
+						HashSet<InputValueCombination> allowedCombis = recipe.expand(DataModel.this::isProducible);
+						allProdRecipe.get(recipe.outputValue.id).addAll(allowedCombis);
+					}
+				}
+				return allProdRecipe;
+			}
+
+			private void showinResultDialog(Consumer<PrintStream> print) {
+				if (gui.resultDialog==null)
+					gui.resultDialog = new ResultDialog(gui.mainwindow, "Results");
+
+//				SaveViewer.runWithProgressDialog(gui.mainwindow, "Generate Output", pd->{
+//					pd.setTaskTitle("Generate Output");
+//					pd.setIndeterminate(true);
+					gui.resultDialog.setText_Stream(print);
+					gui.resultDialog.showDialog();
+					//gui.resultDialog.setVisible(true);
+//				});
 			}
 
 			public void SetSelectedIngredientsInStock(boolean isInStock) {
@@ -1196,6 +1381,55 @@ public class RecipeAnalyser implements ActionListener {
 		
 		}
 
+		private class RecipeChainFinder2 {
+			
+			private DataModel<IDType>.Ingredient finalOutput;
+			private HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe;
+			private HashMap<IDType, HashSet<InputValueCombination>> neededRecipes;
+
+			public RecipeChainFinder2(Ingredient finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe) {
+				this.finalOutput = finalOutput;
+				this.allProdRecipe = allProdRecipe;
+				this.neededRecipes = new HashMap<>();
+			}
+			
+			public void search() {
+				addAllRecipesFor(finalOutput);
+			}
+			
+			private void addAllRecipesFor(Ingredient ingredient) {
+				if (ingredient==null) return;
+				IDType id = ingredient.getID();
+				if (neededRecipes.containsKey(id)) return;
+				if (isInStock(id)) return;
+				
+				HashSet<InputValueCombination> recipes = allProdRecipe.get(id);
+				if (recipes!=null) {
+					neededRecipes.put(id, recipes);
+					for (InputValueCombination r:recipes)
+						for (IDType ingID:r.values)
+							addAllRecipesFor(getIngredient(ingID));
+				}
+			}
+
+			public void printTree(PrintStream out) {
+				out.printf("Possible Recipe Chains for \"%s\"%n", getIngredientName(finalOutput.getID()));
+				neededRecipes.forEach((id,recipes)->{
+					String indent;
+					if (recipes.size()==1) {
+						out.printf("    %s", getIngredientName(id));
+						indent = " ";
+					} else {
+						out.printf("    %s%n", getIngredientName(id));
+						indent = "          ";
+					}
+					for (InputValueCombination r:recipes)
+						out.printf("%s<-- %s%n", indent, r.toString());
+				});
+				out.printf("<end>%n");
+			}
+		}
+
 		private class RecipeChainFinder {
 			
 			private Ingredient finalOutput;
@@ -1205,6 +1439,9 @@ public class RecipeAnalyser implements ActionListener {
 			public RecipeChainFinder(Ingredient finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe) {
 				this.finalOutput = finalOutput;
 				this.allProdRecipe = allProdRecipe;
+			}
+
+			public void search() {
 				baseRecipeOutput = new RecipeOutput(null,this.finalOutput);
 			}
 			
@@ -1338,11 +1575,43 @@ public class RecipeAnalyser implements ActionListener {
 		}
 
 		protected class RecipeIngredient {
-			Integer amount;
-			IDType id;
+			final Integer amount;
+			final IDType id;
 			RecipeIngredient(Integer amount, IDType id) {
 				this.amount = amount;
 				this.id = id;
+			}
+			@Override public String toString() {
+				if (amount==null) return getIngredientName(id);
+				return amount+" "+getIngredientName(id);
+			}
+		}
+
+		private class SpecificRecipe {
+			private RecipeIngredient out;
+			private Vector<RecipeIngredient> inputs;
+			public SpecificRecipe(RecipeIngredient out, RecipeIngredient in0) { this(out,in0,null,null); }
+			public SpecificRecipe(RecipeIngredient out, RecipeIngredient in0, RecipeIngredient in1) { this(out,in0,in1,null); }
+			public SpecificRecipe(RecipeIngredient out, RecipeIngredient in0, RecipeIngredient in1, RecipeIngredient in2) {
+				this.out = out;
+				inputs = new Vector<>();
+				if (in0!=null) inputs.add(in0);
+				if (in1!=null) inputs.add(in1);
+				if (in2!=null) inputs.add(in2);
+			}
+			public float getRatio(IDType idOut, IDType idIn) {
+				if (!areIDsEqual(out.id, idOut))
+					throw new IllegalStateException();
+				if (out.amount==null || out.amount==0) return Float.NaN;
+				for (RecipeIngredient in:inputs)
+					if (areIDsEqual(in.id, idIn)) {
+						if (in.amount==null || in.amount==0) return Float.NaN;
+						return out.amount/in.amount;
+					}
+				return Float.NaN;
+			}
+			@Override public String toString() {
+				return out.toString()+" <-- "+String.join(" + ", (Iterable<String>)() -> inputs.stream().map(RecipeIngredient::toString).iterator());
 			}
 		}
 
@@ -1371,7 +1640,45 @@ public class RecipeAnalyser implements ActionListener {
 			public String toString() {
 				return "Recipe " + index + " (" + getIngredientName(outputValue.id) + ")";
 			}
-		
+			
+			public Vector<SpecificRecipe> getSpecificRecipes(IDType inputID) {
+				Vector<SpecificRecipe> recipes = new Vector<>();
+				Vector<Vector<RecipeIngredient>> nonEmptyArrays = new Vector<>();
+				if (!inputValues1.isEmpty()) nonEmptyArrays.add(inputValues1);
+				if (!inputValues2.isEmpty()) nonEmptyArrays.add(inputValues2);
+				if (!inputValues3.isEmpty()) nonEmptyArrays.add(inputValues3);
+				for (int i=0; i<nonEmptyArrays.size(); i++) {
+					Vector<RecipeIngredient> inputValues = nonEmptyArrays.get(i);
+					if (hasInput(inputValues,inputID)) {
+						RecipeIngredient input = getInput(inputValues,inputID);
+						if (nonEmptyArrays.size()>0) {
+							for (RecipeIngredient in0:nonEmptyArrays.get(0)) {
+								if (i==0) in0 = input;
+								if (nonEmptyArrays.size() <= 1)
+									recipes.add(new SpecificRecipe(outputValue,in0));
+								else {
+									for (RecipeIngredient in1:nonEmptyArrays.get(1)) {
+										if (i==1) in1 = input;
+										if (nonEmptyArrays.size() <= 2)
+											recipes.add(new SpecificRecipe(outputValue,in0,in1));
+										else {
+											for (RecipeIngredient in2:nonEmptyArrays.get(2)) {
+												if (i==2) in2 = input;
+												recipes.add(new SpecificRecipe(outputValue,in0,in1,in2));
+												if (i==2) break;
+											}
+										}
+										if (i==1) break;
+									}
+								}
+								if (i==0) break;
+							}
+						}
+					}
+				}
+				return recipes;
+			}
+			
 			public HashSet<InputValueCombination> expand() {
 				return expand(i->true);
 			}
@@ -1425,6 +1732,35 @@ public class RecipeAnalyser implements ActionListener {
 				case 1: if (row<inputValues2.size()) return inputValues2.get(row); break;
 				case 2: if (row<inputValues3.size()) return inputValues3.get(row); break;
 				}
+				return null;
+			}
+
+			public HashSet<IDType> getSetOfInputs() {
+				HashSet<IDType> inputs = new HashSet<>();
+				for (Vector<RecipeIngredient> inputValues:this.inputValues)
+					for (RecipeIngredient input:inputValues)
+						inputs.add(input.id);
+				return inputs;
+			}
+
+			public boolean hasInput(IDType id) {
+				for (Vector<RecipeIngredient> inputValues:this.inputValues)
+					if (hasInput(inputValues, id))
+						return true;
+				return false;
+			}
+
+			private boolean hasInput(Vector<RecipeIngredient> inputValues, IDType id) {
+				for (RecipeIngredient input:inputValues)
+					if (areIDsEqual(input.id, id))
+						return true;
+				return false;
+			}
+
+			private RecipeIngredient getInput(Vector<RecipeIngredient> inputValues, IDType id) {
+				for (RecipeIngredient input:inputValues)
+					if (areIDsEqual(input.id, id))
+						return input;
 				return null;
 			}
 		}
