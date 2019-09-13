@@ -723,6 +723,7 @@
 ^FLOORMAT1.type=BaseDekoration
 ^FOOD_M_CAT=
 ^FOOD_M_MEAT=
+^FOOD_M_REX=
 ^FOOD_PIE_SCUST=
 ^FOOD_P_ALL1=Heptaploid-Weizen
 ^FOOD_P_ALL1.type=PlantProduct
