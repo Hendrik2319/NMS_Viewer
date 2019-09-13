@@ -670,18 +670,13 @@ public class RecipeAnalyser implements ActionListener {
 	}
 
 	private static class RefinerDataModel extends DataModel<String> {
+		
 		RefinerDataModel() {
 			super(Type.Refiner);
 		}
 
 		@Override protected String parseID(String str) {
 			return str;
-		}
-
-		@Override protected boolean areIDsEqual(String id1, String id2) {
-			if (id1==null && id2==null) return true;
-			if (id1==null || id2==null) return false;
-			return id1.equals(id2);
 		}
 
 		@Override protected RecipeIngredient parseRecipeIngredient(int row, String[] rowData, int i) {
@@ -737,9 +732,22 @@ public class RecipeAnalyser implements ActionListener {
 			@Override String getDesc () { return null; }
 			@Override Float  getPrice() { return price; }
 		}
+
+		@Override protected InputValueCombination createCombi(String in0, String in1, String in2) {
+			return new InputValueCombination(in0, in1, in2);
+		}
+		private class InputValueCombination extends DataModel<String>.InputValueCombination {
+			protected InputValueCombination(String in0, String in1, String in2) { super(in0, in1, in2); }
+			@Override protected InputValueCombination cast(Object obj) {
+				if (obj instanceof InputValueCombination) return (InputValueCombination) obj;
+				return null;
+			}
+		}
+		
 	}
 	
 	private static class NutrientProcessorDataModel extends DataModel<Integer> {
+		
 		NutrientProcessorDataModel() {
 			super(Type.NutrientProcessor);
 		}
@@ -747,12 +755,6 @@ public class RecipeAnalyser implements ActionListener {
 		@Override protected Integer parseID(String str) {
 			try { return Integer.parseInt(str); }
 			catch (NumberFormatException e) { return null; }
-		}
-
-		@Override protected boolean areIDsEqual(Integer id1, Integer id2) {
-			if (id1==null && id2==null) return true;
-			if (id1==null || id2==null) return false;
-			return id1.intValue()==id2.intValue();
 		}
 
 		@Override protected RecipeIngredient parseRecipeIngredient(int row, String[] rowData, int i) throws ParseException {
@@ -834,6 +836,16 @@ public class RecipeAnalyser implements ActionListener {
 			}
 		}
 
+		@Override protected InputValueCombination createCombi(Integer in0, Integer in1, Integer in2) {
+			return new InputValueCombination(in0, in1, in2);
+		}
+		private class InputValueCombination extends DataModel<Integer>.InputValueCombination {
+			protected InputValueCombination(Integer in0, Integer in1, Integer in2) { super(in0, in1, in2); }
+			@Override protected InputValueCombination cast(Object obj) {
+				if (obj instanceof InputValueCombination) return (InputValueCombination) obj;
+				return null;
+			}
+		}
 	}
 	
 	private static abstract class DataModel<IDType extends Comparable<IDType>> {
@@ -1116,7 +1128,6 @@ public class RecipeAnalyser implements ActionListener {
 
 		protected abstract Ingredient       parseIngredient      (int row, String[] rowData) throws ParseException;
 		protected abstract RecipeIngredient parseRecipeIngredient(int row, String[] rowData, int i) throws ParseException;
-		protected abstract boolean areIDsEqual(IDType id1,IDType id2);
 		
 		private class ServiceFunctions {
 
@@ -1125,7 +1136,7 @@ public class RecipeAnalyser implements ActionListener {
 					HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
 					ingredientsTableModel.highlighted.clear();
 					ingredientsTableModel.forEach(ingredient -> {
-						InputValueCombination combi = new InputValueCombination(ingredientsTableModel.clickedIngredient.getID(),ingredient.getID());
+						InputValueCombination combi = createCombi(ingredientsTableModel.clickedIngredient.getID(),ingredient.getID());
 						if (allCombis.contains(combi))
 							ingredientsTableModel.highlighted.add(ingredient.getID());
 					});
@@ -1249,8 +1260,8 @@ public class RecipeAnalyser implements ActionListener {
 					Vector<IDType> selectedIngredients = ingredientsTableModel.getSelected();
 					HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
 					for (IDType value:selectedIngredients) {
-						InputValueCombination singleCombi = new InputValueCombination(value);
-						InputValueCombination doubleCombi = new InputValueCombination(value,value);
+						InputValueCombination singleCombi = createCombi(value);
+						InputValueCombination doubleCombi = createCombi(value,value);
 						if (!allCombis.contains(singleCombi)) messages.append( String.format( "Can't find a recipes for (%s)%n", singleCombi.toString() ) );
 						if (!allCombis.contains(doubleCombi)) messages.append( String.format( "Can't find a recipes for (%s)%n", doubleCombi.toString() ) );
 					}
@@ -1333,23 +1344,29 @@ public class RecipeAnalyser implements ActionListener {
 			
 		}
 		
-		private class InputValueCombination {
+		private InputValueCombination createCombi(IDType in0) { return createCombi(in0,null,null); } 
+		private InputValueCombination createCombi(IDType in0, IDType in1) { return createCombi(in0,in1,null); }
+		protected abstract InputValueCombination createCombi(IDType in0, IDType in1, IDType in2);
+		
+		protected abstract class InputValueCombination {
 		
 			private final Vector<IDType> values;
 		
-			public InputValueCombination(IDType in0) { this(in0,null,null); }
-			public InputValueCombination(IDType in0, IDType in1) { this(in0,in1,null); }
-			public InputValueCombination(IDType in0, IDType in1, IDType in2) {
+			protected InputValueCombination(IDType in0, IDType in1, IDType in2) {
 				values = new Vector<>();
 				if (in0!=null) values.add(in0);
 				if (in1!=null) values.add(in1);
 				if (in2!=null) values.add(in2);
 				values.sort(null);
 			}
-		
+			
+			public void forEach(Consumer<IDType> action) {
+				values.forEach(action);
+			}
+			
 			public boolean contains(IDType val) {
 				for (IDType v:values)
-					if (areIDsEqual(v,val)) return true;
+					if (v.compareTo(val)==0) return true;
 				return false;
 			}
 			
@@ -1362,21 +1379,18 @@ public class RecipeAnalyser implements ActionListener {
 			public int hashCode() {
 				return values.stream().mapToInt(id->id.hashCode()).reduce(0, (i1,i2)->i1^i2);
 			}
-		
+			
+			protected abstract InputValueCombination cast(Object obj);
+			
 			@Override
 			public boolean equals(Object obj) {
-				if (obj instanceof DataModel.InputValueCombination) {
-					@SuppressWarnings("unchecked")
-					InputValueCombination other = (DataModel<IDType>.InputValueCombination) obj;
-					if (this.values.size()!=other.values.size()) return false;
-					for (int i=0; i<values.size(); i++) {
-						IDType val1 = this.values.get(i);
-						IDType val2 = other.values.get(i);
-						if (!areIDsEqual(val1,val2)) return false;
-					}
-					return true;
-				} else
-					return false;
+				InputValueCombination other = cast(obj);
+				if (other==null) return false;
+				if (this.values.size()!=other.values.size()) return false;
+				for (int i=0; i<values.size(); i++)
+					if (this.values.get(i).compareTo(other.values.get(i))!=0)
+						return false;
+				return true;
 			}
 		
 		}
@@ -1407,8 +1421,7 @@ public class RecipeAnalyser implements ActionListener {
 				if (recipes!=null) {
 					neededRecipes.put(id, recipes);
 					for (InputValueCombination r:recipes)
-						for (IDType ingID:r.values)
-							addAllRecipesFor(getIngredient(ingID));
+						r.forEach(ingID->addAllRecipesFor(getIngredient(ingID)));
 				}
 			}
 
@@ -1520,8 +1533,8 @@ public class RecipeAnalyser implements ActionListener {
 					this.recipe = recipe;
 					this.isExecutable = true;
 					this.inputs = new Vector<>();// new RecipeOutput[this.recipe.values.size()];
-					RecipeOutput recipeOutput;
-					for (IDType val:this.recipe.values) {
+					this.recipe.forEach(val->{
+						RecipeOutput recipeOutput;
 						Ingredient input = getIngredient(val);
 						if (input==null) {
 							inputs.add(new RecipeOutput(this,val));
@@ -1530,7 +1543,7 @@ public class RecipeAnalyser implements ActionListener {
 							if (recipeOutput.allowedRecipes.isEmpty() && !recipeOutput.isBaseInput)
 								isExecutable = false;
 						}
-					}
+					});
 				}
 		
 				public void printTree(PrintStream out, String firstIndent, String nextIndent) {
@@ -1600,11 +1613,11 @@ public class RecipeAnalyser implements ActionListener {
 				if (in2!=null) inputs.add(in2);
 			}
 			public float getRatio(IDType idOut, IDType idIn) {
-				if (!areIDsEqual(out.id, idOut))
+				if (out.id.compareTo(idOut)!=0)
 					throw new IllegalStateException();
 				if (out.amount==null || out.amount==0) return Float.NaN;
 				for (RecipeIngredient in:inputs)
-					if (areIDsEqual(in.id, idIn)) {
+					if (in.id.compareTo(idIn)==0) {
 						if (in.amount==null || in.amount==0) return Float.NaN;
 						return out.amount/in.amount;
 					}
@@ -1692,16 +1705,16 @@ public class RecipeAnalyser implements ActionListener {
 					for (RecipeIngredient in0:nonEmptyArrays.get(0)) {
 						if (isInputAllowed.test(in0.id)) {
 							if (nonEmptyArrays.size() <= 1)
-								combis.add(new InputValueCombination(in0.id));
+								combis.add(createCombi(in0.id));
 							else {
 								for (RecipeIngredient in1:nonEmptyArrays.get(1)) {
 									if (isInputAllowed.test(in1.id)) {
 										if (nonEmptyArrays.size() <= 2)
-											combis.add(new InputValueCombination(in0.id,in1.id));
+											combis.add(createCombi(in0.id,in1.id));
 										else {
 											for (RecipeIngredient in2:nonEmptyArrays.get(2)) {
 												if (isInputAllowed.test(in2.id)) {
-													combis.add(new InputValueCombination(in0.id,in1.id,in2.id));
+													combis.add(createCombi(in0.id,in1.id,in2.id));
 												}
 											}
 										}
@@ -1752,14 +1765,14 @@ public class RecipeAnalyser implements ActionListener {
 
 			private boolean hasInput(Vector<RecipeIngredient> inputValues, IDType id) {
 				for (RecipeIngredient input:inputValues)
-					if (areIDsEqual(input.id, id))
+					if (input.id.compareTo(id)==0)
 						return true;
 				return false;
 			}
 
 			private RecipeIngredient getInput(Vector<RecipeIngredient> inputValues, IDType id) {
 				for (RecipeIngredient input:inputValues)
-					if (areIDsEqual(input.id, id))
+					if (input.id.compareTo(id)==0)
 						return input;
 				return null;
 			}
