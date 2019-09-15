@@ -72,7 +72,7 @@ import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 
-public class RecipeAnalyser implements ActionListener {
+class RecipeAnalyser implements ActionListener {
 	private static final String RECIPE_ANALYSER_CFG = "NMS_Viewer.RecipeAnalyser.cfg";
 
 	private static final Color COLOR_INGREDIENT_MARKER = new Color(0,213,255);
@@ -113,8 +113,8 @@ public class RecipeAnalyser implements ActionListener {
 	
 	private JCheckBoxMenuItem miHighlightProducibleInIngredientsTable = null;
 	
-	private File currentOpenDataFile = null;
-	private DataModel<?> dataModel   = null;
+	private File         dataFile  = null;
+	private DataModel<?> dataModel = null;
 
 	private boolean saveInStockIngredients = false;
 	private EnumMap<DataModel.Type,String> ingredientsInStock = new EnumMap<>(DataModel.Type.class);
@@ -127,7 +127,7 @@ public class RecipeAnalyser implements ActionListener {
 			while ( (line=in.readLine())!=null ) {
 				if (line.startsWith("OpenDataFile=")) {
 					String valueStr = line.substring("OpenDataFile=".length());
-					currentOpenDataFile = new File( valueStr );
+					dataFile = new File( valueStr );
 				}
 				if (line.equals("SaveInStockIngredients")) {
 					saveInStockIngredients = true;
@@ -157,8 +157,8 @@ public class RecipeAnalyser implements ActionListener {
 
 	private RecipeAnalyser writeConfig() {
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(RECIPE_ANALYSER_CFG), StandardCharsets.UTF_8))) {
-			if (currentOpenDataFile!=null)
-				out.printf("OpenDataFile=%s%n", currentOpenDataFile.getAbsolutePath());
+			if (dataFile!=null)
+				out.printf("OpenDataFile=%s%n", dataFile.getAbsolutePath());
 			if (saveInStockIngredients) {
 				out.printf("SaveInStockIngredients%n");
 				for (DataModel.Type type:DataModel.Type.values()) {
@@ -173,8 +173,8 @@ public class RecipeAnalyser implements ActionListener {
 	}
 	
 	private RecipeAnalyser openLastDataFile() {
-		if (currentOpenDataFile!=null)
-			readDataFromFile(currentOpenDataFile);
+		if (dataFile!=null)
+			readDataFromFile(dataFile);
 		return this;
 	}
 
@@ -360,7 +360,7 @@ public class RecipeAnalyser implements ActionListener {
 		
 		case ClearData:
 			dataModel = null;
-			currentOpenDataFile = null;
+			dataFile = null;
 			
 			recipesTable.setModel(new DefaultTableModel());
 			ingredientsTable.setModel(new DefaultTableModel());
@@ -374,22 +374,22 @@ public class RecipeAnalyser implements ActionListener {
 			break;
 		case OpenDataFile:
 			if (fileChooser.showOpenDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
-				currentOpenDataFile = fileChooser.getSelectedFile();
-				readDataFromFile(currentOpenDataFile);
+				dataFile = fileChooser.getSelectedFile();
+				readDataFromFile(dataFile);
 				writeConfig();
 			}
 			break;
 		case SaveDataFile:
-			if (currentOpenDataFile!=null && currentOpenDataFile.isFile()) {
-				saveDataToFile(currentOpenDataFile);
+			if (dataFile!=null && dataFile.isFile()) {
+				saveDataToFile(dataFile);
 				writeConfig();
 				break;
 			}
 			//break;
 		case SaveDataFileAs:
 			if (fileChooser.showSaveDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
-				currentOpenDataFile = fileChooser.getSelectedFile();
-				saveDataToFile(currentOpenDataFile);
+				dataFile = fileChooser.getSelectedFile();
+				saveDataToFile(dataFile);
 				writeConfig();
 			}
 			break;
@@ -480,15 +480,14 @@ public class RecipeAnalyser implements ActionListener {
 		if (dataModel == null)
 			str += " - <No Data>";
 		else {
-			if (currentOpenDataFile==null) str += "  -  <unsaved>";
-			else str += "  -  "+currentOpenDataFile.getName();
+			if (dataFile==null) str += "  -  <unsaved>";
+			else str += "  -  "+dataFile.getName();
 			switch (dataModel.type) {
 			case NutrientProcessor: str += "  [NutrientProcessor Recipes]"; break;
 			case Refiner          : str += "  [Refiner Recipes]"; break;
 			}
 		}
 		mainwindow.setTitle("Recipe Analyser"+str);
-		
 	}
 
 	private void setDataModelType(DataModel.Type type) {

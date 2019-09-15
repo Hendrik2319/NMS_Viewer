@@ -177,6 +177,7 @@ public class SaveViewer implements ActionListener {
 				case SwitchFolder: return 1;
 				case Open        : return 1;
 				case Compare     : return 0;
+				case Save        : return 2;
 				case SaveAs      : return 3;
 				case Close       : return 5;
 				case Reload      : return 4;
@@ -1037,7 +1038,7 @@ public class SaveViewer implements ActionListener {
 		
 	}
 
-	public enum ToolbarIcons { SwitchFolder, Open, SaveAs, Close, Reload, Compare, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
+	public enum ToolbarIcons { SwitchFolder, Open, Save, SaveAs, Close, Reload, Compare, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
 
 	private class ComparePanel extends JPanel {
 		private static final long serialVersionUID = -876150147630145750L;
@@ -1199,19 +1200,22 @@ public class SaveViewer implements ActionListener {
 		return createMenuItem(title, l, null, null, enabled, null);
 	}
 	public static JMenuItem createMenuItem(String title, ActionListener l) {
-		return createMenuItem(title, l, null);
+		return createMenuItem(title, l, null, null, true, null);
+	}
+	public static JMenuItem createMenuItem(String title, ActionListener l, ToolbarIcons icon) {
+		return createMenuItem(title, l, null, null, true, icon);
 	}
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
-		return createMenuItem(title, l, actionCommand, null);
-	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, ToolbarIcons icon) {
-		return createMenuItem(title, l, null, null, true, icon);
+		return createMenuItem(title, l, null, actionCommand, true, null);
 	}
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
 		return createMenuItem(title, l, null, actionCommand, true, icon);
 	}
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
 		return createMenuItem(title, l, disabler, actionCommand, true, null);
+	}
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, ToolbarIcons icon) {
+		return createMenuItem(title, l, disabler, actionCommand, true, icon);
 	}
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
