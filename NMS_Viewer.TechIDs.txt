@@ -570,7 +570,9 @@
 ^STARSUIT.imageBG=085C78
 ^STORY_TRANSLATE=Artemis' Übersetzer
 ^STORY_TRANSLATE.type=ExosuitExtension
+^STORY_TRANSLATE.image=_self.ArtemisÜbersetzer.png
 ^STORY_TRANSLATE.imageBG=0063B6
+^STORY_TRANSLATE.upgradeClass=C
 ^STRONGLASER=Fortgeschrittener Minenlaser
 ^STRONGLASER.type=MultitoolWeaponUpgrade
 ^STRONGLASER.image=AdvMiningLaserIcon.png
