@@ -350,7 +350,12 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private enum ActionCommand {
-		Open, Reload, Close, WriteHTML, WriteJSON, SwitchToGameFolder, SwitchToBackupFolder, Compare, TabSelected, ComputeCoordinates,
+		Open, Reload, Close, Compare,
+		WriteHTML, WriteJSON,
+		SwitchToGameFolder, SwitchToBackupFolder,
+		TabSelected, ComputeCoordinates, SelectCoordinates,
+		RefreshExtraImages, ShowExtraImages,
+		OpenRecipeAnalyser, OpenProductionOptimiser,
 		  save_hg( 0,  "save.hg","save.hg"),
 		 save2_hg( 1, "save2.hg","..2"    ),
 		 save3_hg( 2, "save3.hg","..3"    ),
@@ -361,7 +366,7 @@ public class SaveViewer implements ActionListener {
 		 save8_hg( 7, "save8.hg","..8"    ),
 		 save9_hg( 8, "save9.hg","..9"    ),
 		save10_hg( 9,"save10.hg","..10"   ),
-		RefreshExtraImages, ShowExtraImages, SelectCoordinates, OpenRecipeAnalyser;
+		;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
 		private String filename;
@@ -484,6 +489,10 @@ public class SaveViewer implements ActionListener {
 			
 		case OpenRecipeAnalyser:
 			RecipeAnalyser.start(false);
+			break;
+			
+		case OpenProductionOptimiser:
+			ProductionOptimiser.start(false);
 			break;
 		}
 	}
@@ -981,10 +990,11 @@ public class SaveViewer implements ActionListener {
 //			toolBar.add(createButton("Select Coordinates"  , ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
 			toolBar.add(createButton("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
+			toolBar.addSeparator();
+			toolBar.add(createButton("Recipe Analyser", ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
+			toolBar.add(createButton("Production Optimiser", ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
-			extraMenu.add(createMenuItem("Open RecipeAnalyser", ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
-			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
 			extraMenu.add(createMenuItem("Switch to Backup Folder"      , ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
 			extraMenu.add(createMenuItem("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
