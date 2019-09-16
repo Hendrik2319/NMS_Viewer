@@ -1,5 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -15,6 +16,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -22,12 +27,14 @@ import java.util.function.Predicate;
 import javax.swing.BorderFactory;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultCellEditor;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
@@ -42,6 +49,7 @@ import javax.swing.table.TableCellRenderer;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
+import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
@@ -85,6 +93,9 @@ class ProductionOptimiser implements ActionListener {
 	private   ProductsTableModel   productsTableModel = null;
 	private InputList inputList = null;
 	private JTextArea outputTextArea = null;
+	private JComboBox<Result> resultList = null;
+	
+	private Result selectedResult = null;
 
 	ProductionOptimiser() {
 		
@@ -115,7 +126,7 @@ class ProductionOptimiser implements ActionListener {
 		baseInputsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(rendererCheckBox));
 		JScrollPane baseInputsTableScrollPane = new JScrollPane(baseInputsTable);
 		baseInputsTableScrollPane.setBorder(createCompoundBorder("Base Inputs") );
-		baseInputsTableScrollPane.setPreferredSize(new Dimension(900,200));
+		baseInputsTableScrollPane.setPreferredSize(new Dimension(getSumofColWidths(BaseInputsTableColumnID.values())+50,200));
 		
 		productsTableModel = new ProductsTableModel();
 		productsTable = new TableView.SimplifiedTable("ProductsTable", productsTableModel, true, true, false);
@@ -123,13 +134,25 @@ class ProductionOptimiser implements ActionListener {
 		productsTable.setDefaultEditor(Input.class, new DefaultCellEditor(new JComboBox<Input>(inputList)));
 		JScrollPane productsTableScrollPane = new JScrollPane(productsTable);
 		productsTableScrollPane.setBorder(createCompoundBorder("Products"));
-		productsTableScrollPane.setPreferredSize(new Dimension(900,200));
+		productsTableScrollPane.setPreferredSize(new Dimension(getSumofColWidths(ProductsTableColumnID.values())+50,300));
+		
+		resultList = new JComboBox<Result>();
+		resultList.addActionListener(e->showResult((Result)resultList.getSelectedItem()));
+		resultList.setEnabled(false);
+		
+		JPanel resultListPanel = new JPanel(new BorderLayout(3,3));
+		resultListPanel.setBorder(BorderFactory.createTitledBorder("Results"));
+		resultListPanel.add(resultList);
 		
 		outputTextArea = new JTextArea();
+		
 		JScrollPane outputScrollPane = new JScrollPane(outputTextArea);
-		outputScrollPane.setBorder(BorderFactory.createTitledBorder("Output"));
 		outputScrollPane.setBorder(createCompoundBorder("Output"));
 		outputScrollPane.setPreferredSize(new Dimension(200,200));
+		
+		JPanel outputPanel = new JPanel(new BorderLayout(3,3));
+		outputPanel.add(outputScrollPane,BorderLayout.CENTER);
+		outputPanel.add(resultListPanel,BorderLayout.NORTH);
 		
 		JSplitPane tablePane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		tablePane.setTopComponent(baseInputsTableScrollPane);
@@ -139,7 +162,7 @@ class ProductionOptimiser implements ActionListener {
 		JSplitPane contentPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 		contentPane.setLeftComponent(tablePane);
-		contentPane.setRightComponent(outputScrollPane);
+		contentPane.setRightComponent(outputPanel);
 		contentPane.setResizeWeight(0.8);
 		
 		JMenu menuData = new JMenu("Data");
@@ -161,6 +184,25 @@ class ProductionOptimiser implements ActionListener {
 		updateGuiAccess();
 		updateWindowTitle();
 		return this;
+	}
+
+	private void showResult(Result result) {
+		selectedResult = result;
+		baseInputsTableModel.fireTableUpdate();
+		productsTableModel.fireTableUpdate();
+		if (selectedResult!=null) {
+			SaveViewer.log_ln("Avail: %s", selectedResult.avail);
+			SaveViewer.log_ln("Amounts of Level 1 products at start: %s", selectedResult.level1Amounts);
+			SaveViewer.log_ln("Consumed Base Inputs: %s", selectedResult.consumedBaseInputs);
+			SaveViewer.log_ln("Stored Products: %s", selectedResult.storedProducts);
+		}
+	}
+
+	private <ColumnID extends SimplifiedColumnIDInterface> int getSumofColWidths(ColumnID[] values) {
+		int width = 0;
+		for (ColumnID colID:values)
+			width += colID.getColumnConfig().prefWidth;
+		return width;
 	}
 
 	private CompoundBorder createCompoundBorder(String title) {
@@ -233,9 +275,19 @@ class ProductionOptimiser implements ActionListener {
 			}
 			break;
 			
-		case FindMostValuableProduction:
-			// TODO
-			break;
+		case FindMostValuableProduction: {
+			SaveViewer.runWithProgressDialog(mainwindow, "title", pd->{
+				Vector<Result> results = new MostValuableProduction(pd).find();
+				resultList.setModel(new DefaultComboBoxModel<Result>(results));
+				resultList.setSelectedItem(null);
+				resultList.setEnabled(true);
+				SaveViewer.log_ln("Most Valuable Productions:");
+				for (int i=0; i<results.size(); i++) {
+					Result res = results.get(i);
+					SaveViewer.log_ln("   [%02d] %d", i+1, res.avail);
+				}
+			});
+		} break;
 		}
 	}
 
@@ -334,7 +386,7 @@ class ProductionOptimiser implements ActionListener {
 					}
 					if (line.startsWith("amount=")) {
 						String valueStr = line.substring("amount=".length());
-						try { baseInput.amount = Integer.parseInt(valueStr); }
+						try { baseInput.storedAmount = Integer.parseInt(valueStr); }
 						catch (NumberFormatException e) {}
 					}
 					if (line.equals("isInfinite")) {
@@ -360,7 +412,7 @@ class ProductionOptimiser implements ActionListener {
 					}
 					if (line.startsWith("amount=")) {
 						String valueStr = line.substring("amount=".length());
-						try { product.amount = Integer.parseInt(valueStr); }
+						try { product.producedAmount = Integer.parseInt(valueStr); }
 						catch (NumberFormatException e) {}
 					}
 					readProductInput(line, 1, product);
@@ -381,6 +433,20 @@ class ProductionOptimiser implements ActionListener {
 			if (product.input3!=null) product.input3 = getInput(product.input3.name);
 		});
 		
+		StringBuilder msg = new StringBuilder();
+		productsTableModel.forEach(product->{
+			if (product.findCircRefOf(product.input1, null)) { msg.append(String.format("input %s of product %s%n", product.input1, product)); product.input1=null; }
+			if (product.findCircRefOf(product.input2, null)) { msg.append(String.format("input %s of product %s%n", product.input2, product)); product.input2=null; }
+			if (product.findCircRefOf(product.input3, null)) { msg.append(String.format("input %s of product %s%n", product.input3, product)); product.input3=null; }
+		});
+		String msgStr = msg.toString();
+		if (!msgStr.isEmpty()) {
+			String message = "Found circular references in read file.\r\n";
+			message += "Following inputs will be removed:\r\n";
+			message += msgStr;
+			showErrorMessage("Found circular references", message);
+		}
+		
 		baseInputsTableModel.fireTableUpdate();
 		productsTableModel.fireTableUpdate();
 	}
@@ -392,14 +458,14 @@ class ProductionOptimiser implements ActionListener {
 				out.printf("name=%s%n",baseInput.name);
 				out.printf("price=%d%n",baseInput.price);
 				if (baseInput.isInfinite) out.printf("isInfinite%n");
-				else out.printf("amount=%d%n",baseInput.amount);
+				else out.printf("amount=%d%n",baseInput.storedAmount);
 				out.println();
 			});
 			productsTableModel.forEach(product->{
 				out.println("[Product]");
 				out.printf("name=%s%n",product.name);
 				out.printf("price=%d%n",product.price);
-				out.printf("amount=%d%n",product.amount);
+				out.printf("amount=%d%n",product.producedAmount);
 				writeProductInput(out, 1,product.input1,product.n1);
 				writeProductInput(out, 2,product.input2,product.n2);
 				writeProductInput(out, 3,product.input3,product.n3);
@@ -470,9 +536,307 @@ class ProductionOptimiser implements ActionListener {
 		String newName = String.format("%s_%03d", input.name, i);
 		while (!isUniqueName(input,newName))
 			newName = String.format("%s_%03d", input.name, ++i);
-		String message = String.format("Entered name \"%s\" is not unique. It will be changed into \"%s\".", input.name, newName);
-		JOptionPane.showMessageDialog(mainwindow, message, "Name is not unique", JOptionPane.WARNING_MESSAGE);
+		showWarningMessage("Name is not unique", String.format("Entered name \"%s\" is not unique. It will be changed into \"%s\".", input.name, newName));
 		input.name = newName;
+	}
+
+	private void showErrorMessage(String title, String message) {
+		JOptionPane.showMessageDialog(mainwindow, message, title, JOptionPane.ERROR_MESSAGE);
+	}
+
+	private void showWarningMessage(String title, String message) {
+		JOptionPane.showMessageDialog(mainwindow, message, title, JOptionPane.WARNING_MESSAGE);
+	}
+	
+	private class Result {
+		public int avail;
+		public HashMap<BaseInput,Integer> consumedBaseInputs;
+		public HashMap<Product,Integer> storedProducts;
+		public HashMap<Product,Integer> level1Amounts;
+		
+		public Result(HashMap<Product, Integer> currentAmounts) {
+			storedProducts = new HashMap<>(currentAmounts);
+			level1Amounts = new HashMap<>(currentAmounts);
+			consumedBaseInputs = new HashMap<>();
+			avail = 0;
+		}
+		
+		@Override public String toString() {
+			return "Result [avail=" + avail + "]";
+		}
+	}
+
+	private class MostValuableProduction {
+		
+		private static final int MAX_RESULT_COUNT = 10;
+		private Vector<ProductionOptimiser.Result> results;
+		private ProgressDialog pd;
+
+		MostValuableProduction(ProgressDialog pd) {
+			this.pd = pd;
+			results = new Vector<>();
+		}
+
+		public Vector<ProductionOptimiser.Result> find() {
+			pd.displayProgressString(ProgressDialog.ProgressDisplay.Number);
+			
+			pd.setTaskTitle("Checking Requirements");
+			pd.setIndeterminate(true);
+			
+			if (!checkRequirements()) return null;
+			
+			pd.setTaskTitle("Running Loop");
+			pd.setIndeterminate(true);
+			
+			results.clear();
+			Loop loop = new Loop();
+			loop.start();
+			
+			return results;
+		}
+
+		private class Result extends ProductionOptimiser.Result {
+			private boolean canStillProduce;
+		
+			public Result(HashMap<Product, Integer> currentAmounts) {
+				super(currentAmounts);
+				currentAmounts.forEach((p,n)->{
+					consumeBaseInput(p.input1,p.n1*n);
+					consumeBaseInput(p.input2,p.n2*n);
+					consumeBaseInput(p.input3,p.n3*n);
+				});
+			}
+
+			public void computeValues() {
+				canStillProduce = true;
+				while (canStillProduce) {
+					canStillProduce = false;
+					productsTableModel.forEach(product->{
+						if (isHigherLevelProduct(product)) {
+							Integer stored = storedProducts.get(product);
+							if (stored==null) stored=0;
+							int n1 = getMaxAmount(product.input1, product.n1);
+							int n2 = getMaxAmount(product.input2, product.n2);
+							int n3 = getMaxAmount(product.input3, product.n3);
+							int n = Math.min(Math.min(n1, n2), n3);
+							if (n>0) {
+								canStillProduce = true;
+								consumeProduct(product.input1, product.n1*n);
+								consumeProduct(product.input2, product.n2*n);
+								consumeProduct(product.input3, product.n3*n);
+							}
+							storedProducts.put(product,stored+n);
+						}
+					});
+				}
+				
+				int costs = consumedBaseInputs.entrySet().stream().mapToInt(entry->entry.getKey().price*entry.getValue()).sum();
+				int priceOfProducts = storedProducts.entrySet().stream().mapToInt(entry->entry.getKey().price*entry.getValue()).sum();
+				avail = priceOfProducts-costs;
+			}
+
+			private void consumeBaseInput(Input input, int n) {
+				if (input instanceof BaseInput)
+					add(consumedBaseInputs, (BaseInput) input, n);
+				else if (input!=null)
+					throw new IllegalStateException();
+			}
+		
+			private int getMaxAmount(Input input, int n) {
+				if (input==null) return Integer.MAX_VALUE;
+				if (input instanceof Product) {
+					Integer stored = storedProducts.get((Product) input);
+					return stored==null ? 0 : stored/n;
+				} else
+					throw new IllegalStateException();
+			}
+
+			private void consumeProduct(Input input, int n) {
+				if (input instanceof Product)
+					add(storedProducts, (Product) input, -n);
+				else if (input!=null)
+					throw new IllegalStateException();
+			}
+			
+			private <V> void add(HashMap<V,Integer> map, V key, int n) {
+				Integer value = map.get(key);
+				if (value==null) value=0;
+				map.put(key,value + n);
+			}
+			
+		}
+
+		private class Loop {
+			
+			private HashMap<Product,Integer> maxAmounts;
+			private HashMap<Product,Integer> currentAmounts;
+			private Vector<Product> products;
+			private HashMap<BaseInput,HashMap<Product,Integer>> neededBaseInputs;
+			private int[] indexMultipliers;
+
+			Loop() {
+				maxAmounts = new HashMap<>();
+				currentAmounts = new HashMap<>();
+				products = new Vector<>();
+				neededBaseInputs = new HashMap<>();
+				indexMultipliers = null;
+			}
+
+			public void start() {
+				maxAmounts.clear();
+				currentAmounts.clear();
+				productsTableModel.forEach(p->{
+					if ( isLevel1Product(p) ) {
+						int n1 = getMaxAmount(p.input1,p.n1);
+						int n2 = getMaxAmount(p.input2,p.n2);
+						int n3 = getMaxAmount(p.input3,p.n3);
+						int n = Math.min(Math.min(n1, n2), n3);
+						maxAmounts.put(p,n);
+						currentAmounts.put(p,0);
+					}
+				});
+				
+				products.clear();
+				products.addAll(maxAmounts.keySet());
+				SaveViewer.log_ln("Lvl1 Products: %s", products);
+				SaveViewer.log_ln("Max. Amounts: %s", maxAmounts);
+				
+				indexMultipliers = new int[products.size()];
+				int numberOfCases = 1;
+				for (int i=products.size()-1; i>=0; i--) {
+					Product p = products.get(i);
+					indexMultipliers[i] = numberOfCases;
+					numberOfCases *= maxAmounts.get(p);
+				}
+				SaveViewer.log_ln("Number Of Cases: %d", numberOfCases);
+				pd.setValue(0, (int)numberOfCases);
+				
+				neededBaseInputs.clear();
+				loop(0,0);
+			}
+
+			private int getMaxAmount(Input input, int n) {
+				if (input instanceof BaseInput)
+					return ((BaseInput) input).storedAmount/n;
+				return Integer.MAX_VALUE;
+			}
+
+			private void loop(int loopLevel, int caseIndex) {
+				pd.setValue(caseIndex);
+				
+				if (loopLevel>=products.size()) { // most inner loop
+					Result result = new Result(currentAmounts);
+					result.computeValues();
+					if (results.isEmpty() || results.firstElement().avail<=result.avail) {
+						results.add(result);
+						results.sort(Comparator.<ProductionOptimiser.Result,Integer>comparing(res->res.avail));
+						while (results.size()>MAX_RESULT_COUNT) {
+							if (results.get(0).avail == results.get(MAX_RESULT_COUNT).avail)
+								break;
+							results.remove(0);
+						}
+					}
+					return;
+				}
+				
+				Product product = products.get(loopLevel);
+				int max = maxAmounts.get(product);
+				
+				for (int n=0; n<=max; n++) {
+					setAmount(product, n);
+					if (!haveAllResources()) break;
+					loop(loopLevel+1, caseIndex + n*indexMultipliers[loopLevel]);
+				}
+				setAmount(product, 0);
+			}
+
+			private void setAmount(Product product, int n) {
+				currentAmounts.put(product,n);
+				setNeededBaseInputs(product.input1, product, n*product.n1);
+				setNeededBaseInputs(product.input2, product, n*product.n2);
+				setNeededBaseInputs(product.input3, product, n*product.n3);
+			}
+
+			private void setNeededBaseInputs(Input input, Product product, int n) {
+				if (input instanceof BaseInput) {
+					BaseInput baseInput = (BaseInput) input;
+					HashMap<Product, Integer> needs = neededBaseInputs.get(baseInput);
+					if (needs==null) neededBaseInputs.put(baseInput, needs = new HashMap<>());
+					needs.put(product, n);
+				}
+			}
+
+			private boolean haveAllResources() {
+				for (BaseInput baseInput:neededBaseInputs.keySet()) {
+					int consumption = neededBaseInputs.get(baseInput).entrySet().stream().mapToInt(entry->entry.getValue()).sum();
+					if (consumption > baseInput.storedAmount)
+						return false;
+				}
+				return true;
+			}
+		}
+
+		private boolean checkRequirements() {
+			StringBuilder msg = new StringBuilder();
+			HashSet<Product> usedInputs = new HashSet<>();
+			productsTableModel.forEach(p->{
+				if ( isLevel1Product(p) )
+					return; // this is a level 1 product -> Ok
+				
+				if (!isHigherLevelProduct(p) )
+					msg.append(String.format("\"%s\" used mixed inputs (Base Inputs and Products).%n", p));
+				
+				if (hasNoInputs(p) )
+					msg.append(String.format("\"%s\" has no inputs.%n", p));
+				
+				if (!hasExclusiveInputs(usedInputs, p) )
+					msg.append(String.format("\"%s\": Not all inputs are exclusive.%n", p));
+				
+				int cost = p.computeCosts();
+				if (p.price < cost) {
+					msg.append(String.format(Locale.ENGLISH, "\"%s\": Manufacturing costs of %,d U are higher than price of %,d U.%n", p, cost, p.price));
+				}
+				
+			});
+			String msgStr = msg.toString();
+			if (!msgStr.isEmpty()) {
+				showErrorMessage("Not all products meets the requirements", "Not all products meets the requirements:\r\n"+msgStr);
+				return false;
+			}
+			return true;
+		}
+
+		private boolean hasNoInputs(Product p) {
+			return p.input1==null && p.input2==null && p.input3==null;
+		}
+
+		private boolean isLevel1Product(Product p) {
+			Input i1 = p.input1;
+			Input i2 = p.input2;
+			Input i3 = p.input3;
+			return (i1==null || i1 instanceof BaseInput) && (i2==null || i2 instanceof BaseInput) && (i3==null || i3 instanceof BaseInput);
+		}
+
+		private boolean isHigherLevelProduct(Product p) {
+			Input i1 = p.input1;
+			Input i2 = p.input2;
+			Input i3 = p.input3;
+			return (i1==null || i1 instanceof Product) && (i2==null || i2 instanceof Product) && (i3==null || i3 instanceof Product);
+		}
+
+		private boolean hasExclusiveInputs(HashSet<Product> usedInputs, Product p) {
+			return isExclusiveInput(usedInputs, p.input1) && isExclusiveInput(usedInputs, p.input2) && isExclusiveInput(usedInputs, p.input3);
+		}
+
+		private boolean isExclusiveInput(HashSet<Product> usedInputs, Input input) {
+			if (input instanceof Product) {
+				Product product = (Product) input;
+				if (usedInputs.contains(product)) return false;
+				usedInputs.add(product);
+			}
+			return true;
+		}
+	
 	}
 
 	private class InputList implements ComboBoxModel<Input> {
@@ -484,6 +848,9 @@ class ProductionOptimiser implements ActionListener {
 			listDataListeners = new Vector<>();
 		}
 
+		@Override public void    addListDataListener(ListDataListener l) { listDataListeners.   add(l); }
+		@Override public void removeListDataListener(ListDataListener l) { listDataListeners.remove(l); }
+
 		public void update() {
 			ListDataEvent e = new ListDataEvent(this, ListDataEvent.CONTENTS_CHANGED, 0, getSize()-1);
 			for (ListDataListener ldl:listDataListeners) {
@@ -491,11 +858,8 @@ class ProductionOptimiser implements ActionListener {
 			}
 		}
 
-		@Override public void    addListDataListener(ListDataListener l) { listDataListeners.   add(l); }
-		@Override public void removeListDataListener(ListDataListener l) { listDataListeners.remove(l); }
-
 		@Override public int getSize() {
-			return baseInputsTableModel.size() + productsTableModel.size();
+			return 1 + baseInputsTableModel.size() + productsTableModel.size();
 		}
 
 		@Override public Input getElementAt(int index) {
@@ -536,17 +900,17 @@ class ProductionOptimiser implements ActionListener {
 	private static class BaseInput extends Input{
 		
 		boolean isInfinite;
-		int amount;
+		int storedAmount;
 		
 		private BaseInput(String name) {
 			super(name);
 			this.isInfinite = true;
-			this.amount = 0;
+			this.storedAmount = 0;
 		}
 	}
 	private static class Product extends Input{
 
-		int   amount;
+		int   producedAmount;
 		Input input1;
 		Input input2;
 		Input input3;
@@ -556,7 +920,7 @@ class ProductionOptimiser implements ActionListener {
 		
 		Product(String name) {
 			super(name);
-			this.amount = 1;
+			this.producedAmount = 1;
 			this.input1 = null;
 			this.input2 = null;
 			this.input3 = null;
@@ -565,13 +929,36 @@ class ProductionOptimiser implements ActionListener {
 			this.n3 = 1;
 		}
 
-		public int getLevel() {
-			return 1 + Math.max(Math.max(getLevelOf(input1), getLevelOf(input2)), getLevelOf(input3));
+		public int computeCosts() {
+			return 
+					(input1==null?0:input1.price*n1) + 
+					(input2==null?0:input2.price*n2) + 
+					(input3==null?0:input3.price*n3);
 		}
 
-		private int getLevelOf(Input input) {
+		public int getLevel() {
+			return getLevel(new HashSet<>());
+		}
+		private int getLevel(HashSet<Product> parents) {
+			if (parents.contains(this))
+				throw new IllegalStateException(String.format("Found circular reference: \"%s\" found in [%s]", this, parents));
+			parents.add(this);
+			return 1 + Math.max(
+						Math.max(
+							getLevelOf(input1,new HashSet<>(parents)),
+							getLevelOf(input2,new HashSet<>(parents))
+						),
+						getLevelOf(input3,new HashSet<>(parents))
+					);
+		}
+
+		public int getLevelOf(Input input) {
+			HashSet<Product> parents = new HashSet<>(); parents.add(this);
+			return getLevelOf(input, parents);
+		}
+		private int getLevelOf(Input input, HashSet<Product> parents) {
 			if (input instanceof Product)
-				return ((Product)input).getLevel();
+				return ((Product)input).getLevel(parents);
 			return 0;
 		}
 
@@ -579,6 +966,26 @@ class ProductionOptimiser implements ActionListener {
 			if (input==null) return true;
 			if (input instanceof BaseInput)
 				return ((BaseInput) input).isInfinite;
+			return false;
+		}
+
+		public boolean findCircRefOf(Input input, StringBuilder msg) {
+			HashSet<Product> parents = new HashSet<>(); parents.add(this);
+			return findCircRefOf(input, parents, msg);
+		}
+		private boolean findCircRefOf(Input input, HashSet<Product> parents, StringBuilder msg) {
+			if (input instanceof Product) {
+				Product product = (Product) input;
+				if (parents.contains(product)) {
+					if (msg!=null) msg.append(String.format("\"%s\" found in %s%n", product, parents));
+					return true;
+				}
+				parents.add(product);
+				return
+					product.findCircRefOf(product.input1, new HashSet<>(parents), msg) ||
+					product.findCircRefOf(product.input2, new HashSet<>(parents), msg) ||
+					product.findCircRefOf(product.input3, new HashSet<>(parents), msg);
+			}
 			return false;
 		}
 		
@@ -602,10 +1009,13 @@ class ProductionOptimiser implements ActionListener {
 	
 	// [30, 56, 148, 51]
 	private enum BaseInputsTableColumnID implements SimplifiedColumnIDInterface {
-		Infinite("Inf"   , Boolean.class, 20,-1, 30,-1),
-		Amount  ("Amount", Integer.class, 20,-1, 50,-1),
-		Name    ("Name"  ,  String.class, 20,-1,150,-1),
-		Price   ("Price" , Integer.class, 20,-1, 50,-1),
+		Infinite ("Inf"      , Boolean.class, 20,-1, 30,-1),
+		Amount   ("Amount"   , Integer.class, 20,-1, 50,-1),
+		Name     ("Name"     ,  String.class, 20,-1,150,-1),
+		Price    ("Price"    , Integer.class, 20,-1, 50,-1),
+		Consumed ("Consumed" , Integer.class, 20,-1, 60,-1),
+		Cost     ("Cost"     , Integer.class, 20,-1, 50,-1),
+		Remaining("Remaining", Integer.class, 20,-1, 60,-1),
 		;
 		private SimplifiedColumnConfig columnConfig;
 		BaseInputsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
@@ -656,6 +1066,9 @@ class ProductionOptimiser implements ActionListener {
 			case Infinite:
 			case Name    :
 			case Price   : return true;
+			case Consumed :
+			case Cost     :
+			case Remaining: return false;
 			}
 			return false;
 		}
@@ -666,11 +1079,20 @@ class ProductionOptimiser implements ActionListener {
 			BaseInput baseInput = get(rowIndex);
 			switch (columnID) {
 			case Infinite: return baseInput.isInfinite;
-			case Amount  : return baseInput.isInfinite?null:baseInput.amount;
+			case Amount  : return baseInput.isInfinite?null:baseInput.storedAmount;
 			case Name    : return baseInput.name;
 			case Price   : return baseInput.price;
+			case Consumed : if (selectedResult==null) return null; return getConsumedBaseInput(baseInput);
+			case Cost     : if (selectedResult==null) return null; return getConsumedBaseInput(baseInput)*baseInput.price;
+			case Remaining: if (selectedResult==null || baseInput.isInfinite) return null; return baseInput.storedAmount - getConsumedBaseInput(baseInput);
 			}
 			return null;
+		}
+
+		private int getConsumedBaseInput(BaseInput baseInput) {
+			Integer val = selectedResult.consumedBaseInputs.get(baseInput);
+			if (val==null) return 0;
+			return val;
 		}
 
 		@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, BaseInputsTableColumnID columnID) {
@@ -683,10 +1105,13 @@ class ProductionOptimiser implements ActionListener {
 			}
 			BaseInput baseInput = get(rowIndex);
 			switch (columnID) {
-			case Infinite: baseInput.isInfinite = (Boolean) aValue; productsTableModel.fireTableUpdate(); fireTableRowUpdate(rowIndex); break; 
-			case Amount  : baseInput.amount     = parseInt(aValue); productsTableModel.fireTableUpdate(); break;
-			case Name    : baseInput.name       = (String) aValue; checkUniqueName(baseInput); productsTableModel.fireTableUpdate(); break;
-			case Price   : baseInput.price      = parseInt(aValue); break;
+			case Infinite: baseInput.isInfinite   = (Boolean) aValue; productsTableModel.fireTableUpdate(); fireTableRowUpdate(rowIndex); break; 
+			case Amount  : baseInput.storedAmount = parseInt(aValue); productsTableModel.fireTableUpdate(); break;
+			case Name    : baseInput.name         = (String) aValue; checkUniqueName(baseInput); productsTableModel.fireTableUpdate(); break;
+			case Price   : baseInput.price        = parseInt(aValue); break;
+			case Consumed : break;
+			case Cost     : break;
+			case Remaining: break;
 			}
 		}
 
@@ -720,7 +1145,16 @@ class ProductionOptimiser implements ActionListener {
 				
 				if (component instanceof JLabel) {
 					JLabel label = (JLabel) component;
-					label.setHorizontalAlignment( columnClass==Integer.class ? JLabel.CENTER : JLabel.LEFT );
+					int horizontalAlignment;
+					
+					if (columnID==BaseInputsTableColumnID.Amount || columnID==BaseInputsTableColumnID.Consumed || columnID==BaseInputsTableColumnID.Cost || columnID==BaseInputsTableColumnID.Remaining)
+						horizontalAlignment = JLabel.RIGHT;
+					else if (columnClass==Integer.class)
+						horizontalAlignment = JLabel.CENTER;
+					else
+						horizontalAlignment = JLabel.LEFT;
+					
+					label.setHorizontalAlignment( horizontalAlignment );
 				}
 				
 				if (rowIndex<BaseInputsTableModel.this.size()) {
@@ -735,16 +1169,20 @@ class ProductionOptimiser implements ActionListener {
 	}
 	
 	private enum ProductsTableColumnID implements SimplifiedColumnIDInterface {
-		Level   ("Lvl"    , Integer.class, 20,-1, 20,-1),
-		Amount  ("N"      , Integer.class, 20,-1, 40,-1),
-		Name    ("Result" ,  String.class, 20,-1,150,-1),
-		Price   ("Price"  , Integer.class, 20,-1, 40,-1),
-		N1      ("N1"     , Integer.class, 20,-1, 40,-1),
-		Input1  ("Input 1",   Input.class, 20,-1,150,-1),
-		N2      ("N2"     , Integer.class, 20,-1, 40,-1),
-		Input2  ("Input 2",   Input.class, 20,-1,150,-1),
-		N3      ("N3"     , Integer.class, 20,-1, 40,-1),
-		Input3  ("Input 3",   Input.class, 20,-1,150,-1),
+		Level   ("Lvl"     , Integer.class, 20,-1, 20,-1),
+		Amount  ("N"       , Integer.class, 20,-1, 40,-1),
+		Name    ("Result"  ,  String.class, 20,-1,150,-1),
+		Price   ("Price"   , Integer.class, 20,-1, 50,-1),
+		Cost    ("Costs"   , Integer.class, 20,-1, 50,-1),
+		Ratio   ("P/C"     ,  String.class, 20,-1, 50,-1),
+		N1      ("N1"      , Integer.class, 20,-1, 40,-1),
+		Input1  ("Input 1" ,   Input.class, 20,-1,150,-1),
+		N2      ("N2"      , Integer.class, 20,-1, 40,-1),
+		Input2  ("Input 2" ,   Input.class, 20,-1,150,-1),
+		N3      ("N3"      , Integer.class, 20,-1, 40,-1),
+		Input3  ("Input 3" ,   Input.class, 20,-1,150,-1),
+		Produced("Produced", Integer.class, 20,-1, 60,-1),
+		Value   ("Value"   , Integer.class, 20,-1, 60,-1),
 		;
 		private SimplifiedColumnConfig columnConfig;
 		ProductsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
@@ -792,6 +1230,8 @@ class ProductionOptimiser implements ActionListener {
 			switch (columnID) {
 			
 			case Level :
+			case Cost  :
+			case Ratio :
 				return false;
 				
 			case Amount:
@@ -805,6 +1245,10 @@ class ProductionOptimiser implements ActionListener {
 			case N1: return product.input1!=null;
 			case N2: return product.input2!=null;
 			case N3: return product.input3!=null;
+			
+			case Produced:
+			case Value:
+				return false;
 			}
 			return false;
 		}
@@ -815,17 +1259,27 @@ class ProductionOptimiser implements ActionListener {
 			Product product = get(rowIndex);
 			switch (columnID) {
 			case Level : return product.getLevel();
-			case Amount: return product.amount;
+			case Amount: return product.producedAmount;
 			case Name  : return product.name;
 			case Price : return product.price;
+			case Cost  : return product.computeCosts();
+			case Ratio : { int costs = product.computeCosts(); if (costs==0) return ""; return String.format(Locale.ENGLISH, "%1.2f", product.price/(float)costs); }
 			case Input1: return product.input1;
 			case Input2: return product.input2;
 			case Input3: return product.input3;
 			case N1    : return product.input1==null?null:product.n1;
 			case N2    : return product.input2==null?null:product.n2;
 			case N3    : return product.input3==null?null:product.n3;
+			case Produced: if (selectedResult==null) return null; return getStoredProducts(product);
+			case Value   : if (selectedResult==null) return null; return getStoredProducts(product)*product.price;
 			}
 			return null;
+		}
+
+		private int getStoredProducts(Product product) {
+			Integer val = selectedResult.storedProducts.get(product);
+			if (val==null) return 0;
+			return val;
 		}
 
 		@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ProductsTableColumnID columnID) {
@@ -839,16 +1293,33 @@ class ProductionOptimiser implements ActionListener {
 			Product product = get(rowIndex);
 			switch (columnID) {
 			case Level : break;
-			case Amount: product.amount = parseInt(aValue); break;
+			case Amount: product.producedAmount = parseInt(aValue); break;
 			case Name  : product.name = (String)aValue; checkUniqueName(product); break;
 			case Price : product.price = parseInt(aValue); break;
-			case Input1: product.input1 = (Input)aValue; fireTableRowUpdate(rowIndex); break;
-			case Input2: product.input2 = (Input)aValue; fireTableRowUpdate(rowIndex); break;
-			case Input3: product.input3 = (Input)aValue; fireTableRowUpdate(rowIndex); break;
+			case Cost  : break;
+			case Ratio : break;
+			case Input1: aValue = checkCircRef(product,(Input)aValue); product.input1 = (Input)aValue; fireTableRowUpdate(rowIndex); break;
+			case Input2: aValue = checkCircRef(product,(Input)aValue); product.input2 = (Input)aValue; fireTableRowUpdate(rowIndex); break;
+			case Input3: aValue = checkCircRef(product,(Input)aValue); product.input3 = (Input)aValue; fireTableRowUpdate(rowIndex); break;
 			case N1    : product.n1 = parseInt(aValue); break;
 			case N2    : product.n2 = parseInt(aValue); break;
 			case N3    : product.n3 = parseInt(aValue); break;
+			case Produced: break;
+			case Value   : break;
 			}
+		}
+
+		private Input checkCircRef(Product product, Input input) {
+			StringBuilder msg = new StringBuilder();
+			if (product.findCircRefOf(input,msg)) {
+				String title = "Found circular reference";
+				String message = "Found circular reference:\r\n"+msg;
+				message += "This means, that an input of \""+product+"\" or itself needs itself as a direct or indirect input.\r\n";
+				message += "Selected input will be removed.";
+				showErrorMessage(title, message);
+				return null;
+			}
+			return input;
 		}
 
 		public TableCellRenderer createCellRenderer() {
@@ -874,20 +1345,35 @@ class ProductionOptimiser implements ActionListener {
 					
 					if (component instanceof JLabel) {
 						JLabel label = (JLabel) component;
-						label.setHorizontalAlignment( columnClass==Integer.class ? JLabel.CENTER : JLabel.LEFT );
+						int horizontalAlignment;
+						
+						if (columnID==ProductsTableColumnID.Price || columnID==ProductsTableColumnID.Cost || columnID==ProductsTableColumnID.Ratio || columnID==ProductsTableColumnID.Value)
+							horizontalAlignment = JLabel.RIGHT;
+						else if (columnClass==Integer.class)
+							horizontalAlignment = JLabel.CENTER;
+						else
+							horizontalAlignment = JLabel.LEFT;
+						
+						label.setHorizontalAlignment( horizontalAlignment );
 					}
 					
 					switch (getColumnID(columnIndex)) {
 					case Level :
 					case Amount:
 					case Name  :
-					case Price : break;
+					case Price :
+					case Cost  :
+					case Ratio : break;
+					
 					case Input1:
 					case N1    : if (product.input1!=null) bgColor = getProductLevelColor(product.getLevelOf(product.input1)); break;
 					case Input2:
 					case N2    : if (product.input2!=null) bgColor = getProductLevelColor(product.getLevelOf(product.input2)); break;
 					case Input3:
 					case N3    : if (product.input3!=null) bgColor = getProductLevelColor(product.getLevelOf(product.input3)); break;
+					
+					case Produced:
+					case Value   : break;
 					}
 					
 					boolean hasInfiniteInput = product.isInfinite(product.input1) && product.isInfinite(product.input2) && product.isInfinite(product.input3);

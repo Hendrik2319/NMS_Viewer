@@ -1144,7 +1144,6 @@ class RecipeAnalyser implements ActionListener {
 			}
 
 			public void FindGrowingCycles() {
-				// TODO Auto-generated method stub
 				if (recipes!=null) {
 					SaveViewer.runWithProgressDialog(gui.mainwindow, "Find GrowingCycles", pd->{
 						pd.setTaskTitle("Search for Growing Cycles");
