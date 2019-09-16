@@ -2426,6 +2426,38 @@ class=Yellow
 short=4 Planeten
 info=
 
+[Reg000000006A5E0D]
+name=Hajeljan-Untiefe
+
+[Sys003100006A5E0D]
+name=Uqingya III
+race=Korvax
+conflict=2
+conflict_label=unbändig
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln103100006A5E0D]
+name=Antuw Sigma
+biome=Airless
+short=
+info=Cu, SR_Rost, Fe##
+
+[Pln203100006A5E0D]
+name=Cucamo Sigma
+biome=Irradiated
+is extreme
+short=
+info=#Cu, U, NaCl
+
+[Pln403100006A5E0D]
+name=Seyc
+biome=Lush
+with water
+short=
+info=Cu, Pf, NaCl
+
 [Reg00000000FCFE0E]
 name=Viksvan
 
@@ -4977,8 +5009,9 @@ name=Itis Beta
 biome=Lush
 is extreme
 with water
+resources=Cu_,Pf,Co
 short=
-info=#Cu, Pf, Co
+info=<ParsedPlanetaryResources> #Cu, Pf, Co
 
 [Pln201400FCD7F684]
 name=Akhargol Primus
@@ -4993,27 +5026,31 @@ info=<ParsedPlanetaryResources> Cu, U, Ag
 name=Liypsoni Alpha
 biome=Lush
 with water
+resources=Cu,Pf,Ag
 short=
-info=Cu, Pf, Ag
+info=<ParsedPlanetaryResources> Cu, Pf, Ag
 
 [Pln401400FCD7F684]
 name=Heliopens Hiura
 biome=Irradiated
 with water
+resources=Cu,U,NaCl
 short=
-info=Cu, U, NaCl
+info=<ParsedPlanetaryResources> Cu, U, NaCl
 
 [Pln501400FCD7F684]
 name=Kujavite Delta
 biome=AnomFragmColumns
+resources=Cu,Au,Fe__
 short=
-info=Cu, Au, Fe##
+info=<ParsedPlanetaryResources> Cu, Au, Fe##
 
 [Pln601400FCD7F684]
 name=Ciferdamno Tebas
 biome=Frozen
+resources=Cu,CO2,NaCl
 short=
-info=Cu, CO2, NaCl
+info=<ParsedPlanetaryResources> Cu, CO2, NaCl
 
 [Sys002000FCD7F684]
 name=Aitunx-Loe
