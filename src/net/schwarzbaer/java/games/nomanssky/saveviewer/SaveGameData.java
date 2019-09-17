@@ -26,8 +26,10 @@ import java.util.function.Supplier;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.AssignmentExistsException;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -66,7 +68,9 @@ public class SaveGameData {
 	public Vector<TeleportEndpoints> teleportEndpoints = null;
 	public Vector<Frigate> frigates = null;
 	public Vector<FrigateMission> frigateMissions = null;
-	private Freighter freighter = null;
+	public Freighter  freighter  = null;
+	public SpaceShips spaceShips = null;
+	public Exocrafts  exocrafts  = null;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -91,16 +95,18 @@ public class SaveGameData {
 		
 		general.parse();
 		parseStats();
-		parseKnownBlueprints();
+		knownBlueprints = KnownBlueprints.parse(this);
 		knownWords  = parseKnownWords("KnownWords","Word","Races");
 		knownWords2 = parseKnownWords("[KnownWords2]","[Word]","Races");
 		parseDiscoveryData();
-		inventories = Inventories.parseInventories(this,json_data);
+		inventories = Inventories.parseInventories(this);
 		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
-		parseStoredInteractions();
-		parseTeleportEndpoints();
-		freighter = Freighter.parse(this,json_data);
+		storedInteractions = StoredInteraction.parse(this);
+		teleportEndpoints = TeleportEndpoints.parse(this);
+		freighter  = Freighter .parse(this);
+		spaceShips = SpaceShips.parse(this);
+		exocrafts  = Exocrafts .parse(this);
 		parseFrigates();
 		parseFrigateMissions();
 		universe.sort();
@@ -256,15 +262,6 @@ public class SaveGameData {
 		return new UniverseAddress(galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
 	}
 
-	private static Position parsePosition(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
-		Position position = new Position();
-		position.pos = parseCoordinates(obj, valueName_Pos);
-		position.at  = parseCoordinates(obj, valueName_At);
-		position.up  = parseCoordinates(obj, valueName_Up);
-		position.gps = PolarCoordinates.parse(position.pos);
-		return position;
-	}
-
 	public static class Position {
 		
 		public Coordinates pos;
@@ -284,23 +281,14 @@ public class SaveGameData {
 			this.up  = position.up ==null?null:new      Coordinates(position.up );
 			this.gps = position.gps==null?null:new PolarCoordinates(position.gps);
 		}
-	}
-
-	private static Coordinates parseCoordinates(JSON_Object obj, String valueName) {
-		JSON_Array arrayValue = getArrayValue(obj, valueName);
-		if (arrayValue==null) return null;
-		
-		Coordinates coords = new Coordinates();
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
-			Double d = getFloat(value);
-			if (d!=null) {
-				value.wasProcessed=true;
-				coords.set(i,d);
-			}
+		private static Position parse(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
+			Position position = new Position();
+			position.pos = Coordinates.parse(obj, valueName_Pos);
+			position.at  = Coordinates.parse(obj, valueName_At);
+			position.up  = Coordinates.parse(obj, valueName_Up);
+			position.gps = PolarCoordinates.parse(position.pos);
+			return position;
 		}
-		
-		return coords;
 	}
 
 	public static class PolarCoordinates {
@@ -346,6 +334,23 @@ public class SaveGameData {
 
 	public static class Coordinates extends Point3D {
 	
+		private static Coordinates parse(JSON_Object obj, String valueName) {
+			JSON_Array arrayValue = getArrayValue(obj, valueName);
+			if (arrayValue==null) return null;
+			
+			Coordinates coords = new Coordinates();
+			for (int i=0; i<arrayValue.size(); ++i) {
+				Value value = arrayValue.get(i);
+				Double d = getFloat(value);
+				if (d!=null) {
+					value.wasProcessed=true;
+					coords.set(i,d);
+				}
+			}
+			
+			return coords;
+		}
+
 		public double w1;
 		private int length;
 	
@@ -554,31 +559,31 @@ public class SaveGameData {
 		}
 	}
 
-	private static Owner parseOwnerField(JSON_Object parentObj, String valueName) {
-		JSON_Object objectValue = getObjectValue(parentObj, valueName);
-		if (objectValue==null) return null;
-		
-		Owner owner = new Owner();
-		owner.LID = getStringValue(objectValue, "LID");
-		owner.UID = getStringValue(objectValue, "UID");
-		owner.USN = getStringValue(objectValue, "USN");
-		owner.TS  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
-		
-		if (owner.USN!=null && !owner.USN.isEmpty() && owner.UID!=null && !owner.UID.isEmpty())
-			try {
-				SaveViewer.steamIDs.set(owner.UID, owner.USN);
-			} catch (AssignmentExistsException e) {
-				e.printConflict();
-			}
-		
-		return owner;
-	}
-
 	public static class Owner {
 		public String LID;
 		public String UID;
 		public String USN;
 		public TimeStamp TS;
+
+		public static Owner parse(JSON_Object parentObj, String valueName) {
+			JSON_Object objectValue = getObjectValue(parentObj, valueName);
+			if (objectValue==null) return null;
+			
+			Owner owner = new Owner();
+			owner.LID = getStringValue(objectValue, "LID");
+			owner.UID = getStringValue(objectValue, "UID");
+			owner.USN = getStringValue(objectValue, "USN");
+			owner.TS  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
+			
+			if (owner.USN!=null && !owner.USN.isEmpty() && owner.UID!=null && !owner.UID.isEmpty())
+				try {
+					SaveViewer.steamIDs.set(owner.UID, owner.USN);
+				} catch (AssignmentExistsException e) {
+					e.printConflict();
+				}
+			
+			return owner;
+		}
 	}
 
 	public static class SeedValue {
@@ -607,39 +612,25 @@ public class SaveGameData {
 		}
 	}
 
-	private void parseTeleportEndpoints() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","TeleportEndpoints");
-		if (arrayValue==null) return;
-		JSON_Array notParsableObjects = new JSON_Array();
-		
-		teleportEndpoints = new Vector<TeleportEndpoints>();
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
-			JSON_Object objectValue = getObject(value);
-			if (objectValue==null) {
-				notParsableObjects.add(value);
-				continue;
-			}
+	public static class ResourceBlock {
+	
+		public String filename = null;
+		public SeedValue seed = null;
+		public String altID = null;
+		public JSON_Array ProceduralTexture_Samplers = null;
+	
+		public static ResourceBlock parse(JSON_Object data, Object... path) {
+			JSON_Object resourceObj = getObjectValue(data, path);
+			if (resourceObj==null) return null;
+	
+			ResourceBlock resourceBlock = new ResourceBlock();
+			resourceBlock.filename = getStringValue(resourceObj, "Filename");
+			resourceBlock.seed = SeedValue.parse( getArrayValue(resourceObj, "Seed") );
+			resourceBlock.altID = getStringValue(resourceObj, "AltId");
+			resourceBlock.ProceduralTexture_Samplers = getArrayValue(resourceObj, "ProceduralTexture", "Samplers");
 			
-			TeleportEndpoints te = new TeleportEndpoints();
-			te.universeAddress  = parseUniverseAddressStructure(objectValue, "UniverseAddress");
-			te.position         = parseCoordinates(objectValue, "Position");
-			te.gpsCoords        = PolarCoordinates.parse(te.position);
-			te.lookAt           = parseCoordinates(objectValue, "LookAt");
-			te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
-			te.teleportHost     = TeleportEndpoints.TeleportHost.parseValue(te.teleportHostStr);
-			te.name             = getStringValue(objectValue, "Name");
-			
-			if (te.universeAddress!=null) {
-				ObjectWithSource obj = universe.getOrCreate(te.universeAddress);
-				obj.foundInTeleportEndpoints.add(teleportEndpoints.size());
-			}
-			
-			teleportEndpoints.add(te);
+			return resourceBlock;
 		}
-		
-		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
 	}
 
 	public static class TeleportEndpoints {
@@ -677,48 +668,45 @@ public class SaveGameData {
 			this.universeAddress = null;
 			this.gpsCoords = null;
 		}
-	}
 
-	private void parseStoredInteractions() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","StoredInteractions");
-		if (arrayValue==null) return;
-		JSON_Array notParsableObjects = new JSON_Array();
-		
-		storedInteractions = new Vector<StoredInteraction>();
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
-			JSON_Object objectValue = getObject(value);
-			if (objectValue==null) {
-				notParsableObjects.add(value);
-				continue;
-			}
+		private static Vector<TeleportEndpoints> parse(SaveGameData data) {
+			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","TeleportEndpoints");
+			if (arrayValue==null) return null;
+			JSON_Array notParsableObjects = new JSON_Array();
 			
-			JSON_Array interactions = getArrayValue(objectValue,"Interactions");
-			if (interactions==null) continue;
-			
-			for (int j=0; j<interactions.size(); ++j) {
-				Value interactionValue = interactions.get(j);
-				JSON_Object interaction = getObject(interactionValue);
-				if (interaction==null) {
-					notParsableObjects.add(interactionValue);
+			Vector<TeleportEndpoints> teleportEndpoints = new Vector<TeleportEndpoints>();
+			for (int i=0; i<arrayValue.size(); ++i) {
+				Value value = arrayValue.get(i);
+				JSON_Object objectValue = getObject(value);
+				if (objectValue==null) {
+					notParsableObjects.add(value);
 					continue;
 				}
-				StoredInteraction si = new StoredInteraction();
-				si.groupIndex       = i;
-				si.interactionIndex = j;
-				si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
-				si.value            = getIntegerValue(interaction, "Value");
-				si.position         = parseCoordinates(interaction, "Position");
-				si.gpsCoords        = PolarCoordinates.parse(si.position);
 				
-				storedInteractions.add(si);
+				TeleportEndpoints te = new TeleportEndpoints();
+				te.universeAddress  = parseUniverseAddressStructure(objectValue, "UniverseAddress");
+				te.position         = Coordinates     .parse(objectValue, "Position");
+				te.gpsCoords        = PolarCoordinates.parse(te.position);
+				te.lookAt           = Coordinates     .parse(objectValue, "LookAt");
+				te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
+				te.teleportHost     = TeleportEndpoints.TeleportHost.parseValue(te.teleportHostStr);
+				te.name             = getStringValue(objectValue, "Name");
+				
+				if (te.universeAddress!=null) {
+					ObjectWithSource obj = data.universe.getOrCreate(te.universeAddress);
+					obj.foundInTeleportEndpoints.add(teleportEndpoints.size());
+				}
+				
+				teleportEndpoints.add(te);
 			}
+			
+			if (!notParsableObjects.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
+			
+			return teleportEndpoints;
 		}
-		
-		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
 	}
-	
+
 	public static class StoredInteraction {
 		
 		public int groupIndex;
@@ -735,6 +723,48 @@ public class SaveGameData {
 			this.value = null;
 			this.position = null;
 			this.gpsCoords = null;
+		}
+
+		private static Vector<StoredInteraction> parse(SaveGameData data) {
+			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","StoredInteractions");
+			if (arrayValue==null) return null;
+			JSON_Array notParsableObjects = new JSON_Array();
+			
+			Vector<StoredInteraction> storedInteractions = new Vector<StoredInteraction>();
+			for (int i=0; i<arrayValue.size(); ++i) {
+				Value value = arrayValue.get(i);
+				JSON_Object objectValue = getObject(value);
+				if (objectValue==null) {
+					notParsableObjects.add(value);
+					continue;
+				}
+				
+				JSON_Array interactions = getArrayValue(objectValue,"Interactions");
+				if (interactions==null) continue;
+				
+				for (int j=0; j<interactions.size(); ++j) {
+					Value interactionValue = interactions.get(j);
+					JSON_Object interaction = getObject(interactionValue);
+					if (interaction==null) {
+						notParsableObjects.add(interactionValue);
+						continue;
+					}
+					StoredInteraction si = new StoredInteraction();
+					si.groupIndex       = i;
+					si.interactionIndex = j;
+					si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
+					si.value            = getIntegerValue(interaction, "Value");
+					si.position         = Coordinates.parse(interaction, "Position");
+					si.gpsCoords        = PolarCoordinates.parse(si.position);
+					
+					storedInteractions.add(si);
+				}
+			}
+			
+			if (!notParsableObjects.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
+			
+			return storedInteractions;
 		}
 	}
 
@@ -756,13 +786,13 @@ public class SaveGameData {
 			PersistentPlayerBase pb = new PersistentPlayerBase(this,baseIndex);
 			pb.baseVersion     = getIntegerValue (objectValue, "BaseVersion");
 			pb.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
-			pb.position        = parseCoordinates(objectValue, "Position");
+			pb.position        = Coordinates     .parse(objectValue, "Position");
 			pb.gpsCoords       = PolarCoordinates.parse(pb.position);
-			pb.forward         = parseCoordinates(objectValue, "Forward");
+			pb.forward         = Coordinates     .parse(objectValue, "Forward");
 			pb.userData        = getIntegerValue (objectValue, "UserData");
 			pb.lastUpdateTS    = TimeStamp.create(getIntegerValue (objectValue, "LastUpdateTimestamp"));
 			pb.rid             = getStringValue  (objectValue, "RID");
-			pb.owner           = parseOwnerField (objectValue, "Owner");
+			pb.owner           = Owner.parse     (objectValue, "Owner");
 			pb.name            = getStringValue  (objectValue, "Name");
 			pb.baseTypeStr     = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.baseType        = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
@@ -813,7 +843,7 @@ public class SaveGameData {
 		bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
 		bbo.objectID  = getStringValue  (objectValue, "ObjectID");
 		bbo.userData  = getIntegerValue (objectValue, "UserData");
-		bbo.position  = parsePosition   (objectValue, "Position", "Up", "At");
+		bbo.position  = Position.parse  (objectValue, "Position", "Up", "At");
 		if (bbo.objectID!=null) {
 			GeneralizedID id = GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
 			id.getUsage(this).addBBOUsage(label,index);
@@ -1010,89 +1040,226 @@ public class SaveGameData {
 			return "BuildingObject("+objectID+")";
 		}
 	}
-	
-	private void parseKnownBlueprints() {
-		knownBlueprints = new KnownBlueprints();
-		knownBlueprints.technologies = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownTech"    ), GameInfos.techIDs   );
-		knownBlueprints.products     = parseKnownBlueprints(getArrayValue(json_data,"PlayerStateData","KnownProducts"), GameInfos.productIDs);
-	}
-
-	private GeneralizedID[] parseKnownBlueprints(JSON_Array arrayValue, IDMap map) {
-		if (arrayValue==null) return new GeneralizedID[0];
-		
-		GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
-			String id = getString(value);
-			if (id!=null) {
-				knownBlueprints[i] = map.get(id,this,GeneralizedID.Usage.Type.Blueprint);// addGeneralizedID(map, id);
-				knownBlueprints[i].getUsage(this).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
-			}
-		}
-		Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
-		return knownBlueprints;
-	}
 
 	public static final class KnownBlueprints {
 
-		public GeneralizedID[] products;
-		public GeneralizedID[] technologies;
-	
+		public GeneralizedID[] products = null;
+		public GeneralizedID[] technologies = null;
+		
+		private static KnownBlueprints parse(SaveGameData data) {
+			KnownBlueprints knownBlueprints = new KnownBlueprints();
+			knownBlueprints.technologies = parse(data, getArrayValue(data.json_data,"PlayerStateData","KnownTech"    ), GameInfos.techIDs   );
+			knownBlueprints.products     = parse(data, getArrayValue(data.json_data,"PlayerStateData","KnownProducts"), GameInfos.productIDs);
+			return knownBlueprints;
+		}
+
+		private static GeneralizedID[] parse(SaveGameData data, JSON_Array arrayValue, IDMap map) {
+			if (arrayValue==null) return new GeneralizedID[0];
+			
+			GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
+			for (int i=0; i<arrayValue.size(); ++i) {
+				Value value = arrayValue.get(i);
+				String id = getString(value);
+				if (id!=null) {
+					knownBlueprints[i] = map.get(id,data,GeneralizedID.Usage.Type.Blueprint);// addGeneralizedID(map, id);
+					knownBlueprints[i].getUsage(data).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
+				}
+			}
+			Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
+			return knownBlueprints;
+		}
+	}
+
+	public static class Freighter {
+		
+		public enum FreighterClass { CapitalFreighter, Freighter }
+		
+		public String name = null;
+		public FreighterClass freighterClass = null; 
+		public UniverseAddress ua = null;
+		public Position pos = null;
+		public Race crewRace = null;
+		public Inventory inventory = null;
+		public Inventory inventoryTech = null;
+		
+		private ResourceBlock crewResourceBlock = null;
+		private ResourceBlock freighterResourceBlock = null;
+
+		private static Freighter parse(SaveGameData data) {
+			Freighter freighter = new Freighter();
+			
+			freighter.name = getStringValue(data.json_data,"PlayerStateData","PlayerFreighterName");
+			freighter.ua   = parseUniverseAddressStructure(data.json_data,"PlayerStateData","FreighterUniverseAddress");
+			freighter.pos  = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
+			
+			freighter.crewResourceBlock      = ResourceBlock.parse(data.json_data,"PlayerStateData","CurrentFreighterNPC");
+			freighter.freighterResourceBlock = ResourceBlock.parse(data.json_data,"PlayerStateData","CurrentFreighter");
+			
+			if (freighter.crewResourceBlock!=null && freighter.crewResourceBlock.filename!=null) {
+				switch (freighter.crewResourceBlock.filename) {
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Race.Korvax; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Race.Vykeen; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Race.Gek; break;
+				}
+			}
+			
+			if (freighter.freighterResourceBlock!=null && freighter.freighterResourceBlock.filename!=null) {
+				switch (freighter.freighterResourceBlock.filename) {
+				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/CAPITALFREIGHTER_PROC.SCENE.MBIN": freighter.freighterClass = FreighterClass.CapitalFreighter; break;
+				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/FREIGHTER_PROC.SCENE.MBIN"       : freighter.freighterClass = FreighterClass.Freighter; break;
+				}
+			}
+			
+			String inventoryLabel = "Freighter";
+			if (freighter.name!=null) inventoryLabel += String.format(" \"%s\"", freighter.name);
+			if (freighter.crewRace!=null || freighter.freighterClass!=null) {
+				String values = "";
+				if (freighter.crewRace      !=null) values += String.format("%sCrew:%s" , values.isEmpty()?"":", ", freighter.crewRace);
+				if (freighter.freighterClass!=null) values += String.format("%sClass:%s", values.isEmpty()?"":", ", freighter.freighterClass);
+				inventoryLabel += "  ( "+values+" )";
+			}
+			
+			freighter.inventory     = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory"         ), inventoryLabel    , "FreighterInventory");
+			freighter.inventoryTech = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+			
+			return freighter;
+		}
+	}
+
+	public static class SpaceShips extends VehicleGroup {
+
+		private static SpaceShips parse(SaveGameData data) {
+			return (SpaceShips)parseArray(
+				data,
+				getArrayValue(data.json_data, "PlayerStateData", "ShipOwnership"), "ShipOwnership",
+				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryShip"),
+				SpaceShips::new, SpaceShip::new
+			);
+		}
+		
+		public static class SpaceShip extends VehicleGroup.Vehicle {
+			public enum VehicleClass { Transporter, Fighter, Shuttle, Exotic }
+			public VehicleClass vehicleClass = null;
+			
+			@Override protected String getPredefinedName(int i) { return null; }
+			@Override protected String getTypeLabel() { return "SpaceShip"; }
+			@Override protected void setVehicleClass(String resourcefilename) {
+				switch (resourcefilename) {
+				case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN": vehicleClass = VehicleClass.Transporter; break;
+				case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"  : vehicleClass = VehicleClass.Fighter; break;
+				case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"   : vehicleClass = VehicleClass.Shuttle; break;
+				case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"   : vehicleClass = VehicleClass.Exotic; break;
+				default:
+					SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
+				}
+			}
+			@Override protected String getVehicleClass() {
+				if (vehicleClass == null) return null;
+				return vehicleClass.toString();
+			}
+		}
+	}
+	public static class Exocrafts extends VehicleGroup {
+
+		private static Exocrafts parse(SaveGameData data) {
+			return (Exocrafts)parseArray(
+				data,
+				getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
+				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryVehicle"),
+				Exocrafts::new, Exocraft::new
+			);
+		}
+		
+		public static class Exocraft extends VehicleGroup.Vehicle {
+			private static final String[] VehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", null, "Nautilon"};
+			@Override protected String getPredefinedName(int i) {
+				if (0<=i && i<VehicleNames.length) return VehicleNames[i];
+				return null;
+			}
+			@Override protected String getTypeLabel() { return "Exocraft"; }
+			@Override protected void setVehicleClass(String resourcefilename) {}
+			@Override protected String getVehicleClass() { return null; }
+		}
+	}
+
+	public static abstract class VehicleGroup {
+		
+		public Long primary = null;
+		public Vehicle[] vehicles = null;
+
+		protected static VehicleGroup parseArray(SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<VehicleGroup> createGroup, Supplier<Vehicle> createVehicle) {
+			
+			VehicleGroup proto = createGroup.get();
+			proto.primary = primary;
+			
+			if (json_Array!=null) {
+				proto.vehicles = new Vehicle[json_Array.size()];
+				for (int i=0; i<json_Array.size(); ++i)
+					proto.vehicles[i] = Vehicle.parse(data, getObject(json_Array.get(i)), i, arraySourcePath+"["+i+"]", createVehicle, i==proto.primary);
+			}	
+			
+			return proto;
+		}
+
+		public static abstract class Vehicle {
+			public Inventory inventory = null;
+			public Inventory inventoryTech = null;
+			private ResourceBlock resourceBlock = null;
+			
+			protected abstract String getPredefinedName(int i);
+			protected abstract String getTypeLabel();
+			protected abstract void setVehicleClass(String resourcefilename);
+			protected abstract String getVehicleClass();
+			
+			public static Vehicle parse(SaveGameData data, JSON_Object vehicleData, int i, String dataSourcePath, Supplier<Vehicle> createVehicle, boolean isPrimary) {
+				if (vehicleData == null) return null;
+				
+				Vehicle vehicle = createVehicle.get();
+				
+				vehicle.resourceBlock = ResourceBlock.parse(vehicleData,"Resource");
+				if (vehicle.resourceBlock!=null && vehicle.resourceBlock.filename!=null && !vehicle.resourceBlock.filename.isEmpty())
+					vehicle.setVehicleClass(vehicle.resourceBlock.filename);
+				
+				String baseLabel = vehicle.getTypeLabel()+" "+(i+1);
+				
+				String predefinedName = vehicle.getPredefinedName(i);
+				if (predefinedName!=null && !predefinedName.isEmpty()) baseLabel = "["+(i+1)+"] "+predefinedName;
+				
+				String inventoryLabel     = baseLabel;
+				String inventoryTechLabel = baseLabel+" (Tech)";
+				
+				String name = getStringValue(vehicleData,"Name");
+				String classStr = vehicle.getVehicleClass();
+				
+				if (name!=null && !name.isEmpty()) inventoryLabel += " \""+name+"\"";
+				if (classStr!=null) inventoryLabel += " <"+classStr+">";
+				if (isPrimary)      inventoryLabel += "   [Primary]";
+				
+				vehicle.inventory     = Inventories.parse(data,getObjectValue(vehicleData,"Inventory"         ), inventoryLabel    , dataSourcePath+".Inventory");
+				vehicle.inventoryTech = Inventories.parse(data,getObjectValue(vehicleData,"Inventory_TechOnly"), inventoryTechLabel, dataSourcePath+".Inventory_TechOnly");
+				
+				return vehicle;
+			}
+		}
 	}
 
 	public final static class Inventories {
 
-		private static Inventories parseInventories(SaveGameData source, JSON_Object json_data) {
+		private static Inventories parseInventories(SaveGameData data) {
 			Inventories inventories = new Inventories();
-			inventories.player.standard    = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
-			inventories.player.tech        = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
-			inventories.player.cargo       = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
-			inventories.ship_old           = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
-			inventories.multitool          = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
-			inventories.grave              = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
-			inventories.freighter.standard = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "FreighterInventory"         ), "Freighter"       , "FreighterInventory");
-			inventories.freighter.tech     = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+			inventories.player.standard    = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
+			inventories.player.tech        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
+			inventories.player.cargo       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
+			inventories.ship_old           = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
+			inventories.multitool          = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
+			inventories.grave              = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
 			
 			inventories.chests = new Inventory[10];
 			for (int i=0; i<inventories.chests.length; ++i)
-				inventories.chests[i] = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-			inventories.magicChest        = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
-			inventories.magicChest2       = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
-			inventories.ingredientStorage = Inventories.parse(source,getObjectValue(json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
-			
-			String[] vehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", "", "Nautilon"};
-			inventories.vehicles = null;
-			JSON_Array vehicles = getArrayValue(json_data, "PlayerStateData","VehicleOwnership");
-			if (vehicles!=null) {
-				inventories.vehicles = new Vehicle[vehicles.size()];
-				for (int i=0; i<vehicles.size(); ++i) {
-					JSON_Object vehicleData = getObject(vehicles.get(i));
-					inventories.vehicles[i] = new Vehicle();
-					if (vehicleData != null) {
-						String name = getStringValue(vehicleData,"Name");
-						if (name==null) name = "";
-						if (name.isEmpty() && i<vehicleNames.length) name = vehicleNames[i];
-						inventories.vehicles[i].standard = Inventories.parse(source,getObjectValue(vehicleData,"Inventory"         ),"Vehicle "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "VehicleOwnership["+i+"].Inventory");
-						inventories.vehicles[i].tech     = Inventories.parse(source,getObjectValue(vehicleData,"Inventory_TechOnly"),"Vehicle "+(i+1)+" (Tech)"                            , "VehicleOwnership["+i+"].Inventory_TechOnly");
-					}
-				}
-			}
-			
-			inventories.ships = null;
-			JSON_Array ships = getArrayValue(json_data, "PlayerStateData","ShipOwnership");
-			if (ships!=null) {
-				inventories.ships = new Vehicle[ships.size()];
-				for (int i=0; i<ships.size(); ++i) {
-					JSON_Object shipData = getObject(ships.get(i));
-					inventories.ships[i] = new Vehicle();
-					if (shipData != null) {
-						String name = getStringValue(shipData,"Name");
-						if (name==null) name = "";
-						inventories.ships[i].standard = Inventories.parse(source,getObjectValue(shipData,"Inventory"         ), "Ship "+(i+1)+(name.isEmpty()?"":(" \""+name+"\"")), "ShipOwnership["+i+"].Inventory");
-						inventories.ships[i].tech     = Inventories.parse(source,getObjectValue(shipData,"Inventory_TechOnly"), "Ship "+(i+1)+" (Tech)"                            , "ShipOwnership["+i+"].Inventory_TechOnly");
-					}
-				}
-			}	
+				inventories.chests[i] = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
+			inventories.magicChest        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+			inventories.magicChest2       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+			inventories.ingredientStorage = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
 			
 			return inventories;
 		}
@@ -1135,28 +1302,16 @@ public class SaveGameData {
 		}
 		
 		public Player player;
-		public Inventory multitool;
-		public Vehicle[] ships;
-		public Vehicle[] vehicles;
-		public Inventory[] chests;
-		public Inventory magicChest;
-		public Inventory magicChest2;
-		public Inventory ingredientStorage;
-		public Vehicle   freighter;
-		public Inventory ship_old;
-		public Inventory grave;
+		public Inventory multitool = null;
+		public Inventory[] chests = null;
+		public Inventory magicChest = null;
+		public Inventory magicChest2 = null;
+		public Inventory ingredientStorage = null;
+		public Inventory ship_old = null;
+		public Inventory grave = null;
 		
 		public Inventories() {
 			super();
-			this.ship_old = null;
-			this.ships = null;
-			this.vehicles = null;
-			this.magicChest2 = null;
-			this.magicChest = null;
-			this.chests = null;
-			this.freighter = new Vehicle();
-			this.grave = null;
-			this.multitool = null;
 			this.player = new Player();
 		}
 		public static class Player {
@@ -1167,14 +1322,6 @@ public class SaveGameData {
 				this.standard = null;
 				this.tech = null;
 				this.cargo = null;
-			}
-		}
-		public static class Vehicle {
-			public Inventory standard;
-			public Inventory tech;
-			public Vehicle() {
-				this.standard = null;
-				this.tech = null;
 			}
 		}
 		public final static class Inventory {
@@ -1447,14 +1594,6 @@ public class SaveGameData {
 		
 		if (!notParsableObjects.isEmpty())
 			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
-	}
-	
-	public static class Freighter {
-
-		public static Freighter parse(SaveGameData source, JSON_Object json_data) {
-			// TODO Auto-generated method stub
-			return null;
-		}
 	}
 	
 	public static class Frigate {
@@ -1969,7 +2108,7 @@ public class SaveGameData {
 					//    UID  String
 					//    USN  String
 					//    TS   Long
-					stData.OWS = parseOwnerField(object, "OWS");
+					stData.OWS = Owner.parse(object, "OWS");
 					
 					// RID  String (evtl.)
 					stData.RID = getStringValue_silent(object,"RID");
@@ -2207,50 +2346,26 @@ public class SaveGameData {
 	public final static class General {
 		
 		private SaveGameData data;
-		public UniverseAddress currentUniverseAddress;
-		public UniverseAddress freighterUA;
-		public UniverseAddress anomalyUA;
-		public UniverseAddress graveUA;
-		public Position freighterPos;
-		public Position anomalyPos;
-		public Position gravePos;
-		public Long units;
-		public Long nanites;
-		public Long quicksilver;
-		public Long playerHealth;
-		public Long playerShield;
-		public Long energy;
-		public Long shipHealth;
-		public Long shipShield;
-		public Long timeAlive;
-		public Long totalPlayTime;
-		public Long hazardTimeAlive;
-		public Long knownGlyphsMask;
+		public UniverseAddress currentUniverseAddress = null;
+		public UniverseAddress anomalyUA = null;
+		public UniverseAddress graveUA = null;
+		public Position anomalyPos = null;
+		public Position gravePos   = null;
+		public Long units        = null;
+		public Long nanites      = null;
+		public Long quicksilver  = null;
+		public Long playerHealth = null;
+		public Long playerShield = null;
+		public Long energy     = null;
+		public Long shipHealth = null;
+		public Long shipShield = null;
+		public Long timeAlive  = null;
+		public Long totalPlayTime   = null;
+		public Long hazardTimeAlive = null;
+		public Long knownGlyphsMask = null;
 		
 		public General(SaveGameData data) {
 			this.data = data;
-			
-			currentUniverseAddress = null;
-			freighterUA  = null;
-			graveUA      = null;
-			freighterPos = null;
-			gravePos     = null;
-			
-			units        = null;
-			nanites      = null;
-			quicksilver  = null;
-			
-			playerHealth = null;
-			playerShield = null;
-			energy       = null;
-			shipHealth   = null;
-			shipShield   = null;
-			
-			timeAlive       = null;
-			totalPlayTime   = null;
-			hazardTimeAlive = null;
-			
-			knownGlyphsMask = null;
 		}
 		
 		public void parse() {
@@ -2260,12 +2375,10 @@ public class SaveGameData {
 				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress).isCurrPos = true;
 				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress).isCurrPos = true;
 			}
-			freighterUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","FreighterUniverseAddress");
 			anomalyUA   = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
 			graveUA     = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
-			freighterPos = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
-			anomalyPos   = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
-			gravePos     = parsePosition(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			anomalyPos   = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
+			gravePos     = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
 			
 			units           = getIntegerValue( data.json_data, "PlayerStateData","Units"           );

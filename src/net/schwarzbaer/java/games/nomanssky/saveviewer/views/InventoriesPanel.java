@@ -40,7 +40,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.U
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Vehicle;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VehicleGroup.Vehicle;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
@@ -55,20 +55,16 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
-		tabbedPane.addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech));
-		//addTab(data.inventories.player.standard);
-		//addTab(data.inventories.player.tech    );
-		addTab(data.inventories.player.cargo   );
-		addTab(data.inventories.grave          );
-		addTab(data.inventories.multitool      );
-		tabbedPane.addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(data.inventories.freighter));
-		//addTab(data.inventories.freighter.standard);
-		//addTab(data.inventories.freighter.tech    );
-		addTab(data.inventories.ship_old          );
-		tabbedPane.addTab("Ships"           , new InventoryListPanel(mainwindow).addInv(data.inventories.ships));
-		tabbedPane.addTab("Vehicles"        , new InventoryListPanel(mainwindow).addInv(data.inventories.vehicles));
-		tabbedPane.addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
-		tabbedPane.addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.magicChest,data.inventories.magicChest2));
+		addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech));
+		addTab(data.inventories.player.cargo);
+		addTab(data.inventories.grave);
+		addTab(data.inventories.multitool);
+		addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(data.freighter.inventory,data.freighter.inventoryTech));
+		addTab(data.inventories.ship_old);
+		if (data.spaceShips.vehicles!=null) addTab("SpaceShips", new InventoryListPanel(mainwindow).addInv(data.spaceShips.vehicles));
+		if (data.exocrafts .vehicles!=null) addTab("Exocrafts" , new InventoryListPanel(mainwindow).addInv(data.exocrafts .vehicles));
+		addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
+		addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.magicChest,data.inventories.magicChest2));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -80,6 +76,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 	}
 
 
+	private void addTab(String title, InventoryListPanel listPanel) {
+		tabbedPane.addTab(title, listPanel);
+	}
 	private void addTab(Inventory inventory) {
 		if (inventory!=null)
 			tabbedPane.addTab(inventory.label, new InventoryPanel(mainwindow, inventory));
@@ -716,8 +715,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		public InventoryListPanel addInv(Vehicle... vehicles) {
 			for (int i=0; i<vehicles.length; ++i)
 				if (vehicles[i]!=null) {
-				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].standard,true,false,this));
-				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].tech    ,true,false,this));
+				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].inventory    ,true,false,this));
+				contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].inventoryTech,true,false,this));
 			}
 			return this;
 		}

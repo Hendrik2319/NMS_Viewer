@@ -75,7 +75,7 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				appendLine(String.format(Locale.ENGLISH, "    distance to center of galaxy: %1.1f regions", currentUA.getDistToCenter_inRegionUnits()));
 			}
 			
-			showUAddressAndPosition(data.general.freighterUA, data.general.freighterPos,"Position of Freighter");
+			showUAddressAndPosition(data.freighter.ua, data.freighter.pos,"Position of Freighter");
 			showUAddressAndPosition(data.general.anomalyUA, data.general.anomalyPos,"Position of Anomaly");
 			showUAddressAndPosition(data.general.graveUA, data.general.gravePos,"Position of Grave");
 			
