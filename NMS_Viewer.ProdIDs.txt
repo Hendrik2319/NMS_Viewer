@@ -811,6 +811,7 @@
 ^FRIG_BOOST_TRA.type=Product
 ^FRIG_BOOST_TRA.image=NmsCommodity_High_Capacity_Vector_Compressor_icon.png
 ^FRIG_BOOST_TRA.imageBG=0063B6
+^FRIG_TOKEN=
 ^FUELPROD3=Kohlenstoff-Kristall
 ^FUELPROD3.type=ResourceCrystal
 ^FUELPROD3.image=PRODUCT.FUELPROD.KohlenstoffKristall.png
