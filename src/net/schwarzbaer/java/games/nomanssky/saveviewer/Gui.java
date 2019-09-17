@@ -19,8 +19,15 @@ import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.AbstractButton;
@@ -46,6 +53,7 @@ import javax.swing.border.Border;
 
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
@@ -62,6 +70,49 @@ public class Gui {
 		g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
 		b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
 		return new Color(r,g,b);
+	}
+
+	public static class TextAreaDialog extends StandardDialog {
+		private static final long serialVersionUID = -2869012153535397866L;
+		private JTextArea outputTextArea;
+	
+		public TextAreaDialog(Window parent, String title) {
+			super(parent, title, ModalityType.MODELESS);
+			setPreferredSize(new Dimension(600,900));
+			
+			outputTextArea = new JTextArea();
+			outputTextArea.setEditable(false);
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			contentPane.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
+			
+			this.createGUI(contentPane);
+		}
+		
+		public void setText_Stream(Consumer<PrintStream> print) {
+			try {
+				ByteArrayOutputStream strOut = new ByteArrayOutputStream();
+				PrintStream printOut = new PrintStream(strOut,true,StandardCharsets.UTF_8.toString());
+				print.accept(printOut);
+				printOut.flush();
+				setText(strOut.toString(StandardCharsets.UTF_8.toString()));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public void setText_Writer(Consumer<PrintWriter> print) {
+			StringWriter strOut = new StringWriter();
+			PrintWriter printOut = new PrintWriter(strOut);
+			print.accept(printOut);
+			printOut.flush();
+			setText(strOut.toString());
+		}
+	
+		public void setText(String str) {
+			outputTextArea.setText(str);
+		}
 	}
 
 	public static class ListBoxDialog<T> extends StandardDialog {
@@ -170,6 +221,8 @@ public class Gui {
 		private UniverseAddress shownUA;
 		private UniverseAddress resultUA;
 		private AbstractInputPanel[] inputPanels;
+
+		private Universe universe;
 		
 		private static abstract class AbstractInputPanel extends JPanel {
 			private static final long serialVersionUID = -2301492858089122177L;
@@ -195,15 +248,24 @@ public class Gui {
 			abstract void setAddress(UniverseAddress ua);
 		}
 		
-		public CoordinatesDialog(Window parent) {
-			this(parent,false,"Compute Coordinates");
+//		public CoordinatesDialog(Window parent) {
+//			this(parent,null,false,"Compute Coordinates");
+//		}
+		
+		public CoordinatesDialog(Window parent, Universe universe) {
+			this(parent,universe,false,"Compute Coordinates");
 		}
 		
-		public CoordinatesDialog(Window parent, boolean usedAsInputDialog, String title) {
+//		public CoordinatesDialog(Window parent, boolean usedAsInputDialog, String title) {
+//			this(parent, null, usedAsInputDialog, title);
+//		}
+		
+		public CoordinatesDialog(Window parent, Universe universe, boolean usedAsInputDialog, String title) {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
 			this.usedAsInputDialog = usedAsInputDialog;
 			this.shownUA = null;
 			this.resultUA = null;
+			this.universe = universe;
 			
 			inputPanels = new AbstractInputPanel[4];
 			GridBagLayout layout = new GridBagLayout();
@@ -224,17 +286,20 @@ public class Gui {
 			}
 			
 			outputField = new JTextArea();
+			outputField.setEditable(false);
+			
 			Border outsideBorder;
 			if (this.usedAsInputDialog) outsideBorder = BorderFactory.createTitledBorder("Selected Address");
 			else                        outsideBorder = BorderFactory.createEtchedBorder();
-			outputField.setBorder(BorderFactory.createCompoundBorder(outsideBorder,BorderFactory.createEmptyBorder(3,3,3,3)));
-			outputField.setPreferredSize(new Dimension(300,20));
-			outputField.setEditable(false);
+			
+			JScrollPane outputScrollPane = new JScrollPane(outputField);
+			outputScrollPane.setBorder(BorderFactory.createCompoundBorder(outsideBorder,BorderFactory.createEmptyBorder(3,3,3,3)));
+			outputScrollPane.setPreferredSize(new Dimension(300,20));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 			contentPane.add(inputPanels,BorderLayout.WEST);
-			contentPane.add(outputField,BorderLayout.CENTER);
+			contentPane.add(outputScrollPane,BorderLayout.CENTER);
 			contentPane.add(portalGlyphPanel,BorderLayout.SOUTH);
 
 			JPanel dialogPanel = new JPanel(new BorderLayout(3,3));
@@ -297,6 +362,13 @@ public class Gui {
 			outputField.append("\r\n"+ua.getPortalGlyphCodeStr());
 			outputField.append("\r\n"+ua.getAddressStr());
 			outputField.append("\r\n    = "+ua.getAddress());
+			
+			if (universe!=null) {
+				outputField.append("\r\n");
+				for (String str:ua.getVerboseName(universe)) {
+					outputField.append("\r\n"+str);
+				}
+			}
 		}
 
 		private void showError(String message) {

@@ -50,22 +50,23 @@ public class SaveGameData {
 	public final String filename;
 	public final int index;
 	public final JSON_Object json_data;
-	public HashMap<String, Vector<String>> deObfuscatorUsage;
+	public HashMap<String, Vector<String>> deObfuscatorUsage = null;
 	
 	public final General general;
 	public final Universe universe;
-	public Stats stats;
-	public KnownWords knownWords;
-	public KnownWords knownWords2;
 	public final DiscoveryData discoveryData;
-	public Inventories inventories;
-	public KnownBlueprints knownBlueprints;
-	public UnboundBuildingObject[] baseBuildingObjects;
-	public Vector<PersistentPlayerBase> persistentPlayerBases;
-	public Vector<StoredInteraction> storedInteractions;
-	public Vector<TeleportEndpoints> teleportEndpoints;
-	public Vector<Frigate> frigates;
-	public Vector<FrigateMission> frigateMissions;
+	public Stats stats = null;
+	public KnownWords knownWords = null;
+	public KnownWords knownWords2 = null;
+	public Inventories inventories = null;
+	public KnownBlueprints knownBlueprints = null;
+	public UnboundBuildingObject[] baseBuildingObjects = null;
+	public Vector<PersistentPlayerBase> persistentPlayerBases = null;
+	public Vector<StoredInteraction> storedInteractions = null;
+	public Vector<TeleportEndpoints> teleportEndpoints = null;
+	public Vector<Frigate> frigates = null;
+	public Vector<FrigateMission> frigateMissions = null;
+	private Freighter freighter = null;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -75,19 +76,10 @@ public class SaveGameData {
 		this.filename = filename;
 		this.index = index;
 		this.json_data = json_data;
-		this.deObfuscatorUsage = null;
 		
 		this.general = new General(this);
 		this.universe = new Universe();
-		this.stats = null;
-		this.knownWords = null;
 		this.discoveryData = new DiscoveryData(this);
-		this.inventories = null;
-		this.baseBuildingObjects = null;
-		this.persistentPlayerBases = null;
-		this.teleportEndpoints = null;
-		this.frigates = null;
-		this.frigateMissions = null;
 	}
 
 	public void setDeObfuscatorUsage(HashMap<String, Vector<String>> deObfuscatorUsage) {
@@ -108,6 +100,7 @@ public class SaveGameData {
 		parsePersistentPlayerBases();
 		parseStoredInteractions();
 		parseTeleportEndpoints();
+		freighter = Freighter.parse(this,json_data);
 		parseFrigates();
 		parseFrigateMissions();
 		universe.sort();
@@ -1454,6 +1447,14 @@ public class SaveGameData {
 		
 		if (!notParsableObjects.isEmpty())
 			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
+	}
+	
+	public static class Freighter {
+
+		public static Freighter parse(SaveGameData source, JSON_Object json_data) {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 	
 	public static class Frigate {

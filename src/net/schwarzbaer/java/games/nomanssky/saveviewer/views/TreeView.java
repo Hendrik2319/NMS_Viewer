@@ -303,8 +303,12 @@ public class TreeView {
 
 		@Override
 		public String toString() {
-			if (name==null) return dataToString();
-			return name +" : "+ dataToString();
+			return toString(dataToString());
+		}
+
+		public String toString(String dataStr) {
+			if (name==null) return dataStr;
+			return name +" : "+ dataStr;
 		}
 
 		protected String dataToString() {

@@ -181,7 +181,8 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			boolean hasObfuscatedChildren = true;
 			RawDataTreeIcons icon = null;
 			if (obj instanceof JsonTreeNode) {
-				Value value = ((JsonTreeNode)obj).data;
+				JsonTreeNode jsonTreeNode = (JsonTreeNode)obj;
+				Value value = jsonTreeNode.data;
 				wasProcessed = value.wasProcessed;
 				wasDeObfuscated = ((JsonTreeNode)obj).wasDeObfuscated;
 				hasObfuscatedChildren = value.hasObfuscatedChildren();
@@ -192,7 +193,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 				case Float  : icon = RawDataTreeIcons.Number; break;
 				case Integer: icon = RawDataTreeIcons.Number; break;
 				case Object : icon = RawDataTreeIcons.Object; break;
-				case String : icon = RawDataTreeIcons.String; setText( SaveViewer.steamIDs.getNameReplacement(((StringValue)value).value) ); break;
+				case String : icon = RawDataTreeIcons.String; setText( jsonTreeNode.toString(SaveViewer.steamIDs.getNameReplacement(((StringValue)value).value)) ); break;
 				}
 			}
 			

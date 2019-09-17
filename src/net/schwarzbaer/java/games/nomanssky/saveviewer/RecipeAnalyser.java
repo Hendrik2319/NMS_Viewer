@@ -7,11 +7,9 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,8 +20,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -50,7 +46,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
@@ -62,13 +57,13 @@ import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
-import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 
@@ -103,7 +98,7 @@ class RecipeAnalyser implements ActionListener {
 	
 	private FileChooser               fileChooser = null;
 	private StatusFields              statusFields = null;
-	private ResultDialog              resultDialog = null;
+	private TextAreaDialog            resultDialog = null;
 	
 	private TableView.SimplifiedTable ingredientsTable = null;
 	private TableView.SimplifiedTable recipesTable = null;
@@ -624,50 +619,6 @@ class RecipeAnalyser implements ActionListener {
 		return rawTabTable;
 	}
 	
-	private static class ResultDialog extends StandardDialog {
-		private static final long serialVersionUID = -2869012153535397866L;
-		private JTextArea outputTextArea;
-	
-		public ResultDialog(Window parent, String title) {
-			super(parent, title, ModalityType.MODELESS);
-			setPreferredSize(new Dimension(600,900));
-			
-			outputTextArea = new JTextArea();
-			outputTextArea.setEditable(false);
-			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-			contentPane.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
-			
-			this.createGUI(contentPane);
-		}
-		
-		public void setText_Stream(Consumer<PrintStream> print) {
-			try {
-				ByteArrayOutputStream strOut = new ByteArrayOutputStream();
-				PrintStream printOut = new PrintStream(strOut,true,StandardCharsets.UTF_8.toString());
-				print.accept(printOut);
-				printOut.flush();
-				setText(strOut.toString(StandardCharsets.UTF_8.toString()));
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		@SuppressWarnings("unused")
-		public void setText_Writer(Consumer<PrintWriter> print) {
-			StringWriter strOut = new StringWriter();
-			PrintWriter printOut = new PrintWriter(strOut);
-			print.accept(printOut);
-			printOut.flush();
-			setText(strOut.toString());
-		}
-
-		public void setText(String str) {
-			outputTextArea.setText(str);
-		}
-	}
-
 	private static class RefinerDataModel extends DataModel<String> {
 		
 		RefinerDataModel() {
@@ -1321,7 +1272,7 @@ class RecipeAnalyser implements ActionListener {
 
 			private void showinResultDialog(Consumer<PrintStream> print) {
 				if (gui.resultDialog==null)
-					gui.resultDialog = new ResultDialog(gui.mainwindow, "Results");
+					gui.resultDialog = new TextAreaDialog(gui.mainwindow, "Results");
 
 //				SaveViewer.runWithProgressDialog(gui.mainwindow, "Generate Output", pd->{
 //					pd.setTaskTitle("Generate Output");

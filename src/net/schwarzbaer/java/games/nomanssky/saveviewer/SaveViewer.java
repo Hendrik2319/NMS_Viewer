@@ -76,6 +76,7 @@ import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
@@ -466,11 +467,11 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case ComputeCoordinates:
-			new Gui.CoordinatesDialog(mainWindow).showDialog();
+			new Gui.CoordinatesDialog(mainWindow,getCurrentUniverse()).showDialog();
 			break;
 			
 		case SelectCoordinates: {
-			Gui.CoordinatesDialog dlg = new Gui.CoordinatesDialog(mainWindow,true,"Select Coordinates");
+			Gui.CoordinatesDialog dlg = new Gui.CoordinatesDialog(mainWindow,getCurrentUniverse(),true,"Select Coordinates");
 			dlg.showDialog();
 			if (dlg.hasResult()) {
 				dlg.getResult();
@@ -495,6 +496,11 @@ public class SaveViewer implements ActionListener {
 			ProductionOptimiser.start(false);
 			break;
 		}
+	}
+
+	private Universe getCurrentUniverse() {
+		if (contentPane.selectedSaveGameView == null) return null;
+		return contentPane.selectedSaveGameView.data.universe;
 	}
 
 	private boolean isSavegameFolderKnown() {
@@ -991,15 +997,15 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
 			toolBar.add(createButton("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			toolBar.addSeparator();
-			toolBar.add(createButton("Recipe Analyser", ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
+			toolBar.add(createButton("Recipe Analyser"     , ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
 			toolBar.add(createButton("Production Optimiser", ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
 			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
 			extraMenu.add(createMenuItem("Switch to Backup Folder"      , ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
-			extraMenu.add(createMenuItem("Open Savegame", ToolbarIcons.Open  , ActionCommand.Open  ,true));
-//			extraMenu.add(createMenuItem("Reload"       , ToolbarIcons.Reload, ActionCommand.Reload,false));
-//			extraMenu.add(createMenuItem("Close"        , ToolbarIcons.Close , ActionCommand.Close ,false));
+			extraMenu.add(createMenuItem("Open Savegame"    , ToolbarIcons.Open   , ActionCommand.Open   ,true));
+//			extraMenu.add(createMenuItem("Reload"           , ToolbarIcons.Reload , ActionCommand.Reload ,false));
+//			extraMenu.add(createMenuItem("Close"            , ToolbarIcons.Close  , ActionCommand.Close  ,false));
 			extraMenu.add(createMenuItem("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));

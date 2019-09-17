@@ -793,7 +793,7 @@ public class SimplePanels {
 		}
 		
 		private void highlightSpecificAddress() {
-			Gui.CoordinatesDialog dlg = new Gui.CoordinatesDialog(mainWindow,true,"Select Coordinates");
+			Gui.CoordinatesDialog dlg = new Gui.CoordinatesDialog(mainWindow,data.universe,true,"Select Coordinates");
 			dlg.showDialog();
 			if (dlg.hasResult()) {
 				addressToHighlight = dlg.getResult();
