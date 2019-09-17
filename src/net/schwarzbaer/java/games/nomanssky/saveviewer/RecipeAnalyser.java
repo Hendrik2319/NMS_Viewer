@@ -7,6 +7,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -37,6 +38,7 @@ import javax.swing.BorderFactory;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -47,6 +49,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -57,8 +60,10 @@ import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
+import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
+import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
@@ -174,21 +179,24 @@ class RecipeAnalyser implements ActionListener {
 	}
 
 	enum ActionCommand {
+		ClearData,
 		OpenDataFile,
 		SaveDataFile,
 		SaveDataFileAs,
-		FindConflictingRecipes,
+		
+		FindRecipes,
 		FindBasicRecipes,
+		FindConflictingRecipes,
 		FindCombinableIngredients,
 		FindGrowingCycles,
+		
 		ClearMarkersInIngredientsTable,
 		HighlightProducibleInIngredientsTable,
-		FindRecipes, FindRecipes2,
+		FindRecipeChain, FindRecipeChain2,
 		CopyRefinerRecipesFromClipBoard,
 		CopyRefinerIngredientsFromClipBoard,
 		CopyNutrientProcessorRecipesFromClipBoard,
 		CopyNutrientProcessorIngredientsFromClipBoard,
-		ClearData,
 		SaveInStockIngredients,
 		SetInStock, UnsetInStock,
 		;
@@ -208,8 +216,8 @@ class RecipeAnalyser implements ActionListener {
 		
 		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
 		JMenuItem miFindCombinableIngredients = SaveViewer.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients);
-		JMenuItem miFindRecipes  = SaveViewer.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipes);
-		JMenuItem miFindRecipes2 = SaveViewer.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipes2);
+		JMenuItem miFindRecipes  = SaveViewer.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain);
+		JMenuItem miFindRecipes2 = SaveViewer.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipeChain2);
 		
 		ingredientsTable.addContextMenuInvokeListener((rowV, columnV)->{
 			if (dataModel==null || dataModel.ingredientsTableModel==null) return;
@@ -290,9 +298,10 @@ class RecipeAnalyser implements ActionListener {
 		menuAnalyse.add(SaveViewer.createMenuItem("Clear markers in ingredients table", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
 		menuAnalyse.add(miHighlightProducibleInIngredientsTable);
 		menuAnalyse.addSeparator();
-		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same ingredient but different result", this, disabler, ActionCommand.FindConflictingRecipes));
-		menuAnalyse.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same ingredients but different result", this, disabler, ActionCommand.FindConflictingRecipes));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find all basic recipes { (#) and (#,#) } for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes cycles where amount of at least one ingredient is growing", this, disabler, ActionCommand.FindGrowingCycles));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with specific ingredients", this, disabler, ActionCommand.FindRecipes));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -414,23 +423,23 @@ class RecipeAnalyser implements ActionListener {
 			break;
 			
 		case FindRecipes:
-			if (dataModel!=null)
-				dataModel.serviceFunctions.FindRecipeChains();
+			if (dataModel!=null) dataModel.serviceFunctions.FindRecipes();
 			break;
 			
-		case FindRecipes2:
-			if (dataModel!=null)
-				dataModel.serviceFunctions.FindRecipeChains2();
+		case FindRecipeChain:
+			if (dataModel!=null) dataModel.serviceFunctions.FindRecipeChains();
+			break;
+			
+		case FindRecipeChain2:
+			if (dataModel!=null) dataModel.serviceFunctions.FindRecipeChains2();
 			break;
 			
 		case FindGrowingCycles:
-			if (dataModel!=null)
-				dataModel.serviceFunctions.FindGrowingCycles();
+			if (dataModel!=null) dataModel.serviceFunctions.FindGrowingCycles();
 			break;
 			
 		case FindCombinableIngredients:
-			if (dataModel!=null)
-				dataModel.serviceFunctions.FindCombinableIngredients();
+			if (dataModel!=null) dataModel.serviceFunctions.FindCombinableIngredients();
 			break;
 			
 		case ClearMarkersInIngredientsTable:
@@ -525,11 +534,12 @@ class RecipeAnalyser implements ActionListener {
 			case SaveDataFileAs:
 				return dataModel!=null;
 				
+			case FindRecipes:
 			case FindBasicRecipes:
 			case FindCombinableIngredients:
 			case FindConflictingRecipes:
-			case FindRecipes:
-			case FindRecipes2:
+			case FindRecipeChain:
+			case FindRecipeChain2:
 			case FindGrowingCycles:
 				return dataModel!=null && dataModel.recipes!=null;
 				
@@ -660,6 +670,11 @@ class RecipeAnalyser implements ActionListener {
 			return new Ingredient(ID,type,name,price);
 		}
 		
+		@Override protected Ingredient castIngredient(Object obj) {
+			if (obj instanceof Ingredient) return (Ingredient) obj;
+			return null;
+		}
+		
 		private class Ingredient extends DataModel<String>.Ingredient {
 
 			private String id;
@@ -743,6 +758,11 @@ class RecipeAnalyser implements ActionListener {
 			return new Ingredient(row+1,type,nameDE,nameEN,desc);
 		}
 		
+		@Override protected Ingredient castIngredient(Object obj) {
+			if (obj instanceof Ingredient) return (Ingredient) obj;
+			return null;
+		}
+
 		private enum IngredientType {
 			IM, IP0, IP1, IP2A, IP2B, IR0, IR1, IR2, IRM, IRX, IAF, IAK, BC, BH, EI, EP
 		}
@@ -1076,11 +1096,36 @@ class RecipeAnalyser implements ActionListener {
 			return recipes;
 		}
 
+
+		protected abstract Ingredient       castIngredient       (Object obj);
 		protected abstract Ingredient       parseIngredient      (int row, String[] rowData) throws ParseException;
 		protected abstract RecipeIngredient parseRecipeIngredient(int row, String[] rowData, int i) throws ParseException;
 		
 		private class ServiceFunctions {
 
+			public void FindRecipes() {
+				RecipeDialog dlg = new RecipeDialog(gui.mainwindow, "Define Ingredient Scheme");
+				dlg.showDialog();
+				if (dlg.hasResult()) {
+					IDType output = dlg.output==null ? null : dlg.output.getID();
+					IDType input1 = dlg.input1==null ? null : dlg.input1.getID();
+					IDType input2 = dlg.input2==null ? null : dlg.input2.getID();
+					IDType input3 = dlg.input3==null ? null : dlg.input3.getID();
+					InputValueCombination inputs = createCombi(input1,input2,input3);
+					
+					TextAreaDialog outputDlg = new TextAreaDialog(gui.mainwindow, "Found Recipes");
+					outputDlg.setText_Stream(out->{
+						for (Recipe recipe:recipes) {
+							if (recipe.hasInput(inputs) && (output==null || recipe.outputValue.id==output)) {
+								Vector<SpecificRecipe> specificRecipes = recipe.getSpecificRecipes(inputs);
+								for (SpecificRecipe spRec:specificRecipes)
+									out.printf("%s%n", spRec.toString());
+							}
+						}
+					});
+				}
+				
+			}
 			public void FindCombinableIngredients() {
 				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null) {
 					HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
@@ -1641,6 +1686,12 @@ class RecipeAnalyser implements ActionListener {
 				return recipes;
 			}
 			
+			public Vector<SpecificRecipe> getSpecificRecipes(InputValueCombination inputs) {
+				Vector<SpecificRecipe> foundRecipes = new Vector<>();
+				// TODO Auto-generated method stub
+				return foundRecipes;
+			}
+
 			public HashSet<InputValueCombination> expand() {
 				return expand(i->true);
 			}
@@ -1705,20 +1756,34 @@ class RecipeAnalyser implements ActionListener {
 				return inputs;
 			}
 
-			public boolean hasInput(IDType id) {
-				for (Vector<RecipeIngredient> inputValues:this.inputValues)
-					if (hasInput(inputValues, id))
-						return true;
+			public boolean hasInput(InputValueCombination inputs) {
+				int[] res = new  int[inputs.values.size()];
+				for (int i=0; i<inputs.values.size(); i++) {
+					res[i] = findInput(inputs.values.get(i));
+					if (res[i]==0) return false;
+				}
+				// TODO Auto-generated method stub
 				return false;
 			}
 
+			public int findInput(IDType id) {
+				int result = 0;
+				for (int i=0; i<inputValues.size(); i++) {
+					if (hasInput(inputValues.get(i), id))
+						result |= (1<<i);
+				}
+				return result;
+			}
+
+			public boolean hasInput(IDType id) {
+				return findInput(id)!=0;
+			}
 			private boolean hasInput(Vector<RecipeIngredient> inputValues, IDType id) {
 				for (RecipeIngredient input:inputValues)
 					if (input.id.compareTo(id)==0)
 						return true;
 				return false;
 			}
-
 			private RecipeIngredient getInput(Vector<RecipeIngredient> inputValues, IDType id) {
 				for (RecipeIngredient input:inputValues)
 					if (input.id.compareTo(id)==0)
@@ -2034,6 +2099,77 @@ class RecipeAnalyser implements ActionListener {
 		
 		}
 		
+		private class RecipeDialog extends StandardDialog {
+			private static final long serialVersionUID = 5554539104807205300L;
+			
+			public Ingredient output = null;
+			public Ingredient input1 = null;
+			public Ingredient input2 = null;
+			public Ingredient input3 = null;
+
+			private boolean hasResult;
+			private Vector<Ingredient> ingredients;
+
+			private ListCellRenderer<Ingredient> comboBoxRenderer;
+			
+			public RecipeDialog(Window parent, String title) {
+				super(parent, title);
+				hasResult = false;
+				
+				comboBoxRenderer = new Tables.NonStringRenderer<Ingredient>(obj->{
+					Ingredient ingredient = castIngredient(obj);
+					if (ingredient==null) return "<undefined>";
+					String name = ingredient.getName();
+					if (name==null) return ""+ingredient.getID();
+					return name;
+				}) {};
+				
+				if (ingredientsTableModel==null) ingredients = new Vector<>();
+				else ingredients = new Vector<>(ingredientsTableModel.ingredients);
+				ingredients.add(0, null);
+				
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.BOTH;
+				
+				JPanel inputPanel = new JPanel();
+				inputPanel.setBorder(BorderFactory.createLoweredBevelBorder());
+				c.weightx = 1; inputPanel.add(createComboBox(ing->output=ing),c);
+				c.weightx = 0; inputPanel.add(new JLabel(" <--- "),c);
+				c.weightx = 1; inputPanel.add(createComboBox(ing->input1=ing),c);
+				c.weightx = 0; inputPanel.add(new JLabel(" + "),c);
+				c.weightx = 1; inputPanel.add(createComboBox(ing->input2=ing),c);
+				c.weightx = 0; inputPanel.add(new JLabel(" + "),c);
+				c.weightx = 1; inputPanel.add(createComboBox(ing->input3=ing),c);
+				
+				JPanel buttonPanel = new JPanel(new GridBagLayout());
+				c.weightx = 1;
+				buttonPanel.add(new JLabel(),c);
+				c.weightx = 0;
+				buttonPanel.add(SaveViewer.createButton("Ok"    , e->{ hasResult=true; closeDialog(); }),c);
+				buttonPanel.add(SaveViewer.createButton("Cancel", e->{ closeDialog(); }),c);
+				
+				JPanel contentPane = new JPanel(new BorderLayout());
+				contentPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+				contentPane.add(inputPanel,BorderLayout.CENTER);
+				contentPane.add(buttonPanel,BorderLayout.SOUTH);
+				
+				createGUI(contentPane);
+			}
+
+			private JComboBox<DataModel<IDType>.Ingredient> createComboBox(Consumer<Ingredient> selectListener) {
+				JComboBox<Ingredient> comp = new JComboBox<Ingredient>(ingredients);
+				comp.setRenderer(comboBoxRenderer);
+				comp.setSelectedItem(null);
+				comp.setPreferredSize(new Dimension(150,20));
+				comp.addActionListener(e->selectListener.accept(castIngredient(comp.getSelectedItem())));
+				return comp;
+			}
+
+			public boolean hasResult() {
+				return hasResult;
+			}
+			
+		}
 	}
 	
 	private static class ParseException extends Exception {
