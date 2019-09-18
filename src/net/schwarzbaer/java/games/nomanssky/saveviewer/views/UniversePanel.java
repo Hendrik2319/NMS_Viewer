@@ -15,12 +15,14 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
@@ -54,6 +56,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
@@ -62,6 +65,7 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
@@ -905,12 +909,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private Gui.IconComboBox<Biome> cmbbxBiome;
 		private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
-
 		private JCheckBox chkbxExtreme;
-
+		
 		private JTextField txtfldResources;
-
 		private JButton btnSetResources;
+		
+		private ResourceSelectDialog resourceSelectDialog;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);
@@ -949,7 +953,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			txtfldResources = new JTextField();
 			txtfldResources.setEditable(false);
 			btnSetResources = SaveViewer.createButton("Change", e->{
-				//TODO Dialog for setting planetary resources
+				if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
+				EnumSet<Resources> result = resourceSelectDialog.showDialog(node.value.resources);
+				if (result!=null) {
+					node.value.resources.clear();
+					node.value.resources.addAll(result);
+					updateTxtfldResources();
+					updateTreeNode(node, false);
+				}
 			});
 			
 			addCompToValuePanel(cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
@@ -978,8 +989,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			cmbbxBuriedTreasure.setSelectedItem(planet.buriedTreasure);
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
 			
-			String txtfldStr = String.join(", ", Universe.Planet.Resources.getStringIterable(planet.resources, Resources::getShortLabel));
-			txtfldResources.setText(txtfldStr);
+			updateTxtfldResources();
 			
 			clearText();
 			appendln("Universe Coordinates       : %s"     , ua.getCoordinates());
@@ -997,6 +1007,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				for (PersistentPlayerBase base:planet.additionalInfos.bases)
 					appendln("    Base on Planet: \"%s\"", base.name);
 			}
+		}
+
+		private void updateTxtfldResources() {
+			txtfldResources.setText(String.join(", ", Universe.Planet.Resources.getStringIterable(node.value.resources, Resources::getShortLabel)));
 		}
 
 		private Icon createPortalGlyphs(long portalGlyphCode) {
@@ -1622,6 +1636,107 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		default:
 			break;
 		}
+	}
+
+	private static class ResourceSelectDialog extends StandardDialog {
+		private static final long serialVersionUID = 5776076174454193077L;
+		
+		private EnumSet<Resources> resources = null;
+		private boolean ignoreChanges = true;
+
+		public ResourceSelectDialog(Window parent, String title) {
+			super(parent, title, ModalityType.APPLICATION_MODAL, true);
+			
+			JTextField strInput = new JTextField();
+			ResourceGrid resourceGrid = new ResourceGrid();
+			
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			JPanel buttonPanel = new JPanel(new GridBagLayout());
+			c.weightx = 1;
+			buttonPanel.add(new JLabel(),c);
+			c.weightx = 0;
+			buttonPanel.add(SaveViewer.createButton("Ok"    , e->{ ignoreChanges=false; closeDialog(); }),c);
+			buttonPanel.add(SaveViewer.createButton("Cancel", e->{ closeDialog(); }),c);
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+			contentPane.add(strInput, BorderLayout.NORTH);
+			contentPane.add(resourceGrid, BorderLayout.CENTER);
+			contentPane.add(buttonPanel, BorderLayout.SOUTH);
+			
+			createGUI(contentPane);
+		}
+
+		public EnumSet<Resources> showDialog(EnumSet<Resources> resources) {
+			this.resources = resources.clone();
+			showDialog();
+			if (ignoreChanges) return null;
+			return this.resources;
+		}
+		
+		private class ResourceGrid extends Canvas {
+			private static final long serialVersionUID = 8683936443777991288L;
+			
+			private static final int SLOT_RASTER_X = InventoriesPanel.InventoryPanel.InventoryDisplay.SLOT_RASTER_X;
+			private static final int SLOT_RASTER_Y = InventoriesPanel.InventoryPanel.InventoryDisplay.SLOT_RASTER_Y;
+			
+			private GeneralizedID[] resourceIDs;
+			private Resources[] allResources;
+			private int nColumn;
+			private Integer hovered;
+			
+			ResourceGrid() {
+				nColumn = 6;
+				hovered = null;
+				allResources = Resources.values();
+				resourceIDs = new GeneralizedID[allResources.length];
+				for (int i=0; i<resourceIDs.length; i++)
+					resourceIDs[i] = allResources[i].getGeneralizedID();
+				
+				int nRow = (int)Math.ceil(allResources.length/(float)nColumn);
+				setPreferredSize(new Dimension( nColumn*SLOT_RASTER_X+10, nRow*SLOT_RASTER_Y+10 ));
+				
+				MouseAdapter mouse = new MouseAdapter() {
+					@Override public void mouseEntered(MouseEvent e) { hovered = getIndex(e); repaint(); }
+					@Override public void mouseMoved  (MouseEvent e) { hovered = getIndex(e); repaint(); }
+					@Override public void mouseExited (MouseEvent e) { hovered = null; repaint(); }
+					@Override public void mouseClicked(MouseEvent e) {
+						Integer selected = getIndex(e);
+						if (selected==null) return;
+						if (selected<0 || selected>=allResources.length) return;
+						
+						Resources resource = allResources[selected];
+						if (resources.contains(resource)) resources.remove(resource);
+						else resources.add(resource);
+						
+						repaint();
+					}
+				};
+				addMouseListener(mouse);
+				addMouseMotionListener(mouse);
+			}
+			private Integer getIndex(MouseEvent e) {
+				int gridX = e.getX()/SLOT_RASTER_X;
+				int gridY = e.getY()/SLOT_RASTER_Y;
+				if (gridY<0 || gridX<0 || gridX>=nColumn) return null;
+				int i = gridY*nColumn + gridX;
+				if (i>=allResources.length) return null;
+				return i;
+			}
+			
+			@Override protected void sizeChanged(int width, int height) {
+				nColumn = width / SLOT_RASTER_X;
+			}
+
+			@Override protected void paintCanvas(Graphics g, int x, int y, int width, int height) {
+				if (!(g instanceof Graphics2D)) return;
+				Graphics2D g2 = (Graphics2D)g;
+				InventoriesPanel.InventoryPanel.InventoryDisplay.drawSlotGrid(g2, x, y, nColumn, resourceIDs, i->resources.contains(allResources[i]), hovered);
+			}
+			
+		}
+	
 	}
 
 	private class SearchBar extends JPanel {

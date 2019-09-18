@@ -3186,43 +3186,46 @@ public class SaveGameData {
 			}
 			
 			public enum Resources {
-				Cu_    ("#Cu","^EX_YELLOW"),
-				Cd_    ("#Cd","^EX_RED"),
-				Em_    ("#Em","^EX_GREEN"),
-				In_    ("#In","^EX_BLUE"),
-				Cu     ("Cu","^YELLOW2"),
-				Cd     ("Cd","^RED2"),
-				Em     ("Em","^GREEN2"),
-				In     ("In","^BLUE2"),
+				Cu_    ("#Cu", GameInfos.substanceIDs, "^EX_YELLOW"),
+				Cd_    ("#Cd", GameInfos.substanceIDs, "^EX_RED"),
+				Em_    ("#Em", GameInfos.substanceIDs, "^EX_GREEN"),
+				In_    ("#In", GameInfos.substanceIDs, "^EX_BLUE"),
+				Cu     ("Cu" , GameInfos.substanceIDs, "^YELLOW2"),
+				Cd     ("Cd" , GameInfos.substanceIDs, "^RED2"),
+				Em     ("Em" , GameInfos.substanceIDs, "^GREEN2"),
+				In     ("In" , GameInfos.substanceIDs, "^BLUE2"),
 				
-				NH3    ("NH3","^TOXIC1"),
-				U      ("U","^RADIO1"),
-				P      ("P","^HOT1"),
-				Pf     ("Pf","^LUSH1"),
-				Py     ("Py","^DUSTY1"),
-				CO2    ("CO2","^COLD1"),
+				NH3    ("NH3", GameInfos.substanceIDs, "^TOXIC1"),
+				U      ("U"  , GameInfos.substanceIDs, "^RADIO1"),
+				P      ("P"  , GameInfos.substanceIDs, "^HOT1"),
+				Pf     ("Pf" , GameInfos.substanceIDs, "^LUSH1"),
+				Py     ("Py" , GameInfos.substanceIDs, "^DUSTY1"),
+				CO2    ("CO2", GameInfos.substanceIDs, "^COLD1"),
 				
-				Ag     ("Ag","^ASTEROID1"),
-				Au     ("Au","^ASTEROID2"),
-				Co     ("Co","^CAVE1"),
-				Fe_    ("Fe#","^LAND2"),
-				Fe__   ("Fe##","^LAND3"),
-				Na     ("Na","^CATALYST1"),
-				NaCl   ("NaCl","^WATER1"),
-				Sr_Rost("Sr_Rost","^SPACEGUNK3"),
-				Eiweiﬂperle("Eiweiﬂperle","^ALBUMENPEARL"),
+				Ag     ("Ag"     , GameInfos.substanceIDs, "^ASTEROID1"),
+				Au     ("Au"     , GameInfos.substanceIDs, "^ASTEROID2"),
+				Co     ("Co"     , GameInfos.substanceIDs, "^CAVE1"),
+				Fe_    ("Fe#"    , GameInfos.substanceIDs, "^LAND2"),
+				Fe__   ("Fe##"   , GameInfos.substanceIDs, "^LAND3"),
+				Na     ("Na"     , GameInfos.substanceIDs, "^CATALYST1"),
+				NaCl   ("NaCl"   , GameInfos.substanceIDs, "^WATER1"),
+				Sr_Rost("Sr_Rost", GameInfos.substanceIDs, "^SPACEGUNK3"),
+				Eiweiﬂperle("Eiweiﬂperle", GameInfos.productIDs, "^ALBUMENPEARL"),
 				;
 				public final String label;
 				public final String ID;
-				Resources(String label, String ID) {
+				private IDMap idMap;
+				
+				Resources(String label, IDMap idMap, String ID) {
 					this.label = label;
+					this.idMap = idMap;
 					this.ID = ID;
 				}
 				public static Iterable<String> getStringIterable(Collection<Resources> resources) {
 					return getStringIterable(resources, Resources::toString);
 				}
 				public static Iterable<String> getStringIterable(Collection<Resources> resources, Function<Resources,String> convert) {
-					return () -> resources.stream().map(convert).iterator();
+					return () -> resources.stream().sorted().map(convert).iterator();
 				}
 				public static Resources getViaLabel(String label) {
 					for (Resources res:values())
@@ -3231,10 +3234,11 @@ public class SaveGameData {
 					return null;
 				}
 				public GeneralizedID getGeneralizedID() {
-					GeneralizedID id = null;
-					if (id==null) id = GameInfos.productIDs  .getIfContains(ID);
-					if (id==null) id = GameInfos.substanceIDs.getIfContains(ID);
-					return id;
+//					GeneralizedID id = null;
+//					if (id==null) id = GameInfos.productIDs  .getIfContains(ID);
+//					if (id==null) id = GameInfos.substanceIDs.getIfContains(ID);
+//					return id;
+					return idMap.getIfContains(ID);
 				}
 				public String getShortLabel() {
 					return label;

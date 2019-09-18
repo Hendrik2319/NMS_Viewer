@@ -1023,6 +1023,7 @@ public class GameInfos {
 			if (!hasSymbol()) return label+" ["+id+"]";
 			return "("+symbol+") "+label+" ["+id+"]";
 		}
+		@Override public String toString() { return getName(); }
 		
 		public boolean hasImageFileName() { return imageFileName!=null; }
 		public String getImageFileName() { return imageFileName==null?"":imageFileName; }
