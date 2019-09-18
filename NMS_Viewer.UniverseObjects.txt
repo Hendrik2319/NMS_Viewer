@@ -252,6 +252,25 @@ class=Yellow
 short=2 Planeten
 info=
 
+[Reg000000FCCE59C1]
+name=Wibereb
+
+[Sys005600FCCE59C1]
+name=Stefie System 1
+race=Vykeen
+conflict=3
+conflict_label=gewaltig
+class=Yellow
+
+[Pln105600FCCE59C1]
+
+[Pln205600FCCE59C1]
+name=Luca W/1
+biome=Barren
+resources=Cu,Py,Fe__
+
+[Pln505600FCCE59C1]
+
 [Reg000000FEEC69F7]
 name=Fostva-Quadrant
 
@@ -2461,6 +2480,20 @@ resources=Cu,Pf,NaCl
 short=
 info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
+[Sys007300006A5E0D]
+name=Ryangxin
+race=Gek
+conflict=1
+conflict_label=belanglos
+class=Yellow
+
+[Pln207300006A5E0D]
+name=Bostus Primus
+biome=Lush
+with water
+buriedTreasure=AncientBones
+resources=Cu,Pf,Na
+
 [Sys020300006A5E0D]
 name=Aronqu-Sun XII
 class=Red
@@ -4293,6 +4326,16 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Reg0000000065630C]
+
+[Sys0051000065630C]
+
+[Pln1051000065630C]
+
+[Pln2051000065630C]
+
+[Pln3051000065630C]
+
 [Reg00000001D52331]
 name=Dammerc
 
@@ -4541,6 +4584,12 @@ blackholetarget=003600FED6A36B
 class=Yellow
 short=4 Planeten
 info=
+
+[Reg000000FEA6142F]
+
+[Sys00D900FEA6142F]
+
+[Pln50D900FEA6142F]
 
 [Reg00000000444444]
 
@@ -5028,6 +5077,27 @@ blackholetarget=002B0004369A84
 class=Yellow
 short=2 Planeten
 info=
+
+[Reg000000052CA65C]
+name=Meer von Arbodi
+
+[Sys001300052CA65C]
+name=Mutii Was Here
+race=Korvax
+conflict=3
+conflict_label=gewaltig
+class=Yellow
+
+[Pln101300052CA65C]
+name=Dan Sunday
+biome=Irradiated
+resources=Cu,U,Na
+
+[Pln201300052CA65C]
+name=Musho Betis
+
+[Pln301300052CA65C]
+name=Dan Sunday x2
 
 [Reg000000FCD7F684]
 name=Nezenka-Arm
