@@ -2441,6 +2441,7 @@ info=
 [Pln103100006A5E0D]
 name=Antuw Sigma
 biome=Airless
+resources=Cu,Fe__,Sr_Rost
 short=
 info=Cu, SR_Rost, Fe##
 
@@ -2448,15 +2449,51 @@ info=Cu, SR_Rost, Fe##
 name=Cucamo Sigma
 biome=Irradiated
 is extreme
+resources=Cu_,U,NaCl
 short=
-info=#Cu, U, NaCl
+info=<ParsedPlanetaryResources> #Cu, U, NaCl
 
 [Pln403100006A5E0D]
 name=Seyc
 biome=Lush
 with water
+resources=Cu,Pf,NaCl
 short=
-info=Cu, Pf, NaCl
+info=<ParsedPlanetaryResources> Cu, Pf, NaCl
+
+[Sys020300006A5E0D]
+name=Aronqu-Sun XII
+class=Red
+short=3 Planeten
+info=
+
+[Pln120300006A5E0D]
+name=Aager
+biome=AnomBeams
+resources=Cd,Ag,Au
+short=
+info=<ParsedPlanetaryResources> Cd, Au, Ag
+
+[Pln220300006A5E0D]
+name=Gentonha
+biome=Scorched
+resources=Cd,P,Ag
+short=
+info=<ParsedPlanetaryResources> Cd, P, Ag
+
+[Pln320300006A5E0D]
+name=Ileneato
+biome=Airless
+resources=Cd,Fe__,Sr_Rost
+short=
+info=Cd, SR_Rost, Fe##
+
+[Pln420300006A5E0D]
+name=Aplefar
+biome=AnomBones
+resources=Cd,Au,Co
+short=
+info=<ParsedPlanetaryResources> Cd, Au, Co
 
 [Reg00000000FCFE0E]
 name=Viksvan
@@ -5122,6 +5159,7 @@ class=Yellow
 [Pln107000FCD7F684]
 name=Napecule Beta
 biome=Frozen
+resources=Cd,CO2
 short=
 info=Cu, CO2, ??
 

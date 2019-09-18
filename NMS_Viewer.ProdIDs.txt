@@ -743,6 +743,7 @@
 ^FOOD_P_ALL3.type=PlantProduct
 ^FOOD_P_ALL3.image=PRODUCT.PLANT.ALL3WILD.png
 ^FOOD_P_ALL3.imageBG=10805C
+^FOOD_P_GLITCH=
 ^FOOD_P_HOTWILD=Feuerbeere
 ^FOOD_P_HOTWILD.image=PRODUCT.PLANT.HOTWILD.png
 ^FOOD_P_HOTWILD.imageBG=10805C
@@ -1749,7 +1750,12 @@
 ^U_SHIELDBOOST4.image=NmsProduct_QuantumProcessor_Icon.png
 ^U_SHIELDBOOST4.imageBG=F0A92B
 ^U_SHIPBLOB1=
-^U_SHIPGUN1=
+^U_SHIPGUN1=Photonen-Kanonen-Modul (C)
+^U_SHIPGUN1.type=ShipWeaponUpgradeM
+^U_SHIPGUN3=Photonen-Kanonen-Modul (A)
+^U_SHIPGUN3.type=ShipWeaponUpgradeM
+^U_SHIPGUN3.image=NmsTech_Heat_Capacitor_Icon_13.png
+^U_SHIPGUN3.imageBG=7C4562
 ^U_SHIPLAS2=Phasenstrahler-Modul (B)
 ^U_SHIPLAS2.type=ShipWeaponUpgradeM
 ^U_SHIPLAS2.image=NmsCommodity_QuantumAccelerator_icon.png
