@@ -1762,6 +1762,9 @@ class RecipeAnalyser implements ActionListener {
 					res[i] = findInput(inputs.values.get(i));
 					if (res[i]==0) return false;
 				}
+				if (res.length==0) return true; // no inputs
+				if (res.length==1) return true; // 1 input && res[0]!=0
+				
 				// TODO Auto-generated method stub
 				return false;
 			}

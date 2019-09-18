@@ -50,6 +50,7 @@ import javax.swing.table.TableCellRenderer;
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
 import net.schwarzbaer.gui.ProgressDialog;
+import net.schwarzbaer.gui.ProgressDialog.CancelListener;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
@@ -278,13 +279,15 @@ class ProductionOptimiser implements ActionListener {
 		case FindMostValuableProduction: {
 			SaveViewer.runWithProgressDialog(mainwindow, "title", pd->{
 				Vector<Result> results = new MostValuableProduction(pd).find();
-				resultList.setModel(new DefaultComboBoxModel<Result>(results));
-				resultList.setSelectedItem(null);
-				resultList.setEnabled(true);
-				SaveViewer.log_ln("Most Valuable Productions:");
-				for (int i=0; i<results.size(); i++) {
-					Result res = results.get(i);
-					SaveViewer.log_ln("   [%02d] %d", i+1, res.avail);
+				if (results!=null) {
+					resultList.setModel(new DefaultComboBoxModel<Result>(results));
+					resultList.setSelectedItem(null);
+					resultList.setEnabled(true);
+					SaveViewer.log_ln("Most Valuable Productions:");
+					for (int i=0; i<results.size(); i++) {
+						Result res = results.get(i);
+						SaveViewer.log_ln("   [%02d] %d", i+1, res.avail);
+					}
 				}
 			});
 		} break;
@@ -566,15 +569,22 @@ class ProductionOptimiser implements ActionListener {
 		}
 	}
 
-	private class MostValuableProduction {
+	private class MostValuableProduction implements CancelListener {
 		
 		private static final int MAX_RESULT_COUNT = 10;
 		private Vector<ProductionOptimiser.Result> results;
 		private ProgressDialog pd;
+		private boolean cancelTask;
 
 		MostValuableProduction(ProgressDialog pd) {
 			this.pd = pd;
 			results = new Vector<>();
+			cancelTask = false;
+			pd.addCancelListener(this);
+		}
+
+		@Override public void cancelTask() {
+			cancelTask = true;
 		}
 
 		public Vector<ProductionOptimiser.Result> find() {
@@ -591,6 +601,8 @@ class ProductionOptimiser implements ActionListener {
 			results.clear();
 			Loop loop = new Loop();
 			loop.start();
+			
+			if (cancelTask) return null;
 			
 			return results;
 		}
@@ -687,11 +699,7 @@ class ProductionOptimiser implements ActionListener {
 				currentAmounts.clear();
 				productsTableModel.forEach(p->{
 					if ( isLevel1Product(p) ) {
-						int n1 = getMaxAmount(p.input1,p.n1);
-						int n2 = getMaxAmount(p.input2,p.n2);
-						int n3 = getMaxAmount(p.input3,p.n3);
-						int n = Math.min(Math.min(n1, n2), n3);
-						maxAmounts.put(p,n);
+						maxAmounts.put(p,p.computeProducibleAmount());
 						currentAmounts.put(p,0);
 					}
 				});
@@ -713,12 +721,6 @@ class ProductionOptimiser implements ActionListener {
 				
 				neededBaseInputs.clear();
 				loop(0,0);
-			}
-
-			private int getMaxAmount(Input input, int n) {
-				if (input instanceof BaseInput)
-					return ((BaseInput) input).storedAmount/n;
-				return Integer.MAX_VALUE;
 			}
 
 			private void loop(int loopLevel, int caseIndex) {
@@ -743,6 +745,7 @@ class ProductionOptimiser implements ActionListener {
 				int max = maxAmounts.get(product);
 				
 				for (int n=0; n<=max; n++) {
+					if (cancelTask) return;
 					setAmount(product, n);
 					if (!haveAllResources()) break;
 					loop(loopLevel+1, caseIndex + n*indexMultipliers[loopLevel]);
@@ -988,6 +991,23 @@ class ProductionOptimiser implements ActionListener {
 			}
 			return false;
 		}
+
+		public int computeProducibleAmount() {
+			int n1_ = getProducibleAmount(input1,n1);
+			int n2_ = getProducibleAmount(input2,n2);
+			int n3_ = getProducibleAmount(input3,n3);
+			int n = Math.min(Math.min(n1_, n2_), n3_);
+			return n * producedAmount;
+		}
+
+		private int getProducibleAmount(Input input, int n) {
+			if (input instanceof BaseInput) {
+				BaseInput baseInput = (BaseInput) input;
+				return baseInput.storedAmount/n;
+			}
+			if (input==null) return Integer.MAX_VALUE;
+			return 0;
+		}
 		
 	}
 	
@@ -1169,20 +1189,21 @@ class ProductionOptimiser implements ActionListener {
 	}
 	
 	private enum ProductsTableColumnID implements SimplifiedColumnIDInterface {
-		Level   ("Lvl"     , Integer.class, 20,-1, 20,-1),
-		Amount  ("N"       , Integer.class, 20,-1, 40,-1),
-		Name    ("Result"  ,  String.class, 20,-1,150,-1),
-		Price   ("Price"   , Integer.class, 20,-1, 50,-1),
-		Cost    ("Costs"   , Integer.class, 20,-1, 50,-1),
-		Ratio   ("P/C"     ,  String.class, 20,-1, 50,-1),
-		N1      ("N1"      , Integer.class, 20,-1, 40,-1),
-		Input1  ("Input 1" ,   Input.class, 20,-1,150,-1),
-		N2      ("N2"      , Integer.class, 20,-1, 40,-1),
-		Input2  ("Input 2" ,   Input.class, 20,-1,150,-1),
-		N3      ("N3"      , Integer.class, 20,-1, 40,-1),
-		Input3  ("Input 3" ,   Input.class, 20,-1,150,-1),
-		Produced("Produced", Integer.class, 20,-1, 60,-1),
-		Value   ("Value"   , Integer.class, 20,-1, 60,-1),
+		Level     ("Lvl"       , Integer.class, 20,-1, 20,-1),
+		Amount    ("N"         , Integer.class, 20,-1, 40,-1),
+		Name      ("Result"    ,  String.class, 20,-1,150,-1),
+		Price     ("Price"     , Integer.class, 20,-1, 50,-1),
+		Cost      ("Costs"     , Integer.class, 20,-1, 50,-1),
+		Ratio     ("P/C"       ,  String.class, 20,-1, 50,-1),
+		N1        ("N1"        , Integer.class, 20,-1, 40,-1),
+		Input1    ("Input 1"   ,   Input.class, 20,-1,150,-1),
+		N2        ("N2"        , Integer.class, 20,-1, 40,-1),
+		Input2    ("Input 2"   ,   Input.class, 20,-1,150,-1),
+		N3        ("N3"        , Integer.class, 20,-1, 40,-1),
+		Input3    ("Input 3"   ,   Input.class, 20,-1,150,-1),
+		Producible("Producible", Integer.class, 20,-1, 60,-1),
+		Produced  ("Produced"  , Integer.class, 20,-1, 60,-1),
+		Value     ("Value"     , Integer.class, 20,-1, 60,-1),
 		;
 		private SimplifiedColumnConfig columnConfig;
 		ProductsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
@@ -1246,6 +1267,7 @@ class ProductionOptimiser implements ActionListener {
 			case N2: return product.input2!=null;
 			case N3: return product.input3!=null;
 			
+			case Producible:
 			case Produced:
 			case Value:
 				return false;
@@ -1270,6 +1292,7 @@ class ProductionOptimiser implements ActionListener {
 			case N1    : return product.input1==null?null:product.n1;
 			case N2    : return product.input2==null?null:product.n2;
 			case N3    : return product.input3==null?null:product.n3;
+			case Producible: if (product.getLevel()==1) return product.computeProducibleAmount(); return null;
 			case Produced: if (selectedResult==null) return null; return getStoredProducts(product);
 			case Value   : if (selectedResult==null) return null; return getStoredProducts(product)*product.price;
 			}
@@ -1304,6 +1327,7 @@ class ProductionOptimiser implements ActionListener {
 			case N1    : product.n1 = parseInt(aValue); break;
 			case N2    : product.n2 = parseInt(aValue); break;
 			case N3    : product.n3 = parseInt(aValue); break;
+			case Producible: break;
 			case Produced: break;
 			case Value   : break;
 			}
@@ -1372,6 +1396,7 @@ class ProductionOptimiser implements ActionListener {
 					case Input3:
 					case N3    : if (product.input3!=null) bgColor = getProductLevelColor(product.getLevelOf(product.input3)); break;
 					
+					case Producible:
 					case Produced:
 					case Value   : break;
 					}
