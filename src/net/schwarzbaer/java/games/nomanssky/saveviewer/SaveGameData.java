@@ -636,7 +636,10 @@ public class SaveGameData {
 	public static class TeleportEndpoints {
 		
 		public enum TeleportHost {
-			Base("Base on Planet"), Spacestation("Space Station");
+			Base("Base on Planet"),
+			Spacestation("Space Station"),
+			ExternalBase("Base of another Player"),
+			;
 			
 			public String label;
 			TeleportHost(String label) {
@@ -689,7 +692,7 @@ public class SaveGameData {
 				te.gpsCoords        = PolarCoordinates.parse(te.position);
 				te.lookAt           = Coordinates     .parse(objectValue, "LookAt");
 				te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
-				te.teleportHost     = TeleportEndpoints.TeleportHost.parseValue(te.teleportHostStr);
+				te.teleportHost     = TeleportHost.parseValue(te.teleportHostStr);
 				te.name             = getStringValue(objectValue, "Name");
 				
 				if (te.universeAddress!=null) {
