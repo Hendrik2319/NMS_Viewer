@@ -744,7 +744,10 @@
 ^FOOD_P_ALL3.type=PlantProduct
 ^FOOD_P_ALL3.image=PRODUCT.PLANT.ALL3WILD.png
 ^FOOD_P_ALL3.imageBG=10805C
-^FOOD_P_GLITCH=
+^FOOD_P_GLITCH=Hexabeere
+^FOOD_P_GLITCH.type=PlantProduct
+^FOOD_P_GLITCH.image=PRODUCT.PLANT.GLITCHWILD.png
+^FOOD_P_GLITCH.imageBG=10805C
 ^FOOD_P_HOTWILD=Feuerbeere
 ^FOOD_P_HOTWILD.image=PRODUCT.PLANT.HOTWILD.png
 ^FOOD_P_HOTWILD.imageBG=10805C
@@ -813,7 +816,9 @@
 ^FRIG_BOOST_TRA.type=Product
 ^FRIG_BOOST_TRA.image=NmsCommodity_High_Capacity_Vector_Compressor_icon.png
 ^FRIG_BOOST_TRA.imageBG=0063B6
-^FRIG_TOKEN=
+^FRIG_TOKEN=Geborgenes Fregattenmodul
+^FRIG_TOKEN.image=PRODUCT.RESEARCHTOKEN.png
+^FRIG_TOKEN.imageBG=0063B6
 ^FUELPROD3=Kohlenstoff-Kristall
 ^FUELPROD3.type=ResourceCrystal
 ^FUELPROD3.image=PRODUCT.FUELPROD.KohlenstoffKristall.png
@@ -983,8 +988,8 @@
 ^NAV_DATA.image=NmsProduct_QuantumProcessor_Icon.png
 ^NAV_DATA.imageBG=0063B6
 ^NAV_DATA_DROP=Absprungkapsel-Koordinatendaten
-^NAV_DATA_DROP.type=TradeProduct
-^NAV_DATA_DROP.image=NmsProduct_CryogenicChamber_Icon.png
+^NAV_DATA_DROP.type=Special
+^NAV_DATA_DROP.image=PRODUCT.EXONAVDATA.png
 ^NAV_DATA_DROP.imageBG=CCCCCC
 ^NIPNIPBUDS=NipNip-Knospen
 ^NIPNIPBUDS.type=PlantProduct
@@ -1444,7 +1449,10 @@
 ^SNOWPLANT=Frostwurz
 ^SNOWPLANT.type=Plant
 ^SNOWPLANT.image=NmsFarming_Skywort_Icon.Frostwurz.png
-^SOUL_ENGINE=
+^SOUL_ENGINE=Seelen-Engine
+^SOUL_ENGINE.type=Special
+^SOUL_ENGINE.image=SOULENGINE.png
+^SOUL_ENGINE.imageBG=CCCCCC
 ^SPAWNER_BALL=
 ^SPEC_DECAL01=
 ^SPEC_DECAL02=
@@ -1542,7 +1550,7 @@
 ^TELEPORTER.image=Buildable.teleporter.png
 ^TOXICPLANT=Pilzgeflecht
 ^TOXICPLANT.type=Plant
-^TOXICPLANT.image=NmsPlant_Puffball_Icon.Pilzgeflecht.jpg
+^TOXICPLANT.image=Product.toxicplant.png
 ^TRA_ALLOY3=Optisches Lösungsmittel
 ^TRA_ALLOY3.obsolete=
 ^TRA_ALLOY3.image=NmsCommodity_Optical_Solvent_icon.png
