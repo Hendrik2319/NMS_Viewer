@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import javax.activation.DataHandler;
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -1200,6 +1201,24 @@ public class SaveViewer implements ActionListener {
 	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
 	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
 
+	public static <AC extends Enum<AC>> void setComp(JComboBox<?> comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		if (disabler     !=null) disabler.add(actionCommand, comp);
+		if (listener     !=null) comp.addActionListener(listener);
+		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+	}
+
+	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		if (disabler     !=null) disabler.add(actionCommand, comp);
+		if (listener     !=null) comp.addActionListener(listener);
+		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+	}
+
+	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		if (disabler     !=null) disabler.add(actionCommand, comp);
+		if (listener     !=null) comp.addActionListener(listener);
+		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+	}
+
 	public static JButton createButton(String title, ActionListener l) {
 		JButton button = new JButton(title);
 		if (l!=null) button.addActionListener(l);
@@ -1241,9 +1260,7 @@ public class SaveViewer implements ActionListener {
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
 		menuItem.setEnabled(enabled);
-		if (disabler!=null) disabler.add(actionCommand, menuItem);
-		if (l!=null) menuItem.addActionListener(l);
-		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
+		setComp(menuItem, l, disabler, actionCommand);
 		if (icon!=null) menuItem.setIcon(toolbarIS.getIcon(icon));
 		return menuItem;
 	}
@@ -1257,9 +1274,7 @@ public class SaveViewer implements ActionListener {
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
 		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
 		menuItem.setEnabled(enabled);
-		if (disabler!=null) disabler.add(actionCommand, menuItem);
-		if (l!=null) menuItem.addActionListener(l);
-		if (actionCommand!=null) menuItem.setActionCommand(actionCommand.toString());
+		setComp(menuItem, l, disabler, actionCommand);
 		return menuItem;
 	}
 
@@ -1276,14 +1291,12 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static JTextField createTextField(String txt, Consumer<String> setInput) {
+		return createTextField(txt, null, null, setInput);
+	}
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
 		JTextField obj = new JTextField(txt);
-		if (setInput!=null) {
-			obj.addActionListener(e->setInput.accept(obj.getText()));
-			obj.addFocusListener(new FocusListener() {
-				@Override public void focusGained(FocusEvent e) {}
-				@Override public void focusLost(FocusEvent e) { setInput.accept(obj.getText()); }
-			});
-		}
+		ActionListener listener = setInput==null ? null : e->setInput.accept(obj.getText());
+		setTextField(obj, listener, disabler, actionCommand);
 		return obj;
 	}
 
@@ -1291,17 +1304,26 @@ public class SaveViewer implements ActionListener {
 		return createTextField(txt, l, null, null);
 	}
 	
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
 		JTextField obj = new JTextField(txt);
-		if (actionCommand!=null) obj.setActionCommand(actionCommand.toString());
-		if (disabler!=null) disabler.add(actionCommand, obj);
-		if (l!=null) {
-			obj.addActionListener(l);
-			obj.addFocusListener(new FocusListener() {
+		setTextField(obj, listener, disabler, actionCommand);
+		return obj;
+	}
+
+	private static <AC extends Enum<AC>> void setTextField(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		setComp(comp,listener,disabler,actionCommand);
+		if (listener!=null) {
+			comp.addFocusListener(new FocusListener() {
 				@Override public void focusGained(FocusEvent e) {}
-				@Override public void focusLost(FocusEvent e) { l.actionPerformed(new ActionEvent(obj, ActionEvent.ACTION_PERFORMED, actionCommand==null?null:actionCommand.toString())); }
+				@Override public void focusLost(FocusEvent e) {
+					listener.actionPerformed(
+							new ActionEvent(
+									comp, ActionEvent.ACTION_PERFORMED,
+									actionCommand==null?null:actionCommand.toString()
+							)
+					);
+				}
 			});
 		}
-		return obj;
 	}
 }
