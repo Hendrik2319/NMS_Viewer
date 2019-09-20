@@ -13,6 +13,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -972,8 +973,8 @@ public class ResourceHotSpots implements ActionListener {
 		private static final long serialVersionUID = 3631270386892323918L;
 		
 		private static final Color COLOR_AXIS = new Color(0x70000000,true);
-		private static final int nMajorTicksPerAxis = 2;
-		private static final int minMinorTickUnitLength_px = 20;
+		//private static final int nMajorTicksPerAxis = 2;
+		private static final int minMinorTickUnitLength_px = 7;
 		private static final int majorTickLength_px = 10;
 		private static final int minorTickLength_px = 4;
 		
@@ -990,6 +991,9 @@ public class ResourceHotSpots implements ActionListener {
 
 		private Point panStart = null;
 		private Point tempPanOffset = null;
+
+		private AxisTicks verticalAxisTicks   = new AxisTicks();
+		private AxisTicks horizontalAxisTicks = new AxisTicks();
 		
 		HotSpotsView() {
 			MouseInputAdapter mouse = new MouseInputAdapter() {
@@ -1031,6 +1035,7 @@ public class ResourceHotSpots implements ActionListener {
 				float offsetLong =  offset.x / scalePixelPerLength / scaleLengthPerAngleLong;
 				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
 				updateScaleLengthPerAngle();
+				updateAxisTicks();
 			}
 			panStart = null;
 			tempPanOffset = null;
@@ -1055,6 +1060,7 @@ public class ResourceHotSpots implements ActionListener {
 			center.longitude = (centerOld.longitude - location.longitude) * (float) (Math.cos(centerOld.latitude/180*Math.PI) / Math.cos(center.latitude/180*Math.PI) ) / f + location.longitude;
 			
 			updateScaleLengthPerAngle();
+			updateAxisTicks();
 			repaint();
 		}
 
@@ -1113,6 +1119,55 @@ public class ResourceHotSpots implements ActionListener {
 			scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
 		}
 
+		private void updateAxisTicks() {
+			if (center==null) return;
+			updateAxisTicks( convertLength_ScreenToAngle_Lat (minMinorTickUnitLength_px),   verticalAxisTicks );
+			updateAxisTicks( convertLength_ScreenToAngle_Long(minMinorTickUnitLength_px), horizontalAxisTicks );
+		}
+
+		private void updateAxisTicks(float minMinorTickUnitLength_a, AxisTicks axisTicks) {
+			
+			axisTicks.majorTickUnit_a = 1f;
+			axisTicks.minorTickCount = 5; // minorTickUnit_a = 0.2
+			axisTicks.precision = 0;
+			while (axisTicks.majorTickUnit_a/10 > minMinorTickUnitLength_a) {
+				
+				if (axisTicks.majorTickUnit_a/10 > minMinorTickUnitLength_a) {
+					axisTicks.majorTickUnit_a /= 2; // majorTickUnit_a = 0.5
+					axisTicks.minorTickCount = 5;   // minorTickUnit_a = 0.1
+					axisTicks.precision += 1;
+				}
+				
+				if (axisTicks.majorTickUnit_a/10 > minMinorTickUnitLength_a) {
+					axisTicks.majorTickUnit_a /= 2.5f; // majorTickUnit_a = 0.2
+					axisTicks.minorTickCount = 4;      // minorTickUnit_a = 0.05
+				}
+				
+				if (axisTicks.majorTickUnit_a/10 > minMinorTickUnitLength_a) {
+					axisTicks.majorTickUnit_a /= 2; // majorTickUnit_a = 0.1
+					axisTicks.minorTickCount = 5;   // minorTickUnit_a = 0.02
+				}
+			};
+			while (axisTicks.majorTickUnit_a/axisTicks.minorTickCount < minMinorTickUnitLength_a) {
+				
+				if (axisTicks.majorTickUnit_a/axisTicks.minorTickCount < minMinorTickUnitLength_a) {
+					axisTicks.majorTickUnit_a *= 2; // majorTickUnit_a = 2
+					axisTicks.minorTickCount = 4;   // minorTickUnit_a = 0.5
+				}
+				
+				if (axisTicks.majorTickUnit_a/axisTicks.minorTickCount < minMinorTickUnitLength_a) {
+					axisTicks.majorTickUnit_a *= 2.5f; // majorTickUnit_a = 5
+					axisTicks.minorTickCount = 5;      // minorTickUnit_a = 1
+				}
+				
+				if (axisTicks.majorTickUnit_a/axisTicks.minorTickCount < minMinorTickUnitLength_a) {
+					axisTicks.majorTickUnit_a *= 2; // majorTickUnit_a = 10
+					axisTicks.minorTickCount = 5;   // minorTickUnit_a = 2
+				}
+			};
+			axisTicks.minorTickUnit_a = axisTicks.majorTickUnit_a/axisTicks.minorTickCount;
+		}
+
 		public void setRegion(Planet planet, Planet.Region region) {
 			//SaveViewer.log_ln("%s.setRegion( %s, %s )", getClass().getSimpleName(), planet, region);
 			this.planet = planet;
@@ -1121,7 +1176,7 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		public void reset() {
-			SaveViewer.log_ln("%s.reset()   [ planet:%s, region:%s ]", getClass().getSimpleName(), planet, region);
+			//SaveViewer.log_ln("%s.reset()   [ planet:%s, region:%s ]", getClass().getSimpleName(), planet, region);
 			if (region!=null && planet!=null) {
 				min = new LatLong();
 				max = new LatLong();
@@ -1142,10 +1197,12 @@ public class ResourceHotSpots implements ActionListener {
 				center = new LatLong( (min.latitude+max.latitude)/2, (min.longitude+max.longitude)/2 );
 				
 				updateScaleLengthPerAngle();
-				float scalePixelPerLengthLat  = (height-40) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
+				float scalePixelPerLengthLat  = (height-30) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
 				float scalePixelPerLengthLong = (width -30) / ((max.longitude-min.longitude)*scaleLengthPerAngleLong);
 				scalePixelPerLength = Math.min(scalePixelPerLengthLat, scalePixelPerLengthLong);
-				SaveViewer.log_ln("%s.reset()   center:%s, scale( %fu/°(Lat), %fu/°(Long), %fpx/u )", getClass().getSimpleName(), center, scaleLengthPerAngleLat,scaleLengthPerAngleLong,scalePixelPerLength);
+				updateAxisTicks();
+				
+				//SaveViewer.log_ln("%s.reset()   center:%s, scale( %fu/°(Lat), %fu/°(Long), %fpx/u )", getClass().getSimpleName(), center, scaleLengthPerAngleLat,scaleLengthPerAngleLong,scalePixelPerLength);
 			}
 			repaint();
 		}
@@ -1177,16 +1234,33 @@ public class ResourceHotSpots implements ActionListener {
 				region.referencePoints.forEach(item->draw(g2,item));
 				region.hotSpots       .forEach(item->draw(g2,item));
 				
-				drawAxis( g2, x+10      , y+20, height-40, true  );
-				drawAxis( g2, x+width-10, y+20, height-40, true  );
-				drawAxis( g2, y+10       , x+20, width-40, false );
-				drawAxis( g2, y+height-10, x+20, width-40, false );
+				drawAxis( g2, x+5      , y+20, height-40, true,  true,  verticalAxisTicks);
+				drawAxis( g2, x+width-5, y+20, height-40, true,  false, verticalAxisTicks);
+				drawAxis( g2, y+5       , x+20, width-40, false, true,  horizontalAxisTicks);
+				drawAxis( g2, y+height-5, x+20, width-40, false, false, horizontalAxisTicks);
+				
+				drawScale( g2 );
 			}
 			
 			g2.setClip(null);
 		}
+		
+		private void drawScale(Graphics2D g2) {
+			// TODO Auto-generated method stub
+			
+		}
 
-		private void drawAxis(Graphics2D g2, int c0, int c1, int width1, boolean isVertical) {
+		private static class AxisTicks {
+			public Float majorTickUnit_a = null;
+			public Float minorTickUnit_a = null;
+			public Integer minorTickCount = null;
+			public int precision = 1;
+			public String toString(float angle) {
+				return String.format(Locale.ENGLISH, "%1."+precision+"f", angle);
+			}
+		}
+
+		private void drawAxis(Graphics2D g2, int c0, int c1, int width1, boolean isVertical, boolean labelsRightBottom, AxisTicks axisTicks) {
 			//   isVertical:  c0 = x, c1 = y, width1 = height
 			// ! isVertical:  c0 = y, c1 = x, width1 = width
 			if (center==null) return;
@@ -1198,12 +1272,6 @@ public class ResourceHotSpots implements ActionListener {
 			if (isVertical) maxAngle_a = convertPos_ScreenToAngle_Lat (c1+width1);
 			else            maxAngle_a = convertPos_ScreenToAngle_Long(c1+width1);
 			
-			int minAngle_px,maxAngle_px;
-			if (isVertical) minAngle_px = convertPos_AngleToScreen_Lat (minAngle_a);
-			else            minAngle_px = convertPos_AngleToScreen_Long(minAngle_a);
-			if (isVertical) maxAngle_px = convertPos_AngleToScreen_Lat (maxAngle_a);
-			else            maxAngle_px = convertPos_AngleToScreen_Long(maxAngle_a);
-			
 			//boolean switchedMinMax = false;
 			if (maxAngle_a<minAngle_a) {
 				angleWidth_a = minAngle_a; // angleWidth_a  used as temp. storage
@@ -1213,23 +1281,8 @@ public class ResourceHotSpots implements ActionListener {
 			}
 			angleWidth_a = maxAngle_a-minAngle_a;
 			
-			float majorTickUnit_a = 1;
-			while (majorTickUnit_a*nMajorTicksPerAxis > angleWidth_a   ) majorTickUnit_a/=10;
-			while (majorTickUnit_a*nMajorTicksPerAxis < angleWidth_a/10) majorTickUnit_a*=10;
 			
-			float majorTickUnitLength_px;
-			if (isVertical) majorTickUnitLength_px = convertLength_AngleToScreen_Lat (majorTickUnit_a);
-			else            majorTickUnitLength_px = convertLength_AngleToScreen_Long(majorTickUnit_a);
-			
-			int minorTickCount;
-			if      (majorTickUnitLength_px/10 > minMinorTickUnitLength_px) minorTickCount = 10;
-			else if (majorTickUnitLength_px/5  > minMinorTickUnitLength_px) minorTickCount = 5;
-			else if (majorTickUnitLength_px/2  > minMinorTickUnitLength_px) minorTickCount = 2;
-			else minorTickCount = 1; // -> no minor ticks
-			
-			float minorTickUnit_a = majorTickUnit_a/minorTickCount;
-			
-			float firstMajorTick_a = (float) Math.ceil(minAngle_a / majorTickUnit_a) * majorTickUnit_a;
+			float firstMajorTick_a = (float) Math.ceil(minAngle_a / axisTicks.majorTickUnit_a) * axisTicks.majorTickUnit_a;
 			
 			//SaveViewer.log_ln("drawAxis: %s, c0:%d, c1:%d, width1:%d", isVertical?"vertical":"horizontal", c0, c1, width1);
 			//SaveViewer.log_ln("          MajorTickUnit:%f, MinorTickCount:%d, MinorTickUnit:%f", majorTickUnit_a, minorTickCount, minorTickUnit_a);
@@ -1242,18 +1295,18 @@ public class ResourceHotSpots implements ActionListener {
 			if (isVertical) g2.drawLine(c0, c1, c0, c1+width1);
 			else            g2.drawLine(c1, c0, c1+width1, c0);
 			
-			for (int j=1; minAngle_a < firstMajorTick_a-j*minorTickUnit_a; j++)
-				drawMinorTick( g2, c0, firstMajorTick_a - j*minorTickUnit_a, isVertical );
+			for (int j=1; minAngle_a < firstMajorTick_a-j*axisTicks.minorTickUnit_a; j++)
+				drawMinorTick( g2, c0, firstMajorTick_a - j*axisTicks.minorTickUnit_a, isVertical, labelsRightBottom );
 			
-			for (int i=0; firstMajorTick_a+i*majorTickUnit_a < maxAngle_a; i++) {
-				float majorTick_a = firstMajorTick_a + i*majorTickUnit_a;
-				drawMajorTick( g2, c0, majorTick_a, isVertical );
-				for (int j=1; j<minorTickCount && majorTick_a + j*minorTickUnit_a < maxAngle_a; j++)
-					drawMinorTick( g2, c0, majorTick_a + j*minorTickUnit_a, isVertical );
+			for (int i=0; firstMajorTick_a+i*axisTicks.majorTickUnit_a < maxAngle_a; i++) {
+				float majorTick_a = firstMajorTick_a + i*axisTicks.majorTickUnit_a;
+				drawMajorTick( g2, c0, majorTick_a, isVertical, labelsRightBottom, axisTicks );
+				for (int j=1; j<axisTicks.minorTickCount && majorTick_a + j*axisTicks.minorTickUnit_a < maxAngle_a; j++)
+					drawMinorTick( g2, c0, majorTick_a + j*axisTicks.minorTickUnit_a, isVertical, labelsRightBottom );
 			}
 		}
 
-		private void drawMajorTick(Graphics2D g2, int c0, float angle, boolean isVertical) {
+		private void drawMajorTick(Graphics2D g2, int c0, float angle, boolean isVertical, boolean labelsRightBottom, AxisTicks axisTicks) {
 			//   isVertical:  c0 = x, c1 = y, width1 = height
 			// ! isVertical:  c0 = y, c1 = x, width1 = width
 			int c1;
@@ -1261,11 +1314,27 @@ public class ResourceHotSpots implements ActionListener {
 			else            c1 = convertPos_AngleToScreen_Long(angle);
 			//SaveViewer.log_ln("drawMajorTick: %s, Angle:%f -> (%d,%d)", isVertical?"vertical":"horizontal", angle, c0,c1);
 			
-			if (isVertical) g2.drawLine(c0-majorTickLength_px/2, c1, c0+majorTickLength_px/2, c1);
-			else            g2.drawLine(c1, c0-majorTickLength_px/2, c1, c0+majorTickLength_px/2);
+			int halfTick = majorTickLength_px/2;
+			int tickLeft  = halfTick;
+			int tickRight = halfTick;
+			if (labelsRightBottom) tickLeft = 0;
+			else                   tickRight = 0;
+			if (isVertical) g2.drawLine(c0-tickLeft, c1, c0+tickRight, c1);
+			else            g2.drawLine(c1, c0-tickLeft, c1, c0+tickRight);
+			
+			String label = axisTicks.toString(angle); //TODO
+			Rectangle2D bounds = g2.getFontMetrics().getStringBounds(label, g2);
+			
+			if (isVertical) {
+				if (labelsRightBottom) g2.drawString(label, (float)(c0-bounds.getX()+halfTick+4                  ), (float)(c1-bounds.getY()-bounds.getHeight()/2));
+				else                   g2.drawString(label, (float)(c0-bounds.getX()-halfTick-4-bounds.getWidth()), (float)(c1-bounds.getY()-bounds.getHeight()/2));
+			} else {
+				if (labelsRightBottom) g2.drawString(label, (float)(c1-bounds.getX()-bounds.getWidth()/2), (float)(c0-bounds.getY()+halfTick+4                   ));
+				else                   g2.drawString(label, (float)(c1-bounds.getX()-bounds.getWidth()/2), (float)(c0-bounds.getY()-halfTick-4-bounds.getHeight()));
+			}
 		}
 
-		private void drawMinorTick(Graphics2D g2, int c0, float angle, boolean isVertical) {
+		private void drawMinorTick(Graphics2D g2, int c0, float angle, boolean isVertical, boolean labelsRightBottom) {
 			//   isVertical:  c0 = x, c1 = y, width1 = height
 			// ! isVertical:  c0 = y, c1 = x, width1 = width
 			int c1;
@@ -1273,8 +1342,12 @@ public class ResourceHotSpots implements ActionListener {
 			else            c1 = convertPos_AngleToScreen_Long(angle);
 			//SaveViewer.log_ln("drawMinorTick: %s, Angle:%f -> (%d,%d)", isVertical?"vertical":"horizontal", angle, c0,c1);
 			
-			if (isVertical) g2.drawLine(c0-minorTickLength_px/2, c1, c0+minorTickLength_px/2, c1);
-			else            g2.drawLine(c1, c0-minorTickLength_px/2, c1, c0+minorTickLength_px/2);
+			int tickLeft  = minorTickLength_px/2;
+			int tickRight = minorTickLength_px/2;
+			if (labelsRightBottom) tickLeft  = 0;
+			else                   tickRight = 0;
+			if (isVertical) g2.drawLine(c0-tickLeft, c1, c0+tickRight, c1);
+			else            g2.drawLine(c1, c0-tickLeft, c1, c0+tickRight);
 		}
 
 		private void draw(Graphics2D g2, Planet.ReferencePoint item) {
