@@ -11,6 +11,8 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -41,6 +43,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
+import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
@@ -601,6 +604,11 @@ public class ResourceHotSpots implements ActionListener {
 			this.longitude = longitude;
 		}
 
+		private LatLong(LatLong other) {
+			this.latitude = other.latitude;
+			this.longitude = other.longitude;
+		}
+
 		public void setLatitudeStr (String aValue) { latitude  = parse(aValue); }
 		public void setLongitudeStr(String aValue) { longitude = parse(aValue); }
 
@@ -963,6 +971,12 @@ public class ResourceHotSpots implements ActionListener {
 	private static class HotSpotsView extends Canvas {
 		private static final long serialVersionUID = 3631270386892323918L;
 		
+		private static final Color COLOR_AXIS = new Color(0x70000000,true);
+		private static final int nMajorTicksPerAxis = 2;
+		private static final int minMinorTickUnitLength_px = 20;
+		private static final int majorTickLength_px = 10;
+		private static final int minorTickLength_px = 4;
+		
 		private Planet planet = null;
 		private Planet.Region region = null;
 
@@ -971,11 +985,23 @@ public class ResourceHotSpots implements ActionListener {
 		private float scaleLengthPerAngleLong = Float.NaN;
 		private float scalePixelPerLength = Float.NaN;
 
-		private LatLong min;
+		private LatLong min = null;
+		private LatLong max = null;
 
-		private LatLong max;
+		private Point panStart = null;
+		private Point tempPanOffset = null;
 		
 		HotSpotsView() {
+			MouseInputAdapter mouse = new MouseInputAdapter() {
+				@Override public void mousePressed   (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) startPan  (e.getPoint()); }
+				@Override public void mouseDragged   (MouseEvent e) { proceedPan(e.getPoint());  }
+				@Override public void mouseReleased  (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) stopPan   (e.getPoint());  }
+				@Override public void mouseWheelMoved(MouseWheelEvent e) { zoom(e.getPoint(),e.getPreciseWheelRotation()); }
+				
+			};
+			addMouseListener(mouse);
+			addMouseMotionListener(mouse);
+			addMouseWheelListener(mouse);
 		}
 
 		@Override
@@ -983,6 +1009,109 @@ public class ResourceHotSpots implements ActionListener {
 			throw new UnsupportedOperationException();
 		}
 
+		protected void startPan(Point point) {
+			//SaveViewer.log_ln("startPan: (%d,%d)", point.x, point.y);
+			panStart = point;
+			tempPanOffset = new Point();
+			repaint();
+		}
+
+		protected void proceedPan(Point point) {
+			//SaveViewer.log_ln("proceedPan: (%d,%d)", point.x, point.y);
+			if (panStart != null)
+				tempPanOffset = sub(point,panStart);
+			repaint();
+		}
+
+		protected void stopPan(Point point) {
+			//SaveViewer.log_ln("stopPan: (%d,%d)", point.x, point.y);
+			if (panStart!=null && center!=null && !Float.isNaN(scalePixelPerLength) && !Float.isNaN(scaleLengthPerAngleLat) && !Float.isNaN(scaleLengthPerAngleLong)) {
+				Point offset = sub(point,panStart);
+				float offsetLat  = -offset.y / scalePixelPerLength / scaleLengthPerAngleLat;
+				float offsetLong =  offset.x / scalePixelPerLength / scaleLengthPerAngleLong;
+				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
+				updateScaleLengthPerAngle();
+			}
+			panStart = null;
+			tempPanOffset = null;
+			repaint();
+		}
+
+		private Point sub(Point p1, Point p2) {
+			return new Point(p1.x-p2.x,p1.y-p2.y);
+		}
+
+		protected void zoom(Point point, double preciseWheelRotation) {
+			//SaveViewer.log_ln("zoom: (%d,%d) %f", point.x, point.y, preciseWheelRotation);
+			if (center==null) return;
+			
+			LatLong centerOld = new LatLong(center);
+			LatLong location = convertScreenToAngle(point);
+			
+			float f = (float) Math.pow(1.1f, preciseWheelRotation);
+			
+			scalePixelPerLength *= f;
+			center.latitude  = (centerOld.latitude  - location.latitude ) / f + location.latitude;
+			center.longitude = (centerOld.longitude - location.longitude) * (float) (Math.cos(centerOld.latitude/180*Math.PI) / Math.cos(center.latitude/180*Math.PI) ) / f + location.longitude;
+			
+			updateScaleLengthPerAngle();
+			repaint();
+		}
+
+		private float convertLength_ScreenToAngle_Lat (float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLat ; }
+		private float convertLength_ScreenToAngle_Long(float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLong; }
+
+		private Float convertPos_ScreenToAngle_Lat(int y) {
+			if (center==null) return null;
+			if (tempPanOffset!=null) y -= tempPanOffset.y;
+			return center.latitude  - convertLength_ScreenToAngle_Lat(y - height/2f);
+		}
+
+		private Float convertPos_ScreenToAngle_Long(int x) {
+			if (center==null) return null;
+			if (tempPanOffset!=null) x -= tempPanOffset.x;
+			return center.longitude + convertLength_ScreenToAngle_Long(x - width /2f);
+		}
+		private LatLong convertScreenToAngle(Point point) {
+			if (center==null) return null;
+			return new LatLong(
+				convertPos_ScreenToAngle_Lat (point.y),
+				convertPos_ScreenToAngle_Long(point.x)
+			);
+		}
+
+		private float convertLength_AngleToScreen_Lat (float length_a) { return length_a * scaleLengthPerAngleLat  * scalePixelPerLength; }
+		private float convertLength_AngleToScreen_Long(float length_a) { return length_a * scaleLengthPerAngleLong * scalePixelPerLength; }
+
+		private Integer convertPos_AngleToScreen_Lat (Float latitude) {
+			if (center==null) return null;
+			float y = height/2f - convertLength_AngleToScreen_Lat (latitude  - center.latitude );
+			if (tempPanOffset!=null) y += tempPanOffset.y;
+			return Math.round(y);
+		}
+		private Integer convertPos_AngleToScreen_Long(Float longitude) {
+			if (center==null) return null;
+			float x = width /2f + convertLength_AngleToScreen_Long(longitude - center.longitude);
+			if (tempPanOffset!=null) x += tempPanOffset.x;
+			return Math.round(x);
+		}
+		private Point convertPos_AngleToScreen(LatLong location) {
+			if (center==null) return null;
+			return new Point(
+				convertPos_AngleToScreen_Long(location.longitude),
+				convertPos_AngleToScreen_Lat (location.latitude )
+			);
+		}
+
+		private Integer convertLength_LengthToScreen(Float length) {
+			if (length==null || Float.isNaN(length) || Float.isNaN(scalePixelPerLength)) return null;
+			return Math.round( length * scalePixelPerLength );
+		}
+
+		private void updateScaleLengthPerAngle() {
+			scaleLengthPerAngleLat  = (float) (2*Math.PI*planet.radius / 360);
+			scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
+		}
 
 		public void setRegion(Planet planet, Planet.Region region) {
 			//SaveViewer.log_ln("%s.setRegion( %s, %s )", getClass().getSimpleName(), planet, region);
@@ -1012,8 +1141,7 @@ public class ResourceHotSpots implements ActionListener {
 				
 				center = new LatLong( (min.latitude+max.latitude)/2, (min.longitude+max.longitude)/2 );
 				
-				scaleLengthPerAngleLat  = (float) (2*Math.PI*planet.radius / 360);
-				scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
+				updateScaleLengthPerAngle();
 				float scalePixelPerLengthLat  = (height-40) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
 				float scalePixelPerLengthLong = (width -30) / ((max.longitude-min.longitude)*scaleLengthPerAngleLong);
 				scalePixelPerLength = Math.min(scalePixelPerLengthLat, scalePixelPerLengthLong);
@@ -1030,7 +1158,6 @@ public class ResourceHotSpots implements ActionListener {
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g2.setClip(x, y, width, height);
 			
-			// TODO Auto-generated method stub
 			g2.setColor(Color.WHITE);
 			g2.fillRect(x, y, width, height);
 			
@@ -1049,25 +1176,109 @@ public class ResourceHotSpots implements ActionListener {
 				region.circles        .forEach(item->draw(g2,item));
 				region.referencePoints.forEach(item->draw(g2,item));
 				region.hotSpots       .forEach(item->draw(g2,item));
+				
+				drawAxis( g2, x+10      , y+20, height-40, true  );
+				drawAxis( g2, x+width-10, y+20, height-40, true  );
+				drawAxis( g2, y+10       , x+20, width-40, false );
+				drawAxis( g2, y+height-10, x+20, width-40, false );
 			}
 			
 			g2.setClip(null);
 		}
 
-		private Integer convertLengthToScreen(Float length) {
-			if (length==null || Float.isNaN(length) || Float.isNaN(scalePixelPerLength)) return null;
-			return Math.round( length * scalePixelPerLength );
+		private void drawAxis(Graphics2D g2, int c0, int c1, int width1, boolean isVertical) {
+			//   isVertical:  c0 = x, c1 = y, width1 = height
+			// ! isVertical:  c0 = y, c1 = x, width1 = width
+			if (center==null) return;
+			if (width1<0) return; // display area too small
+			
+			float minAngle_a,maxAngle_a,angleWidth_a;
+			if (isVertical) minAngle_a = convertPos_ScreenToAngle_Lat (c1);
+			else            minAngle_a = convertPos_ScreenToAngle_Long(c1);
+			if (isVertical) maxAngle_a = convertPos_ScreenToAngle_Lat (c1+width1);
+			else            maxAngle_a = convertPos_ScreenToAngle_Long(c1+width1);
+			
+			int minAngle_px,maxAngle_px;
+			if (isVertical) minAngle_px = convertPos_AngleToScreen_Lat (minAngle_a);
+			else            minAngle_px = convertPos_AngleToScreen_Long(minAngle_a);
+			if (isVertical) maxAngle_px = convertPos_AngleToScreen_Lat (maxAngle_a);
+			else            maxAngle_px = convertPos_AngleToScreen_Long(maxAngle_a);
+			
+			//boolean switchedMinMax = false;
+			if (maxAngle_a<minAngle_a) {
+				angleWidth_a = minAngle_a; // angleWidth_a  used as temp. storage
+				minAngle_a = maxAngle_a;
+				maxAngle_a = angleWidth_a;
+				//switchedMinMax = true;
+			}
+			angleWidth_a = maxAngle_a-minAngle_a;
+			
+			float majorTickUnit_a = 1;
+			while (majorTickUnit_a*nMajorTicksPerAxis > angleWidth_a   ) majorTickUnit_a/=10;
+			while (majorTickUnit_a*nMajorTicksPerAxis < angleWidth_a/10) majorTickUnit_a*=10;
+			
+			float majorTickUnitLength_px;
+			if (isVertical) majorTickUnitLength_px = convertLength_AngleToScreen_Lat (majorTickUnit_a);
+			else            majorTickUnitLength_px = convertLength_AngleToScreen_Long(majorTickUnit_a);
+			
+			int minorTickCount;
+			if      (majorTickUnitLength_px/10 > minMinorTickUnitLength_px) minorTickCount = 10;
+			else if (majorTickUnitLength_px/5  > minMinorTickUnitLength_px) minorTickCount = 5;
+			else if (majorTickUnitLength_px/2  > minMinorTickUnitLength_px) minorTickCount = 2;
+			else minorTickCount = 1; // -> no minor ticks
+			
+			float minorTickUnit_a = majorTickUnit_a/minorTickCount;
+			
+			float firstMajorTick_a = (float) Math.ceil(minAngle_a / majorTickUnit_a) * majorTickUnit_a;
+			
+			//SaveViewer.log_ln("drawAxis: %s, c0:%d, c1:%d, width1:%d", isVertical?"vertical":"horizontal", c0, c1, width1);
+			//SaveViewer.log_ln("          MajorTickUnit:%f, MinorTickCount:%d, MinorTickUnit:%f", majorTickUnit_a, minorTickCount, minorTickUnit_a);
+			//SaveViewer.log_ln("          MajorTickUnitLengths[px]: %f", majorTickUnitLength_px);
+			//SaveViewer.log_ln("          Range: %f..%f (%f)", minAngle_a, maxAngle_a, angleWidth_a);
+			//SaveViewer.log_ln("          Range[px]: %d..%d", minAngle_px, maxAngle_px);
+			//SaveViewer.log_ln("          FirstMajorTick: %f", firstMajorTick_a);
+			
+			g2.setPaint(COLOR_AXIS);
+			if (isVertical) g2.drawLine(c0, c1, c0, c1+width1);
+			else            g2.drawLine(c1, c0, c1+width1, c0);
+			
+			for (int j=1; minAngle_a < firstMajorTick_a-j*minorTickUnit_a; j++)
+				drawMinorTick( g2, c0, firstMajorTick_a - j*minorTickUnit_a, isVertical );
+			
+			for (int i=0; firstMajorTick_a+i*majorTickUnit_a < maxAngle_a; i++) {
+				float majorTick_a = firstMajorTick_a + i*majorTickUnit_a;
+				drawMajorTick( g2, c0, majorTick_a, isVertical );
+				for (int j=1; j<minorTickCount && majorTick_a + j*minorTickUnit_a < maxAngle_a; j++)
+					drawMinorTick( g2, c0, majorTick_a + j*minorTickUnit_a, isVertical );
+			}
 		}
-		
-		private Point convertAngleToScreen(LatLong location) {
-			if (center==null) return null;
-			float x = width /2f + (location.longitude - center.longitude) * scaleLengthPerAngleLong * scalePixelPerLength;
-			float y = height/2f - (location.latitude  - center.latitude ) * scaleLengthPerAngleLat  * scalePixelPerLength;
-			return new Point( Math.round(x), Math.round(y) );
+
+		private void drawMajorTick(Graphics2D g2, int c0, float angle, boolean isVertical) {
+			//   isVertical:  c0 = x, c1 = y, width1 = height
+			// ! isVertical:  c0 = y, c1 = x, width1 = width
+			int c1;
+			if (isVertical) c1 = convertPos_AngleToScreen_Lat (angle);
+			else            c1 = convertPos_AngleToScreen_Long(angle);
+			//SaveViewer.log_ln("drawMajorTick: %s, Angle:%f -> (%d,%d)", isVertical?"vertical":"horizontal", angle, c0,c1);
+			
+			if (isVertical) g2.drawLine(c0-majorTickLength_px/2, c1, c0+majorTickLength_px/2, c1);
+			else            g2.drawLine(c1, c0-majorTickLength_px/2, c1, c0+majorTickLength_px/2);
+		}
+
+		private void drawMinorTick(Graphics2D g2, int c0, float angle, boolean isVertical) {
+			//   isVertical:  c0 = x, c1 = y, width1 = height
+			// ! isVertical:  c0 = y, c1 = x, width1 = width
+			int c1;
+			if (isVertical) c1 = convertPos_AngleToScreen_Lat (angle);
+			else            c1 = convertPos_AngleToScreen_Long(angle);
+			//SaveViewer.log_ln("drawMinorTick: %s, Angle:%f -> (%d,%d)", isVertical?"vertical":"horizontal", angle, c0,c1);
+			
+			if (isVertical) g2.drawLine(c0-minorTickLength_px/2, c1, c0+minorTickLength_px/2, c1);
+			else            g2.drawLine(c1, c0-minorTickLength_px/2, c1, c0+minorTickLength_px/2);
 		}
 
 		private void draw(Graphics2D g2, Planet.ReferencePoint item) {
-			Point p = convertAngleToScreen(item.location);
+			Point p = convertPos_AngleToScreen(item.location);
 			if (p!=null) {
 				g2.setColor(new Color(0x5EB91E));
 				g2.fillOval(p.x-3, p.y-3, 6, 6);
@@ -1075,8 +1286,8 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		private void draw(Graphics2D g2, Planet.Circle item) {
-			Point p = convertAngleToScreen(item.center);
-			Integer radius = convertLengthToScreen(item.radius);
+			Point p = convertPos_AngleToScreen(item.center);
+			Integer radius = convertLength_LengthToScreen(item.radius);
 			if (p!=null && radius!=null) {
 				g2.setColor(Color.LIGHT_GRAY);
 				g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
@@ -1084,7 +1295,7 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		private void draw(Graphics2D g2, Planet.HotSpot item) {
-			Point p = convertAngleToScreen(item.location);
+			Point p = convertPos_AngleToScreen(item.location);
 			if (p!=null) {
 				if (item.type==null) {
 					g2.setColor(Color.BLACK);
