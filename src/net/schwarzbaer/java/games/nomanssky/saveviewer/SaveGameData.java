@@ -1630,8 +1630,11 @@ public class SaveGameData {
 			MINING_TER_4  ("Erntedrohnen"                 ,"Kampf: +1"),
 			MINING_TER_5  ("Metalldetektor"               ,"Industrie: +2"),
 			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
+			MINING_BAD_2  ("Kleine Behälter"              ,"Industrie: -4"),
+			MINING_BAD_5  ("Defekte Drohnen"              ,"Industrie: -2"),
 			
 			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
+			COMBAT_SEC_3  ("Tarngerät"                     ,"Kampf: +6"),
 			COMBAT_SEC_4  ("Ultraschallwaffe"              ,"Kampf: +2"),
 			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
 			COMBAT_TER_1  ("Versteckte Waffen"             ,"Kampf: +1"),
@@ -1641,6 +1644,7 @@ public class SaveGameData {
 			COMBAT_TER_6  ("Nachgerüstete Geschütze"       ,"Kampf: +3"),
 			COMBAT_BAD_1  ("Feige Schützen"                ,"Kampf: -2"),
 			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
+			COMBAT_BAD_3  ("Defekte Torpedos"              ,"Kampf: -6"),
 			
 			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
 			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
@@ -1659,13 +1663,16 @@ public class SaveGameData {
 			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
 			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
 			
+			FUEL_PRI      ("Unterstützungsspezialist"    ,"Treibstoffkosten der Expedition: -15"),
 			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_3    ("Robotercrew"                 ,"Treibstoffkosten der Expedition: -6"),
 			FUEL_TER_4    ("Photonensegel"               ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_5    ("Übertakteter Stromverteiler" ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
+			FUEL_TER_7    ("Effizienter Warpantrieb"     ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_BAD_1    ("Durstige Crew"               ,"Kosten pro Warp: +1"),
+			FUEL_BAD_3    ("Undichte Treibstoffrohre"    ,"Kosten pro Warp: +4"),
 			
 			INVULN_TER_1  ("Sich selbst reparierender Rumpf" ,"Schadensreduzierung"),
 			INVULN_TER_2  ("Fortgeschrittene Wartungsdrohnen","Schadensreduzierung"),
@@ -2488,6 +2495,13 @@ public class SaveGameData {
 		public String getAddressStr() {
 			return String.format("0x%014X", address);
 		}
+		
+		public static UniverseAddress parseAddressStr(String str) {
+			if (str!=null && str.startsWith("0x"))
+				try { return new UniverseAddress( Long.parseLong(str.substring(2), 16) ); }
+				catch (NumberFormatException e) {}
+			return null;
+		}
 
 		@Override
 		public int hashCode() {
@@ -2496,7 +2510,7 @@ public class SaveGameData {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (obj instanceof UniverseAddress) return false;
+			if (!(obj instanceof UniverseAddress)) return false;
 			UniverseAddress other = (UniverseAddress)obj;
 			return this.address == other.address;
 		}

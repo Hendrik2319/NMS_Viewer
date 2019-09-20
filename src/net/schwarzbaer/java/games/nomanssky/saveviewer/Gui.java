@@ -665,19 +665,17 @@ public class Gui {
 		}
 	}
 
-	public static class IconComboBox<ValueType> extends JComboBox<ValueType> {
+	public static abstract class IconComboBox<ValueType> extends JComboBox<ValueType> {
 		private static final long serialVersionUID = -5602524657587053852L;
 		
 		private ValueType[] values;
-		private ExternalFunctionality<ValueType> functionality;
 		
-		public IconComboBox(ValueType[] values, ExternalFunctionality<ValueType> functionality) {
-			this(values, -1,-1,  functionality);
+		public IconComboBox(ValueType[] values) {
+			this(values, -1,-1);
 		}
-		public IconComboBox(ValueType[] values, int prefWidth, int prefHeight, ExternalFunctionality<ValueType> functionality) {
+		public IconComboBox(ValueType[] values, int prefWidth, int prefHeight) {
 			super(values);
 			this.values = values;
-			this.functionality = functionality;
 			setRenderer(new Renderer(prefWidth, prefHeight));
 		}
 		
@@ -687,11 +685,9 @@ public class Gui {
 			return getItemAt(i);
 		}
 
-		public static interface ExternalFunctionality<T> {
-			public T cast(Object obj);
-			public Icon createIcon(T value);
-			public String getLabel(T value);
-		}
+		public abstract ValueType cast(Object obj);
+		public abstract Icon createIcon(ValueType value);
+		public abstract String getLabel(ValueType value);
 		
 		private class Renderer extends TableView.IconTextRenderer<ValueType,Integer> {
 
@@ -701,12 +697,12 @@ public class Gui {
 
 			@Override
 			protected ValueType cast(Object obj) {
-				return functionality.cast(obj);
+				return IconComboBox.this.cast(obj);
 			}
 
 			@Override
 			protected Icon createIcon(ValueType value) {
-				return functionality.createIcon(value);
+				return IconComboBox.this.createIcon(value);
 			}
 
 			@Override
@@ -719,7 +715,7 @@ public class Gui {
 
 			@Override
 			protected String getLabel(ValueType value) {
-				return functionality.getLabel(value);
+				return IconComboBox.this.getLabel(value);
 			}
 			
 		}

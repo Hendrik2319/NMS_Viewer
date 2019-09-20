@@ -68,6 +68,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -90,7 +91,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
 	
-	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindExtraInfo, RemoveHighlights, ShowFullDiscoveredUniverseData, ScrollToCurrentPosition }
+	private enum UniverseTreeActionCommand { SetName, SetDistance, ExpandAll, CollapseRemainingTree, FindExtraInfo, RemoveHighlights, ShowFullDiscoveredUniverseData, ScrollToCurrentPosition, OpenResourceHotSpots }
 	private enum UniverseTreeIcons {
 		Universe, Galaxy, Region, SolarSystem, Planet,
 		GekSys, KorvaxSys, VykeenSys, Unexplored,
@@ -667,7 +668,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(UniversePanel.this,true);
 			this.node = null;
 			
-			cmbbxRace = new Gui.IconComboBox<Race>(Race.values(), new Gui.IconComboBox.ExternalFunctionality<Race>() {
+			cmbbxRace = new Gui.IconComboBox<Race>(Race.values()) {
+				private static final long serialVersionUID = 5328964374227212373L;
+				
 				@Override public Race cast(Object obj) {
 					if (!(obj instanceof StarClass)) return null;
 					return (Race)obj;
@@ -679,8 +682,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (value==null) return "";
 					return value.fullName;
 				}
-			});
-			cmbbxStarClass = new Gui.IconComboBox<StarClass>(StarClass.values(), new Gui.IconComboBox.ExternalFunctionality<StarClass>() {
+			};
+			cmbbxStarClass = new Gui.IconComboBox<StarClass>(StarClass.values()) {
+				private static final long serialVersionUID = 5328964374227212373L;
+				
 				@Override public StarClass cast(Object obj) {
 					if (!(obj instanceof StarClass)) return null;
 					return (StarClass)obj;
@@ -692,8 +697,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (value==null) return "";
 					return value.getLabel();
 				}
-			});
-			cmbbxConflictLevel = new Gui.IconComboBox<Integer>(new Integer[]{1,2,3}, new Gui.IconComboBox.ExternalFunctionality<Integer>() {
+			};
+			cmbbxConflictLevel = new Gui.IconComboBox<Integer>(new Integer[]{1,2,3}) {
+				private static final long serialVersionUID = 5328964374227212373L;
+				
 				@Override public Integer cast(Object obj) {
 					if (!(obj instanceof Integer)) return null;
 					return (Integer)obj;
@@ -706,7 +713,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (value==null || value<=0 || 3<value) return "";
 					return "Conflict Level "+value;
 				}
-			});
+			};
 			cmbbxRace         .addActionListener(e->{ if (isSettingContent) return; node.value.race      = (Race     )cmbbxRace     .getSelectedItem(); updateTreeNode(node, false); });
 			cmbbxStarClass    .addActionListener(e->{ if (isSettingContent) return; node.value.starClass = (StarClass)cmbbxStarClass.getSelectedItem(); updateTreeNode(node, false); });
 			cmbbxConflictLevel.addActionListener(e->{
@@ -926,7 +933,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			add(portalGlyphs,BorderLayout.NORTH);
 			
-			cmbbxBiome = new Gui.IconComboBox<Biome>(Biome.values(), new Gui.IconComboBox.ExternalFunctionality<Biome>() {
+			cmbbxBiome = new Gui.IconComboBox<Biome>(Biome.values()) {
+				private static final long serialVersionUID = 5328964374227212373L;
+				
 				@Override public Biome cast(Object obj) {
 					if (!(obj instanceof Biome)) return null;
 					return (Biome)obj;
@@ -938,7 +947,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (value==null) return "";
 					return value.name_EN;
 				}
-			});
+			};
 			cmbbxBiome.addActionListener(e->{ if (isSettingContent) return; node.value.biome = cmbbxBiome.getSelected(); updateTreeNode(node, false);  });
 			
 			cmbbxBuriedTreasure = new JComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()));
@@ -1171,6 +1180,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super("Planet");
 			
 			add(miSetName = createMenuItem("Change Name",UniverseTreeActionCommand.SetName));
+			add(createMenuItem("Open Resource HotSpots",UniverseTreeActionCommand.OpenResourceHotSpots));
 			
 			addSeparator();
 			miSetBiome = new Gui.ListMenu<Biome>("Set Biome",Biome.values(),null,
@@ -1294,6 +1304,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				default:break;
 				}
 				updateTreeNodeAndInfoPanel(clickedNode, false, false);
+			}
+			break;
+			
+		case OpenResourceHotSpots:
+			if (clickedNode instanceof PlanetNode) {
+				Planet planet=((PlanetNode)clickedNode).value;
+				ResourceHotSpots.start(planet);
 			}
 			break;
 			
@@ -1832,7 +1849,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxTeleporter;
 			
 			PlanetBar() {
-				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20, new Gui.IconComboBox.ExternalFunctionality<Biome>() {
+				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20) {
+					private static final long serialVersionUID = 5328964374227212373L;
+					
 					@Override public Biome cast(Object obj) {
 						if (!(obj instanceof Biome)) return null;
 						return (Biome)obj;
@@ -1844,7 +1863,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						if (value==null) return "<none>";
 						return value.name_EN;
 					}
-				});
+				};
 				cmbbxBiome.addActionListener(e->updateMarkers());
 				
 				cmbbxBuriedTreasure = new JComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()));

@@ -1207,8 +1207,13 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
+		return createButton(title, l, null, actionCommand);
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
 		JButton button = createButton(title,l);
-		button.setActionCommand(actionCommand.toString());
+		if (disabler!=null) disabler.add(actionCommand, button);
+		if (actionCommand!=null) button.setActionCommand(actionCommand.toString());
 		return button;
 	}
 
@@ -1283,12 +1288,18 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static JTextField createTextField(String txt, ActionListener l) {
+		return createTextField(txt, l, null, null);
+	}
+	
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
 		JTextField obj = new JTextField(txt);
+		if (actionCommand!=null) obj.setActionCommand(actionCommand.toString());
+		if (disabler!=null) disabler.add(actionCommand, obj);
 		if (l!=null) {
 			obj.addActionListener(l);
 			obj.addFocusListener(new FocusListener() {
 				@Override public void focusGained(FocusEvent e) {}
-				@Override public void focusLost(FocusEvent e) { l.actionPerformed(new ActionEvent(obj, ActionEvent.ACTION_FIRST, null)); }
+				@Override public void focusLost(FocusEvent e) { l.actionPerformed(new ActionEvent(obj, ActionEvent.ACTION_PERFORMED, actionCommand==null?null:actionCommand.toString())); }
 			});
 		}
 		return obj;

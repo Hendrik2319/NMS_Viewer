@@ -258,6 +258,13 @@ public class GameInfos {
 			}
 		});
 	}
+	
+	public static String getName(UniverseAddress ua) {
+		if (ua==null) return null;
+		UniverseObjectData uod = universeObjectDataArr.get(ua.getAddress());
+		if (uod==null) return null;
+		return uod.name;
+	}
 
 	public static void loadUniverseObjectDataFromFile() {
 		long start = System.currentTimeMillis();
