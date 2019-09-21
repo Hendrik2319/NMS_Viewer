@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
@@ -29,6 +30,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiConsumer;
@@ -53,6 +56,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.event.MouseInputAdapter;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
@@ -93,12 +97,15 @@ public class ResourceHotSpots implements ActionListener {
 	private JTextField planetRadiusField;
 	
 	private WindowConfig windowConfig = null;
+	
+	private JComboBox<String> hotSpotSubstanceSelect = null;
+	private JComboBox<Planet.HotSpot.Type > hotSpotTypeSelect = null;
+	private JComboBox<Planet.HotSpot.Class> hotSpotClassSelect = null;
 
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
 		SaveViewer.loadToolbarIcons();
-		GameInfos.loadUniverseObjectDataFromFile();
 		start(null);
 	}
 	
@@ -106,7 +113,7 @@ public class ResourceHotSpots implements ActionListener {
 		new ResourceHotSpots()
 			.readConfig()
 			.readData()
-			.addNewData(planet)
+			.preselectPlanet(planet)
 			.createGUI(planet==null);
 	}
 	
@@ -192,6 +199,8 @@ public class ResourceHotSpots implements ActionListener {
 	}
 
 	private ResourceHotSpots createGUI(boolean standalone) {
+		GridBagConstraints c = new GridBagConstraints();
+		c.fill = GridBagConstraints.BOTH;
 		
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
@@ -213,7 +222,7 @@ public class ResourceHotSpots implements ActionListener {
 		circlesTableScrollPane.setPreferredSize(new Dimension(400, 200));
 		circlesTableScrollPane.setBorder(createCompoundBorder("Circles"));
 		
-		hotSpotsTableModel = new HotSpotsTableModel();
+		hotSpotsTableModel = new HotSpotsTableModel(this::updateHotSpotSubstanceSelect);
 		hotSpotsTable = new TableView.SimplifiedTable("HotSpots", hotSpotsTableModel, true, true, true);
 		hotSpotsTableModel.configureTable(hotSpotsTable);
 		JScrollPane hotSpotsTableScrollPane = new JScrollPane(hotSpotsTable);
@@ -232,8 +241,29 @@ public class ResourceHotSpots implements ActionListener {
 		
 		hotSpotsView = new HotSpotsView();
 		hotSpotsView.setPreferredSize(new Dimension(400,600));
+		
+		hotSpotTypeSelect      = new JComboBox<Planet.HotSpot.Type >(SaveViewer.addNull(Planet.HotSpot.Type .values()));
+		hotSpotClassSelect     = new JComboBox<Planet.HotSpot.Class>(SaveViewer.addNull(Planet.HotSpot.Class.values()));
+		hotSpotSubstanceSelect = new JComboBox<String>();
+		SaveViewer.setComp(hotSpotTypeSelect     , disabler, ActionCommand.SelectHotSpotType     , hotSpotsView::setSelectCriteria);
+		SaveViewer.setComp(hotSpotClassSelect    , disabler, ActionCommand.SelectHotSpotClass    , hotSpotsView::setSelectCriteria);
+		SaveViewer.setComp(hotSpotSubstanceSelect, disabler, ActionCommand.SelectHotSpotSubstance, hotSpotsView::setSelectCriteria);
+		
+		JPanel hotSpotsSelectPanel = new JPanel(new GridBagLayout());
+		hotSpotsSelectPanel.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+		c.weightx=0;
+		hotSpotsSelectPanel.add(new JLabel("Type: "),c);
+		hotSpotsSelectPanel.add(hotSpotTypeSelect,c);
+		hotSpotsSelectPanel.add(new JLabel("   Substance: "),c);
+		hotSpotsSelectPanel.add(hotSpotSubstanceSelect,c);
+		hotSpotsSelectPanel.add(new JLabel("   Class: "),c);
+		hotSpotsSelectPanel.add(hotSpotClassSelect,c);
+		c.weightx=1;
+		hotSpotsSelectPanel.add(new JLabel(),c);
+		
 		JPanel hotSpotsViewPanel = new JPanel(new BorderLayout());
 		hotSpotsViewPanel.setBorder(createCompoundBorder("HotSpots View"));
+		hotSpotsViewPanel.add(hotSpotsSelectPanel,BorderLayout.NORTH);
 		hotSpotsViewPanel.add(hotSpotsView,BorderLayout.CENTER);
 		referencePointsTableModel.setHotSpotsView(hotSpotsView);
 		circlesTableModel        .setHotSpotsView(hotSpotsView);
@@ -258,13 +288,9 @@ public class ResourceHotSpots implements ActionListener {
 		planetRadiusField.setEnabled(false);
 		planetRadiusField.setMinimumSize(new Dimension(70,16));
 		
-		GridBagConstraints c = new GridBagConstraints();
-		c.fill = GridBagConstraints.BOTH;
-		
 		c.weightx=0;
 		JPanel planetPanel = new JPanel(new GridBagLayout());
 		planetPanel.setBorder(BorderFactory.createTitledBorder("Planet"));
-		planetPanel.add(SaveViewer.createButton("Add Planet" , this, disabler, ActionCommand.AddPlanet),c);
 		planetPanel.add(planetComboBox,c);
 		planetPanel.add(SaveViewer.createButton("Change Name", this, disabler, ActionCommand.ChangePlanetName),c);
 		planetPanel.add(planetRadiusLabel,c);
@@ -315,11 +341,30 @@ public class ResourceHotSpots implements ActionListener {
 		return this;
 	}
 
+	private void updateHotSpotSubstanceSelect() {
+		if (currentRegion==null)
+			hotSpotSubstanceSelect.setModel(new DefaultComboBoxModel<>());
+		else {
+			HashSet<String> substances = new HashSet<>();
+			currentRegion.hotSpots.forEach(hotSpot->{
+				if (hotSpot.substance!=null && !hotSpot.substance.isEmpty())
+					substances.add(hotSpot.substance);
+			});
+			Vector<String> strs = new Vector<>(substances);
+			strs.sort(null);
+			strs.insertElementAt(null,0);
+			hotSpotSubstanceSelect.setModel(new DefaultComboBoxModel<>(strs));
+		}
+	}
+
 	private void updateGuiAfterRegionChange() {
 		if (referencePointsTableModel!=null) referencePointsTableModel.setRegion(currentRegion);
 		if (circlesTableModel        !=null) circlesTableModel        .setRegion(currentRegion);
 		if (hotSpotsTableModel       !=null) hotSpotsTableModel       .setRegion(currentRegion);
 		if (hotSpotsView             !=null) hotSpotsView             .setRegion(currentPlanet,currentRegion);
+		if (hotSpotSubstanceSelect   !=null) updateHotSpotSubstanceSelect();
+		if (hotSpotTypeSelect        !=null) hotSpotTypeSelect.setSelectedItem(null);
+		if (hotSpotClassSelect       !=null) hotSpotClassSelect.setSelectedItem(null);
 	}
 
 	private void updatePlanetRadiusField() {
@@ -331,7 +376,6 @@ public class ResourceHotSpots implements ActionListener {
 		disabler.setEnable(ac->{
 			switch (ac) {
 			
-			case AddPlanet:
 			case SaveWindowConfig:
 				return true;
 				
@@ -349,6 +393,9 @@ public class ResourceHotSpots implements ActionListener {
 				return currentPlanet!=null && !currentPlanet.regions.isEmpty();
 				
 			case ChangeRegionName:
+			case SelectHotSpotType:
+			case SelectHotSpotSubstance:
+			case SelectHotSpotClass:
 				return currentPlanet!=null && currentRegion!=null;
 				
 			}
@@ -360,9 +407,11 @@ public class ResourceHotSpots implements ActionListener {
 		ClearData,
 		SaveDataFile,
 		ChangePlanetRadius,
-		AddPlanet, AddRegion,
+		AddRegion,
 		SelectPlanet, SelectRegion,
-		ChangePlanetName, ChangeRegionName, SaveWindowConfig,
+		ChangePlanetName, ChangeRegionName,
+		SaveWindowConfig,
+		SelectHotSpotType, SelectHotSpotClass, SelectHotSpotSubstance,
 		;
 	}
 	
@@ -379,11 +428,19 @@ public class ResourceHotSpots implements ActionListener {
 		case SaveWindowConfig:
 			writeConfig();
 			break;
-
-		case AddPlanet:
-			break;
+			
 		case AddRegion:
+			if (currentPlanet!=null) {
+				currentPlanet.regions.add( currentRegion = new Planet.Region("<New Region>") );
+				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>(currentPlanet.regions));
+				regionComboBox.setSelectedItem(currentRegion);
+			}
+			updateGuiAccess();
 			break;
+			
+		case SelectHotSpotType: break;
+		case SelectHotSpotSubstance: break;
+		case SelectHotSpotClass: break;
 			
 		case SelectPlanet:
 			currentPlanet = (Planet)planetComboBox.getSelectedItem();
@@ -432,6 +489,7 @@ public class ResourceHotSpots implements ActionListener {
 				try { currentPlanet.radius = Float.parseFloat( str ); }
 				catch (NumberFormatException e1) {}
 				updatePlanetRadiusField();
+				hotSpotsView.update();
 			}
 		} break;
 		}
@@ -490,7 +548,7 @@ public class ResourceHotSpots implements ActionListener {
 	
 	private enum DataBlock { Planet, Region, ReferencePoint, Circle, HotSpot }
 	
-	private ResourceHotSpots addNewData(SaveGameData.Universe.Planet planet) {
+	private ResourceHotSpots preselectPlanet(SaveGameData.Universe.Planet planet) {
 		if (planet==null) return this;
 		
 		for (Planet p:planets)
@@ -559,11 +617,8 @@ public class ResourceHotSpots implements ActionListener {
 					if (line.startsWith("UniverseAddress=")) {
 						String valueStr = line.substring("UniverseAddress=".length());
 						planet.universeAddress = UniverseAddress.parseAddressStr(valueStr);
-						if (planet.universeAddress!=null) {
-							String name = GameInfos.getName(planet.universeAddress);
-							if (name==null) name = planet.universeAddress.getCoordinates_Planet();
-							planet.name = name;
-						}
+						if (planet.universeAddress!=null && planet.name==null)
+							planet.name = planet.universeAddress.getCoordinates_Planet();
 					}
 					if (line.startsWith("name=")) {
 						String valueStr = line.substring("name=".length());
@@ -595,6 +650,9 @@ public class ResourceHotSpots implements ActionListener {
 					if (line.startsWith("name=")) {
 						String valueStr = line.substring("name=".length());
 						referencePoint.name = valueStr;
+					}
+					if (line.equals("isBase")) {
+						referencePoint.isBase = true;
 					}
 					break;
 				
@@ -675,6 +733,7 @@ public class ResourceHotSpots implements ActionListener {
 						if (referencePoint.location.latitude !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , referencePoint.location.getLatitudeStr ());
 						if (referencePoint.location.longitude!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", referencePoint.location.getLongitudeStr());
 						if (referencePoint.name              !=null) out.printf(Locale.ENGLISH, "name=%s%n"     , referencePoint.name);
+						if (referencePoint.isBase                  ) out.printf(Locale.ENGLISH, "isBase%n");
 						out.println();
 					});
 					region.circles.forEach(circle->{
@@ -831,22 +890,29 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		private static class ReferencePoint implements DisplayableLocation {
+		private static class ReferencePoint extends Location {
 			
 			public LatLong location;
 			public String name;
+			public boolean isBase;
 			
 			ReferencePoint() {
 				location = new LatLong();
 				name = null;
+				isBase = false;
 			}
 
-			@Override public LatLong getLocation() { return location; }
+			@Override
+			public String toString() {
+				return "ReferencePoint [location=" + location + ", name=" + name + ", isBase=" + isBase + "]";
+			}
+
+			@Override public LatLong getCoords() { return location; }
 			@Override public String getTypeStr() { return "Reference Point"; }
 			@Override public String getLabel() { return name; }
 		}
 
-		private static class Circle implements DisplayableLocation {
+		private static class Circle extends Location {
 			
 			LatLong center;
 			Float radius;
@@ -856,12 +922,17 @@ public class ResourceHotSpots implements ActionListener {
 				radius = null;
 			}
 
-			@Override public LatLong getLocation() { return center; }
+			@Override public LatLong getCoords() { return center; }
 			@Override public String getTypeStr() { return "Circle"; }
 			@Override public String getLabel() { return "Circle"; }
+
+			@Override
+			public String toString() {
+				return "Circle [center=" + center + ", radius=" + radius + "]";
+			}
 		}
 
-		private static class HotSpot implements DisplayableLocation {
+		private static class HotSpot extends Location {
 			private enum Type { Mineral, Gas, Energy }
 			private enum Class {
 				A(300),B(200),C(100);
@@ -883,7 +954,13 @@ public class ResourceHotSpots implements ActionListener {
 				this.rate = null;
 			}
 
-			@Override public LatLong getLocation() { return location; }
+			@Override
+			public String toString() {
+				return "HotSpot [location=" + location + ", type=" + type + ", substance=" + substance
+						+ ", hotSpotClass=" + hotSpotClass + ", rate=" + rate + "]";
+			}
+
+			@Override public LatLong getCoords() { return location; }
 			@Override public String getTypeStr() { return "HotSpot"; }
 			@Override public String getLabel() {
 				return String.format("%s %s, Class %s, Rate %s",
@@ -896,16 +973,17 @@ public class ResourceHotSpots implements ActionListener {
 		}
 	}
 	
-	private interface DisplayableLocation {
-		LatLong getLocation();
-		String getTypeStr();
-		String getLabel();
+	private static abstract class Location {
+		protected abstract LatLong getCoords();
+		protected abstract String getTypeStr();
+		protected abstract String getLabel();
+		@Override public abstract String toString();
 	}
 	
-	private static abstract class LocalTableModel<DataType extends DisplayableLocation, ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> extends SimplifiedTableModel<ColumnID> {
+	private static abstract class LocalTableModel<DataType extends Location, ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> extends SimplifiedTableModel<ColumnID> {
 		
 		protected Planet.Region region;
-		private HotSpotsView hotSpotsView;
+		private HotSpotsView hotSpotsView = null;
 		
 		protected LocalTableModel(ColumnID[] columns) {
 			super(columns);
@@ -916,11 +994,15 @@ public class ResourceHotSpots implements ActionListener {
 		}
 		
 		protected void updateHotSpotsView() {
-			hotSpotsView.repaint();
+			hotSpotsView.update();
 		}
 
 		public void setRegion(Planet.Region region) {
 			//SaveViewer.log_ln("%s.setRegion( %s )", getClass().getSimpleName(), region);
+			if (table.isEditing()) {
+				TableCellEditor tce = table.getCellEditor();
+				if (tce!=null) tce.stopCellEditing();
+			}
 			this.region = region;
 			fireTableUpdate();
 		}
@@ -965,6 +1047,7 @@ public class ResourceHotSpots implements ActionListener {
 		Latitude ("Latitude" ,  String.class, 20,-1, 70,-1),
 		Longitude("Longitude",  String.class, 20,-1, 70,-1),
 		Name     ("Name"     ,  String.class, 20,-1,150,-1),
+		IsBase   ("Is Base?" , Boolean.class, 20,-1, 50,-1),
 		;
 		private SimplifiedColumnConfig columnConfig;
 		ReferencePointsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
@@ -1000,6 +1083,7 @@ public class ResourceHotSpots implements ActionListener {
 			case Latitude : return referencePoint.location.getLatitudeStr();
 			case Longitude: return referencePoint.location.getLongitudeStr();
 			case Name     : return referencePoint.name;
+			case IsBase   : return referencePoint.isBase;
 			}
 			return null;
 		}
@@ -1020,6 +1104,7 @@ public class ResourceHotSpots implements ActionListener {
 			case Latitude : referencePoint.location.setLatitudeStr((String)aValue); break;
 			case Longitude: referencePoint.location.setLongitudeStr((String)aValue); break;
 			case Name     : referencePoint.name = (String)aValue; break;
+			case IsBase   : referencePoint.isBase = (Boolean)aValue; break;
 			}
 			updateHotSpotsView();
 		}
@@ -1113,8 +1198,15 @@ public class ResourceHotSpots implements ActionListener {
 	
 	private static class HotSpotsTableModel extends LocalTableModel<Planet.HotSpot,HotSpotsTableColumnID> {
 
-		protected HotSpotsTableModel() {
+		private SubstanceChangeListener substanceChangeListener;
+
+		protected HotSpotsTableModel(SubstanceChangeListener substanceChangeListener) {
 			super(HotSpotsTableColumnID.values());
+			this.substanceChangeListener = substanceChangeListener;
+		}
+		
+		private interface SubstanceChangeListener {
+			void substanceHasChanged();
 		}
 
 		@Override
@@ -1175,7 +1267,7 @@ public class ResourceHotSpots implements ActionListener {
 			case Latitude : hotSpot.location.setLatitudeStr ((String)aValue); break;
 			case Longitude: hotSpot.location.setLongitudeStr((String)aValue); break;
 			case Type     : hotSpot.type = (Planet.HotSpot.Type)aValue; break;
-			case Substance: hotSpot.substance = (String)aValue; break;
+			case Substance: hotSpot.substance = (String)aValue; substanceChangeListener.substanceHasChanged(); break;
 			case Class    : hotSpot.hotSpotClass = (Planet.HotSpot.Class)aValue; if (hotSpot.rate==null && hotSpot.hotSpotClass!=null) { hotSpot.rate=hotSpot.hotSpotClass.rate; fireTableRowUpdate(rowIndex); } break;
 			case Rate     : try { hotSpot.rate = parseInt(aValue); } catch (NumberFormatException e) { fireTableRowUpdate(rowIndex); }
 			}
@@ -1184,21 +1276,30 @@ public class ResourceHotSpots implements ActionListener {
 	}
 	
 	private static class HotSpotsView extends Canvas {
+
 		private static final long serialVersionUID = 3631270386892323918L;
 
 		private static final BasicStroke STROKE_DASHED_LINE = new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[]{2f,3f}, 0f);
 
-		private static final Color COLOR_REFERENCEPOINT = new Color(0x5EB91E);
-		private static final Color COLOR_ENERGY         = new Color(0xFC4200);
-		private static final Color COLOR_GAS            = new Color(0xFFCC00);
-		private static final Color COLOR_MINERAL        = new Color(0x5A84B1);
-		private static final Color COLOR_AXIS           = new Color(0x70000000,true);
+		private static final Color COLOR_REFERENCEPOINT         = new Color(0x5EB91E);
+		private static final Color COLOR_HOTSPOT_ENERGY         = new Color(0xFC4200);
+		private static final Color COLOR_HOTSPOT_GAS            = new Color(0xFFCC00);
+		private static final Color COLOR_HOTSPOT_MINERAL        = new Color(0x5A84B1);
+		private static final Color COLOR_HOTSPOT_FAILS_CRITERIA = new Color(0xD0D0D0);
+		private static final Color COLOR_AXIS                   = new Color(0x70000000,true);
+		private static final Color COLOR_BASE_RANGE             = Color.BLACK;
+		private static final Color COLOR_CIRCLE_HIGHLIGHTED     = Color.GRAY;
+		private static final Color COLOR_CIRCLE_FILL            = new Color(0xEFEFEF);
+		
+		private static final Polygon POLYGON_SMALL_HOUSE = new Polygon(new int[] {0,5,3,3,-3,-3,-5}, new int[] {-4,1,1,3,3,1,1}, 7);
 		
 		//private static final int nMajorTicksPerAxis = 2;
 		private static final int minMinorTickUnitLength_px = 7;
 		private static final int majorTickLength_px = 10;
 		private static final int minorTickLength_px = 4;
 		private static final int minScaleLength_px = 50;
+		private static final int MaxNearDistance = 20;
+
 		
 		private Planet planet = null;
 		private Planet.Region region = null;
@@ -1210,7 +1311,11 @@ public class ResourceHotSpots implements ActionListener {
 		private Axes horizontalAxes = new Axes(false);
 		private Scale mapScale      = new Scale();
 
-		private DisplayableLocation displayedLocation = null;
+		private Location displayedLocation = null;
+
+		private String filterSubstance = null;
+		private Planet.HotSpot.Class filterHotSpotClass = null;
+		private Planet.HotSpot.Type filterHotSpotType = null;
 		
 		HotSpotsView() {
 			MouseInputAdapter mouse = new MouseInputAdapter() {
@@ -1219,20 +1324,109 @@ public class ResourceHotSpots implements ActionListener {
 				@Override public void mouseReleased  (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) stopPan   (e.getPoint());  }
 				@Override public void mouseWheelMoved(MouseWheelEvent e) { zoom(e.getPoint(),e.getPreciseWheelRotation()); }
 				
+				@Override public void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); }
+				@Override public void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); }
+				@Override public void mouseExited (MouseEvent e) { displayedLocation=null; repaint(); }
+				
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					findNearDisplayableLocation(e.getPoint()); 
+				}
 			};
 			addMouseListener(mouse);
 			addMouseMotionListener(mouse);
 			addMouseWheelListener(mouse);
 		}
-
-		public void setDisplayedLocation(DisplayableLocation displayedLocation) {
-			this.displayedLocation = displayedLocation;
-			repaint();
-		}
-
+		
 		@Override
 		public void setBorder(Border border) {
 			throw new UnsupportedOperationException();
+		}
+
+		public void setRegion(Planet planet, Planet.Region region) {
+			this.planet = planet;
+			this.region = region;
+			filterSubstance = null;
+			filterHotSpotClass = null;
+			filterHotSpotType = null;
+			reset();
+		}
+
+		public void reset() {
+			if (viewState.reset()) {
+				updateAxes();
+				mapScale.update();
+			}
+			repaint();
+		}
+
+		public void update() {
+			if (!viewState.isOk())
+				reset();
+			repaint();
+		}
+
+		public void setSelectCriteria(String filterSubstance) {
+			this.filterSubstance = filterSubstance;
+			repaint();
+		}
+
+		public void setSelectCriteria(Planet.HotSpot.Class filterHotSpotClass) {
+			this.filterHotSpotClass = filterHotSpotClass;
+			repaint();
+		}
+
+		public void setSelectCriteria(Planet.HotSpot.Type filterHotSpotType) {
+			this.filterHotSpotType = filterHotSpotType;
+			repaint();
+		}
+		
+		private boolean meetsCriteria(Planet.HotSpot item) {
+			if (filterHotSpotType !=null && !filterHotSpotType .equals(item.type        )) return false;
+			if (filterSubstance   !=null && !filterSubstance   .equals(item.substance   )) return false;
+			if (filterHotSpotClass!=null && !filterHotSpotClass.equals(item.hotSpotClass)) return false;
+			return true;
+		}
+
+		private void findNearDisplayableLocation(Point point) {
+			if (region==null || !viewState.isOk()) return;
+			
+			float maxDistance = MaxNearDistance;
+			Location loc,nearest = null;
+			
+			loc = findNearest(point, maxDistance, region.referencePoints);
+			if (loc!=null) { maxDistance = getDistance(loc,point); nearest = loc; }
+			
+			loc = findNearest(point, maxDistance, region.hotSpots);
+			if (loc!=null) { maxDistance = getDistance(loc,point); nearest = loc; }
+			
+			if (displayedLocation!=nearest) {
+				displayedLocation=nearest;
+				repaint();
+			}
+		}
+		
+		private Location findNearest(Point point, float maxDistance, Vector<? extends Location> locations ) {
+			Location nearestLocation = null;
+			for (Location loc:locations) {
+				float dist = getDistance(loc,point);
+				if (!Float.isNaN(dist) && dist<maxDistance) {
+					nearestLocation = loc;
+					maxDistance = dist;
+				}
+			}
+			return nearestLocation;
+		}
+
+		private float getDistance(Location loc, Point point) {
+			Point locScreen = viewState.convertPos_AngleToScreen(loc.getCoords());
+			if (locScreen==null) return Float.NaN;
+			return (float) Math.sqrt( (point.x-locScreen.x)*(point.x-locScreen.x) + (point.y-locScreen.y)*(point.y-locScreen.y) );
+		}
+
+		public void setDisplayedLocation(Location displayedLocation) {
+			this.displayedLocation = displayedLocation;
+			repaint();
 		}
 
 		protected void startPan(Point point) {
@@ -1267,20 +1461,6 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		public void setRegion(Planet planet, Planet.Region region) {
-			this.planet = planet;
-			this.region = region;
-			reset();
-		}
-
-		public void reset() {
-			if (viewState.reset()) {
-				updateAxes();
-				mapScale.update();
-			}
-			repaint();
-		}
-		
 		private Point sub(Point p1, Point p2) {
 			return new Point(p1.x-p2.x,p1.y-p2.y);
 		}
@@ -1293,11 +1473,20 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		private static Rectangle2D getBounds(Graphics2D g2, Font font, String str) {
-			return font.getStringBounds(str, g2.getFontRenderContext());
+			return font.getStringBounds(str==null?"":str, g2.getFontRenderContext());
 		}
 
 		private static Rectangle2D getBounds(Graphics2D g2, String str) {
-			return g2.getFontMetrics().getStringBounds(str, g2);
+			return g2.getFontMetrics().getStringBounds(str==null?"":str, g2);
+		}
+
+		private static Polygon translatePolygonTo(int x, int y, Polygon polygon) {
+			Polygon newPolygon = new Polygon();
+			newPolygon.npoints = polygon.npoints;
+			newPolygon.xpoints = Arrays.copyOf(polygon.xpoints, newPolygon.npoints);
+			newPolygon.ypoints = Arrays.copyOf(polygon.ypoints, newPolygon.npoints);
+			newPolygon.translate(x, y);
+			return newPolygon;
 		}
 
 		@Override
@@ -1305,44 +1494,51 @@ public class ResourceHotSpots implements ActionListener {
 			if (!(g instanceof Graphics2D)) return;
 			Graphics2D g2 = (Graphics2D) g;
 			
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g2.setClip(x, y, width, height);
-			
-			g2.setColor(Color.WHITE);
-			g2.fillRect(x, y, width, height);
-			
-			if (region==null || !viewState.isOk()) {
-				g2.setColor(Color.RED);
-				g2.drawRect(x+1, y+1, width-3, height-3);
+			if (region != null) {
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setClip(x, y, width, height);
 				
-			} else {
-				region.circles        .forEach(item->draw(g2,item, false));
-				region.referencePoints.forEach(item->draw(g2,item));
-				region.hotSpots       .forEach(item->draw(g2,item));
+				g2.setColor(Color.WHITE);
+				g2.fillRect(x, y, width, height);
 				
-				verticalAxes.drawAxis( g2, x+5      , y+20, height-40, true  );
-				verticalAxes.drawAxis( g2, x+width-5, y+20, height-40, false );
-				horizontalAxes.drawAxis( g2, y+5       , x+20, width-40, true  );
-				horizontalAxes.drawAxis( g2, y+height-5, x+20, width-40, false );
-				mapScale.drawScale( g2, x+width-110, y+height-50, 60,15 );
-				
-				if (displayedLocation != null) {
-					if (displayedLocation instanceof Planet.Circle) {
-						Planet.Circle circle = (Planet.Circle) displayedLocation;
-						draw(g2,circle,true);
-					} else
-						new LocationBox(viewState,width,height,displayedLocation)
-							.draw(g2,(iconX,iconY)->{
-								if (displayedLocation instanceof Planet.HotSpot) {
-									Planet.HotSpot hotSpot = (Planet.HotSpot) displayedLocation;
-									draw(g2, hotSpot, iconX, iconY);
-								}
-								if (displayedLocation instanceof Planet.ReferencePoint) {
-									Planet.ReferencePoint referencePoint = (Planet.ReferencePoint) displayedLocation;
-									draw(g2, referencePoint, iconX, iconY);
-								}
-							});
+				if (viewState.isOk()) {
+					
+					region.circles        .forEach(item->draw(g2,item,false));
+					region.referencePoints.forEach(item->{ if (item!=displayedLocation) draw(g2,item,false); });
+					region.hotSpots       .forEach(item->{ if (item!=displayedLocation) draw(g2,item); });
+					
+					verticalAxes.drawAxis( g2, x+5      , y+20, height-40, true  );
+					verticalAxes.drawAxis( g2, x+width-5, y+20, height-40, false );
+					horizontalAxes.drawAxis( g2, y+5       , x+20, width-40, true  );
+					horizontalAxes.drawAxis( g2, y+height-5, x+20, width-40, false );
+					mapScale.drawScale( g2, x+width-110, y+height-50, 60,15 );
+					
+					if (displayedLocation != null) {
+						
+						if (displayedLocation instanceof Planet.Circle) {
+							Planet.Circle circle = (Planet.Circle) displayedLocation;
+							draw(g2,circle,true);
+							
+						} else {
+							if (displayedLocation instanceof Planet.HotSpot       ) draw(g2, (Planet.HotSpot       ) displayedLocation);
+							if (displayedLocation instanceof Planet.ReferencePoint) draw(g2, (Planet.ReferencePoint) displayedLocation, true);
+							
+							new LocationBox(viewState,width,height,displayedLocation)
+								.draw(g2,(iconX,iconY)->{
+									if (displayedLocation instanceof Planet.HotSpot) {
+										Planet.HotSpot hotSpot = (Planet.HotSpot) displayedLocation;
+										drawIcon(g2, hotSpot, iconX, iconY);
+									}
+									if (displayedLocation instanceof Planet.ReferencePoint) {
+										Planet.ReferencePoint referencePoint = (Planet.ReferencePoint) displayedLocation;
+										drawIcon(g2, referencePoint, iconX, iconY);
+									}
+								});
+						}
+					}
+				} else {
 				}
+			} else {
 			}
 			
 			g2.setClip(null);
@@ -1361,12 +1557,12 @@ public class ResourceHotSpots implements ActionListener {
 			private static final int iconWidth  = 10;
 			private static final int iconHeight = 10;
 
-			private DisplayableLocation displayedLocation;
+			private Location displayedLocation;
 			private ViewState viewState;
 			private int width;
 			private int height;
 
-			public LocationBox(ViewState viewState, int width, int height, DisplayableLocation displayedLocation) {
+			public LocationBox(ViewState viewState, int width, int height, Location displayedLocation) {
 				this.viewState = viewState;
 				this.width = width;
 				this.height = height;
@@ -1374,9 +1570,10 @@ public class ResourceHotSpots implements ActionListener {
 			}
 
 			public void draw(Graphics2D g2, BiConsumer<Integer,Integer> drawIcon) {
-				LatLong loc = displayedLocation.getLocation();
+				LatLong loc = displayedLocation.getCoords();
 				Point p = viewState.convertPos_AngleToScreen(loc);
 				
+				if (p==null) return;
 				if (p.x<0 || p.x>width ) return;
 				if (p.y<0 || p.y>height) return;
 				
@@ -1428,13 +1625,13 @@ public class ResourceHotSpots implements ActionListener {
 				g2.setFont(typeFont);
 				x = box.x + border + typeXOffset - typeBounds.getX();
 				y = box.y + border - typeBounds.getY();
-				g2.drawString(type, (int)Math.round(x), (int)Math.round(y));
+				if (type!=null) g2.drawString(type, (int)Math.round(x), (int)Math.round(y));
 				
 				g2.setColor(COLOR_TEXT_LABEL);
 				g2.setFont(standardFont);
 				x = box.x + border + iconWidth + spacing - labelBounds.getX();
 				y = box.y + border + typeBounds.getHeight()+ spacing + Math.max(labelBounds.getHeight(),iconHeight)/2-labelBounds.getHeight()/2 - labelBounds.getY();
-				g2.drawString(label, (int)Math.round(x), (int)Math.round(y));
+				if (label!=null) g2.drawString(label, (int)Math.round(x), (int)Math.round(y));
 				
 				x = box.x + border + iconWidth/2;
 				y = box.y + border + typeBounds.getHeight()+ spacing + Math.max(labelBounds.getHeight(),iconHeight)/2;
@@ -1448,7 +1645,7 @@ public class ResourceHotSpots implements ActionListener {
 			Integer radius = viewState.convertLength_LengthToScreen(item.radius);
 			if (p!=null && radius!=null) {
 				if (asHighlighted) {
-					g2.setColor(Color.BLACK);
+					g2.setColor(COLOR_CIRCLE_HIGHLIGHTED);
 					Stroke currentStroke = g2.getStroke();
 					g2.setStroke(STROKE_DASHED_LINE);
 					g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
@@ -1456,43 +1653,51 @@ public class ResourceHotSpots implements ActionListener {
 					g2.drawLine(p.x-3,p.y, p.x+3, p.y);
 					g2.drawLine(p.x,p.y-3, p.x,p.y+3);
 				} else {
-					g2.setColor(Color.LIGHT_GRAY);
+					g2.setColor(COLOR_CIRCLE_FILL);
 					g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
 				}
 			}
 		}
 
-		private void draw(Graphics2D g2, Planet.ReferencePoint item) {
+		private void draw(Graphics2D g2, Planet.ReferencePoint item, boolean asHighlighted) {
 			Point p = viewState.convertPos_AngleToScreen(item.location);
-			if (p!=null) draw(g2, item, p.x, p.y);
+			if (p!=null) {
+				drawIcon(g2, item, p.x, p.y);
+				if (asHighlighted && item.isBase) {
+					int radius = viewState.convertLength_LengthToScreen(300f);
+					g2.setColor(COLOR_BASE_RANGE);
+					Stroke currentStroke = g2.getStroke();
+					g2.setStroke(STROKE_DASHED_LINE);
+					g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
+					g2.setStroke(currentStroke);
+				}
+			}
 		}
 
 		private void draw(Graphics2D g2, Planet.HotSpot item) {
 			Point p = viewState.convertPos_AngleToScreen(item.location);
-			if (p!=null) draw(g2, item, p.x, p.y);
+			if (p!=null) drawIcon(g2, item, p.x, p.y);
 		}
 
-		private void draw(Graphics2D g2, Planet.ReferencePoint item, int x, int y) {
+		private void drawIcon(Graphics2D g2, Planet.ReferencePoint item, int x, int y) {
 			g2.setColor(COLOR_REFERENCEPOINT);
-			g2.fillOval(x-3, y-3, 6, 6);
+			if (item.isBase)
+				g2.fillPolygon(translatePolygonTo(x,y,POLYGON_SMALL_HOUSE));
+			else
+				g2.fillOval(x-3, y-3, 6, 6);
 		}
 
-		private void draw(Graphics2D g2, Planet.HotSpot item, int x, int y) {
-			if (item.type==null) {
-				g2.setColor(Color.BLACK);
-			} else
+		private void drawIcon(Graphics2D g2, Planet.HotSpot item, int x, int y) {
+			if (item.type==null || !meetsCriteria(item))
+				g2.setColor(COLOR_HOTSPOT_FAILS_CRITERIA); 
+			else
 				switch (item.type) {
-				case Mineral: g2.setColor(COLOR_MINERAL);break;
-				case Gas    : g2.setColor(COLOR_GAS);break;
-				case Energy : g2.setColor(COLOR_ENERGY); break;
-				default:
-					break;
-				
+				case Mineral: g2.setColor(COLOR_HOTSPOT_MINERAL); break;
+				case Gas    : g2.setColor(COLOR_HOTSPOT_GAS    ); break;
+				case Energy : g2.setColor(COLOR_HOTSPOT_ENERGY ); break;
+				default: break;
 				}
 			g2.fillOval(x-3, y-3, 6, 6);
-			
-			// TODO Auto-generated method stub
-			
 		}
 
 		private class Scale {
@@ -1731,21 +1936,32 @@ public class ResourceHotSpots implements ActionListener {
 				region.hotSpots       .forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
 				
 				if (min.latitude==null || min.longitude==null || max.latitude==null || max.longitude==null ) {
-					center = null;
-					scaleLengthPerAngleLat  = Float.NaN;
-					scaleLengthPerAngleLong = Float.NaN;
-					scalePixelPerLength     = Float.NaN;
+					clearValues();
 					return false;
 				}
 				
 				center = new LatLong( (min.latitude+max.latitude)/2, (min.longitude+max.longitude)/2 );
 				
 				updateScaleLengthPerAngle();
-				float scalePixelPerLengthLat  = (height-30) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
-				float scalePixelPerLengthLong = (width -30) / ((max.longitude-min.longitude)*scaleLengthPerAngleLong);
+				float neededheight = (max.latitude -min.latitude )*scaleLengthPerAngleLat;
+				float neededWidth  = (max.longitude-min.longitude)*scaleLengthPerAngleLong;
+				if (neededheight==0 || neededWidth==0) {
+					clearValues();
+					return false;
+				}
+				
+				float scalePixelPerLengthLat  = (height-30) / neededheight;
+				float scalePixelPerLengthLong = (width -30) / neededWidth;
 				scalePixelPerLength = Math.min(scalePixelPerLengthLat, scalePixelPerLengthLong);
 				
 				return true;
+			}
+
+			private void clearValues() {
+				center = null;
+				scaleLengthPerAngleLat  = Float.NaN;
+				scaleLengthPerAngleLong = Float.NaN;
+				scalePixelPerLength     = Float.NaN;
 			}
 			
 			public boolean zoom(Point point, float f) {
@@ -1787,25 +2003,26 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		
 			private Point convertPos_AngleToScreen(LatLong location) {
+				if (location.latitude==null || location.longitude==null) return null;
 				return new Point(
 					convertPos_AngleToScreen_Long(location.longitude),
 					convertPos_AngleToScreen_Lat (location.latitude )
 				);
 			}
-			private Integer convertPos_AngleToScreen_Long(Float longitude) {
+			private Integer convertPos_AngleToScreen_Long(float longitude) {
 				float x = width /2f + convertLength_AngleToScreen_Long(longitude - center.longitude);
 				if (tempPanOffset!=null) x += tempPanOffset.x;
 				return Math.round(x);
 			}
-			private Integer convertPos_AngleToScreen_Lat (Float latitude) {
+			private Integer convertPos_AngleToScreen_Lat (float latitude) {
 				float y = height/2f - convertLength_AngleToScreen_Lat (latitude  - center.latitude );
 				if (tempPanOffset!=null) y += tempPanOffset.y;
 				return Math.round(y);
 			}
 			private float convertLength_AngleToScreen_Long(float length_a) { return length_a * scaleLengthPerAngleLong * scalePixelPerLength; }
 			private float convertLength_AngleToScreen_Lat (float length_a) { return length_a * scaleLengthPerAngleLat  * scalePixelPerLength; }
+			
 			private LatLong convertScreenToAngle(Point point) {
-				if (center==null) return null;
 				return new LatLong(
 					convertPos_ScreenToAngle_Lat (point.y),
 					convertPos_ScreenToAngle_Long(point.x)

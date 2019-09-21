@@ -1201,20 +1201,30 @@ public class SaveViewer implements ActionListener {
 	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
 	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
 
+	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, Consumer<ItemType> valueSelected) {
+		if (disabler!=null && actionCommand!=null)
+			disabler.add(actionCommand, comp);
+		
+		if (valueSelected!=null) comp.addActionListener(e->{
+			int index = comp.getSelectedIndex();
+			if (index<0) valueSelected.accept(null);
+			else valueSelected.accept(comp.getItemAt(index));
+		});
+	}
 	public static <AC extends Enum<AC>> void setComp(JComboBox<?> comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		if (disabler     !=null) disabler.add(actionCommand, comp);
+		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
 
 	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		if (disabler     !=null) disabler.add(actionCommand, comp);
+		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
 
 	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		if (disabler     !=null) disabler.add(actionCommand, comp);
+		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
@@ -1231,7 +1241,7 @@ public class SaveViewer implements ActionListener {
 
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
 		JButton button = createButton(title,l);
-		if (disabler!=null) disabler.add(actionCommand, button);
+		if (disabler!=null && actionCommand!=null) disabler.add(actionCommand, button);
 		if (actionCommand!=null) button.setActionCommand(actionCommand.toString());
 		return button;
 	}

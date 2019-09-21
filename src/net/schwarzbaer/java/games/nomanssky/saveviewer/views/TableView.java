@@ -138,6 +138,7 @@ public class TableView {
 		
 		public SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
+			dataModel.setTable(this);
 			setModel(dataModel);
 		}
 		

@@ -10,11 +10,13 @@ name=Nähe der Hauptbasis
 latitude=+15.99
 longitude=-37.83
 name=Haus am See
+isBase
 
 [ReferencePoint]
 latitude=+15.45
 longitude=-37.93
 name=Villa Hügel
+isBase
 
 [Circle]
 latitude=+14.59
