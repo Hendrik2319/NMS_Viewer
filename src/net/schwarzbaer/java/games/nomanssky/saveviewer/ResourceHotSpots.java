@@ -11,6 +11,8 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Rectangle2D;
@@ -40,6 +42,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -194,21 +197,21 @@ public class ResourceHotSpots implements ActionListener {
 		
 		referencePointsTableModel = new ReferencePointsTableModel();
 		referencePointsTable = new TableView.SimplifiedTable("ReferencePoints", referencePointsTableModel, true, true, true);
-		configureEachColumn(referencePointsTable,referencePointsTableModel);
+		referencePointsTableModel.configureTable(referencePointsTable);
 		JScrollPane referencePointsTableScrollPane = new JScrollPane(referencePointsTable);
 		referencePointsTableScrollPane.setPreferredSize(new Dimension(400, 200));
 		referencePointsTableScrollPane.setBorder(createCompoundBorder("Reference Points"));
 		
 		circlesTableModel = new CirclesTableModel();
 		circlesTable = new TableView.SimplifiedTable("Circles", circlesTableModel, true, true, true);
-		configureEachColumn(circlesTable,circlesTableModel);
+		circlesTableModel.configureTable(circlesTable);
 		JScrollPane circlesTableScrollPane = new JScrollPane(circlesTable);
 		circlesTableScrollPane.setPreferredSize(new Dimension(400, 200));
 		circlesTableScrollPane.setBorder(createCompoundBorder("Circles"));
 		
 		hotSpotsTableModel = new HotSpotsTableModel();
 		hotSpotsTable = new TableView.SimplifiedTable("HotSpots", hotSpotsTableModel, true, true, true);
-		configureEachColumn(hotSpotsTable,hotSpotsTableModel);
+		hotSpotsTableModel.configureTable(hotSpotsTable);
 		JScrollPane hotSpotsTableScrollPane = new JScrollPane(hotSpotsTable);
 		hotSpotsTableScrollPane.setPreferredSize(new Dimension(400, 300));
 		hotSpotsTableScrollPane.setBorder(createCompoundBorder("HotSpots"));
@@ -228,6 +231,9 @@ public class ResourceHotSpots implements ActionListener {
 		JPanel hotSpotsViewPanel = new JPanel(new BorderLayout());
 		hotSpotsViewPanel.setBorder(createCompoundBorder("HotSpots View"));
 		hotSpotsViewPanel.add(hotSpotsView,BorderLayout.CENTER);
+		referencePointsTableModel.setHotSpotsView(hotSpotsView);
+		circlesTableModel        .setHotSpotsView(hotSpotsView);
+		hotSpotsTableModel       .setHotSpotsView(hotSpotsView);
 		
 		windowConfig.centerPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		windowConfig.centerPanel.setResizeWeight(0);
@@ -425,25 +431,6 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		} break;
 		}
-	}
-
-	private void forEachColumn(JTable table, BiConsumer<TableColumn,Integer> action) {
-		TableColumnModel columnModelmodel = table.getColumnModel();
-		if (columnModelmodel==null) return;
-		
-		int n = columnModelmodel.getColumnCount();
-		for (int i=0; i<n; i++) {
-			TableColumn column = columnModelmodel.getColumn(i);
-			action.accept(column,i);
-		}
-	}
-
-	private <ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> void configureEachColumn(JTable table, LocalTableModel<ColumnID> tableModel) {
-		forEachColumn(table, (column,i)->{
-			i = table.convertColumnIndexToModel(i);
-			ColumnID id = tableModel.getColumnID(i);
-			tableModel.configureColumn(column,i,id);
-		});
 	}
 
 	private CompoundBorder createCompoundBorder(String title) {
@@ -840,7 +827,7 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		private static class ReferencePoint {
+		private static class ReferencePoint implements DisplayableLocation {
 			
 			public LatLong location;
 			public String name;
@@ -849,9 +836,14 @@ public class ResourceHotSpots implements ActionListener {
 				location = new LatLong();
 				name = null;
 			}
+
+			@Override
+			public LatLong getLocation() {
+				return location;
+			}
 		}
 
-		private static class Circle {
+		private static class Circle implements DisplayableLocation {
 			
 			LatLong center;
 			Float radius;
@@ -860,9 +852,14 @@ public class ResourceHotSpots implements ActionListener {
 				center = new LatLong();
 				radius = null;
 			}
+
+			@Override
+			public LatLong getLocation() {
+				return center;
+			}
 		}
 
-		private static class HotSpot {
+		private static class HotSpot implements DisplayableLocation {
 			private enum Type { Mineral, Gas, Energy }
 			private enum Class {
 				A(300),B(200),C(100);
@@ -883,15 +880,33 @@ public class ResourceHotSpots implements ActionListener {
 				this.hotSpotClass = null;
 				this.rate = null;
 			}
+
+			@Override
+			public LatLong getLocation() {
+				return location;
+			}
 		}
 	}
 	
-	private static abstract class LocalTableModel<ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> extends SimplifiedTableModel<ColumnID> {
+	private interface DisplayableLocation {
+		LatLong getLocation();
+	}
+	
+	private static abstract class LocalTableModel<DataType extends DisplayableLocation, ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> extends SimplifiedTableModel<ColumnID> {
 		
 		protected Planet.Region region;
+		private HotSpotsView hotSpotsView;
 		
 		protected LocalTableModel(ColumnID[] columns) {
 			super(columns);
+		}
+		
+		public void setHotSpotsView(HotSpotsView hotSpotsView) {
+			this.hotSpotsView = hotSpotsView;
+		}
+		
+		protected void updateHotSpotsView() {
+			hotSpotsView.repaint();
 		}
 
 		public void setRegion(Planet.Region region) {
@@ -899,11 +914,41 @@ public class ResourceHotSpots implements ActionListener {
 			this.region = region;
 			fireTableUpdate();
 		}
-		
-		@Override public ColumnID getColumnID(int columnIndex) {
-			return super.getColumnID(columnIndex);
+
+		private void forEachColumn(JTable table, BiConsumer<TableColumn,Integer> action) {
+			TableColumnModel columnModelmodel = table.getColumnModel();
+			if (columnModelmodel==null) return;
+			
+			int n = columnModelmodel.getColumnCount();
+			for (int i=0; i<n; i++) {
+				TableColumn column = columnModelmodel.getColumn(i);
+				action.accept(column,i);
+			}
 		}
-		public abstract void configureColumn(TableColumn column, Integer i, ColumnID columnID);
+
+		void configureTable(JTable table) {
+			forEachColumn(table, (column,i)->{
+				i = table.convertColumnIndexToModel(i);
+				configureColumn(column,i,getColumnID(i));
+			});
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			table.getSelectionModel().addListSelectionListener(e->selectionChanged(table.getSelectedRow()));
+			table.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) {
+					table.clearSelection();
+					selectionChanged(-1);
+				}
+			});
+		}
+		
+		private void selectionChanged(int row) {
+			if (row<0) hotSpotsView.setDisplayedLocation(null);
+			hotSpotsView.setDisplayedLocation(getItemAt(row));
+		}
+		
+		protected abstract DataType getItemAt(int row);
+		protected abstract void configureColumn(TableColumn column, Integer i, ColumnID columnID);
 	}
 
 	private enum ReferencePointsTableColumnID implements SimplifiedColumnIDInterface {
@@ -918,7 +963,7 @@ public class ResourceHotSpots implements ActionListener {
 		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 	
-	private static class ReferencePointsTableModel extends LocalTableModel<ReferencePointsTableColumnID> {
+	private static class ReferencePointsTableModel extends LocalTableModel<Planet.ReferencePoint,ReferencePointsTableColumnID> {
 		
 
 		protected ReferencePointsTableModel() {
@@ -930,11 +975,17 @@ public class ResourceHotSpots implements ActionListener {
 		@Override public void configureColumn(TableColumn column, Integer i, ReferencePointsTableColumnID columnID) {}
 
 		@Override
-		public Object getValueAt(int rowIndex, int columnIndex, ReferencePointsTableColumnID columnID) {
-			if (region==null || rowIndex>=region.referencePoints.size())
+		protected Planet.ReferencePoint getItemAt(int rowIndex) {
+			if (region==null || rowIndex<0 || rowIndex>=region.referencePoints.size())
 				return null;
-			
-			Planet.ReferencePoint referencePoint = region.referencePoints.get(rowIndex);
+			return region.referencePoints.get(rowIndex);
+		}
+
+		@Override
+		public Object getValueAt(int rowIndex, int columnIndex, ReferencePointsTableColumnID columnID) {
+			Planet.ReferencePoint referencePoint = getItemAt(rowIndex);
+			if (referencePoint==null) return null;
+				
 			switch (columnID) {
 			case Latitude : return referencePoint.location.getLatitudeStr();
 			case Longitude: return referencePoint.location.getLongitudeStr();
@@ -960,6 +1011,7 @@ public class ResourceHotSpots implements ActionListener {
 			case Longitude: referencePoint.location.setLongitudeStr((String)aValue); break;
 			case Name     : referencePoint.name = (String)aValue; break;
 			}
+			updateHotSpotsView();
 		}
 	
 	}
@@ -976,10 +1028,17 @@ public class ResourceHotSpots implements ActionListener {
 		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 
-	private static class CirclesTableModel extends LocalTableModel<CirclesTableColumnID> {
+	private static class CirclesTableModel extends LocalTableModel<Planet.Circle,CirclesTableColumnID> {
 		
 		protected CirclesTableModel() {
 			super(CirclesTableColumnID.values());
+		}
+
+		@Override
+		protected Planet.Circle getItemAt(int rowIndex) {
+			if (region==null || rowIndex<0 || rowIndex>=region.circles.size())
+				return null;
+			return region.circles.get(rowIndex);
 		}
 	
 		@Override
@@ -994,10 +1053,9 @@ public class ResourceHotSpots implements ActionListener {
 	
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex, CirclesTableColumnID columnID) {
-			if (region==null || rowIndex>=region.circles.size())
-				return null;
+			Planet.Circle circle = getItemAt(rowIndex);
+			if (circle==null) return null;
 			
-			Planet.Circle circle = region.circles.get(rowIndex);
 			switch (columnID) {
 			case Latitude : return circle.center.getLatitudeStr();
 			case Longitude: return circle.center.getLongitudeStr();
@@ -1023,6 +1081,7 @@ public class ResourceHotSpots implements ActionListener {
 			case Longitude: circle.center.setLongitudeStr((String)aValue); break;
 			case Radius   : try { circle.radius = parseFloat(aValue); } catch (NumberFormatException e) { fireTableRowUpdate(rowIndex); } break;
 			}
+			updateHotSpotsView();
 		}
 	
 	}
@@ -1042,10 +1101,17 @@ public class ResourceHotSpots implements ActionListener {
 		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 	
-	private static class HotSpotsTableModel extends LocalTableModel<HotSpotsTableColumnID> {
+	private static class HotSpotsTableModel extends LocalTableModel<Planet.HotSpot,HotSpotsTableColumnID> {
 
 		protected HotSpotsTableModel() {
 			super(HotSpotsTableColumnID.values());
+		}
+
+		@Override
+		protected Planet.HotSpot getItemAt(int rowIndex) {
+			if (region==null || rowIndex<0 || rowIndex>=region.hotSpots.size())
+				return null;
+			return region.hotSpots.get(rowIndex);
 		}
 
 		@Override
@@ -1069,10 +1135,9 @@ public class ResourceHotSpots implements ActionListener {
 
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex, HotSpotsTableColumnID columnID) {
-			if (region==null || rowIndex>=region.hotSpots.size())
-				return null;
+			Planet.HotSpot hotSpot = getItemAt(rowIndex);
+			if (hotSpot==null) return null;
 			
-			Planet.HotSpot hotSpot = region.hotSpots.get(rowIndex);
 			switch (columnID) {
 			case Latitude : return hotSpot.location.getLatitudeStr();
 			case Longitude: return hotSpot.location.getLongitudeStr();
@@ -1104,13 +1169,18 @@ public class ResourceHotSpots implements ActionListener {
 			case Class    : hotSpot.hotSpotClass = (Planet.HotSpot.Class)aValue; if (hotSpot.rate==null && hotSpot.hotSpotClass!=null) { hotSpot.rate=hotSpot.hotSpotClass.rate; fireTableRowUpdate(rowIndex); } break;
 			case Rate     : try { hotSpot.rate = parseInt(aValue); } catch (NumberFormatException e) { fireTableRowUpdate(rowIndex); }
 			}
+			updateHotSpotsView();
 		}
 	}
 	
 	private static class HotSpotsView extends Canvas {
 		private static final long serialVersionUID = 3631270386892323918L;
 		
+		private static final Color COLOR_ENERGY = new Color(0xFC4200);
+		private static final Color COLOR_GAS = new Color(0xFFCC00);
+		private static final Color COLOR_MINERAL = new Color(0x5A84B1);
 		private static final Color COLOR_AXIS = new Color(0x70000000,true);
+		
 		//private static final int nMajorTicksPerAxis = 2;
 		private static final int minMinorTickUnitLength_px = 7;
 		private static final int majorTickLength_px = 10;
@@ -1120,17 +1190,14 @@ public class ResourceHotSpots implements ActionListener {
 		private Planet planet = null;
 		private Planet.Region region = null;
 
-		private LatLong center = null;
-		private float scaleLengthPerAngleLat  = Float.NaN;
-		private float scaleLengthPerAngleLong = Float.NaN;
-		private float scalePixelPerLength     = Float.NaN;
-
 		private Point panStart = null;
-		private Point tempPanOffset = null;
 
+		private ViewState viewState = new ViewState();
 		private Axes verticalAxes   = new Axes(true);
 		private Axes horizontalAxes = new Axes(false);
-		private Scale mapScale = new Scale();
+		private Scale mapScale      = new Scale();
+
+		private DisplayableLocation displayedLocation = null;
 		
 		HotSpotsView() {
 			MouseInputAdapter mouse = new MouseInputAdapter() {
@@ -1145,6 +1212,11 @@ public class ResourceHotSpots implements ActionListener {
 			addMouseWheelListener(mouse);
 		}
 
+		public void setDisplayedLocation(DisplayableLocation displayedLocation) {
+			this.displayedLocation = displayedLocation;
+			repaint();
+		}
+
 		@Override
 		public void setBorder(Border border) {
 			throw new UnsupportedOperationException();
@@ -1152,27 +1224,24 @@ public class ResourceHotSpots implements ActionListener {
 
 		protected void startPan(Point point) {
 			panStart = point;
-			tempPanOffset = new Point();
+			viewState.tempPanOffset = new Point();
 			repaint();
 		}
 
 		protected void proceedPan(Point point) {
 			if (panStart != null)
-				tempPanOffset = sub(point,panStart);
+				viewState.tempPanOffset = sub(point,panStart);
 			repaint();
 		}
 
 		protected void stopPan(Point point) {
-			if (panStart!=null && center!=null && !Float.isNaN(scalePixelPerLength) && !Float.isNaN(scaleLengthPerAngleLat) && !Float.isNaN(scaleLengthPerAngleLong)) {
-				Point offset = sub(point,panStart);
-				float offsetLat  = -offset.y / scalePixelPerLength / scaleLengthPerAngleLat;
-				float offsetLong =  offset.x / scalePixelPerLength / scaleLengthPerAngleLong;
-				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
-				updateScaleLengthPerAngle();
-				updateAxes();
-			}
+			if (panStart!=null)
+				if (viewState.moveCenter(sub(point,panStart))) {
+					updateAxes();
+				}
+			
 			panStart = null;
-			tempPanOffset = null;
+			viewState.tempPanOffset = null;
 			repaint();
 		}
 
@@ -1181,83 +1250,18 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		protected void zoom(Point point, double preciseWheelRotation) {
-			if (center==null) return;
-			
-			LatLong centerOld = new LatLong(center);
-			LatLong location = convertScreenToAngle(point);
-			
 			float f = (float) Math.pow(1.1f, preciseWheelRotation);
-			if (scalePixelPerLength*f < minScaleLength_px/6000f) return;
-			
-			scalePixelPerLength *= f;
-			center.latitude  = (centerOld.latitude  - location.latitude ) / f + location.latitude;
-			center.longitude = (centerOld.longitude - location.longitude) * (float) (Math.cos(centerOld.latitude/180*Math.PI) / Math.cos(center.latitude/180*Math.PI) ) / f + location.longitude;
-			
-			updateScaleLengthPerAngle();
-			updateAxes();
-			mapScale.update();
-			repaint();
-		}
-
-		private float convertLength_ScreenToAngle_Lat (float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLat ; }
-		private float convertLength_ScreenToAngle_Long(float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLong; }
-
-		private Float convertPos_ScreenToAngle_Lat(int y) {
-			if (center==null) return null;
-			if (tempPanOffset!=null) y -= tempPanOffset.y;
-			return center.latitude  - convertLength_ScreenToAngle_Lat(y - height/2f);
-		}
-
-		private Float convertPos_ScreenToAngle_Long(int x) {
-			if (center==null) return null;
-			if (tempPanOffset!=null) x -= tempPanOffset.x;
-			return center.longitude + convertLength_ScreenToAngle_Long(x - width /2f);
-		}
-		private LatLong convertScreenToAngle(Point point) {
-			if (center==null) return null;
-			return new LatLong(
-				convertPos_ScreenToAngle_Lat (point.y),
-				convertPos_ScreenToAngle_Long(point.x)
-			);
-		}
-
-		private float convertLength_AngleToScreen_Lat (float length_a) { return length_a * scaleLengthPerAngleLat  * scalePixelPerLength; }
-		private float convertLength_AngleToScreen_Long(float length_a) { return length_a * scaleLengthPerAngleLong * scalePixelPerLength; }
-
-		private Integer convertPos_AngleToScreen_Lat (Float latitude) {
-			if (center==null) return null;
-			float y = height/2f - convertLength_AngleToScreen_Lat (latitude  - center.latitude );
-			if (tempPanOffset!=null) y += tempPanOffset.y;
-			return Math.round(y);
-		}
-		private Integer convertPos_AngleToScreen_Long(Float longitude) {
-			if (center==null) return null;
-			float x = width /2f + convertLength_AngleToScreen_Long(longitude - center.longitude);
-			if (tempPanOffset!=null) x += tempPanOffset.x;
-			return Math.round(x);
-		}
-		private Point convertPos_AngleToScreen(LatLong location) {
-			if (center==null) return null;
-			return new Point(
-				convertPos_AngleToScreen_Long(location.longitude),
-				convertPos_AngleToScreen_Lat (location.latitude )
-			);
-		}
-
-		private Integer convertLength_LengthToScreen(Float length_u) {
-			if (length_u==null || Float.isNaN(length_u) || Float.isNaN(scalePixelPerLength)) return null;
-			return Math.round( length_u * scalePixelPerLength );
-		}
-
-		private void updateScaleLengthPerAngle() {
-			scaleLengthPerAngleLat  = (float) (2*Math.PI*planet.radius / 360);
-			scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
+			if (viewState.zoom(point,f)) {
+				updateAxes();
+				mapScale.update();
+				repaint();
+			}
 		}
 
 		private void updateAxes() {
-			if (center==null) return;
-			  verticalAxes.updateTicks( convertLength_ScreenToAngle_Lat (minMinorTickUnitLength_px) );
-			horizontalAxes.updateTicks( convertLength_ScreenToAngle_Long(minMinorTickUnitLength_px) );
+			if (!viewState.isOk()) return;
+			  verticalAxes.updateTicks( viewState.convertLength_ScreenToAngle_Lat (minMinorTickUnitLength_px) );
+			horizontalAxes.updateTicks( viewState.convertLength_ScreenToAngle_Long(minMinorTickUnitLength_px) );
 		}
 
 		public void setRegion(Planet planet, Planet.Region region) {
@@ -1267,7 +1271,34 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		public void reset() {
-			if (region!=null && planet!=null) {
+			if (viewState.reset()) {
+				updateAxes();
+				mapScale.update();
+			}
+			repaint();
+		}
+		
+		private class ViewState {
+
+			private LatLong center = null;
+			private float scaleLengthPerAngleLat  = Float.NaN;
+			private float scaleLengthPerAngleLong = Float.NaN;
+			private float scalePixelPerLength     = Float.NaN;
+			
+			private Point tempPanOffset = null;
+			
+			public boolean isOk() {
+				return center!=null && !Float.isNaN(scalePixelPerLength) && !Float.isNaN(scaleLengthPerAngleLat) && !Float.isNaN(scaleLengthPerAngleLong);
+			}
+
+			public boolean haveScalePixelPerLength() {
+				return !Float.isNaN(scalePixelPerLength);
+			}
+
+			public boolean reset() {
+				if (region==null || planet==null || planet.radius==null)
+					return false;
+				
 				LatLong min = new LatLong();
 				LatLong max = new LatLong();
 				
@@ -1280,7 +1311,7 @@ public class ResourceHotSpots implements ActionListener {
 					scaleLengthPerAngleLat  = Float.NaN;
 					scaleLengthPerAngleLong = Float.NaN;
 					scalePixelPerLength     = Float.NaN;
-					return;
+					return false;
 				}
 				
 				center = new LatLong( (min.latitude+max.latitude)/2, (min.longitude+max.longitude)/2 );
@@ -1289,10 +1320,84 @@ public class ResourceHotSpots implements ActionListener {
 				float scalePixelPerLengthLat  = (height-30) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
 				float scalePixelPerLengthLong = (width -30) / ((max.longitude-min.longitude)*scaleLengthPerAngleLong);
 				scalePixelPerLength = Math.min(scalePixelPerLengthLat, scalePixelPerLengthLong);
-				updateAxes();
-				mapScale.update();
+				
+				return true;
 			}
-			repaint();
+			
+			public boolean zoom(Point point, float f) {
+				if (!isOk()) return false;
+				
+				LatLong centerOld = new LatLong(center);
+				LatLong location = convertScreenToAngle(point);
+				
+				if (scalePixelPerLength*f < minScaleLength_px/6000f) return false;
+				
+				scalePixelPerLength *= f;
+				center.latitude  = (centerOld.latitude  - location.latitude ) / f + location.latitude;
+				center.longitude = (centerOld.longitude - location.longitude) * (float) (Math.cos(centerOld.latitude/180*Math.PI) / Math.cos(center.latitude/180*Math.PI) ) / f + location.longitude;
+				
+				updateScaleLengthPerAngle();
+				
+				return true;
+			}
+
+			public boolean moveCenter(Point offsetOnScreen) {
+				if (!isOk()) return false;
+				
+				float offsetLat  = convertLength_ScreenToAngle_Lat (-offsetOnScreen.y);
+				float offsetLong = convertLength_ScreenToAngle_Long( offsetOnScreen.x);
+				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
+				updateScaleLengthPerAngle();
+				
+				return true;
+			}
+
+			private void updateScaleLengthPerAngle() {
+				scaleLengthPerAngleLat  = (float) (2*Math.PI*planet.radius / 360);
+				scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
+			}
+
+			private Integer convertLength_LengthToScreen(Float length_u) {
+				if (length_u==null || Float.isNaN(length_u)) return null;
+				return Math.round( length_u * scalePixelPerLength );
+			}
+
+			private Point convertPos_AngleToScreen(LatLong location) {
+				return new Point(
+					convertPos_AngleToScreen_Long(location.longitude),
+					convertPos_AngleToScreen_Lat (location.latitude )
+				);
+			}
+			private Integer convertPos_AngleToScreen_Long(Float longitude) {
+				float x = width /2f + convertLength_AngleToScreen_Long(longitude - center.longitude);
+				if (tempPanOffset!=null) x += tempPanOffset.x;
+				return Math.round(x);
+			}
+			private Integer convertPos_AngleToScreen_Lat (Float latitude) {
+				float y = height/2f - convertLength_AngleToScreen_Lat (latitude  - center.latitude );
+				if (tempPanOffset!=null) y += tempPanOffset.y;
+				return Math.round(y);
+			}
+			private float convertLength_AngleToScreen_Long(float length_a) { return length_a * scaleLengthPerAngleLong * scalePixelPerLength; }
+			private float convertLength_AngleToScreen_Lat (float length_a) { return length_a * scaleLengthPerAngleLat  * scalePixelPerLength; }
+			private LatLong convertScreenToAngle(Point point) {
+				if (center==null) return null;
+				return new LatLong(
+					convertPos_ScreenToAngle_Lat (point.y),
+					convertPos_ScreenToAngle_Long(point.x)
+				);
+			}
+			private Float convertPos_ScreenToAngle_Long(int x) {
+				if (tempPanOffset!=null) x -= tempPanOffset.x;
+				return center.longitude + convertLength_ScreenToAngle_Long(x - width /2f);
+			}
+			private Float convertPos_ScreenToAngle_Lat(int y) {
+				if (tempPanOffset!=null) y -= tempPanOffset.y;
+				return center.latitude  - convertLength_ScreenToAngle_Lat(y - height/2f);
+			}
+			private float convertLength_ScreenToAngle_Long(float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLong; }
+			private float convertLength_ScreenToAngle_Lat (float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLat ; }
+			
 		}
 
 		@Override
@@ -1306,11 +1411,11 @@ public class ResourceHotSpots implements ActionListener {
 			g2.setColor(Color.WHITE);
 			g2.fillRect(x, y, width, height);
 			
-			if (region==null) {
+			if (region==null || !viewState.isOk()) {
 				g2.setColor(Color.RED);
 				g2.drawRect(x+1, y+1, width-3, height-3);
-			} else {
 				
+			} else {
 				region.circles        .forEach(item->draw(g2,item));
 				region.referencePoints.forEach(item->draw(g2,item));
 				region.hotSpots       .forEach(item->draw(g2,item));
@@ -1319,80 +1424,56 @@ public class ResourceHotSpots implements ActionListener {
 				verticalAxes.drawAxis( g2, x+width-5, y+20, height-40, false );
 				horizontalAxes.drawAxis( g2, y+5       , x+20, width-40, true  );
 				horizontalAxes.drawAxis( g2, y+height-5, x+20, width-40, false );
-				
 				mapScale.drawScale( g2, x+width-110, y+height-50, 60,15 );
+				
+				if (displayedLocation != null) {
+					// TODO
+				}
 			}
 			
 			g2.setClip(null);
 		}
 		
-		private class Scale {
+		private void draw(Graphics2D g2, Planet.Circle item) {
+			Point p = viewState.convertPos_AngleToScreen(item.center);
+			Integer radius = viewState.convertLength_LengthToScreen(item.radius);
+			if (p!=null && radius!=null) {
+				g2.setColor(Color.LIGHT_GRAY);
+				g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
+			}
+		}
 
-			private float scaleLength_u = 1;
-			private int scaleLength_px = minScaleLength_px;
+		private void draw(Graphics2D g2, Planet.ReferencePoint item) {
+			Point p = viewState.convertPos_AngleToScreen(item.location);
+			if (p!=null) draw(g2, item, p.x, p.y);
+		}
 
-			public void update() {
-				if (Float.isNaN(scalePixelPerLength)) return;
+		private void draw(Graphics2D g2, Planet.HotSpot item) {
+			Point p = viewState.convertPos_AngleToScreen(item.location);
+			if (p!=null) draw(g2, item, p.x, p.y);
+		}
+
+		private void draw(Graphics2D g2, Planet.ReferencePoint item, int x, int y) {
+			g2.setColor(new Color(0x5EB91E));
+			g2.fillOval(x-3, y-3, 6, 6);
+		}
+
+		private void draw(Graphics2D g2, Planet.HotSpot item, int x, int y) {
+			if (item.type==null) {
+				g2.setColor(Color.BLACK);
+			} else
+				switch (item.type) {
+				case Mineral: g2.setColor(COLOR_MINERAL);break;
+				case Gas    : g2.setColor(COLOR_GAS);break;
+				case Energy : g2.setColor(COLOR_ENERGY); break;
+				default:
+					break;
 				
-				scaleLength_u = 1;
-				
-				if (( convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) )
-					while ( convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) {
-						float base = scaleLength_u;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u = 1.5f*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    2*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    3*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    4*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    5*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    6*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    8*base;
-						if (convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =   10*base;
-					}
-				else
-					while ( convertLength_LengthToScreen(scaleLength_u*0.80f) > minScaleLength_px) {
-						float base = scaleLength_u;
-						if (convertLength_LengthToScreen(base*0.80f) > minScaleLength_px) scaleLength_u = base*0.80f;
-						if (convertLength_LengthToScreen(base*0.60f) > minScaleLength_px) scaleLength_u = base*0.60f;
-						if (convertLength_LengthToScreen(base*0.50f) > minScaleLength_px) scaleLength_u = base*0.50f;
-						if (convertLength_LengthToScreen(base*0.40f) > minScaleLength_px) scaleLength_u = base*0.40f;
-						if (convertLength_LengthToScreen(base*0.30f) > minScaleLength_px) scaleLength_u = base*0.30f;
-						if (convertLength_LengthToScreen(base*0.20f) > minScaleLength_px) scaleLength_u = base*0.20f;
-						if (convertLength_LengthToScreen(base*0.15f) > minScaleLength_px) scaleLength_u = base*0.15f;
-						if (convertLength_LengthToScreen(base*0.10f) > minScaleLength_px) scaleLength_u = base*0.10f;
-					}
-				scaleLength_px = convertLength_LengthToScreen(scaleLength_u);
-			}
+				}
+			g2.fillOval(x-3, y-3, 6, 6);
 			
-			private String getScaleLengthStr() {
-				float f = scaleLength_u;
-				if (f<0.002) return String.format(Locale.ENGLISH, "%1.5fu", f);
-				if (f<0.02 ) return String.format(Locale.ENGLISH, "%1.4fu", f);
-				if (f<0.2  ) return String.format(Locale.ENGLISH, "%1.3fu", f);
-				if (f<2   ) return String.format(Locale.ENGLISH, "%1.2fu", f);
-				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fu", f);
-				f /= 1000;
-				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fku", f);
-				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fku", f);
-				f /= 1000;
-				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fMu", f);
-				else        return String.format(Locale.ENGLISH, "%1.0fMu", f);
-			}
+			// TODO Auto-generated method stub
 			
-			private void drawScale(Graphics2D g2, int x, int y, int w, int h) {
-				//g2.setColor(Color.RED);
-				//g2.drawRect(x, y, w, h);
-				
-				g2.setColor(COLOR_AXIS);
-				
-				g2.drawLine(x+w, y  , x+w, y+h);
-				g2.drawLine(x+w, y+h, x+w-scaleLength_px, y+h);
-				g2.drawLine(x+w-scaleLength_px, y+h, x+w-scaleLength_px, y);
-				
-				String str = getScaleLengthStr();
-				Rectangle2D bounds = g2.getFontMetrics().getStringBounds(str, g2);
-				
-				g2.drawString( str, (float)(x+w-bounds.getX()-bounds.getWidth()-3), (float)(y+h-bounds.getY()-bounds.getHeight()-3) );
-			}
 		}
 
 		private class Axes {
@@ -1453,18 +1534,17 @@ public class ResourceHotSpots implements ActionListener {
 				};
 				minorTickUnit_a = majorTickUnit_a/minorTickCount;
 			}
-
+		
 			private void drawAxis(Graphics2D g2, int c0, int c1, int width1, boolean labelsRightBottom) {
 				//   isVertical:  c0 = x, c1 = y, width1 = height
 				// ! isVertical:  c0 = y, c1 = x, width1 = width
-				if (center==null) return;
 				if (width1<0) return; // display area too small
 				
 				float minAngle_a,maxAngle_a,angleWidth_a;
-				if (isVertical) minAngle_a = convertPos_ScreenToAngle_Lat (c1);
-				else            minAngle_a = convertPos_ScreenToAngle_Long(c1);
-				if (isVertical) maxAngle_a = convertPos_ScreenToAngle_Lat (c1+width1);
-				else            maxAngle_a = convertPos_ScreenToAngle_Long(c1+width1);
+				if (isVertical) minAngle_a = viewState.convertPos_ScreenToAngle_Lat (c1);
+				else            minAngle_a = viewState.convertPos_ScreenToAngle_Long(c1);
+				if (isVertical) maxAngle_a = viewState.convertPos_ScreenToAngle_Lat (c1+width1);
+				else            maxAngle_a = viewState.convertPos_ScreenToAngle_Long(c1+width1);
 				
 				if (maxAngle_a<minAngle_a) {
 					angleWidth_a = minAngle_a; // angleWidth_a  used as temp. storage
@@ -1490,13 +1570,13 @@ public class ResourceHotSpots implements ActionListener {
 						drawMinorTick( g2, c0, majorTick_a + j*minorTickUnit_a, labelsRightBottom );
 				}
 			}
-
+		
 			private void drawMajorTick(Graphics2D g2, int c0, float angle, boolean labelsRightBottom) {
 				//   isVertical:  c0 = x, c1 = y, width1 = height
 				// ! isVertical:  c0 = y, c1 = x, width1 = width
 				int c1;
-				if (isVertical) c1 = convertPos_AngleToScreen_Lat (angle);
-				else            c1 = convertPos_AngleToScreen_Long(angle);
+				if (isVertical) c1 = viewState.convertPos_AngleToScreen_Lat (angle);
+				else            c1 = viewState.convertPos_AngleToScreen_Long(angle);
 				
 				int halfTick = majorTickLength_px/2;
 				int tickLeft  = halfTick;
@@ -1517,13 +1597,13 @@ public class ResourceHotSpots implements ActionListener {
 					else                   g2.drawString(label, (float)(c1-bounds.getX()-bounds.getWidth()/2), (float)(c0-bounds.getY()-halfTick-4-bounds.getHeight()));
 				}
 			}
-
+		
 			private void drawMinorTick(Graphics2D g2, int c0, float angle, boolean labelsRightBottom) {
 				//   isVertical:  c0 = x, c1 = y, width1 = height
 				// ! isVertical:  c0 = y, c1 = x, width1 = width
 				int c1;
-				if (isVertical) c1 = convertPos_AngleToScreen_Lat (angle);
-				else            c1 = convertPos_AngleToScreen_Long(angle);
+				if (isVertical) c1 = viewState.convertPos_AngleToScreen_Lat (angle);
+				else            c1 = viewState.convertPos_AngleToScreen_Long(angle);
 				
 				int tickLeft  = minorTickLength_px/2;
 				int tickRight = minorTickLength_px/2;
@@ -1534,42 +1614,73 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		private void draw(Graphics2D g2, Planet.ReferencePoint item) {
-			Point p = convertPos_AngleToScreen(item.location);
-			if (p!=null) {
-				g2.setColor(new Color(0x5EB91E));
-				g2.fillOval(p.x-3, p.y-3, 6, 6);
-			}
-		}
-
-		private void draw(Graphics2D g2, Planet.Circle item) {
-			Point p = convertPos_AngleToScreen(item.center);
-			Integer radius = convertLength_LengthToScreen(item.radius);
-			if (p!=null && radius!=null) {
-				g2.setColor(Color.LIGHT_GRAY);
-				g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
-			}
-		}
-
-		private void draw(Graphics2D g2, Planet.HotSpot item) {
-			Point p = convertPos_AngleToScreen(item.location);
-			if (p!=null) {
-				if (item.type==null) {
-					g2.setColor(Color.BLACK);
-				} else
-					switch (item.type) {
-					case Mineral: g2.setColor(new Color(0x5A84B1));break;
-					case Gas    : g2.setColor(new Color(0xFFCC00));break;
-					case Energy : g2.setColor(new Color(0xFC4200)); break;
-					default:
-						break;
-					
+		private class Scale {
+		
+			private float scaleLength_u = 1;
+			private int scaleLength_px = minScaleLength_px;
+		
+			public void update() {
+				if (!viewState.haveScalePixelPerLength()) return;
+				
+				scaleLength_u = 1;
+				
+				if (( viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) )
+					while ( viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) {
+						float base = scaleLength_u;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u = 1.5f*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    2*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    3*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    4*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    5*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    6*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    8*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =   10*base;
 					}
-				g2.fillOval(p.x-3, p.y-3, 6, 6);
+				else
+					while ( viewState.convertLength_LengthToScreen(scaleLength_u*0.80f) > minScaleLength_px) {
+						float base = scaleLength_u;
+						if (viewState.convertLength_LengthToScreen(base*0.80f) > minScaleLength_px) scaleLength_u = base*0.80f;
+						if (viewState.convertLength_LengthToScreen(base*0.60f) > minScaleLength_px) scaleLength_u = base*0.60f;
+						if (viewState.convertLength_LengthToScreen(base*0.50f) > minScaleLength_px) scaleLength_u = base*0.50f;
+						if (viewState.convertLength_LengthToScreen(base*0.40f) > minScaleLength_px) scaleLength_u = base*0.40f;
+						if (viewState.convertLength_LengthToScreen(base*0.30f) > minScaleLength_px) scaleLength_u = base*0.30f;
+						if (viewState.convertLength_LengthToScreen(base*0.20f) > minScaleLength_px) scaleLength_u = base*0.20f;
+						if (viewState.convertLength_LengthToScreen(base*0.15f) > minScaleLength_px) scaleLength_u = base*0.15f;
+						if (viewState.convertLength_LengthToScreen(base*0.10f) > minScaleLength_px) scaleLength_u = base*0.10f;
+					}
+				scaleLength_px = viewState.convertLength_LengthToScreen(scaleLength_u);
 			}
 			
-			// TODO Auto-generated method stub
+			private String getScaleLengthStr() {
+				float f = scaleLength_u;
+				if (f<0.002) return String.format(Locale.ENGLISH, "%1.5fu", f);
+				if (f<0.02 ) return String.format(Locale.ENGLISH, "%1.4fu", f);
+				if (f<0.2  ) return String.format(Locale.ENGLISH, "%1.3fu", f);
+				if (f<2   ) return String.format(Locale.ENGLISH, "%1.2fu", f);
+				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fu", f);
+				f /= 1000;
+				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fku", f);
+				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fku", f);
+				f /= 1000;
+				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fMu", f);
+				else        return String.format(Locale.ENGLISH, "%1.0fMu", f);
+			}
 			
+			private void drawScale(Graphics2D g2, int x, int y, int w, int h) {
+				//g2.setColor(Color.RED);
+				//g2.drawRect(x, y, w, h);
+				
+				g2.setColor(COLOR_AXIS);
+				
+				g2.drawLine(x+w, y  , x+w, y+h);
+				g2.drawLine(x+w, y+h, x+w-scaleLength_px, y+h);
+				g2.drawLine(x+w-scaleLength_px, y+h, x+w-scaleLength_px, y);
+				
+				String str = getScaleLengthStr();
+				Rectangle2D bounds = g2.getFontMetrics().getStringBounds(str, g2);
+				
+				g2.drawString( str, (float)(x+w-bounds.getX()-bounds.getWidth()-3), (float)(y+h-bounds.getY()-bounds.getHeight()-3) );
+			}
 		}
 	
 	}
