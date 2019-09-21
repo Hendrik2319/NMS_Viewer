@@ -40,6 +40,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
@@ -62,6 +63,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 public class ResourceHotSpots implements ActionListener {
 	
 	private static final String RESOURCE_HOTSPOTS_DATA = "NMS_Viewer.ResourceHotSpots.data";
+	private static final String RESOURCE_HOTSPOTS_CFG = "NMS_Viewer.ResourceHotSpots.cfg";
 
 	private StandardMainWindow mainwindow = null;
 	private TableView.SimplifiedTable referencePointsTable = null;
@@ -72,7 +74,7 @@ public class ResourceHotSpots implements ActionListener {
 	private ReferencePointsTableModel referencePointsTableModel = null;
 	private CirclesTableModel         circlesTableModel = null;
 	private HotSpotsTableModel        hotSpotsTableModel = null;
-	private HotSpotsView               hotSpotsView = null;
+	private HotSpotsView              hotSpotsView = null;
 	
 	private Vector<Planet> planets = new Vector<>();
 	private Planet         currentPlanet = null;
@@ -82,6 +84,8 @@ public class ResourceHotSpots implements ActionListener {
 	private JComboBox<Planet.Region> regionComboBox = null;
 
 	private JTextField planetRadiusField;
+	
+	private WindowConfig windowConfig = null;
 
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
@@ -93,17 +97,100 @@ public class ResourceHotSpots implements ActionListener {
 	
 	public static void start(SaveGameData.Universe.Planet planet) {
 		new ResourceHotSpots()
-//			.readConfig()
-//			.writeConfig()
+			.readConfig()
 			.readData()
 			.addNewData(planet)
 			.createGUI(planet==null);
+	}
+	
+	private class WindowConfig {
+		public JSplitPane upperTablePanel = null;
+		public JSplitPane tablePanel = null;
+		public JSplitPane centerPanel = null;
+		
+		private Dimension mainwindowSize = null;
+		private Point mainwindowLocation = null;
+		private Integer centerPanelDividerLocation = null;
+		private Integer tablePanelDividerLocation = null;
+		private Integer upperTablePanelDividerLocation = null;
+		
+		public void writeToFile(PrintWriter out) {
+			if (mainwindowSize==null) mainwindowSize = new Dimension();
+			if (mainwindowLocation==null) mainwindowLocation = new Point();
+			mainwindow.getSize(mainwindowSize);
+			mainwindow.getLocation(mainwindowLocation);
+			out.printf("mainwindow.location.x=%d%n", mainwindowLocation.x);
+			out.printf("mainwindow.location.y=%d%n", mainwindowLocation.y);
+			out.printf("mainwindow.size.width=%d%n", mainwindowSize.width);
+			out.printf("mainwindow.size.height=%d%n", mainwindowSize.height);
+			out.printf("centerPanel.dividerLocation=%d%n", centerPanel.getDividerLocation());
+			out.printf("tablePanel.dividerLocation=%d%n", tablePanel.getDividerLocation());
+			out.printf("upperTablePanel.dividerLocation=%d%n", upperTablePanel.getDividerLocation());
+		}
+		
+		public void parseLineFromFile(String line) {
+			if (line.startsWith("mainwindow.size.width=")) {
+				String valueStr = line.substring("mainwindow.size.width=".length());
+				if (mainwindowSize==null) mainwindowSize = new Dimension();
+				try { mainwindowSize.width = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) {}
+			}
+			if (line.startsWith("mainwindow.size.height=")) {
+				String valueStr = line.substring("mainwindow.size.height=".length());
+				if (mainwindowSize==null) mainwindowSize = new Dimension();
+				try { mainwindowSize.height = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) {}
+			}
+			if (line.startsWith("mainwindow.location.x=")) {
+				String valueStr = line.substring("mainwindow.location.x=".length());
+				if (mainwindowLocation==null) mainwindowLocation = new Point();
+				try { mainwindowLocation.x = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) {}
+			}
+			if (line.startsWith("mainwindow.location.y=")) {
+				String valueStr = line.substring("mainwindow.location.y=".length());
+				if (mainwindowLocation==null) mainwindowLocation = new Point();
+				try { mainwindowLocation.y = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) {}
+			}
+			if (line.startsWith("centerPanel.dividerLocation=")) {
+				String valueStr = line.substring("centerPanel.dividerLocation=".length());
+				try { centerPanelDividerLocation = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) { centerPanelDividerLocation = null; }
+			}
+			if (line.startsWith("tablePanel.dividerLocation=")) {
+				String valueStr = line.substring("tablePanel.dividerLocation=".length());
+				try { tablePanelDividerLocation = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) { tablePanelDividerLocation = null; }
+			}
+			if (line.startsWith("upperTablePanel.dividerLocation=")) {
+				String valueStr = line.substring("upperTablePanel.dividerLocation=".length());
+				try { upperTablePanelDividerLocation = Integer.parseInt(valueStr); }
+				catch (NumberFormatException e) { upperTablePanelDividerLocation = null; }
+			}
+		}
+
+		public void configureGUI() {
+			if (mainwindowSize!=null)
+				mainwindow.setSize(mainwindowSize.width, mainwindowSize.height);
+			if (mainwindowLocation!=null)
+				mainwindow.setLocation(mainwindowLocation.x, mainwindowLocation.y);
+			if (centerPanelDividerLocation    !=null)
+				centerPanel    .setDividerLocation(centerPanelDividerLocation    );
+			if (upperTablePanelDividerLocation!=null)
+				upperTablePanel.setDividerLocation(upperTablePanelDividerLocation);
+			if (tablePanelDividerLocation     !=null)
+				tablePanel     .setDividerLocation(tablePanelDividerLocation     );
+		}
 	}
 
 	private ResourceHotSpots createGUI(boolean standalone) {
 		
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
+		
+		if (windowConfig == null)
+			windowConfig = new WindowConfig();
 		
 		referencePointsTableModel = new ReferencePointsTableModel();
 		referencePointsTable = new TableView.SimplifiedTable("ReferencePoints", referencePointsTableModel, true, true, true);
@@ -126,15 +213,15 @@ public class ResourceHotSpots implements ActionListener {
 		hotSpotsTableScrollPane.setPreferredSize(new Dimension(400, 300));
 		hotSpotsTableScrollPane.setBorder(createCompoundBorder("HotSpots"));
 		
-		JSplitPane upperTablePanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		upperTablePanel.setResizeWeight(1f/2f);
-		upperTablePanel.setTopComponent(referencePointsTableScrollPane);
-		upperTablePanel.setBottomComponent(circlesTableScrollPane);
+		windowConfig.upperTablePanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		windowConfig.upperTablePanel.setResizeWeight(0);
+		windowConfig.upperTablePanel.setTopComponent(referencePointsTableScrollPane);
+		windowConfig.upperTablePanel.setBottomComponent(circlesTableScrollPane);
 		
-		JSplitPane tablePanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		tablePanel.setResizeWeight(2f/3f);
-		tablePanel.setTopComponent(upperTablePanel);
-		tablePanel.setBottomComponent(hotSpotsTableScrollPane);
+		windowConfig.tablePanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		windowConfig.tablePanel.setResizeWeight(0);
+		windowConfig.tablePanel.setTopComponent(windowConfig.upperTablePanel);
+		windowConfig.tablePanel.setBottomComponent(hotSpotsTableScrollPane);
 		
 		hotSpotsView = new HotSpotsView();
 		hotSpotsView.setPreferredSize(new Dimension(400,600));
@@ -142,10 +229,10 @@ public class ResourceHotSpots implements ActionListener {
 		hotSpotsViewPanel.setBorder(createCompoundBorder("HotSpots View"));
 		hotSpotsViewPanel.add(hotSpotsView,BorderLayout.CENTER);
 		
-		JSplitPane centerPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		centerPanel.setResizeWeight(0);
-		centerPanel.setLeftComponent(tablePanel);
-		centerPanel.setRightComponent(hotSpotsViewPanel);
+		windowConfig.centerPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		windowConfig.centerPanel.setResizeWeight(0);
+		windowConfig.centerPanel.setLeftComponent(windowConfig.tablePanel);
+		windowConfig.centerPanel.setRightComponent(hotSpotsViewPanel);
 		
 		planetComboBox = new JComboBox<Planet>(planets);
 		regionComboBox = new JComboBox<>();
@@ -189,14 +276,18 @@ public class ResourceHotSpots implements ActionListener {
 		JPanel contentPane = new JPanel(new BorderLayout(3,3));
 		contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 		contentPane.add(selectPanel,BorderLayout.NORTH);
-		contentPane.add(centerPanel,BorderLayout.CENTER);
+		contentPane.add(windowConfig.centerPanel,BorderLayout.CENTER);
 		
 		JMenu menuData = new JMenu("Data");
 		menuData.add(SaveViewer.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData     , ToolbarIcons.Delete));
 		menuData.add(SaveViewer.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile  , ToolbarIcons.Save));
 		
+		JMenu menuView = new JMenu("View");
+		menuView.add(SaveViewer.createMenuItem("Save current configuration of this window", this, disabler, ActionCommand.SaveWindowConfig, ToolbarIcons.Save));
+		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
+		menuBar.add(menuView);
 		
 		mainwindow = new StandardMainWindow("Resource HotSpots",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
 		mainwindow.startGUI(contentPane,menuBar);
@@ -206,6 +297,11 @@ public class ResourceHotSpots implements ActionListener {
 		planetComboBox.setSelectedItem(currentPlanet);
 		regionComboBox.setSelectedItem(currentRegion);
 		updateGuiAccess();
+		
+		SwingUtilities.invokeLater(() -> {
+			//mainwindow.setSize(1500, 900);
+			windowConfig.configureGUI();
+		});
 		return this;
 	}
 
@@ -224,7 +320,9 @@ public class ResourceHotSpots implements ActionListener {
 		if (disabler==null) return;
 		disabler.setEnable(ac->{
 			switch (ac) {
+			
 			case AddPlanet:
+			case SaveWindowConfig:
 				return true;
 				
 			case ClearData:
@@ -242,6 +340,7 @@ public class ResourceHotSpots implements ActionListener {
 				
 			case ChangeRegionName:
 				return currentPlanet!=null && currentRegion!=null;
+				
 			}
 			return null;
 		});
@@ -253,7 +352,7 @@ public class ResourceHotSpots implements ActionListener {
 		ChangePlanetRadius,
 		AddPlanet, AddRegion,
 		SelectPlanet, SelectRegion,
-		ChangePlanetName, ChangeRegionName,
+		ChangePlanetName, ChangeRegionName, SaveWindowConfig,
 		;
 	}
 	
@@ -267,7 +366,10 @@ public class ResourceHotSpots implements ActionListener {
 		case SaveDataFile:
 			writeData();
 			break;
-			
+		case SaveWindowConfig:
+			writeConfig();
+			break;
+
 		case AddPlanet:
 			break;
 		case AddRegion:
@@ -276,12 +378,14 @@ public class ResourceHotSpots implements ActionListener {
 		case SelectPlanet:
 			currentPlanet = (Planet)planetComboBox.getSelectedItem();
 			//SaveViewer.log_ln("ResourceHotSpots.currentPlanet: %s", currentPlanet);
-			if (currentPlanet==null)
+			if (currentPlanet==null) {
 				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>());
-			else
+				regionComboBox.setSelectedItem(null);
+			} else {
 				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>(currentPlanet.regions));
+				regionComboBox.setSelectedItem(currentPlanet.regions.isEmpty()?null:currentPlanet.regions.firstElement());
+			}
 			updatePlanetRadiusField();
-			regionComboBox.setSelectedItem(null);
 			updateGuiAccess();
 			break;
 			
@@ -349,13 +453,47 @@ public class ResourceHotSpots implements ActionListener {
 		);
 	}
 
-	@SuppressWarnings("unused")
 	private ResourceHotSpots writeConfig() {
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(RESOURCE_HOTSPOTS_CFG), StandardCharsets.UTF_8))) {
+			
+			out.println("[WindowConfig]");
+			windowConfig.writeToFile(out);
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 		return this;
 	}
-
-	@SuppressWarnings("unused")
+	
+	private enum ConfigBlock { WindowConfig }
 	private ResourceHotSpots readConfig() {
+		ConfigBlock configBlock = null;
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(RESOURCE_HOTSPOTS_CFG), StandardCharsets.UTF_8))) {
+			String line;
+			while ( (line=in.readLine())!=null ) {
+				switch (line) {
+				case "":
+					configBlock = null;
+					break;
+					
+				case "[WindowConfig]":
+					configBlock = ConfigBlock.WindowConfig;
+					if (windowConfig==null)
+						windowConfig = new WindowConfig();
+					break;
+				}
+				
+				if (configBlock!=null)
+					switch (configBlock) {
+					case WindowConfig:
+						windowConfig.parseLineFromFile(line);
+						break;
+					}
+			}
+		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return this;
 	}
 	
