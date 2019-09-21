@@ -76,7 +76,7 @@ longitude=-37.93
 type=Energy
 substance=
 class=B
-rate=200
+rate=22000
 
 [HotSpot]
 latitude=+16.04

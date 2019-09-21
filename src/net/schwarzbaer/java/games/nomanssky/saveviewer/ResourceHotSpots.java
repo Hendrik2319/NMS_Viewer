@@ -1,14 +1,18 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -285,7 +289,7 @@ public class ResourceHotSpots implements ActionListener {
 		contentPane.add(windowConfig.centerPanel,BorderLayout.CENTER);
 		
 		JMenu menuData = new JMenu("Data");
-		menuData.add(SaveViewer.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData     , ToolbarIcons.Delete));
+		//menuData.add(SaveViewer.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData     , ToolbarIcons.Delete));
 		menuData.add(SaveViewer.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile  , ToolbarIcons.Save));
 		
 		JMenu menuView = new JMenu("View");
@@ -837,10 +841,9 @@ public class ResourceHotSpots implements ActionListener {
 				name = null;
 			}
 
-			@Override
-			public LatLong getLocation() {
-				return location;
-			}
+			@Override public LatLong getLocation() { return location; }
+			@Override public String getTypeStr() { return "Reference Point"; }
+			@Override public String getLabel() { return name; }
 		}
 
 		private static class Circle implements DisplayableLocation {
@@ -853,10 +856,9 @@ public class ResourceHotSpots implements ActionListener {
 				radius = null;
 			}
 
-			@Override
-			public LatLong getLocation() {
-				return center;
-			}
+			@Override public LatLong getLocation() { return center; }
+			@Override public String getTypeStr() { return "Circle"; }
+			@Override public String getLabel() { return "Circle"; }
 		}
 
 		private static class HotSpot implements DisplayableLocation {
@@ -881,15 +883,23 @@ public class ResourceHotSpots implements ActionListener {
 				this.rate = null;
 			}
 
-			@Override
-			public LatLong getLocation() {
-				return location;
+			@Override public LatLong getLocation() { return location; }
+			@Override public String getTypeStr() { return "HotSpot"; }
+			@Override public String getLabel() {
+				return String.format("%s %s, Class %s, Rate %s",
+						type==null?"???":type,
+						substance==null?"":substance,
+						hotSpotClass==null?"??":hotSpotClass,
+						rate==null?"??":rate
+				);
 			}
 		}
 	}
 	
 	private interface DisplayableLocation {
 		LatLong getLocation();
+		String getTypeStr();
+		String getLabel();
 	}
 	
 	private static abstract class LocalTableModel<DataType extends DisplayableLocation, ColumnID extends Enum<ColumnID> & SimplifiedColumnIDInterface> extends SimplifiedTableModel<ColumnID> {
@@ -1175,11 +1185,14 @@ public class ResourceHotSpots implements ActionListener {
 	
 	private static class HotSpotsView extends Canvas {
 		private static final long serialVersionUID = 3631270386892323918L;
-		
-		private static final Color COLOR_ENERGY = new Color(0xFC4200);
-		private static final Color COLOR_GAS = new Color(0xFFCC00);
-		private static final Color COLOR_MINERAL = new Color(0x5A84B1);
-		private static final Color COLOR_AXIS = new Color(0x70000000,true);
+
+		private static final BasicStroke STROKE_DASHED_LINE = new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[]{2f,3f}, 0f);
+
+		private static final Color COLOR_REFERENCEPOINT = new Color(0x5EB91E);
+		private static final Color COLOR_ENERGY         = new Color(0xFC4200);
+		private static final Color COLOR_GAS            = new Color(0xFFCC00);
+		private static final Color COLOR_MINERAL        = new Color(0x5A84B1);
+		private static final Color COLOR_AXIS           = new Color(0x70000000,true);
 		
 		//private static final int nMajorTicksPerAxis = 2;
 		private static final int minMinorTickUnitLength_px = 7;
@@ -1245,10 +1258,6 @@ public class ResourceHotSpots implements ActionListener {
 			repaint();
 		}
 
-		private Point sub(Point p1, Point p2) {
-			return new Point(p1.x-p2.x,p1.y-p2.y);
-		}
-
 		protected void zoom(Point point, double preciseWheelRotation) {
 			float f = (float) Math.pow(1.1f, preciseWheelRotation);
 			if (viewState.zoom(point,f)) {
@@ -1256,12 +1265,6 @@ public class ResourceHotSpots implements ActionListener {
 				mapScale.update();
 				repaint();
 			}
-		}
-
-		private void updateAxes() {
-			if (!viewState.isOk()) return;
-			  verticalAxes.updateTicks( viewState.convertLength_ScreenToAngle_Lat (minMinorTickUnitLength_px) );
-			horizontalAxes.updateTicks( viewState.convertLength_ScreenToAngle_Long(minMinorTickUnitLength_px) );
 		}
 
 		public void setRegion(Planet planet, Planet.Region region) {
@@ -1278,126 +1281,23 @@ public class ResourceHotSpots implements ActionListener {
 			repaint();
 		}
 		
-		private class ViewState {
+		private Point sub(Point p1, Point p2) {
+			return new Point(p1.x-p2.x,p1.y-p2.y);
+		}
 
-			private LatLong center = null;
-			private float scaleLengthPerAngleLat  = Float.NaN;
-			private float scaleLengthPerAngleLong = Float.NaN;
-			private float scalePixelPerLength     = Float.NaN;
-			
-			private Point tempPanOffset = null;
-			
-			public boolean isOk() {
-				return center!=null && !Float.isNaN(scalePixelPerLength) && !Float.isNaN(scaleLengthPerAngleLat) && !Float.isNaN(scaleLengthPerAngleLong);
+		private void updateAxes() {
+			if (viewState.isOk()) {
+				  verticalAxes.updateTicks( viewState.convertLength_ScreenToAngle_Lat (minMinorTickUnitLength_px) );
+				horizontalAxes.updateTicks( viewState.convertLength_ScreenToAngle_Long(minMinorTickUnitLength_px) );
 			}
+		}
 
-			public boolean haveScalePixelPerLength() {
-				return !Float.isNaN(scalePixelPerLength);
-			}
+		private static Rectangle2D getBounds(Graphics2D g2, Font font, String str) {
+			return font.getStringBounds(str, g2.getFontRenderContext());
+		}
 
-			public boolean reset() {
-				if (region==null || planet==null || planet.radius==null)
-					return false;
-				
-				LatLong min = new LatLong();
-				LatLong max = new LatLong();
-				
-				region.referencePoints.forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
-				region.circles        .forEach(item->{ min.setMin(item.center  ); max.setMax(item.center  ); });
-				region.hotSpots       .forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
-				
-				if (min.latitude==null || min.longitude==null || max.latitude==null || max.longitude==null ) {
-					center = null;
-					scaleLengthPerAngleLat  = Float.NaN;
-					scaleLengthPerAngleLong = Float.NaN;
-					scalePixelPerLength     = Float.NaN;
-					return false;
-				}
-				
-				center = new LatLong( (min.latitude+max.latitude)/2, (min.longitude+max.longitude)/2 );
-				
-				updateScaleLengthPerAngle();
-				float scalePixelPerLengthLat  = (height-30) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
-				float scalePixelPerLengthLong = (width -30) / ((max.longitude-min.longitude)*scaleLengthPerAngleLong);
-				scalePixelPerLength = Math.min(scalePixelPerLengthLat, scalePixelPerLengthLong);
-				
-				return true;
-			}
-			
-			public boolean zoom(Point point, float f) {
-				if (!isOk()) return false;
-				
-				LatLong centerOld = new LatLong(center);
-				LatLong location = convertScreenToAngle(point);
-				
-				if (scalePixelPerLength*f < minScaleLength_px/6000f) return false;
-				
-				scalePixelPerLength *= f;
-				center.latitude  = (centerOld.latitude  - location.latitude ) / f + location.latitude;
-				center.longitude = (centerOld.longitude - location.longitude) * (float) (Math.cos(centerOld.latitude/180*Math.PI) / Math.cos(center.latitude/180*Math.PI) ) / f + location.longitude;
-				
-				updateScaleLengthPerAngle();
-				
-				return true;
-			}
-
-			public boolean moveCenter(Point offsetOnScreen) {
-				if (!isOk()) return false;
-				
-				float offsetLat  = convertLength_ScreenToAngle_Lat (-offsetOnScreen.y);
-				float offsetLong = convertLength_ScreenToAngle_Long( offsetOnScreen.x);
-				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
-				updateScaleLengthPerAngle();
-				
-				return true;
-			}
-
-			private void updateScaleLengthPerAngle() {
-				scaleLengthPerAngleLat  = (float) (2*Math.PI*planet.radius / 360);
-				scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
-			}
-
-			private Integer convertLength_LengthToScreen(Float length_u) {
-				if (length_u==null || Float.isNaN(length_u)) return null;
-				return Math.round( length_u * scalePixelPerLength );
-			}
-
-			private Point convertPos_AngleToScreen(LatLong location) {
-				return new Point(
-					convertPos_AngleToScreen_Long(location.longitude),
-					convertPos_AngleToScreen_Lat (location.latitude )
-				);
-			}
-			private Integer convertPos_AngleToScreen_Long(Float longitude) {
-				float x = width /2f + convertLength_AngleToScreen_Long(longitude - center.longitude);
-				if (tempPanOffset!=null) x += tempPanOffset.x;
-				return Math.round(x);
-			}
-			private Integer convertPos_AngleToScreen_Lat (Float latitude) {
-				float y = height/2f - convertLength_AngleToScreen_Lat (latitude  - center.latitude );
-				if (tempPanOffset!=null) y += tempPanOffset.y;
-				return Math.round(y);
-			}
-			private float convertLength_AngleToScreen_Long(float length_a) { return length_a * scaleLengthPerAngleLong * scalePixelPerLength; }
-			private float convertLength_AngleToScreen_Lat (float length_a) { return length_a * scaleLengthPerAngleLat  * scalePixelPerLength; }
-			private LatLong convertScreenToAngle(Point point) {
-				if (center==null) return null;
-				return new LatLong(
-					convertPos_ScreenToAngle_Lat (point.y),
-					convertPos_ScreenToAngle_Long(point.x)
-				);
-			}
-			private Float convertPos_ScreenToAngle_Long(int x) {
-				if (tempPanOffset!=null) x -= tempPanOffset.x;
-				return center.longitude + convertLength_ScreenToAngle_Long(x - width /2f);
-			}
-			private Float convertPos_ScreenToAngle_Lat(int y) {
-				if (tempPanOffset!=null) y -= tempPanOffset.y;
-				return center.latitude  - convertLength_ScreenToAngle_Lat(y - height/2f);
-			}
-			private float convertLength_ScreenToAngle_Long(float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLong; }
-			private float convertLength_ScreenToAngle_Lat (float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLat ; }
-			
+		private static Rectangle2D getBounds(Graphics2D g2, String str) {
+			return g2.getFontMetrics().getStringBounds(str, g2);
 		}
 
 		@Override
@@ -1416,7 +1316,7 @@ public class ResourceHotSpots implements ActionListener {
 				g2.drawRect(x+1, y+1, width-3, height-3);
 				
 			} else {
-				region.circles        .forEach(item->draw(g2,item));
+				region.circles        .forEach(item->draw(g2,item, false));
 				region.referencePoints.forEach(item->draw(g2,item));
 				region.hotSpots       .forEach(item->draw(g2,item));
 				
@@ -1427,19 +1327,138 @@ public class ResourceHotSpots implements ActionListener {
 				mapScale.drawScale( g2, x+width-110, y+height-50, 60,15 );
 				
 				if (displayedLocation != null) {
-					// TODO
+					if (displayedLocation instanceof Planet.Circle) {
+						Planet.Circle circle = (Planet.Circle) displayedLocation;
+						draw(g2,circle,true);
+					} else
+						new LocationBox(viewState,width,height,displayedLocation)
+							.draw(g2,(iconX,iconY)->{
+								if (displayedLocation instanceof Planet.HotSpot) {
+									Planet.HotSpot hotSpot = (Planet.HotSpot) displayedLocation;
+									draw(g2, hotSpot, iconX, iconY);
+								}
+								if (displayedLocation instanceof Planet.ReferencePoint) {
+									Planet.ReferencePoint referencePoint = (Planet.ReferencePoint) displayedLocation;
+									draw(g2, referencePoint, iconX, iconY);
+								}
+							});
 				}
 			}
 			
 			g2.setClip(null);
 		}
 		
-		private void draw(Graphics2D g2, Planet.Circle item) {
+		private static class LocationBox {
+			private static final Color COLOR_BOX_BACKGROUND = new Color(0xfff1cf);
+			private static final Color COLOR_LINES = Color.GRAY;
+			private static final Color COLOR_TEXT_TYPE = Color.GRAY;
+			private static final Color COLOR_TEXT_LABEL = Color.BLACK;
+			private static final Point boxOffset = new Point(15,20);
+			private static final int boxSpacingToBorder = 30;
+			private static final int typeXOffset = 4;
+			private static final int border = 4;
+			private static final int spacing= 2;
+			private static final int iconWidth  = 10;
+			private static final int iconHeight = 10;
+
+			private DisplayableLocation displayedLocation;
+			private ViewState viewState;
+			private int width;
+			private int height;
+
+			public LocationBox(ViewState viewState, int width, int height, DisplayableLocation displayedLocation) {
+				this.viewState = viewState;
+				this.width = width;
+				this.height = height;
+				this.displayedLocation = displayedLocation;
+			}
+
+			public void draw(Graphics2D g2, BiConsumer<Integer,Integer> drawIcon) {
+				LatLong loc = displayedLocation.getLocation();
+				Point p = viewState.convertPos_AngleToScreen(loc);
+				
+				if (p.x<0 || p.x>width ) return;
+				if (p.y<0 || p.y>height) return;
+				
+				String type  = displayedLocation.getTypeStr();
+				String label = displayedLocation.getLabel();
+				
+				Font standardFont = g2.getFont();
+				Font typeFont = standardFont.deriveFont(standardFont.getSize2D()*0.6f);
+				Rectangle2D typeBounds  = getBounds(g2, typeFont, type);
+				Rectangle2D labelBounds = getBounds(g2, standardFont, label);
+				
+				Rectangle box = new Rectangle();
+				Point line = new Point();
+				
+				box.height = (int) Math.round( typeBounds.getHeight() + Math.max( labelBounds.getHeight(), iconHeight ) + 2*border + 1*spacing );
+				box.width  = (int) Math.round( Math.max( typeXOffset + typeBounds.getWidth(), labelBounds.getWidth() + spacing + iconWidth ) + 2*border );
+				
+				if        (p.x+boxOffset.x+box.width < width-boxSpacingToBorder) {
+					box.x  = p.x+boxOffset.x;
+					line.x = p.x+boxOffset.x;
+				} else if (p.x-boxOffset.x-box.width > boxSpacingToBorder) {
+					box.x  = p.x-boxOffset.x-box.width;
+					line.x = p.x-boxOffset.x;
+				} else {
+					box.x  = width/2-box.width/2;
+					line.x = width/2;
+				}
+				
+				if        (p.y-boxOffset.y-box.height > boxSpacingToBorder) {
+					box.y  = p.y-boxOffset.y-box.height;
+					line.y = p.y-boxOffset.y;
+				} else if (p.y+boxOffset.y+box.height < height-boxSpacingToBorder) {
+					box.y  = p.y+boxOffset.y;
+					line.y = p.y+boxOffset.y;
+				} else {
+					box.y  = height/2-box.height/2;
+					line.y = height/2;
+				}
+				
+				g2.setColor(COLOR_LINES);
+				g2.drawLine(p.x,p.y, line.x, line.y);
+				g2.setColor(COLOR_BOX_BACKGROUND);
+				g2.fillRect(box.x, box.y, box.width, box.height);
+				g2.setColor(COLOR_LINES);
+				g2.drawRect(box.x, box.y, box.width-1, box.height-1);
+				
+				double x,y;
+				g2.setColor(COLOR_TEXT_TYPE);
+				g2.setFont(typeFont);
+				x = box.x + border + typeXOffset - typeBounds.getX();
+				y = box.y + border - typeBounds.getY();
+				g2.drawString(type, (int)Math.round(x), (int)Math.round(y));
+				
+				g2.setColor(COLOR_TEXT_LABEL);
+				g2.setFont(standardFont);
+				x = box.x + border + iconWidth + spacing - labelBounds.getX();
+				y = box.y + border + typeBounds.getHeight()+ spacing + Math.max(labelBounds.getHeight(),iconHeight)/2-labelBounds.getHeight()/2 - labelBounds.getY();
+				g2.drawString(label, (int)Math.round(x), (int)Math.round(y));
+				
+				x = box.x + border + iconWidth/2;
+				y = box.y + border + typeBounds.getHeight()+ spacing + Math.max(labelBounds.getHeight(),iconHeight)/2;
+				drawIcon.accept((int)Math.round(x), (int)Math.round(y));
+			}
+			
+		}
+		
+		private void draw(Graphics2D g2, Planet.Circle item, boolean asHighlighted) {
 			Point p = viewState.convertPos_AngleToScreen(item.center);
 			Integer radius = viewState.convertLength_LengthToScreen(item.radius);
 			if (p!=null && radius!=null) {
-				g2.setColor(Color.LIGHT_GRAY);
-				g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
+				if (asHighlighted) {
+					g2.setColor(Color.BLACK);
+					Stroke currentStroke = g2.getStroke();
+					g2.setStroke(STROKE_DASHED_LINE);
+					g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
+					g2.setStroke(currentStroke);
+					g2.drawLine(p.x-3,p.y, p.x+3, p.y);
+					g2.drawLine(p.x,p.y-3, p.x,p.y+3);
+				} else {
+					g2.setColor(Color.LIGHT_GRAY);
+					g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
+				}
 			}
 		}
 
@@ -1454,7 +1473,7 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		private void draw(Graphics2D g2, Planet.ReferencePoint item, int x, int y) {
-			g2.setColor(new Color(0x5EB91E));
+			g2.setColor(COLOR_REFERENCEPOINT);
 			g2.fillOval(x-3, y-3, 6, 6);
 		}
 
@@ -1474,6 +1493,75 @@ public class ResourceHotSpots implements ActionListener {
 			
 			// TODO Auto-generated method stub
 			
+		}
+
+		private class Scale {
+		
+			private float scaleLength_u = 1;
+			private int scaleLength_px = minScaleLength_px;
+		
+			public void update() {
+				if (!viewState.haveScalePixelPerLength()) return;
+				
+				scaleLength_u = 1;
+				
+				if (( viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) )
+					while ( viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) {
+						float base = scaleLength_u;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u = 1.5f*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    2*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    3*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    4*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    5*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    6*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    8*base;
+						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =   10*base;
+					}
+				else
+					while ( viewState.convertLength_LengthToScreen(scaleLength_u*0.80f) > minScaleLength_px) {
+						float base = scaleLength_u;
+						if (viewState.convertLength_LengthToScreen(base*0.80f) > minScaleLength_px) scaleLength_u = base*0.80f;
+						if (viewState.convertLength_LengthToScreen(base*0.60f) > minScaleLength_px) scaleLength_u = base*0.60f;
+						if (viewState.convertLength_LengthToScreen(base*0.50f) > minScaleLength_px) scaleLength_u = base*0.50f;
+						if (viewState.convertLength_LengthToScreen(base*0.40f) > minScaleLength_px) scaleLength_u = base*0.40f;
+						if (viewState.convertLength_LengthToScreen(base*0.30f) > minScaleLength_px) scaleLength_u = base*0.30f;
+						if (viewState.convertLength_LengthToScreen(base*0.20f) > minScaleLength_px) scaleLength_u = base*0.20f;
+						if (viewState.convertLength_LengthToScreen(base*0.15f) > minScaleLength_px) scaleLength_u = base*0.15f;
+						if (viewState.convertLength_LengthToScreen(base*0.10f) > minScaleLength_px) scaleLength_u = base*0.10f;
+					}
+				scaleLength_px = viewState.convertLength_LengthToScreen(scaleLength_u);
+			}
+			
+			private String getScaleLengthStr() {
+				float f = scaleLength_u;
+				if (f<0.002) return String.format(Locale.ENGLISH, "%1.5fu", f);
+				if (f<0.02 ) return String.format(Locale.ENGLISH, "%1.4fu", f);
+				if (f<0.2  ) return String.format(Locale.ENGLISH, "%1.3fu", f);
+				if (f<2   ) return String.format(Locale.ENGLISH, "%1.2fu", f);
+				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fu", f);
+				f /= 1000;
+				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fku", f);
+				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fku", f);
+				f /= 1000;
+				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fMu", f);
+				else        return String.format(Locale.ENGLISH, "%1.0fMu", f);
+			}
+			
+			private void drawScale(Graphics2D g2, int x, int y, int w, int h) {
+				//g2.setColor(Color.RED);
+				//g2.drawRect(x, y, w, h);
+				
+				g2.setColor(COLOR_AXIS);
+				
+				g2.drawLine(x+w, y  , x+w, y+h);
+				g2.drawLine(x+w, y+h, x+w-scaleLength_px, y+h);
+				g2.drawLine(x+w-scaleLength_px, y+h, x+w-scaleLength_px, y);
+				
+				String str = getScaleLengthStr();
+				Rectangle2D bounds = getBounds(g2, str);
+				
+				g2.drawString( str, (float)(x+w-bounds.getX()-bounds.getWidth()-3), (float)(y+h-bounds.getY()-bounds.getHeight()-3) );
+			}
 		}
 
 		private class Axes {
@@ -1614,73 +1702,126 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		private class Scale {
+		private class ViewState {
 		
-			private float scaleLength_u = 1;
-			private int scaleLength_px = minScaleLength_px;
+			private LatLong center = null;
+			private float scaleLengthPerAngleLat  = Float.NaN;
+			private float scaleLengthPerAngleLong = Float.NaN;
+			private float scalePixelPerLength     = Float.NaN;
+			
+			private Point tempPanOffset = null;
+			
+			public boolean isOk() {
+				return center!=null && !Float.isNaN(scalePixelPerLength) && !Float.isNaN(scaleLengthPerAngleLat) && !Float.isNaN(scaleLengthPerAngleLong);
+			}
 		
-			public void update() {
-				if (!viewState.haveScalePixelPerLength()) return;
+			public boolean haveScalePixelPerLength() {
+				return !Float.isNaN(scalePixelPerLength);
+			}
+		
+			public boolean reset() {
+				if (region==null || planet==null || planet.radius==null)
+					return false;
 				
-				scaleLength_u = 1;
+				LatLong min = new LatLong();
+				LatLong max = new LatLong();
 				
-				if (( viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) )
-					while ( viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) {
-						float base = scaleLength_u;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u = 1.5f*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    2*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    3*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    4*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    5*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    6*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =    8*base;
-						if (viewState.convertLength_LengthToScreen(scaleLength_u) < minScaleLength_px) scaleLength_u =   10*base;
-					}
-				else
-					while ( viewState.convertLength_LengthToScreen(scaleLength_u*0.80f) > minScaleLength_px) {
-						float base = scaleLength_u;
-						if (viewState.convertLength_LengthToScreen(base*0.80f) > minScaleLength_px) scaleLength_u = base*0.80f;
-						if (viewState.convertLength_LengthToScreen(base*0.60f) > minScaleLength_px) scaleLength_u = base*0.60f;
-						if (viewState.convertLength_LengthToScreen(base*0.50f) > minScaleLength_px) scaleLength_u = base*0.50f;
-						if (viewState.convertLength_LengthToScreen(base*0.40f) > minScaleLength_px) scaleLength_u = base*0.40f;
-						if (viewState.convertLength_LengthToScreen(base*0.30f) > minScaleLength_px) scaleLength_u = base*0.30f;
-						if (viewState.convertLength_LengthToScreen(base*0.20f) > minScaleLength_px) scaleLength_u = base*0.20f;
-						if (viewState.convertLength_LengthToScreen(base*0.15f) > minScaleLength_px) scaleLength_u = base*0.15f;
-						if (viewState.convertLength_LengthToScreen(base*0.10f) > minScaleLength_px) scaleLength_u = base*0.10f;
-					}
-				scaleLength_px = viewState.convertLength_LengthToScreen(scaleLength_u);
+				region.referencePoints.forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
+				region.circles        .forEach(item->{ min.setMin(item.center  ); max.setMax(item.center  ); });
+				region.hotSpots       .forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
+				
+				if (min.latitude==null || min.longitude==null || max.latitude==null || max.longitude==null ) {
+					center = null;
+					scaleLengthPerAngleLat  = Float.NaN;
+					scaleLengthPerAngleLong = Float.NaN;
+					scalePixelPerLength     = Float.NaN;
+					return false;
+				}
+				
+				center = new LatLong( (min.latitude+max.latitude)/2, (min.longitude+max.longitude)/2 );
+				
+				updateScaleLengthPerAngle();
+				float scalePixelPerLengthLat  = (height-30) / ((max.latitude -min.latitude )*scaleLengthPerAngleLat );
+				float scalePixelPerLengthLong = (width -30) / ((max.longitude-min.longitude)*scaleLengthPerAngleLong);
+				scalePixelPerLength = Math.min(scalePixelPerLengthLat, scalePixelPerLengthLong);
+				
+				return true;
 			}
 			
-			private String getScaleLengthStr() {
-				float f = scaleLength_u;
-				if (f<0.002) return String.format(Locale.ENGLISH, "%1.5fu", f);
-				if (f<0.02 ) return String.format(Locale.ENGLISH, "%1.4fu", f);
-				if (f<0.2  ) return String.format(Locale.ENGLISH, "%1.3fu", f);
-				if (f<2   ) return String.format(Locale.ENGLISH, "%1.2fu", f);
-				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fu", f);
-				f /= 1000;
-				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fku", f);
-				if (f<1000) return String.format(Locale.ENGLISH, "%1.0fku", f);
-				f /= 1000;
-				if (f<2   ) return String.format(Locale.ENGLISH, "%1.1fMu", f);
-				else        return String.format(Locale.ENGLISH, "%1.0fMu", f);
+			public boolean zoom(Point point, float f) {
+				if (!isOk()) return false;
+				
+				LatLong centerOld = new LatLong(center);
+				LatLong location = convertScreenToAngle(point);
+				
+				if (scalePixelPerLength*f < minScaleLength_px/6000f) return false;
+				
+				scalePixelPerLength *= f;
+				center.latitude  = (centerOld.latitude  - location.latitude ) / f + location.latitude;
+				center.longitude = (centerOld.longitude - location.longitude) * (float) (Math.cos(centerOld.latitude/180*Math.PI) / Math.cos(center.latitude/180*Math.PI) ) / f + location.longitude;
+				
+				updateScaleLengthPerAngle();
+				
+				return true;
 			}
+		
+			public boolean moveCenter(Point offsetOnScreen) {
+				if (!isOk()) return false;
+				
+				float offsetLat  = convertLength_ScreenToAngle_Lat (-offsetOnScreen.y);
+				float offsetLong = convertLength_ScreenToAngle_Long( offsetOnScreen.x);
+				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
+				updateScaleLengthPerAngle();
+				
+				return true;
+			}
+		
+			private void updateScaleLengthPerAngle() {
+				scaleLengthPerAngleLat  = (float) (2*Math.PI*planet.radius / 360);
+				scaleLengthPerAngleLong = (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
+			}
+		
+			private Integer convertLength_LengthToScreen(Float length_u) {
+				if (length_u==null || Float.isNaN(length_u)) return null;
+				return Math.round( length_u * scalePixelPerLength );
+			}
+		
+			private Point convertPos_AngleToScreen(LatLong location) {
+				return new Point(
+					convertPos_AngleToScreen_Long(location.longitude),
+					convertPos_AngleToScreen_Lat (location.latitude )
+				);
+			}
+			private Integer convertPos_AngleToScreen_Long(Float longitude) {
+				float x = width /2f + convertLength_AngleToScreen_Long(longitude - center.longitude);
+				if (tempPanOffset!=null) x += tempPanOffset.x;
+				return Math.round(x);
+			}
+			private Integer convertPos_AngleToScreen_Lat (Float latitude) {
+				float y = height/2f - convertLength_AngleToScreen_Lat (latitude  - center.latitude );
+				if (tempPanOffset!=null) y += tempPanOffset.y;
+				return Math.round(y);
+			}
+			private float convertLength_AngleToScreen_Long(float length_a) { return length_a * scaleLengthPerAngleLong * scalePixelPerLength; }
+			private float convertLength_AngleToScreen_Lat (float length_a) { return length_a * scaleLengthPerAngleLat  * scalePixelPerLength; }
+			private LatLong convertScreenToAngle(Point point) {
+				if (center==null) return null;
+				return new LatLong(
+					convertPos_ScreenToAngle_Lat (point.y),
+					convertPos_ScreenToAngle_Long(point.x)
+				);
+			}
+			private Float convertPos_ScreenToAngle_Long(int x) {
+				if (tempPanOffset!=null) x -= tempPanOffset.x;
+				return center.longitude + convertLength_ScreenToAngle_Long(x - width /2f);
+			}
+			private Float convertPos_ScreenToAngle_Lat(int y) {
+				if (tempPanOffset!=null) y -= tempPanOffset.y;
+				return center.latitude  - convertLength_ScreenToAngle_Lat(y - height/2f);
+			}
+			private float convertLength_ScreenToAngle_Long(float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLong; }
+			private float convertLength_ScreenToAngle_Lat (float length_px) { return length_px / scalePixelPerLength / scaleLengthPerAngleLat ; }
 			
-			private void drawScale(Graphics2D g2, int x, int y, int w, int h) {
-				//g2.setColor(Color.RED);
-				//g2.drawRect(x, y, w, h);
-				
-				g2.setColor(COLOR_AXIS);
-				
-				g2.drawLine(x+w, y  , x+w, y+h);
-				g2.drawLine(x+w, y+h, x+w-scaleLength_px, y+h);
-				g2.drawLine(x+w-scaleLength_px, y+h, x+w-scaleLength_px, y);
-				
-				String str = getScaleLengthStr();
-				Rectangle2D bounds = g2.getFontMetrics().getStringBounds(str, g2);
-				
-				g2.drawString( str, (float)(x+w-bounds.getX()-bounds.getWidth()-3), (float)(y+h-bounds.getY()-bounds.getHeight()-3) );
-			}
 		}
 	
 	}
