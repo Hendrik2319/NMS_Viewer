@@ -358,6 +358,7 @@ public class SaveViewer implements ActionListener {
 		TabSelected, ComputeCoordinates, SelectCoordinates,
 		RefreshExtraImages, ShowExtraImages,
 		OpenRecipeAnalyser, OpenProductionOptimiser,
+		WriteKnownSteamIDsToHTML,
 		  save_hg( 0,  "save.hg","save.hg"),
 		 save2_hg( 1, "save2.hg","..2"    ),
 		 save3_hg( 2, "save3.hg","..3"    ),
@@ -495,6 +496,9 @@ public class SaveViewer implements ActionListener {
 			
 		case OpenProductionOptimiser:
 			ProductionOptimiser.start(false);
+			break;
+		case WriteKnownSteamIDsToHTML:
+			FileExport.writeKnownSteamIDsToHTML();
 			break;
 		}
 	}
@@ -1002,6 +1006,8 @@ public class SaveViewer implements ActionListener {
 			toolBar.add(createButton("Production Optimiser", ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
+			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", ToolbarIcons.SwitchFolder, ActionCommand.WriteKnownSteamIDsToHTML,true));
+			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
 			extraMenu.add(createMenuItem("Switch to Backup Folder"      , ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
 			extraMenu.add(createMenuItem("Open Savegame"    , ToolbarIcons.Open   , ActionCommand.Open   ,true));

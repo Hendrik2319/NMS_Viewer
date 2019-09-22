@@ -20,7 +20,10 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -2016,6 +2019,12 @@ public class SaveGameData {
 			String prevValue = data.putIfAbsent(steamID, steamName);
 			if (prevValue!=null && !prevValue.equals(steamName))
 				throw new AssignmentExistsException(steamID, steamName, prevValue);
+		}
+		public void forEachSorted(BiConsumer<String,String> action) {
+			Set<Entry<String, String>> entrySet = data.entrySet();
+			Vector<Entry<String, String>> vector = new Vector<>(entrySet);
+			vector.sort(Comparator.<Entry<String, String>, String>comparing(Entry<String, String>::getKey).thenComparing(Entry<String, String>::getValue));
+			vector.forEach(entry->action.accept(entry.getKey(),entry.getValue()));
 		}
 		
 		public static class AssignmentExistsException extends Exception {

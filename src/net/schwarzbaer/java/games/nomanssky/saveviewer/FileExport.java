@@ -55,6 +55,8 @@ public class FileExport {
 	static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
 	static final String FILE_KNOWN_EDITABLE_MODS  = "NMS_Viewer.KnownEditableMods.txt";;
 	static final String FILE_KNOWN_STEAM_ID       = "NMS_Viewer.KnownSteamIDs.txt";
+	static final String FILE_KNOWN_STEAM_ID_HTML  = "NMS_Viewer.KnownSteamIDs.html";
+	static final String FILE_KNOWN_STEAM_ID_TemplateHTML = "/html/KnownSteamIDs.template.html";
 	
 	static {
 		VRMLoutput.vrmlFileChooser = new JFileChooser("./");
@@ -63,6 +65,24 @@ public class FileExport {
 		VRMLoutput.vrmlFileChooser.setFileFilter(VRMLoutput.vrmlFileFilter = new FileNameExtensionFilter("VRML-File (*.wrl)","wrl"));
 
 		VRMLoutput.createModelMap();
+	}
+	
+	static void writeKnownSteamIDsToHTML() {
+		
+		try (
+				BufferedReader in = new BufferedReader(new InputStreamReader("".getClass().getResourceAsStream(FILE_KNOWN_STEAM_ID_TemplateHTML), StandardCharsets.UTF_8));
+				PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FILE_KNOWN_STEAM_ID_HTML), StandardCharsets.UTF_8))
+		) {
+			String line;
+			while ( (line=in.readLine())!=null ) {
+				if (line.equals("// write here: new SteamID( id, name )"))
+					SaveViewer.steamIDs.forEachSorted((id,name)->out.printf("\t\tnew SteamID( \"%s\", \"%s\" ),%n", id, name));
+				else
+					out.println(line);
+			}
+		}
+		catch (FileNotFoundException e) { e.printStackTrace(); }
+		catch (IOException e) { e.printStackTrace(); }
 	}
 
 	static void writeToJSON(JSON_Object json_Object, File copyfile) {

@@ -1,0 +1,55 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Known SteamIDs</title>
+<style type="text/css" media="screen">
+	body {
+		background:#1B2838;
+		color:#FFFFFF;
+		font-family: Arial, Helvetica, Verdana, sans-serif;
+	}
+	
+	#SteamIDs td { background:#354F6D; padding:10px 30px; }
+	#SteamIDs tr:hover td { background:#5488AA; }
+	a { color:#FFFFFF; text-decoration:none; }
+	a:visited { color:#AAAAAA; }
+	
+</style>
+<script type="text/javascript" charset="utf-8">
+	function SteamID( id, name ) {
+		this.id = id;
+		this.name = name;
+	}
+	
+	var SteamIDs = [
+// write here: new SteamID( id, name )
+	];
+	
+	function fillContent() {
+		var table = document.getElementById("SteamIDs");
+		if (table) {
+			for (var i=0; i<SteamIDs.length; i++) {
+				var SteamID = SteamIDs[i];
+				var tr = table.appendChild(document.createElement('tr'));
+				var td1 = tr.appendChild(document.createElement('td'));
+				var td2 = tr.appendChild(document.createElement('td'));
+				var a1 = td1.appendChild(document.createElement('a'));
+				var a2 = td2.appendChild(document.createElement('a'));
+				a1.appendChild(document.createTextNode(SteamID.id));
+				a2.appendChild(document.createTextNode(SteamID.name));
+				a1.href = "https://steamcommunity.com/profiles/"+SteamID.id;
+				a2.href = "https://steamcommunity.com/profiles/"+SteamID.id;
+				a1.target = "_blank";
+				a2.target = "_blank";
+			}
+		}
+	}
+	
+	window.addEventListener('load', fillContent);
+</script>
+</head>
+<body>
+	<table id="SteamIDs"></table>
+</body>
+</html>
