@@ -294,6 +294,16 @@ class=Yellow
 short=4 Planeten
 info=
 
+[Reg0000000636EA02]
+
+[Sys0033000636EA02]
+
+[Pln1033000636EA02]
+
+[Pln2033000636EA02]
+
+[Pln3033000636EA02]
+
 [Reg000000FEEBAA17]
 name=Cemiini-Untiefe
 
@@ -3164,6 +3174,24 @@ short=
 info=Nebel: grün, orange
 
 [Pln10790002FDAFDC]
+
+[Reg000000076C4FF4]
+
+[Sys019A00076C4FF4]
+name=Ominushv
+race=Gek
+conflict=2
+conflict_label=unbändig
+class=Green
+short=6 Planeten
+info=
+
+[Pln519A00076C4FF4]
+name=Pembles Sigma
+biome=Exotic_Mega
+resources=Em,NH3,Ag
+short=
+info=Graustufen
 
 [Reg000000F8FF8FF8]
 

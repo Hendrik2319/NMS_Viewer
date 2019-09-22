@@ -1462,6 +1462,7 @@
 ^SPEC_DECAL06=
 ^SPEC_DECAL07=
 ^SPEC_DECAL08=
+^SPEC_FIREWORK02=
 ^SPHERESHAPE=
 ^SPHERESHAPE.type=BaseComponent
 ^STARCHART_A=Planetenkarte (Sicherer, Interessanter Ort)

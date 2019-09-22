@@ -48,6 +48,16 @@ latitude=+14.99
 longitude=-37.80
 radius=426.00
 
+[Circle]
+latitude=+15.36
+longitude=-38.00
+radius=143.15
+
+[Circle]
+latitude=+16.01
+longitude=-37.82
+radius=132.60
+
 [HotSpot]
 latitude=+15.90
 longitude=-37.42
