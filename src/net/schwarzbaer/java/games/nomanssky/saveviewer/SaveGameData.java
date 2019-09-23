@@ -1660,6 +1660,7 @@ public class SaveGameData {
 			TRADING_SEC_6 ("Teleportationsgerät"         ,"Handel: +6"),
 			TRADING_TER_1 ("Wirtschaftsscanner"          ,"Handel: +1"),
 			TRADING_TER_3 ("Roboterdiener"               ,"Handel: +3"),
+			TRADING_TER_4 ("Automatischer Übersetzer"    ,"Handel: +1"),
 			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),
 			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
 			
@@ -3044,7 +3045,7 @@ public class SaveGameData {
 		public static final class SolarSystem extends DiscoverableObject {
 			
 			public enum StarClass {
-				Yellow("G","F"), Red("K"), Green, Blue("B");
+				Yellow("G","F"), Red("K","M"), Green("E"), Blue("B","O");
 				
 				private String[] letters;
 				StarClass(String... letters) {

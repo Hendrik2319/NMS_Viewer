@@ -58,8 +58,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
-		addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech));
-		addTab(data.inventories.player.cargo);
+		addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech,data.inventories.player.cargo));
 		addTab(data.inventories.grave);
 		addTab(data.inventories.multitool);
 		addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(data.freighter.inventory,data.freighter.inventoryTech));
@@ -416,7 +415,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				g2.setStroke(STROKE__STANDARD);
 				for (int indexX=0; indexX<inventoryWidth; ++indexX)
 					for (int indexY=0; indexY<inventoryHeight; ++indexY) {
-						g2.setClip(baseClip);
+						//g2.setClip(baseClip);
 						Inventory.Slot slot = slots[indexX][indexY];
 						if (slot == null)
 							continue;
@@ -437,11 +436,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						drawSlot(g2, x1,y1, baseClip, standardFont, slotId, slotIdStr, amount, maxAmount, type, typeStr, isEmpty, specialSlotType, damageFactor );
 					}
 				
+				//g2.setClip(baseClip);
 				
 				if (DRAW_HOVERED_SLOT_WITH_OVERLAY)
 					drawHoveredSlot_Overlay(g2, x, y, hoveredSlot, isHoveredSlotFixed);
-				
-				g2.setClip(baseClip);
 			}
 
 			@SuppressWarnings("unused")
@@ -462,21 +460,22 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						int x1=x+col*SLOT_RASTER_X+SLOT_BORDER;
 						int y1=y+row*SLOT_RASTER_Y+SLOT_BORDER;
 						
-						g2.setClip(baseClip);
 						if (!DRAW_HOVERED_SLOT_WITH_OVERLAY && isSelected!=null && isSelected.test(i))
 							drawHoveredSlot_Border(g2, x1, y1, true);
 						
 						drawSlotSimple(g2, x1, y1, baseClip, standardFont, slotIDs[i]);
+						//g2.setClip(baseClip);
 						
 						if (DRAW_HOVERED_SLOT_WITH_OVERLAY && isSelected!=null && isSelected.test(i))
 							drawHoveredSlot_Overlay(g2, x1, y1, true);
 					}
 					row++;
 				}
+				
+				//g2.setClip(baseClip);
+				
 				if (DRAW_HOVERED_SLOT_WITH_OVERLAY)
 					drawHoveredSlot_Overlay(g2, x, y, hovered==null?null:new Point(hovered%nColumn,hovered/nColumn), false);
-				
-				g2.setClip(baseClip);
 			}
 
 			private static Font getStandardFont(Graphics2D g2) {
@@ -542,6 +541,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						g2.setPaint(COLOR__SLOT_TITLE);
 						g2.drawString(specialSlotType, x+strOffsetX, y+strOffsetY);
 					}
+					g2.setClip(baseClip);
 					return; 
 				}
 				
@@ -561,6 +561,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					g2.drawString(slotId==null?slotIdStr:slotId.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
 				
 					g2.drawString(String.format("%s/%s", amount, maxAmount), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+					
+					g2.setClip(baseClip);
 					return; 
 				}
 				
@@ -602,6 +604,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					drawSymbol(g2, slotId, imageX,imageY, imageBorder, stdBoldFont);
 				
 				g2.setFont( standardFont );
+				g2.setClip(baseClip);
 			}
 
 			private static void drawAmount(Graphics2D g2, int amount, int maxAmount, int imageX, int imageY, int imageSize) {
