@@ -5327,6 +5327,17 @@ resources=Cu,Au,Fe__
 short=
 info=<ParsedPlanetaryResources> Cu, Au, Fe##
 
+[Sys01AB00FCD7F684]
+name=Maasua
+unexplored
+class=Green
+
+[Pln11AB00FCD7F684]
+name=Puplefka Idaka
+biome=Frozen
+with water
+resources=Em,CO2,Ag
+
 [Sys01DE00FCD7F684]
 name=Songxi
 race=Vykeen
