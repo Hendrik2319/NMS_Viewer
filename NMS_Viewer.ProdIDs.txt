@@ -105,8 +105,13 @@
 ^ATLAS_SEED_9.image=ATLASSEED.9.png
 ^ATLAS_SEED_9.imageBG=CCCCCC
 ^BAIT_BASIC=Kreaturenkugeln
+^BAIT_BASIC.type=Special
 ^BAIT_BASIC.image=PRODUCT.BAIT.PELLETS.png
 ^BAIT_BASIC.imageBG=C11746
+^BAIT_MEAT_3=Pheromonbeutel
+^BAIT_MEAT_3.type=Special
+^BAIT_MEAT_3.image=PRODUCT.BAIT.SACK.png
+^BAIT_MEAT_3.imageBG=BB392C
 ^BAIT_VEG_1=Duftende Kräuter
 ^BAIT_VEG_1.type=Special
 ^BAIT_VEG_1.image=PRODUCT.BAIT.HERBS.png
@@ -129,7 +134,7 @@
 ^BASECAPSULE=Basis-Bergungskapsel
 ^BASECAPSULE.type=BaseComponent
 ^BASECAPSULE.image=BUILDABLE.BASECAPSULE.png
-^BASE_AQUARIUM=
+^BASE_AQUARIUM=Aquarium
 ^BASE_AQUARIUM.type=BaseDekoration
 ^BASE_BARNACLE=
 ^BASE_BARNACLE.type=BaseDekoration
@@ -187,7 +192,8 @@
 ^BASE_STARJOINT.type=PlanetTrophy
 ^BASE_STARJOINT.image=BUILDABLE.STARJOINT.png
 ^BASE_STARJOINT.imageBG=2C7C9F
-^BASE_TERRARIUM=
+^BASE_TERRARIUM=Terrarium
+^BASE_TERRARIUM.type=BaseDekoration
 ^BASE_TOYCORE=
 ^BASE_TOYCORE.type=BaseDekoration
 ^BASE_TOYCUBE=
@@ -722,6 +728,7 @@
 ^FLOORMAT1=Bodenmatte
 ^FLOORMAT1.type=BaseDekoration
 ^FOOD_M_CAT=Katzenleber
+^FOOD_M_CAT.type=Special
 ^FOOD_M_CAT.image=PRODUCT.BAIT.SACK.png
 ^FOOD_M_CAT.imageBG=BB392C
 ^FOOD_M_CRAB=
@@ -1240,6 +1247,10 @@
 ^PROC_HIST#06864.type=Treasure
 ^PROC_HIST#06864.image=Artifact.HistoricalDocument.png
 ^PROC_HIST#06864.imageBG=1EB808
+^PROC_LOOT#01992=Ausgegrabener Schatz (gewöhnlich)
+^PROC_LOOT#01992.type=Treasure
+^PROC_LOOT#01992.image=Artifact.UnearthedTreasure.png
+^PROC_LOOT#01992.imageBG=153250
 ^PROC_LOOT#13511=Ausgegrabener Schatz (ungewöhnlich)
 ^PROC_LOOT#13511.type=Treasure
 ^PROC_LOOT#13511.image=Artifact.UnearthedTreasure.png
@@ -1379,6 +1390,10 @@
 ^PROC_TOOL#95913.type=Treasure
 ^PROC_TOOL#95913.image=Artifact.LostArtifact.png
 ^PROC_TOOL#95913.imageBG=460C34
+^PROC_TOOL#96026=Vergessenes Artefakt (ungewöhnlich)
+^PROC_TOOL#96026.type=Treasure
+^PROC_TOOL#96026.image=Artifact.LostArtifact.png
+^PROC_TOOL#96026.imageBG=460C34
 ^PROC_TOOL#97909=Vergessenes Artefakt (ungewöhnlich)
 ^PROC_TOOL#97909.type=Treasure
 ^PROC_TOOL#97909.image=Artifact.LostArtifact.png

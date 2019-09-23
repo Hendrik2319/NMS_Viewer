@@ -297,8 +297,20 @@ info=
 [Reg0000000636EA02]
 
 [Sys0033000636EA02]
+name=Liinggo-Mee
+race=Gek
+conflict=3
+conflict_label=beängstigend
+class=Yellow
+short=3 Planeten
+info=
 
 [Pln1033000636EA02]
+name=Nertunio
+biome=Lush
+resources=Cu,Pf,Fe__
+short=
+info=noch irgendein weiterer Hinweis
 
 [Pln2033000636EA02]
 
@@ -2242,6 +2254,21 @@ blackholetarget=005B00FDE4323A
 class=Yellow
 short=1 Planet
 info=
+
+[Reg0000000665FD59]
+name=Bikuyl-Cluster
+
+[Sys01EF000665FD59]
+name=Noomor-Dig
+race=Vykeen
+conflict=1
+conflict_label=ruhig
+class=Yellow
+
+[Pln11EF000665FD59]
+name=Plut Beta
+biome=Irradiated
+resources=Cu,U,NaCl
 
 [Reg000000FD331D83]
 name=Riykroni-Adjunkt
@@ -4826,6 +4853,30 @@ short=ExtHot
 info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
+
+[Reg000000FFF37590]
+name=Koenpa
+
+[Sys001300FFF37590]
+name=Otosuh IX
+race=Korvax
+conflict=1
+conflict_label=belanglos
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln101300FFF37590]
+name=Koba 89/C7
+biome=Scorched
+with water
+resources=Cu,P,Ag
+
+[Pln501300FFF37590]
+name=Meghamal
+biome=Lush
+buriedTreasure=AncientBones
+resources=Cu,Pf,Fe__
 
 [Reg00000003CC45B8]
 name=Aygans-Quadrant
