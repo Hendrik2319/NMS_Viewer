@@ -1300,6 +1300,10 @@
 ^PROC_LOOT#24824.type=Treasure
 ^PROC_LOOT#24824.image=Artifact.UnearthedTreasure.png
 ^PROC_LOOT#24824.imageBG=153250
+^PROC_LOOT#24892=Ausgegrabener Schatz (ungewöhnlich)
+^PROC_LOOT#24892.type=Treasure
+^PROC_LOOT#24892.image=Artifact.UnearthedTreasure.png
+^PROC_LOOT#24892.imageBG=460C34
 ^PROC_PLNT#01935=Empfindliche Flora (gewöhnlich)
 ^PROC_PLNT#01935.type=Treasure
 ^PROC_PLNT#01935.image=Artifact.DelicateFlora.png
