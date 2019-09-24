@@ -9,6 +9,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -294,9 +295,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			private static final boolean DRAW_HOVERED_SLOT_WITH_OVERLAY  = true;
 			private static final Color COLOR__SLOT_HOVERED_OVERLAY       = new Color(0x8089c5ff,true);
-			private static final Color COLOR__SLOT_HOVERED_OVERLAY_FIXED = new Color(0x8091ff94,true);
+			private static final Color COLOR__SLOT_HOVERED_OVERLAY_FIXED = new Color(0x80ffe864,true);
 			private static final Color COLOR__SLOT_HOVERED       = new Color(0xFFD800);
 			private static final Color COLOR__SLOT_HOVERED_FIXED = Color.GREEN;
+			
 			private static final Color COLOR__SLOT_EDGE          = Color.BLACK;
 			
 			private static final Color COLOR__SLOT_TITLE        = Color.BLACK;
@@ -319,6 +321,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			private static final Color COLOR__SLOT_TEXT_TECH      = new Color(0xAD00AD);
 
 			private static final Color COLOR__SLOT_BG            = Color.WHITE;
+
 			private static final Color COLOR__DAMAGED_SLOT_BG    = Color.RED;
 
 			private static final Color COLOR__UPGRCLS_BG     = new Color(0,0,0,160);
@@ -327,9 +330,12 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 
 			private static final Color COLOR__INVENTORY_BG = new Color(0xE0E0E0);
 			
-			private static final Stroke STROKE__SLOT_HOVERED = new BasicStroke(6.0f,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL);
+			private static final Stroke STROKE__THICK_BORDER = new BasicStroke(6.0f,BasicStroke.CAP_BUTT,BasicStroke.JOIN_BEVEL);
 			private static final Stroke STROKE__STANDARD     = new BasicStroke(1.0f);
 			
+			private static final Paint COLOR__SLOT_BG_SELECTED   = new Color(0xFFDB00);
+			private static final Paint COLOR__SLOT_EDGE_SELECTED = Color.RED;
+
 			public static final int SLOT_BORDER = 3;
 			public static final int SLOT_WIDTH  = 90;
 			public static final int SLOT_HEIGHT = SLOT_WIDTH+13;
@@ -343,7 +349,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			
 			private static final float UPGRCLS_STR_FONT_SCALE = 1.7f;
 			private static final int UPGRCLS_STR_OFFSET_Y = 6;
-			
+
 			private enum UpgrCls {
 				S("S",new Color(0xFFA712), 0),
 				A("A",new Color(0xA063D8),-1),
@@ -408,7 +414,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				g2.fillRect(x, y, imageWidth, imageHeight);
 				
 				if (!DRAW_HOVERED_SLOT_WITH_OVERLAY)
-					drawHoveredSlot_Border(g2, x, y, hoveredSlot, isHoveredSlotFixed);
+					drawHoveredSlot(g2, x, y, hoveredSlot, isHoveredSlotFixed, false);
 				
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 //				g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -439,17 +445,42 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				//g2.setClip(baseClip);
 				
 				if (DRAW_HOVERED_SLOT_WITH_OVERLAY)
-					drawHoveredSlot_Overlay(g2, x, y, hoveredSlot, isHoveredSlotFixed);
+					drawHoveredSlot(g2, x, y, hoveredSlot, isHoveredSlotFixed, true);
 			}
 
-			@SuppressWarnings("unused")
+			public static void drawSlotGrid(Graphics2D g2, int x, int y, GeneralizedID[][] slotIdGrid, Predicate<GeneralizedID> isSelected, Point hovered) {
+				Font standardFont = getStandardFont(g2);
+				g2.setFont(standardFont);
+				Rectangle baseClip = g2.getClipBounds();
+				
+				if (!DRAW_HOVERED_SLOT_WITH_OVERLAY)
+					drawHoveredSlot(g2, x, y, hovered, false, false);
+				
+				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2.setStroke(STROKE__STANDARD);
+				for (int row=0; row<slotIdGrid.length; row++) {
+					for (int col=0; col<slotIdGrid[row].length; col++) {
+						GeneralizedID slotId = slotIdGrid[row][col];
+						if (slotId==null) continue;
+						
+						int x1=x+col*SLOT_RASTER_X+SLOT_BORDER;
+						int y1=y+row*SLOT_RASTER_Y+SLOT_BORDER;
+						
+						drawSlotSimple(g2, x1, y1, baseClip, standardFont, slotId, isSelected!=null && isSelected.test(slotId));
+					}
+				}
+				
+				if (DRAW_HOVERED_SLOT_WITH_OVERLAY)
+					drawHoveredSlot(g2, x, y, hovered, false, true);
+			}
+			
 			public static void drawSlotGrid(Graphics2D g2, int x, int y, int nColumn, GeneralizedID[] slotIDs, Predicate<Integer> isSelected, Integer hovered) {
 				Font standardFont = getStandardFont(g2);
 				g2.setFont(standardFont);
 				Rectangle baseClip = g2.getClipBounds();
 				
 				if (!DRAW_HOVERED_SLOT_WITH_OVERLAY)
-					drawHoveredSlot_Border(g2, x, y, hovered==null?null:new Point(hovered%nColumn,hovered/nColumn), false);
+					drawHoveredSlot(g2, x, y, hovered==null?null:new Point(hovered%nColumn,hovered/nColumn), false, false);
 				
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 				g2.setStroke(STROKE__STANDARD);
@@ -460,66 +491,70 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						int x1=x+col*SLOT_RASTER_X+SLOT_BORDER;
 						int y1=y+row*SLOT_RASTER_Y+SLOT_BORDER;
 						
-						if (!DRAW_HOVERED_SLOT_WITH_OVERLAY && isSelected!=null && isSelected.test(i))
-							drawHoveredSlot_Border(g2, x1, y1, true);
-						
-						drawSlotSimple(g2, x1, y1, baseClip, standardFont, slotIDs[i]);
-						//g2.setClip(baseClip);
-						
-						if (DRAW_HOVERED_SLOT_WITH_OVERLAY && isSelected!=null && isSelected.test(i))
-							drawHoveredSlot_Overlay(g2, x1, y1, true);
+						drawSlotSimple(g2, x1, y1, baseClip, standardFont, slotIDs[i], isSelected!=null && isSelected.test(i));
 					}
 					row++;
 				}
 				
-				//g2.setClip(baseClip);
-				
 				if (DRAW_HOVERED_SLOT_WITH_OVERLAY)
-					drawHoveredSlot_Overlay(g2, x, y, hovered==null?null:new Point(hovered%nColumn,hovered/nColumn), false);
+					drawHoveredSlot(g2, x, y, hovered==null?null:new Point(hovered%nColumn,hovered/nColumn), false, true);
 			}
 
 			private static Font getStandardFont(Graphics2D g2) {
 				return g2.getFont().deriveFont(Font.PLAIN, 11);
 			}
 
-			private static void drawHoveredSlot_Border(Graphics2D g2, int x, int y, Point hoveredSlot, boolean isHoveredSlotFixed) {
+			private static void drawHoveredSlot(Graphics2D g2, int x, int y, Point hoveredSlot, boolean isHoveredSlotFixed, boolean asOverlay) {
+				Color color;
+				if (asOverlay) color = isHoveredSlotFixed?COLOR__SLOT_HOVERED_OVERLAY_FIXED:COLOR__SLOT_HOVERED_OVERLAY;
+				else           color = isHoveredSlotFixed?COLOR__SLOT_HOVERED_FIXED        :COLOR__SLOT_HOVERED        ;
 				if (hoveredSlot!=null) {
 					int xH = x+hoveredSlot.x*SLOT_RASTER_X+SLOT_BORDER;
 					int yH = y+hoveredSlot.y*SLOT_RASTER_Y+SLOT_BORDER;
-					drawHoveredSlot_Border(g2, xH, yH, isHoveredSlotFixed);
+					if (asOverlay) {
+						g2.setPaint(color);
+						g2.fillRect(xH, yH, SLOT_WIDTH, SLOT_HEIGHT);
+					} else {
+						g2.setStroke(STROKE__THICK_BORDER);
+						g2.setPaint(color);
+						g2.drawRect(xH, yH, SLOT_WIDTH, SLOT_HEIGHT);
+					}
 				}
 			}
-			private static void drawHoveredSlot_Overlay(Graphics2D g2, int x, int y, Point hoveredSlot, boolean isHoveredSlotFixed) {
-				if (hoveredSlot!=null) {
-					int xH = x+hoveredSlot.x*SLOT_RASTER_X+SLOT_BORDER;
-					int yH = y+hoveredSlot.y*SLOT_RASTER_Y+SLOT_BORDER;
-					drawHoveredSlot_Overlay(g2, xH, yH, isHoveredSlotFixed);
-				}
+			private static void drawSlotSimple(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, GeneralizedID slotId, boolean isSelected) {
+				drawSlotSimple(g2, x,y, baseClip, standardFont, slotId, null, null, isSelected);
 			}
-			private static void drawHoveredSlot_Border(Graphics2D g2, int x, int y, boolean isHoveredSlotFixed) {
-				g2.setStroke(STROKE__SLOT_HOVERED);
-				g2.setPaint(isHoveredSlotFixed?COLOR__SLOT_HOVERED_FIXED:COLOR__SLOT_HOVERED);
-				g2.drawRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
-			}
-			private static void drawHoveredSlot_Overlay(Graphics2D g2, int x, int y, boolean isHoveredSlotFixed) {
-				//g2.setStroke(STROKE__SLOT_HOVERED);
-				g2.setPaint(isHoveredSlotFixed?COLOR__SLOT_HOVERED_OVERLAY_FIXED:COLOR__SLOT_HOVERED_OVERLAY);
-				g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
-			}
-
-			private static void drawSlotSimple(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, GeneralizedID slotId) {
-				drawSlotSimple(g2, x,y, baseClip, standardFont, slotId, null, null);
-			}
-			private static void drawSlotSimple(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, GeneralizedID slotId, Long amount, Long maxAmount) {
+			private static void drawSlotSimple(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, GeneralizedID slotId, Long amount, Long maxAmount, boolean isSelected) {
 				Debug.Assert(slotId!=null);
-				drawSlot(g2, x,y, baseClip, standardFont, slotId, null, amount, maxAmount, null, "???", false, "", null );
+				drawSlot(g2, x,y, baseClip, standardFont, isSelected, slotId, null, amount, maxAmount, null, "???", false, "", null );
 			}
 			
 			private static void drawSlot(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont,
 					GeneralizedID slotId, String slotIdStr, Long amount, Long maxAmount, SlotType type, String typeStr, boolean isEmpty, String specialSlotType, Double damageFactor ) {
+				drawSlot(g2, x,y, baseClip, standardFont, false, slotId, slotIdStr, amount, maxAmount, type, typeStr, isEmpty, specialSlotType, damageFactor );
+			}
+			private static void drawSlot(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, boolean isSelected,
+					GeneralizedID slotId, String slotIdStr, Long amount, Long maxAmount, SlotType type, String typeStr, boolean isEmpty, String specialSlotType, Double damageFactor ) {
+				
+				if (isSelected) {
+					g2.setStroke(STROKE__THICK_BORDER);
+					g2.setPaint(COLOR__SLOT_EDGE_SELECTED);
+					g2.drawRect(x, y, SLOT_WIDTH-1, SLOT_HEIGHT-1);
+					g2.setStroke(STROKE__STANDARD);
+				}
 				
 				if (!isEmpty) {
-					g2.setPaint((damageFactor==null || damageFactor==0)?COLOR__SLOT_BG:COLOR__DAMAGED_SLOT_BG);
+					Paint background;
+					if (isSelected)
+						background = COLOR__SLOT_BG_SELECTED;
+					
+					else if (damageFactor==null || damageFactor==0)
+						background = COLOR__SLOT_BG;
+					
+					else
+						background = COLOR__DAMAGED_SLOT_BG;
+					
+					g2.setPaint(background);
 					g2.fillRect(x, y, SLOT_WIDTH, SLOT_HEIGHT);
 				}
 				g2.setPaint(COLOR__SLOT_EDGE);

@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -1664,9 +1665,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		public ResourceSelectDialog(Window parent, String title) {
 			super(parent, title, ModalityType.APPLICATION_MODAL, true);
 			
-			JTextField strInput = new JTextField();
-			ResourceGrid resourceGrid = new ResourceGrid();
-			
 			JButton okButton     = SaveViewer.createButton("Ok"    , e->{ ignoreChanges=false; closeDialog(); });
 			JButton cancelButton = SaveViewer.createButton("Cancel", e->{ closeDialog(); });
 			okButton    .setPreferredSize(new Dimension(75,25));
@@ -1683,8 +1681,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-			contentPane.add(strInput, BorderLayout.NORTH);
-			contentPane.add(resourceGrid, BorderLayout.CENTER);
+			contentPane.add(new ResourceGrid(), BorderLayout.CENTER);
 			contentPane.add(buttonPanel, BorderLayout.SOUTH);
 			
 			createGUI(contentPane);
@@ -1703,47 +1700,43 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private static final int SLOT_RASTER_X = InventoriesPanel.InventoryPanel.InventoryDisplay.SLOT_RASTER_X;
 			private static final int SLOT_RASTER_Y = InventoriesPanel.InventoryPanel.InventoryDisplay.SLOT_RASTER_Y;
 			
-			private GeneralizedID[] resourceIDs;
-			private Resources[] allResources;
-			private Resources[][] allResources2;
+			private GeneralizedID[][] resIdArrays;
+			private GeneralizedID[][] resGrid;
+			
 			private int nColumn;
-			private Integer hovered;
+			private Point hovered;
 			
 			ResourceGrid() {
 				nColumn = 6;
 				hovered = null;
 				
-				// TODO
-				// ##########################
-				allResources2 = new Resources[][] {
+				Resources[][] resArrays = new Resources[][] {
 					new Resources[] { Resources.Cu_, Resources.Cd_, Resources.Em_, Resources.In_, },
 					new Resources[] { Resources.Cu, Resources.Cd, Resources.Em, Resources.In, },
 					new Resources[] { Resources.Pf, Resources.Py, Resources.P, Resources.U, Resources.CO2, Resources.NH3 },
 					null
 				};
-				allResources2[3] = getRemaining();
-				for (Resources[] arr:allResources2)
-					SaveViewer.log_ln("%s", Arrays.toString(arr));
-				// ##########################
+				resArrays[3] = getRemaining(Resources.values(), resArrays);
 				
-				allResources = Resources.values();
-				resourceIDs = new GeneralizedID[allResources.length];
-				for (int i=0; i<resourceIDs.length; i++)
-					resourceIDs[i] = allResources[i].getGeneralizedID();
+				resIdArrays = createFrom(resArrays);
+				//for (Resources[] arr:allResources2)
+				//	SaveViewer.log_ln("%s", Arrays.toString(arr));
 				
-				int nRow = (int)Math.ceil(allResources.length/(float)nColumn);
+				int nRow = computeRowCount(resIdArrays,nColumn);
+				resGrid = createResGrid(resIdArrays,nRow,nColumn);
+				
 				setPreferredSize(new Dimension( nColumn*SLOT_RASTER_X+10, nRow*SLOT_RASTER_Y+10 ));
 				
 				MouseAdapter mouse = new MouseAdapter() {
-					@Override public void mouseEntered(MouseEvent e) { hovered = getIndex(e); repaint(); }
-					@Override public void mouseMoved  (MouseEvent e) { hovered = getIndex(e); repaint(); }
+					@Override public void mouseEntered(MouseEvent e) { hovered = getIndexes(e); repaint(); }
+					@Override public void mouseMoved  (MouseEvent e) { hovered = getIndexes(e); repaint(); }
 					@Override public void mouseExited (MouseEvent e) { hovered = null; repaint(); }
 					@Override public void mouseClicked(MouseEvent e) {
-						Integer selected = getIndex(e);
+						Point selected = getIndexes(e);
 						if (selected==null) return;
-						if (selected<0 || selected>=allResources.length) return;
+						GeneralizedID id = resGrid[selected.y][selected.x];
 						
-						Resources resource = allResources[selected];
+						Resources resource = getResource(id);
 						if (resources.contains(resource)) resources.remove(resource);
 						else resources.add(resource);
 						
@@ -1753,11 +1746,34 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				addMouseListener(mouse);
 				addMouseMotionListener(mouse);
 			}
-			private Resources[] getRemaining() {
+			
+			private int computeRowCount(GeneralizedID[][] resArrays, int nColumn) {
+				int nRows = 0;
+				for (GeneralizedID[] arr:resArrays)
+					nRows += (int)Math.ceil(arr.length/(float)nColumn);
+				return nRows;
+			}
+
+			private GeneralizedID[][] createResGrid(GeneralizedID[][] resArrays, int nRow, int nColumn) {
+				GeneralizedID[][] resGrid = new GeneralizedID[nRow][nColumn];
+				int row = 0;
+				for (GeneralizedID[] arr:resArrays) {
+					int nRow1 = (int)Math.ceil(arr.length/(float)nColumn);
+					for (int r=0; r<nRow1; r++)
+						for (int c=0; c<nColumn; c++) {
+							int i = r*nColumn+c;
+							resGrid[row+r][c] = i>=arr.length?null:arr[i];
+						}
+					row += nRow1;
+				}
+				return resGrid;
+			}
+
+			private Resources[] getRemaining(Resources[] allRes, Resources[][] resArrays) {
 				Vector<Resources> remaining = new Vector<>();
-				for (Resources res1:Resources.values()) {
+				for (Resources res1:allRes) {
 					boolean found = false;
-					for (Resources[] arr:allResources2) {
+					for (Resources[] arr:resArrays) {
 						if (arr!=null)
 							for (Resources res2:arr)
 								if (res1==res2) {
@@ -1772,23 +1788,46 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 				return remaining.toArray(new Resources[remaining.size()]);
 			}
-			private Integer getIndex(MouseEvent e) {
+			private GeneralizedID[][] createFrom(Resources[][] resArrays) {
+				GeneralizedID[][] idArrays = new GeneralizedID[resArrays.length][];
+				for (int i=0; i<resArrays.length; i++) {
+					Resources[] arr = resArrays[i];
+					idArrays[i] = new GeneralizedID[arr.length];
+					for (int j=0; j<arr.length; j++)
+						idArrays[i][j] = arr[j].getGeneralizedID();
+				}
+				return idArrays;
+			}
+
+			private Resources getResource(GeneralizedID id) {
+				for (Resources res:Resources.values())
+					if (res.ID.equals(id.id))
+						return res;
+				return null;
+			}
+
+			private Point getIndexes(MouseEvent e) {
 				int gridX = e.getX()/SLOT_RASTER_X;
 				int gridY = e.getY()/SLOT_RASTER_Y;
-				if (gridY<0 || gridX<0 || gridX>=nColumn) return null;
-				int i = gridY*nColumn + gridX;
-				if (i>=allResources.length) return null;
-				return i;
+				if (gridY<0 || gridX<0 || gridX>=nColumn || gridY>=resGrid.length) return null;
+				if (resGrid[gridY][gridX]==null) return null;
+				return new Point(gridX,gridY);
 			}
 			
 			@Override protected void sizeChanged(int width, int height) {
-				nColumn = width / SLOT_RASTER_X;
+				int nColumnNew = width / SLOT_RASTER_X;
+				int nRow = computeRowCount(resIdArrays,nColumnNew);
+				if (nRow!=resGrid.length || nColumnNew!=nColumn) {
+					nColumn = nColumnNew;
+					resGrid = createResGrid(resIdArrays,nRow,nColumn);
+				}
 			}
 
 			@Override protected void paintCanvas(Graphics g, int x, int y, int width, int height) {
 				if (!(g instanceof Graphics2D)) return;
 				Graphics2D g2 = (Graphics2D)g;
-				InventoriesPanel.InventoryPanel.InventoryDisplay.drawSlotGrid(g2, x, y, nColumn, resourceIDs, i->resources.contains(allResources[i]), hovered);
+				//InventoriesPanel.InventoryPanel.InventoryDisplay.drawSlotGrid(g2, x, y, nColumn, resourceIDs, i->resources.contains(allResources[i]), hovered);
+				InventoriesPanel.InventoryPanel.InventoryDisplay.drawSlotGrid(g2, x, y, resGrid, id->resources.contains(getResource(id)), hovered);
 			}
 			
 		}
