@@ -1673,6 +1673,7 @@ public class SaveGameData {
 			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
 			
 			FUEL_PRI      ("Unterstützungsspezialist"    ,"Treibstoffkosten der Expedition: -15"),
+			FUEL_SEC_6    ("Tragbarer Fusionszünder"     ,"Treibstoffkosten der Expedition: -9"),
 			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_TER_3    ("Robotercrew"                 ,"Treibstoffkosten der Expedition: -6"),

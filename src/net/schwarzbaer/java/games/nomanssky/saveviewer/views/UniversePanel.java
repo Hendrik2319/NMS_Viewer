@@ -1667,14 +1667,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			JTextField strInput = new JTextField();
 			ResourceGrid resourceGrid = new ResourceGrid();
 			
+			JButton okButton     = SaveViewer.createButton("Ok"    , e->{ ignoreChanges=false; closeDialog(); });
+			JButton cancelButton = SaveViewer.createButton("Cancel", e->{ closeDialog(); });
+			okButton    .setPreferredSize(new Dimension(75,25));
+			cancelButton.setPreferredSize(new Dimension(75,25));
+			
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
 			JPanel buttonPanel = new JPanel(new GridBagLayout());
 			c.weightx = 1;
 			buttonPanel.add(new JLabel(),c);
 			c.weightx = 0;
-			buttonPanel.add(SaveViewer.createButton("Ok"    , e->{ ignoreChanges=false; closeDialog(); }),c);
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->{ closeDialog(); }),c);
+			buttonPanel.add(okButton,c);
+			buttonPanel.add(cancelButton,c);
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -1700,12 +1705,27 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			private GeneralizedID[] resourceIDs;
 			private Resources[] allResources;
+			private Resources[][] allResources2;
 			private int nColumn;
 			private Integer hovered;
 			
 			ResourceGrid() {
 				nColumn = 6;
 				hovered = null;
+				
+				// TODO
+				// ##########################
+				allResources2 = new Resources[][] {
+					new Resources[] { Resources.Cu_, Resources.Cd_, Resources.Em_, Resources.In_, },
+					new Resources[] { Resources.Cu, Resources.Cd, Resources.Em, Resources.In, },
+					new Resources[] { Resources.Pf, Resources.Py, Resources.P, Resources.U, Resources.CO2, Resources.NH3 },
+					null
+				};
+				allResources2[3] = getRemaining();
+				for (Resources[] arr:allResources2)
+					SaveViewer.log_ln("%s", Arrays.toString(arr));
+				// ##########################
+				
 				allResources = Resources.values();
 				resourceIDs = new GeneralizedID[allResources.length];
 				for (int i=0; i<resourceIDs.length; i++)
@@ -1732,6 +1752,25 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				addMouseListener(mouse);
 				addMouseMotionListener(mouse);
+			}
+			private Resources[] getRemaining() {
+				Vector<Resources> remaining = new Vector<>();
+				for (Resources res1:Resources.values()) {
+					boolean found = false;
+					for (Resources[] arr:allResources2) {
+						if (arr!=null)
+							for (Resources res2:arr)
+								if (res1==res2) {
+									found = true;
+									break;
+								}
+						if (found)
+							break;
+					}
+					if (!found)
+						remaining.add(res1);
+				}
+				return remaining.toArray(new Resources[remaining.size()]);
 			}
 			private Integer getIndex(MouseEvent e) {
 				int gridX = e.getX()/SLOT_RASTER_X;

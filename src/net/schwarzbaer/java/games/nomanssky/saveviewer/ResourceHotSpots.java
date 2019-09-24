@@ -1290,6 +1290,7 @@ public class ResourceHotSpots implements ActionListener {
 		private static final Color COLOR_BASE_RANGE             = Color.BLACK;
 		private static final Color COLOR_CIRCLE_HIGHLIGHTED     = Color.GRAY;
 		private static final Color COLOR_CIRCLE_FILL            = new Color(0xEFEFEF);
+		private static final Color COLOR_CIRCLE_FILL2           = new Color(0xF7F7F7);
 		
 		private static final Polygon POLYGON_SMALL_HOUSE = new Polygon(new int[] {0,5,3,3,-3,-3,-5}, new int[] {-4,1,1,3,3,1,1}, 7);
 		
@@ -1503,7 +1504,8 @@ public class ResourceHotSpots implements ActionListener {
 				
 				if (viewState.isOk()) {
 					
-					region.circles        .forEach(item->draw(g2,item,false));
+					region.circles        .forEach(item->draw(g2, item, true));
+					region.circles        .forEach(item->draw(g2, item, false));
 					region.referencePoints.forEach(item->{ if (item!=displayedLocation) draw(g2,item,false); });
 					region.hotSpots       .forEach(item->{ if (item!=displayedLocation) draw(g2,item); });
 					
@@ -1517,7 +1519,7 @@ public class ResourceHotSpots implements ActionListener {
 						
 						if (displayedLocation instanceof Planet.Circle) {
 							Planet.Circle circle = (Planet.Circle) displayedLocation;
-							draw(g2,circle,true);
+							drawHighlighted(g2,circle);
 							
 						} else {
 							if (displayedLocation instanceof Planet.HotSpot       ) draw(g2, (Planet.HotSpot       ) displayedLocation);
@@ -1640,22 +1642,28 @@ public class ResourceHotSpots implements ActionListener {
 			
 		}
 		
-		private void draw(Graphics2D g2, Planet.Circle item, boolean asHighlighted) {
+		private void drawHighlighted(Graphics2D g2, Planet.Circle item) {
 			Point p = viewState.convertPos_AngleToScreen(item.center);
-			Integer radius = viewState.convertLength_LengthToScreen(item.radius);
+			Integer radius  = viewState.convertLength_LengthToScreen(item.radius);
 			if (p!=null && radius!=null) {
-				if (asHighlighted) {
-					g2.setColor(COLOR_CIRCLE_HIGHLIGHTED);
-					Stroke currentStroke = g2.getStroke();
-					g2.setStroke(STROKE_DASHED_LINE);
-					g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
-					g2.setStroke(currentStroke);
-					g2.drawLine(p.x-3,p.y, p.x+3, p.y);
-					g2.drawLine(p.x,p.y-3, p.x,p.y+3);
-				} else {
-					g2.setColor(COLOR_CIRCLE_FILL);
-					g2.fillOval(p.x-radius, p.y-radius, radius*2, radius*2);
-				}
+				g2.setColor(COLOR_CIRCLE_HIGHLIGHTED);
+				Stroke currentStroke = g2.getStroke();
+				g2.setStroke(STROKE_DASHED_LINE);
+				g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
+				g2.setStroke(currentStroke);
+				g2.drawLine(p.x-3,p.y, p.x+3, p.y);
+				g2.drawLine(p.x,p.y-3, p.x,p.y+3);
+			}
+		}
+
+		private void draw(Graphics2D g2, Planet.Circle item, boolean drawOuterCircle) {
+			Point p = viewState.convertPos_AngleToScreen(item.center);
+			Float radius_u = item.radius;
+			if (radius_u!=null && !drawOuterCircle) radius_u -= 10;
+			Integer radius_px  = viewState.convertLength_LengthToScreen(radius_u);
+			if (p!=null && radius_px!=null) {
+				g2.setColor(drawOuterCircle?COLOR_CIRCLE_FILL2:COLOR_CIRCLE_FILL);
+				g2.fillOval(p.x-radius_px, p.y-radius_px, radius_px*2, radius_px*2);
 			}
 		}
 
