@@ -26,6 +26,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -44,6 +45,7 @@ import javax.activation.DataHandler;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
@@ -55,11 +57,13 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -648,6 +652,12 @@ public class SaveViewer implements ActionListener {
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
 	}
 
+	public static void runInEventThreadAndWait(Runnable doRun) {
+		//doRun.run(); // for testing
+		try { SwingUtilities.invokeAndWait(doRun); }
+		catch (InvocationTargetException | InterruptedException e) { e.printStackTrace(); }
+	}
+
 	public static void runWithProgressDialog(Window parent, String title, Consumer<ProgressDialog> useProgressDialog) {
 		ProgressDialog.runWithProgressDialog(parent, title, 400, useProgressDialog);
 	}
@@ -1207,9 +1217,9 @@ public class SaveViewer implements ActionListener {
 	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
 	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
 
-	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, Consumer<ItemType> valueSelected) {
-		if (disabler!=null && actionCommand!=null)
-			disabler.add(actionCommand, comp);
+	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, boolean enabled, Consumer<ItemType> valueSelected) {
+		comp.setEnabled(enabled);
+		if (disabler!=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		
 		if (valueSelected!=null) comp.addActionListener(e->{
 			int index = comp.getSelectedIndex();
@@ -1217,38 +1227,49 @@ public class SaveViewer implements ActionListener {
 			else valueSelected.accept(comp.getItemAt(index));
 		});
 	}
-	public static <AC extends Enum<AC>> void setComp(JComboBox<?> comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+	public static <AC extends Enum<AC>> void setComp(JComboBox<?> comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		comp.setEnabled(enabled);
 		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
 
-	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		comp.setEnabled(enabled);
 		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
 
-	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		comp.setEnabled(enabled);
 		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
 
 	public static JButton createButton(String title, ActionListener l) {
+		return createButton(title, l, null, null, true);
+	}
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
+		return createButton(title, l, null, actionCommand, true);
+	}
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+		return createButton(title, l, disabler, actionCommand, true);
+	}
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
 		JButton button = new JButton(title);
-		if (l!=null) button.addActionListener(l);
+		setComp(button, l, disabler, actionCommand, enabled);
 		return button;
 	}
-
-	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
-		return createButton(title, l, null, actionCommand);
+	
+	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
+		return createRadioButton(title, bg, l, null, null, isSelected, enabled);
 	}
-
-	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
-		JButton button = createButton(title,l);
-		if (disabler!=null && actionCommand!=null) disabler.add(actionCommand, button);
-		if (actionCommand!=null) button.setActionCommand(actionCommand.toString());
+	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
+		JRadioButton button = new JRadioButton(title,isSelected);
+		if (bg!=null) bg.add(button);
+		setComp(button, l, disabler, actionCommand, enabled);
 		return button;
 	}
 
@@ -1276,7 +1297,7 @@ public class SaveViewer implements ActionListener {
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
 		menuItem.setEnabled(enabled);
-		setComp(menuItem, l, disabler, actionCommand);
+		setComp(menuItem, l, disabler, actionCommand, true);
 		if (icon!=null) menuItem.setIcon(toolbarIS.getIcon(icon));
 		return menuItem;
 	}
@@ -1290,13 +1311,24 @@ public class SaveViewer implements ActionListener {
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
 		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
 		menuItem.setEnabled(enabled);
-		setComp(menuItem, l, disabler, actionCommand);
+		setComp(menuItem, l, disabler, actionCommand, true);
 		return menuItem;
 	}
 
 	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
+		return createCheckbox(title, l, null, null, isSelected, true);
+	}
+	public static JCheckBox createCheckbox(String title, boolean isSelected, Consumer<Boolean> selectionChanged) {
+		return createCheckbox(title, null, null, isSelected, true, selectionChanged);
+	}
+	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
 		JCheckBox button = new JCheckBox(title,isSelected);
-		if (l!=null) button.addActionListener(l);
+		setComp(button, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled);
+		return button;
+	}
+	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
+		JCheckBox button = new JCheckBox(title,isSelected);
+		setComp(button, l, disabler, actionCommand, enabled);
 		return button;
 	}
 	
@@ -1327,7 +1359,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private static <AC extends Enum<AC>> void setTextField(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		setComp(comp,listener,disabler,actionCommand);
+		setComp(comp,listener,disabler,actionCommand, true);
 		if (listener!=null) {
 			comp.addFocusListener(new FocusListener() {
 				@Override public void focusGained(FocusEvent e) {}

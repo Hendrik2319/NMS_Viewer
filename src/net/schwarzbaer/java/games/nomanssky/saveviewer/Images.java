@@ -10,12 +10,14 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,10 +37,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
@@ -46,6 +51,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -423,7 +429,7 @@ public class Images {
 		return true;
 	}
 
-	public boolean deleteImage(String imageFileName, Runnable taskBeforeUpdatingImageListListeners) {
+	public boolean deleteImage(String imageFileName, Consumer<Integer> taskBeforeUpdatingImageListListeners) {
 		int index = findImage(imageFileName);
 		if (index == -1) { SaveViewer.log_error_ln("Can't delete image: Image \"%s\" was not found in image list.", imageFileName); return false; }
 		
@@ -447,7 +453,7 @@ public class Images {
 		images.remove(imageFileName);
 		
 		if (taskBeforeUpdatingImageListListeners!=null)
-			taskBeforeUpdatingImageListListeners.run();
+			taskBeforeUpdatingImageListListeners.accept(index);
 		
 		updateImageListListeners(null);
 		return true;
@@ -472,19 +478,26 @@ public class Images {
 
 	private void updateImageListListeners(ProgressDialog pd) {
 		if (pd!=null) {
-			pd.setTaskTitle("Update GUI");
-			pd.setValue(0, imageListListeners.size());
+			SaveViewer.runInEventThreadAndWait(()->{
+				pd.setTaskTitle("Update GUI");
+				pd.setValue(0, imageListListeners.size());
+			});
 		}
 		for (int i=0; i<imageListListeners.size(); i++) {
 			imageListListeners.get(i).imageListChanged();
-			if (pd!=null) pd.setValue(i+1);
+			if (pd!=null) {
+				int value = i+1;
+				SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+			}
 		}
 	}
 
 	private void readImages(ProgressDialog pd) {
 		if (pd!=null) {
-			pd.setTaskTitle("Get Image List");
-			pd.setIndeterminate(true);
+			SaveViewer.runInEventThreadAndWait(()->{
+				pd.setTaskTitle("Get Image List");
+				pd.setIndeterminate(true);
+			});
 		}
 		long start = System.currentTimeMillis();
 		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
@@ -504,13 +517,15 @@ public class Images {
 				return false;
 			}
 		});
-		if (pd!=null) pd.setTaskTitle("Sort Image List");
+		if (pd!=null)
+			SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle("Sort Image List"));
 		Arrays.sort(imagesNames,Comparator.comparing(String::toLowerCase));
 		
-		if (pd!=null) {
-			pd.setTaskTitle("Read Images");
-			pd.setValue(0, imagesNames.length);
-		}
+		if (pd!=null)
+			SaveViewer.runInEventThreadAndWait(()->{
+				pd.setTaskTitle("Read Images");
+				pd.setValue(0, imagesNames.length);
+			});
 		
 		int listChunkIndex = 0;
 		images.clear();
@@ -525,9 +540,10 @@ public class Images {
 			if (image!=null)
 				images.put(imagesNames[i], image);
 			
-			if (pd!=null)
-				pd.setValue(i+1);
-			else {
+			if (pd!=null) {
+				int value = i+1;
+				SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+			} else {
 				int n= i*6/imagesNames.length;
 				if (listChunkIndex != n) {
 					listChunkIndex = n;
@@ -557,32 +573,34 @@ public class Images {
 		if (imageFileName!=null)
 			baseImage = images.get(imageFileName);
 		
-		if (imageBackground!=null || (baseImage!=null && (width!=baseImage.getWidth() || height!=baseImage.getHeight()))) {
-			if (width <0) width  = (baseImage==null)?256:baseImage.getWidth();
-			if (height<0) height = (baseImage==null)?256:baseImage.getHeight();
-			BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			Graphics g = combinedImage.getGraphics();
-			if (imageBackground!=null) {
-				g.setColor(new Color(imageBackground));
-				g.fillRect(0,0,width,height);
+		if (imageBackground==null) {
+			if (baseImage==null) return baseImage;
+			if (width==baseImage.getWidth() && height==baseImage.getHeight()) return baseImage;
+		}
+		
+		if (width <0) width  = (baseImage==null)?256:baseImage.getWidth();
+		if (height<0) height = (baseImage==null)?256:baseImage.getHeight();
+		BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics g = combinedImage.getGraphics();
+		if (imageBackground!=null) {
+			g.setColor(new Color(imageBackground));
+			g.fillRect(0,0,width,height);
+		}
+		if (baseImage!=null) {
+			if (width==baseImage.getWidth() && height==baseImage.getHeight())
+				g.drawImage(baseImage,0,0,null);
+			else {
+				if (g instanceof Graphics2D) {
+					Graphics2D g2 = (Graphics2D)g;
+					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+					g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+					g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+					g2.drawImage(baseImage,0,0,width,height,null);
+				} else
+					g.drawImage(baseImage,0,0,width,height,null);
 			}
-			if (baseImage!=null) {
-				if (width==baseImage.getWidth() && height==baseImage.getHeight())
-					g.drawImage(baseImage,0,0,null);
-				else {
-					if (g instanceof Graphics2D) {
-						Graphics2D g2 = (Graphics2D)g;
-						g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-						g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-						g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-						g2.drawImage(baseImage,0,0,width,height,null);
-					} else
-						g.drawImage(baseImage,0,0,width,height,null);
-				}
-			}
-			return combinedImage;
-		} else
-			return baseImage;
+		}
+		return combinedImage;
 	}
 	
 	public enum UpgradeCategory {
@@ -694,50 +712,104 @@ public class Images {
 		}
 	}
 	
-	public static class ImageGridPanel extends net.schwarzbaer.gui.ImageGridPanel {
+	public static class ImageGridPanel extends net.schwarzbaer.gui.ImageGridPanel implements Iterable<net.schwarzbaer.gui.ImageGridPanel.ImageData> {
 		private static final long serialVersionUID = -5485402060151977360L;
-		private Iterable<ImageData> images;
 		private boolean markUsedImages;
+		private int[] sortedIndexes;
 
 		public ImageGridPanel(int cols, String preselectedImageFileName) {
 			super(cols, preselectedImageFileName, false, null);
 			markUsedImages = false;
-			
-			images = new Iterable<ImageGridPanel.ImageData>() {
-				@Override public Iterator<ImageData> iterator() {
-					return new Iterator<ImageGridPanel.ImageData>() {
-						private int index = 0;
-						@Override public boolean hasNext() {
-							return index<SaveViewer.images.imagesNames.length;
-						}
-						@Override public ImageData next() {
-							String imageName = SaveViewer.images.imagesNames[index++];
-							BufferedImage image = SaveViewer.images.getImage(imageName,null,64,64);
-							return new ImageData(imageName, imageName, image);
-						}
-					};
-				}
-			};
+			sortedIndexes = null;
 			
 			setMarkerColors(new Color[] { Color.LIGHT_GRAY, new Color(0xDCB9F2) });
-			createImageItems(preselectedImageFileName,images,null);
+			createImageItems(preselectedImageFileName,this,null);
 		}
 		
+		public int[] removeValue(int index, int[] arr) {
+			if (index<0 || index>=arr.length)
+				return arr;
+			
+			if (index==0)
+				return Arrays.copyOfRange(arr, 1, arr.length);
+			
+			if (index==arr.length-1)
+				return Arrays.copyOfRange(arr, 0, arr.length-1);
+			
+			
+			return IntStream.concat(
+					Arrays.stream(arr,0,index),
+					Arrays.stream(arr,index+1,arr.length)
+			).toArray();
+		}
+		
+		public void deleteSortedIndex(int index, int nameIndex) {
+			sortedIndexes = Arrays
+					.stream( removeValue(index, sortedIndexes) )
+					.map(i-> i < nameIndex ? i : i-1)
+					.toArray();
+		}
+
+		public boolean hasStandardOrder() {
+			return sortedIndexes==null;
+		}
+
+		public void setOrder(int[] sortedIndexes) {
+			this.sortedIndexes = sortedIndexes;
+		}
+		
+		public int getSelectedGridIndex() {
+			return selectedIndex;
+		}
+		public void setSelectedGridIndex(int selectedIndex) {
+			this.selectedIndex = selectedIndex;
+		}
+
+		private int getIndex(int i) {
+			if (sortedIndexes!=null) return sortedIndexes[i]; 
+			return i;
+		}
+		private int getLength() {
+			if (sortedIndexes!=null) return sortedIndexes.length; 
+			return SaveViewer.images.imagesNames.length;
+		}
+		
+		@Override
+		public Iterator<ImageData> iterator() {
+			return new Iterator<ImageData>() {
+				private int index = 0;
+				@Override public boolean hasNext() {
+					return index < getLength();
+				}
+				@Override public ImageData next() {
+					String imageName = SaveViewer.images.imagesNames[getIndex(index++)];
+					BufferedImage image = SaveViewer.images.getImage(imageName,null,64,64);
+					return new ImageData(imageName, imageName, image);
+				}
+			};
+		}
+
 		public void resetImages(ProgressDialog pd) {
 			if (pd!=null) {
-				pd.setTaskTitle("Remove images from grid");
-				pd.setIndeterminate(true);
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Remove images from grid");
+					pd.setIndeterminate(true);
+				});
 			}
 			String selectedImageID = getSelectedImageID();
 			removeAll();
 			
 			if (pd!=null) {
-				pd.setTaskTitle("Create new image grid");
-				pd.setValue(0, SaveViewer.images.imagesNames.length);
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Create new image grid");
+					pd.setValue(0, SaveViewer.images.imagesNames.length);
+				});
 			}
-			createImageItems(selectedImageID, images, i->{ if (pd!=null) pd.setValue(i); });
+			createImageItems(selectedImageID, this, pd==null ? null : i->SaveViewer.runInEventThreadAndWait(()->pd.setValue(i)));
 			if (markUsedImages)
 				markUsedImages(markUsedImages);
+			
+			revalidate();
 		}
 
 		public void markUsedImages(boolean markUsedImages) {
@@ -761,6 +833,47 @@ public class Images {
 				}
 		}
 	}
+	
+	private static class ComparableImage {
+		final WritableRaster raster;
+		final int index;
+		double similarity;
+
+		ComparableImage(String imageName, int index) {
+			BufferedImage image = SaveViewer.images.getImage(imageName,0xFFFFFF,256,256);
+			this.raster = image.getRaster();
+			this.index = index;
+			this.similarity = Double.NaN;
+		}
+
+		public void computeSimilarityTo(ComparableImage other) {
+			Rectangle bounds      = this .raster.getBounds();
+			Rectangle otherBounds = other.raster.getBounds();
+			if (!bounds.equals(otherBounds))
+				throw new IllegalArgumentException();
+			
+			double[] p1 = new double[4];
+			double[] p2 = new double[4];
+			similarity = 0;
+			for (int x=bounds.x; x<bounds.width+bounds.x; x++)
+				for (int y=bounds.y; y<bounds.height+bounds.y; y++) {
+					this .raster.getPixel(x, y, p1);
+					other.raster.getPixel(x, y, p2);
+					similarity += (float) Math.sqrt( (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]) );
+				}
+		}
+
+		@SuppressWarnings("unused")
+		public void testRaster() {
+			float[] pixel = new float[4];
+			Rectangle bounds = raster.getBounds();
+			for (int x=bounds.x; x<bounds.width+bounds.x; x++)
+				for (int y=bounds.y; y<bounds.height+bounds.y; y++) {
+					raster.getPixel(x, y, pixel);
+					SaveViewer.log_ln("raster(%d,%d) := [ %1.5f, %1.5f, %1.5f, %1.5f ]", x,y, pixel[0], pixel[1], pixel[2], pixel[3]);
+				}
+		}
+	}
 
 	public static class ShowImagesDialog extends StandardDialog {
 		private static final long serialVersionUID = 2440132074027157283L;
@@ -771,8 +884,12 @@ public class Images {
 		private JTextArea output;
 		private JLabel imageField;
 		private JPopupMenu contextMenu;
+		private JRadioButton rdbtnSortSimilarity;
+		
+		private String selectedName;
 		private String clickedName;
-		private int clickedIndex;
+		private int clickedGridIndex;
+
 		
 		public ShowImagesDialog(Window parent, String title) {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
@@ -780,14 +897,15 @@ public class Images {
 			
 			imageGridPanel = new ImageGridPanel(8,null);
 			imageGridPanel.markUsedImages(markUsedImagesByDefault);
-			imageGridPanel.addSelectionListener(this::showValuesofSelected);
+			imageGridPanel.addSelectionListener(this::setSelected);
 			imageGridPanel.addRightClickListener((name, index, source, x, y) -> {
 				clickedName  = name;
-				clickedIndex = index;
+				clickedGridIndex = index;
 				contextMenu.show(source, x, y);
 			});
 			clickedName = null;
-			clickedIndex = -1;
+			clickedGridIndex = -1;
+			selectedName = null;
 			
 			imageScrollPane = new JScrollPane(imageGridPanel);
 			imageScrollPane.setPreferredSize(new Dimension(930,700));
@@ -802,11 +920,18 @@ public class Images {
 			JScrollPane outputScrollPane = new JScrollPane(output);
 			outputScrollPane.setPreferredSize(new Dimension(400,450));
 			
-			JCheckBox chkbxMarkUsedImages;
-			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, markUsedImagesByDefault));
-			buttonPanel.add(SaveViewer.createButton("Close",e->closeDialog()));
-			chkbxMarkUsedImages.addActionListener(e->imageGridPanel.markUsedImages(chkbxMarkUsedImages.isSelected()));
+			ButtonGroup bg = new ButtonGroup();
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			JPanel buttonPanel = new JPanel(new GridBagLayout());
+			c.weightx = 0;
+			buttonPanel.add(SaveViewer.createRadioButton("Sort by name", bg, true, true,e->sortByName()),c);
+			buttonPanel.add(rdbtnSortSimilarity = SaveViewer.createRadioButton("Sort by similarity to selected image", bg, false, false,e->sortBySimilarityTo(selectedName)),c);
+			buttonPanel.add(SaveViewer.createCheckbox("Mark Used Images", markUsedImagesByDefault, isSelected->imageGridPanel.markUsedImages(isSelected)),c);
+			c.weightx = 1;
+			buttonPanel.add(new JLabel(),c);
+			c.weightx = 0;
+			buttonPanel.add(SaveViewer.createButton("Close",e->closeDialog()),c);
 			
 						
 			JPanel rightPanel = new JPanel(new BorderLayout(3,3));
@@ -820,13 +945,59 @@ public class Images {
 			contentPane.add(buttonPanel,BorderLayout.SOUTH);
 			
 			contextMenu = new JPopupMenu("ImageContextMenu");
-			contextMenu.add("Rename").addActionListener(e->renameSelectedImage());;
-			contextMenu.add("Delete").addActionListener(e->deleteSelectedImage());;
+			contextMenu.add("Sort by similarity to this image").addActionListener(e->sortBySimilarityTo(clickedName));
+			contextMenu.addSeparator();
+			contextMenu.add("Rename").addActionListener(e->renameSelectedImage());
+			contextMenu.add("Delete").addActionListener(e->deleteSelectedImage());
 			
 			getUsage();
 			this.createGUI(contentPane);
 		}
 		
+		private void sortByName() {
+			SaveViewer.runWithProgressDialog(this, "Sort By Name", pd -> {
+				imageGridPanel.setOrder(null);
+				imageGridPanel.resetImages(pd);
+			});
+		}
+		
+		private void sortBySimilarityTo(String imageName) {
+			if (imageName==null) return;
+			SaveViewer.runWithProgressDialog(this, "Sort By Similarity", pd -> {
+				SaveViewer.runInEventThreadAndWait(()->{
+					if (!rdbtnSortSimilarity.isSelected())
+						rdbtnSortSimilarity.setSelected(true);
+					
+					pd.setTaskTitle("Compare images");
+					pd.setValue(0, SaveViewer.images.imagesNames.length);
+				});
+				
+				ComparableImage baseImage = new ComparableImage(imageName,-1);
+				//selectedImage.testRaster();
+				
+				ComparableImage[] images = new ComparableImage[SaveViewer.images.imagesNames.length];
+				for (int i=0; i<SaveViewer.images.imagesNames.length; i++) {
+					ComparableImage image1 = new ComparableImage(SaveViewer.images.imagesNames[i],i);
+					image1.computeSimilarityTo(baseImage);
+					images[i] = image1;
+					int value = i+1;
+					SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+				}
+				
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Sort images");
+					pd.setIndeterminate(true);
+				});
+				int[] sortedIndexes = Arrays.stream(images)
+						.sorted(Comparator.comparing(image2->image2.similarity))
+						.mapToInt(image3->image3.index)
+						.toArray();
+				
+				imageGridPanel.setOrder(sortedIndexes);
+				imageGridPanel.resetImages(pd);
+			});
+		}
+
 		private static class IdUsage {
 			Vector<GeneralizedID> techIDs     ;
 			Vector<GeneralizedID> productIDs  ;
@@ -865,7 +1036,7 @@ public class Images {
 		}
 
 		private void deleteSelectedImage() {
-			if (clickedName==null) return;
+			if (clickedName==null && clickedGridIndex<0) return;
 			
 			if (JOptionPane.YES_OPTION !=
 					JOptionPane.showConfirmDialog(
@@ -894,30 +1065,26 @@ public class Images {
 						return;
 			}
 			
-			boolean wasSuccessful = SaveViewer.images.deleteImage(clickedName, ()->{
+			boolean wasSuccessful = SaveViewer.images.deleteImage(clickedName, index->{
 				IdUsage removedIdUsage = usage.remove(clickedName);
 				if (removedIdUsage!=null)
 					removedIdUsage.setImageFileName(null);
+				if (!imageGridPanel.hasStandardOrder())
+					imageGridPanel.deleteSortedIndex(clickedGridIndex,index);
 			});
 			if (wasSuccessful) {
-				if (clickedIndex==imageGridPanel.selectedIndex) {
-					showValuesofSelected(null);
-					imageGridPanel.selectedIndex = -1;
+				if (clickedGridIndex==imageGridPanel.getSelectedGridIndex()) {
+					setSelected(null);
+					imageGridPanel.setSelectedGridIndex(-1);
 				}
-				ProgressDialog pd = new ProgressDialog(this,"Reset Images in Window");
-				new Thread(()->{
-					pd.waitUntilDialogIsVisible();
-					imageGridPanel.resetImages(pd);
-					pd.closeDialog();
-					imageGridPanel.revalidate();
-				}).start();
-				pd.showDialog();
+				
+				SaveViewer.runWithProgressDialog(this, "Reset Images in Window", imageGridPanel::resetImages);
 				GameInfos.saveAllIDsToFiles();
 			} else
 				JOptionPane.showMessageDialog(this, "Can't delete \""+clickedName+"\".", "Error", JOptionPane.ERROR_MESSAGE);
 			
 			clickedName = null;
-			clickedIndex = -1;
+			clickedGridIndex = -1;
 		}
 
 		private void renameSelectedImage() {
@@ -936,31 +1103,37 @@ public class Images {
 				}
 			});
 			if (wasSuccessful) {
-				imageGridPanel.setImageName(clickedIndex,newName);
-				if (clickedIndex==imageGridPanel.selectedIndex)
-					showValuesofSelected(newName);
+				imageGridPanel.setImageName(clickedGridIndex,newName);
+				if (clickedGridIndex==imageGridPanel.getSelectedGridIndex())
+					setSelected(newName);
 				GameInfos.saveAllIDsToFiles();
 			} else
 				JOptionPane.showMessageDialog(this, "Can't rename \""+oldName+"\" to \""+newName+"\".", "Error", JOptionPane.ERROR_MESSAGE);
 			
 			clickedName = null;
-			clickedIndex = -1;
+			clickedGridIndex = -1;
 		}
 
-		private void showValuesofSelected(String imageFileName) {
-			//SaveViewer.log_ln("Selected Image: %s", name);
+		private void setSelected(String selectedName) {
+			this.selectedName = selectedName;
+			rdbtnSortSimilarity.setEnabled(selectedName!=null);
+			showValuesOfSelected();
+		}
+		private void showValuesOfSelected() {
+			//SaveViewer.log_ln("Selected Image: %s", selectedName);
 			
 			output.setText("");
-			if (imageFileName==null) return;
+			if (selectedName==null) return;
 			
-			BufferedImage image = SaveViewer.images.getImage(imageFileName,null,-1,-1);
+			BufferedImage image = SaveViewer.images.getImage(selectedName,null,-1,-1);
 			imageField.setIcon(image!=null?new ImageIcon(image):null);
 			
 			output.append("Image:\r\n");
-			output.append("   "+imageFileName+"\r\n");
+			output.append("   "+selectedName+"\r\n");
+			if (image!=null) output.append("   "+image.getWidth()+" x "+image.getHeight()+"\r\n");
 			output.append("\r\n");
 			
-			IdUsage idUsage = usage.get(imageFileName);
+			IdUsage idUsage = usage.get(selectedName);
 			if (idUsage==null) idUsage = new IdUsage();
 			
 			output.append("Used by following IDs:\r\n");

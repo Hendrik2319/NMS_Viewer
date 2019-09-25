@@ -245,9 +245,9 @@ public class ResourceHotSpots implements ActionListener {
 		hotSpotTypeSelect      = new JComboBox<Planet.HotSpot.Type >(SaveViewer.addNull(Planet.HotSpot.Type .values()));
 		hotSpotClassSelect     = new JComboBox<Planet.HotSpot.Class>(SaveViewer.addNull(Planet.HotSpot.Class.values()));
 		hotSpotSubstanceSelect = new JComboBox<String>();
-		SaveViewer.setComp(hotSpotTypeSelect     , disabler, ActionCommand.SelectHotSpotType     , hotSpotsView::setSelectCriteria);
-		SaveViewer.setComp(hotSpotClassSelect    , disabler, ActionCommand.SelectHotSpotClass    , hotSpotsView::setSelectCriteria);
-		SaveViewer.setComp(hotSpotSubstanceSelect, disabler, ActionCommand.SelectHotSpotSubstance, hotSpotsView::setSelectCriteria);
+		SaveViewer.setComp(hotSpotTypeSelect     , disabler, ActionCommand.SelectHotSpotType     , true, hotSpotsView::setSelectCriteria);
+		SaveViewer.setComp(hotSpotClassSelect    , disabler, ActionCommand.SelectHotSpotClass    , true, hotSpotsView::setSelectCriteria);
+		SaveViewer.setComp(hotSpotSubstanceSelect, disabler, ActionCommand.SelectHotSpotSubstance, true, hotSpotsView::setSelectCriteria);
 		
 		JPanel hotSpotsSelectPanel = new JPanel(new GridBagLayout());
 		hotSpotsSelectPanel.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
@@ -276,8 +276,8 @@ public class ResourceHotSpots implements ActionListener {
 		
 		planetComboBox = new JComboBox<Planet>(planets);
 		regionComboBox = new JComboBox<>();
-		SaveViewer.setComp(planetComboBox,this,disabler,ActionCommand.SelectPlanet);
-		SaveViewer.setComp(regionComboBox,this,disabler,ActionCommand.SelectRegion);
+		SaveViewer.setComp(planetComboBox,this,disabler,ActionCommand.SelectPlanet, true);
+		SaveViewer.setComp(regionComboBox,this,disabler,ActionCommand.SelectRegion, true);
 		planetComboBox.setMinimumSize(new Dimension(100,16));
 		regionComboBox.setMinimumSize(new Dimension(100,16));
 		
