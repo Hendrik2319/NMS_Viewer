@@ -3737,6 +3737,13 @@ class=Yellow
 short=6 Planeten
 info=
 
+[Pln106E00FDF7809A]
+name=Gojoshu XVIII
+biome=Barren
+aggrSentinels
+gravitino balls
+resources=Cu,Py,NaCl
+
 [Sys007900FDF7809A]
 name=Wiposcua XII
 race=Korvax
@@ -4872,11 +4879,48 @@ biome=Scorched
 with water
 resources=Cu,P,Ag
 
+[Pln201300FFF37590]
+name=Ootle
+biome=Lush
+with water
+resources=Cu,Pf,Ag
+
 [Pln501300FFF37590]
 name=Meghamal
 biome=Lush
 buriedTreasure=AncientBones
 resources=Cu,Pf,Fe__
+
+[Sys006F00FFF37590]
+name=Illgasins
+race=Vykeen
+short=4 Planeten
+info=
+
+[Pln106F00FFF37590]
+name=Kesbrowns
+biome=Lush
+with water
+resources=Cu,Pf,Co
+
+[Pln206F00FFF37590]
+name=Losdonnar Minoris
+biome=Frozen
+resources=Cu,CO2,Co
+
+[Sys007500FFF37590]
+name=Erleisla
+race=Gek
+conflict=2
+conflict_label=streitlustig
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln107500FFF37590]
+name=Stbur XVII
+biome=Frozen
+resources=Cu,CO2,NaCl
 
 [Reg00000003CC45B8]
 name=Aygans-Quadrant
