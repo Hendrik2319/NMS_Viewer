@@ -758,8 +758,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			chkbxUnexplored = SaveViewer.createCheckbox("is Unexplored", e->{
 				if (isSettingContent) return;
 				node.value.isUnexplored = chkbxUnexplored.isSelected();
-				cmbbxRace         .setEnabled(!node.value.isUnexplored);
-				cmbbxConflictLevel.setEnabled(!node.value.isUnexplored);
+				cmbbxRace               .setEnabled(!node.value.isUnexplored);
+				cmbbxConflictLevel      .setEnabled(!node.value.isUnexplored);
+				cmbbxConflictLevelLabels.setEnabled(!node.value.isUnexplored);
+				btnAddConflictLevelLabel.setEnabled(!node.value.isUnexplored);
 				updateTreeNode(node, false);
 			}, false);
 			

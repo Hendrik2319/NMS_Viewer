@@ -26,6 +26,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
@@ -171,12 +172,11 @@ public class SimplePanels {
 				}
 				if (!editableMods.isEmpty()) {
 					EditNewMods dlg = new EditNewMods(mainWindow, "Edit Modifications", editableMods, ()->showValues(fr,rowM));
-					new Thread(new Runnable() {
-						@Override public void run() {
-							dlg.showDialog();
-							Frigate.EditableModification.saveKnownEditableModsToFile();
-						}
-					}).start();
+					SwingUtilities.invokeLater(() -> {
+						dlg.showDialog();
+						Frigate.EditableModification.saveKnownEditableModsToFile();
+						tableModel.fireTableUpdate();
+					});
 				} else {
 					JOptionPane.showMessageDialog(mainWindow, "No editable modifications in current frigate.", "No Editable Modifications", JOptionPane.INFORMATION_MESSAGE);
 				}
@@ -240,7 +240,7 @@ public class SimplePanels {
 			// [80, 80, 80, 120, 70, 70, 70, 93, 40, 40, 40, 40, 90, 150]
 			// [80, 80, 80, 120, 70, 70, 70, 80, 50, 50, 50, 50, 60, 150, 163, 167]
 			Index         ("#"                  ,   Integer.class, 35, -1,  35,  35),
-			Name          ("Name"               ,    String.class, 35, -1,  80,  80),
+			Name          ("Name"               ,    String.class, 35, -1, 180, 180),
 			ShipType      ("Ship Type"          ,    String.class, 35, -1,  80,  80),
 			CrewRace      ("Crew Race"          ,    String.class, 35, -1,  80,  80),
 			Aquired       ("Aquired"            , TimeStamp.class, 35, -1, 120, 120),

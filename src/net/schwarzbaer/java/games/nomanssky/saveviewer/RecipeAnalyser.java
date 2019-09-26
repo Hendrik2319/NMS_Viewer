@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
@@ -80,9 +81,15 @@ class RecipeAnalyser implements ActionListener {
 	private static final Color COLOR_INGREDIENT_INPUT  = new Color(255,204,153);
 	private static final Color COLOR_INGREDIENT_OUTPUT = new Color(204,255,0);
 
-	private static final Color COLOR_RECIPE_ODD  = new Color(1.0f,1.0f,0.8f);
-	private static final Color COLOR_RECIPE_EVEN = Color.WHITE;
-
+	private static final Color BGCOLOR_RECIPE_ODD  = new Color(1.0f,1.0f,0.8f);
+	private static final Color BGCOLOR_RECIPE_EVEN = Color.WHITE;
+	private static final Color BGCOLOR_RECIPE_ODD_PRODUCIBLE  = new Color(0xCBE7A0);
+	private static final Color BGCOLOR_RECIPE_EVEN_PRODUCIBLE = new Color(0xBBD795);
+	@SuppressWarnings("unused")
+	private static final Color BGCOLOR_RECIPE_INGREDIENT_PRODUCIBLE = new Color(0x8CD744);
+	private static final Color BGCOLOR_RECIPE_IS_WRONG  = new Color(0xF0F0F0);
+	private static final Color TXTCOLOR_RECIPE_IS_WRONG = Color.GRAY;
+	
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
@@ -198,7 +205,7 @@ class RecipeAnalyser implements ActionListener {
 		CopyNutrientProcessorRecipesFromClipBoard,
 		CopyNutrientProcessorIngredientsFromClipBoard,
 		SaveInStockIngredients,
-		SetInStock, UnsetInStock,
+		SetInStock, UnsetInStock, MarkRecipeAsWrong,
 		;
 	}
 
@@ -241,7 +248,8 @@ class RecipeAnalyser implements ActionListener {
 			miFindRecipes2.setEnabled(isProducible);
 		});
 		
-		DebugTableContextMenu contextMenu = ingredientsTable.getDebugTableContextMenu();
+		DebugTableContextMenu contextMenu;
+		contextMenu = ingredientsTable.getDebugTableContextMenu();
 		contextMenu.addSeparator();
 		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		contextMenu.add(miFindRecipes);
@@ -256,6 +264,23 @@ class RecipeAnalyser implements ActionListener {
 		
 		recipesTable = new TableView.SimplifiedTable("RecipesTable", true, true, false);
 		recipesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		
+		JMenuItem miMarkRecipeAsWrong = SaveViewer.createCheckBoxMenuItem("Recipe is wrong", this, disabler, ActionCommand.MarkRecipeAsWrong);
+		recipesTable.addContextMenuInvokeListener((rowV, columnV)->{
+			if (dataModel==null || dataModel.recipesTableModel==null) return;
+			
+			int rowM = recipesTable.convertRowIndexToModel(rowV);
+			dataModel.recipesTableModel.setClickedRecipe(rowM);
+			//DataModel<?>.RecipesTableModel.RecipeRow recipeRow = dataModel.recipesTableModel.clickedRecipeRow;
+			DataModel<?>.Recipe clickedRecipe = dataModel.recipesTableModel.clickedRecipe;
+			miMarkRecipeAsWrong.setText( String.format("%s is wrong", clickedRecipe==null ? "Recipe" : clickedRecipe.toString()) );
+			miMarkRecipeAsWrong.setEnabled(clickedRecipe!=null);
+			miMarkRecipeAsWrong.setSelected(clickedRecipe!=null && clickedRecipe.isWrong);
+		});
+		
+		contextMenu = recipesTable.getDebugTableContextMenu();
+		contextMenu.addSeparator();
+		contextMenu.add(miMarkRecipeAsWrong);
 		
 		rawIngredientsTable = new JTable();
 		rawIngredientsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -457,6 +482,11 @@ class RecipeAnalyser implements ActionListener {
 			}
 			break;
 			
+		case MarkRecipeAsWrong:
+			if (dataModel!=null)
+				dataModel.toggleClickedRecipeIsWrong();
+			break;
+			
 		case SetInStock  : setInStock(true ); break;
 		case UnsetInStock: setInStock(false); break;
 		case SaveInStockIngredients:
@@ -496,7 +526,7 @@ class RecipeAnalyser implements ActionListener {
 
 	private void setDataModelType(DataModel.Type type) {
 		if (dataModel == null) {
-			dataModel = DataModel.create(type);
+			dataModel = DataModel.create(type,null);
 			dataModel.setGui(this);
 			dataModel.setStockListener(this::ingredientsStockHasChanged);
 			if (saveInStockIngredients)
@@ -549,6 +579,9 @@ class RecipeAnalyser implements ActionListener {
 			case UnsetInStock:
 			case SaveInStockIngredients:
 				return dataModel!=null && dataModel.ingredientsTableModel!=null;
+				
+			case MarkRecipeAsWrong:
+				return true;
 			}
 			return null;
 		});
@@ -631,8 +664,8 @@ class RecipeAnalyser implements ActionListener {
 	
 	private static class RefinerDataModel extends DataModel<String> {
 		
-		RefinerDataModel() {
-			super(Type.Refiner);
+		RefinerDataModel(int[] tempWrongRecipes) {
+			super(Type.Refiner, tempWrongRecipes);
 		}
 
 		@Override protected String parseID(String str) {
@@ -713,8 +746,8 @@ class RecipeAnalyser implements ActionListener {
 	
 	private static class NutrientProcessorDataModel extends DataModel<Integer> {
 		
-		NutrientProcessorDataModel() {
-			super(Type.NutrientProcessor);
+		NutrientProcessorDataModel(int[] tempWrongRecipes) {
+			super(Type.NutrientProcessor, tempWrongRecipes);
 		}
 
 		@Override protected Integer parseID(String str) {
@@ -844,10 +877,12 @@ class RecipeAnalyser implements ActionListener {
 		private Type type;
 
 		private ServiceFunctions serviceFunctions;
+		private int[] tempWrongRecipes;
 
 		
-		DataModel(Type type) {
+		DataModel(Type type, int[] tempWrongRecipes) {
 			this.type = type;
+			this.tempWrongRecipes = tempWrongRecipes;
 			this.serviceFunctions = new ServiceFunctions();
 		}
 
@@ -860,20 +895,21 @@ class RecipeAnalyser implements ActionListener {
 			rawRecipesTable     = gui.rawRecipesTable    ;
 		}
 
-		public static DataModel<?> create(Type type) {
+		public static DataModel<?> create(Type type, int[] tempWrongRecipes) {
 			if (type != null)
 				switch (type) {
-				case NutrientProcessor: return new NutrientProcessorDataModel();
-				case Refiner          : return new RefinerDataModel();
+				case NutrientProcessor: return new NutrientProcessorDataModel(tempWrongRecipes);
+				case Refiner          : return new RefinerDataModel(tempWrongRecipes);
 				}
 			
-			return new NutrientProcessorDataModel(); // no config
+			return new NutrientProcessorDataModel(tempWrongRecipes); // no config
 		}
 
 		public static DataModel<?> readDataCfgFromZIP(ZipFile zipin, String entryName) throws IOException {
 			ZipEntry entry = zipin.getEntry(entryName);
 			
 			Type type = null;
+			int[] wrongRecipes = null;
 			
 			if (entry != null) {
 				BufferedReader in = new BufferedReader( new InputStreamReader(zipin.getInputStream(entry), StandardCharsets.UTF_8));
@@ -883,16 +919,46 @@ class RecipeAnalyser implements ActionListener {
 						try { type = Type.valueOf( line.substring("type=".length()) ); }
 						catch (Exception e) {}
 					}
+					if (line.startsWith("wrongRecipes=")) {
+						String valueStr = line.substring("wrongRecipes=".length());
+						String[] parts = valueStr.split(",");
+						wrongRecipes = new int[parts.length];
+						for (int i=0; i<wrongRecipes.length; i++) {
+							try { wrongRecipes[i] = Integer.parseInt(parts[i]); }
+							catch (NumberFormatException e) { wrongRecipes[i] = -1; }
+						}
+						
+					}
 				}
 			}
 			
-			return create(type);
+			return create(type,wrongRecipes);
 		}
 		public void writeDataCfgToZIP(ZipOutputStream zipout, PrintWriter out, String entryName) throws IOException {
 			zipout.putNextEntry(new ZipEntry(entryName));
+			
 			out.printf("type=%s%n",type);
+			
+			StringBuilder wrongRecipes = new StringBuilder();
+			for (int i=0; i<recipes.size(); i++) {
+				Recipe recipe = recipes.get(i);
+				if (recipe.isWrong) wrongRecipes.append( (i>0?",":"") + i);
+			}
+			if (wrongRecipes.length()>0)
+				out.printf("wrongRecipes=%s%n", wrongRecipes.toString());
+			
 			out.flush();
 			zipout.closeEntry();
+		}
+
+		public void toggleClickedRecipeIsWrong() {
+			if (recipesTableModel==null) return;
+			if (recipesTableModel.clickedRecipe==null) return;
+			recipesTableModel.clickedRecipe.isWrong = !recipesTableModel.clickedRecipe.isWrong;
+			checkInputOutput();
+			updateProducibility();
+			recipesTable.repaint();
+			ingredientsTable.repaint();
 		}
 
 		public String getInStockIngredients() {
@@ -912,6 +978,22 @@ class RecipeAnalyser implements ActionListener {
 		
 		protected abstract IDType parseID(String str);
 
+		public void forEachRecipe(Consumer<Recipe> consumer) {
+			for (Recipe recipe:recipes) {
+				if (!recipe.isWrong)
+					consumer.accept(recipe);
+			}
+		}
+
+		public boolean forEachRecipe(BiFunction<Boolean,Boolean,Boolean> merge, boolean initialResult, Predicate<Recipe> consumer) {
+			boolean result = initialResult;
+			for (Recipe recipe:recipes) {
+				if (!recipe.isWrong)
+					result = merge.apply(result, consumer.test(recipe)) ;
+			}
+			return result;
+		}
+		
 		public interface StockListener {
 			void stockHasChanged(String inStockIngredients);
 		}
@@ -941,15 +1023,15 @@ class RecipeAnalyser implements ActionListener {
 			if (recipes!=null && !producible.isEmpty()) {
 				boolean foundNew = true;
 				while (foundNew) {
-					foundNew = false;
-					for (Recipe recipe:recipes) {
+					foundNew = forEachRecipe( (a,b)->a||b, false,
+							recipe->{
 						
 						if (isProducible(recipe.outputValue.id))
-							continue;
+							return false;
 						
 						Ingredient ingredient = getIngredient(recipe.outputValue.id);
 						if (ingredient==null || ingredient.getName()==null)
-							continue;
+							return false;
 						
 						boolean recipeIsProducible = true;
 						for (Vector<RecipeIngredient> inputValues:recipe.inputValues)
@@ -968,9 +1050,10 @@ class RecipeAnalyser implements ActionListener {
 						
 						if (recipeIsProducible) {
 							producible.add(recipe.outputValue.id);
-							foundNew = true;
+							return true;
 						}
-					}
+						return false;
+					});
 				}
 			}
 			statusFields.setFieldProducible(producible.size());
@@ -1051,10 +1134,8 @@ class RecipeAnalyser implements ActionListener {
 				}
 			}
 			
-			Ingredient ingredient;
-			for (Recipe recipe:recipes) {
-				
-				ingredient = getIngredient(recipe.outputValue.id);
+			forEachRecipe(recipe->{
+				Ingredient ingredient = getIngredient(recipe.outputValue.id);
 				if (ingredient!=null) ingredient.isOutputValue = true;
 				
 				for (Vector<RecipeIngredient> inputValues:recipe.inputValues) {
@@ -1063,7 +1144,7 @@ class RecipeAnalyser implements ActionListener {
 						if (ingredient!=null) ingredient.isInputValue = true;
 					}
 				}
-			}
+			});
 		}
 
 		private Vector<Ingredient> parseIngredients() throws ParseException {
@@ -1080,7 +1161,9 @@ class RecipeAnalyser implements ActionListener {
 		}
 		
 		private Vector<Recipe> parseRecipes() throws ParseException {
+			
 			Vector<Recipe> recipes = new Vector<>();
+			
 			Recipe recipe = null;
 			for (int row=0; row<rawRecipesData.size(); row++) {
 				String[] rowData = rawRecipesData.get(row);
@@ -1093,6 +1176,13 @@ class RecipeAnalyser implements ActionListener {
 				if (inputValue2!=null) recipe.addInputValue(1,inputValue2);
 				if (inputValue3!=null) recipe.addInputValue(2,inputValue3);
 			}
+			
+			if (tempWrongRecipes!=null)
+				for (int index:tempWrongRecipes)
+					if (0<=index && index<recipes.size())
+						recipes.get(index).isWrong = true;
+			tempWrongRecipes=null;
+			
 			return recipes;
 		}
 
@@ -1115,13 +1205,13 @@ class RecipeAnalyser implements ActionListener {
 					
 					TextAreaDialog outputDlg = new TextAreaDialog(gui.mainwindow, "Found Recipes");
 					outputDlg.setText_Stream(out->{
-						for (Recipe recipe:recipes) {
+						forEachRecipe(recipe->{
 							if (recipe.hasInput(inputs) && (output==null || recipe.outputValue.id==output)) {
 								Vector<SpecificRecipe> specificRecipes = recipe.getSpecificRecipes(inputs);
 								for (SpecificRecipe spRec:specificRecipes)
 									out.printf("%s%n", spRec.toString());
 							}
-						}
+						});
 					});
 				}
 				
@@ -1146,11 +1236,11 @@ class RecipeAnalyser implements ActionListener {
 						pd.setIndeterminate(true);
 						
 						HashMap<IDType,Vector<Recipe>> allRecipes = new HashMap<>();
-						for (Recipe recipe:recipes) {
+						forEachRecipe(recipe->{
 							Vector<Recipe> recipes = allRecipes.get(recipe.outputValue.id);
 							if (recipes==null) allRecipes.put(recipe.outputValue.id, recipes = new Vector<>());
 							recipes.add(recipe);
-						}
+						});
 						
 						Vector<GrowingCycle> growingCycles = new Vector<>();
 						allRecipes.forEach((id1,recipes1)->{
@@ -1228,8 +1318,8 @@ class RecipeAnalyser implements ActionListener {
 				if (recipes!=null) {
 					StringBuilder messages = new StringBuilder();
 					HashMap<InputValueCombination,Recipe> allCombis = new HashMap<>();
-					for (Recipe recipe:recipes) {
-						HashSet<InputValueCombination> recipeCombis = recipe.expand();
+					forEachRecipe(recipe->{
+						HashSet<InputValueCombination> recipeCombis = recipe.getAllCombinations();
 						for (InputValueCombination combi:recipeCombis) {
 							Recipe lastRecipe = allCombis.put(combi, recipe);
 							if (lastRecipe!=null)
@@ -1242,7 +1332,7 @@ class RecipeAnalyser implements ActionListener {
 										)
 								);
 						}
-					}
+					});
 					return messages.toString();
 				}
 				return null;
@@ -1296,22 +1386,22 @@ class RecipeAnalyser implements ActionListener {
 			private HashSet<InputValueCombination> getSetOfAllCombis() {
 				HashSet<InputValueCombination> allCombis = new HashSet<>();
 				if (recipesTableModel!=null)
-					for (Recipe recipe:recipes) {
-						HashSet<InputValueCombination> recipeCombis = recipe.expand();
+					forEachRecipe(recipe->{
+						HashSet<InputValueCombination> recipeCombis = recipe.getAllCombinations();
 						allCombis.addAll(recipeCombis);
-					}
+					});
 				return allCombis;
 			}
 
 			private HashMap<IDType, HashSet<InputValueCombination>> getAllProducibleRecipes() {
 				HashMap<IDType,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
 				ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<InputValueCombination>()));
-				for (Recipe recipe:recipes) {
+				forEachRecipe(recipe->{
 					if (isProducible(recipe.outputValue.id)) {
-						HashSet<InputValueCombination> allowedCombis = recipe.expand(DataModel.this::isProducible);
+						HashSet<InputValueCombination> allowedCombis = recipe.getCombinations(DataModel.this::isProducible);
 						allProdRecipe.get(recipe.outputValue.id).addAll(allowedCombis);
 					}
-				}
+				});
 				return allProdRecipe;
 			}
 
@@ -1624,6 +1714,7 @@ class RecipeAnalyser implements ActionListener {
 
 		private class Recipe {
 		
+			public boolean isWrong;
 			private int index;
 			private RecipeIngredient outputValue;
 			private Vector<RecipeIngredient> inputValues1;
@@ -1692,10 +1783,10 @@ class RecipeAnalyser implements ActionListener {
 				return foundRecipes;
 			}
 
-			public HashSet<InputValueCombination> expand() {
-				return expand(i->true);
+			public HashSet<InputValueCombination> getAllCombinations() {
+				return getCombinations(i->true);
 			}
-			public HashSet<InputValueCombination> expand(Predicate<IDType> isInputAllowed) {
+			public HashSet<InputValueCombination> getCombinations(Predicate<IDType> isInputAllowed) {
 				HashSet<InputValueCombination> combis = new HashSet<>();
 				Vector<Vector<RecipeIngredient>> nonEmptyArrays = new Vector<>();
 				if (!inputValues1.isEmpty()) nonEmptyArrays.add(inputValues1);
@@ -1793,6 +1884,21 @@ class RecipeAnalyser implements ActionListener {
 						return input;
 				return null;
 			}
+
+			public boolean isProducible() {
+				for (Vector<RecipeIngredient> inputValues:this.inputValues) {
+					boolean found = false;
+					for (RecipeIngredient input:inputValues) {
+						if (DataModel.this.isProducible(input.id)) {
+							found = true;
+							break;
+						}
+					}
+					if (!inputValues.isEmpty() && !found)
+						return false;
+				}
+				return true;
+			}
 		}
 
 		private enum RecipesTableColumnID implements SimplifiedColumnIDInterface {
@@ -1818,6 +1924,8 @@ class RecipeAnalyser implements ActionListener {
 		private class RecipesTableModel extends SimplifiedTableModel<RecipesTableColumnID> {
 		
 			private Vector<RecipeRow> recipesRows;
+			public RecipeRow clickedRecipeRow = null;
+			public Recipe clickedRecipe = null;
 		
 			protected RecipesTableModel() {
 				super(RecipesTableColumnID.values());
@@ -1830,6 +1938,15 @@ class RecipeAnalyser implements ActionListener {
 				}
 			}
 		
+			public void setClickedRecipe(int rowIndex) {
+				
+				if (rowIndex<0 || rowIndex>=recipesRows.size()) clickedRecipeRow = null;
+				else clickedRecipeRow = recipesRows.get(rowIndex);
+				
+				if (clickedRecipeRow == null) clickedRecipe = null;
+				else clickedRecipe = clickedRecipeRow.recipe;
+			}
+
 			private class RecipeRow {
 				private int index;
 				private int row;
@@ -2021,7 +2138,11 @@ class RecipeAnalyser implements ActionListener {
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 				if (recipesTableModel!=null && row<recipesTableModel.recipesRows.size()) {
-					switch (recipesTableModel.getColumnID(column)) {
+					
+					RecipesTableColumnID columnID = recipesTableModel.getColumnID(column);
+					RecipesTableModel.RecipeRow recipeRow = recipesTableModel.recipesRows.get(row);
+					
+					switch (columnID) {
 					case Index:
 						setHorizontalAlignment(CENTER); break;
 					case Output:
@@ -2035,15 +2156,59 @@ class RecipeAnalyser implements ActionListener {
 					case Input3Am:
 						setHorizontalAlignment(RIGHT); break;
 					}
-					RecipesTableModel.RecipeRow recipeRow = recipesTableModel.recipesRows.get(row);
+					
+					boolean isProducible = recipeRow.recipe.isProducible();
+					
+					Color bgColor, fgColor = table.getForeground();
+					
+					if (recipeRow.recipe.isWrong) {
+						bgColor = BGCOLOR_RECIPE_IS_WRONG;
+						fgColor = TXTCOLOR_RECIPE_IS_WRONG;
+						
+					} else {
+						if ((recipeRow.index&1)==0) bgColor = isProducible ? BGCOLOR_RECIPE_EVEN_PRODUCIBLE : BGCOLOR_RECIPE_EVEN;
+						else                        bgColor = isProducible ? BGCOLOR_RECIPE_ODD_PRODUCIBLE : BGCOLOR_RECIPE_ODD;
+						
+						switch (columnID) {
+						case Input1Am:
+						case Input1:
+							if (isProducible(recipeRow,0)) bgColor = darker(bgColor,0.1);
+							break;
+							
+						case Input2Am:
+						case Input2:
+							if (isProducible(recipeRow,1)) bgColor = darker(bgColor,0.1);
+							break;
+							
+						case Input3Am:
+						case Input3:
+							if (isProducible(recipeRow,2)) bgColor = darker(bgColor,0.1);
+							break;
+							
+						default: break;
+						}
+					}
+					
 					if (!isSelected) {
-						if ((recipeRow.index&1)==0)
-							setBackground(COLOR_RECIPE_EVEN);
-						else
-							setBackground(COLOR_RECIPE_ODD);
+						setBackground(bgColor);
+						setForeground(fgColor);
 					}
 				}
 				return component;
+			}
+
+			private Color darker(Color color, double d) {
+				return new Color(
+						(int)Math.floor(color.getRed  ()*(1-d)),
+						(int)Math.floor(color.getGreen()*(1-d)),
+						(int)Math.floor(color.getBlue ()*(1-d))
+				);
+			}
+
+			private boolean isProducible(RecipesTableModel.RecipeRow recipeRow, int i) {
+				RecipeIngredient recipeIngredient = recipeRow.recipe.getInputValue(i, recipeRow.row);
+				if (recipeIngredient==null) return false;
+				return DataModel.this.isProducible(recipeIngredient.id) || DataModel.this.isInStock(recipeIngredient.id);
 			}
 			
 			

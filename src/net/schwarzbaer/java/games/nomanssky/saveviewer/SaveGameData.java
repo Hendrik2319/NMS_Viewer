@@ -1626,6 +1626,7 @@ public class SaveGameData {
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
 			
 			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
+			MINING_SEC_1  ("Laserbohranordnung"           ,"Industrie: +2"),
 			MINING_SEC_2  ("Traktorstrahl"                ,"Kampf: +4"),
 			MINING_SEC_3  ("Ultraschallschweiﬂer"         ,"Industrie: +6"),
 			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
