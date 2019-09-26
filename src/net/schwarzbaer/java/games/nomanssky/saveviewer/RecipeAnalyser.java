@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -205,7 +206,8 @@ class RecipeAnalyser implements ActionListener {
 		CopyNutrientProcessorRecipesFromClipBoard,
 		CopyNutrientProcessorIngredientsFromClipBoard,
 		SaveInStockIngredients,
-		SetInStock, UnsetInStock, MarkRecipeAsWrong,
+		SetInStock, UnsetInStock,
+		MarkRecipeAsWrong,
 		;
 	}
 
@@ -246,6 +248,7 @@ class RecipeAnalyser implements ActionListener {
 			miFindRecipes .setEnabled(isProducible);
 			miFindRecipes2.setText(String.format("Find recipe chain (2) for %s", name));
 			miFindRecipes2.setEnabled(isProducible);
+			updateGuiAccess();
 		});
 		
 		DebugTableContextMenu contextMenu;
@@ -276,6 +279,7 @@ class RecipeAnalyser implements ActionListener {
 			miMarkRecipeAsWrong.setText( String.format("%s is wrong", clickedRecipe==null ? "Recipe" : clickedRecipe.toString()) );
 			miMarkRecipeAsWrong.setEnabled(clickedRecipe!=null);
 			miMarkRecipeAsWrong.setSelected(clickedRecipe!=null && clickedRecipe.isWrong);
+			updateGuiAccess();
 		});
 		
 		contextMenu = recipesTable.getDebugTableContextMenu();
@@ -565,23 +569,29 @@ class RecipeAnalyser implements ActionListener {
 				return dataModel!=null;
 				
 			case FindRecipes:
-			case FindBasicRecipes:
-			case FindCombinableIngredients:
 			case FindConflictingRecipes:
-			case FindRecipeChain:
-			case FindRecipeChain2:
 			case FindGrowingCycles:
 				return dataModel!=null && dataModel.recipes!=null;
 				
+			case FindBasicRecipes:
+				return dataModel!=null && dataModel.recipes!=null && dataModel.ingredientsTable.getSelectedRowCount()>0;
+				
 			case ClearMarkersInIngredientsTable:
 			case HighlightProducibleInIngredientsTable:
-			case SetInStock:
-			case UnsetInStock:
 			case SaveInStockIngredients:
 				return dataModel!=null && dataModel.ingredientsTableModel!=null;
 				
+			case SetInStock:
+			case UnsetInStock:
+				return dataModel!=null && dataModel.ingredientsTableModel!=null && dataModel.ingredientsTable.getSelectedRowCount()>0;
+				
+			case FindRecipeChain:
+			case FindRecipeChain2:
+			case FindCombinableIngredients:
+				return null;
+				
 			case MarkRecipeAsWrong:
-				return true;
+				return dataModel!=null && dataModel.recipesTableModel!=null && dataModel.recipesTableModel.clickedRecipe!=null;
 			}
 			return null;
 		});
@@ -1432,7 +1442,7 @@ class RecipeAnalyser implements ActionListener {
 		private InputValueCombination createCombi(IDType in0, IDType in1) { return createCombi(in0,in1,null); }
 		protected abstract InputValueCombination createCombi(IDType in0, IDType in1, IDType in2);
 		
-		protected abstract class InputValueCombination {
+		protected abstract class InputValueCombination implements Comparable<InputValueCombination>{
 		
 			private final Vector<IDType> values;
 		
@@ -1476,6 +1486,21 @@ class RecipeAnalyser implements ActionListener {
 						return false;
 				return true;
 			}
+
+			@Override
+			public int compareTo(InputValueCombination other) {
+				if (other == null) return -1;
+				int n = Math.max(values.size(), other.values.size());
+				for (int i=0; i<n; i++) {
+					if (i>=values.size()) return -1;
+					if (i>=other.values.size()) return +1;
+					IDType id1 = values.get(i);
+					IDType id2 = other.values.get(i);
+					int cmp = id1.compareTo(id2);
+					if (cmp!=0) return cmp;
+				}
+				return 0;
+			}
 		
 		}
 
@@ -1484,17 +1509,35 @@ class RecipeAnalyser implements ActionListener {
 			private DataModel<IDType>.Ingredient finalOutput;
 			private HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe;
 			private HashMap<IDType, HashSet<InputValueCombination>> neededRecipes;
+			private HashMap<IDType, Integer> ingredientOrder;
 
 			public RecipeChainFinder2(Ingredient finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe) {
 				this.finalOutput = finalOutput;
 				this.allProdRecipe = allProdRecipe;
 				this.neededRecipes = new HashMap<>();
+				this.ingredientOrder = new HashMap<>();
 			}
 			
 			public void search() {
+				neededRecipes.clear();
+				ingredientOrder.clear();
 				addAllRecipesFor(finalOutput);
+				setOrder(finalOutput,0);
 			}
 			
+			private void setOrder(Ingredient ingredient, int newOrderIndex) {
+				if (ingredient==null) return;
+				IDType id = ingredient.getID();
+				Integer oldOrderIndex = ingredientOrder.get(id);
+				if (oldOrderIndex==null || oldOrderIndex>newOrderIndex) {
+					ingredientOrder.put(id,newOrderIndex);
+					HashSet<InputValueCombination> recipes = neededRecipes.get(id);
+					if (recipes!=null)
+						for (InputValueCombination r:recipes)
+							r.forEach(ingID->setOrder(getIngredient(ingID),newOrderIndex+1));
+				}
+			}
+
 			private void addAllRecipesFor(Ingredient ingredient) {
 				if (ingredient==null) return;
 				IDType id = ingredient.getID();
@@ -1511,18 +1554,26 @@ class RecipeAnalyser implements ActionListener {
 
 			public void printTree(PrintStream out) {
 				out.printf("Possible Recipe Chains for \"%s\"%n", getIngredientName(finalOutput.getID()));
-				neededRecipes.forEach((id,recipes)->{
-					String indent;
-					if (recipes.size()==1) {
-						out.printf("    %s", getIngredientName(id));
-						indent = " ";
-					} else {
-						out.printf("    %s%n", getIngredientName(id));
-						indent = "          ";
-					}
-					for (InputValueCombination r:recipes)
+				
+				Vector<IDType> sortedIDs = new Vector<>(neededRecipes.keySet());
+				sortedIDs.sort(Comparator.<IDType,Integer>comparing(ingredientOrder::get,Comparator.nullsLast(Comparator.naturalOrder())));
+				
+				String indent;
+				HashSet<InputValueCombination> recipes;
+				for (IDType id:sortedIDs) {
+					
+					Integer orderIndex = ingredientOrder.get(id);
+					recipes = neededRecipes.get(id);
+					
+					out.printf("    [%s] %s", orderIndex, getIngredientName(id));
+					if (recipes.size()==1) { indent = " "; }
+					else { out.println(); indent = "          "; }
+					
+					Vector<InputValueCombination> sortedRecipes = new Vector<>(recipes);
+					sortedRecipes.sort(null);
+					for (InputValueCombination r:sortedRecipes)
 						out.printf("%s<-- %s%n", indent, r.toString());
-				});
+				}
 				out.printf("<end>%n");
 			}
 		}
@@ -2093,7 +2144,7 @@ class RecipeAnalyser implements ActionListener {
 				switch (columnID) {
 				case Index      : return !isInput ? null : ingredient.getID();
 				case InStock    : return !isInput ? null : isInStock(ingredient.getID()); // ? "In Stock" : "---";
-				case Producible : return !isInput ? null : isProducible(ingredient.getID()) ? "producible" : "----";
+				case Producible : return !isInput ? null : isInStock(ingredient.getID()) ? "in stock" : isProducible(ingredient.getID()) ? "producible" : "----";
 				case Type       : return ingredient==null ? null : ingredient.getType();
 				case NameDE     : return ingredient==null ? null : ingredient.getName(Lang.De);
 				case NameEN     : return ingredient==null ? null : ingredient.getName(Lang.En);
