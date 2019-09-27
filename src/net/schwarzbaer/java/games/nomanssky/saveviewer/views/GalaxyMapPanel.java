@@ -231,12 +231,12 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		Worker() { stopNow = false; pd = null; }
 		void setProgressDialog(ProgressDialog pd) { this.pd = pd; }
 		
-		protected void setProgress(int value         ) { if (pd!=null) pd.setValue(value    ); }
-		protected void setProgress(int value, int max) { if (pd!=null) pd.setValue(value,max); }
-		protected void setTaskTitle(String title)      { if (pd!=null) pd.setTaskTitle(title); }
+		protected void setProgress(int value         ) { if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value    )); }
+		protected void setProgress(int value, int max) { if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value,max)); }
+		protected void setTaskTitle(String title)      { if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle(title)); }
 		
-		@Override public void cancelTask() { stopNow = true; pd.closeDialog(); }
-		@Override public void run() { compute(); pd.closeDialog(); }
+		@Override public void cancelTask() { stopNow = true; if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.closeDialog()); }
+		@Override public void run() { compute(); if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.closeDialog()); }
 		protected abstract void compute();
 	}
 

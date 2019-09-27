@@ -540,10 +540,9 @@ public class Images {
 			if (image!=null)
 				images.put(imagesNames[i], image);
 			
-			if (pd!=null) {
-				int value = i+1;
-				SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
-			} else {
+			int value = i+1;
+			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+			else {
 				int n= i*6/imagesNames.length;
 				if (listChunkIndex != n) {
 					listChunkIndex = n;

@@ -553,7 +553,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
-		if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 4); }
+		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
 		log_ln(" done");
@@ -561,7 +561,7 @@ public class SaveViewer implements ActionListener {
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isNEXT = false;
 		if (!SaveGameData.hasValue(new_json_data, "Version")) {
-			if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
+			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
 			new_json_data = deObfuscator.deObfuscate(new_json_data);
 			deObfuscatorUsage = deObfuscator.getUsage();
 			isNEXT = true;
@@ -576,11 +576,11 @@ public class SaveViewer implements ActionListener {
 			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex);
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			
-			if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(2); }
+			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
 			saveGameData.parse(isNEXT);
 			
 			if (mainWindow!=null) {
-				if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
+				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Update GUI"); pd.setValue(3); });
 				SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,isNEXT);
 				loadedSaveGames.add(saveGameView);
 				contentPane.addSaveGameView(saveGameView);
@@ -601,7 +601,7 @@ public class SaveViewer implements ActionListener {
 
 	private void reloadSaveGameView(SaveGameView view) {
 		runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
-			if (pd!=null) { pd.setTaskTitle("Parse file"); pd.setValue(0, 5); }
+			if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
 			log_ln("");
 			log("Parse file \"%s\" ...",view.file.getPath());
 			JSON_Object new_json_data = new JSON_Parser(view.file).parse();
@@ -610,20 +610,32 @@ public class SaveViewer implements ActionListener {
 			HashMap<String, Vector<String>> deObfuscatorUsage = null;
 			boolean isNEXT = false;
 			if (!SaveGameData.hasValue(new_json_data, "Version")) {
-				if (pd!=null) { pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); }
+				runInEventThreadAndWait(()->{
+					
+				});
+				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
 				new_json_data = deObfuscator.deObfuscate(new_json_data);
 				deObfuscatorUsage = deObfuscator.getUsage();
 				isNEXT = true;
 			}
 			
 			if (new_json_data!=null) {
-				if (pd!=null) { pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); }
+				runInEventThreadAndWait(()->{
+					
+				});
+				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
 				GameInfos.removeUsages(view.data);
 				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index);
 				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
-				if (pd!=null) { pd.setTaskTitle("Parse JSON data"); pd.setValue(3); }
+				runInEventThreadAndWait(()->{
+					
+				});
+				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
 				saveGameData.parse(isNEXT);
-				if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
+				runInEventThreadAndWait(()->{
+					
+				});
+				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Update GUI"); pd.setValue(4); });
 				view.replaceData(saveGameData,isNEXT);
 				contentPane.updateIDPanels();
 			}

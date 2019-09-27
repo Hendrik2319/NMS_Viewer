@@ -254,11 +254,11 @@ public class FileExport {
 	}
 
 	private static long startTask(ProgressDialog pd, String indent, String taskTitle, int max) {
-		if (pd!=null) {
+		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
 			pd.setTaskTitle(taskTitle);
 			if (max>=0) pd.setValue(0, max);
 			else pd.setIndeterminate(true);
-		}
+		});
 		long startTime = System.currentTimeMillis();
 		SaveViewer.log("%s%s ... ",indent,taskTitle);
 		return startTime;
@@ -285,18 +285,18 @@ public class FileExport {
 			if (dontAsk)
 				file = new File(suggestedFileName);
 			else {
-				if (pd!=null) {
+				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
 					pd.setIndeterminate(true);
 					pd.setTaskTitle("Ask for filename");
-				}
+				});
 				file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
 			}
 			if (file==null) return;
 			
-			if (pd!=null) {
+			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
 				pd.setIndeterminate(true);
 				pd.setTaskTitle("Determine max. dimensions");
-			}
+			});
 			Point3D min = null;
 			Point3D max = null;
 			
@@ -357,7 +357,8 @@ public class FileExport {
 					BuildingObject obj = bObjs[i];
 					if (!cubeCombine.add(obj) && !freightCombine.add(obj))
 						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
-					if (pd!=null) pd.setValue(i+1);
+					int value = i+1;
+					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
 				}
 				endTask(startTime);
 				
@@ -412,17 +413,17 @@ public class FileExport {
 			Double pRad = planetRadius;
 			if (pRad!=null && pRad<=0) pRad=null;
 			
-			if (pd!=null) {
+			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
 				pd.setIndeterminate(true);
 				pd.setTaskTitle("Ask for filename");
-			}
+			});
 			File file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
 			if (file==null) return;
 			
-			if (pd!=null) {
+			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
 				pd.setIndeterminate(true);
 				pd.setTaskTitle("Determine max. dimensions");
-			}
+			});
 			Point3D min = null;
 			Point3D max = null;
 			
@@ -490,7 +491,8 @@ public class FileExport {
 				
 				startTime = startTask(pd, "   ", "Write objects", objects.length);
 				for (int i=0; i<objects.length; i++) {
-					if (pd!=null) pd.setValue(i);
+					int value = i;
+					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
 					BuildingObject obj = objects[i];
 					if (obj.position==null) continue;
 					if (obj.position.pos==null) continue;
@@ -503,7 +505,7 @@ public class FileExport {
 					vrml.printf(               " string \"%s\"", obj.getNameOrObjectID().replace('\"','_'));
 					vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
 				}
-				if (pd!=null) pd.setValue(objects.length);
+				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(objects.length); });
 				endTask(startTime);
 				
 			} catch (FileNotFoundException e) {
@@ -3287,7 +3289,8 @@ public class FileExport {
 				Point3D p = points.get(i);
 				if (pointsStr.length()>0) pointsStr.append(", ");
 				pointsStr.append(String.format(Locale.ENGLISH,"%1.2f %1.2f %1.2f", p.x, p.y, p.z));
-				if (verbose && pd!=null) pd.setValue(i+1); 
+				int value = i+1;
+				if (verbose && pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
 			}
 			if (verbose) endTask(startTime);
 			
@@ -3297,7 +3300,8 @@ public class FileExport {
 				Segment seg = segments.get(s);
 				if (indexesStr.length()>0) indexesStr.append(" -1");
 				for (int i:seg.indexes) indexesStr.append(" "+i);
-				if (verbose && pd!=null) pd.setValue(s+1); 
+				int value = s+1;
+				if (verbose && pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); }); 
 			}
 			if (verbose) endTask(startTime);
 			

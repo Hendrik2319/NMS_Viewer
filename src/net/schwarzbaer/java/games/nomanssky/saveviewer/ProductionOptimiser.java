@@ -588,15 +588,19 @@ class ProductionOptimiser implements ActionListener {
 		}
 
 		public Vector<ProductionOptimiser.Result> find() {
-			pd.displayProgressString(ProgressDialog.ProgressDisplay.Number);
-			
-			pd.setTaskTitle("Checking Requirements");
-			pd.setIndeterminate(true);
+			SaveViewer.runInEventThreadAndWait(()->{
+				pd.displayProgressString(ProgressDialog.ProgressDisplay.Number);
+				
+				pd.setTaskTitle("Checking Requirements");
+				pd.setIndeterminate(true);
+			});
 			
 			if (!checkRequirements()) return null;
 			
-			pd.setTaskTitle("Running Loop");
-			pd.setIndeterminate(true);
+			SaveViewer.runInEventThreadAndWait(()->{
+				pd.setTaskTitle("Running Loop");
+				pd.setIndeterminate(true);
+			});
 			
 			results.clear();
 			Loop loop = new Loop();
@@ -717,14 +721,17 @@ class ProductionOptimiser implements ActionListener {
 					numberOfCases *= maxAmounts.get(p);
 				}
 				SaveViewer.log_ln("Number Of Cases: %d", numberOfCases);
-				pd.setValue(0, (int)numberOfCases);
+				int numberOfCases2 = (int)numberOfCases;
+				SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(0, numberOfCases2); });
 				
 				neededBaseInputs.clear();
 				loop(0,0);
 			}
 
 			private void loop(int loopLevel, int caseIndex) {
-				pd.setValue(caseIndex);
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setValue(caseIndex);
+				});
 				
 				if (loopLevel>=products.size()) { // most inner loop
 					Result result = new Result(currentAmounts);

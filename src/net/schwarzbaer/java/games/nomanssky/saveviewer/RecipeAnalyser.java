@@ -207,7 +207,7 @@ class RecipeAnalyser implements ActionListener {
 		CopyNutrientProcessorIngredientsFromClipBoard,
 		SaveInStockIngredients,
 		SetInStock, UnsetInStock,
-		MarkRecipeAsWrong,
+		MarkRecipeAsWrong, FindRecipesWith,
 		;
 	}
 
@@ -225,8 +225,9 @@ class RecipeAnalyser implements ActionListener {
 		
 		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
 		JMenuItem miFindCombinableIngredients = SaveViewer.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients);
-		JMenuItem miFindRecipes  = SaveViewer.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain);
-		JMenuItem miFindRecipes2 = SaveViewer.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipeChain2);
+		JMenuItem miFindRecipeChain  = SaveViewer.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain);
+		JMenuItem miFindRecipeChain2 = SaveViewer.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipeChain2);
+		JMenuItem miFindRecipesWith  = SaveViewer.createMenuItem("Find recipes with #### as input", this, disabler, ActionCommand.FindRecipesWith);
 		
 		ingredientsTable.addContextMenuInvokeListener((rowV, columnV)->{
 			if (dataModel==null || dataModel.ingredientsTableModel==null) return;
@@ -239,15 +240,17 @@ class RecipeAnalyser implements ActionListener {
 			name = hasName ? ("\""+name+"\"") : "<???>";
 
 			miFindCombinableIngredients.setText(String.format("Mark all ingredients, that are combinable (#,#) with %s", name));
+			miFindRecipesWith          .setText(String.format("Find recipes with %s as input", name));
 			miFindCombinableIngredients.setEnabled(hasName);
+			miFindRecipesWith          .setEnabled(hasName);
 			
 			miHighlightProducible.setSelected(dataModel.ingredientsTableModel.highlightProducible);
 			
 			boolean isProducible = hasName && ingredient.isOutputValue && ingredient.isProducible();
-			miFindRecipes .setText(String.format("Find recipe chain for %s", name));
-			miFindRecipes .setEnabled(isProducible);
-			miFindRecipes2.setText(String.format("Find recipe chain (2) for %s", name));
-			miFindRecipes2.setEnabled(isProducible);
+			miFindRecipeChain .setText(String.format("Find recipe chain for %s", name));
+			miFindRecipeChain2.setText(String.format("Find recipe chain (2) for %s", name));
+			miFindRecipeChain .setEnabled(isProducible);
+			miFindRecipeChain2.setEnabled(isProducible);
 			updateGuiAccess();
 		});
 		
@@ -255,8 +258,9 @@ class RecipeAnalyser implements ActionListener {
 		contextMenu = ingredientsTable.getDebugTableContextMenu();
 		contextMenu.addSeparator();
 		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
-		contextMenu.add(miFindRecipes);
-		contextMenu.add(miFindRecipes2);
+		contextMenu.add(miFindRecipeChain);
+		contextMenu.add(miFindRecipeChain2);
+		contextMenu.add(miFindRecipesWith);
 		contextMenu.addSeparator();
 		contextMenu.add(miFindCombinableIngredients);
 		contextMenu.add(SaveViewer.createMenuItem("Clear markers", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
@@ -330,7 +334,7 @@ class RecipeAnalyser implements ActionListener {
 		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same ingredients but different result", this, disabler, ActionCommand.FindConflictingRecipes));
 		menuAnalyse.add(SaveViewer.createMenuItem("Find all basic recipes { (#) and (#,#) } for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes cycles where amount of at least one ingredient is growing", this, disabler, ActionCommand.FindGrowingCycles));
-		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with specific ingredients", this, disabler, ActionCommand.FindRecipes));
+		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with specific ingredients or output", this, disabler, ActionCommand.FindRecipes));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -453,6 +457,10 @@ class RecipeAnalyser implements ActionListener {
 			
 		case FindRecipes:
 			if (dataModel!=null) dataModel.serviceFunctions.FindRecipes();
+			break;
+			
+		case FindRecipesWith:
+			if (dataModel!=null) dataModel.serviceFunctions.FindRecipesWith();
 			break;
 			
 		case FindRecipeChain:
@@ -585,13 +593,14 @@ class RecipeAnalyser implements ActionListener {
 			case UnsetInStock:
 				return dataModel!=null && dataModel.ingredientsTableModel!=null && dataModel.ingredientsTable.getSelectedRowCount()>0;
 				
+			case MarkRecipeAsWrong:
+				return dataModel!=null && dataModel.recipesTableModel!=null && dataModel.recipesTableModel.clickedRecipe!=null;
+				
 			case FindRecipeChain:
 			case FindRecipeChain2:
 			case FindCombinableIngredients:
+			case FindRecipesWith:
 				return null;
-				
-			case MarkRecipeAsWrong:
-				return dataModel!=null && dataModel.recipesTableModel!=null && dataModel.recipesTableModel.clickedRecipe!=null;
 			}
 			return null;
 		});
@@ -1098,11 +1107,11 @@ class RecipeAnalyser implements ActionListener {
 			try {
 				Vector<Ingredient> ingredients = parseIngredients();
 				ingredientsTableModel = new IngredientsTableModel(ingredients);
-				ingredientsTable.setModel(ingredientsTableModel);
 				ingredientsTable.setCellRendererForAllColumns(new IngredientsTableRenderer(), true);
 				JCheckBox rendererCheckBox = new JCheckBox();
 				rendererCheckBox.setHorizontalAlignment(JCheckBox.CENTER);
 				ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(rendererCheckBox));
+				ingredientsTable.setModel(ingredientsTableModel);
 				if (recipesTableModel!=null) recipesTableModel.fireTableUpdate();
 				checkInputOutput();
 				updateProducibility();
@@ -1124,8 +1133,8 @@ class RecipeAnalyser implements ActionListener {
 			try {
 				recipes = parseRecipes();
 				recipesTableModel = new RecipesTableModel();
-				recipesTable.setModel(recipesTableModel);
 				recipesTable.setCellRendererForAllColumns(new RecipesTableRenderer(), true);
+				recipesTable.setModel(recipesTableModel);
 				checkInputOutput();
 				updateProducibility();
 			} catch (ParseException e) {
@@ -1224,8 +1233,44 @@ class RecipeAnalyser implements ActionListener {
 						});
 					});
 				}
-				
 			}
+			
+			public void FindRecipesWith() {
+				if (recipes!=null && ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null) {
+					SaveViewer.runWithProgressDialog(gui.mainwindow, "Find Recipes", pd->{
+						IDType inputID = ingredientsTableModel.clickedIngredient.getID();
+						
+						SaveViewer.runInEventThreadAndWait(()->{
+							pd.setTaskTitle("Find Recipes");
+							pd.setValue(0, recipes.size());
+						});
+						
+						HashMap<IDType,Vector<SpecificRecipe>> allRecipes = new HashMap<>();
+						forEachRecipe(recipe->{
+							Vector<SpecificRecipe> recipes = allRecipes.get(recipe.outputValue.id);
+							if (recipes==null) allRecipes.put(recipe.outputValue.id,recipes=new Vector<>());
+							recipes.addAll( recipe.getSpecificRecipes( inputID ) );
+							SaveViewer.runInEventThreadAndWait(()->pd.setValue(recipe.index+1));
+						});
+						Vector<IDType> sortedIDs = new Vector<>(allRecipes.keySet());
+						sortedIDs.sort(null);
+						
+						SaveViewer.runInEventThreadAndWait(()->{
+							pd.setTaskTitle("Output");
+							pd.setIndeterminate(true);
+						});
+						
+						TextAreaDialog outputDlg = new TextAreaDialog(gui.mainwindow, "Found Recipes");
+						outputDlg.showDialog();
+						outputDlg.setText_Stream(out->{
+							for (IDType id:sortedIDs)
+								for (SpecificRecipe recipe:allRecipes.get(id))
+									out.println(recipe.toString());
+						});
+					});
+				}
+			}
+			
 			public void FindCombinableIngredients() {
 				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null) {
 					HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
@@ -1242,8 +1287,10 @@ class RecipeAnalyser implements ActionListener {
 			public void FindGrowingCycles() {
 				if (recipes!=null) {
 					SaveViewer.runWithProgressDialog(gui.mainwindow, "Find GrowingCycles", pd->{
-						pd.setTaskTitle("Search for Growing Cycles");
-						pd.setIndeterminate(true);
+						SaveViewer.runInEventThreadAndWait(()->{
+							pd.setTaskTitle("Search for Growing Cycles");
+							pd.setIndeterminate(true);
+						});
 						
 						HashMap<IDType,Vector<Recipe>> allRecipes = new HashMap<>();
 						forEachRecipe(recipe->{
@@ -1291,8 +1338,10 @@ class RecipeAnalyser implements ActionListener {
 							}
 						});
 						
-						pd.setTaskTitle("Generate Output");
-						pd.setIndeterminate(true);
+						SaveViewer.runInEventThreadAndWait(()->{
+							pd.setTaskTitle("Generate Output");
+							pd.setIndeterminate(true);
+						});
 						
 						showinResultDialog(out->{
 							for (GrowingCycle gc:growingCycles) {
