@@ -3381,9 +3381,27 @@ info=
 short=
 info=W: In Entwicklung
 
+[Reg00000002008FFE]
+name=Eymifa-Adjunkt
+
+[Sys010D0002008FFE]
+name=Kojaviln
+race=Vykeen
+conflict=3
+conflict_label=aggressiv
+class=Blue
+
+[Pln310D0002008FFE]
+name=Platon X
+biome=Lush
+with water
+resources=In,Pf,Fe__
+
 [Reg000000FFFF8000]
 
 [Sys000900FFFF8000]
+
+[Reg00000000000000]
 
 [Reg00000010000000]
 
@@ -3586,6 +3604,19 @@ class=Yellow
 short=2 Planeten
 info=
 
+[Reg00000002FFA005]
+
+[Sys00960002FFA005]
+name=Trump's anti-pepito wall
+
+[Pln10960002FFA005]
+
+[Pln20960002FFA005]
+
+[Sys00D70002FFA005]
+
+[Pln20D70002FFA005]
+
 [Reg000000FEFDD006]
 name=Nossolm-Adjunkt
 
@@ -3691,6 +3722,9 @@ short=6 Planeten
 info=
 
 [Pln10740003008045]
+name=Wuquay
+biome=Toxic
+resources=Cu,NH3,NaCl
 
 [Sys00790003008045]
 name=Pilteg
@@ -3989,6 +4023,32 @@ blackholetarget=003D000006934D
 class=Yellow
 short=1 Planet
 info=
+
+[Reg000000006C117A]
+name=Yaranba-Band
+
+[Sys007400006C117A]
+name=Doforangi VI
+race=Gek
+conflict=3
+conflict_label=hoch
+class=Yellow
+short=3 Planeten
+info=
+short=Wirtschaft
+info=2 - komfortabel
+
+[Pln107400006C117A]
+name=Gian Z16
+biome=Toxic
+is extreme
+resources=Cu_,NH3,Na
+
+[Pln207400006C117A]
+name=Neu: Tuch
+biome=Lush
+is extreme
+resources=Cu_,Pf,Fe__
 
 [Reg000000001DE17F]
 name=Rigrendenew
@@ -5369,6 +5429,27 @@ resources=Cu,CO2,NaCl
 short=
 info=<ParsedPlanetaryResources> Cu, CO2, NaCl
 
+[Sys006A00FCD7F684]
+name=Onubri IV
+race=Gek
+conflict=3
+conflict_label=zerstörerisch
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln406A00FCD7F684]
+name=Kiporth XIII
+biome=Toxic
+resources=Cu,NH3,NaCl
+
+[Pln506A00FCD7F684]
+name=Yipso G10
+biome=Airless
+resources=Cu,Fe__,Sr_Rost
+short=Portal
+info=+40.40, +164.80
+
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
 race=Korvax
@@ -5408,9 +5489,9 @@ class=Yellow
 [Pln107000FCD7F684]
 name=Napecule Beta
 biome=Frozen
-resources=Cd,CO2
-short=
-info=Cu, CO2, ??
+resources=Cd,CO2,Fe__
+short=Portal
+info=+19.24, +91.68
 
 [Pln207000FCD7F684]
 name=Suso 90/F7
@@ -5419,6 +5500,8 @@ with water
 resources=Cu,Pf,Na
 short=
 info=<ParsedPlanetaryResources> Cu, Pf, Na
+short=Portal
+info=-60.31,-83.40
 
 [Pln307000FCD7F684]
 name=Nehoul Iash
@@ -5493,8 +5576,6 @@ race=Vykeen
 conflict=2
 conflict_label=gewalttätig
 class=Green
-short=2 Planeten
-info=
 
 [Pln11AB00FDD7F684]
 name=Gefinchal
@@ -5525,6 +5606,10 @@ name=Zaviusa Y3
 biome=Exotic_Mega
 with water
 resources=Em,NH3,NaCl
+short=Portal
+info=+67.07, -25.07
+short="Planet der Eheringe"
+info=
 
 [Reg000000FE1FA68F]
 oldname=Dedurot-Weite
