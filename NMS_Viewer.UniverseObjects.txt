@@ -3739,6 +3739,26 @@ info=
 short=
 info=Nebel: blatt-grün
 
+[Sys01C90003008045]
+name=Nisadeln
+race=Korvax
+conflict=1
+conflict_label=mild
+economy=2
+economy_label=angemessen
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln51C90003008045]
+name=Ganmoutha XV
+biome=Barren
+is extreme
+aggrSentinels
+with water
+buriedTreasure=SalvageableScrap
+resources=Cu_,Py,NaCl
+
 [Reg000000032BF04B]
 name=Exesci-Adjunkt
 
@@ -5348,6 +5368,8 @@ name=Meseogw-Rip
 race=Vykeen
 conflict=3
 conflict_label=aggressiv
+economy=1
+economy_label=erfolglos
 class=Yellow
 
 [Pln101400FCD7F684]
@@ -5403,6 +5425,8 @@ name=Aitunx-Loe
 race=Gek
 conflict=2
 conflict_label=streitlustig
+economy=1
+economy_label=Geringe Versorgung
 class=Yellow
 
 [Pln102000FCD7F684]
@@ -5434,6 +5458,8 @@ name=Onubri IV
 race=Gek
 conflict=3
 conflict_label=zerstörerisch
+economy=3
+economy_label=Hohe Versorgung
 class=Yellow
 short=6 Planeten
 info=
@@ -5455,7 +5481,11 @@ name=Ladoin-Gulu
 race=Korvax
 conflict=1
 conflict_label=stabil
+economy=3
+economy_label=boomend
 class=Yellow
+short=Erinnerungsterminal
+info=
 
 [Pln106E00FCD7F684]
 name=Emur 51/I4
@@ -5464,6 +5494,8 @@ with water
 resources=Cu,U,Ag
 short=
 info=<ParsedPlanetaryResources> Cu, U, Ag
+short=Erinnerungsterminal
+info=
 
 [Pln206E00FCD7F684]
 name=Eminglen Alpha
@@ -5484,6 +5516,8 @@ name=Magogal
 race=Gek
 conflict=3
 conflict_label=gesetzlos
+economy=2
+economy_label=erfolgversprechend
 class=Yellow
 
 [Pln107000FCD7F684]
@@ -5510,6 +5544,11 @@ resources=Cu,Au,Fe__
 short=
 info=<ParsedPlanetaryResources> Cu, Au, Fe##
 
+[Sys007A00FCD7F684]
+atlasinterface=true
+
+[Sys016F00FCD7F684]
+
 [Sys01AB00FCD7F684]
 name=Maasua
 unexplored
@@ -5526,6 +5565,8 @@ name=Songxi
 race=Vykeen
 conflict=3
 conflict_label=hoch
+economy=2
+economy_label=komfortabel
 class=Yellow
 
 [Pln11DE00FCD7F684]
@@ -5575,6 +5616,8 @@ name=Dodtal III
 race=Vykeen
 conflict=2
 conflict_label=gewalttätig
+economy=2
+economy_label=angemessen
 class=Green
 
 [Pln11AB00FDD7F684]
@@ -5597,6 +5640,8 @@ name=Kualai
 race=Korvax
 conflict=3
 conflict_label=beängstigend
+economy=1
+economy_label=scheiternd
 class=Green
 short=3 Planeten
 info=
