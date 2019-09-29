@@ -158,6 +158,12 @@ public class SaveGameData {
 				}
 			}
 		}
+		if (general.anomalyUA!=null) {
+			if (general.anomalyUA.isSolarSystem()) {
+				Universe.SolarSystem system = universe.findSolarSystem(general.anomalyUA);
+				if (system!=null) system.additionalInfos.hasAnomaly=true;
+			}
+		}
 		if (teleportEndpoints!=null) {
 			for (TeleportEndpoints tel:teleportEndpoints) {
 				if (tel.universeAddress==null) continue;
@@ -1674,6 +1680,7 @@ public class SaveGameData {
 			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
 			
 			FUEL_PRI      ("Unterstützungsspezialist"    ,"Treibstoffkosten der Expedition: -15"),
+			FUEL_SEC_5    ("Fortgeschrittener Stromverteiler","Treibstoffkosten der Expedition: -6"),
 			FUEL_SEC_6    ("Tragbarer Fusionszünder"     ,"Treibstoffkosten der Expedition: -9"),
 			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
 			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
@@ -3068,46 +3075,44 @@ public class SaveGameData {
 			public static class AdditionalInfos {
 				public boolean hasFreighter;
 				public boolean hasTeleportEndPoint;
+				public boolean hasAnomaly;
 				public AdditionalInfos() {
-					this.hasFreighter = false;
-					this.hasTeleportEndPoint = false;
+					hasFreighter = false;
+					hasTeleportEndPoint = false;
+					hasAnomaly = false;
 				}
 				public boolean isEmpty() {
-					return !hasFreighter && !hasTeleportEndPoint;
+					return !hasFreighter && !hasTeleportEndPoint && !hasAnomaly;
 				}
 			}
 			
 			final Region region;
 			final int solarSystemIndex;
-			public final Vector<Planet> planets;
+			public final Vector<Planet> planets = new Vector<>();
 			
-			public Race race;
-			public StarClass starClass;
-			public int conflictLevel;
-			public String conflictLevelLabel;
-			public boolean isUnexplored; 
-			public Double distanceToCenter;
+			public Race race = null;
+			public StarClass starClass = null;
+			
+			public int conflictLevel = -1;
+			public String conflictLevelLabel = null;
+			public int economyLevel = -1;
+			public String economyLevelLabel = null;
+			
+			public boolean isUnexplored = false; 
+			public Double distanceToCenter = null;
+			
 			public boolean hasAtlasInterface; 
 			public boolean hasBlackHole; 
-			public UniverseAddress blackHoleTarget;
+			public UniverseAddress blackHoleTarget = null;
 			
-			public AdditionalInfos additionalInfos;
+			public AdditionalInfos additionalInfos = new AdditionalInfos();
 			
 			public SolarSystem(Region region, int solarSystemIndex) {
 				super(Type.SolarSystem);
 				this.region = region;
 				this.solarSystemIndex = solarSystemIndex;
-				this.planets = new Vector<>();
-				this.race = null;
-				this.starClass = null;
-				this.conflictLevel = -1;
-				this.isUnexplored = false;
-				this.distanceToCenter = null;
 				this.hasAtlasInterface = shouldHaveAtlasInterface(); 
 				this.hasBlackHole = shouldHaveBlackHole();
-				this.blackHoleTarget = null;
-				
-				this.additionalInfos = new AdditionalInfos();
 			}
 
 			public boolean shouldHaveBlackHole     () { return shouldHaveBlackHole     (solarSystemIndex); }
@@ -3600,8 +3605,8 @@ public class SaveGameData {
 				PREDS_KILLED("Predatory animals killed"),
 				FLORA_KILLED,
 				TRADERS_KILLED,
-				FIENDS_KILLED,
-				FIEND_EGG,
+				FIENDS_KILLED("Monsters killed"),
+				FIEND_EGG("Monster Eggs collected"),
 				CREATURES_KILL,
 				DISC_ALL_CREATU("Planets, where all creatures were found"),
 				DISC_FLORA    ("Discovered vegetables"),

@@ -82,6 +82,7 @@ public class GameInfos {
 	
 	private static HashMap<Long,UniverseObjectData> universeObjectDataArr;
 	private static HashMap<Integer,HashSet<String>> conflictLevelLabels;
+	private static HashMap<Integer,HashSet<String>> economyLevelLabels;
 	
 	private static class UOD_Region extends UniverseObjectData {
 		public UOD_Region(UniverseAddress ua) {
@@ -114,7 +115,9 @@ public class GameInfos {
 		Universe.SolarSystem.StarClass starClass;
 		Double distanceToCenter;
 		int conflictLevel;
+		int economyLevel;
 		String conflictLevelLabel;
+		String economyLevelLabel;
 		Boolean isUnexplored;
 		Boolean hasAtlasInterface; 
 		Boolean hasBlackHole;
@@ -128,6 +131,8 @@ public class GameInfos {
 			distanceToCenter = null;
 			conflictLevel = -1;
 			conflictLevelLabel = null;
+			economyLevel = -1;
+			economyLevelLabel = null;
 			hasAtlasInterface = null;
 			hasBlackHole = null;
 			blackHoleTarget = null;
@@ -140,6 +145,8 @@ public class GameInfos {
 			distanceToCenter = sys.distanceToCenter;
 			conflictLevel = sys.conflictLevel;
 			conflictLevelLabel = sys.conflictLevelLabel;
+			economyLevel = sys.economyLevel;
+			economyLevelLabel = sys.economyLevelLabel;
 			hasAtlasInterface = sys.hasAtlasInterface;
 			hasBlackHole = sys.hasBlackHole;
 			blackHoleTarget = (sys.blackHoleTarget==null || !sys.hasBlackHole)?null:sys.blackHoleTarget.getAddress();
@@ -233,6 +240,43 @@ public class GameInfos {
 	public static int getConflictLevel(String label) {
 		for (Integer level:conflictLevelLabels.keySet()) {
 			HashSet<String> labels = conflictLevelLabels.get(level);
+			if (labels.contains(label)) return level;
+		}
+		return -1;
+	}
+	
+	public static void updateEconomyLevelLabels() {
+		economyLevelLabels = new HashMap<>();
+		for (UniverseObjectData uoData:universeObjectDataArr.values()) {
+			if (!(uoData instanceof UOD_SolarSystem)) continue;
+			UOD_SolarSystem system = (UOD_SolarSystem)uoData;
+			if (system.economyLevelLabel!=null) {
+				HashSet<String> labels = economyLevelLabels.get(system.economyLevel);
+				if (labels==null) economyLevelLabels.put(system.economyLevel, labels = new HashSet<>());
+				labels.add(system.economyLevelLabel);
+			}
+		}
+	}
+	
+	public static String[] getEconomyLevelLabels(int economyLevel) {
+		HashSet<String> labels;
+		if (economyLevel<1) {
+			labels = new HashSet<>();
+			for (HashSet<String> set:economyLevelLabels.values())
+				labels.addAll(set);
+			
+		} else
+			labels = economyLevelLabels.get(economyLevel);
+		
+		if (labels==null || labels.isEmpty()) return new String[0];
+		String[] arr = labels.toArray(new String[0]);
+		Arrays.sort(arr);
+		return arr;
+	}
+
+	public static int getEconomyLevel(String label) {
+		for (Integer level:economyLevelLabels.keySet()) {
+			HashSet<String> labels = economyLevelLabels.get(level);
 			if (labels.contains(label)) return level;
 		}
 		return -1;
@@ -375,6 +419,17 @@ public class GameInfos {
 						system.conflictLevelLabel = valueStr;
 						continue;
 					}
+					if (str.startsWith("economy=")) {
+						valueStr = str.substring("economy=".length());
+						try { system.economyLevel = Integer.parseInt(valueStr); }
+						catch (NumberFormatException e) { system.economyLevel = -1; }
+						continue;
+					}
+					if (str.startsWith("economy_label=")) {
+						valueStr = str.substring("economy_label=".length());
+						system.economyLevelLabel = valueStr;
+						continue;
+					}
 				}
 				if (planet!=null) {
 					if (str.startsWith("biome=")) {
@@ -441,6 +496,7 @@ public class GameInfos {
 		catch (IOException e) { e.printStackTrace(); }
 		
 		updateConflictLevelLabels();
+		updateEconomyLevelLabels();
 		
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
@@ -518,6 +574,14 @@ public class GameInfos {
 				if (uod_system.conflictLevelLabel!=null) {
 					system.conflictLevelLabel = uod_system.conflictLevelLabel;
 					if (withOutput) SaveViewer.log_ln("   Conflict Level Label of %s was defined: \"%s\"", objName, system.conflictLevelLabel);
+				}
+				if (uod_system.economyLevel>=0) {
+					system.economyLevel = uod_system.economyLevel;
+					if (withOutput) SaveViewer.log_ln("   Economy Level of %s was defined: %d", objName, system.economyLevel);
+				}
+				if (uod_system.economyLevelLabel!=null) {
+					system.economyLevelLabel = uod_system.economyLevelLabel;
+					if (withOutput) SaveViewer.log_ln("   Economy Level Label of %s was defined: \"%s\"", objName, system.economyLevelLabel);
 				}
 				if (uod_system.isUnexplored!=null) {
 					system.isUnexplored = uod_system.isUnexplored;
@@ -636,6 +700,8 @@ public class GameInfos {
 						if (uod_system.race              !=null) out.printf("race=%s\r\n",uod_system.race);
 						if (uod_system.conflictLevel     >=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
 						if (uod_system.conflictLevelLabel!=null) out.printf("conflict_label=%s\r\n",uod_system.conflictLevelLabel);
+						if (uod_system.economyLevel      >=0   ) out.printf("economy=%d\r\n",uod_system.economyLevel);
+						if (uod_system.economyLevelLabel !=null) out.printf("economy_label=%s\r\n",uod_system.economyLevelLabel);
 					}
 					if (uod_system.hasAtlasInterface!=null) {
 						if (uod_system.hasAtlasInterface || SolarSystem.shouldHaveAtlasInterface(uod_system.universeAddress.solarSystemIndex))

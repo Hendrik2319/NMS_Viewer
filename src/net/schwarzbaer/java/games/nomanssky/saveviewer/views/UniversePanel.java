@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Window;
@@ -98,6 +99,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		GekSys, KorvaxSys, VykeenSys, Unexplored,
 		Yellow, Red, Green, Blue,
 		ConflictLevel1, ConflictLevel2, ConflictLevel3,
+		EconomyLevel1, EconomyLevel2, EconomyLevel3,
 		;
 	}
 	private enum PlanetTreeIcons {
@@ -107,7 +109,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		;
 	}
 	private enum AdditionalTreeIcons {
-		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20), BlackHole(20), Atlas(17);
+		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20), BlackHole(20), Atlas(17), Anomaly(20);
 
 		private int iconWidth;
 		private AdditionalTreeIcons(int iconWidth) { this.iconWidth = iconWidth; }
@@ -129,7 +131,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		protected <KeyType> Icon[] createIconArray(KeyType[] values, IconID iconNullId, Function<KeyType,IconID> getIconID) {
 			Icon[] icons = new Icon[values.length+1];
-			icons[0] = iconNullId!=null?iconSource.getCachedIcon(iconNullId):null;
+			icons[0] = iconNullId == null ? null : iconSource.getCachedIcon(iconNullId);
 			for (int i=0; i<values.length; i++)
 				icons[i+1] = iconSource.getCachedIcon(getIconID.apply(values[i]));
 			return icons;
@@ -147,16 +149,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			return icons;
 		}
 		
-		protected Icon[][][] combineIconArrays(Icon[] icons1, Icon[] icons2, Icon[] icons3, IconID iconBgId) {
+		protected Icon[][][][] combineIconArrays(Icon[] icons1, Icon[] icons2, Icon[] icons3, Icon[] icons4, IconID iconBgId) {
 			Icon iconBG = iconBgId!=null?iconSource.getCachedIcon(iconBgId):null;
-			Icon[][][] icons = new Icon[icons1.length][icons2.length][icons3.length];
-			Icon icon1,icon2;
-			for (int i=0; i<icons1.length; i++) {
-				icon1 = IconSource.combine(iconBG, icons1[i]);
-				for (int j=0; j<icons2.length; j++) {
-					icon2 = IconSource.combine(icon1, icons2[j]);
-					for (int k=0; k<icons3.length; k++) {
-						icons[i][j][k] = IconSource.combine(icon2, icons3[k]);
+			Icon[][][][] icons = new Icon[icons1.length][icons2.length][icons3.length][icons4.length];
+			Icon icon1,icon2,icon3;
+			for (int i1=0; i1<icons1.length; i1++) {
+				icon1 = IconSource.combine(iconBG, icons1[i1]);
+				for (int i2=0; i2<icons2.length; i2++) {
+					icon2 = IconSource.combine(icon1, icons2[i2]);
+					for (int i3=0; i3<icons3.length; i3++) {
+						icon3 = IconSource.combine(icon2, icons3[i3]);
+						for (int i4=0; i4<icons4.length; i4++) {
+							icons[i1][i2][i3][i4] = IconSource.combine(icon3, icons4[i4]);
+						}
 					}
 				}
 			}
@@ -164,21 +169,27 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 		
 		protected <KeyType> Icon[] createIconArray(KeyType[] values, int x, int y, int w, int h, Function<KeyType,IconID> getIconID) {
+			return createIconArray(values, x,y,w,h, getIconID, null);
+		}
+		protected <KeyType> Icon[] createIconArray(KeyType[] values, int x, int y, int w, int h, Function<KeyType,IconID> getIconID, Color bgColor) {
 			Icon[] icons = new Icon[values.length];
 			for (int i=0; i<values.length; i++) {
 				IconID iconID = getIconID.apply(values[i]);
 				Icon cachedIcon = iconSource.getCachedIcon(iconID);
-				icons[i] = IconSource.cutIcon(cachedIcon,x,y,w,h);
+				icons[i] = IconSource.cutIcon(cachedIcon,x,y,w,h,bgColor);
 			}
 			return icons;
 		}
 		
-		protected <E extends Enum<E>> EnumMap<E,Icon> createIconEnumMap(Class<E> eClass, E[] values, int x, int y, int w, int h, Function<E,IconID> getIconID) {
-			EnumMap<E, Icon> enumMap = new EnumMap<>(eClass);
-			for (E value:values) {
+		protected <KeyType extends Enum<KeyType>> EnumMap<KeyType,Icon> createIconEnumMap(Class<KeyType> eClass, KeyType[] values, int x, int y, int w, int h, Function<KeyType,IconID> getIconID) {
+			return createIconEnumMap(eClass, values, x,y,w,h, getIconID, null);
+		}
+		protected <KeyType extends Enum<KeyType>> EnumMap<KeyType,Icon> createIconEnumMap(Class<KeyType> eClass, KeyType[] values, int x, int y, int w, int h, Function<KeyType,IconID> getIconID, Color bgColor) {
+			EnumMap<KeyType, Icon> enumMap = new EnumMap<>(eClass);
+			for (KeyType value:values) {
 				IconID iconID = getIconID.apply(value);
 				Icon cachedIcon = iconSource.getCachedIcon(iconID);
-				enumMap.put(value, IconSource.cutIcon(cachedIcon,x,y,w,h)); 
+				enumMap.put(value, IconSource.cutIcon(cachedIcon,x,y,w,h,bgColor)); 
 			}
 			return enumMap;
 		}
@@ -186,12 +197,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	private static class SolarSystemIcons extends IconsMap<UniverseTreeIcons> {
 		
-		private Icon[][][] icons;
+		private Icon[][][][] icons;
 		private Icon[] unexploredIcons;
 		
 		EnumMap<Race,Icon> RaceIcons;
 		EnumMap<StarClass,Icon> StarClassIcons;
 		private Icon[] ConflictLevelIcons;
+		private Icon[] EconomyLevelIcons;
 		
 		SolarSystemIcons() {
 			super(UniverseTreeIconsIS);
@@ -228,30 +240,41 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 				return null;
 			};
+			Function<Integer, UniverseTreeIcons> getEconomyLevelIconID = (Integer economyLevel)->{
+				switch(economyLevel) {
+				case 1: return UniverseTreeIcons.EconomyLevel1;
+				case 2: return UniverseTreeIcons.EconomyLevel2;
+				case 3: return UniverseTreeIcons.EconomyLevel3;
+				}
+				return null;
+			};
 			
 			Icon[] raceIcons = createIconArray(Race.values(), null, getRaceIconID);
 			Icon[] starClassIcons = createIconArray(StarClass.values(), null, getStarClassIconID);
 			Icon[] conflictLevelIcons = createIconArray(new Integer[]{1,2,3}, null, getConflictLevelIconID);
-			icons = combineIconArrays(raceIcons, starClassIcons, conflictLevelIcons, UniverseTreeIcons.SolarSystem);
+			Icon[] economyLevelIcons = createIconArray(new Integer[]{1,2,3}, null, getEconomyLevelIconID);
+			icons = combineIconArrays(raceIcons, starClassIcons, conflictLevelIcons, economyLevelIcons, UniverseTreeIcons.SolarSystem);
 			
 			Icon[] unexploredIcon = new Icon[] { null, iconSource.getCachedIcon(UniverseTreeIcons.Unexplored) };
 			unexploredIcons = combineIconArrays(unexploredIcon, starClassIcons, UniverseTreeIcons.SolarSystem)[1];
 			
+			EconomyLevelIcons  = createIconArray(new Integer[]{1,2,3}, 25,3,5,17, getEconomyLevelIconID, Color.GRAY);
 			ConflictLevelIcons = createIconArray(new Integer[]{1,2,3}, 0,9,11,11, getConflictLevelIconID);
-			RaceIcons = createIconEnumMap(Race.class, Race.values(), 10,0,20,20, getRaceIconID);
+			RaceIcons = createIconEnumMap(Race.class, Race.values(), 8,0,20,20, getRaceIconID);
 			StarClassIcons = new EnumMap<>(StarClass.class);
 			for (StarClass starClass:StarClass.values()) {
-				Icon cachedIcon = get(null, starClass, -1, false);
+				Icon cachedIcon = get(null, starClass, -1, -1, false);
 				StarClassIcons.put(starClass, IconSource.cutIcon(cachedIcon,0,0,20,20)); 
 			}
 		}
 		
-		Icon get(Race race, StarClass starClass, int conflictLevel, boolean unexplored) {
+		Icon get(Race race, StarClass starClass, int conflictLevel, int economyLevel, boolean unexplored) {
 			int raceIndex      = race     ==null?0:(race     .ordinal()+1);
 			int starClassIndex = starClass==null?0:(starClass.ordinal()+1);
 			if (conflictLevel<1 || 3<conflictLevel) conflictLevel = 0;
+			if (economyLevel<1 || 3<economyLevel) economyLevel = 0;
 			if (unexplored) return unexploredIcons[starClassIndex];
-			return icons[raceIndex][starClassIndex][conflictLevel];
+			return icons[raceIndex][starClassIndex][conflictLevel][economyLevel];
 		}
 	}
 	
@@ -494,37 +517,48 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		private SimplifiedTable extraInfoTable;
 		private UniversePanel universePanel;
-		private JPanel valuePanel;
-		private GridBagLayout valuePanelLayout;
+		private JPanel leftValuePanel;
+		private JPanel rightValuePanel;
 		private GridBagConstraints c;
 		
 		InfoPanel_UniverseObject(UniversePanel universePanel, boolean useValuePanel) {
 			this.universePanel = universePanel;
 			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
-			extraInfoTable.setPreferredScrollableViewportSize(new Dimension(610, 120));;
+			JScrollPane extraInfoTableScrollPane = new JScrollPane(extraInfoTable);
+			extraInfoTableScrollPane.setPreferredSize(new Dimension(500, 60));;
 			
 			if (useValuePanel) {
-				valuePanel = new JPanel(valuePanelLayout = new GridBagLayout());
-				valuePanel.setBorder(BorderFactory.createTitledBorder("Values"));
 				c = new GridBagConstraints();
+				leftValuePanel = new JPanel(new GridBagLayout());
+				rightValuePanel = new JPanel(new GridBagLayout());
 				
-				JPanel southPanel = new JPanel(new BorderLayout(3,3));
-				southPanel.add(valuePanel, BorderLayout.WEST);
-				southPanel.add(new JScrollPane(extraInfoTable), BorderLayout.CENTER);
+				JPanel southPanel = new JPanel(new GridBagLayout());
+				southPanel.setBorder(BorderFactory.createTitledBorder("Values"));
+				c.insets = new Insets(2,2,2,2);
+				addComp(southPanel,  leftValuePanel, 0,0, 1,1, GridBagConstraints.BOTH);
+				addComp(southPanel, rightValuePanel, 0,0, 1,1, GridBagConstraints.BOTH);
+				addComp(southPanel, new JLabel()   , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+				addComp(southPanel, extraInfoTableScrollPane, 1, 1, GridBagConstraints.REMAINDER , 1, GridBagConstraints.BOTH);
+				c.insets = new Insets(0,0,0,0);
 				
 				add(southPanel,BorderLayout.SOUTH);
 			} else
-				add(new JScrollPane(extraInfoTable),BorderLayout.SOUTH);
+				add(extraInfoTableScrollPane,BorderLayout.SOUTH);
 		}
 		
-		protected void addCompToValuePanel(Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+		protected void addCompToRight(Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+			addComp(rightValuePanel, comp, weightx, weighty, gridwidth, gridheight, fill);
+		}
+		protected void addCompToLeft(Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+			addComp(leftValuePanel, comp, weightx, weighty, gridwidth, gridheight, fill);
+		}
+		private void addComp(JPanel panel, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
 			c.weightx=weightx;
 			c.weighty=weighty;
 			c.gridwidth=gridwidth;
 			c.gridheight=gridheight;
 			c.fill = fill;
-			valuePanelLayout.setConstraints(comp, c);
-			valuePanel.add(comp);
+			panel.add(comp,c);
 		}
 
 		protected void showDiscNameObj(GenericTreeNode<?> node, Universe.DiscoverableObject obj) {
@@ -560,7 +594,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private enum ExtraInfoColumnID implements SimplifiedColumnIDInterface {
 			ShowInParent(""     , Boolean.class, 10,-1, 20, 20),
 			Label       ("Label",  String.class, 20,-1,100,100),
-			Info        ("Info" ,  String.class, 50,-1,290,290);
+			Info        ("Info" ,  String.class, 50,-1,390,390);
 			
 			private SimplifiedColumnConfig config;
 		
@@ -653,9 +687,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private JComboBox<Race> cmbbxRace;
 		private JComboBox<StarClass> cmbbxStarClass;
-		private Gui.IconComboBox<Integer> cmbbxConflictLevel;
-		private JComboBox<String> cmbbxConflictLevelLabels;
-		private JButton btnAddConflictLevelLabel;
+
+		private LabeledLevelsBlock llbConflict;
+		private LabeledLevelsBlock llbEconomy;
 
 		private JCheckBox chkbxUnexplored;
 
@@ -699,69 +733,39 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					return value.getLabel();
 				}
 			};
-			cmbbxConflictLevel = new Gui.IconComboBox<Integer>(new Integer[]{1,2,3}) {
-				private static final long serialVersionUID = 5328964374227212373L;
+			
+			llbConflict = new LabeledLevelsBlock("Conflict Level", SolarSystemIcons.ConflictLevelIcons, 1, 3) {
+				@Override void setLevelInNode     (int    level     ) { node.value.conflictLevel      = level; }
+				@Override void setLevelLabelInNode(String levelLabel) { node.value.conflictLevelLabel = levelLabel; }
 				
-				@Override public Integer cast(Object obj) {
-					if (!(obj instanceof Integer)) return null;
-					return (Integer)obj;
-				}
-				@Override public Icon createIcon(Integer value) {
-					if (value==null || value<=0 || 3<value) return null;
-					return SolarSystemIcons.ConflictLevelIcons[value-1];
-				}
-				@Override public String getLabel(Integer value) {
-					if (value==null || value<=0 || 3<value) return "";
-					return "Conflict Level "+value;
-				}
+				@Override int    getLevelFromNode     () { return node.value.conflictLevel     ; }
+				@Override String getLevelLabelFromNode() { return node.value.conflictLevelLabel; }
+				
+				@Override int      getLevelByLabel(String levelLabel) { return GameInfos.getConflictLevel(levelLabel); }
+				@Override String[] getLevelLabels(int level)          { return GameInfos.getConflictLevelLabels(level); }
+				@Override void     updateLevelLabelsGameInfos()       { GameInfos.updateConflictLevelLabels(); }
 			};
+			llbEconomy = new LabeledLevelsBlock( "Economy Level", SolarSystemIcons.EconomyLevelIcons, 1, 3) {
+				@Override void setLevelInNode     (int    level     ) { node.value.economyLevel      = level; }
+				@Override void setLevelLabelInNode(String levelLabel) { node.value.economyLevelLabel = levelLabel; }
+				
+				@Override int    getLevelFromNode     () { return node.value.economyLevel     ; }
+				@Override String getLevelLabelFromNode() { return node.value.economyLevelLabel; }
+				
+				@Override int      getLevelByLabel(String levelLabel) { return GameInfos.getEconomyLevel(levelLabel); }
+				@Override String[] getLevelLabels(int level)          { return GameInfos.getEconomyLevelLabels(level); }
+				@Override void     updateLevelLabelsGameInfos()       { GameInfos.updateEconomyLevelLabels(); }
+			};
+			
 			cmbbxRace         .addActionListener(e->{ if (isSettingContent) return; node.value.race      = (Race     )cmbbxRace     .getSelectedItem(); updateTreeNode(node, false); });
 			cmbbxStarClass    .addActionListener(e->{ if (isSettingContent) return; node.value.starClass = (StarClass)cmbbxStarClass.getSelectedItem(); updateTreeNode(node, false); });
-			cmbbxConflictLevel.addActionListener(e->{
-				if (isSettingContent) return;
-				
-				Integer val = cmbbxConflictLevel.getSelected();
-				node.value.conflictLevel = val==null?-1:val;
-				updateTreeNode(node, false);
-				
-				GameInfos.updateConflictLevelLabels();
-				updateCmbbxConflictLevelLabels();
-			});
-			
-			cmbbxConflictLevelLabels = new JComboBox<String>();
-			cmbbxConflictLevelLabels.addActionListener(e->{
-				if (isSettingContent) return;
-				
-				int index = cmbbxConflictLevelLabels.getSelectedIndex();
-				String label = index<0?null:cmbbxConflictLevelLabels.getItemAt(index);
-				node.value.conflictLevelLabel = label;
-				updateTreeNode(node, false);
-				
-				if (node.value.conflictLevel<1) {
-					int conflictLevel = GameInfos.getConflictLevel(label);
-					SwingUtilities.invokeLater(()->{
-						cmbbxConflictLevel.setSelectedItem(conflictLevel<1?null:(Integer)conflictLevel);
-					});
-				}
-			});
-			btnAddConflictLevelLabel = SaveViewer.createButton("Add",e->{
-				String label = JOptionPane.showInputDialog(this, "message", "title", JOptionPane.PLAIN_MESSAGE);
-				if (label!=null) {
-					node.value.conflictLevelLabel = label;
-					updateTreeNode(node, false);
-					
-					GameInfos.updateConflictLevelLabels();
-					updateCmbbxConflictLevelLabels();
-				}
-			});
 			
 			chkbxUnexplored = SaveViewer.createCheckbox("is Unexplored", e->{
 				if (isSettingContent) return;
 				node.value.isUnexplored = chkbxUnexplored.isSelected();
 				cmbbxRace               .setEnabled(!node.value.isUnexplored);
-				cmbbxConflictLevel      .setEnabled(!node.value.isUnexplored);
-				cmbbxConflictLevelLabels.setEnabled(!node.value.isUnexplored);
-				btnAddConflictLevelLabel.setEnabled(!node.value.isUnexplored);
+				llbConflict.setEnabled(!node.value.isUnexplored);
+				llbEconomy .setEnabled(!node.value.isUnexplored);
 				updateTreeNode(node, false);
 			}, false);
 			
@@ -811,22 +815,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
 			
-			addCompToValuePanel(cmbbxRace               , 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(cmbbxStarClass          , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(cmbbxConflictLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(cmbbxConflictLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(btnAddConflictLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxUnexplored         , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxAtlasInterface     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxBlackHole          , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToValuePanel(blackHoleTargetPanel    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-		}
-
-		private void updateCmbbxConflictLevelLabels() {
-			String[] labels = GameInfos.getConflictLevelLabels(node.value.conflictLevel);
-			cmbbxConflictLevelLabels.setModel(new DefaultComboBoxModel<>(labels));
-			cmbbxConflictLevelLabels.setSelectedItem(node.value.conflictLevelLabel);
-			btnAddConflictLevelLabel.setEnabled(node.value.conflictLevel>=1);
+			addCompToLeft (cmbbxRace               , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (cmbbxStarClass          , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbConflict.cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbEconomy .cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbEconomy .cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbEconomy .btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (chkbxUnexplored         , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (new JLabel()            , 1,1, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToRight(chkbxAtlasInterface     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToRight(chkbxBlackHole          , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToRight(blackHoleTargetPanel    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToRight(new JLabel()            , 1,1, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 		}
 
 		private void updateBlackHoleTargetPanel() {
@@ -851,16 +853,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			cmbbxRace          .setSelectedItem(system.race         );
 			cmbbxStarClass     .setSelectedItem(system.starClass    );
-			cmbbxConflictLevel .setSelectedItem(system.conflictLevel<1?null:system.conflictLevel);
-			updateCmbbxConflictLevelLabels();
+			llbConflict.setLevel(system.conflictLevel);
+			llbConflict.updateLevelLabels();
+			llbEconomy .setLevel(system.economyLevel);
+			llbEconomy .updateLevelLabels();
 			
 			chkbxUnexplored    .setSelected(system.isUnexplored     );
 			chkbxAtlasInterface.setSelected(system.hasAtlasInterface);
 			chkbxBlackHole     .setSelected(system.hasBlackHole     );
 			updateBlackHoleTargetPanel();
 			
-			cmbbxRace         .setEnabled(!system.isUnexplored);
-			cmbbxConflictLevel.setEnabled(!system.isUnexplored);
+			cmbbxRace  .setEnabled(!system.isUnexplored);
+			llbConflict.setEnabled(!system.isUnexplored);
+			llbEconomy .setEnabled(!system.isUnexplored);
 			
 			showInfos();
 		}
@@ -904,6 +909,113 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (system.additionalInfos.hasFreighter)
 					appendln("    Freighter in System");
 			}
+		}
+		
+		private abstract class LabeledLevelsBlock {
+			private Gui.IconComboBox<Integer> cmbbxLevel;
+			private JComboBox<String> cmbbxLevelLabels;
+			private JButton btnAddLevelLabel;
+			private int minLevel;
+			private int maxLevel;
+			private int undefinedValue;
+			
+			abstract void setLevelInNode(int level);
+			abstract void setLevelLabelInNode(String levelLabel);
+			
+			private boolean isInRange(int level) {
+				return minLevel<=level && level<=maxLevel;
+			}
+			
+			LabeledLevelsBlock(String baseLabel, Icon[] icons, int minLevel, int maxLevel) {
+				this.minLevel = minLevel;
+				this.maxLevel = maxLevel;
+				this.undefinedValue = Math.min(-1, minLevel-1);
+				if (maxLevel<minLevel) throw new IllegalArgumentException();
+				
+				Integer[] values = new Integer[maxLevel-minLevel+1];
+				for (int i=0; i<=maxLevel-minLevel; i++)
+					values[i] = minLevel+i;
+				
+				cmbbxLevel = new Gui.IconComboBox<Integer>(values) {
+					private static final long serialVersionUID = 5328964374227212373L;
+					
+					@Override public Integer cast(Object obj) {
+						if (!(obj instanceof Integer)) return null;
+						return (Integer)obj;
+					}
+					@Override public Icon createIcon(Integer value) {
+						if (value==null || !isInRange(value)) return null;
+						return icons[value-minLevel];
+					}
+					@Override public String getLabel(Integer value) {
+						if (value==null || !isInRange(value)) return "";
+						return baseLabel+" "+value;
+					}
+				};
+				
+				cmbbxLevel.addActionListener(e->{
+					if (isSettingContent) return;
+					
+					Integer val = cmbbxLevel.getSelected();
+					setLevelInNode( val==null ? undefinedValue : val );
+					updateTreeNode(node, false);
+					
+					updateLevelLabelsGameInfos();
+					updateLevelLabels();
+				});
+				
+				cmbbxLevelLabels = new JComboBox<String>();
+				cmbbxLevelLabels.addActionListener(e->{
+					if (isSettingContent) return;
+					
+					int index = cmbbxLevelLabels.getSelectedIndex();
+					String levelLabel = index<0?null:cmbbxLevelLabels.getItemAt(index);
+					setLevelLabelInNode(levelLabel);
+					updateTreeNode(node, false);
+					
+					if (!isInRange(getLevelFromNode())) {
+						int level = getLevelByLabel(levelLabel);
+						SwingUtilities.invokeLater(()->setLevel(level));
+					}
+				});
+				btnAddLevelLabel = SaveViewer.createButton("Add",e->{
+					String levelLabel = JOptionPane.showInputDialog(InfoPanel_SolarSystem.this, "message", "title", JOptionPane.PLAIN_MESSAGE);
+					if (levelLabel!=null) {
+						setLevelLabelInNode(levelLabel);
+						updateTreeNode(node, false);
+						
+						updateLevelLabelsGameInfos();
+						updateLevelLabels();
+					}
+				});
+			}
+
+			public void setLevel(int level) {
+				cmbbxLevel.setSelectedItem(isInRange(level) ? level : null);
+			}
+
+			public void setEnabled(boolean enabled) {
+				cmbbxLevel      .setEnabled(enabled);
+				cmbbxLevelLabels.setEnabled(enabled);
+				btnAddLevelLabel.setEnabled(enabled);
+			}
+			
+			abstract int    getLevelFromNode();
+			abstract String getLevelLabelFromNode();
+			
+			abstract int      getLevelByLabel(String levelLabel);
+			abstract String[] getLevelLabels(int level);
+			abstract void     updateLevelLabelsGameInfos();
+			
+			private void updateLevelLabels() {
+				int level = getLevelFromNode();
+				String label = getLevelLabelFromNode();
+				String[] labels = getLevelLabels(level);
+				cmbbxLevelLabels.setModel(new DefaultComboBoxModel<>(labels));
+				cmbbxLevelLabels.setSelectedItem(label);
+				btnAddLevelLabel.setEnabled(level>=1);
+			}
+			
 		}
 	}
 	
@@ -962,7 +1074,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			chkbxWater    = SaveViewer.createCheckbox("with Water"          , e->{ if (isSettingContent) return; node.value.withWater              = chkbxWater   .isSelected(); updateTreeNode(node, true ); }, false);
 			chkbxGrav     = SaveViewer.createCheckbox("with Gravitino Balls", e->{ if (isSettingContent) return; node.value.withGravitinoBalls     = chkbxGrav    .isSelected(); updateTreeNode(node, false); }, false);
 			
-			txtfldResources = new JTextField();
+			txtfldResources = new JTextField(20);
 			txtfldResources.setEditable(false);
 			btnSetResources = SaveViewer.createButton("Change", e->{
 				if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
@@ -975,14 +1087,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 			});
 			
-			addCompToValuePanel(cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxExtreme       , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxAggrSent      , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxWater         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(chkbxGrav          , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(cmbbxBuriedTreasure, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(txtfldResources    , 1, 0, 1, 1, GridBagConstraints.BOTH);
-			addCompToValuePanel(btnSetResources    , 0, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToLeft (cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToLeft (chkbxExtreme       , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToLeft (chkbxAggrSent      , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToLeft (chkbxWater         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToLeft (new JLabel()       , 1, 1, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToRight(txtfldResources    , 1, 0, 1, 1, GridBagConstraints.BOTH);
+			addCompToRight(btnSetResources    , 0, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToRight(cmbbxBuriedTreasure, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToRight(chkbxGrav          , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToRight(new JLabel()       , 1, 1, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 		}
 		
 		@Override
@@ -1071,6 +1185,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private ListMenu<Race> miSetRace;
 		private ListMenu<StarClass> miSetStarClass;
 		private ListMenu<Integer> miSetConflictLevel;
+		private ListMenu<Integer> miSetEconomyLevel;
 		private JCheckBoxMenuItem miUnexplored;
 		
 		Contextmenu_SolarSystem() {
@@ -1146,6 +1261,28 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetConflictLevel.setShowSelectedValue(true);
 			add(miSetConflictLevel);
 			
+			miSetEconomyLevel = new Gui.ListMenu<Integer>("Set Economy Level",new Integer[]{1,2,3},null,
+				new Gui.ListMenuItems.ExternFunction<Integer>() {
+					@Override public void setResult(Integer value) {
+						if (clickedNode instanceof SolarSystemNode) {
+							((SolarSystemNode)clickedNode).value.economyLevel = value==null?-1:value;
+							updateTreeNodeAndInfoPanel(clickedNode, false);
+						}
+					}
+					@Override public void configureMenuItem(JMenuItem menuItem, Integer value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("<none>");
+						} else {
+							menuItem.setIcon(SolarSystemIcons.EconomyLevelIcons[value-1]);
+							menuItem.setText("Economy Level "+value);
+						}
+					}
+				}
+			);
+			miSetEconomyLevel.setShowSelectedValue(true);
+			add(miSetEconomyLevel);
+			
 			add(miUnexplored = new JCheckBoxMenuItem("Unexplored", false));
 			miUnexplored.addActionListener(e->{
 				if (clickedNode instanceof SolarSystemNode) {
@@ -1165,9 +1302,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetRace.setValue(system.race);
 			miSetStarClass.setValue(system.starClass);
 			miSetConflictLevel.setValue(1<=system.conflictLevel&&system.conflictLevel<=3?system.conflictLevel:null);
+			miSetEconomyLevel .setValue(1<=system. economyLevel&&system. economyLevel<=3?system. economyLevel:null);
 			miUnexplored.setSelected(system.isUnexplored);
 			miSetRace.setEnabled(!system.isUnexplored);
 			miSetConflictLevel.setEnabled(!system.isUnexplored);
+			miSetEconomyLevel .setEnabled(!system.isUnexplored);
 		}
 	}
 	
@@ -2291,10 +2430,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					SolarSystem system = solarSystemNode.value;
 					Icon icon;
 					if (!system.additionalInfos.isEmpty() || system.hasAtlasInterface || system.hasBlackHole) {
-						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole))
+						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole))
 							icon = solarSystemNode.cachedCustomIcon.get();
 						else {
-							icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel, system.isUnexplored);
+							icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored);
 							if (system.hasAtlasInterface)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Atlas));
 							if (system.hasBlackHole)
@@ -2303,10 +2442,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter));
 							if (system.additionalInfos.hasFreighter)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
-							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole);
+							if (system.additionalInfos.hasAnomaly)
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Anomaly));
+							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole);
 						}
 					} else
-						icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel, system.isUnexplored);
+						icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored);
 					component.setIcon(icon);
 				}
 				break;
@@ -2457,21 +2598,30 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private final Race race;
 			private final StarClass starClass;
 			private final int conflictLevel;
+			private final int economyLevel;
 			private final boolean isUnexplored;
 			protected boolean hasAtlasInterface;
 			private boolean hasBlackHole;
 
-			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel, boolean isUnexplored, boolean hasAtlasInterface, boolean hasBlackHole) {
+			public CachedCustomIcon(Icon icon, Race race, StarClass starClass, int conflictLevel, int economyLevel, boolean isUnexplored, boolean hasAtlasInterface, boolean hasBlackHole) {
 				this.icon = icon;
 				this.race = race;
 				this.starClass = starClass;
 				this.conflictLevel = conflictLevel;
+				this.economyLevel = economyLevel;
 				this.isUnexplored = isUnexplored;
 				this.hasAtlasInterface = hasAtlasInterface;
 				this.hasBlackHole = hasBlackHole;
 			}
-			public boolean is(Race race, StarClass starClass, int conflictLevel, boolean isUnexplored, boolean hasAtlasInterface, boolean hasBlackHole) {
-				return this.race==race && this.starClass==starClass && this.conflictLevel==conflictLevel && this.isUnexplored==isUnexplored && this.hasAtlasInterface==hasAtlasInterface && this.hasBlackHole==hasBlackHole;
+			public boolean is(Race race, StarClass starClass, int conflictLevel, int economyLevel, boolean isUnexplored, boolean hasAtlasInterface, boolean hasBlackHole) {
+				return
+						this.race==race &&
+						this.starClass==starClass &&
+						this.conflictLevel==conflictLevel &&
+						this.economyLevel==economyLevel &&
+						this.isUnexplored==isUnexplored &&
+						this.hasAtlasInterface==hasAtlasInterface &&
+						this.hasBlackHole==hasBlackHole;
 			}
 			public Icon get() {
 				return icon;

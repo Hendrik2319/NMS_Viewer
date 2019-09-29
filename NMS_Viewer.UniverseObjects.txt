@@ -4032,6 +4032,8 @@ name=Doforangi VI
 race=Gek
 conflict=3
 conflict_label=hoch
+economy=2
+economy_label=komfortabel
 class=Yellow
 short=3 Planeten
 info=
@@ -5347,8 +5349,6 @@ race=Vykeen
 conflict=3
 conflict_label=aggressiv
 class=Yellow
-short=6 Planeten
-info=
 
 [Pln101400FCD7F684]
 name=Itis Beta
