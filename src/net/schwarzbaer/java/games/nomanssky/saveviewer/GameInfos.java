@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -209,74 +210,58 @@ public class GameInfos {
 	}
 	
 	public static void updateConflictLevelLabels() {
-		conflictLevelLabels = new HashMap<>();
+		conflictLevelLabels = updateLevelLabels(system->system.conflictLevelLabel, system->system.conflictLevel);
+	}
+	public static void updateEconomyLevelLabels() {
+		economyLevelLabels = updateLevelLabels(system->system.economyLevelLabel, system->system.economyLevel);
+	}
+	private static HashMap<Integer,HashSet<String>> updateLevelLabels(Function<UOD_SolarSystem,String> getLabel, Function<UOD_SolarSystem,Integer> getLevel) {
+		HashMap<Integer,HashSet<String>> levelLabels = new HashMap<>();
 		for (UniverseObjectData uoData:universeObjectDataArr.values()) {
 			if (!(uoData instanceof UOD_SolarSystem)) continue;
 			UOD_SolarSystem system = (UOD_SolarSystem)uoData;
-			if (system.conflictLevelLabel!=null) {
-				HashSet<String> labels = conflictLevelLabels.get(system.conflictLevel);
-				if (labels==null) conflictLevelLabels.put(system.conflictLevel, labels = new HashSet<>());
-				labels.add(system.conflictLevelLabel);
+			String levelLabel = getLabel.apply(system);
+			if (levelLabel!=null) {
+				int level = getLevel.apply(system);
+				HashSet<String> labels = levelLabels.get(level);
+				if (labels==null) levelLabels.put(level, labels = new HashSet<>());
+				labels.add(levelLabel);
 			}
 		}
+		return levelLabels;
 	}
 	
 	public static String[] getConflictLevelLabels(int conflictLevel) {
+		return getLevelLabels(conflictLevel, conflictLevelLabels);
+	}
+	public static String[] getEconomyLevelLabels(int economyLevel) {
+		return getLevelLabels(economyLevel, economyLevelLabels);
+	}
+	private static String[] getLevelLabels(int level, HashMap<Integer,HashSet<String>> levelLabels) {
 		HashSet<String> labels;
-		if (conflictLevel<1) {
+		if (level<1) {
 			labels = new HashSet<>();
-			for (HashSet<String> set:conflictLevelLabels.values())
+			for (HashSet<String> set:levelLabels.values())
 				labels.addAll(set);
 			
 		} else
-			labels = conflictLevelLabels.get(conflictLevel);
+			labels = levelLabels.get(level);
 		
 		if (labels==null || labels.isEmpty()) return new String[0];
 		String[] arr = labels.toArray(new String[0]);
-		Arrays.sort(arr);
+		Arrays.sort(arr,Comparator.comparing(String::toLowerCase));
 		return arr;
 	}
 
 	public static int getConflictLevel(String label) {
-		for (Integer level:conflictLevelLabels.keySet()) {
-			HashSet<String> labels = conflictLevelLabels.get(level);
-			if (labels.contains(label)) return level;
-		}
-		return -1;
+		return getLabeledLevel(label, conflictLevelLabels);
 	}
-	
-	public static void updateEconomyLevelLabels() {
-		economyLevelLabels = new HashMap<>();
-		for (UniverseObjectData uoData:universeObjectDataArr.values()) {
-			if (!(uoData instanceof UOD_SolarSystem)) continue;
-			UOD_SolarSystem system = (UOD_SolarSystem)uoData;
-			if (system.economyLevelLabel!=null) {
-				HashSet<String> labels = economyLevelLabels.get(system.economyLevel);
-				if (labels==null) economyLevelLabels.put(system.economyLevel, labels = new HashSet<>());
-				labels.add(system.economyLevelLabel);
-			}
-		}
-	}
-	
-	public static String[] getEconomyLevelLabels(int economyLevel) {
-		HashSet<String> labels;
-		if (economyLevel<1) {
-			labels = new HashSet<>();
-			for (HashSet<String> set:economyLevelLabels.values())
-				labels.addAll(set);
-			
-		} else
-			labels = economyLevelLabels.get(economyLevel);
-		
-		if (labels==null || labels.isEmpty()) return new String[0];
-		String[] arr = labels.toArray(new String[0]);
-		Arrays.sort(arr);
-		return arr;
-	}
-
 	public static int getEconomyLevel(String label) {
-		for (Integer level:economyLevelLabels.keySet()) {
-			HashSet<String> labels = economyLevelLabels.get(level);
+		return getLabeledLevel(label, economyLevelLabels);
+	}
+	private static int getLabeledLevel(String label, HashMap<Integer,HashSet<String>> levelLabels) {
+		for (Integer level:levelLabels.keySet()) {
+			HashSet<String> labels = levelLabels.get(level);
 			if (labels.contains(label)) return level;
 		}
 		return -1;

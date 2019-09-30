@@ -29,10 +29,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.Vector;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -40,12 +40,12 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -72,6 +72,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.PopupDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.SearchFieldWithPopup;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
@@ -910,6 +912,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				appendln("Additional Infos:");
 				if (system.additionalInfos.hasFreighter)
 					appendln("    Freighter in System");
+				if (system.additionalInfos.hasAnomaly)
+					appendln("    Anomaly in System");
+				if (system.additionalInfos.hasTeleportEndPoint)
+					appendln("    is reachable by Teleport Network");
 			}
 		}
 		
@@ -1040,7 +1046,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		private ResourceSelectDialog resourceSelectDialog;
 		
-		InfoPanel_Planet() {
+		InfoPanel_Planet() { // TODO
 			super(UniversePanel.this, true);
 			this.node = null;
 			
@@ -2044,90 +2050,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				treeModel.nodeChanged(node);
 			}
 		}
-
-		private class PopupDialog extends JDialog {
-			private static final long serialVersionUID = 2119752129654976331L;
-			
-			PopupDialog(Window owner) {
-				super(owner,ModalityType.APPLICATION_MODAL);
-			}
-			
-			protected void setGUI(JPanel content) {
-				setUndecorated(true);
-				setContentPane(content);
-				pack();
-			}
-			
-			protected void hidePopup() {
-				setVisible(false);
-			}
-			
-			public void showPopup(Component parent, int x, int y) {
-				Point p = parent.getLocationOnScreen();
-				setLocation(p.x+x, p.y+y);
-				setVisible(true);
-			}
-		}
-		
-		private class SearchFieldWithPopup extends JTextField {
-			private static final long serialVersionUID = -8505198126697979409L;
-			
-			private String searchStr = null;
-			private JPopupMenu fittingNamesPopup = null;
-
-			private Function<String, HashSet<String>> getFittingNames;
-			private Consumer<String> selectFinally;
-
-			private int maxNameListLength;
-			
-			SearchFieldWithPopup(int columns, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally) {
-				super(columns);
-				this.getFittingNames = getFittingNames;
-				this.selectFinally = selectFinally;
-				
-				fittingNamesPopup = new JPopupMenu("Fitting Names");
-				addCaretListener(e -> updateSearch(false));
-			}
-			
-			public void updateSearch() {
-				updateSearch(true);
-			}
-			private void updateSearch(boolean forceUpdate) {
-				String newStr = getText();
-				if (!forceUpdate && newStr.equals(searchStr)) return;
-				searchStr = newStr;
-				
-				fittingNamesPopup.setVisible(false);
-				
-				HashSet<String> fittingNames = getFittingNames.apply(searchStr);
-				if (fittingNames.isEmpty()) return;
-				
-				Vector<String> names = new Vector<>(fittingNames);
-				names.sort(Comparator.<String,String>comparing(String::toLowerCase));
-				
-				fittingNamesPopup.removeAll();
-				for (int i=0; i<names.size(); i++) {
-					if (i>=maxNameListLength) {
-						int n = i-maxNameListLength+1;
-						fittingNamesPopup.add(SaveViewer.createMenuItem("... and "+n+" more",null,false));
-						break;
-					}
-					String name = names.get(i);
-					fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->{
-						searchStr = name;
-						setText(searchStr);
-						selectFinally.accept(name);
-					}));
-				}
-				
-				fittingNamesPopup.show(this, 0, getHeight()+1);
-				requestFocusInWindow();
-			}
-
-			public void setMaxNameListLength(int maxNameListLength) {
-				this.maxNameListLength = maxNameListLength;
-			}
-		}
 		
 		private class NameSearch extends PopupDialog {
 			private static final long serialVersionUID = 2446633626490169526L;
@@ -2278,27 +2200,166 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 		
 		private class SolarSystemBar extends AbstractSearchBar<SolarSystem> {
-			
 			private static final long serialVersionUID = 7635343276037663444L;
+			
+			private Gui.IconComboBox<Race> cmbbxRace;
+			private Gui.IconComboBox<StarClass> cmbbxStarClass;
+
+			private Gui.IconComboBox<Integer> cmbbxConflictLevel;
+			private Gui.IconComboBox<Integer> cmbbxEconomyLevel;
+
+			private TristateCheckBox chkbxUnexplored;
+
+			private TristateCheckBox chkbxAtlasInterface;
+			private TristateCheckBox chkbxBlackHole;
+			private TristateCheckBox chkbxReachableByTeleport;
 
 			SolarSystemBar() {}
 			
 			@Override
 			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) {
-				// TODO Auto-generated method stub
 				
+				cmbbxRace = new Gui.IconComboBox<Race>( SaveViewer.addNull(Race.values())) {
+					private static final long serialVersionUID = 5328964374227212373L;
+					
+					@Override public Race cast(Object obj) {
+						if (!(obj instanceof Race)) return null;
+						return (Race)obj;
+					}
+					@Override public Icon createIcon(Race value) {
+						return SolarSystemIcons.RaceIcons.get(value);
+					}
+					@Override public String getLabel(Race value) {
+						if (value==null) return "<all values>";
+						return value.fullName;
+					}
+				};
+				cmbbxRace.addActionListener(e->updateMarkers());
+				
+				cmbbxStarClass = new Gui.IconComboBox<StarClass>( SaveViewer.addNull(StarClass.values())) {
+					private static final long serialVersionUID = 5328964374227212373L;
+					
+					@Override public StarClass cast(Object obj) {
+						if (!(obj instanceof StarClass)) return null;
+						return (StarClass)obj;
+					}
+					@Override public Icon createIcon(StarClass value) {
+						return SolarSystemIcons.StarClassIcons.get(value);
+					}
+					@Override public String getLabel(StarClass value) {
+						if (value==null) return "<all values>";
+						return value.getLabel();
+					}
+				};
+				cmbbxStarClass.addActionListener(e->updateMarkers());
+				
+				cmbbxConflictLevel = new Gui.IconComboBox<Integer>( new Integer[] {null,1,2,3} ) {
+					private static final long serialVersionUID = 5328964374227212373L;
+					
+					@Override public Integer cast(Object obj) {
+						if (!(obj instanceof Integer)) return null;
+						return (Integer)obj;
+					}
+					@Override public Icon createIcon(Integer value) {
+						if (value==null || value<1 || value>3) return null;
+						return SolarSystemIcons.ConflictLevelIcons[value-1];
+					}
+					@Override public String getLabel(Integer value) {
+						if (value==null || value<1 || value>3) return "<all values>";
+						return "Conflict Level "+value;
+					}
+				};
+				cmbbxConflictLevel.addActionListener(e->updateMarkers());
+				
+				cmbbxEconomyLevel = new Gui.IconComboBox<Integer>( new Integer[] {null,1,2,3} ) {
+					private static final long serialVersionUID = 5328964374227212373L;
+					
+					@Override public Integer cast(Object obj) {
+						if (!(obj instanceof Integer)) return null;
+						return (Integer)obj;
+					}
+					@Override public Icon createIcon(Integer value) {
+						if (value==null || value<1 || value>3) return null;
+						return SolarSystemIcons.EconomyLevelIcons[value-1];
+					}
+					@Override public String getLabel(Integer value) {
+						if (value==null || value<1 || value>3) return "<all values>";
+						return "Economy Level "+value;
+					}
+				};
+				cmbbxEconomyLevel.addActionListener(e->updateMarkers());
+				
+				chkbxUnexplored          = SaveViewer.createTristateCheckBox("is unexplored"           , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxAtlasInterface      = SaveViewer.createTristateCheckBox("has atlas interface"     , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxBlackHole           = SaveViewer.createTristateCheckBox("has black hole"          , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxReachableByTeleport = SaveViewer.createTristateCheckBox("is reachable by teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				
+				c.fill = GridBagConstraints.BOTH;
+				
+				c.weightx = 1;
+				c.weighty = 0;
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				left.add( cmbbxRace         , c );
+				left.add( cmbbxStarClass    , c );
+				left.add( cmbbxConflictLevel, c );
+				left.add( cmbbxEconomyLevel , c );
+				right.add( chkbxUnexplored         , c );
+				right.add( chkbxAtlasInterface     , c );
+				right.add( chkbxBlackHole          , c );
+				right.add( chkbxReachableByTeleport, c );
+				
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				c.weighty = 1;
+				left.add(new JLabel(),c);
+				right.add(new JLabel(),c);
 			}
 
 			@Override
 			public void clearMarkers() {
-				// TODO Auto-generated method stub
-				
+				cmbbxRace         .setSelectedItem(null);
+				cmbbxStarClass    .setSelectedItem(null);
+				cmbbxConflictLevel.setSelectedItem(null);
+				cmbbxEconomyLevel .setSelectedItem(null);
+				chkbxUnexplored         .setUndefined();
+				chkbxAtlasInterface     .setUndefined();
+				chkbxBlackHole          .setUndefined();
+				chkbxReachableByTeleport.setUndefined();
 			}
 
 			@Override
-			public boolean shouldBeMarked(SolarSystem obj) {
-				// TODO Auto-generated method stub
-				return false;
+			public boolean shouldBeMarked(SolarSystem sys) {
+				if (isUnset()) return false;
+				
+				Race race = cmbbxRace.getSelected();
+				if (race!=null && sys.race!=race) return false;
+				
+				StarClass starClass = cmbbxStarClass.getSelected();
+				if (starClass!=null && sys.starClass!=starClass) return false;
+				
+				Integer conflictLevel = cmbbxConflictLevel.getSelected();
+				if (conflictLevel!=null && sys.conflictLevel!=conflictLevel) return false;
+				
+				Integer economyLevel = cmbbxEconomyLevel.getSelected();
+				if (economyLevel!=null && sys.economyLevel!=economyLevel) return false;
+				
+				if (!chkbxUnexplored         .isUndefined() && sys.isUnexplored     !=chkbxUnexplored         .isSelected()) return false;
+				if (!chkbxAtlasInterface     .isUndefined() && sys.hasAtlasInterface!=chkbxAtlasInterface     .isSelected()) return false;
+				if (!chkbxBlackHole          .isUndefined() && sys.hasBlackHole     !=chkbxBlackHole          .isSelected()) return false;
+				if (!chkbxReachableByTeleport.isUndefined() && sys.additionalInfos.hasTeleportEndPoint!=chkbxReachableByTeleport.isSelected()) return false;
+				
+				return true;
+			}
+			
+			private boolean isUnset() {
+				return				
+					cmbbxRace         .getSelectedItem()==null &&
+					cmbbxStarClass    .getSelectedItem()==null &&
+					cmbbxConflictLevel.getSelectedItem()==null &&
+					cmbbxEconomyLevel .getSelectedItem()==null &&
+					chkbxUnexplored         .isUndefined() &&
+					chkbxAtlasInterface     .isUndefined() &&
+					chkbxBlackHole          .isUndefined() &&
+					chkbxReachableByTeleport.isUndefined();
 			}
 		}
 		
@@ -2316,13 +2377,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxVehicleSummoner;
 			private TristateCheckBox chkbxBase;
 			private TristateCheckBox chkbxTeleporter;
+
+			private ResourceSelectDialog resourceSelectDialog;
+			private EnumSet<Resources> resources;
+			private boolean findAllRes;
+
+			private JTextField txtfldResources;
+			private JRadioButton rdbtnAllRes;
+			private JRadioButton rdbtnOneRes;
 			
 			PlanetBar() {}
 			
 			@Override
-			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) {
+			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) { // TODO
 				
-				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20) {
+				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()) ) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public Biome cast(Object obj) {
@@ -2333,7 +2402,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						return PlanetIcons.BiomeIcons.get(value);
 					}
 					@Override public String getLabel(Biome value) {
-						if (value==null) return "<none>";
+						if (value==null) return "<all values>";
 						return value.name_EN;
 					}
 				};
@@ -2355,13 +2424,35 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 //				});
 				cmbbxBuriedTreasure.addActionListener(e->updateMarkers());
 				
-				chkbxExtreme         = SaveViewer.createTristateCheckBox("Extreme"         , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxAggrSent        = SaveViewer.createTristateCheckBox("Aggr. Sentinels" , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxWater           = SaveViewer.createTristateCheckBox("with Water"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxGrav            = SaveViewer.createTristateCheckBox("with Grav. Balls", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox("with Vehicle Summoner", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxBase            = SaveViewer.createTristateCheckBox("with Base"            , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxTeleporter      = SaveViewer.createTristateCheckBox("reachable by Teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				resourceSelectDialog = null;
+				resources = EnumSet.noneOf(Resources.class);
+				findAllRes = true;
+				
+				ButtonGroup bgResources = new ButtonGroup();
+				rdbtnAllRes = SaveViewer.createRadioButton("all resources", bgResources ,  findAllRes, true, e->{ findAllRes = true ; updateMarkers(); });
+				rdbtnOneRes = SaveViewer.createRadioButton("at least one" , bgResources , !findAllRes, true, e->{ findAllRes = false; updateMarkers(); });
+				
+				txtfldResources = new JTextField(20);
+				txtfldResources.setEditable(false);
+				
+				JButton btnSetResources = SaveViewer.createButton("Set", e->{
+					if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
+					EnumSet<Resources> result = resourceSelectDialog.showDialog(resources);
+					if (result!=null) {
+						resources.clear();
+						resources.addAll(result);
+						updateResourceComps();
+						updateMarkers();
+					}
+				});
+				
+				chkbxExtreme         = SaveViewer.createTristateCheckBox("is Extreme"              , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxAggrSent        = SaveViewer.createTristateCheckBox("has Aggressive Sentinels", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxWater           = SaveViewer.createTristateCheckBox("has Water"               , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxGrav            = SaveViewer.createTristateCheckBox("has Gravitino-Balls"     , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox("has Vehicle Summoner"    , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxBase            = SaveViewer.createTristateCheckBox("has Base"                , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxTeleporter      = SaveViewer.createTristateCheckBox("is reachable by Teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
 				c.fill = GridBagConstraints.BOTH;
 				
@@ -2372,21 +2463,32 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				left.add( chkbxExtreme, c );
 				left.add( chkbxAggrSent, c );
 				left.add( chkbxWater, c );
+				
+				JPanel resPanel = new JPanel(new BorderLayout());
+				resPanel.add(txtfldResources,BorderLayout.CENTER);
+				resPanel.add(btnSetResources,BorderLayout.EAST);
+				right.add( resPanel, c );
+				
+				JPanel andOrPanel = new JPanel(new GridLayout(1,0));
+				andOrPanel.add(rdbtnAllRes);
+				andOrPanel.add(rdbtnOneRes);
+				right.add( andOrPanel, c );
+				
 				right.add( cmbbxBuriedTreasure, c );
 				right.add( chkbxGrav, c );
 				
 				c.gridwidth = 1;
-				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner)),c);
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner)), c );
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				right.add( chkbxVehicleSummoner, c );
 				
 				c.gridwidth = 1;
-				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom   )),c);
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom   )), c );
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				right.add( chkbxBase, c );
 				
 				c.gridwidth = 1;
-				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)),c);
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)), c );
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				right.add( chkbxTeleporter, c );
 				
@@ -2394,6 +2496,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				c.weighty = 1;
 				left.add(new JLabel(),c);
 				right.add(new JLabel(),c);
+				
+				updateResourceComps();
+			}
+
+			private void updateResourceComps() {
+				rdbtnAllRes.setEnabled(!resources.isEmpty());
+				rdbtnOneRes.setEnabled(!resources.isEmpty());
+				txtfldResources.setText(String.join(", ", Universe.Planet.Resources.getStringIterable(resources, Resources::getShortLabel)));
 			}
 
 			@Override
@@ -2401,24 +2511,33 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (isUnset()) return false;
 				
 				Biome biome = cmbbxBiome.getSelected();
-				boolean isBiome    = biome==null || p.biome==biome;
+				if (biome != null && p.biome != biome) return false;
 				
 				BuriedTreasure buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem();
-				boolean hasBuriedTreasure = buriedTreasure==null || p.buriedTreasure==buriedTreasure;
+				if (buriedTreasure != null && p.buriedTreasure != buriedTreasure) return false;
 				
-				boolean hasExtremeBiome    = chkbxExtreme        .isUndefined() || p.hasExtremeBiome       ==chkbxExtreme .isSelected();
-				boolean hasAggrSent        = chkbxAggrSent       .isUndefined() || p.areSentinelsAggressive==chkbxAggrSent.isSelected();
-				boolean hasWater           = chkbxWater          .isUndefined() || p.withWater             ==chkbxWater   .isSelected();
-				boolean hasGrav            = chkbxGrav           .isUndefined() || p.withGravitinoBalls    ==chkbxGrav    .isSelected();
-				boolean hasVehicleSummoner = chkbxVehicleSummoner.isUndefined() || p.additionalInfos.hasExocraftSummoningStation == chkbxVehicleSummoner.isSelected();
-				boolean hasBase            = chkbxBase           .isUndefined() || p.additionalInfos.bases.isEmpty()             != chkbxBase           .isSelected();
-				boolean hasTeleporter      = chkbxTeleporter     .isUndefined() || p.additionalInfos.hasTeleportEndPoint         == chkbxTeleporter     .isSelected();
+				if (!resources.isEmpty()) {
+					boolean found = findAllRes;
+					for (Resources res:resources)
+						if (p.resources.contains(res)) { if (!findAllRes) { found = true ; break; } }
+						else                           { if ( findAllRes) { found = false; break; } }
+					if (!found) return false;
+				}
 				
-				return isBiome && hasBuriedTreasure && hasExtremeBiome && hasAggrSent && hasWater && hasGrav && hasVehicleSummoner && hasBase && hasTeleporter;
+				if (!chkbxExtreme        .isUndefined() && p.hasExtremeBiome        != chkbxExtreme .isSelected()) return false;
+				if (!chkbxAggrSent       .isUndefined() && p.areSentinelsAggressive != chkbxAggrSent.isSelected()) return false;
+				if (!chkbxWater          .isUndefined() && p.withWater              != chkbxWater   .isSelected()) return false;
+				if (!chkbxGrav           .isUndefined() && p.withGravitinoBalls     != chkbxGrav    .isSelected()) return false;
+				if (!chkbxVehicleSummoner.isUndefined() && p.additionalInfos.hasExocraftSummoningStation != chkbxVehicleSummoner.isSelected()) return false;
+				if (!chkbxBase           .isUndefined() && p.additionalInfos.bases.isEmpty()             == chkbxBase           .isSelected()) return false;
+				if (!chkbxTeleporter     .isUndefined() && p.additionalInfos.hasTeleportEndPoint         != chkbxTeleporter     .isSelected()) return false;
+				
+				return true;
 			}
 			
 			private boolean isUnset() {
-				return				
+				return
+					resources.isEmpty() &&
 					cmbbxBiome.getSelectedItem()==null &&
 					cmbbxBuriedTreasure.getSelectedItem()==null &&
 					chkbxExtreme        .isUndefined() &&
@@ -2432,8 +2551,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 			@Override
 			public void clearMarkers() {
-				cmbbxBiome.setSelectedItem(null);
-				cmbbxBuriedTreasure.setSelectedItem(null);
+				resources.clear();
+				updateResourceComps();
+				cmbbxBiome          .setSelectedItem(null);
+				cmbbxBuriedTreasure .setSelectedItem(null);
 				chkbxExtreme        .setUndefined();
 				chkbxAggrSent       .setUndefined();
 				chkbxWater          .setUndefined();

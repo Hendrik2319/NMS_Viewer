@@ -623,7 +623,7 @@ public class TableView {
 		}
 
 		@Override protected UpgradeCategory getIconKey(UpgradeCategory value) { return value; }
-		@Override protected String          getLabel  (UpgradeCategory value) { return value.getLabel(); }
+		@Override protected String          getLabel  (UpgradeCategory value) { return value==null ? null : value.getLabel(); }
 	}
 	
 	public static class NamedColorRenderer extends IconTextRenderer<NamedColor,Integer> {
@@ -640,7 +640,7 @@ public class TableView {
 		}
 
 		@Override protected Integer getIconKey(NamedColor value) { return value.value; }
-		@Override protected String  getLabel  (NamedColor value) { return String.format("[%06X] %s", value.value, value.name);  }
+		@Override protected String  getLabel  (NamedColor value) { return value==null ? null : String.format("[%06X] %s", value.value, value.name);  }
 	}
 	
 	public static abstract class IconTextRenderer<ValueType,IconKey> implements ListCellRenderer<ValueType>, TableCellRenderer {
@@ -693,7 +693,6 @@ public class TableView {
 				setForeground(textColor);
 				if (value==null) {
 					setIcon(null);
-					setText("");
 				} else {
 					IconKey iconKey = getIconKey(value);
 					if (iconKey==null) {
@@ -703,8 +702,8 @@ public class TableView {
 						if (icon==null) iconCache.put(iconKey,icon = createIcon(value));
 						setIcon(icon);
 					}
-					setText(getLabel(value));
 				}
+				setText(getLabel(value));
 			}
 		}
 	}

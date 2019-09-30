@@ -12,6 +12,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.LayoutManager;
+import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -25,7 +26,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -39,6 +42,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -997,6 +1001,90 @@ public class Gui {
 		
 		public interface ContextMenuInvokeListener {
 			public void contextMenuWillBeInvoked(int x, int y);
+		}
+	}
+
+	public static class PopupDialog extends JDialog {
+		private static final long serialVersionUID = 2119752129654976331L;
+		
+		protected PopupDialog(Window owner) {
+			super(owner,ModalityType.APPLICATION_MODAL);
+		}
+		
+		protected void setGUI(JPanel content) {
+			setUndecorated(true);
+			setContentPane(content);
+			pack();
+		}
+		
+		protected void hidePopup() {
+			setVisible(false);
+		}
+		
+		public void showPopup(Component parent, int x, int y) {
+			Point p = parent.getLocationOnScreen();
+			setLocation(p.x+x, p.y+y);
+			setVisible(true);
+		}
+	}
+	
+	public static class SearchFieldWithPopup extends JTextField {
+		private static final long serialVersionUID = -8505198126697979409L;
+		
+		private String searchStr = null;
+		private JPopupMenu fittingNamesPopup = null;
+
+		private Function<String, HashSet<String>> getFittingNames;
+		private Consumer<String> selectFinally;
+
+		private int maxNameListLength;
+		
+		public SearchFieldWithPopup(int columns, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally) {
+			super(columns);
+			this.getFittingNames = getFittingNames;
+			this.selectFinally = selectFinally;
+			
+			fittingNamesPopup = new JPopupMenu("Fitting Names");
+			addCaretListener(e -> updateSearch(false));
+		}
+		
+		public void updateSearch() {
+			updateSearch(true);
+		}
+		private void updateSearch(boolean forceUpdate) {
+			String newStr = getText();
+			if (!forceUpdate && newStr.equals(searchStr)) return;
+			searchStr = newStr;
+			
+			fittingNamesPopup.setVisible(false);
+			
+			HashSet<String> fittingNames = getFittingNames.apply(searchStr);
+			if (fittingNames.isEmpty()) return;
+			
+			Vector<String> names = new Vector<>(fittingNames);
+			names.sort(Comparator.<String,String>comparing(String::toLowerCase));
+			
+			fittingNamesPopup.removeAll();
+			for (int i=0; i<names.size(); i++) {
+				if (i>=maxNameListLength) {
+					int n = i-maxNameListLength+1;
+					fittingNamesPopup.add(SaveViewer.createMenuItem("... and "+n+" more",null,false));
+					break;
+				}
+				String name = names.get(i);
+				fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->{
+					searchStr = name;
+					setText(searchStr);
+					selectFinally.accept(name);
+				}));
+			}
+			
+			fittingNamesPopup.show(this, 0, getHeight()+1);
+			requestFocusInWindow();
+		}
+
+		public void setMaxNameListLength(int maxNameListLength) {
+			this.maxNameListLength = maxNameListLength;
 		}
 	}
 }
