@@ -17,8 +17,6 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -2079,6 +2077,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 			private Function<String, HashSet<String>> getFittingNames;
 			private Consumer<String> selectFinally;
+
+			private int maxNameListLength;
 			
 			SearchFieldWithPopup(int columns, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally) {
 				super(columns);
@@ -2086,14 +2086,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				this.selectFinally = selectFinally;
 				
 				fittingNamesPopup = new JPopupMenu("Fitting Names");
-				addCaretListener(e -> {
-					search();
-				});
+				addCaretListener(e -> updateSearch(false));
 			}
 			
-			private void search() {
+			public void updateSearch() {
+				updateSearch(true);
+			}
+			private void updateSearch(boolean forceUpdate) {
 				String newStr = getText();
-				if (newStr.equals(searchStr)) return;
+				if (!forceUpdate && newStr.equals(searchStr)) return;
 				searchStr = newStr;
 				
 				fittingNamesPopup.setVisible(false);
@@ -2105,22 +2106,34 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				names.sort(Comparator.<String,String>comparing(String::toLowerCase));
 				
 				fittingNamesPopup.removeAll();
-				for (String name:names)
-					fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->selectFinally.accept(name)));
+				for (int i=0; i<names.size(); i++) {
+					if (i>=maxNameListLength) {
+						int n = i-maxNameListLength+1;
+						fittingNamesPopup.add(SaveViewer.createMenuItem("... and "+n+" more",null,false));
+						break;
+					}
+					String name = names.get(i);
+					fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->{
+						searchStr = name;
+						setText(searchStr);
+						selectFinally.accept(name);
+					}));
+				}
 				
 				fittingNamesPopup.show(this, 0, getHeight()+1);
 				requestFocusInWindow();
+			}
+
+			public void setMaxNameListLength(int maxNameListLength) {
+				this.maxNameListLength = maxNameListLength;
 			}
 		}
 		
 		private class NameSearch extends PopupDialog {
 			private static final long serialVersionUID = 2446633626490169526L;
 			
-			private String searchStr = null;
-			private JTextField textField = null;
+			private SearchFieldWithPopup textField = null;
 			private boolean searchCaseSensitive = false;
-
-			private JPopupMenu fittingNamesPopup;
 			
 			NameSearch() {
 				super(mainWindow);
@@ -2132,20 +2145,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						)
 				);
 				
-				fittingNamesPopup = new JPopupMenu("Fitting Names");
-				
-				//textField = new SearchFieldWithPopup(20, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally)
-				
-				textField = new JTextField(20);
-				textField.addCaretListener(e -> {
-					// TODO Auto-generated method stub
-					search();
-				});
-//				textField.addKeyListener(new KeyListener() {
-//					@Override public void keyPressed(KeyEvent e) {}
-//					@Override public void keyReleased(KeyEvent e) {}
-//					@Override public void keyTyped(KeyEvent e) { search(); }
-//				});
+				textField = new SearchFieldWithPopup(20, this::search, this::select);
+				textField.setMaxNameListLength(5);
 				
 				GridBagConstraints c = new GridBagConstraints();
 				c.fill = GridBagConstraints.BOTH;
@@ -2156,42 +2157,22 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				
 				c.gridwidth = 1;
 				content.add(textField,c);
-				content.add(SaveViewer.createCheckbox("case sensitive", searchCaseSensitive, b->searchCaseSensitive = b),c);
+				content.add(SaveViewer.createCheckbox("case sensitive", searchCaseSensitive, b->{
+					searchCaseSensitive = b;
+					textField.updateSearch();
+				}),c);
 				
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				content.add( SaveViewer.createButton("Close", e->hidePopup()),c);
 				setGUI(content);
 			}
 
-			private void search() {
-				String newStr = textField.getText();
-				if (newStr.equals(searchStr)) return;
-				searchStr = newStr;
-				
-				fittingNamesPopup.setVisible(false);
-				
-				HashSet<String> fittingNames = search2();
-				if (fittingNames.isEmpty()) return;
-				
-				Vector<String> names = new Vector<>(fittingNames);
-				names.sort(Comparator.<String,String>comparing(String::toLowerCase));
-				
-				fittingNamesPopup.removeAll();
-				for (String name:names)
-					fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->select(name)));
-				
-				fittingNamesPopup.show(textField, 0, textField.getHeight()+1);
-				textField.requestFocusInWindow();
-			}
-
 			private void select(String name) {
-				searchStr = name;
-				textField.setText(searchStr);
-				search2();
+				search(name);
 				hidePopup();
 			}
 
-			private HashSet<String> search2() {
+			private HashSet<String> search(String searchStr) {
 				HashSet<String> fittingNames = new HashSet<>();
 				boolean isMarked;
 				int markedPlanets = 0;
@@ -2199,17 +2180,17 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				int markedRegions = 0;
 				for (Galaxy g:data.universe.galaxies) {
 					for (Region r:g.regions) {
-						isMarked = shouldBeMarked(r,fittingNames);
+						isMarked = shouldBeMarked(searchStr,r,fittingNames);
 						setMarker( (GenericTreeNode<?>)r.guiComp, isMarked );
 						if (isMarked) ++markedSolarSystems;
 						
 						for (SolarSystem s:r.solarSystems) {
-							isMarked = shouldBeMarked(s,fittingNames);
+							isMarked = shouldBeMarked(searchStr,s,fittingNames);
 							setMarker( (GenericTreeNode<?>)s.guiComp, isMarked );
 							if (isMarked) ++markedSolarSystems;
 							
 							for (Planet p:s.planets) {
-								isMarked = shouldBeMarked(p,fittingNames);
+								isMarked = shouldBeMarked(searchStr,p,fittingNames);
 								setMarker( (GenericTreeNode<?>)p.guiComp, isMarked );
 								if (isMarked) ++markedPlanets;
 							}
@@ -2220,33 +2201,33 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				return fittingNames;
 			}
 
-			private boolean shouldBeMarked(Region r, HashSet<String> fittingNames) {
+			private boolean shouldBeMarked(String searchStr, Region r, HashSet<String> fittingNames) {
 				if (searchStr.length()<3) return false;
 				
 				boolean shouldBeMarked = false;
-				shouldBeMarked |= shouldBeMarked(r.hasOldName(),r.getOldName(),fittingNames);
-				shouldBeMarked |= shouldBeMarked(r.hasName(),r.getName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(searchStr, r.hasOldName(),r.getOldName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(searchStr, r.hasName(),r.getName(),fittingNames);
 				return shouldBeMarked;
 			}
 
-			private boolean shouldBeMarked(DiscoverableObject obj, HashSet<String> fittingNames) {
+			private boolean shouldBeMarked(String searchStr, DiscoverableObject obj, HashSet<String> fittingNames) {
 				if (searchStr.length()<3) return false;
 				
 				boolean shouldBeMarked = false;
-				shouldBeMarked |= shouldBeMarked(obj.hasOldOriginalName(),obj.getOldOriginalName(),fittingNames);
-				shouldBeMarked |= shouldBeMarked(obj.hasOriginalName(),obj.getOriginalName(),fittingNames);
-				shouldBeMarked |= shouldBeMarked(obj.hasUploadedName(),obj.getUploadedName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(searchStr, obj.hasOldOriginalName(),obj.getOldOriginalName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(searchStr, obj.hasOriginalName(),obj.getOriginalName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(searchStr, obj.hasUploadedName(),obj.getUploadedName(),fittingNames);
 				return shouldBeMarked;
 			}
-			private boolean shouldBeMarked(boolean hasName, String name, HashSet<String> fittingNames) {
-				if (hasName && containsSearchStr(name)) {
+			private boolean shouldBeMarked(String searchStr, boolean hasName, String name, HashSet<String> fittingNames) {
+				if (hasName && containsSearchStr(name,searchStr)) {
 					fittingNames.add(name);
 					return true;
 				}
 				return false;
 			}
 
-			private boolean containsSearchStr(String name) {
+			private boolean containsSearchStr(String name, String searchStr) {
 				if (searchCaseSensitive)
 					return name.contains(searchStr);
 				else
