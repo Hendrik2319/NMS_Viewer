@@ -17,6 +17,8 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
@@ -39,6 +42,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -979,7 +983,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				});
 				btnAddLevelLabel = SaveViewer.createButton("Add",e->{
-					String levelLabel = JOptionPane.showInputDialog(InfoPanel_SolarSystem.this, "message", "title", JOptionPane.PLAIN_MESSAGE);
+					String levelLabel = JOptionPane.showInputDialog(InfoPanel_SolarSystem.this, "Define new label:", "Add Label", JOptionPane.PLAIN_MESSAGE);
 					if (levelLabel!=null) {
 						setLevelLabelInNode(levelLabel);
 						updateTreeNode(node, false);
@@ -1979,43 +1983,60 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = -322241964276963216L;
 
 		private boolean disableUpdates;
-
-		private PlanetBar planetBar;
+		private PlanetBar planetSearch;
+		private SolarSystemBar solarSystemSearch;
 		
 		SearchBar() {
-			super(new BorderLayout(3,3));
+			super(new GridBagLayout());
 			setBorder(BorderFactory.createTitledBorder("Search"));
 			disableUpdates = false;
 			
-			planetBar = new PlanetBar();
+			planetSearch = new PlanetBar();
+			solarSystemSearch = new SolarSystemBar();
+			NameSearch nameSearch = new NameSearch();
 			
-			//addComp( SaveViewer.createButton("X", e->{}), 0, GridBagConstraints.BOTH);
-			add( SaveViewer.createButton("Clear Markers", e->clearMarkers()), BorderLayout.WEST);
-			add( planetBar, BorderLayout.CENTER);
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.weighty = 0;
+			c.weightx = 0;
+			
+			add( SaveViewer.createButton("Clear Markers"    , e->clearMarkers()), c);
+			add( SaveViewer.createButton("Find Planet"      , e->planetSearch     .showPopup(treeScrollPane, 3,3)), c);
+			add( SaveViewer.createButton("Find Solar System", e->solarSystemSearch.showPopup(treeScrollPane, 3,3)), c);
+			add( SaveViewer.createButton("Find via Name"    , e->nameSearch       .showPopup(treeScrollPane, 3,3)), c);
+			
+			c.weightx = 1;
+			add( new JLabel(), c);
 		}
-		
+
 		private void clearMarkers() {
 			disableUpdates = true;
-			planetBar.clearMarkers();
+			planetSearch.clearMarkers();
+			solarSystemSearch.clearMarkers();
 			disableUpdates = false;
 			updateMarkers();
 		}
 
 		private void updateMarkers() {
 			if (disableUpdates) return;
+			boolean isMarked;
 			int markedPlanets = 0;
+			int markedSolarSystems = 0;
 			for (Galaxy g:data.universe.galaxies) {
 				for (Region r:g.regions) {
 					for (SolarSystem s:r.solarSystems) {
+						isMarked = solarSystemSearch.shouldBeMarked(s);
+						setMarker( (GenericTreeNode<?>)s.guiComp, isMarked );
+						if (isMarked) ++markedSolarSystems;
 						for (Planet p:s.planets) {
-							boolean isMarked = planetBar.shouldBeMarked(p);
+							isMarked = planetSearch.shouldBeMarked(p);
 							setMarker( (GenericTreeNode<?>)p.guiComp, isMarked );
 							if (isMarked) ++markedPlanets;
 						}
 					}
 				}
 			}
-			SaveViewer.log_ln("marked: %d Planets", markedPlanets);
+			SaveViewer.log_ln("marked: %d Planets, %d Solar Systems", markedPlanets, markedSolarSystems);
 		}
 
 
@@ -2026,33 +2047,281 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 
-
-		
-		private abstract class UniObjBar extends JPanel {
-			private static final long serialVersionUID = -4572786436916343840L;
+		private class PopupDialog extends JDialog {
+			private static final long serialVersionUID = 2119752129654976331L;
 			
-			protected GridBagLayout layout;
-			protected GridBagConstraints gbc;
-			
-			UniObjBar() {
-				setLayout(layout = new GridBagLayout());
-				gbc = new GridBagConstraints();
+			PopupDialog(Window owner) {
+				super(owner,ModalityType.APPLICATION_MODAL);
 			}
 			
-			public abstract void clearMarkers();
+			protected void setGUI(JPanel content) {
+				setUndecorated(true);
+				setContentPane(content);
+				pack();
+			}
 			
-			protected void addComp(Component comp, double weightx, int fill) {
-				gbc.weightx=weightx;
-				gbc.weighty=0;
-				gbc.gridwidth=1;
-				gbc.gridheight=1;
-				gbc.fill = fill;
-				layout.setConstraints(comp, gbc);
-				add(comp);
+			protected void hidePopup() {
+				setVisible(false);
+			}
+			
+			public void showPopup(Component parent, int x, int y) {
+				Point p = parent.getLocationOnScreen();
+				setLocation(p.x+x, p.y+y);
+				setVisible(true);
 			}
 		}
 		
-		private class PlanetBar extends UniObjBar {
+		private class SearchFieldWithPopup extends JTextField {
+			private static final long serialVersionUID = -8505198126697979409L;
+			
+			private String searchStr = null;
+			private JPopupMenu fittingNamesPopup = null;
+
+			private Function<String, HashSet<String>> getFittingNames;
+			private Consumer<String> selectFinally;
+			
+			SearchFieldWithPopup(int columns, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally) {
+				super(columns);
+				this.getFittingNames = getFittingNames;
+				this.selectFinally = selectFinally;
+				
+				fittingNamesPopup = new JPopupMenu("Fitting Names");
+				addCaretListener(e -> {
+					search();
+				});
+			}
+			
+			private void search() {
+				String newStr = getText();
+				if (newStr.equals(searchStr)) return;
+				searchStr = newStr;
+				
+				fittingNamesPopup.setVisible(false);
+				
+				HashSet<String> fittingNames = getFittingNames.apply(searchStr);
+				if (fittingNames.isEmpty()) return;
+				
+				Vector<String> names = new Vector<>(fittingNames);
+				names.sort(Comparator.<String,String>comparing(String::toLowerCase));
+				
+				fittingNamesPopup.removeAll();
+				for (String name:names)
+					fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->selectFinally.accept(name)));
+				
+				fittingNamesPopup.show(this, 0, getHeight()+1);
+				requestFocusInWindow();
+			}
+		}
+		
+		private class NameSearch extends PopupDialog {
+			private static final long serialVersionUID = 2446633626490169526L;
+			
+			private String searchStr = null;
+			private JTextField textField = null;
+			private boolean searchCaseSensitive = false;
+
+			private JPopupMenu fittingNamesPopup;
+			
+			NameSearch() {
+				super(mainWindow);
+				JPanel content = new JPanel(new GridBagLayout());
+				content.setBorder(
+						BorderFactory.createCompoundBorder(
+								BorderFactory.createLineBorder(Color.GRAY),
+								BorderFactory.createEmptyBorder(2,5,2,5)
+						)
+				);
+				
+				fittingNamesPopup = new JPopupMenu("Fitting Names");
+				
+				//textField = new SearchFieldWithPopup(20, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally)
+				
+				textField = new JTextField(20);
+				textField.addCaretListener(e -> {
+					// TODO Auto-generated method stub
+					search();
+				});
+//				textField.addKeyListener(new KeyListener() {
+//					@Override public void keyPressed(KeyEvent e) {}
+//					@Override public void keyReleased(KeyEvent e) {}
+//					@Override public void keyTyped(KeyEvent e) { search(); }
+//				});
+				
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.BOTH;
+				
+				c.weightx = 1;
+				c.weighty = 1;
+				c.insets = new Insets(2,5,2,5);
+				
+				c.gridwidth = 1;
+				content.add(textField,c);
+				content.add(SaveViewer.createCheckbox("case sensitive", searchCaseSensitive, b->searchCaseSensitive = b),c);
+				
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				content.add( SaveViewer.createButton("Close", e->hidePopup()),c);
+				setGUI(content);
+			}
+
+			private void search() {
+				String newStr = textField.getText();
+				if (newStr.equals(searchStr)) return;
+				searchStr = newStr;
+				
+				fittingNamesPopup.setVisible(false);
+				
+				HashSet<String> fittingNames = search2();
+				if (fittingNames.isEmpty()) return;
+				
+				Vector<String> names = new Vector<>(fittingNames);
+				names.sort(Comparator.<String,String>comparing(String::toLowerCase));
+				
+				fittingNamesPopup.removeAll();
+				for (String name:names)
+					fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->select(name)));
+				
+				fittingNamesPopup.show(textField, 0, textField.getHeight()+1);
+				textField.requestFocusInWindow();
+			}
+
+			private void select(String name) {
+				searchStr = name;
+				textField.setText(searchStr);
+				search2();
+				hidePopup();
+			}
+
+			private HashSet<String> search2() {
+				HashSet<String> fittingNames = new HashSet<>();
+				boolean isMarked;
+				int markedPlanets = 0;
+				int markedSolarSystems = 0;
+				int markedRegions = 0;
+				for (Galaxy g:data.universe.galaxies) {
+					for (Region r:g.regions) {
+						isMarked = shouldBeMarked(r,fittingNames);
+						setMarker( (GenericTreeNode<?>)r.guiComp, isMarked );
+						if (isMarked) ++markedSolarSystems;
+						
+						for (SolarSystem s:r.solarSystems) {
+							isMarked = shouldBeMarked(s,fittingNames);
+							setMarker( (GenericTreeNode<?>)s.guiComp, isMarked );
+							if (isMarked) ++markedSolarSystems;
+							
+							for (Planet p:s.planets) {
+								isMarked = shouldBeMarked(p,fittingNames);
+								setMarker( (GenericTreeNode<?>)p.guiComp, isMarked );
+								if (isMarked) ++markedPlanets;
+							}
+						}
+					}
+				}
+				SaveViewer.log_ln("marked: %d Planets, %d Solar Systems, %d Regions  \"%s\"", markedPlanets, markedSolarSystems, markedRegions, searchStr);
+				return fittingNames;
+			}
+
+			private boolean shouldBeMarked(Region r, HashSet<String> fittingNames) {
+				if (searchStr.length()<3) return false;
+				
+				boolean shouldBeMarked = false;
+				shouldBeMarked |= shouldBeMarked(r.hasOldName(),r.getOldName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(r.hasName(),r.getName(),fittingNames);
+				return shouldBeMarked;
+			}
+
+			private boolean shouldBeMarked(DiscoverableObject obj, HashSet<String> fittingNames) {
+				if (searchStr.length()<3) return false;
+				
+				boolean shouldBeMarked = false;
+				shouldBeMarked |= shouldBeMarked(obj.hasOldOriginalName(),obj.getOldOriginalName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(obj.hasOriginalName(),obj.getOriginalName(),fittingNames);
+				shouldBeMarked |= shouldBeMarked(obj.hasUploadedName(),obj.getUploadedName(),fittingNames);
+				return shouldBeMarked;
+			}
+			private boolean shouldBeMarked(boolean hasName, String name, HashSet<String> fittingNames) {
+				if (hasName && containsSearchStr(name)) {
+					fittingNames.add(name);
+					return true;
+				}
+				return false;
+			}
+
+			private boolean containsSearchStr(String name) {
+				if (searchCaseSensitive)
+					return name.contains(searchStr);
+				else
+					return name.toLowerCase().contains(searchStr.toLowerCase());
+			}
+		}
+		
+		private abstract class AbstractSearchBar<ObjType> extends PopupDialog {
+			private static final long serialVersionUID = 606788005699319541L;
+
+			AbstractSearchBar() {
+				super(mainWindow);
+				JPanel content = new JPanel(new GridBagLayout());
+				content.setBorder(
+						BorderFactory.createCompoundBorder(
+								BorderFactory.createLineBorder(Color.GRAY),
+								BorderFactory.createEmptyBorder(2,5,2,5)
+						)
+				);
+				
+				JPanel left  = new JPanel(new GridBagLayout());
+				JPanel right = new JPanel(new GridBagLayout());
+				setContent(left, right, new GridBagConstraints());
+				
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.BOTH;
+				
+				c.weightx = 1;
+				c.weighty = 1;
+				c.insets = new Insets(2,5,2,5);
+				
+				c.gridwidth = 1;
+				content.add(left,c);
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				content.add(right,c);
+				
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				content.add( SaveViewer.createButton("Close", e->{ super.hidePopup(); }),c);
+				super.setGUI(content);
+			}
+
+			@Override protected void setGUI(JPanel content) { throw new UnsupportedOperationException(); }
+			@Override protected void hidePopup() { throw new UnsupportedOperationException(); }
+
+			protected abstract void setContent(JPanel left, JPanel right, GridBagConstraints c);
+			public abstract void clearMarkers();
+			public abstract boolean shouldBeMarked(ObjType obj);
+		}
+		
+		private class SolarSystemBar extends AbstractSearchBar<SolarSystem> {
+			
+			private static final long serialVersionUID = 7635343276037663444L;
+
+			SolarSystemBar() {}
+			
+			@Override
+			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void clearMarkers() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public boolean shouldBeMarked(SolarSystem obj) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+		}
+		
+		private class PlanetBar extends AbstractSearchBar<Planet> {
 			private static final long serialVersionUID = -5056089942590204797L;
 			
 			private Gui.IconComboBox<Biome> cmbbxBiome;
@@ -2067,7 +2336,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxBase;
 			private TristateCheckBox chkbxTeleporter;
 			
-			PlanetBar() {
+			PlanetBar() {}
+			
+			@Override
+			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) {
+				
 				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()), 170,20) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
@@ -2105,22 +2378,44 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				chkbxAggrSent        = SaveViewer.createTristateCheckBox("Aggr. Sentinels" , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxWater           = SaveViewer.createTristateCheckBox("with Water"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxGrav            = SaveViewer.createTristateCheckBox("with Grav. Balls", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox(null, e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxBase            = SaveViewer.createTristateCheckBox(null, e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxTeleporter      = SaveViewer.createTristateCheckBox(null, e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox("with Vehicle Summoner", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxBase            = SaveViewer.createTristateCheckBox("with Base"            , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxTeleporter      = SaveViewer.createTristateCheckBox("reachable by Teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
-				addComp( cmbbxBiome   , 0, GridBagConstraints.BOTH);
-				addComp( chkbxExtreme , 0, GridBagConstraints.BOTH);
-				addComp( chkbxAggrSent, 0, GridBagConstraints.BOTH);
-				addComp( chkbxWater   , 0, GridBagConstraints.BOTH);
-				addComp( chkbxGrav    , 0, GridBagConstraints.BOTH);
-				addComp( cmbbxBuriedTreasure, 0, GridBagConstraints.BOTH);
-				addComp( chkbxVehicleSummoner, 0, GridBagConstraints.BOTH); addComp( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner)), 0, GridBagConstraints.BOTH);
-				addComp( chkbxBase           , 0, GridBagConstraints.BOTH); addComp( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom)), 0, GridBagConstraints.BOTH);
-				addComp( chkbxTeleporter     , 0, GridBagConstraints.BOTH); addComp( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)), 0, GridBagConstraints.BOTH);
-				addComp( new JLabel() , 1, GridBagConstraints.BOTH);
+				c.fill = GridBagConstraints.BOTH;
+				
+				c.weightx = 1;
+				c.weighty = 0;
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				left.add( cmbbxBiome, c );
+				left.add( chkbxExtreme, c );
+				left.add( chkbxAggrSent, c );
+				left.add( chkbxWater, c );
+				right.add( cmbbxBuriedTreasure, c );
+				right.add( chkbxGrav, c );
+				
+				c.gridwidth = 1;
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner)),c);
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				right.add( chkbxVehicleSummoner, c );
+				
+				c.gridwidth = 1;
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom   )),c);
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				right.add( chkbxBase, c );
+				
+				c.gridwidth = 1;
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)),c);
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				right.add( chkbxTeleporter, c );
+				
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				c.weighty = 1;
+				left.add(new JLabel(),c);
+				right.add(new JLabel(),c);
 			}
 
+			@Override
 			public boolean shouldBeMarked(Planet p) {
 				if (isUnset()) return false;
 				
@@ -2141,7 +2436,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				return isBiome && hasBuriedTreasure && hasExtremeBiome && hasAggrSent && hasWater && hasGrav && hasVehicleSummoner && hasBase && hasTeleporter;
 			}
 			
-			public boolean isUnset() {
+			private boolean isUnset() {
 				return				
 					cmbbxBiome.getSelectedItem()==null &&
 					cmbbxBuriedTreasure.getSelectedItem()==null &&
