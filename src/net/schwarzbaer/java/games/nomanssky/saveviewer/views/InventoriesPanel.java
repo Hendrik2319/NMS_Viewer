@@ -23,6 +23,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import javax.swing.BorderFactory;
@@ -40,6 +41,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
@@ -116,7 +119,6 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private Updatable updateListener;
 
 		private Window mainwindow;
-
 
 		public InventoryPanel(Window mainwindow, Inventory inventory) {
 			this(mainwindow, inventory, false, true, null);
@@ -268,6 +270,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					textarea.append("Base Status Values:\r\n");
 					for (Inventory.BaseStatValue bsv:inventory.baseStatValues)
 						textarea.append(String.format("   %s: %s\r\n",bsv.baseStatID,bsv.value));						
+				}
+				for (Consumer<TextAreaOutput> extraInfosOutput:inventory.extraInfosOutputs) {
+					textarea.append("\r\n");					
+					extraInfosOutput.accept(new Gui.TextAreaOutput(textarea));
 				}
 			} else {
 				Inventory.Slot slot = inventory.slots[inventoryLabel.hoveredSlot.x][inventoryLabel.hoveredSlot.y];

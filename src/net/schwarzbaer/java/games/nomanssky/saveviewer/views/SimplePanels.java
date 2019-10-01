@@ -205,12 +205,24 @@ public class SimplePanels {
 			appendln("Name      : %s", fr.name    ==null?"":(fr.name!=null && fr.name.isEmpty()?("<Frigate "+(rowIndex+1)+">"):fr.name));
 			appendln("Ship Type : %s", fr.shipType==null?"":fr.shipType);
 			appendln("Crew Race : %s", fr.crewRace==null?"":fr.crewRace);
+			appendln("Model Seed: %s", fr.modelSeed==null?"<null>":fr.modelSeed.getSeedStr());
+			appendln("Home Seed : %s", fr.homeSeed ==null?"<null>":fr.homeSeed.getSeedStr());
+			if (fr.homeSeed!=null) {
+				UniverseAddress ua = fr.homeSeed.getSeedAsUniverseAddress();
+				if (ua!=null) {
+					Vector<String> verboseName = ua.getVerboseName(data.universe);
+					for (String str:verboseName) appendln("            %s", str);
+				}
+			}
 			appendln();
 			appendln("When Aquired     : %s", fr.aquired         ==null?"":fr.aquired          );
 			appendln("Expeditions      : %s", fr.expeditions     ==null?"":fr.expeditions      );
 			appendln("Successful Fights: %s", fr.successfulFights==null?"":fr.successfulFights );
+			appendln("Failed Fights    : %s", fr.successfulFights==null?"":fr.failedFights_Q   );
 			appendln("Damages          : %s", fr.damages         ==null?"":fr.damages          );
 			appendln("Fuel Consumption : %s", fr.fuelConsumption ==null?"":String.format("%d t / 250 ly", fr.fuelConsumption) );
+			appendln("Fuel Capacity    : %s", fr.fuelCapacity_Q  ==null?"":fr.fuelCapacity_Q   );
+			appendln("Speed            : %s", fr.speed_Q         ==null?"":fr.speed_Q          );
 			appendln();
 			appendln("Combat      : %s ", fr.combatValue     ==null?"":fr.combatValue      );
 			appendln("Exploration : %s ", fr.explorationValue==null?"":fr.explorationValue );
@@ -225,8 +237,6 @@ public class SimplePanels {
 			appendln();
 			appendln("Unidentified Values :");
 			appendln("    %s", fr.unidentified.getUnidentifiedLongs());
-			appendln("    Seed 1: %s", fr.unidentified.seed1==null?"":fr.unidentified.seed1);
-			appendln("    Seed 2: %s", fr.unidentified.seed2==null?"":fr.unidentified.seed2);
 		}
 		
 		private void appendln() {
@@ -304,8 +314,8 @@ public class SimplePanels {
 				case CurrDamage   : return fr.damageValue==null || fr.damageValue==0?"":"damaged ("+fr.damageValue+")";
 				
 				case UnidentValues: return fr.unidentified.getUnidentifiedLongs();
-				case Seed1        : return fr.unidentified.seed1;
-				case Seed2        : return fr.unidentified.seed2;
+				case Seed1        : return fr.modelSeed;
+				case Seed2        : return fr.homeSeed;
 				}
 				return null;
 			}
@@ -944,7 +954,7 @@ public class SimplePanels {
 				PersistentPlayerBase pb = bases.get(i);
 				String title;
 				//if (bases.size()<15)
-					title = String.format("Base %d: %s", i+1, pb.baseType!=null?pb.baseType.getLongLabel():("["+pb.baseTypeStr+"]"));
+					title = String.format("Base %d: %s", i+1, pb.baseType!=null?pb.baseType.getMidLabel():("["+pb.baseTypeStr+"]"));
 				//else if (bases.size()<30)
 				//	title = String.format("B%d:%s", j+1, pb.baseType==null?"????":pb.baseType.getMidLabel());
 				//else
@@ -965,6 +975,7 @@ public class SimplePanels {
 			private static final long serialVersionUID = -4150419571200547225L;
 			private static final Color FG_Freighter = new Color(0x4483FF);
 			private static final Color FG_Planet    = new Color(0x007F00);
+			private static final Color FG_Other     = Color.MAGENTA.darker();
 
 			public BaseTabHeader(String title, PersistentPlayerBase pb) {
 				setOpaque(false);
@@ -972,8 +983,9 @@ public class SimplePanels {
 				JLabel label = new JLabel(title);
 				if (pb.baseType!=null)
 					switch (pb.baseType) {
-					case FreighterBase : label.setForeground(FG_Freighter); break;
-					case HomePlanetBase: label.setForeground(FG_Planet); break;
+					case FreighterBase     : label.setForeground(FG_Freighter); break;
+					case HomePlanetBase    : label.setForeground(FG_Planet); break;
+					case ExternalPlanetBase: label.setForeground(FG_Other); break;
 					}
 				add(label);
 			}
@@ -1100,9 +1112,9 @@ public class SimplePanels {
 				if (playerbase.owner!=null) {
 					textArea.append("\r\nOwner :\r\n");
 					textArea.append("   LID : "            +(playerbase.owner.LID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.LID))+"\r\n");
-					textArea.append("   UID (User ID  ) : "+(playerbase.owner.UID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.UID))+"\r\n");
-					textArea.append("   USN (User Name) : "+(playerbase.owner.USN==null?"":playerbase.owner.USN)+"\r\n");
-					textArea.append("   TS  (Timestamp) : "+(playerbase.owner.TS ==null?"":playerbase.owner.TS.toString())+"\r\n");
+					textArea.append("   UID (User ID  ) : "+(playerbase.owner.userID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.userID))+"\r\n");
+					textArea.append("   USN (User Name) : "+(playerbase.owner.userName==null?"":playerbase.owner.userName)+"\r\n");
+					textArea.append("   TS  (Timestamp) : "+(playerbase.owner.timeStamp ==null?"":playerbase.owner.timeStamp.toString())+"\r\n");
 				}
 				
 				if (playerbase.galacticAddress!=null) {
@@ -1373,9 +1385,9 @@ public class SimplePanels {
 				case DM     : if (storeData.DM     ==null) return ""; else return storeData.DM     ;
 				case DM_CN  : if (storeData.DM_CN  ==null) return ""; else return storeData.DM_CN  ;
 				case OWS_LID: if (storeData.OWS!=null && storeData.OWS.LID==null) return ""; else return storeData.OWS.LID;
-				case OWS_UID: if (storeData.OWS!=null && storeData.OWS.UID==null) return ""; else return storeData.OWS.UID;
-				case OWS_USN: if (storeData.OWS!=null && storeData.OWS.USN==null) return ""; else return storeData.OWS.USN;
-				case OWS_TS : if (storeData.OWS==null) return null; else return storeData.OWS.TS;
+				case OWS_UID: if (storeData.OWS!=null && storeData.OWS.userID==null) return ""; else return storeData.OWS.userID;
+				case OWS_USN: if (storeData.OWS!=null && storeData.OWS.userName==null) return ""; else return storeData.OWS.userName;
+				case OWS_TS : if (storeData.OWS==null) return null; else return storeData.OWS.timeStamp;
 				case RID    : if (storeData.RID    ==null) return ""; else return storeData.RID    ;
 				case PTK    : if (storeData.PTK    ==null) return ""; else return storeData.PTK    ;
 				}

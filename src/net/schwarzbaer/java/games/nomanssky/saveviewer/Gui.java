@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -1085,6 +1086,20 @@ public class Gui {
 
 		public void setMaxNameListLength(int maxNameListLength) {
 			this.maxNameListLength = maxNameListLength;
+		}
+	}
+	
+	public static class TextAreaOutput {
+		private JTextArea textArea;
+
+		public TextAreaOutput(JTextArea textArea) {
+			this.textArea = textArea;
+		}
+		public void printf(Locale l, String format, Object... args) {
+			textArea.append(String.format(l, format, args));
+		}
+		public void printf(String format, Object... args) {
+			textArea.append(String.format(format, args));
 		}
 	}
 }

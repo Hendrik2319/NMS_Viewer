@@ -24,13 +24,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.AssignmentExistsException;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase.BaseType;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints.TeleportHost;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
@@ -110,7 +114,7 @@ public class SaveGameData {
 		freighter  = Freighter .parse(this);
 		spaceShips = SpaceShips.parse(this);
 		exocrafts  = Exocrafts .parse(this);
-		parseFrigates();
+		frigates   = Frigate   .parse(this);
 		parseFrigateMissions();
 		universe.sort();
 		//universe.writeToConsole();
@@ -143,14 +147,19 @@ public class SaveGameData {
 					Universe.SolarSystem system = universe.findSolarSystem(base.galacticAddress);
 					if (system!=null) system.additionalInfos.hasFreighter = true;
 				} break;
+				case ExternalPlanetBase:
 				case HomePlanetBase: {
 					Universe.Planet planet = universe.findPlanet(base.galacticAddress);
 					if (planet!=null) {
-						planet.additionalInfos.bases.add(base);
-						for (BuildingObject bbo:base.objects) {
-							if (bbo.objectID==null) continue;
-							if (bbo.objectID.equals("^SUMMON_GARAGE")) {
-								planet.additionalInfos.hasExocraftSummoningStation = true;
+						if (base.baseType==BaseType.ExternalPlanetBase)
+							planet.additionalInfos.otherPlayerBases.add(base);
+						if (base.baseType==BaseType.HomePlanetBase) {
+							planet.additionalInfos.playerBases.add(base);
+							for (BuildingObject bbo:base.objects) {
+								if (bbo.objectID==null) continue;
+								if (bbo.objectID.equals("^SUMMON_GARAGE")) {
+									planet.additionalInfos.hasExocraftSummoningStation = true;
+								}
 							}
 						}
 					}
@@ -169,11 +178,16 @@ public class SaveGameData {
 				if (tel.universeAddress==null) continue;
 				if (tel.universeAddress.isPlanet()) {
 					Universe.Planet planet = universe.findPlanet(tel.universeAddress);
-					if (planet!=null) planet.additionalInfos.hasTeleportEndPoint=true;
+					if (planet!=null) {
+						if (tel.teleportHost==TeleportHost.ExternalBase)
+							planet.additionalInfos.teleportEndpointsInOtherPlayerBases.add(tel);
+						else
+							planet.additionalInfos.teleportEndpoints.add(tel);
+					}
 				}
 				if (tel.universeAddress.isSolarSystem()) {
 					Universe.SolarSystem system = universe.findSolarSystem(tel.universeAddress);
-					if (system!=null) system.additionalInfos.hasTeleportEndPoint=true;
+					if (system!=null) system.additionalInfos.teleportEndpoints.add(tel);
 				}
 			}
 		}
@@ -570,9 +584,9 @@ public class SaveGameData {
 
 	public static class Owner {
 		public String LID;
-		public String UID;
-		public String USN;
-		public TimeStamp TS;
+		public String userID;
+		public String userName;
+		public TimeStamp timeStamp;
 
 		public static Owner parse(JSON_Object parentObj, String valueName) {
 			JSON_Object objectValue = getObjectValue(parentObj, valueName);
@@ -580,30 +594,40 @@ public class SaveGameData {
 			
 			Owner owner = new Owner();
 			owner.LID = getStringValue(objectValue, "LID");
-			owner.UID = getStringValue(objectValue, "UID");
-			owner.USN = getStringValue(objectValue, "USN");
-			owner.TS  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
+			owner.userID = getStringValue(objectValue, "UID");
+			owner.userName = getStringValue(objectValue, "USN");
+			owner.timeStamp  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
 			
-			if (owner.USN!=null && !owner.USN.isEmpty() && owner.UID!=null && !owner.UID.isEmpty())
+			if (owner.userName!=null && !owner.userName.isEmpty() && owner.userID!=null && !owner.userID.isEmpty())
 				try {
-					SaveViewer.steamIDs.set(owner.UID, owner.USN);
+					SaveViewer.steamIDs.set(owner.userID, owner.userName);
 				} catch (AssignmentExistsException e) {
 					e.printConflict();
 				}
 			
 			return owner;
 		}
+		
+		public String getOwnerName() {
+			if (userName!=null && !userName.isEmpty()) return userName;
+			if (userID!=null) {
+				String name = SaveViewer.steamIDs.get(userID);
+				if (name!=null && !name.isEmpty()) return name;
+				return String.format("SteamID %s", userID);
+			}
+			return null;
+		}
 	}
 
 	public static class SeedValue {
 		
-		private Boolean boolVal;
-		private Long longVal;
+		public final Boolean isValid;
+		public final Long seedValue;
 
 		public SeedValue(Boolean boolVal, Long longVal) {
 			super();
-			this.boolVal = boolVal;
-			this.longVal = longVal;
+			this.isValid = boolVal;
+			this.seedValue = longVal;
 		}
 
 		public static SeedValue parse(JSON_Array json_Array) {
@@ -615,9 +639,20 @@ public class SaveGameData {
 		}
 
 		@Override public String toString() {
-			if (longVal==null)
-				return String.format("<%s> <null>", boolVal, longVal);
-			return     String.format("<%s> 0x%016X", boolVal, longVal);
+			if (seedValue==null)
+				return String.format("<%s> <null>", isValid, seedValue);
+			return     String.format("<%s> 0x%016X", isValid, seedValue);
+		}
+		
+		public String getSeedStr() {
+			if (!isValid) return "<no valid seed>";
+			if (seedValue==null) return "<null>";
+			return String.format("0x%016X", seedValue);
+		}
+		
+		public UniverseAddress getSeedAsUniverseAddress() {
+			if (seedValue==null) return null;
+			return new UniverseAddress(seedValue);
 		}
 	}
 
@@ -679,6 +714,11 @@ public class SaveGameData {
 			this.lookAt = null;
 			this.universeAddress = null;
 			this.gpsCoords = null;
+		}
+		
+		public String getNameAndGPS() {
+			if (gpsCoords==null) return String.format("\"%s\"", name);
+			return String.format("\"%s\" @ %s", name, gpsCoords.toString());
 		}
 
 		private static Vector<TeleportEndpoints> parse(SaveGameData data) {
@@ -886,7 +926,10 @@ public class SaveGameData {
 	public static class PersistentPlayerBase {
 
 		public enum BaseType {
-			FreighterBase("F","Freighter","Freighter Base"), HomePlanetBase("P","Planet","Planet Base");
+			FreighterBase     ("F","Freighter Base","Players Base on Freighter"),
+			HomePlanetBase    ("P","Planet Base"   ,"Players Base on Planet"),
+			ExternalPlanetBase("P","Other Base"    ,"Other Players Base on Planet"),
+			;
 			
 			static BaseType parseValue(String str) {
 				try { return valueOf(str); }
@@ -1096,6 +1139,7 @@ public class SaveGameData {
 		
 		private ResourceBlock crewResourceBlock = null;
 		private ResourceBlock freighterResourceBlock = null;
+		private SeedValue homeseed;
 
 		private static Freighter parse(SaveGameData data) {
 			Freighter freighter = new Freighter();
@@ -1114,12 +1158,16 @@ public class SaveGameData {
 				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Race.Gek; break;
 				}
 			}
-			
 			if (freighter.freighterResourceBlock!=null && freighter.freighterResourceBlock.filename!=null) {
 				switch (freighter.freighterResourceBlock.filename) {
 				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/CAPITALFREIGHTER_PROC.SCENE.MBIN": freighter.freighterClass = FreighterClass.CapitalFreighter; break;
 				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/FREIGHTER_PROC.SCENE.MBIN"       : freighter.freighterClass = FreighterClass.Freighter; break;
 				}
+			}
+			
+			freighter.homeseed = SeedValue.parse( getArrayValue(data.json_data, "PlayerStateData","[CurrentFreighter HomeSeed]") );
+			if (freighter.homeseed!=null) {
+				
 			}
 			
 			String inventoryLabel = "Freighter";
@@ -1133,6 +1181,32 @@ public class SaveGameData {
 			
 			freighter.inventory     = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory"         ), inventoryLabel    , "FreighterInventory");
 			freighter.inventoryTech = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+			
+			if (freighter.inventory!=null) {
+				//data.universe;
+				freighter.inventory.addExtraInfos(out->{
+					out.printf("Freighter Infos:%n");
+					if (freighter.name!=null)
+						out.printf("   Name: %s%n", freighter.name.isEmpty() ? "<Original Name>" : "\""+freighter.name+"\"");
+					if (freighter.inventory.validSlots!=null && freighter.inventory.inventoryClass!=null)
+						out.printf("   Type: %s-%d%n", freighter.inventory.inventoryClass, freighter.inventory.validSlots);
+					if (freighter.freighterClass!=null)
+						out.printf("   Class: %s%n", freighter.freighterClass);
+					if (freighter.crewRace      !=null)
+						out.printf("   Crew: %s%n" , freighter.crewRace);
+					if (freighter.freighterResourceBlock!=null && freighter.freighterResourceBlock.seed!=null)
+						out.printf("   Model Seed: %s%n", freighter.freighterResourceBlock.seed.getSeedStr());
+					if (freighter.homeseed!=null && freighter.homeseed.seedValue!=null) {
+						out.printf("   Home Seed: 0x%016X%n", freighter.homeseed.seedValue);
+						UniverseAddress ua = freighter.homeseed.getSeedAsUniverseAddress();
+						if (ua!=null) {
+							Vector<String> verboseName = ua.getVerboseName(data.universe);
+							for (String str:verboseName)
+								out.printf("              %s%n", str);
+						}
+					}
+				});
+			}
 			
 			return freighter;
 		}
@@ -1151,23 +1225,41 @@ public class SaveGameData {
 		
 		public static class SpaceShip extends VehicleGroup.Vehicle {
 			public enum VehicleClass { Transporter, Fighter, Shuttle, Exotic }
-			public VehicleClass vehicleClass = null;
+			public VehicleClass shipClass = null;
 			
 			@Override protected String getPredefinedName(int i) { return null; }
 			@Override protected String getTypeLabel() { return "SpaceShip"; }
 			@Override protected void setVehicleClass(String resourcefilename) {
 				switch (resourcefilename) {
-				case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN": vehicleClass = VehicleClass.Transporter; break;
-				case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"  : vehicleClass = VehicleClass.Fighter; break;
-				case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"   : vehicleClass = VehicleClass.Shuttle; break;
-				case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"   : vehicleClass = VehicleClass.Exotic; break;
+				case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Transporter; break;
+				case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"  : shipClass = VehicleClass.Fighter; break;
+				case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Shuttle; break;
+				case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Exotic; break;
 				default:
 					SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
 				}
 			}
 			@Override protected String getVehicleClass() {
-				if (vehicleClass == null) return null;
-				return vehicleClass.toString();
+				if (shipClass == null) return null;
+				return shipClass.toString();
+			}
+			
+			@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() {
+				return out->{
+					if (resourceBlock!=null) {
+						out.printf("Ship Infos:%n");
+						if (name!=null)
+							out.printf("   Name: %s%n", name.isEmpty() ? "<Original Name>" : "\""+name+"\"");
+						if (inventory.validSlots!=null && inventory.inventoryClass!=null)
+							out.printf("   Type: %s-%d%n", inventory.inventoryClass, inventory.validSlots);
+						if (shipClass!=null)
+							out.printf("   Class: %s%n", shipClass);
+						if (isPrimary)
+						out.printf("   is Primary Ship%n");
+						if (resourceBlock.seed!=null)
+							out.printf("   Model Seed: %s%n", resourceBlock.seed.getSeedStr());
+					}
+				};
 			}
 		}
 	}
@@ -1191,6 +1283,7 @@ public class SaveGameData {
 			@Override protected String getTypeLabel() { return "Exocraft"; }
 			@Override protected void setVehicleClass(String resourcefilename) {}
 			@Override protected String getVehicleClass() { return null; }
+			@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() { return null; }
 		}
 	}
 
@@ -1216,12 +1309,15 @@ public class SaveGameData {
 		public static abstract class Vehicle {
 			public Inventory inventory = null;
 			public Inventory inventoryTech = null;
-			private ResourceBlock resourceBlock = null;
+			public ResourceBlock resourceBlock = null;
+			public String name;
+			public boolean isPrimary;
 			
 			protected abstract String getPredefinedName(int i);
 			protected abstract String getTypeLabel();
 			protected abstract void setVehicleClass(String resourcefilename);
 			protected abstract String getVehicleClass();
+			protected abstract Consumer<TextAreaOutput> getExtraInfosOutput();
 			
 			public static Vehicle parse(SaveGameData data, JSON_Object vehicleData, int i, String dataSourcePath, Supplier<Vehicle> createVehicle, boolean isPrimary) {
 				if (vehicleData == null) return null;
@@ -1240,15 +1336,21 @@ public class SaveGameData {
 				String inventoryLabel     = baseLabel;
 				String inventoryTechLabel = baseLabel+" (Tech)";
 				
-				String name = getStringValue(vehicleData,"Name");
+				vehicle.name = getStringValue(vehicleData,"Name");
 				String classStr = vehicle.getVehicleClass();
+				vehicle.isPrimary = isPrimary;
 				
-				if (name!=null && !name.isEmpty()) inventoryLabel += " \""+name+"\"";
-				if (classStr!=null) inventoryLabel += " <"+classStr+">";
-				if (isPrimary)      inventoryLabel += "   [Primary]";
+				if (vehicle.name!=null && !vehicle.name.isEmpty()) inventoryLabel += " \""+vehicle.name+"\"";
+				if (classStr!=null   ) inventoryLabel += " <"+classStr+">";
+				if (vehicle.isPrimary) inventoryLabel += "   [Primary]";
 				
 				vehicle.inventory     = Inventories.parse(data,getObjectValue(vehicleData,"Inventory"         ), inventoryLabel    , dataSourcePath+".Inventory");
 				vehicle.inventoryTech = Inventories.parse(data,getObjectValue(vehicleData,"Inventory_TechOnly"), inventoryTechLabel, dataSourcePath+".Inventory_TechOnly");
+				
+				Consumer<TextAreaOutput> extraInfosOutput = vehicle.getExtraInfosOutput();
+				if (vehicle.inventory!=null && extraInfosOutput!=null) {
+					vehicle.inventory.addExtraInfos(extraInfosOutput);
+				}
 				
 				return vehicle;
 			}
@@ -1466,6 +1568,7 @@ public class SaveGameData {
 				public Integer usedSlots;
 				public Integer validSlots;
 				public BaseStatValue[] baseStatValues;
+				public final Vector<Consumer<TextAreaOutput>> extraInfosOutputs;
 				
 				public Inventory(String label) {
 					this.label = label;
@@ -1480,6 +1583,7 @@ public class SaveGameData {
 					this.baseStatValues = null;
 					this.usedSlots = null;
 					this.validSlots = null;
+					extraInfosOutputs = new Vector<>();
 				}
 		
 		//		private SaveGameData getSource2() {
@@ -1490,6 +1594,10 @@ public class SaveGameData {
 		//			return getSource2();
 		//		}
 		
+				public void addExtraInfos(Consumer<TextAreaOutput> extraInfosOutput) {
+					extraInfosOutputs.add(extraInfosOutput);
+				}
+
 				public enum SlotType { Product, Technology, Substance }
 		
 				public final static class Slot {
@@ -1544,77 +1652,13 @@ public class SaveGameData {
 	
 	}
 	
-	private void parseFrigates() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","[Frigates]");
-		if (arrayValue==null) return;
-		JSON_Array notParsableObjects = new JSON_Array();
-		
-		frigates = new Vector<Frigate>();
-		for (int i=0; i<arrayValue.size(); ++i) {
-			Value value = arrayValue.get(i);
-			JSON_Object objectValue = getObject(value);
-			if (objectValue==null) {
-				notParsableObjects.add(value);
-				continue;
-			}
-			
-			Frigate fr = new Frigate();
-			fr.name             = getStringValue (objectValue, "[UserDefinedName]");
-			fr.shipType         = getStringValue (objectValue, "[ShipType]", "[ShipType]");
-			fr.crewRace         = getStringValue (objectValue, "[?CrewRace?]", "[?CrewRaceStr?]");
-			fr.aquired          = TimeStamp.create(getIntegerValue(objectValue, "[?aquired?]"));
-			fr.successfulFights = getIntegerValue(objectValue, "[Progress]");
-			fr.expeditions      = getIntegerValue(objectValue, "[Expeditions]");
-			fr.damages          = getIntegerValue(objectValue, "[Damages]");
-			
-			fr.damageValue      = getIntegerValue(objectValue, "[DamageValue]");
-			
-			fr.combatValue      = getIntegerValue(objectValue, "Stats",0);
-			fr.explorationValue = getIntegerValue(objectValue, "Stats",1);
-			fr.miningValue      = getIntegerValue(objectValue, "Stats",2);
-			fr.diplomacyValue   = getIntegerValue(objectValue, "Stats",3);
-			fr.fuelConsumption  = getIntegerValue(objectValue, "Stats",4);
-			
-			fr.unidentified.seed1 = SeedValue.parse( getArrayValue(objectValue, "[?Seed1?]") );
-			fr.unidentified.seed2 = SeedValue.parse( getArrayValue(objectValue, "[?Seed2/UniverseAddress?]") );
-			
-			fr.unidentified.statVal5 = getIntegerValue(objectValue, "Stats",5);
-			fr.unidentified.statVal6 = getIntegerValue(objectValue, "Stats",6);
-			fr.unidentified.statVal7 = getIntegerValue(objectValue, "Stats",7);
-			fr.unidentified.statVal8 = getIntegerValue(objectValue, "Stats",8);
-			fr.unidentified.statVal9 = getIntegerValue(objectValue, "Stats",9);
-			
-			fr.unidentified.val1_5VG = getIntegerValue(objectValue, "??? [5VG]");
-			fr.unidentified.val2_yJC = getIntegerValue(objectValue, "??? [yJC]");
-			
-			JSON_Array modArr = getArrayValue(objectValue,"[Modifications]");
-			if (modArr!=null) {
-				fr.modifications = new Vector<>();
-				for (Value modVal:modArr) {
-					String modStr = getString(modVal);
-					if (modStr==null) { notParsableObjects.add(modVal); continue; }
-					if (modStr.equals("^")) continue;
-					Frigate.KnownModification mod = Frigate.KnownModification.getMod(modStr);
-					fr.modifications.add( mod!=null ? mod : Frigate.EditableModification.getMod(modStr) );
-				}
-			}
-			
-			frigates.add(fr);
-		}
-		
-		Frigate.EditableModification.saveKnownEditableModsToFile();
-		
-		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
-	}
-	
 	public static class Frigate {
-
+	
 		public interface Modification {
 			public String getLabel();
 			public String getValue();
 		}
-
+	
 		public enum KnownModification implements Modification {
 			EXPLORE_PRI   ("Erkundungsspezialist"        ,"Erkundung: +15"),
 			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
@@ -1716,7 +1760,7 @@ public class SaveGameData {
 				return null;
 			}
 		}
-
+	
 		public static class EditableModification implements Modification {
 			
 			private static HashMap<String,EditableModification> values = new HashMap<>();
@@ -1726,7 +1770,7 @@ public class SaveGameData {
 				if (mod==null) values.put(modStr, mod = new EditableModification(modStr));
 				return mod;
 			}
-
+	
 			public static void loadKnownEditableModsFromFile() {
 				File file = new File(FileExport.FILE_KNOWN_EDITABLE_MODS);
 				if (!file.isFile()) return;
@@ -1764,7 +1808,7 @@ public class SaveGameData {
 				if (!somethingChanged) SaveViewer.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
 				SaveViewer.log_ln("   done (in %1.3fs)", (System.currentTimeMillis()-start)/1000.0f);
 			}
-
+	
 			public static void saveKnownEditableModsToFile() {
 				File file = new File(FileExport.FILE_KNOWN_EDITABLE_MODS);
 				long start = System.currentTimeMillis();
@@ -1800,19 +1844,19 @@ public class SaveGameData {
 			@Override public String getLabel() { return label; }
 			@Override public String getValue() { return value; }
 			@Override public String toString() { return modStr; }
-
+	
 			public boolean isUndefined() { return label.startsWith("\"^"); }
 		}
 		
 		public static class Unidentified {
 			
-			public SeedValue seed1;
-			public SeedValue seed2;
+			//public SeedValue modelSeed;
+			//public SeedValue homeSeed;
 			
-			public Long val1_5VG;
+			//public Long val1_5VG; // failedFights ?
 			
-			public Long statVal5;
-			public Long statVal6;
+			//public Long statVal5; // fuelCapacity_Q 
+			//public Long statVal6; // speed_Q
 			public Long statVal7;
 			public Long statVal8;
 			public Long statVal9;
@@ -1821,62 +1865,122 @@ public class SaveGameData {
 			//public Long val3_7hK; // !=0 bei Schaden an Fregatte
 			
 			Unidentified() {
-				this.seed1 = null;
-				this.seed2 = null;
-				this.val1_5VG = null;
-				this.statVal5 = null;
-				this.statVal6 = null;
+				//this.modelSeed = null;
+				//this.homeSeed = null;
+				//this.val1_5VG = null;
+				//this.statVal5 = null;
+				//this.statVal6 = null;
 				this.statVal7 = null;
 				this.statVal8 = null;
 				this.statVal9 = null;
 				this.val2_yJC = null;
 				//this.val3_7hK = null;
 			}
-
+	
 			public String getUnidentifiedLongs() {
-				return String.format("%s | %s, %s, %s, %s, %s | %s", val1_5VG, statVal5, statVal6, statVal7, statVal8, statVal9, val2_yJC/*, val3_7hK*/);
+				return String.format("%s, %s, %s | %s", /*val1_5VG, statVal5, statVal6,*/ statVal7, statVal8, statVal9, val2_yJC/*, val3_7hK*/);
 			}
 		}
-
-		public String name;
-		public String shipType;
-		public String crewRace;
-		public TimeStamp aquired;
+	
+		public String name = null;
+		public String shipType = null;
+		public String crewRace = null;
+		public TimeStamp aquired = null;
 		
-		public Long successfulFights;
-		public Long expeditions;
-		public Long damages;
-		public Long fuelConsumption;
+		public Long successfulFights = null;
+		public Long expeditions = null;
+		public Long damages = null;
+		public Long fuelConsumption = null;
 		
-		public Long combatValue;
-		public Long explorationValue;
-		public Long miningValue;
-		public Long diplomacyValue;
+		public Long combatValue = null;
+		public Long explorationValue = null;
+		public Long miningValue = null;
+		public Long diplomacyValue = null;
 		
 		public Vector<Modification> modifications;
-		public Long damageValue;
+		public Long damageValue = null;
 		
 		public Unidentified unidentified;
 		
+		public SeedValue modelSeed = null;
+		public SeedValue homeSeed = null;
+		public Long failedFights_Q = null;
+		public Long fuelCapacity_Q = null;
+		public Long speed_Q = null;
+		
 		public Frigate() {
-			this.name = null;
-			this.shipType = null;
-			this.crewRace = null;
-			this.aquired = null;
-			this.successfulFights = null;
-			this.expeditions = null;
-			this.damages = null;
-			this.fuelConsumption = null;
-			this.combatValue = null;
-			this.explorationValue = null;
-			this.miningValue = null;
-			this.diplomacyValue = null;
 			this.modifications = new Vector<>();
 			this.unidentified = new Unidentified();
 		}
+
+		private static Vector<Frigate> parse(SaveGameData data) {
+			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","[Frigates]");
+			if (arrayValue==null) return null;
+			JSON_Array notParsableObjects = new JSON_Array();
+			
+			Vector<Frigate> frigates = new Vector<Frigate>();
+			for (int i=0; i<arrayValue.size(); ++i) {
+				Value value = arrayValue.get(i);
+				JSON_Object objectValue = getObject(value);
+				if (objectValue==null) {
+					notParsableObjects.add(value);
+					continue;
+				}
+				
+				Frigate fr = new Frigate();
+				fr.name             = getStringValue (objectValue, "[UserDefinedName]");
+				fr.shipType         = getStringValue (objectValue, "[ShipType]", "[ShipType]");
+				fr.crewRace         = getStringValue (objectValue, "[CrewRace]", "[CrewRaceStr]");
+				fr.aquired          = TimeStamp.create(getIntegerValue(objectValue, "[?aquired?]"));
+				fr.successfulFights = getIntegerValue(objectValue, "[SuccessfulFights]");
+				fr.expeditions      = getIntegerValue(objectValue, "[Expeditions]");
+				fr.damages          = getIntegerValue(objectValue, "[Damages]");
+				fr.failedFights_Q   = getIntegerValue(objectValue, "[Failed]");
+				
+				fr.damageValue      = getIntegerValue(objectValue, "[DamageValue]");
+				
+				fr.combatValue      = getIntegerValue(objectValue, "Stats",0);
+				fr.explorationValue = getIntegerValue(objectValue, "Stats",1);
+				fr.miningValue      = getIntegerValue(objectValue, "Stats",2);
+				fr.diplomacyValue   = getIntegerValue(objectValue, "Stats",3);
+				fr.fuelConsumption  = getIntegerValue(objectValue, "Stats",4);
+				fr.fuelCapacity_Q   = getIntegerValue(objectValue, "Stats",5);
+				fr.speed_Q          = getIntegerValue(objectValue, "Stats",6);
+				
+				fr.modelSeed = SeedValue.parse( getArrayValue(objectValue, "[ModelSeed]") );
+				fr.homeSeed  = SeedValue.parse( getArrayValue(objectValue, "[HomeSeed]") );
+				
+				fr.unidentified.statVal7 = getIntegerValue(objectValue, "Stats",7);
+				fr.unidentified.statVal8 = getIntegerValue(objectValue, "Stats",8);
+				fr.unidentified.statVal9 = getIntegerValue(objectValue, "Stats",9);
+				
+				fr.unidentified.val2_yJC = getIntegerValue(objectValue, "??? [yJC]");
+				
+				JSON_Array modArr = getArrayValue(objectValue,"[Modifications]");
+				if (modArr!=null) {
+					fr.modifications = new Vector<>();
+					for (Value modVal:modArr) {
+						String modStr = getString(modVal);
+						if (modStr==null) { notParsableObjects.add(modVal); continue; }
+						if (modStr.equals("^")) continue;
+						Frigate.KnownModification mod = Frigate.KnownModification.getMod(modStr);
+						fr.modifications.add( mod!=null ? mod : Frigate.EditableModification.getMod(modStr) );
+					}
+				}
+				
+				frigates.add(fr);
+			}
+			
+			Frigate.EditableModification.saveKnownEditableModsToFile();
+			
+			if (!notParsableObjects.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
+			
+			return frigates;
+		}
 		
 	}
-	
+
 	private void parseFrigateMissions() {
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","[RunningFrigateMissions]");
 		if (arrayValue==null) return;
@@ -2279,11 +2383,11 @@ public class SaveGameData {
 				if ((obj = getDiscNameObj(data.DD))!=null) {
 					obj.foundInDiscStore.add(i);
 					
-					if (data.OWS.USN!=null) {
+					if (data.OWS.userName!=null) {
 						if (obj.hasDiscoverer())
-							obj.setDiscoverer(obj.getDiscoverer()+" | "+data.OWS.USN);
+							obj.setDiscoverer(obj.getDiscoverer()+" | "+data.OWS.userName);
 						else
-							obj.setDiscoverer(data.OWS.USN);
+							obj.setDiscoverer(data.OWS.userName);
 					}
 					if (data.DM_CN!=null) {
 						if (obj.hasUploadedName())
@@ -2954,11 +3058,12 @@ public class SaveGameData {
 
 			public boolean isReachableByTeleport() {
 				for (SolarSystem sys:solarSystems) {
-					if (sys.additionalInfos.hasTeleportEndPoint)
+					if (!sys.additionalInfos.teleportEndpoints.isEmpty())
 						return true;
-					for (Planet planet:sys.planets)
-						if (planet.additionalInfos.hasTeleportEndPoint)
+					for (Planet planet:sys.planets) {
+						if (planet.additionalInfos.isReachableByTeleport())
 							return true;
+					}
 				}
 				return false;
 			}
@@ -3073,16 +3178,18 @@ public class SaveGameData {
 			}
 			
 			public static class AdditionalInfos {
+				
 				public boolean hasFreighter;
-				public boolean hasTeleportEndPoint;
 				public boolean hasAnomaly;
+				public Vector<TeleportEndpoints> teleportEndpoints; 
+				
 				public AdditionalInfos() {
 					hasFreighter = false;
-					hasTeleportEndPoint = false;
 					hasAnomaly = false;
+					teleportEndpoints = new Vector<>();
 				}
 				public boolean isEmpty() {
-					return !hasFreighter && !hasTeleportEndPoint && !hasAnomaly;
+					return !hasFreighter && !hasAnomaly && teleportEndpoints.isEmpty();
 				}
 			}
 			
@@ -3292,16 +3399,39 @@ public class SaveGameData {
 			}
 			
 			public static class AdditionalInfos {
-				public Vector<PersistentPlayerBase> bases;
+				public Vector<PersistentPlayerBase> playerBases;
+				public Vector<PersistentPlayerBase> otherPlayerBases;
 				public boolean hasExocraftSummoningStation;
-				public boolean hasTeleportEndPoint;
+				public Vector<TeleportEndpoints> teleportEndpoints; 
+				public Vector<TeleportEndpoints> teleportEndpointsInOtherPlayerBases; 
+				
 				public AdditionalInfos() {
-					this.bases = new Vector<>();
+					this.playerBases = new Vector<>();
+					this.otherPlayerBases = new Vector<>();
 					this.hasExocraftSummoningStation = false;
-					this.hasTeleportEndPoint = false;
+					this.teleportEndpoints = new Vector<>();
+					this.teleportEndpointsInOtherPlayerBases = new Vector<>();
 				}
 				public boolean isEmpty() {
-					return bases.isEmpty() && !hasExocraftSummoningStation && !hasTeleportEndPoint;
+					return
+							playerBases.isEmpty() &&
+							otherPlayerBases.isEmpty() &&
+							!hasExocraftSummoningStation &&
+							teleportEndpoints.isEmpty() &&
+							teleportEndpointsInOtherPlayerBases.isEmpty();
+				}
+				
+				public boolean hasOtherPlayersBase() {
+					return !otherPlayerBases.isEmpty() || hasOtherPlayersBaseTeleport();
+				}
+				public boolean hasOtherPlayersBaseTeleport() {
+					return !teleportEndpointsInOtherPlayerBases.isEmpty();
+				}
+				public boolean hasTeleportEndpoints() {
+					return !teleportEndpoints.isEmpty();
+				}
+				public boolean isReachableByTeleport() {
+					return hasOtherPlayersBaseTeleport() || hasTeleportEndpoints();
 				}
 			}
 			

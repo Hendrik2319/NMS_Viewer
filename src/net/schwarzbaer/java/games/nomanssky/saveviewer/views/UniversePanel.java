@@ -77,6 +77,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.SearchFieldWithPopup;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject.ExtraInfo;
@@ -113,7 +114,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		;
 	}
 	private enum AdditionalTreeIcons {
-		VehicleSummoner(20), BaseMainRoom(26), Freighter(44), Teleporter(20), BlackHole(20), Atlas(17), Anomaly(20);
+		VehicleSummoner(20), BaseMainRoom(26), BaseMainRoomOther(26), Freighter(44), Teleporter(20), BlackHole(20), Atlas(17), Anomaly(20);
 
 		private int iconWidth;
 		private AdditionalTreeIcons(int iconWidth) { this.iconWidth = iconWidth; }
@@ -914,8 +915,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					appendln("    Freighter in System");
 				if (system.additionalInfos.hasAnomaly)
 					appendln("    Anomaly in System");
-				if (system.additionalInfos.hasTeleportEndPoint)
-					appendln("    is reachable by Teleport Network");
+				if (!system.additionalInfos.teleportEndpoints.isEmpty()) {
+					appendln("    Teleport Endpoints:");
+					for (TeleportEndpoints tel:system.additionalInfos.teleportEndpoints)
+						appendln("        \"%s\"", tel.name);
+				}
 			}
 		}
 		
@@ -1136,10 +1140,24 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			if (!planet.additionalInfos.isEmpty()) {
 				appendln();
 				appendln("Additional Infos:");
+				if (!planet.additionalInfos.teleportEndpoints.isEmpty()) {
+					appendln("    Teleport Endpoints:");
+					for (TeleportEndpoints tel:planet.additionalInfos.teleportEndpoints)
+						appendln("        %s", tel.getNameAndGPS());
+				}
+				if (!planet.additionalInfos.teleportEndpointsInOtherPlayerBases.isEmpty()) {
+					appendln("    Teleport Endpoints in Base of another Player:");
+					for (TeleportEndpoints tel:planet.additionalInfos.teleportEndpointsInOtherPlayerBases)
+						appendln("        %s", tel.getNameAndGPS());
+				}
 				if (planet.additionalInfos.hasExocraftSummoningStation)
 					appendln("    Exocraft Summoning Station on Planet");
-				for (PersistentPlayerBase base:planet.additionalInfos.bases)
+				for (PersistentPlayerBase base:planet.additionalInfos.playerBases)
 					appendln("    Base on Planet: \"%s\"", base.name);
+				for (PersistentPlayerBase base:planet.additionalInfos.otherPlayerBases) {
+					String ownerName = base.owner!=null ? base.owner.getOwnerName() : null;
+					appendln("    Base on Planet: \"%s\" of %s", base.name, ownerName==null ? "another player" : "\""+ownerName+"\"");
+				}
 			}
 		}
 
@@ -2345,7 +2363,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (!chkbxUnexplored         .isUndefined() && sys.isUnexplored     !=chkbxUnexplored         .isSelected()) return false;
 				if (!chkbxAtlasInterface     .isUndefined() && sys.hasAtlasInterface!=chkbxAtlasInterface     .isSelected()) return false;
 				if (!chkbxBlackHole          .isUndefined() && sys.hasBlackHole     !=chkbxBlackHole          .isSelected()) return false;
-				if (!chkbxReachableByTeleport.isUndefined() && sys.additionalInfos.hasTeleportEndPoint!=chkbxReachableByTeleport.isSelected()) return false;
+				if (!chkbxReachableByTeleport.isUndefined() && sys.additionalInfos.teleportEndpoints.isEmpty()==chkbxReachableByTeleport.isSelected()) return false;
 				
 				return true;
 			}
@@ -2375,7 +2393,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxGrav;
 
 			private TristateCheckBox chkbxVehicleSummoner;
-			private TristateCheckBox chkbxBase;
+			private TristateCheckBox chkbxPlayerBase;
+			private TristateCheckBox chkbxOtherPlayerBase;
 			private TristateCheckBox chkbxTeleporter;
 
 			private ResourceSelectDialog resourceSelectDialog;
@@ -2446,13 +2465,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				});
 				
-				chkbxExtreme         = SaveViewer.createTristateCheckBox("is Extreme"              , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxAggrSent        = SaveViewer.createTristateCheckBox("has Aggressive Sentinels", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxWater           = SaveViewer.createTristateCheckBox("has Water"               , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxGrav            = SaveViewer.createTristateCheckBox("has Gravitino-Balls"     , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox("has Vehicle Summoner"    , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxBase            = SaveViewer.createTristateCheckBox("has Base"                , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxTeleporter      = SaveViewer.createTristateCheckBox("is reachable by Teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxExtreme         = SaveViewer.createTristateCheckBox("is Extreme"                , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxAggrSent        = SaveViewer.createTristateCheckBox("has Aggressive Sentinels"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxWater           = SaveViewer.createTristateCheckBox("has Water"                 , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxGrav            = SaveViewer.createTristateCheckBox("has Gravitino-Balls"       , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox("has Vehicle Summoner"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxPlayerBase      = SaveViewer.createTristateCheckBox("has Base"                  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxOtherPlayerBase = SaveViewer.createTristateCheckBox("has Base of another Player", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxTeleporter      = SaveViewer.createTristateCheckBox("is reachable by Teleport"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
 				c.fill = GridBagConstraints.BOTH;
 				
@@ -2483,9 +2503,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				right.add( chkbxVehicleSummoner, c );
 				
 				c.gridwidth = 1;
-				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom   )), c );
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom)), c );
 				c.gridwidth = GridBagConstraints.REMAINDER;
-				right.add( chkbxBase, c );
+				right.add( chkbxPlayerBase, c );
+				
+				c.gridwidth = 1;
+				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoomOther)), c );
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				right.add( chkbxOtherPlayerBase, c );
 				
 				c.gridwidth = 1;
 				right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)), c );
@@ -2529,8 +2554,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (!chkbxWater          .isUndefined() && p.withWater              != chkbxWater   .isSelected()) return false;
 				if (!chkbxGrav           .isUndefined() && p.withGravitinoBalls     != chkbxGrav    .isSelected()) return false;
 				if (!chkbxVehicleSummoner.isUndefined() && p.additionalInfos.hasExocraftSummoningStation != chkbxVehicleSummoner.isSelected()) return false;
-				if (!chkbxBase           .isUndefined() && p.additionalInfos.bases.isEmpty()             == chkbxBase           .isSelected()) return false;
-				if (!chkbxTeleporter     .isUndefined() && p.additionalInfos.hasTeleportEndPoint         != chkbxTeleporter     .isSelected()) return false;
+				if (!chkbxPlayerBase     .isUndefined() && p.additionalInfos.playerBases.isEmpty()       == chkbxPlayerBase     .isSelected()) return false;
+				if (!chkbxOtherPlayerBase.isUndefined() && p.additionalInfos.hasOtherPlayersBase()       != chkbxOtherPlayerBase.isSelected()) return false;
+				if (!chkbxTeleporter     .isUndefined() && p.additionalInfos.teleportEndpoints.isEmpty() == chkbxTeleporter     .isSelected()) return false;
 				
 				return true;
 			}
@@ -2545,7 +2571,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					chkbxWater          .isUndefined() &&
 					chkbxGrav           .isUndefined() &&
 					chkbxVehicleSummoner.isUndefined() &&
-					chkbxBase           .isUndefined() &&
+					chkbxPlayerBase           .isUndefined() &&
 					chkbxTeleporter     .isUndefined();
 			}
 
@@ -2560,7 +2586,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				chkbxWater          .setUndefined();
 				chkbxGrav           .setUndefined();
 				chkbxVehicleSummoner.setUndefined();
-				chkbxBase           .setUndefined();
+				chkbxPlayerBase           .setUndefined();
 				chkbxTeleporter     .setUndefined();
 			}
 			
@@ -2835,7 +2861,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Atlas));
 							if (system.hasBlackHole)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BlackHole));
-							if (system.additionalInfos.hasTeleportEndPoint)
+							if (!system.additionalInfos.teleportEndpoints.isEmpty())
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter));
 							if (system.additionalInfos.hasFreighter)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
@@ -2858,10 +2884,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							icon = planetNode.cachedCustomIcon.get();
 						else {
 							icon = PlanetIcons.get(planet.biome, planet.areSentinelsAggressive);
-							if (planet.additionalInfos.hasTeleportEndPoint)
+							if (planet.additionalInfos.isReachableByTeleport())
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter));
-							if (!planet.additionalInfos.bases.isEmpty())
+							if (!planet.additionalInfos.playerBases.isEmpty())
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoom));
+							if (planet.additionalInfos.hasOtherPlayersBase())
+								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.BaseMainRoomOther));
 							if (planet.additionalInfos.hasExocraftSummoningStation)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.VehicleSummoner));
 							planetNode.cachedCustomIcon = new PlanetNode.CachedCustomIcon(icon,planet.biome, planet.areSentinelsAggressive);
