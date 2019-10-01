@@ -260,9 +260,16 @@ name=Stefie System 1
 race=Vykeen
 conflict=3
 conflict_label=gewaltig
+economy=2
+economy_label=nachhaltig
 class=Yellow
+short=Erinnerungsterminal
+info=
 
 [Pln105600FCCE59C1]
+name=Bodmanti
+biome=Scorched
+resources=Cu,P,Fe__
 
 [Pln205600FCCE59C1]
 name=Luca W/1
@@ -3209,15 +3216,24 @@ name=Damata-Paye
 race=Vykeen
 conflict=1
 conflict_label=friedlich
+economy=1
+economy_label=mühevoll
 class=Yellow
 short=4 Planeten
 info=
+
+[Pln20760002FDAFDC]
+name=Mikeyan Jiida
+biome=Scorched
+resources=Cu,P,NaCl
 
 [Sys00790002FDAFDC]
 name=Omega
 race=Gek
 conflict=3
 conflict_label=gesetzlos
+economy=2
+economy_label=erfolgversprechend
 blackhole=true
 blackholetarget=007700FEFDD006
 class=Yellow

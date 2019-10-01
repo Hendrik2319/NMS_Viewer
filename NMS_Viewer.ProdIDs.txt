@@ -681,7 +681,10 @@
 ^EYEBALL.type=Special
 ^EYEBALL.image=PRODUCT.EYEBALL.png
 ^EYEBALL.imageBG=10805C
-^FACT_TOKEN=
+^FACT_TOKEN=Fabrik-Überschreibungseinheit
+^FACT_TOKEN.type=Special
+^FACT_TOKEN.image=PRODUCT.EXONAVDATA.png
+^FACT_TOKEN.imageBG=0063B6
 ^FARMPROD1=Säure
 ^FARMPROD1.type=Product
 ^FARMPROD1.image=NmsTech_Acid_Icon_13.Saeure.png
@@ -883,6 +886,7 @@
 ^FRIG_BOOST_TRA.image=NmsCommodity_High_Capacity_Vector_Compressor_icon.png
 ^FRIG_BOOST_TRA.imageBG=0063B6
 ^FRIG_TOKEN=Geborgenes Fregattenmodul
+^FRIG_TOKEN.type=Special
 ^FRIG_TOKEN.image=PRODUCT.RESEARCHTOKEN.png
 ^FRIG_TOKEN.imageBG=0063B6
 ^FUELPROD3=Kohlenstoff-Kristall
@@ -1191,6 +1195,10 @@
 ^PROC_BIO#18063.type=Treasure
 ^PROC_BIO#18063.image=Artifact.BiologicalSample.png
 ^PROC_BIO#18063.imageBG=DC9401
+^PROC_BIO#19946=Biologische Probe (gewöhnlich)
+^PROC_BIO#19946.type=Treasure
+^PROC_BIO#19946.image=Artifact.BiologicalSample.png
+^PROC_BIO#19946.imageBG=153250
 ^PROC_BIO#22699=Biologische Probe (ungewöhnlich)
 ^PROC_BIO#22699.type=Treasure
 ^PROC_BIO#22699.image=Artifact.BiologicalSample.png
@@ -1337,6 +1345,10 @@
 ^PROC_LOOT#15229.type=Treasure
 ^PROC_LOOT#15229.image=Artifact.UnearthedTreasure.png
 ^PROC_LOOT#15229.imageBG=153250
+^PROC_LOOT#18526=Ausgegrabener Schatz (gewöhnlich)
+^PROC_LOOT#18526.type=Treasure
+^PROC_LOOT#18526.image=Artifact.UnearthedTreasure.png
+^PROC_LOOT#18526.imageBG=153250
 ^PROC_LOOT#18657=Ausgegrabener Schatz (selten)
 ^PROC_LOOT#18657.type=Treasure
 ^PROC_LOOT#18657.image=Artifact.UnearthedTreasure.png
@@ -1550,7 +1562,9 @@
 ^SHELFPANEL.type=BaseDekoration
 ^SHIELDSTATION=Schildstation
 ^SHIELDSTATION.type=BaseComponent
-^SHIPCHARGE=
+^SHIPCHARGE=Sternenschildbatterie
+^SHIPCHARGE.image=PRODUCT.SHIPCHARGE.png
+^SHIPCHARGE.imageBG=F0A92B
 ^SHIPSUMMON=
 ^SHIPSUMMON.image=BUILDABLE.SHIPSUMMON.png
 ^SMALLLIGHT=

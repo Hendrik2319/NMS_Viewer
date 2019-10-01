@@ -856,11 +856,14 @@
 ^VEHICLE_ENGINE.imageBG=085C78
 ^VEHICLE_GRIP1=Drift-Aufhängung
 ^VEHICLE_GRIP1.type=ExocraftExtensionUpgrade
+^VEHICLE_GRIP1.image=RENDER.TRACTION.png
 ^VEHICLE_GRIP1.imageBG=0063B6
 ^VEHICLE_GRIP2=
 ^VEHICLE_GRIP2.type=ExocraftExtensionUpgrade
+^VEHICLE_GRIP2.image=RENDER.TRACTION.png
 ^VEHICLE_GRIP3=
 ^VEHICLE_GRIP3.type=ExocraftExtensionUpgrade
+^VEHICLE_GRIP3.image=RENDER.TRACTION.png
 ^VEHICLE_GUN=Exo-Fahrzeug-Bordkanone
 ^VEHICLE_GUN.type=ExocraftWeapon
 ^VEHICLE_GUN.image=NmsTech_Exocraft_Mounted_Cannon_Icon.png
