@@ -307,8 +307,8 @@ public class SaveGameData {
 		private static Position parse(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
 			Position position = new Position();
 			position.pos = Coordinates.parse(obj, valueName_Pos);
-			position.at  = Coordinates.parse(obj, valueName_At);
-			position.up  = Coordinates.parse(obj, valueName_Up);
+			position.at  = Coordinates.parse(obj, valueName_At );
+			position.up  = Coordinates.parse(obj, valueName_Up );
 			position.gps = PolarCoordinates.parse(position.pos);
 			return position;
 		}
@@ -1373,7 +1373,8 @@ public class SaveGameData {
 				inventories.chests[i] = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
 			inventories.magicChest        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
 			inventories.magicChest2       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
-			inventories.ingredientStorage = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
+			if (JSON_Data.hasSubNode(data.json_data, "PlayerStateData", "IngredientStorageInventory"))
+				inventories.ingredientStorage = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
 			
 			return inventories;
 		}
@@ -2513,10 +2514,14 @@ public class SaveGameData {
 				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress).isCurrPos = true;
 				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress).isCurrPos = true;
 			}
-			anomalyUA   = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
-			graveUA     = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
-			anomalyPos   = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
-			gravePos     = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			if (JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
+				anomalyUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
+			graveUA       = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
+			if (    JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyPosition") &&
+					JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyMatrixLookAt") && 
+					JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyMatrixUp"))
+				anomalyPos = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
+			gravePos       = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
 			
 			units           = getIntegerValue( data.json_data, "PlayerStateData","Units"           );
@@ -3502,6 +3507,7 @@ public class SaveGameData {
 	}
 
 	private KnownWords parseKnownWords(String arrLabel, String wordLabel, String racesLabel) {
+		if (!JSON_Data.hasSubNode(json_data,"PlayerStateData",arrLabel)) return null;
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData",arrLabel);
 		KnownWords array;
 		if (arrayValue==null)
