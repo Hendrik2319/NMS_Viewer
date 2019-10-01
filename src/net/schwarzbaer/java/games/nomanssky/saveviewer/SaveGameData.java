@@ -1212,148 +1212,163 @@ public class SaveGameData {
 		}
 	}
 
-	public static class SpaceShips extends VehicleGroup {
+	public static class SpaceShip extends Vehicle {
+		public enum VehicleClass { Transporter, Fighter, Shuttle, Exotic }
+		
+		public boolean usesOldColors = false;
+		public VehicleClass shipClass = null;
+		
+		@Override protected String getPredefinedName(int i) { return null; }
+		@Override protected String getTypeLabel() { return "SpaceShip"; }
+		@Override protected void setVehicleClass(String resourcefilename) {
+			switch (resourcefilename) {
+			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Transporter; break;
+			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"  : shipClass = VehicleClass.Fighter; break;
+			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Shuttle; break;
+			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Exotic; break;
+			default:
+				SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
+			}
+		}
+		@Override protected String getVehicleClass() {
+			if (shipClass == null) return null;
+			return shipClass.toString();
+		}
+		
+		@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() {
+			return out->{
+				if (resourceBlock!=null) {
+					out.printf("Ship Infos:%n");
+					if (name!=null)
+						out.printf("   Name: %s%n", name.isEmpty() ? "<Original Name>" : "\""+name+"\"");
+					if (inventory.validSlots!=null && inventory.inventoryClass!=null)
+						out.printf("   Type: %s-%d%n", inventory.inventoryClass, inventory.validSlots);
+					if (shipClass!=null)
+						out.printf("   Class: %s%n", shipClass);
+					if (isPrimary)
+					out.printf("   is Primary Ship%n");
+					if (resourceBlock.seed!=null)
+						out.printf("   Model Seed: %s%n", resourceBlock.seed.getSeedStr());
+					if (usesOldColors)
+						out.printf("   Model uses old colors%n");
+				}
+			};
+		}
+	}
+
+	public static class Exocraft extends Vehicle {
+		private static final String[] VehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", null, "Nautilon"};
+		@Override protected String getPredefinedName(int i) {
+			if (0<=i && i<VehicleNames.length) return VehicleNames[i];
+			return null;
+		}
+		@Override protected String getTypeLabel() { return "Exocraft"; }
+		@Override protected void setVehicleClass(String resourcefilename) {}
+		@Override protected String getVehicleClass() { return null; }
+		@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() { return null; }
+	}
+
+	public static abstract class Vehicle {
+		public Inventory inventory = null;
+		public Inventory inventoryTech = null;
+		public ResourceBlock resourceBlock = null;
+		public String name;
+		public boolean isPrimary;
+		
+		protected abstract String getPredefinedName(int i);
+		protected abstract String getTypeLabel();
+		protected abstract void setVehicleClass(String resourcefilename);
+		protected abstract String getVehicleClass();
+		protected abstract Consumer<TextAreaOutput> getExtraInfosOutput();
+		
+		public static <VehicleType extends Vehicle> VehicleType parse(SaveGameData data, JSON_Object vehicleData, int i, String dataSourcePath, Supplier<VehicleType> createVehicle, boolean isPrimary) {
+			if (vehicleData == null) return null;
+			
+			VehicleType vehicle = createVehicle.get();
+			
+			vehicle.resourceBlock = ResourceBlock.parse(vehicleData,"Resource");
+			if (vehicle.resourceBlock!=null && vehicle.resourceBlock.filename!=null && !vehicle.resourceBlock.filename.isEmpty())
+				vehicle.setVehicleClass(vehicle.resourceBlock.filename);
+			
+			String baseLabel = vehicle.getTypeLabel()+" "+(i+1);
+			
+			String predefinedName = vehicle.getPredefinedName(i);
+			if (predefinedName!=null && !predefinedName.isEmpty()) baseLabel = "["+(i+1)+"] "+predefinedName;
+			
+			String inventoryLabel     = baseLabel;
+			String inventoryTechLabel = baseLabel+" (Tech)";
+			
+			vehicle.name = getStringValue(vehicleData,"Name");
+			String classStr = vehicle.getVehicleClass();
+			vehicle.isPrimary = isPrimary;
+			
+			if (vehicle.name!=null && !vehicle.name.isEmpty()) inventoryLabel += " \""+vehicle.name+"\"";
+			if (classStr!=null   ) inventoryLabel += " <"+classStr+">";
+			if (vehicle.isPrimary) inventoryLabel += "   [Primary]";
+			
+			vehicle.inventory     = Inventories.parse(data,getObjectValue(vehicleData,"Inventory"         ), inventoryLabel    , dataSourcePath+".Inventory");
+			vehicle.inventoryTech = Inventories.parse(data,getObjectValue(vehicleData,"Inventory_TechOnly"), inventoryTechLabel, dataSourcePath+".Inventory_TechOnly");
+			
+			Consumer<TextAreaOutput> extraInfosOutput = vehicle.getExtraInfosOutput();
+			if (vehicle.inventory!=null && extraInfosOutput!=null) {
+				vehicle.inventory.addExtraInfos(extraInfosOutput);
+			}
+			
+			return vehicle;
+		}
+	}
+
+	public static class SpaceShips extends VehicleGroup<SpaceShip> {
 
 		private static SpaceShips parse(SaveGameData data) {
-			return (SpaceShips)parseArray(
+			SpaceShips ships = new SpaceShips();
+			parseArray(
+				ships,
 				data,
 				getArrayValue(data.json_data, "PlayerStateData", "ShipOwnership"), "ShipOwnership",
 				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryShip"),
-				SpaceShips::new, SpaceShip::new
+				SpaceShip::new, SpaceShip[]::new
 			);
-		}
-		
-		public static class SpaceShip extends VehicleGroup.Vehicle {
-			public enum VehicleClass { Transporter, Fighter, Shuttle, Exotic }
-			public VehicleClass shipClass = null;
 			
-			@Override protected String getPredefinedName(int i) { return null; }
-			@Override protected String getTypeLabel() { return "SpaceShip"; }
-			@Override protected void setVehicleClass(String resourcefilename) {
-				switch (resourcefilename) {
-				case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Transporter; break;
-				case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"  : shipClass = VehicleClass.Fighter; break;
-				case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Shuttle; break;
-				case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Exotic; break;
-				default:
-					SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
-				}
-			}
-			@Override protected String getVehicleClass() {
-				if (shipClass == null) return null;
-				return shipClass.toString();
-			}
-			
-			@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() {
-				return out->{
-					if (resourceBlock!=null) {
-						out.printf("Ship Infos:%n");
-						if (name!=null)
-							out.printf("   Name: %s%n", name.isEmpty() ? "<Original Name>" : "\""+name+"\"");
-						if (inventory.validSlots!=null && inventory.inventoryClass!=null)
-							out.printf("   Type: %s-%d%n", inventory.inventoryClass, inventory.validSlots);
-						if (shipClass!=null)
-							out.printf("   Class: %s%n", shipClass);
-						if (isPrimary)
-						out.printf("   is Primary Ship%n");
-						if (resourceBlock.seed!=null)
-							out.printf("   Model Seed: %s%n", resourceBlock.seed.getSeedStr());
+			if (JSON_Data.hasSubNode(data.json_data, "PlayerStateData", "[ShipUsesOldColors]")) {
+				JSON_Array array = getArrayValue(data.json_data, "PlayerStateData", "[ShipUsesOldColors]");
+				if (array!=null)
+					for (int i=0; i<array.size(); i++) {
+						Boolean b = getBool(array.get(i));
+						if (b!=null) ships.vehicles[i].usesOldColors = b;
 					}
-				};
 			}
+			return ships;
 		}
 	}
-	public static class Exocrafts extends VehicleGroup {
+	public static class Exocrafts extends VehicleGroup<Exocraft> {
 
 		private static Exocrafts parse(SaveGameData data) {
-			return (Exocrafts)parseArray(
+			Exocrafts exocrafts = new Exocrafts();
+			parseArray(
+				exocrafts, 
 				data,
 				getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
 				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryVehicle"),
-				Exocrafts::new, Exocraft::new
+				Exocraft::new, Exocraft[]::new
 			);
-		}
-		
-		public static class Exocraft extends VehicleGroup.Vehicle {
-			private static final String[] VehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", null, "Nautilon"};
-			@Override protected String getPredefinedName(int i) {
-				if (0<=i && i<VehicleNames.length) return VehicleNames[i];
-				return null;
-			}
-			@Override protected String getTypeLabel() { return "Exocraft"; }
-			@Override protected void setVehicleClass(String resourcefilename) {}
-			@Override protected String getVehicleClass() { return null; }
-			@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() { return null; }
+			return exocrafts;
 		}
 	}
 
-	public static abstract class VehicleGroup {
+	public static abstract class VehicleGroup<VehicleType extends Vehicle> {
 		
 		public Long primary = null;
-		public Vehicle[] vehicles = null;
+		public VehicleType[] vehicles = null;
 
-		protected static VehicleGroup parseArray(SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<VehicleGroup> createGroup, Supplier<Vehicle> createVehicle) {
-			
-			VehicleGroup proto = createGroup.get();
-			proto.primary = primary;
+		protected static <V extends Vehicle> void parseArray(VehicleGroup<V> group, SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<V> createVehicle, Function<Integer,V[]> createArray) {
+			group.primary = primary;
 			
 			if (json_Array!=null) {
-				proto.vehicles = new Vehicle[json_Array.size()];
+				group.vehicles = createArray.apply(json_Array.size());
 				for (int i=0; i<json_Array.size(); ++i)
-					proto.vehicles[i] = Vehicle.parse(data, getObject(json_Array.get(i)), i, arraySourcePath+"["+i+"]", createVehicle, i==proto.primary);
+					group.vehicles[i] = Vehicle.parse(data, getObject(json_Array.get(i)), i, arraySourcePath+"["+i+"]", createVehicle, i==group.primary);
 			}	
-			
-			return proto;
-		}
-
-		public static abstract class Vehicle {
-			public Inventory inventory = null;
-			public Inventory inventoryTech = null;
-			public ResourceBlock resourceBlock = null;
-			public String name;
-			public boolean isPrimary;
-			
-			protected abstract String getPredefinedName(int i);
-			protected abstract String getTypeLabel();
-			protected abstract void setVehicleClass(String resourcefilename);
-			protected abstract String getVehicleClass();
-			protected abstract Consumer<TextAreaOutput> getExtraInfosOutput();
-			
-			public static Vehicle parse(SaveGameData data, JSON_Object vehicleData, int i, String dataSourcePath, Supplier<Vehicle> createVehicle, boolean isPrimary) {
-				if (vehicleData == null) return null;
-				
-				Vehicle vehicle = createVehicle.get();
-				
-				vehicle.resourceBlock = ResourceBlock.parse(vehicleData,"Resource");
-				if (vehicle.resourceBlock!=null && vehicle.resourceBlock.filename!=null && !vehicle.resourceBlock.filename.isEmpty())
-					vehicle.setVehicleClass(vehicle.resourceBlock.filename);
-				
-				String baseLabel = vehicle.getTypeLabel()+" "+(i+1);
-				
-				String predefinedName = vehicle.getPredefinedName(i);
-				if (predefinedName!=null && !predefinedName.isEmpty()) baseLabel = "["+(i+1)+"] "+predefinedName;
-				
-				String inventoryLabel     = baseLabel;
-				String inventoryTechLabel = baseLabel+" (Tech)";
-				
-				vehicle.name = getStringValue(vehicleData,"Name");
-				String classStr = vehicle.getVehicleClass();
-				vehicle.isPrimary = isPrimary;
-				
-				if (vehicle.name!=null && !vehicle.name.isEmpty()) inventoryLabel += " \""+vehicle.name+"\"";
-				if (classStr!=null   ) inventoryLabel += " <"+classStr+">";
-				if (vehicle.isPrimary) inventoryLabel += "   [Primary]";
-				
-				vehicle.inventory     = Inventories.parse(data,getObjectValue(vehicleData,"Inventory"         ), inventoryLabel    , dataSourcePath+".Inventory");
-				vehicle.inventoryTech = Inventories.parse(data,getObjectValue(vehicleData,"Inventory_TechOnly"), inventoryTechLabel, dataSourcePath+".Inventory_TechOnly");
-				
-				Consumer<TextAreaOutput> extraInfosOutput = vehicle.getExtraInfosOutput();
-				if (vehicle.inventory!=null && extraInfosOutput!=null) {
-					vehicle.inventory.addExtraInfos(extraInfosOutput);
-				}
-				
-				return vehicle;
-			}
 		}
 	}
 
@@ -1474,27 +1489,6 @@ public class SaveGameData {
 						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
 					if (redundantIndices>0)
 						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
-		
-					redundantIndices = 0;
-					wrongIndices.clear();
-					for (Value value:arrSpecialSlots) {
-						JSON_Object indexObj = getObject(value);
-						if (indexObj==null) continue;
-						Long   indexX = getIntegerValue(indexObj, "Index","X");
-						Long   indexY = getIntegerValue(indexObj, "Index","Y");
-						String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
-						if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
-						if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
-						if (slots[(int)(long)indexX][(int)(long)indexY]==null) { wrongIndices.add(value); continue; }
-						if (slots[(int)(long)indexX][(int)(long)indexY].specialSlotType==null) {
-							slots[(int)(long)indexX][(int)(long)indexY].specialSlotType = type;
-						} else
-							++redundantIndices;
-					}
-					if (!wrongIndices.isEmpty())
-						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
-					if (redundantIndices>0)
-						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
 					
 					redundantIndices = 0;
 					int notValidSlots = 0;
@@ -1543,6 +1537,28 @@ public class SaveGameData {
 					if (!wrongSlots.isEmpty()) SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
 					if (redundantIndices>0   ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
 					if (notValidSlots>0      ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
+					
+					redundantIndices = 0;
+					wrongIndices.clear();
+					for (Value value:arrSpecialSlots) {
+						JSON_Object indexObj = getObject(value);
+						if (indexObj==null) continue;
+						Long   indexX = getIntegerValue(indexObj, "Index","X");
+						Long   indexY = getIntegerValue(indexObj, "Index","Y");
+						String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
+						if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
+						if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
+						Slot slot = slots[(int)(long)indexX][(int)(long)indexY];
+						if (slot==null) { wrongIndices.add(value); continue; }
+						if (slot.specialSlotType==null) {
+							slot.specialSlotType = type;
+						} else
+							++redundantIndices;
+					}
+					if (!wrongIndices.isEmpty())
+						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
+					if (redundantIndices>0)
+						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
 				}
 		
 				private void parseBaseStatValues(JSON_Array valueArray, String inventoryLabel, String inventorySourcePath) {

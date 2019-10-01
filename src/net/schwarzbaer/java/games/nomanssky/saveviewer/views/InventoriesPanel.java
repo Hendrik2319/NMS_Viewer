@@ -47,7 +47,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory.SlotType;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VehicleGroup.Vehicle;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Vehicle;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
@@ -292,6 +292,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						textarea.append("           "+slot.id.type.getLabel()+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
 					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
+					if (slot.specialSlotType!=null)
+						textarea.append("   Special: "+slot.specialSlotType+"\r\n");
 				}
 			}
 		}
