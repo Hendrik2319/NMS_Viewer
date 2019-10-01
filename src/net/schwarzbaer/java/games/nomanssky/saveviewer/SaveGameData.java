@@ -3211,6 +3211,7 @@ public class SaveGameData {
 			public boolean hasAtlasInterface; 
 			public boolean hasBlackHole; 
 			public UniverseAddress blackHoleTarget = null;
+			public boolean withRemembranceTerminal = false;
 			
 			public AdditionalInfos additionalInfos = new AdditionalInfos();
 			
@@ -3254,7 +3255,8 @@ public class SaveGameData {
 				
 				String strExtraInfo = getCombinedExtraInfoLabels(
 					(hasAtlasInterface?"<Atlas>":null),
-					(hasBlackHole?"<BlackHole>":null)
+					(hasBlackHole?"<BlackHole>":null),
+					(withRemembranceTerminal?"<RememTerm>":null)
 				);
 				for (String str:foundLabels) {
 					if (!strExtraInfo.isEmpty()) strExtraInfo+=", ";
@@ -3437,28 +3439,22 @@ public class SaveGameData {
 			
 			final SolarSystem solarSystem;
 			final int planetIndex;
-			private Stats.PlanetStats stats;
-			public Biome biome;
-			public boolean hasExtremeBiome;
-			public boolean areSentinelsAggressive;
-			public boolean withWater;
-			public boolean withGravitinoBalls;
-			public BuriedTreasure buriedTreasure;
-			public AdditionalInfos additionalInfos;
-			public EnumSet<Resources> resources;
+			
+			private Stats.PlanetStats stats = null;
+			public Biome biome = null;
+			public boolean hasExtremeBiome = false;
+			public boolean areSentinelsAggressive = false;
+			public boolean withWater = false;
+			public boolean withGravitinoBalls = false;
+			public boolean withRemembranceTerminal = false;
+			public BuriedTreasure buriedTreasure = null;
+			public AdditionalInfos additionalInfos = new AdditionalInfos();
+			public EnumSet<Resources> resources = EnumSet.noneOf(Resources.class);
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				super(Type.Planet);
 				this.solarSystem = solarSystem;
 				this.planetIndex = planetIndex;
-				this.biome = null;
-				this.hasExtremeBiome = false;
-				this.areSentinelsAggressive = false;
-				this.withWater = false;
-				this.withGravitinoBalls = false;
-				this.buriedTreasure = null;
-				this.additionalInfos = new AdditionalInfos();
-				this.resources = EnumSet.noneOf(Resources.class);
 			}
 			public void setPlanetStats(Stats.PlanetStats stats) {
 				this.stats = stats;
@@ -3487,6 +3483,7 @@ public class SaveGameData {
 						(hasExtremeBiome?"<Extr>":null),
 						(withWater?"<Water>":null),
 						(withGravitinoBalls?"<Grav>":null),
+						(withRemembranceTerminal?"<RememTerm>":null),
 						(buriedTreasure==null?null:"<"+buriedTreasure.name_EN+">")
 					);
 					if (!strExtraInfo.isEmpty()) strExtraInfo = " ("+strExtraInfo+")";

@@ -119,15 +119,16 @@ public class GameInfos {
 		int economyLevel;
 		String conflictLevelLabel;
 		String economyLevelLabel;
-		Boolean isUnexplored;
+		boolean isUnexplored;
 		Boolean hasAtlasInterface; 
 		Boolean hasBlackHole;
 		Long blackHoleTarget;
+		boolean withRemembranceTerminal;
 		
 		public UOD_SolarSystem(UniverseAddress ua) {
 			super(ua, Type.SolarSystem);
 			race = null;
-			isUnexplored = null;
+			isUnexplored = false;
 			starClass = null;
 			distanceToCenter = null;
 			conflictLevel = -1;
@@ -137,6 +138,7 @@ public class GameInfos {
 			hasAtlasInterface = null;
 			hasBlackHole = null;
 			blackHoleTarget = null;
+			withRemembranceTerminal = false;
 		}
 		public UOD_SolarSystem(SolarSystem sys) {
 			super(sys.getUniverseAddress(), Type.SolarSystem, sys);
@@ -151,16 +153,18 @@ public class GameInfos {
 			hasAtlasInterface = sys.hasAtlasInterface;
 			hasBlackHole = sys.hasBlackHole;
 			blackHoleTarget = (sys.blackHoleTarget==null || !sys.hasBlackHole)?null:sys.blackHoleTarget.getAddress();
+			withRemembranceTerminal = sys.withRemembranceTerminal;
 		}
 	}
 	
 	private static class UOD_Planet extends UOD_UniverseObject {
 		Universe.Planet.Biome biome;
+		boolean hasExtremeBiome;
 		boolean areSentinelsAggressive;
 		boolean withWater;
 		boolean withGravitinoBalls;
+		boolean withRemembranceTerminal;
 		Universe.Planet.BuriedTreasure buriedTreasure;
-		boolean hasExtremeBiome;
 		EnumSet<Universe.Planet.Resources> resources;
 		
 		public UOD_Planet(UniverseAddress ua) {
@@ -170,6 +174,7 @@ public class GameInfos {
 			areSentinelsAggressive = false;
 			withWater = false;
 			withGravitinoBalls = false;
+			withRemembranceTerminal = false;
 			buriedTreasure = null;
 			resources = EnumSet.noneOf(Universe.Planet.Resources.class);
 		}
@@ -180,6 +185,7 @@ public class GameInfos {
 			areSentinelsAggressive = planet.areSentinelsAggressive;
 			withWater = planet.withWater;
 			withGravitinoBalls = planet.withGravitinoBalls;
+			withRemembranceTerminal = planet.withRemembranceTerminal;
 			buriedTreasure = planet.buriedTreasure;
 			resources = EnumSet.copyOf(planet.resources);
 		}
@@ -381,6 +387,10 @@ public class GameInfos {
 						catch (NumberFormatException e) { system.blackHoleTarget = null; }
 						continue;
 					}
+					if (str.equals("remembrance terminal")) {
+						system.withRemembranceTerminal = true;
+						continue;
+					}
 					if (str.startsWith("class=")) {
 						valueStr = str.substring("class=".length());
 						try { system.starClass = Universe.SolarSystem.StarClass.valueOf(valueStr); }
@@ -437,6 +447,10 @@ public class GameInfos {
 					}
 					if (str.equals("gravitino balls")) {
 						planet.withGravitinoBalls = true;
+						continue;
+					}
+					if (str.equals("remembrance terminal")) {
+						planet.withRemembranceTerminal = true;
 						continue;
 					}
 					if (str.startsWith("buriedTreasure=")) {
@@ -568,9 +582,9 @@ public class GameInfos {
 					system.economyLevelLabel = uod_system.economyLevelLabel;
 					if (withOutput) SaveViewer.log_ln("   Economy Level Label of %s was defined: \"%s\"", objName, system.economyLevelLabel);
 				}
-				if (uod_system.isUnexplored!=null) {
+				if (uod_system.isUnexplored) {
 					system.isUnexplored = uod_system.isUnexplored;
-					if (withOutput) SaveViewer.log_ln("   %s was defined as unexplored: %s", objName, system.isUnexplored);
+					if (withOutput) SaveViewer.log_ln("   %s was defined as unexplored", objName);
 				}
 				if (uod_system.hasAtlasInterface!=null) {
 					system.hasAtlasInterface = uod_system.hasAtlasInterface;
@@ -583,6 +597,10 @@ public class GameInfos {
 				if (uod_system.blackHoleTarget!=null) {
 					system.blackHoleTarget = new UniverseAddress(uod_system.blackHoleTarget);
 					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole Target: %s", objName, system.blackHoleTarget);
+				}
+				if (uod_system.withRemembranceTerminal) {
+					system.withRemembranceTerminal = uod_system.withRemembranceTerminal;
+					if (withOutput) SaveViewer.log_ln("   %s has a Remembrance Terminal", objName);
 				}
 			}
 			
@@ -606,6 +624,10 @@ public class GameInfos {
 				if (uod_planet.withGravitinoBalls) {
 					planet.withGravitinoBalls = uod_planet.withGravitinoBalls;
 					if (withOutput) SaveViewer.log_ln("   %s has Gravitino Balls",objName);
+				}
+				if (uod_planet.withRemembranceTerminal) {
+					planet.withRemembranceTerminal = uod_planet.withRemembranceTerminal;
+					if (withOutput) SaveViewer.log_ln("   %s has Remembrance Terminal",objName);
 				}
 				if (uod_planet.buriedTreasure!=null) {
 					planet.buriedTreasure = uod_planet.buriedTreasure;
@@ -679,7 +701,7 @@ public class GameInfos {
 				if (uoData.oldname!=null) out.printf("oldname=%s\r\n",uoData.oldname);
 				
 				if (uod_system!=null) {
-					if (uod_system.isUnexplored!=null && uod_system.isUnexplored)
+					if (uod_system.isUnexplored)
 						out.printf("unexplored\r\n");
 					else {
 						if (uod_system.race              !=null) out.printf("race=%s\r\n",uod_system.race);
@@ -689,26 +711,28 @@ public class GameInfos {
 						if (uod_system.economyLevelLabel !=null) out.printf("economy_label=%s\r\n",uod_system.economyLevelLabel);
 					}
 					if (uod_system.hasAtlasInterface!=null) {
-						if (uod_system.hasAtlasInterface || SolarSystem.shouldHaveAtlasInterface(uod_system.universeAddress.solarSystemIndex))
+						//if (uod_system.hasAtlasInterface || SolarSystem.shouldHaveAtlasInterface(uod_system.universeAddress.solarSystemIndex))
 							out.printf("atlasinterface=%s\r\n",uod_system.hasAtlasInterface);
 					}
 					if (uod_system.hasBlackHole!=null) {
-						if (uod_system.hasBlackHole || SolarSystem.shouldHaveBlackHole(uod_system.universeAddress.solarSystemIndex))
+						//if (uod_system.hasBlackHole || SolarSystem.shouldHaveBlackHole(uod_system.universeAddress.solarSystemIndex))
 							out.printf("blackhole=%s\r\n",uod_system.hasBlackHole);
 					}
-					if (uod_system.blackHoleTarget !=null) out.printf("blackholetarget=%014X\r\n",uod_system.blackHoleTarget);
-					if (uod_system.starClass       !=null) out.printf("class=%s\r\n",uod_system.starClass);
-					if (uod_system.distanceToCenter!=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uod_system.distanceToCenter.doubleValue());
+					if (uod_system.blackHoleTarget  !=null) out.printf("blackholetarget=%014X\r\n",uod_system.blackHoleTarget);
+					if (uod_system.withRemembranceTerminal) out.printf("remembrance terminal\r\n");
+					if (uod_system.starClass        !=null) out.printf("class=%s\r\n",uod_system.starClass);
+					if (uod_system.distanceToCenter !=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uod_system.distanceToCenter.doubleValue());
 				}
 				
 				if (uod_planet!=null) {
-					if ( uod_planet.biome           !=null) out.printf("biome=%s%n",uod_planet.biome);
-					if ( uod_planet.hasExtremeBiome       ) out.printf("is extreme%n");
-					if ( uod_planet.areSentinelsAggressive) out.printf("aggrSentinels%n");
-					if ( uod_planet.withWater             ) out.printf("with water%n");
-					if ( uod_planet.withGravitinoBalls    ) out.printf("gravitino balls%n");
-					if ( uod_planet.buriedTreasure  !=null) out.printf("buriedTreasure=%s%n",uod_planet.buriedTreasure);
-					if (!uod_planet.resources.isEmpty()   ) out.printf("resources=%s%n",String.join(",", Universe.Planet.Resources.getStringIterable(uod_planet.resources)));
+					if ( uod_planet.biome            !=null) out.printf("biome=%s%n",uod_planet.biome);
+					if ( uod_planet.hasExtremeBiome        ) out.printf("is extreme%n");
+					if ( uod_planet.areSentinelsAggressive ) out.printf("aggrSentinels%n");
+					if ( uod_planet.withWater              ) out.printf("with water%n");
+					if ( uod_planet.withGravitinoBalls     ) out.printf("gravitino balls%n");
+					if ( uod_planet.withRemembranceTerminal) out.printf("remembrance terminal%n");
+					if ( uod_planet.buriedTreasure   !=null) out.printf("buriedTreasure=%s%n",uod_planet.buriedTreasure);
+					if (!uod_planet.resources.isEmpty()    ) out.printf("resources=%s%n",String.join(",", Universe.Planet.Resources.getStringIterable(uod_planet.resources)));
 				}
 				
 				if (uod_uniObj!=null) {
