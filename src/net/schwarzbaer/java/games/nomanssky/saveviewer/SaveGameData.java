@@ -1213,7 +1213,7 @@ public class SaveGameData {
 	}
 
 	public static class SpaceShip extends Vehicle {
-		public enum VehicleClass { Transporter, Fighter, Shuttle, Exotic }
+		public enum VehicleClass { Transporter, Fighter, Shuttle, Explorer, Exotic }
 		
 		public boolean usesOldColors = false;
 		public VehicleClass shipClass = null;
@@ -1222,10 +1222,11 @@ public class SaveGameData {
 		@Override protected String getTypeLabel() { return "SpaceShip"; }
 		@Override protected void setVehicleClass(String resourcefilename) {
 			switch (resourcefilename) {
-			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Transporter; break;
-			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"  : shipClass = VehicleClass.Fighter; break;
-			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Shuttle; break;
-			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Exotic; break;
+			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Transporter; break;
+			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"     : shipClass = VehicleClass.Fighter; break;
+			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"      : shipClass = VehicleClass.Shuttle; break;
+			case "MODELS/COMMON/SPACECRAFT/SCIENTIFIC/SCIENTIFIC_PROC.SCENE.MBIN": shipClass = VehicleClass.Explorer; break;
+			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"      : shipClass = VehicleClass.Exotic; break;
 			default:
 				SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
 			}
