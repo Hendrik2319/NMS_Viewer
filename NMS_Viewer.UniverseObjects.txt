@@ -5494,6 +5494,25 @@ resources=Cu,CO2,NaCl
 short=
 info=<ParsedPlanetaryResources> Cu, CO2, NaCl
 
+[Sys002E00FCD7F684]
+name=Gohanji XV
+race=Vykeen
+conflict=2
+conflict_label=gereizt
+economy=2
+economy_label=zufriedenstellend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=4 Planeten
+info=
+
+[Pln402E00FCD7F684]
+name=Despinan III
+biome=Toxic
+buriedTreasure=AncientBones
+resources=Cu,NH3,Na
+
 [Sys006A00FCD7F684]
 name=Onubri IV
 race=Gek
@@ -5724,3 +5743,25 @@ oldname=Ezawasahirish
 
 [Pln205000FE1FA68F]
 oldname=Itachita Irli
+
+[Reg000000020E56D7]
+name=Ihtini-Nebel
+
+[Sys015800020E56D7]
+name=Erplace-Pati
+unexplored
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln415800020E56D7]
+name=Yuburn
+biome=Lush
+is extreme
+with water
+buriedTreasure=AncientBones
+resources=In_,Pf,Fe__
+short=Portal
+info=+6.01, -37.70

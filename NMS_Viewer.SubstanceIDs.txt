@@ -97,7 +97,7 @@
 ^GAS3.type=Resource
 ^GAS3.symbol=N
 ^GAS3.image=Substance.Nitrogen.NEXT.png
-^GAS3.imageBG=C68C1E
+^GAS3.imageBG=DE921F
 ^GREEN2=Emeril
 ^GREEN2.type=Resource
 ^GREEN2.symbol=Em
