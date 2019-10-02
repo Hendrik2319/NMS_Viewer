@@ -218,7 +218,7 @@ public class SimplePanels {
 			appendln("When Aquired     : %s", fr.aquired         ==null?"":fr.aquired          );
 			appendln("Expeditions      : %s", fr.expeditions     ==null?"":fr.expeditions      );
 			appendln("Successful Fights: %s", fr.successfulFights==null?"":fr.successfulFights );
-			appendln("Failed Fights    : %s", fr.successfulFights==null?"":fr.failedFights_Q   );
+			appendln("Failed Fights    : %s", fr.failedFights_Q  ==null?"":fr.failedFights_Q   );
 			appendln("Damages          : %s", fr.damages         ==null?"":fr.damages          );
 			appendln("Fuel Consumption : %s", fr.fuelConsumption ==null?"":String.format("%d t / 250 ly", fr.fuelConsumption) );
 			appendln("Fuel Capacity    : %s", fr.fuelCapacity_Q  ==null?"":fr.fuelCapacity_Q   );
@@ -249,24 +249,24 @@ public class SimplePanels {
 		private enum ColumnID implements SimplifiedColumnIDInterface {
 			// [80, 80, 80, 120, 70, 70, 70, 93, 40, 40, 40, 40, 90, 150]
 			// [80, 80, 80, 120, 70, 70, 70, 80, 50, 50, 50, 50, 60, 150, 163, 167]
-			Index         ("#"                  ,   Integer.class, 35, -1,  35,  35),
-			Name          ("Name"               ,    String.class, 35, -1, 180, 180),
-			ShipType      ("Ship Type"          ,    String.class, 35, -1,  80,  80),
-			CrewRace      ("Crew Race"          ,    String.class, 35, -1,  80,  80),
-			Aquired       ("Aquired"            , TimeStamp.class, 35, -1, 120, 120),
-			Fights        ("Fights"             ,      Long.class, 35, -1,  70,  70),
-			Expeditions   ("Expeditions"        ,      Long.class, 35, -1,  70,  70),
-			Damages       ("Damages"            ,      Long.class, 35, -1,  70,  70),
-			FuelCons      ("Fuel Consumption"   ,    String.class, 35, -1,  80,  80),
-			Combat        ("Combat"             ,      Long.class, 35, -1,  50,  50),
-			Exploration   ("Exploration"        ,      Long.class, 35, -1,  50,  50),
-			Mining        ("Mining"             ,      Long.class, 35, -1,  50,  50),
-			Diplomacy     ("Diplomacy"          ,      Long.class, 35, -1,  50,  50),
-			Modifications ("Modifications"      ,    String.class, 35, -1,  50,  50),
-			CurrDamage    ("Cur.Dam."           ,    String.class, 35, -1,  50,  50),
-			UnidentValues ("Unidentified Values",    String.class, 35, -1, 150, 150),
-			Seed1         ("Seed 1"             , SeedValue.class, 35, -1, 170, 170),
-			Seed2         ("Seed 2"             , SeedValue.class, 35, -1, 170, 170),
+			Index         ("#"               ,   Integer.class, 35, -1,  35,  35),
+			Name          ("Name"            ,    String.class, 35, -1, 180, 180),
+			ShipType      ("Ship Type"       ,    String.class, 35, -1,  80,  80),
+			CrewRace      ("Crew Race"       ,    String.class, 35, -1,  80,  80),
+			Aquired       ("Aquired"         , TimeStamp.class, 35, -1, 120, 120),
+			Fights        ("Fights"          ,      Long.class, 35, -1,  70,  70),
+			Expeditions   ("Expeditions"     ,      Long.class, 35, -1,  70,  70),
+			Damages       ("Damages"         ,      Long.class, 35, -1,  70,  70),
+			FuelCons      ("Fuel Consumption",    String.class, 35, -1,  70,  70),
+			Combat        ("Combat"          ,      Long.class, 35, -1,  50,  50),
+			Exploration   ("Exploration"     ,      Long.class, 35, -1,  50,  50),
+			Mining        ("Mining"          ,      Long.class, 35, -1,  50,  50),
+			Diplomacy     ("Diplomacy"       ,      Long.class, 35, -1,  50,  50),
+			Modifications ("Modifications"   ,    String.class, 35, -1,  50,  50),
+			CurrDamage    ("Cur.Dam."        ,    String.class, 35, -1,  50,  50),
+			ModelSeed     ("ModelSeed"       , SeedValue.class, 35, -1, 170, 170),
+			HomeSeed      ("HomeSeed"        , SeedValue.class, 35, -1, 170, 170),
+			UnidentValues ("Unidentified",    String.class, 35, -1,  70,  70),
 			;
 			
 			private SimplifiedColumnConfig columnConfig;
@@ -313,9 +313,10 @@ public class SimplePanels {
 				case Modifications: return showValue(fr.modifications);
 				case CurrDamage   : return fr.damageValue==null || fr.damageValue==0?"":"damaged ("+fr.damageValue+")";
 				
+				case ModelSeed    : return fr.modelSeed;
+				case HomeSeed     : return fr.homeSeed;
+				
 				case UnidentValues: return fr.unidentified.getUnidentifiedLongs();
-				case Seed1        : return fr.modelSeed;
-				case Seed2        : return fr.homeSeed;
 				}
 				return null;
 			}

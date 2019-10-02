@@ -76,8 +76,8 @@ public class SaveGameData {
 	public Vector<Frigate> frigates = null;
 	public Vector<FrigateMission> frigateMissions = null;
 	public Freighter  freighter  = null;
-	public SpaceShips spaceShips = null;
-	public Exocrafts  exocrafts  = null;
+	public VehicleGroup<SpaceShip> spaceShips = null;
+	public VehicleGroup<Exocraft>  exocrafts  = null;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -112,8 +112,8 @@ public class SaveGameData {
 		storedInteractions = StoredInteraction.parse(this);
 		teleportEndpoints = TeleportEndpoints.parse(this);
 		freighter  = Freighter .parse(this);
-		spaceShips = SpaceShips.parse(this);
-		exocrafts  = Exocrafts .parse(this);
+		spaceShips = VehicleGroup.parseSpaceShips(this);
+		exocrafts  = VehicleGroup.parseExocrafts(this);
 		frigates   = Frigate   .parse(this);
 		parseFrigateMissions();
 		universe.sort();
@@ -1318,10 +1318,35 @@ public class SaveGameData {
 		}
 	}
 
-	public static class SpaceShips extends VehicleGroup<SpaceShip> {
+	public static class VehicleGroup<VehicleType extends Vehicle> {
+		
+		public Long primary = null;
+		public VehicleType[] vehicles = null;
 
-		private static SpaceShips parse(SaveGameData data) {
-			SpaceShips ships = new SpaceShips();
+		private static <V extends Vehicle> void parseArray(VehicleGroup<V> group, SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<V> createVehicle, Function<Integer,V[]> createArray) {
+			group.primary = primary;
+			
+			if (json_Array!=null) {
+				group.vehicles = createArray.apply(json_Array.size());
+				for (int i=0; i<json_Array.size(); ++i)
+					group.vehicles[i] = Vehicle.parse(data, getObject(json_Array.get(i)), i, arraySourcePath+"["+i+"]", createVehicle, i==group.primary);
+			}	
+		}
+
+		public static VehicleGroup<Exocraft> parseExocrafts(SaveGameData data) {
+			VehicleGroup<Exocraft> exocrafts = new VehicleGroup<Exocraft>();
+			parseArray(
+				exocrafts, 
+				data,
+				getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
+				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryVehicle"),
+				Exocraft::new, Exocraft[]::new
+			);
+			return exocrafts;
+		}
+
+		public static VehicleGroup<SpaceShip> parseSpaceShips(SaveGameData data) {
+			VehicleGroup<SpaceShip> ships = new VehicleGroup<SpaceShip>();
 			parseArray(
 				ships,
 				data,
@@ -1339,36 +1364,6 @@ public class SaveGameData {
 					}
 			}
 			return ships;
-		}
-	}
-	public static class Exocrafts extends VehicleGroup<Exocraft> {
-
-		private static Exocrafts parse(SaveGameData data) {
-			Exocrafts exocrafts = new Exocrafts();
-			parseArray(
-				exocrafts, 
-				data,
-				getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
-				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryVehicle"),
-				Exocraft::new, Exocraft[]::new
-			);
-			return exocrafts;
-		}
-	}
-
-	public static abstract class VehicleGroup<VehicleType extends Vehicle> {
-		
-		public Long primary = null;
-		public VehicleType[] vehicles = null;
-
-		protected static <V extends Vehicle> void parseArray(VehicleGroup<V> group, SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<V> createVehicle, Function<Integer,V[]> createArray) {
-			group.primary = primary;
-			
-			if (json_Array!=null) {
-				group.vehicles = createArray.apply(json_Array.size());
-				for (int i=0; i<json_Array.size(); ++i)
-					group.vehicles[i] = Vehicle.parse(data, getObject(json_Array.get(i)), i, arraySourcePath+"["+i+"]", createVehicle, i==group.primary);
-			}	
 		}
 	}
 
@@ -1712,6 +1707,7 @@ public class SaveGameData {
 			COMBAT_SEC_3  ("Tarngerät"                     ,"Kampf: +6"),
 			COMBAT_SEC_4  ("Ultraschallwaffe"              ,"Kampf: +2"),
 			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
+			COMBAT_SEC_6  ("Gigantische Kanonen"           ,"Kampf: +6"),
 			COMBAT_TER_1  ("Versteckte Waffen"             ,"Kampf: +1"),
 			COMBAT_TER_2  ("Munitionshersteller"           ,"Kampf: +2"),
 			COMBAT_TER_3  ("Verstärkter Rumpf"             ,"Kampf: +3"),
