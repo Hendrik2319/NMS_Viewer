@@ -10,6 +10,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javax.swing.BorderFactory;
@@ -29,6 +32,7 @@ import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.LabelRendererComponent;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedRowSorter.RowSorterListener;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -116,6 +120,7 @@ public class TableView {
 		private RowSorterListener rowSorterListener;
 		private int[] selectedRowsM;
 		private Vector<ContextMenuInvokeListener> cmiListeners;
+		private SimplifiedTableModel<?> simplifiedTableModel;
 		
 		public SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super();
@@ -125,6 +130,7 @@ public class TableView {
 			this.selectedRowsM = null;
 			this.rowSorterListener = null;
 			this.overallCellRenderer = null;
+			this.simplifiedTableModel = null;
 			if (disableAutoResize)
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 			if (installDebugContextMenu) {
@@ -212,9 +218,13 @@ public class TableView {
 			this.rowSorterListener = rowSorterListener;
 			if (rowSorter!=null && rowSorterListener!=null) rowSorter.addListener(rowSorterListener);
 		}
+		
+		public SimplifiedTableModel<?> getModel_SimplifiedTableModel() {
+			return simplifiedTableModel;
+		}
 
 		public void setModel(SimplifiedTableModel<?> dataModel) {
-			super.setModel(dataModel);
+			super.setModel(this.simplifiedTableModel = dataModel);
 			dataModel.setColumnWidths(this);
 			if (useRowSorter) {
 				setRowSorter(rowSorter = new NewRowSorter(dataModel));
@@ -265,350 +275,109 @@ public class TableView {
 			return comparator;
 		}
 	}
-/*	
-	static class SimplifiedRowSorter extends RowSorter<SimplifiedTableModel<?>> {
+	
+	public static class VerySimpleTable<DataType> extends SimplifiedTable {
+		private static final long serialVersionUID = -5521097765178758216L;
+		private VerySimpleTableModel<DataType> tableModel;
 
-		private SimplifiedTableModel<?> model;
-		private LinkedList<RowSorter.SortKey> keys;
-		private Integer[] modelRowIndexes;
-		private int[] viewRowIndexes;
-
-		SimplifiedRowSorter(SimplifiedTableModel<?> model) {
-			this.model = model;
-			this.keys = new LinkedList<RowSorter.SortKey>();
-			this.modelRowIndexes = null;
-			this.viewRowIndexes = null;
+		public VerySimpleTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
+			super(name, disableAutoResize, installDebugContextMenu, useRowSorter);
+		}
+		public VerySimpleTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, DataType[] data, ColumnID<DataType>[] columns) {
+			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
+			setData(data, columns);
+		}
+		public VerySimpleTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, Vector<DataType> data, ColumnID<DataType>[] columns) {
+			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
+			setData(data, columns);
+		}
+		public VerySimpleTable(String name) {
+			this(name, true, true, true);
+		}
+		public VerySimpleTable(String name, DataType[] data, ColumnID<DataType>[] columns) {
+			this(name, true, true, true, data, columns);
+		}
+		public VerySimpleTable(String name, Vector<DataType> data, ColumnID<DataType>[] columns) {
+			this(name, true, true, true, data, columns);
+		}
+		public void setData(DataType[] data, ColumnID<DataType>[] columns) {
+			setModel(tableModel = new VerySimpleTableModel<DataType>(data, columns));
+		}
+		public void setData(Vector<DataType> data, ColumnID<DataType>[] columns) {
+			setModel(tableModel = new VerySimpleTableModel<DataType>(data, columns));
+		}
+		public VerySimpleTableModel<DataType> getModel_VerySimpleTableModel() {
+			return tableModel;
 		}
 		
-		public void setModel(SimplifiedTableModel<?> model) {
-			this.model = model;
-			this.keys = new LinkedList<RowSorter.SortKey>();
-			sort();
-		}
-
-		@Override public SimplifiedTableModel<?> getModel() { return model; }
-
-		private void log(String format, Object... values) {
-			//System.out.printf(String.format("[%08X:%s] ", this.hashCode(), name)+format+"\r\n",values);
-		}
-
-		private static String toString(List<? extends RowSorter.SortKey> keys) {
-			if (keys==null) return "<null>";
-			String str = "";
-			for (RowSorter.SortKey key:keys) {
-				if (!str.isEmpty()) str+=", ";
-				str+=key.getColumn()+":"+key.getSortOrder();
-			}
-			if (!str.isEmpty()) str = "[ "+str+" ]";
-			return str;
+		public ColumnID<DataType> getColumn(int i) {
+			if (tableModel == null) return null;
+			return tableModel.columns[i];
 		}
 		
-		private void sort() {
-			if (model==null) {
-				this.modelRowIndexes = null;
-				this.viewRowIndexes = null;
-				return;
-			}
-			
-			log("sort() -> %s",toString(keys));
-			
-			int rowCount = getModelRowCount();
-			if (modelRowIndexes==null || modelRowIndexes.length!=rowCount)
-				modelRowIndexes = new Integer[rowCount];
-			
-			for (int i=0; i<modelRowIndexes.length; ++i)
-				modelRowIndexes[i] = i;
-			
-			Comparator<Integer> comparator = null;
-			
-			int unsortedRows = model.getUnsortedRowsCount();
-			if (0<unsortedRows)
-				comparator = Comparator.comparingInt((Integer row)->(row<unsortedRows?row:unsortedRows));
-			
-			for (SortKey key:keys) {
-				SortOrder sortOrder = key.getSortOrder();
-				if (sortOrder==SortOrder.UNSORTED) continue;
-				int column = key.getColumn();
+		public void addSelectionListener(BiConsumer<DataType,Integer> selectionChanged) {
+			getSelectionModel().addListSelectionListener(e->{
+				if (tableModel==null) return;
 				
-				if      (model.getColumnClass(column) == Boolean           .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Boolean           )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == String            .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(String            )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Long              .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Long              )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Integer           .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Integer           )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Double            .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Double            )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == Float             .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Float             )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == TimeStamp         .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(TimeStamp         )model.getValueAt(row,column));
-				else if (model.getColumnClass(column) == GeneralizedID.Type.class) comparator = addComparator(comparator,sortOrder,(Integer row)->(GeneralizedID.Type)model.getValueAt(row,column));
-				else comparator = addComparator(comparator,sortOrder,
-							(Integer row)->{
-								Object object = model.getValueAt(row,column);
-								if (object==null) return null;
-								return object.toString();
-							});
+				int rowIndexV = getSelectedRow();
+				if (rowIndexV<0) { selectionChanged.accept(null,null); return; }
+				
+				int rowIndexM = convertRowIndexToModel(rowIndexV);
+				selectionChanged.accept(tableModel.getValue(rowIndexM),rowIndexM);
+			});
+			
+		}
+		
+		public static class VerySimpleTableModel<DataType> extends Tables.SimplifiedTableModel<ColumnID<DataType>> {
+
+			private ColumnID<DataType>[] columns;
+			private Vector<DataType> dataVector;
+			private DataType[] dataArray;
+
+			public VerySimpleTableModel(DataType[] data, ColumnID<DataType>[] columns) {
+				this(columns,null,data);
+			}
+			public VerySimpleTableModel(Vector<DataType> data, ColumnID<DataType>[] columns) {
+				this(columns,data,null);
+			}
+			private VerySimpleTableModel(ColumnID<DataType>[] columns, Vector<DataType> dataVector, DataType[] dataArray) {
+				super(columns);
+				this.columns = columns;
+				this.dataVector = dataVector;
+				this.dataArray = dataArray;
 			}
 			
-			if (comparator!=null)
-				Arrays.sort(modelRowIndexes, comparator);
+			@Override public int getRowCount() {
+				return dataVector!=null ? dataVector.size() : dataArray!=null ? dataArray.length : 0;
+			}
+
+			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
+				if (rowIndex<0 || rowIndex>=dataVector.size()) return null;
+				return columnID.getValue.apply(getValue(rowIndex),rowIndex);
+			}
+			private DataType getValue(int rowIndex) {
+				return dataVector!=null ? dataVector.get(rowIndex) : dataArray!=null ? dataArray[rowIndex] : null;
+			}
+		}
+		
+		public static class ColumnID<DataType> extends Tables.SimplifiedColumnConfig implements Tables.SimplifiedColumnIDInterface {
 			
-			if (viewRowIndexes==null || viewRowIndexes.length!=rowCount)
-				viewRowIndexes = new int[rowCount];
-			for (int i=0; i<viewRowIndexes.length; ++i) viewRowIndexes[i] = -1;
-			for (int i=0; i<modelRowIndexes    .length; ++i) viewRowIndexes[modelRowIndexes[i]] = i;
-			
-			fireSortOrderChanged();
-		}
-		
-		private <U extends Comparable<? super U>> Comparator<Integer> addComparator(Comparator<Integer> comp, SortOrder sortOrder, Function<? super Integer,? extends U> keyExtractor) {
-			if (sortOrder==SortOrder.DESCENDING) {
-				if (comp==null) comp = Comparator     .comparing    (keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
-				else            comp = comp.reversed().thenComparing(keyExtractor,Comparator.nullsFirst(Comparator.naturalOrder()));
-				return comp.reversed();
-			} else {
-				if (comp==null) comp = Comparator     .comparing    (keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
-				else            comp = comp           .thenComparing(keyExtractor,Comparator.nullsLast(Comparator.naturalOrder()));
-				return comp;
+			private BiFunction<DataType, Integer, Object> getValue;
+
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<DataType,Object> getValue) {
+				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, (d,i)->getValue.apply(d));
 			}
-		}
-		
-		
-		@Override
-		public void toggleSortOrder(int column) {
-			RemovePred pred = new RemovePred(column);
-			keys.removeIf(pred);
-			if (pred.oldSortOrder == SortOrder.ASCENDING)
-				keys.addFirst(new SortKey(column, SortOrder.DESCENDING));
-			else
-				keys.addFirst(new SortKey(column, SortOrder.ASCENDING));
-			log("toggleSortOrder( %d )", column);
-			sort();
-		}
-
-		private static class RemovePred implements Predicate<SortKey> {
-			private int column;
-			private SortOrder oldSortOrder;
-			public RemovePred(int column) {
-				this.column = column;
-				this.oldSortOrder = SortOrder.UNSORTED;
-			}
-			@Override public boolean test(SortKey k) {
-				if (k.getColumn()==column) {
-					oldSortOrder = k.getSortOrder();
-					return true;
-				}
-				return false;
-			}
-		}
-
-		@Override
-		public void setSortKeys(List<? extends RowSorter.SortKey> keys) {
-			if (keys==null) this.keys = new LinkedList<RowSorter.SortKey>();
-			else            this.keys = new LinkedList<RowSorter.SortKey>(keys);
-			log("setSortKeys( %s )",toString(this.keys));
-		}
-
-		@Override
-		public List<? extends RowSorter.SortKey> getSortKeys() {
-			//log("getSortKeys()");
-			return keys;
-		}
-
-		@Override
-		public int convertRowIndexToModel(int index) {
-			if (modelRowIndexes==null) return index;
-			if (index<0) return -1;
-			if (index>=modelRowIndexes.length) return -1;
-			return modelRowIndexes[index];
-		}
-
-		@Override
-		public int convertRowIndexToView(int index) {
-			if (viewRowIndexes==null) return index;
-			if (index<0) return -1;
-			if (index>=viewRowIndexes.length) return -1;
-			return viewRowIndexes[index];
-		}
-
-		@Override public int getViewRowCount() { return getModelRowCount(); }
-		@Override public int getModelRowCount() { if (model==null) return 0; return model.getRowCount(); }
-
-		@Override public void modelStructureChanged() { log("modelStructureChanged()"); sort(); }
-		@Override public void allRowsChanged() { log("allRowsChanged()"); sort(); }
-		@Override public void rowsInserted(int firstRow, int endRow) { log("rowsInserted( %d, %d )", firstRow, endRow); sort(); }
-		@Override public void rowsDeleted(int firstRow, int endRow) { log("rowsDeleted( %d, %d )", firstRow, endRow); sort(); }
-		@Override public void rowsUpdated(int firstRow, int endRow) { log("rowsUpdated( %d, %d )", firstRow, endRow); sort(); }
-		@Override public void rowsUpdated(int firstRow, int endRow, int column) { log("rowsUpdated( %d, %d, %d )", firstRow, endRow, column); sort();
-		}
-		
-	}
-*/
-/*	
-	public static abstract class SimplifiedTableModel<ColumnID extends Enum<ColumnID> & Tables.SimplifiedColumnIDInterface> implements TableModel {
-		
-		protected ColumnID[] columns;
-		private Vector<TableModelListener> tableModelListeners;
-	
-		protected SimplifiedTableModel(ColumnID[] columns) {
-			this.columns = columns;
-			tableModelListeners = new Vector<>();
-		}
-	
-		@Override public void addTableModelListener(TableModelListener l) { tableModelListeners.add(l); }
-		@Override public void removeTableModelListener(TableModelListener l) { tableModelListeners.remove(l); }
-		
-		protected void fireTableModelEvent(TableModelEvent e) {
-			for (TableModelListener tml:tableModelListeners)
-				tml.tableChanged(e);
-		}
-		protected void fireTableColumnUpdate(int columnIndex) {
-			if (getRowCount()>0)
-				fireTableModelEvent(new TableModelEvent(this, 0, getRowCount()-1, columnIndex, TableModelEvent.UPDATE));
-		}
-		protected void fireTableCellUpdate(int rowIndex, int columnIndex) {
-			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, columnIndex, TableModelEvent.UPDATE));
-		}
-		protected void fireTableRowAdded(int rowIndex) {
-			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
-		}
-		protected void fireTableRowRemoved(int rowIndex) {
-			fireTableModelEvent(new TableModelEvent(this, rowIndex, rowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
-		}
-		protected void fireTableRowsRemoved(int firstRowIndex, int lastRowIndex) {
-			fireTableModelEvent(new TableModelEvent(this, firstRowIndex, lastRowIndex, TableModelEvent.ALL_COLUMNS, TableModelEvent.DELETE));
-		}
-		protected void fireTableUpdate() {
-			fireTableModelEvent(new TableModelEvent(this));
-		}
-		protected void fireTableStructureUpdate() {
-			fireTableModelEvent(new TableModelEvent(this,TableModelEvent.HEADER_ROW));
-		}
-		
-		public void initiateColumnUpdate(ColumnID columnID) {
-			int columnIndex = getColumn( columnID );
-			if (columnIndex>=0) fireTableColumnUpdate(columnIndex);
-		}
-
-		@Override public abstract int getRowCount();
-		public abstract Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID);
-		
-		public int getUnsortedRowsCount() { return 0; }
-		
-		protected ColumnID getColumnID(int columnIndex) {
-			if (columnIndex<0) return null;
-			if (columnIndex<columns.length) return columns[columnIndex];
-			return null;
-		}
-		public int getColumn( ColumnID columnID ) {
-			for (int i=0; i<columns.length; ++i)
-				if (columns[i]==columnID)
-					return i;
-			return -1;
-		}
-		
-		@Override public int getColumnCount() { return columns.length; }
-		
-		@Override
-		public String getColumnName(int columnIndex) {
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return null;
-			return columnID.getColumnConfig().name; //getName();
-		}
-	
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return null;
-			return columnID.getColumnConfig().columnClass; //getColumnClass();
-		}
-	
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			if (rowIndex<0) return null;
-			if (rowIndex>=getRowCount()) return null;
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return null;
-			return getValueAt(rowIndex, columnIndex, columnID);
-		}
-	
-		@Override public boolean isCellEditable(int rowIndex, int columnIndex) {
-			if (rowIndex<0) return false;
-			if (rowIndex>=getRowCount()) return false;
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return false;
-			return isCellEditable(rowIndex, columnIndex, columnID);
-		}
-		protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) { return false; }
-	
-		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			if (rowIndex<0) return;
-			if (rowIndex>=getRowCount()) return;
-			ColumnID columnID = getColumnID(columnIndex);
-			if (columnID==null) return;
-			setValueAt(aValue, rowIndex, columnIndex, columnID);
-		}
-		protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ColumnID columnID) {}
-	
-		public void setColumnWidths(JTable table) {
-			TableColumnModel columnModel = table.getColumnModel();
-			for (int i=0; i<columnModel.getColumnCount(); ++i) {
-				ColumnID columnID = getColumnID(i);
-				if (columnID!=null) {
-					Tables.SimplifiedColumnConfig config = columnID.getColumnConfig();
-					setColumnWidth(columnModel.getColumn(i), config.minWidth, config.maxWidth, config.prefWidth, config.currentWidth);
-				}
-			}
-		}
-	
-		private void setColumnWidth(TableColumn column, int min, int max, int preferred, int width) {
-			if (min>=0) column.setMinWidth(min);
-			if (max>=0) column.setMinWidth(max);
-			if (preferred>=0) column.setPreferredWidth(preferred);
-			if (width    >=0) column.setWidth(width);
-		}
-	}
-*/	
-/*	
-	public static class NonStringRenderer<T> implements ListCellRenderer<T>, TableCellRenderer {
-		
-		private RendererComponent comp;
-		private Function<Object, String> converter;
-		
-		public NonStringRenderer(Function<Object,String> converter) {
-			this.converter = converter;
-			this.comp = new RendererComponent();
-			comp.setPreferredSize(new Dimension(1,16));
-		}
-		
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			Color bgColor   = isSelected ? table.getSelectionBackground() : table.getBackground();
-			Color textColor = isSelected ? table.getSelectionForeground() : table.getForeground();
-			comp.set(converter.apply(value),bgColor,textColor);
-			return comp;
-		}
-
-		@Override
-		public Component getListCellRendererComponent(JList<? extends T> list, T value, int index, boolean isSelected, boolean cellHasFocus) {
-			Color bgColor   = isSelected ? list.getSelectionBackground() : null; //list.getBackground();
-			Color textColor = isSelected ? list.getSelectionForeground() : list.getForeground();
-			comp.set(converter.apply(value),bgColor,textColor);
-			return comp;
-		}
-
-		public static class RendererComponent extends LabelRendererComponent {
-			private static final long serialVersionUID = 1870151775725517505L;
-
-			private RendererComponent() {
-				setOpaque(true);
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<DataType, Integer, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+				this.getValue = getValue;
 			}
 
-			public void set(String value, Color bgColor, Color textColor) {
-				setOpaque(bgColor!=null);
-				setBackground(bgColor);
-				setForeground(textColor);
-				setText(value==null?"":value);
+			@Override public SimplifiedColumnConfig getColumnConfig() {
+				return this;
 			}
 		}
 	}
-*/	
+	
 	public static class UpgradeCategoryRenderer extends IconTextRenderer<UpgradeCategory,UpgradeCategory> {
 		
 		public UpgradeCategoryRenderer() { super(50,16); }

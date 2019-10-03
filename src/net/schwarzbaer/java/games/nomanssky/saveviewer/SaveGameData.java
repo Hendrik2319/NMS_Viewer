@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -33,6 +34,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.AssignmentExistsException;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MarkerStack.Marker;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MissionProgress.Mission;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase.BaseType;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints.TeleportHost;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
@@ -73,11 +76,22 @@ public class SaveGameData {
 	public Vector<PersistentPlayerBase> persistentPlayerBases = null;
 	public Vector<StoredInteraction> storedInteractions = null;
 	public Vector<TeleportEndpoints> teleportEndpoints = null;
+	
 	public Vector<Frigate> frigates = null;
 	public Vector<FrigateMission> frigateMissions = null;
+	
 	public Freighter  freighter  = null;
 	public VehicleGroup<SpaceShip> spaceShips = null;
 	public VehicleGroup<Exocraft>  exocrafts  = null;
+	
+	public Vector<Mission> missionProgress = null;
+	public Vector<Marker> markerStack = null;
+	public Vector<UniverseAddress> AtlasStationAdressData = null;
+	public Vector<UniverseAddress> NewAtlasStationAdressData = null;
+	public Vector<UniverseAddress> VisitedAtlasStationsData = null;
+	public Vector<String> KnownQuicksilverSpecials = null;
+	public Vector<String> KnownRefinerRecipes = null;
+	public Vector<VisitedSystems.VisitedSystem> visitedSystems = null;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index) {
 		error = Error.NoError;
@@ -100,6 +114,7 @@ public class SaveGameData {
 	public SaveGameData parse(boolean isNEXT) {
 		if (!isNEXT) return this;
 		
+		visitedSystems = VisitedSystems.parse(this);
 		general.parse();
 		parseStats();
 		knownBlueprints = KnownBlueprints.parse(this);
@@ -110,6 +125,16 @@ public class SaveGameData {
 		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
 		storedInteractions = StoredInteraction.parse(this);
+		
+		missionProgress = MissionProgress.parse(this);
+		markerStack = MarkerStack.parse(this);
+		AtlasStationAdressData    = parseUniverseAddressStructureArray("AtlasStationAdressData"   , json_data, "PlayerStateData", "AtlasStationAdressData");
+		NewAtlasStationAdressData = parseUniverseAddressStructureArray("NewAtlasStationAdressData", json_data, "PlayerStateData", "NewAtlasStationAdressData");
+		VisitedAtlasStationsData  = parseUniverseAddressStructureArray("VisitedAtlasStationsData" , json_data, "PlayerStateData", "VisitedAtlasStationsData");
+		
+		KnownQuicksilverSpecials = parseStringArray("[KnownQuicksilverSpecials]", json_data, "PlayerStateData", "[KnownQuicksilverSpecials]");
+		KnownRefinerRecipes      = parseStringArray("[KnownRefinerRecipes]"     , json_data, "PlayerStateData", "[KnownRefinerRecipes]");
+		
 		teleportEndpoints = TeleportEndpoints.parse(this);
 		freighter  = Freighter .parse(this);
 		spaceShips = VehicleGroup.parseSpaceShips(this);
@@ -254,7 +279,7 @@ public class SaveGameData {
 	}
 
 	private static UniverseAddress parseUniverseAddressStructure(JSON_Object data, Object... path) {
-		JSON_Object universeAddressObj = getObjectValue(data, path);
+		JSON_Object universeAddressObj = path.length==0 ? data : getObjectValue(data, path);
 		if (universeAddressObj==null) return null;
 		
 		Long galaxyIndexLong = getIntegerValue(universeAddressObj,"RealityIndex");
@@ -283,6 +308,65 @@ public class SaveGameData {
 		int planetIndex = (int)(long)planetIndexLong;
 		
 		return new UniverseAddress(galaxyIndex, voxelX, voxelY, voxelZ, solarSystemIndex, planetIndex);
+	}
+	
+	private static Vector<UniverseAddress> parseUniverseAddressStructureArray(String sourceLabel, JSON_Object data, Object... path) {
+		return parseObjectArray(SaveGameData::parseUniverseAddressStructure, sourceLabel, data, path);
+	}
+	@SuppressWarnings("unused")
+	private static Vector<UniverseAddress> parseUniverseAddressFieldArray(String sourceLabel, JSON_Object data, Object... path) {
+		return parseArray(value->{
+			Long addr = getInteger(value);
+			if (addr==null) return null;
+			return new UniverseAddress(addr);
+		}, sourceLabel, data, path);
+	}
+
+	private static <ValueType> Vector<ValueType> parseObjectArray(Supplier<ValueType> createNew, BiConsumer<ValueType,JSON_Object> parseValues, String sourceLabel, JSON_Object data, Object... path) {
+		return parseObjectArray(objectValue->{
+			ValueType dataItem = createNew.get();
+			parseValues.accept(dataItem,objectValue);
+			return dataItem;
+		}, sourceLabel, data, path);
+	}
+	
+	private static <ValueType> Vector<ValueType> parseObjectArray(Function<JSON_Object,ValueType> parseObject, String sourceLabel, JSON_Object data, Object... path) {
+		return parseArray(value->{
+			JSON_Object objectValue = getObject(value);
+			if (objectValue==null) return null;
+			return parseObject.apply(objectValue);
+		}, sourceLabel, data, path);
+	}
+	@SuppressWarnings("unused")
+	private static Vector<Long> parseIntegerArray(String sourceLabel, JSON_Object data, Object... path) {
+		return parseArray(SaveGameData::getInteger, sourceLabel, data, path);
+	}
+	private static Vector<String> parseStringArray(String sourceLabel, JSON_Object data, Object... path) {
+		return parseArray(SaveGameData::getString, sourceLabel, data, path);
+	}
+	private static <ValueType> Vector<ValueType> parseArray(Function<Value,ValueType> parseValue, String sourceLabel, JSON_Object data, Object... path) {
+		return parseArray((value,i)->parseValue.apply(value), sourceLabel, data, path);
+	}
+	private static <ValueType> Vector<ValueType> parseArray(BiFunction<Value,Integer,ValueType> parseValue, String sourceLabel, JSON_Object data, Object... path) {
+		JSON_Array arrayValue = getArrayValue(data,path);
+		if (arrayValue==null) return null;
+		JSON_Array notParsableObjects = new JSON_Array();
+		
+		Vector<ValueType> dataItems = new Vector<>();
+		for (int i=0; i<arrayValue.size(); ++i) {
+			Value value = arrayValue.get(i);
+			
+			ValueType dataItem = parseValue.apply(value,i);
+			if (dataItem==null)
+				notParsableObjects.add(value);
+			else
+				dataItems.add(dataItem);
+		}
+		
+		if (!notParsableObjects.isEmpty())
+			SaveViewer.log_error_ln("Found %d not parseable items in %s.", notParsableObjects.size(), sourceLabel);
+		
+		return dataItems;
 	}
 
 	public static class Position {
@@ -1324,7 +1408,7 @@ public class SaveGameData {
 		public Long primary = null;
 		public VehicleType[] vehicles = null;
 
-		private static <V extends Vehicle> void parseArray(VehicleGroup<V> group, SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<V> createVehicle, Function<Integer,V[]> createArray) {
+		private static <V extends Vehicle> void parseGroup(VehicleGroup<V> group, SaveGameData data, JSON_Array json_Array, String arraySourcePath, Long primary, Supplier<V> createVehicle, Function<Integer,V[]> createArray) {
 			group.primary = primary;
 			
 			if (json_Array!=null) {
@@ -1336,7 +1420,7 @@ public class SaveGameData {
 
 		public static VehicleGroup<Exocraft> parseExocrafts(SaveGameData data) {
 			VehicleGroup<Exocraft> exocrafts = new VehicleGroup<Exocraft>();
-			parseArray(
+			parseGroup(
 				exocrafts, 
 				data,
 				getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
@@ -1348,7 +1432,7 @@ public class SaveGameData {
 
 		public static VehicleGroup<SpaceShip> parseSpaceShips(SaveGameData data) {
 			VehicleGroup<SpaceShip> ships = new VehicleGroup<SpaceShip>();
-			parseArray(
+			parseGroup(
 				ships,
 				data,
 				getArrayValue(data.json_data, "PlayerStateData", "ShipOwnership"), "ShipOwnership",
@@ -2494,7 +2578,72 @@ public class SaveGameData {
 			}
 		}
 	}
+	
+	public final static class MissionProgress {
+		
+		public final static class Mission {
+			public String Mission = null;
+			public Long Progress = null;
+			public Long Seed = null;
+			public Long Data = null;
+			public Vector<Participant> Participants = null;
+		}
+		public final static class Participant {
+			public UniverseAddress UA = null;
+			public SeedValue BuildingSeed = null;
+			public Coordinates BuildingLocation = null;
+			public String ParticipantType = null;
+		}
+		
+		public static Vector<Mission> parse(SaveGameData data) {
+			return parseObjectArray(Mission::new, (mission,objectValue)->{
+				mission.Mission      = getStringValue (objectValue, "Mission");
+				mission.Progress     = getIntegerValue(objectValue, "Progress");
+				mission.Seed         = getIntegerValue(objectValue, "Seed");
+				mission.Data         = getIntegerValue(objectValue, "Data");
+				mission.Participants = parseObjectArray(Participant::new, (participant,objectValue2)->{
+					participant.UA               = parseUniverseAddressField(objectValue2, "UA");
+					participant.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue2, "BuildingSeed") );
+					participant.BuildingLocation = Coordinates.parse(objectValue2, "BuildingLocation");
+					participant.ParticipantType  = getStringValue (objectValue2, "ParticipantType", "ParticipantType");
+				}, "MissionProgress.Participants", objectValue,"Participants");
+			}, "MissionProgress", data.json_data,"PlayerStateData","MissionProgress");
+		}
+		
+	}
+	
+	public final static class MarkerStack {
+		
+		public final static class Marker {
 
+			public Long Table;
+			public String Event;
+			public UniverseAddress galacticAddress;
+			public SeedValue BuildingSeed;
+			public Coordinates BuildingLocation;
+			public String BuildingClass;
+			public Double Time;
+			public String MissionID;
+			public Long MissionSeed;
+			public String ParticipantType;
+		}
+
+		public static Vector<Marker> parse(SaveGameData data) {
+			return parseObjectArray(Marker::new, (marker,objectValue)->{
+				marker.Table            = getIntegerValue(objectValue, "Table");
+				marker.Event            = getStringValue (objectValue, "Event");
+				marker.galacticAddress  = parseUniverseAddressField(objectValue, "GalacticAddress");
+				marker.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue, "BuildingSeed") );
+				marker.BuildingLocation = Coordinates.parse(objectValue, "BuildingLocation");
+				marker.BuildingClass    = getStringValue (objectValue, "BuildingClass", "BuildingClass");
+				marker.Time             = getFloatValue  (objectValue, "Time");
+				marker.MissionID        = getStringValue (objectValue, "MissionID");
+				marker.MissionSeed      = getIntegerValue(objectValue, "MissionSeed");
+				marker.ParticipantType  = getStringValue (objectValue, "ParticipantType", "ParticipantType");
+			}, "MarkerStack", data.json_data,"PlayerStateData","MarkerStack");
+		}
+	}
+	
 	public final static class General {
 		
 		private SaveGameData data;
@@ -2576,6 +2725,35 @@ public class SaveGameData {
 //		public String      getTestString (Object... path) { return data.getStringValue (data.json_data, path); }
 //		public JSON_Array  getTestArray  (Object... path) { return data.getArrayValue  (data.json_data, path); }
 //		public JSON_Object getTestObject (Object... path) { return data.getObjectValue (data.json_data, path); }
+	}
+	
+	public static final class VisitedSystems {
+		public static final class VisitedSystem {
+			public long addr;
+			public UniverseAddress ua;
+			public int extra;
+			
+		}
+		
+		public static Vector<VisitedSystem> parse(SaveGameData data) {
+			return parseArray(value->{
+				Long addr = getInteger(value);
+				if (addr==null) return null;
+				
+				int voxelX = (int)( addr      & 0xFFF);
+				int voxelY = (int)((addr>>12) & 0xFF);
+				int voxelZ = (int)((addr>>20) & 0xFFF);
+				int sysIndex = (int) ((addr>>32)&0xFFF);
+				
+				VisitedSystem sys = new VisitedSystem();
+				sys.addr = addr;
+				sys.ua = new UniverseAddress((((long)sysIndex&0xFFF)<<40) | (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF));
+				sys.extra = (int) ((addr>>44)&0xFFFFF);
+				data.universe.getOrCreate(sys.ua);
+				
+				return sys;
+			}, "VisitedSystems", data.json_data, "PlayerStateData", "VisitedSystems");
+		}
 	}
 
 	public static final class UniverseAddress implements Comparable<UniverseAddress> {
@@ -2726,22 +2904,14 @@ public class SaveGameData {
 		}
 
 		public String getVerboseNameInOneLine(Universe universe) {
-			
-			if (isRegion())
-				return "Region \""+getCoordinates_Region()+"\"";
-			
-			if (isSolarSystem()) {
-				Universe.SolarSystem sys = universe.findSolarSystem(this);
-				return "SolarSystem \""+getCoordinates_Region()+" | "+sys.toString()+"\"";
-			}
-			
-			if (isPlanet()) {
-				Universe.SolarSystem sys = universe.findSolarSystem(this);
-				Universe.Planet pln = universe.findPlanet(this);
-				return "Planet \""+getCoordinates_Region()+" | "+sys.toString(true,true,false,true)+" | "+pln.toString()+"\"";
-			}
-			
-			return getCoordinates();
+			return getVerboseNameInOneLine(universe, -1);
+		}
+		public String getVerboseNameInOneLine(Universe universe, int maxItems) {
+			String strOut = "";
+			Vector<String> verboseName = getVerboseName(universe);
+			for (int i=0; i<verboseName.size() && (maxItems<0 || i<maxItems); i++)
+				strOut += " "+verboseName.get(i);
+			return strOut;
 		}
 
 		public String getCoordinates() { return getCoordinates_Planet(); }
@@ -3946,12 +4116,13 @@ public class SaveGameData {
 
 	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull, ArrayIndexOutOfBounds }
 
-//	private static JSON_Array getArray(Value val)   { if (val==null || !(val instanceof ArrayValue  ) || val.type!=Type.Array  ) return null; val.wasProcessed=true; return ((ArrayValue  )val).value;}
-	private static JSON_Object getObject(Value val) { if (val==null || !(val instanceof ObjectValue ) || val.type!=Type.Object ) return null; val.wasProcessed=true; return ((ObjectValue )val).value;}
-	private static String getString(Value val)      { if (val==null || !(val instanceof StringValue ) || val.type!=Type.String ) return null; val.wasProcessed=true; return ((StringValue )val).value;}
-	private static Boolean getBool(Value val)       { if (val==null || !(val instanceof BoolValue   ) || val.type!=Type.Bool   ) return null; val.wasProcessed=true; return ((BoolValue   )val).value;}
-//	private static Long getInteger(Value val)       { if (val==null || !(val instanceof IntegerValue) || val.type!=Type.Integer) return null; val.wasProcessed=true; return ((IntegerValue)val).value;}
-	private static Double getFloat(Value val)       { if (val==null || !(val instanceof FloatValue  ) || val.type!=Type.Float  ) return null; val.wasProcessed=true; return ((FloatValue  )val).value;}
+	@SuppressWarnings("unused")
+	private static JSON_Array  getArray  (Value val) { if (val==null || !(val instanceof ArrayValue  ) || val.type!=Type.Array  ) return null; val.wasProcessed=true; return ((  ArrayValue)val).value;}
+	private static JSON_Object getObject (Value val) { if (val==null || !(val instanceof ObjectValue ) || val.type!=Type.Object ) return null; val.wasProcessed=true; return (( ObjectValue)val).value;}
+	private static String      getString (Value val) { if (val==null || !(val instanceof StringValue ) || val.type!=Type.String ) return null; val.wasProcessed=true; return (( StringValue)val).value;}
+	private static Boolean     getBool   (Value val) { if (val==null || !(val instanceof BoolValue   ) || val.type!=Type.Bool   ) return null; val.wasProcessed=true; return ((   BoolValue)val).value;}
+	private static Long        getInteger(Value val) { if (val==null || !(val instanceof IntegerValue) || val.type!=Type.Integer) return null; val.wasProcessed=true; return ((IntegerValue)val).value;}
+	private static Double      getFloat  (Value val) { if (val==null || !(val instanceof FloatValue  ) || val.type!=Type.Float  ) return null; val.wasProcessed=true; return ((  FloatValue)val).value;}
 
 	private static void enableStackTrace(boolean isStackTraceEnabled_) {
 		isStackTraceEnabled = isStackTraceEnabled_;
