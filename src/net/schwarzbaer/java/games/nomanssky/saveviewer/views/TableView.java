@@ -351,12 +351,12 @@ public class TableView {
 				return dataVector!=null ? dataVector.size() : dataArray!=null ? dataArray.length : 0;
 			}
 
-			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
-				if (rowIndex<0 || rowIndex>=dataVector.size()) return null;
-				return columnID.getValue.apply(getValue(rowIndex),rowIndex);
-			}
 			private DataType getValue(int rowIndex) {
 				return dataVector!=null ? dataVector.get(rowIndex) : dataArray!=null ? dataArray[rowIndex] : null;
+			}
+			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
+				if (rowIndex<0 || rowIndex>=getRowCount()) return null;
+				return columnID.getValue.apply(getValue(rowIndex),rowIndex);
 			}
 		}
 		

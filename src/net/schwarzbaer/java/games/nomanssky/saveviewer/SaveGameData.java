@@ -63,7 +63,9 @@ public class SaveGameData {
 	public final int index;
 	public final JSON_Object json_data;
 	public HashMap<String, Vector<String>> deObfuscatorUsage = null;
+	public final boolean isPreNEXT;
 	
+	public Long version;
 	public final General general;
 	public final Universe universe;
 	public final DiscoveryData discoveryData;
@@ -89,11 +91,9 @@ public class SaveGameData {
 	public Vector<UniverseAddress> AtlasStationAdressData = null;
 	public Vector<UniverseAddress> NewAtlasStationAdressData = null;
 	public Vector<UniverseAddress> VisitedAtlasStationsData = null;
-	public Vector<String> KnownQuicksilverSpecials = null;
-	public Vector<String> KnownRefinerRecipes = null;
 	public Vector<VisitedSystems.VisitedSystem> visitedSystems = null;
 	
-	public SaveGameData(JSON_Object json_data, String filename, int index) {
+	public SaveGameData(JSON_Object json_data, String filename, int index, boolean isPreNEXT) {
 		error = Error.NoError;
 		errorMessage = "";
 		isStackTraceEnabled = true;
@@ -101,6 +101,7 @@ public class SaveGameData {
 		this.filename = filename;
 		this.index = index;
 		this.json_data = json_data;
+		this.isPreNEXT = isPreNEXT;
 		
 		this.general = new General(this);
 		this.universe = new Universe();
@@ -111,11 +112,14 @@ public class SaveGameData {
 		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
-	public SaveGameData parse(boolean isNEXT) {
-		if (!isNEXT) return this;
+	public SaveGameData parse(boolean forPreview) {
+		version = getIntegerValue(json_data, "Version");
+		if (isPreNEXT) return this;
+		
+		general.parse();
+		if (forPreview) return this;
 		
 		visitedSystems = VisitedSystems.parse(this);
-		general.parse();
 		parseStats();
 		knownBlueprints = KnownBlueprints.parse(this);
 		knownWords  = parseKnownWords("KnownWords","Word","Races");
@@ -131,9 +135,6 @@ public class SaveGameData {
 		AtlasStationAdressData    = parseUniverseAddressStructureArray("AtlasStationAdressData"   , json_data, "PlayerStateData", "AtlasStationAdressData");
 		NewAtlasStationAdressData = parseUniverseAddressStructureArray("NewAtlasStationAdressData", json_data, "PlayerStateData", "NewAtlasStationAdressData");
 		VisitedAtlasStationsData  = parseUniverseAddressStructureArray("VisitedAtlasStationsData" , json_data, "PlayerStateData", "VisitedAtlasStationsData");
-		
-		KnownQuicksilverSpecials = parseStringArray("[KnownQuicksilverSpecials]", json_data, "PlayerStateData", "[KnownQuicksilverSpecials]");
-		KnownRefinerRecipes      = parseStringArray("[KnownRefinerRecipes]"     , json_data, "PlayerStateData", "[KnownRefinerRecipes]");
 		
 		teleportEndpoints = TeleportEndpoints.parse(this);
 		freighter  = Freighter .parse(this);
@@ -829,8 +830,7 @@ public class SaveGameData {
 				te.name             = getStringValue(objectValue, "Name");
 				
 				if (te.universeAddress!=null) {
-					ObjectWithSource obj = data.universe.getOrCreate(te.universeAddress);
-					obj.foundInTeleportEndpoints.add(teleportEndpoints.size());
+					data.universe.getOrCreate(te.universeAddress,obj->obj.foundInTeleportEndpoints.add(teleportEndpoints.size()));
 				}
 				
 				teleportEndpoints.add(te);
@@ -937,8 +937,7 @@ public class SaveGameData {
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
 			
 			if (pb.galacticAddress!=null) {
-				ObjectWithSource obj = universe.getOrCreate(pb.galacticAddress);
-				obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size());
+				universe.getOrCreate(pb.galacticAddress,obj->obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size()));
 			}
 			
 			persistentPlayerBases.add(pb);
@@ -1087,8 +1086,7 @@ public class SaveGameData {
 			parseBuildingObject(objectValue, bbo, "BaseBuildingObjects", i);
 			
 			if (bbo.galacticAddress!=null) {
-				ObjectWithSource obj = universe.getOrCreate(bbo.galacticAddress);
-				obj.foundInBaseBuildingObjects.add(vector.size());
+				universe.getOrCreate(bbo.galacticAddress,obj->obj.foundInBaseBuildingObjects.add(vector.size()));
 			}
 			
 			vector.add(bbo);
@@ -1182,30 +1180,35 @@ public class SaveGameData {
 
 	public static final class KnownBlueprints {
 
-		public GeneralizedID[] products = null;
-		public GeneralizedID[] technologies = null;
+		public Vector<GeneralizedID> technologies = null;
+		public Vector<GeneralizedID> products = null;
+		public Vector<GeneralizedID> quicksilvers = null;
+		public Vector<String> recipes = null;
 		
 		private static KnownBlueprints parse(SaveGameData data) {
 			KnownBlueprints knownBlueprints = new KnownBlueprints();
-			knownBlueprints.technologies = parse(data, getArrayValue(data.json_data,"PlayerStateData","KnownTech"    ), GameInfos.techIDs   );
-			knownBlueprints.products     = parse(data, getArrayValue(data.json_data,"PlayerStateData","KnownProducts"), GameInfos.productIDs);
+			knownBlueprints.technologies   = parseBlueprintArray(data, "Technology" , GameInfos.techIDs   , "KnownTech"                 , data.json_data, "PlayerStateData","KnownTech"    );
+			knownBlueprints.products       = parseBlueprintArray(data, "Product"    , GameInfos.productIDs, "KnownProducts"             , data.json_data, "PlayerStateData","KnownProducts");
+			knownBlueprints.quicksilvers   = parseBlueprintArray(data, "Quicksilver", GameInfos.productIDs, "[KnownQuicksilverSpecials]", data.json_data, "PlayerStateData","[KnownQuicksilverSpecials]");
+			if (hasValue(data.json_data, "PlayerStateData","[KnownRecipes]"))
+				knownBlueprints.recipes = parseStringArray("[KnownRecipes]", data.json_data, "PlayerStateData","[KnownRecipes]");
 			return knownBlueprints;
 		}
-
-		private static GeneralizedID[] parse(SaveGameData data, JSON_Array arrayValue, IDMap map) {
-			if (arrayValue==null) return new GeneralizedID[0];
-			
-			GeneralizedID[] knownBlueprints = new GeneralizedID[arrayValue.size()];
-			for (int i=0; i<arrayValue.size(); ++i) {
-				Value value = arrayValue.get(i);
+		
+		private static Vector<GeneralizedID> parseBlueprintArray(SaveGameData data, String blueprintCategory, IDMap map, String sourceLabel, JSON_Object jsonObject, Object... path) {
+			if (!hasValue(jsonObject, path)) return null;
+			return parseArray((value,i)->{
+				
 				String id = getString(value);
-				if (id!=null) {
-					knownBlueprints[i] = map.get(id,data,GeneralizedID.Usage.Type.Blueprint);// addGeneralizedID(map, id);
-					knownBlueprints[i].getUsage(data).addBlueprintUsage((GameInfos.techIDs==map?"Technology":"Product"),i);
-				}
-			}
-			Arrays.sort(knownBlueprints,Comparator.nullsLast(Comparator.comparing(b->b.id)));
-			return knownBlueprints;
+				if (id==null) return null;
+				
+				GeneralizedID generalizedID = map.get(id,data,GeneralizedID.Usage.Type.Blueprint);
+				if (generalizedID==null) return null;
+				
+				generalizedID.getUsage(data).addBlueprintUsage(blueprintCategory,i);
+				return generalizedID;
+				
+			}, sourceLabel, jsonObject, path);
 		}
 	}
 
@@ -1440,7 +1443,7 @@ public class SaveGameData {
 				SpaceShip::new, SpaceShip[]::new
 			);
 			
-			if (JSON_Data.hasSubNode(data.json_data, "PlayerStateData", "[ShipUsesOldColors]")) {
+			if (hasValue(data.json_data, "PlayerStateData", "[ShipUsesOldColors]")) {
 				JSON_Array array = getArrayValue(data.json_data, "PlayerStateData", "[ShipUsesOldColors]");
 				if (array!=null)
 					for (int i=0; i<array.size(); i++) {
@@ -1468,7 +1471,7 @@ public class SaveGameData {
 				inventories.chests[i] = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
 			inventories.magicChest        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
 			inventories.magicChest2       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
-			if (JSON_Data.hasSubNode(data.json_data, "PlayerStateData", "IngredientStorageInventory"))
+			if (hasValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"))
 				inventories.ingredientStorage = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
 			
 			return inventories;
@@ -2474,12 +2477,12 @@ public class SaveGameData {
 		}
 
 		public void findPlanetsAndSolarSystems() {
-			Universe.DiscoverableObject obj;
 			
 			for (int i=0; i<storeData.size(); i++) {
 				StoreData data = storeData.get(i);
-				if ((obj = getDiscNameObj(data.DD))!=null) {
-					obj.foundInDiscStore.add(i);
+				int index = i;
+				Universe.DiscoverableObject obj = getDiscNameObj(data.DD,obj_->obj_.foundInDiscStore.add(index));
+				if (obj!=null) {
 					
 					if (data.OWS.userName!=null) {
 						if (obj.hasDiscoverer())
@@ -2498,21 +2501,21 @@ public class SaveGameData {
 			
 			for (int i=0; i<availableData.size(); i++) {
 				AvailableData data = availableData.get(i);
-				if ((obj = getDiscNameObj(data.DD))!=null)
-					obj.foundInDiscAvail.add(i);
+				int index = i;
+				getDiscNameObj(data.DD,obj_->obj_.foundInDiscAvail.add(index));
 			}
 		}
 
-		private Universe.DiscoverableObject getDiscNameObj(DDblock dd) {
+		private Universe.DiscoverableObject getDiscNameObj(DDblock dd, Consumer<ObjectWithSource> getSource) {
 			if (dd.DT==null || dd.UA==null) return null;
 				
 			Universe.DiscoverableObject discnameObj = null;
 			
 			if (dd.DT.equals("Planet") && dd.UA.isPlanet())
-				discnameObj = data.universe.getOrCreatePlanet(dd.UA);
+				discnameObj = data.universe.getOrCreatePlanet(dd.UA,getSource);
 			
 			if (dd.DT.equals("SolarSystem") && dd.UA.isSolarSystem())
-				discnameObj = data.universe.getOrCreateSolarSystem(dd.UA);
+				discnameObj = data.universe.getOrCreateSolarSystem(dd.UA,getSource);
 				
 			return discnameObj;
 		}
@@ -2604,7 +2607,8 @@ public class SaveGameData {
 				mission.Participants = parseObjectArray(Participant::new, (participant,objectValue2)->{
 					participant.UA               = parseUniverseAddressField(objectValue2, "UA");
 					participant.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue2, "BuildingSeed") );
-					participant.BuildingLocation = Coordinates.parse(objectValue2, "BuildingLocation");
+					if (hasValue(objectValue2, "BuildingLocation"))
+						participant.BuildingLocation = Coordinates.parse(objectValue2, "BuildingLocation");
 					participant.ParticipantType  = getStringValue (objectValue2, "ParticipantType", "ParticipantType");
 				}, "MissionProgress.Participants", objectValue,"Participants");
 			}, "MissionProgress", data.json_data,"PlayerStateData","MissionProgress");
@@ -2673,15 +2677,15 @@ public class SaveGameData {
 			
 			currentUniverseAddress = parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
 			if (currentUniverseAddress!=null) {
-				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress).isCurrPos = true;
-				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress).isCurrPos = true;
+				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->obj.isCurrPos = true);
+				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->obj.isCurrPos = true);
 			}
-			if (JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
+			if (hasValue(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
 				anomalyUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
 			graveUA       = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
-			if (    JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyPosition") &&
-					JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyMatrixLookAt") && 
-					JSON_Data.hasSubNode(data.json_data, "PlayerStateData","AnomalyMatrixUp"))
+			if (    hasValue(data.json_data, "PlayerStateData","AnomalyPosition") &&
+					hasValue(data.json_data, "PlayerStateData","AnomalyMatrixLookAt") && 
+					hasValue(data.json_data, "PlayerStateData","AnomalyMatrixUp"))
 				anomalyPos = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
 			gravePos       = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
@@ -2749,7 +2753,8 @@ public class SaveGameData {
 				sys.addr = addr;
 				sys.ua = new UniverseAddress((((long)sysIndex&0xFFF)<<40) | (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF));
 				sys.extra = (int) ((addr>>44)&0xFFFFF);
-				data.universe.getOrCreate(sys.ua);
+				
+				data.universe.getOrCreate(sys.ua,obj->obj.foundInVisitedSystems = true);
 				
 				return sys;
 			}, "VisitedSystems", data.json_data, "PlayerStateData", "VisitedSystems");
@@ -3043,70 +3048,68 @@ public class SaveGameData {
 			return null;
 		}
 
-		public ObjectWithSource getOrCreate(UniverseAddress ua) {
-			if (ua.isPlanet     ()) return getOrCreatePlanet     (ua);
-			if (ua.isSolarSystem()) return getOrCreateSolarSystem(ua);
-			if (ua.isRegion     ()) return getOrCreateRegion     (ua);
-			return getOrCreateGalaxy(ua);
+		public ObjectWithSource getOrCreate(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
+			if (ua.isPlanet     ()) return getOrCreatePlanet     (ua,setSource);
+			if (ua.isSolarSystem()) return getOrCreateSolarSystem(ua,setSource);
+			if (ua.isRegion     ()) return getOrCreateRegion     (ua,setSource);
+			return getOrCreateGalaxy(ua,setSource);
 		}
 
-		public Planet getOrCreatePlanet(long address) {
-			return getOrCreatePlanet(new UniverseAddress(address));
+		public Planet getOrCreatePlanet(long address, Consumer<ObjectWithSource> setSource) {
+			return getOrCreatePlanet(new UniverseAddress(address),setSource);
 		}
 
-		public Planet getOrCreatePlanet(UniverseAddress ua) {
-			SolarSystem solarSystem = getOrCreateSolarSystem(ua);
+		public Planet getOrCreatePlanet(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
+			SolarSystem solarSystem = getOrCreateSolarSystem(ua,setSource);
 			
 			Planet planet = solarSystem.findPlanet(ua.planetIndex);
 			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,ua.planetIndex));
 			
+			setSource.accept(planet);
 			return planet;
 		}
 
-		public SolarSystem getOrCreateSolarSystem(UniverseAddress ua) {
-			Region region = getOrCreateRegion(ua);
+		public SolarSystem getOrCreateSolarSystem(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
+			Region region = getOrCreateRegion(ua,setSource);
 			
 			SolarSystem solarSystem = region.findSolarSystem(ua.solarSystemIndex);
 			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,ua.solarSystemIndex));
 			
+			setSource.accept(solarSystem);
 			return solarSystem;
 		}
 
-		public Region getOrCreateRegion(UniverseAddress ua) {
-			Galaxy galaxy = getOrCreateGalaxy(ua);
+		public Region getOrCreateRegion(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
+			Galaxy galaxy = getOrCreateGalaxy(ua,setSource);
 			
 			Region region = galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
 			if (region==null) galaxy.addRegion(region=new Region(galaxy,ua.voxelX,ua.voxelY,ua.voxelZ));
 			
+			setSource.accept(region);
 			return region;
 		}
 
-		private Galaxy getOrCreateGalaxy(UniverseAddress ua) {
+		private Galaxy getOrCreateGalaxy(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
 			Galaxy galaxy = findGalaxy(ua.galaxyIndex);
 			if (galaxy==null) galaxies.add(galaxy=new Galaxy(this,ua.galaxyIndex));
 			
+			setSource.accept(galaxy);
 			return galaxy;
 		}
 
 		public static class ObjectWithSource extends UniverseObject {
 			
-			public boolean isCurrPos;
-			public boolean foundInStats;
-			public HashSet<Integer> foundInDiscStore;
-			public HashSet<Integer> foundInDiscAvail;
-			public HashSet<Integer> foundInPersistentPlayerBases;
-			public HashSet<Integer> foundInBaseBuildingObjects;
-			public HashSet<Integer> foundInTeleportEndpoints;
+			public boolean isCurrPos = false;
+			public boolean foundInStats = false;
+			public boolean foundInVisitedSystems = false;
+			public HashSet<Integer> foundInDiscStore = new HashSet<>();
+			public HashSet<Integer> foundInDiscAvail = new HashSet<>();
+			public HashSet<Integer> foundInPersistentPlayerBases = new HashSet<>();
+			public HashSet<Integer> foundInBaseBuildingObjects = new HashSet<>();
+			public HashSet<Integer> foundInTeleportEndpoints = new HashSet<>();
 			
 			protected ObjectWithSource(Type type) {
 				super(type);
-				isCurrPos        = false;
-				foundInStats     = false;
-				foundInDiscStore = new HashSet<>();
-				foundInDiscAvail = new HashSet<>();
-				foundInPersistentPlayerBases = new HashSet<>();
-				foundInBaseBuildingObjects = new HashSet<>();
-				foundInTeleportEndpoints = new HashSet<>();
 			}
 			
 			public boolean isNotUploaded() {
@@ -3116,6 +3119,7 @@ public class SaveGameData {
 			public boolean hasSourceID() {
 				return isCurrPos ||
 						foundInStats ||
+						foundInVisitedSystems ||
 						!foundInDiscAvail            .isEmpty() ||
 						!foundInDiscStore            .isEmpty() ||
 						!foundInPersistentPlayerBases.isEmpty() ||
@@ -3128,6 +3132,7 @@ public class SaveGameData {
 				StringBuilder sb = new StringBuilder();
 				if (isCurrPos                              ) {                                    sb.append("CP"); }
 				if (foundInStats                           ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
+				if (foundInVisitedSystems                  ) { if (sb.length()>0) sb.append('|'); sb.append("VS"); }
 				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
 				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
 				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("PB"); }
@@ -3140,6 +3145,7 @@ public class SaveGameData {
 				StringBuilder sb = new StringBuilder();
 				if (isCurrPos                              ) {                                     sb.append("Current Position"); }
 				if (foundInStats                           ) { if (sb.length()>0) sb.append(", "); sb.append("Status Values"); }
+				if (foundInVisitedSystems                  ) { if (sb.length()>0) sb.append(", "); sb.append("Visited Systems"); }
 				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Store"+toString(foundInDiscStore)); }
 				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Avail."+toString(foundInDiscAvail)); }
 				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("PlayerBase"+toString(foundInPersistentPlayerBases)); }
@@ -3690,7 +3696,7 @@ public class SaveGameData {
 	}
 
 	private KnownWords parseKnownWords(String arrLabel, String wordLabel, String racesLabel) {
-		if (!JSON_Data.hasSubNode(json_data,"PlayerStateData",arrLabel)) return null;
+		if (!hasValue(json_data,"PlayerStateData",arrLabel)) return null;
 		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData",arrLabel);
 		KnownWords array;
 		if (arrayValue==null)
@@ -3837,8 +3843,7 @@ public class SaveGameData {
 					}
 					
 					
-					Universe.Planet planet = data.universe.getOrCreatePlanet(addressLong);
-					planet.foundInStats = true;
+					Universe.Planet planet = data.universe.getOrCreatePlanet(addressLong,obj->obj.foundInStats = true);
 					
 					PlanetStats ps = new PlanetStats(planet);
 					fillInto(groupStats,ps.stats);
@@ -4129,12 +4134,7 @@ public class SaveGameData {
 	}
 
 	static boolean hasValue(JSON_Object data, Object... path) {
-		try {
-			JSON_Data.getSubNode(data,path);
-			return true;
-		} catch (PathIsNotSolvableException e) {
-			return false;
-		}
+		return JSON_Data.hasSubNode(data, path);
 	}
 
 	private static Value getValue(JSON_Object data, Object... path) {

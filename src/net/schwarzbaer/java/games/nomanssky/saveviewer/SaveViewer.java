@@ -1,6 +1,7 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -50,6 +51,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -80,6 +82,7 @@ import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
@@ -110,6 +113,7 @@ public class SaveViewer implements ActionListener {
 	private ContentPane contentPane;
 	private ComparePanel compareTab;
 	private Vector<SaveGameView> loadedSaveGames;
+	private Color DEFAULT_BUTTON_FOREGROUND_COLOR;
 	
 	public static void main(String[] args) {
 		
@@ -324,6 +328,8 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void createGUI() {
+		DEFAULT_BUTTON_FOREGROUND_COLOR = new JButton().getForeground();
+		
 		inputFileChooser = new JFileChooser("./");
 		inputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		inputFileChooser.setMultiSelectionEnabled(false);
@@ -538,18 +544,60 @@ public class SaveViewer implements ActionListener {
 		return home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
 	}
 	
-	
-	
 	private void checkSavegameExistence() {
 		if (isSavegameFolderKnown())
-			for (ActionCommand ac:ActionCommand.save_commands)
-				contentPane.disabler.setEnable(ac, new File(getSavegameFolder()+ac.filename).isFile());
+			for (ActionCommand ac:ActionCommand.save_commands) {
+				File savefile = new File(getSavegameFolder()+ac.filename);
+				Vector<JComponent> comps = contentPane.disabler.get(ac);
+				if (comps!=null) {
+					SaveGameData data = openSaveGameForPreview(savefile);
+					for (JComponent comp:comps) {
+						if (data.isPreNEXT) {
+							comp.setToolTipText("PreNext SaveGame (will not be parsed)");
+							comp.setForeground(Color.RED);
+						} else if (data.version!=null && data.version>5000) {
+							comp.setToolTipText("Creative ( "+Duration.toString(data.general.totalPlayTime)+" h )");
+							comp.setForeground(Color.BLUE);
+						} else {
+							comp.setToolTipText("Normal ( "+Duration.toString(data.general.totalPlayTime)+" h )");
+							comp.setForeground(DEFAULT_BUTTON_FOREGROUND_COLOR);
+						}
+					}
+				}
+				
+				contentPane.disabler.setEnable(ac, savefile.isFile());
+			}
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
 		runWithProgressDialog(mainWindow,"Open SaveGame", pd->{
 			openSaveGame(saveGameFile,saveGameIndex,pd);
 		});
+	}
+
+	private SaveGameData openSaveGameForPreview(File saveGameFile) {
+		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
+		
+		HashMap<String, Vector<String>> deObfuscatorUsage = null;
+		boolean isPreNEXT;
+		if (SaveGameData.hasValue(new_json_data, "Version"))
+			isPreNEXT = true;
+		else {
+			new_json_data = deObfuscator.deObfuscate(new_json_data,false);
+			deObfuscatorUsage = deObfuscator.getUsage();
+			isPreNEXT = false;
+		}
+		SaveGameData saveGameData;
+		if (new_json_data==null) {
+			saveGameData = null;
+			
+		} else {
+			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),-1,isPreNEXT);
+			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
+			saveGameData.parse(true);
+		}
+		
+		return saveGameData;
 	}
 
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
@@ -559,42 +607,49 @@ public class SaveViewer implements ActionListener {
 		log_ln(" done");
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
-		boolean isNEXT = false;
-		if (!SaveGameData.hasValue(new_json_data, "Version")) {
+		boolean isPreNEXT;
+		if (SaveGameData.hasValue(new_json_data, "Version"))
+			isPreNEXT = true;
+		else {
 			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
 			new_json_data = deObfuscator.deObfuscate(new_json_data);
 			deObfuscatorUsage = deObfuscator.getUsage();
-			isNEXT = true;
+			isPreNEXT = false;
 		}
 		
-		SaveGameData saveGameData = null;
+		SaveGameData saveGameData;
 		if (new_json_data==null) {
+			saveGameData = null;
 			if (mainWindow!=null)
 				JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 			
 		} else {
-			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex);
+			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT);
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			
 			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
-			saveGameData.parse(isNEXT);
+			saveGameData.parse(false);
 			
-			if (mainWindow!=null) {
-				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Update GUI"); pd.setValue(3); });
-				SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,isNEXT);
-				loadedSaveGames.add(saveGameView);
-				contentPane.addSaveGameView(saveGameView);
-				updateWindowTitle();
-			}
+			SaveViewer.runInEventThreadAndWait(()->{
+				if (mainWindow!=null) {
+					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(3);
+					SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,!isPreNEXT);
+					loadedSaveGames.add(saveGameView);
+					contentPane.addSaveGameView(saveGameView);
+					updateWindowTitle();
+				}
+			});
 		}
 		
-		if (mainWindow!=null) {
-			contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
-			contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
-			contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
-			contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.selectedSaveGameView!=null);
-			contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.selectedSaveGameView!=null);
-		}
+		SaveViewer.runInEventThreadAndWait(()->{
+			if (mainWindow!=null) {
+				contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
+				contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
+				contentPane.disabler.setEnable(ActionCommand.Compare  , loadedSaveGames.size()>1 && compareTab==null);
+				contentPane.disabler.setEnable(ActionCommand.WriteHTML, contentPane.selectedSaveGameView!=null);
+				contentPane.disabler.setEnable(ActionCommand.WriteJSON, contentPane.selectedSaveGameView!=null);
+			}
+		});
 		
 		return saveGameData;
 	}
@@ -608,51 +663,47 @@ public class SaveViewer implements ActionListener {
 			log_ln(" done");
 			
 			HashMap<String, Vector<String>> deObfuscatorUsage = null;
-			boolean isNEXT = false;
-			if (!SaveGameData.hasValue(new_json_data, "Version")) {
-				runInEventThreadAndWait(()->{
-					
-				});
+			boolean isPreNEXT;
+			if (SaveGameData.hasValue(new_json_data, "Version")) // <--- UnObfuscated String "Version"
+				isPreNEXT = true;
+			else {
 				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
 				new_json_data = deObfuscator.deObfuscate(new_json_data);
 				deObfuscatorUsage = deObfuscator.getUsage();
-				isNEXT = true;
+				isPreNEXT = false;
 			}
 			
 			if (new_json_data!=null) {
-				runInEventThreadAndWait(()->{
-					
-				});
+				
 				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
 				GameInfos.removeUsages(view.data);
-				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index);
+				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index,isPreNEXT);
 				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
-				runInEventThreadAndWait(()->{
-					
-				});
+				
 				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
-				saveGameData.parse(isNEXT);
+				saveGameData.parse(false);
+				
 				runInEventThreadAndWait(()->{
-					
+					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(4);
+					view.replaceData(saveGameData,!isPreNEXT);
+					contentPane.updateIDPanels();
 				});
-				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Update GUI"); pd.setValue(4); });
-				view.replaceData(saveGameData,isNEXT);
-				contentPane.updateIDPanels();
 			}
 		});
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
 		runWithProgressDialog(mainWindow,"Close SaveGame", pd->{
-			loadedSaveGames.remove(view);
-			contentPane.removeSaveGameView(view);
-			GameInfos.removeUsages(view.data);
-			updateWindowTitle();
-			
-			if (loadedSaveGames.size()<2 && compareTab!=null) {
-				contentPane.removeTab(compareTab);
-				compareTab=null;
-			}
+			runInEventThreadAndWait(()->{
+				loadedSaveGames.remove(view);
+				GameInfos.removeUsages(view.data);
+				contentPane.removeSaveGameView(view);
+				updateWindowTitle();
+				if (loadedSaveGames.size()<2 && compareTab!=null) {
+					contentPane.removeTab(compareTab);
+					compareTab=null;
+				}
+			});
 		});
 	}
 
@@ -665,9 +716,11 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static void runInEventThreadAndWait(Runnable doRun) {
-		//doRun.run(); // for testing
-		try { SwingUtilities.invokeAndWait(doRun); }
-		catch (InvocationTargetException | InterruptedException e) { e.printStackTrace(); }
+		if (SwingUtilities.isEventDispatchThread())
+			doRun.run();
+		else
+			try { SwingUtilities.invokeAndWait(doRun); }
+			catch (InvocationTargetException | InterruptedException e) { e.printStackTrace(); }
 	}
 
 	public static void runWithProgressDialog(Window parent, String title, Consumer<ProgressDialog> useProgressDialog) {
@@ -828,6 +881,9 @@ public class SaveViewer implements ActionListener {
 		}
 
 		public JSON_Object deObfuscate(JSON_Object data) {
+			return deObfuscate(data, true);
+		}
+		public JSON_Object deObfuscate(JSON_Object data, boolean verbose) {
 			
 			usage = new HashMap<>();
 			Result res = new Result();
@@ -849,10 +905,12 @@ public class SaveViewer implements ActionListener {
 					res.unkown.add(nv.name);
 			});
 			
-			SaveViewer.log_ln("DeObfuscation done");
-			SaveViewer.log_ln("   %d of %d replacements done",res.known,res.all);
-			SaveViewer.log_ln("   %d unknown names",res.unkown.size());
-			SaveViewer.log_ln("   %d known names",replacements.size());
+			if (verbose) {
+				SaveViewer.log_ln("DeObfuscation done");
+				SaveViewer.log_ln("   %d of %d replacements done",res.known,res.all);
+				SaveViewer.log_ln("   %d unknown names",res.unkown.size());
+				SaveViewer.log_ln("   %d known names",replacements.size());
+			}
 			
 			return data;
 		}

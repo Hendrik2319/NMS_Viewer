@@ -533,9 +533,9 @@ public class GameInfos {
 			uod_uniObj = null;
 			
 			switch(uoData.type) {
-			case Region     :              uod_region = (UOD_Region     )uoData; if (ua.isRegion     ())          region = forceCreation ? universe.getOrCreateRegion     (ua) : universe.findRegion     (ua); break;
-			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = forceCreation ? universe.getOrCreateSolarSystem(ua) : universe.findSolarSystem(ua); break;
-			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = forceCreation ? universe.getOrCreatePlanet     (ua) : universe.findPlanet     (ua); break;
+			case Region     :              uod_region = (UOD_Region     )uoData; if (ua.isRegion     ())          region = forceCreation ? universe.getOrCreateRegion     (ua,obj->{}) : universe.findRegion     (ua); break;
+			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = forceCreation ? universe.getOrCreateSolarSystem(ua,obj->{}) : universe.findSolarSystem(ua); break;
+			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = forceCreation ? universe.getOrCreatePlanet     (ua,obj->{}) : universe.findPlanet     (ua); break;
 			}
 			if (region!=null) { objName = "region "+ua.getCoordinates_Region();   if (withOutput) SaveViewer.log_ln("Region %s"      ,ua.getCoordinates_Region  ()); }
 			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log_ln("Solar system %s",ua.getSigBoostCode        ()); }

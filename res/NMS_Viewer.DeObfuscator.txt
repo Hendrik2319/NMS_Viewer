@@ -95,7 +95,7 @@ MYl [Word]
 eZ< KnownProducts
 4kj KnownTech
 24< [KnownQuicksilverSpecials]
-Ddk [KnownRefinerRecipes]
+Ddk [KnownRecipes]
 
 dwb MissionProgress
 p0c Mission

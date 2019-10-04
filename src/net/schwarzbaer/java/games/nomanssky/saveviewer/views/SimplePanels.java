@@ -34,14 +34,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellEditor;
 
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
@@ -220,8 +218,8 @@ public class SimplePanels {
 				new ColumnID("Diplomacy"       ,      Long.class, 35, -1,  50,  50, fr->fr.diplomacyValue),
 				new ColumnID("Modifications"   ,    String.class, 35, -1,  50,  50, fr->showValue(fr.modifications)),
 				new ColumnID("Cur.Dam."        ,    String.class, 35, -1,  50,  50, fr->fr.damageValue==null || fr.damageValue==0?"":"damaged ("+fr.damageValue+")"),
-				new ColumnID("ModelSeed"       , SeedValue.class, 35, -1, 170, 170, fr->fr.modelSeed),
-				new ColumnID("HomeSeed"        , SeedValue.class, 35, -1, 170, 170, fr->fr.homeSeed),
+				new ColumnID("ModelSeed"       ,    String.class, 35, -1, 130, 130, fr->fr.modelSeed==null ? null : fr.modelSeed.getSeedStr()),
+				new ColumnID("HomeSeed"        ,    String.class, 35, -1, 130, 130, fr->fr.homeSeed ==null ? null : fr.homeSeed .getSeedStr()),
 				new ColumnID("Unidentified"    ,    String.class, 35, -1,  70,  70, fr->fr.unidentified.getUnidentifiedLongs()),
 			});
 			
@@ -608,7 +606,7 @@ public class SimplePanels {
 			super(data,"TeleportEndpointsTable",true,SaveViewer.DEBUG,true,data.teleportEndpoints,
 				new ColumnID[] {
 					new ColumnID("Name"            , String.class, 150,-1,250,250, te->te.name),
-					new ColumnID("Teleport Host"   , String.class,  50,-1,100,100, te->te.teleportHost   !=null ? te.teleportHost.label : te.teleportHostStr==null ? "" : "["+te.teleportHostStr+"]"),
+					new ColumnID("Teleport Host"   , String.class,  50,-1,130,130, te->te.teleportHost   !=null ? te.teleportHost.label : te.teleportHostStr==null ? "" : "["+te.teleportHostStr+"]"),
 					new ColumnID("Universe Address", String.class,  80,-1,160,160, te->te.universeAddress==null ? "" : te.universeAddress.getCoordinates()),
 					new ColumnID("Planet / System" , String.class, 200,-1,420,420, te->te.universeAddress==null ? "" : te.universeAddress.getVerboseNameInOneLine(data.universe,2)),
 					new ColumnID("GPS Coords"      , String.class,  90,-1,180,180, te->te.gpsCoords      ==null ? "" : te.gpsCoords.toString()),
@@ -734,6 +732,69 @@ public class SimplePanels {
 				new ColumnID("Coordinates"    , String.class,  20,-1,200,200, sys->sys.ua==null ? null : sys.ua.getCoordinates()),
 				new ColumnID("Name"           , String.class,  20,-1,700,700, sys->sys.ua==null ? null : sys.ua.getVerboseNameInOneLine(data.universe, 2)),
 			});
+		}
+	}
+
+	public static class AllBlueprintsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 3973411381549824254L;
+
+		private static class BlueprintColumnID extends TableView.VerySimpleTable.ColumnID<GeneralizedID> {
+			public BlueprintColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<GeneralizedID, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		private static class RecipeColumnID extends TableView.VerySimpleTable.ColumnID<String> {
+			public RecipeColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<String, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		
+		private final VerySimpleTable<GeneralizedID> techsTable;
+		private final VerySimpleTable<GeneralizedID> productsTable;
+		private final VerySimpleTable<GeneralizedID> quicksilversTable;
+		private final VerySimpleTable<String> recipesTable;
+		
+		public AllBlueprintsPanel(SaveGameData data) {
+			super(data);
+			
+			BlueprintColumnID[] blueprintColumns = new BlueprintColumnID[] {
+				new BlueprintColumnID("ID"    , String.class, 20,-1,120,120, id->id.id),
+				new BlueprintColumnID("Label" , String.class, 20,-1,220,220, id->id.label),
+			};
+			RecipeColumnID[] recipeColumns = new RecipeColumnID[] {
+				new RecipeColumnID("ID"    , String.class, 20,-1,200,200, id->id),
+			};
+			
+			JPanel tablePanel = new JPanel(new GridLayout(1,0));
+			techsTable        = addTable(tablePanel, "Known Technologies"        , data.knownBlueprints.technologies, blueprintColumns);
+			productsTable     = addTable(tablePanel, "Known Products"            , data.knownBlueprints.products    , blueprintColumns);
+			quicksilversTable = addTable(tablePanel, "Known Quicksilver Specials", data.knownBlueprints.quicksilvers, blueprintColumns);
+			recipesTable      = addTable(tablePanel, "Known Recipes"             , data.knownBlueprints.recipes     , recipeColumns   );
+			add(tablePanel,BorderLayout.CENTER);
+		}
+		
+		private VerySimpleTable<String> addTable(JPanel tablePanel, String label, Vector<String> data, RecipeColumnID[] columns) {
+			VerySimpleTable<String> table = new VerySimpleTable<>(label+" Table",true,SaveViewer.DEBUG,true,data,columns);
+			addTable(tablePanel, label, table);
+			return table;
+		}
+		private VerySimpleTable<GeneralizedID> addTable(JPanel tablePanel, String label, Vector<GeneralizedID> data, BlueprintColumnID[] columns) {
+			VerySimpleTable<GeneralizedID> table = new VerySimpleTable<>(label+" Table",true,SaveViewer.DEBUG,true,data,columns);
+			addTable(tablePanel, label, table);
+			return table;
+		}
+		private void addTable(JPanel tablePanel, String label, JTable table) {
+			JScrollPane scrollPane = new JScrollPane(table);
+			scrollPane.setBorder(BorderFactory.createTitledBorder(label));
+			tablePanel.add(scrollPane);
+		}
+		
+		@Override
+		public void updateContent() {
+			techsTable       .getModel_SimplifiedTableModel().fireTableUpdate();
+			productsTable    .getModel_SimplifiedTableModel().fireTableUpdate();
+			quicksilversTable.getModel_SimplifiedTableModel().fireTableUpdate();
+			recipesTable     .getModel_SimplifiedTableModel().fireTableUpdate();
 		}
 	}
 
@@ -1164,86 +1225,6 @@ public class SimplePanels {
 					case At       : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
 					}
 					return null;
-				}
-			}
-		}
-	}
-	
-	public static class BlueprintsPanel extends SaveGameViewTabPanel {
-		private static final long serialVersionUID = -3032632553321731912L;
-		enum BlueprintType { KnownProductBlueprints, KnownTechBlueprints }
-		
-		private final SimplifiedTable table;
-		private final BlueprintsTableModel tableModel;
-		private final BlueprintType type;
-		
-		public BlueprintsPanel(SaveGameData data, BlueprintType type, String tableDebugLabel) {
-			super(data);
-			this.type = type;
-			
-			GeneralizedID[] blueprints = null;
-			switch(type) {
-			case KnownProductBlueprints: blueprints=data.knownBlueprints.products; break;
-			case KnownTechBlueprints   : blueprints=data.knownBlueprints.technologies; break;
-			}
-			if (blueprints == null) {
-				tableModel = null;
-				table = null;
-				return;
-			}
-			
-			tableModel = new BlueprintsTableModel(blueprints);
-			table = new SimplifiedTable(tableDebugLabel,tableModel,true,SaveViewer.DEBUG,true);
-			JScrollPane tableScrollPane = new JScrollPane(table);
-			
-			add(tableScrollPane,BorderLayout.CENTER);
-		}
-		
-		@Override
-		public void updateContent() {
-			TableCellEditor cellEditor = table.getCellEditor();
-			if (cellEditor!=null) cellEditor.stopCellEditing();
-			tableModel.fireTableUpdate();
-		}
-
-		private enum ColumnID implements SimplifiedColumnIDInterface {
-			ID    ("ID"    , String.class, 100,-1,120,120),
-			Label ("Label" , String.class, 200,-1,220,220);
-			
-			private SimplifiedColumnConfig columnConfig;
-			
-			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
-			}
-			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
-		}
-	
-		private class BlueprintsTableModel extends SimplifiedTableModel<ColumnID> {
-
-			private GeneralizedID[] blueprints;
-
-			protected BlueprintsTableModel(GeneralizedID[] blueprints) {
-				super(ColumnID.values());
-				this.blueprints = blueprints;
-			}
-
-			@Override public int getRowCount() { return blueprints.length; }
-			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
-				switch(columnID) {
-				case ID   : return blueprints[rowIndex].id;
-				case Label: return blueprints[rowIndex].label;
-				}
-				return null;
-			}
-
-			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) { return columnID == ColumnID.Label; }
-			@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ColumnID columnID) {
-				if (columnID == ColumnID.Label) {
-					blueprints[rowIndex].setLabel(aValue==null?"":aValue.toString());
-					switch(type) {
-					case KnownProductBlueprints: GameInfos.saveProductIDsToFile(); break;
-					case KnownTechBlueprints   : GameInfos.saveTechIDsToFile(); break;
-					}
 				}
 			}
 		}

@@ -21,7 +21,6 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels.BlueprintsPanel.BlueprintType;
 
 public class SaveGameView extends JPanel {
 
@@ -92,11 +91,12 @@ public class SaveGameView extends JPanel {
 			rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data));
 			rawDataPanel.addPanel("DiscoveryData (Stored)", new SimplePanels.DiscoveredDataStoredPanel(data));
 			
-			SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
-			blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
-			blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
+//			SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
+//			blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
+//			blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
+//			tabbedPane.addTab("Blueprints",blueprintsPanel);
 			
-			tabbedPane.addTab("Blueprints",blueprintsPanel);
+			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data));
 			
 			if (data.storedInteractions!=null) rawDataPanel.addPanel("Stored Interactions",new SimplePanels.StoredInteractionsPanel(data));
 			if (data.markerStack       !=null) rawDataPanel.addPanel("Marker Stack",new SimplePanels.MarkerStackPanel(data));
