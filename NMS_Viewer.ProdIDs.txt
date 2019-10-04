@@ -1601,9 +1601,12 @@
 ^SPEC_DECAL06=
 ^SPEC_DECAL07=
 ^SPEC_DECAL08=
+^SPEC_DIVEHELMET=
 ^SPEC_FIREWORK02=Feuerwerk
 ^SPEC_FIREWORK02.image=_self.SPEC_FIREWORK.png
 ^SPEC_FIREWORK02.imageBG=262626
+^SPEC_HELMET01=
+^SPEC_HELMET03=
 ^SPHERESHAPE=
 ^SPHERESHAPE.type=BaseComponent
 ^STARCHART_A=Planetenkarte (Sicherer, Interessanter Ort)
@@ -1806,6 +1809,7 @@
 ^U_EXO_ENG1.type=ExocraftExtensionUpgradeM
 ^U_EXO_ENG1.image=_self.ExoDriveUpgradeModule.png
 ^U_EXO_ENG1.imageBG=5B9352
+^U_EXO_ENG4=
 ^U_EXO_SUB4=Humboldt-Antriebsmodul (S)
 ^U_EXO_SUB4.type=ExocraftExtensionUpgradeM
 ^U_EXO_SUB4.imageBG=F0A92B
@@ -1915,6 +1919,7 @@
 ^U_SHIPGUN3.type=ShipWeaponUpgradeM
 ^U_SHIPGUN3.image=NmsTech_Heat_Capacitor_Icon_13.png
 ^U_SHIPGUN3.imageBG=7C4562
+^U_SHIPGUN4=
 ^U_SHIPLAS2=Phasenstrahler-Modul (B)
 ^U_SHIPLAS2.type=ShipWeaponUpgradeM
 ^U_SHIPLAS2.image=NmsCommodity_QuantumAccelerator_icon.png
