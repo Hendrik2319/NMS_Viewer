@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -34,8 +35,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.AssignmentExistsException;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MarkerStack.Marker;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MissionProgress.Mission;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase.BaseType;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints.TeleportHost;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
@@ -69,6 +68,7 @@ public class SaveGameData {
 	public final General general;
 	public final Universe universe;
 	public final DiscoveryData discoveryData;
+	public final ExperimentalData experimentalData;
 	public Stats stats = null;
 	public KnownWords knownWords = null;
 	public KnownWords knownWords2 = null;
@@ -76,7 +76,6 @@ public class SaveGameData {
 	public KnownBlueprints knownBlueprints = null;
 	public UnboundBuildingObject[] baseBuildingObjects = null;
 	public Vector<PersistentPlayerBase> persistentPlayerBases = null;
-	public Vector<StoredInteraction> storedInteractions = null;
 	public Vector<TeleportEndpoints> teleportEndpoints = null;
 	
 	public Vector<Frigate> frigates = null;
@@ -86,8 +85,6 @@ public class SaveGameData {
 	public VehicleGroup<SpaceShip> spaceShips = null;
 	public VehicleGroup<Exocraft>  exocrafts  = null;
 	
-	public Vector<Mission> missionProgress = null;
-	public Vector<Marker> markerStack = null;
 	public Vector<UniverseAddress> AtlasStationAdressData = null;
 	public Vector<UniverseAddress> NewAtlasStationAdressData = null;
 	public Vector<UniverseAddress> VisitedAtlasStationsData = null;
@@ -106,6 +103,7 @@ public class SaveGameData {
 		this.general = new General(this);
 		this.universe = new Universe();
 		this.discoveryData = new DiscoveryData(this);
+		this.experimentalData = new ExperimentalData(this);
 	}
 
 	public void setDeObfuscatorUsage(HashMap<String, Vector<String>> deObfuscatorUsage) {
@@ -128,10 +126,7 @@ public class SaveGameData {
 		inventories = Inventories.parseInventories(this);
 		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
-		storedInteractions = StoredInteraction.parse(this);
 		
-		missionProgress = MissionProgress.parse(this);
-		markerStack = MarkerStack.parse(this);
 		AtlasStationAdressData    = parseUniverseAddressStructureArray("AtlasStationAdressData"   , json_data, "PlayerStateData", "AtlasStationAdressData");
 		NewAtlasStationAdressData = parseUniverseAddressStructureArray("NewAtlasStationAdressData", json_data, "PlayerStateData", "NewAtlasStationAdressData");
 		VisitedAtlasStationsData  = parseUniverseAddressStructureArray("VisitedAtlasStationsData" , json_data, "PlayerStateData", "VisitedAtlasStationsData");
@@ -142,6 +137,9 @@ public class SaveGameData {
 		exocrafts  = VehicleGroup.parseExocrafts(this);
 		frigates   = Frigate   .parse(this);
 		parseFrigateMissions();
+		
+		experimentalData.parse();
+		
 		universe.sort();
 		//universe.writeToConsole();
 		
@@ -840,67 +838,6 @@ public class SaveGameData {
 				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
 			
 			return teleportEndpoints;
-		}
-	}
-
-	public static class StoredInteraction {
-		
-		public int groupIndex;
-		public int interactionIndex;
-		public UniverseAddress galacticAddress;
-		public Long value;
-		public Coordinates position;
-		public PolarCoordinates gpsCoords;
-		
-		public StoredInteraction() {
-			this.groupIndex = -1;
-			this.interactionIndex = -1;
-			this.galacticAddress = null;
-			this.value = null;
-			this.position = null;
-			this.gpsCoords = null;
-		}
-
-		private static Vector<StoredInteraction> parse(SaveGameData data) {
-			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","StoredInteractions");
-			if (arrayValue==null) return null;
-			JSON_Array notParsableObjects = new JSON_Array();
-			
-			Vector<StoredInteraction> storedInteractions = new Vector<StoredInteraction>();
-			for (int i=0; i<arrayValue.size(); ++i) {
-				Value value = arrayValue.get(i);
-				JSON_Object objectValue = getObject(value);
-				if (objectValue==null) {
-					notParsableObjects.add(value);
-					continue;
-				}
-				
-				JSON_Array interactions = getArrayValue(objectValue,"Interactions");
-				if (interactions==null) continue;
-				
-				for (int j=0; j<interactions.size(); ++j) {
-					Value interactionValue = interactions.get(j);
-					JSON_Object interaction = getObject(interactionValue);
-					if (interaction==null) {
-						notParsableObjects.add(interactionValue);
-						continue;
-					}
-					StoredInteraction si = new StoredInteraction();
-					si.groupIndex       = i;
-					si.interactionIndex = j;
-					si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
-					si.value            = getIntegerValue(interaction, "Value");
-					si.position         = Coordinates.parse(interaction, "Position");
-					si.gpsCoords        = PolarCoordinates.parse(si.position);
-					
-					storedInteractions.add(si);
-				}
-			}
-			
-			if (!notParsableObjects.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
-			
-			return storedInteractions;
 		}
 	}
 
@@ -2581,71 +2518,233 @@ public class SaveGameData {
 			}
 		}
 	}
-	
-	public final static class MissionProgress {
-		
-		public final static class Mission {
-			public String Mission = null;
-			public Long Progress = null;
-			public Long Seed = null;
-			public Long Data = null;
-			public Vector<Participant> Participants = null;
-		}
-		public final static class Participant {
-			public UniverseAddress UA = null;
-			public SeedValue BuildingSeed = null;
-			public Coordinates BuildingLocation = null;
-			public String ParticipantType = null;
-		}
-		
-		public static Vector<Mission> parse(SaveGameData data) {
-			return parseObjectArray(Mission::new, (mission,objectValue)->{
-				mission.Mission      = getStringValue (objectValue, "Mission");
-				mission.Progress     = getIntegerValue(objectValue, "Progress");
-				mission.Seed         = getIntegerValue(objectValue, "Seed");
-				mission.Data         = getIntegerValue(objectValue, "Data");
-				mission.Participants = parseObjectArray(Participant::new, (participant,objectValue2)->{
-					participant.UA               = parseUniverseAddressField(objectValue2, "UA");
-					participant.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue2, "BuildingSeed") );
-					if (hasValue(objectValue2, "BuildingLocation"))
-						participant.BuildingLocation = Coordinates.parse(objectValue2, "BuildingLocation");
-					participant.ParticipantType  = getStringValue (objectValue2, "ParticipantType", "ParticipantType");
-				}, "MissionProgress.Participants", objectValue,"Participants");
-			}, "MissionProgress", data.json_data,"PlayerStateData","MissionProgress");
-		}
-		
-	}
-	
-	public final static class MarkerStack {
-		
-		public final static class Marker {
 
-			public Long Table;
-			public String Event;
+	public static final class ExperimentalData {
+
+		private SaveGameData data;
+		public Vector<StoredInteraction> storedInteractions = null;
+		public Vector<MissionProgress.Mission> missionProgress = null;
+		public Vector<MarkerStack.Marker> markerStack = null;
+		public DATA_Wu_ data_Wu_ = null;
+		public DATA_EQt data_EQt = null;
+		public DATA_m4I data_m4I = null;
+
+		public ExperimentalData(SaveGameData data) {
+			this.data = data;
+		}
+
+		public void parse() {
+			storedInteractions = StoredInteraction.parse(data);
+			
+			missionProgress = MissionProgress.parse(data);
+			markerStack = MarkerStack.parse(data);
+			
+			data_Wu_ = new DATA_Wu_(); data_Wu_.parse(data);
+			data_EQt = new DATA_EQt(); data_EQt.parse(data);
+			data_m4I = new DATA_m4I(); data_m4I.parse(data);
+		}
+
+		public static abstract class RawData<DataType> {
+			
+			public Vector<DataType> data = null;
+			
+			public final Object[] path;
+			public final String shortLabel;
+			private Supplier<DataType> createNew;
+			private BiConsumer<DataType, JSON_Object> parseValues;
+			
+			RawData(String shortLabel, Supplier<DataType> createNew, BiConsumer<DataType, JSON_Object> parseValues, Object... path) {
+				this.shortLabel = shortLabel;
+				this.createNew = createNew;
+				this.parseValues = parseValues;
+				this.path = path;
+			}
+			
+			void parse(SaveGameData data) {
+				if (!hasValue(data.json_data,path)) return; 
+				this.data = parseObjectArray(createNew, parseValues, Arrays.toString(path), data.json_data,path);
+			}
+
+			public String getTabTitel() {
+				Iterator<String> it = Arrays.stream(path).<String>map(obj->obj==null?"<null>":obj.toString()).iterator();
+				return String.join(" -> ",(Iterable<String>) ()->it);
+			}
+		}
+
+		public static class DATA_Wu_ extends RawData<DATA_Wu_.Data> {
+			
+			public static class Data {
+				public String value_E_X = null;
+				public String value_2Fk = null;
+			}
+			
+			DATA_Wu_() {
+				super("Wu?", Data::new, (item,objectValue)->{
+					item.value_E_X = getStringValue(objectValue, "??? [E=X]");
+					item.value_2Fk = getStringValue(objectValue, "??? [2Fk]");
+				}, "PlayerStateData","??? [Wu?]");
+			}
+		}
+
+		public static class DATA_EQt extends RawData<DATA_EQt.Data> {
+			
+			public static class Data {
+				public String MissionID = null;
+				public Long   value_oF_ = null;
+			}
+
+			DATA_EQt() {
+				super("EQt", Data::new, (item,objectValue)->{
+					item.MissionID = getStringValue(objectValue, "MissionID");
+					item.value_oF_ = getIntegerValue(objectValue, "??? [oF@]");
+				}, "PlayerStateData","??? [EQt]");
+			}
+		}
+
+		public static class DATA_m4I extends RawData<DATA_m4I.Data> {
+			
+			public static class Data {
+				public String Id;
+				public String Type;
+				public Long Value;
+			}
+
+			DATA_m4I() {
+				super("m4I", Data::new, (item,objectValue)->{
+					item.Id    =  getStringValue(objectValue, "Id"   );
+					item.Type  =  getStringValue(objectValue, "Type" );
+					item.Value = getIntegerValue(objectValue, "Value");
+				}, "PlayerStateData","??? [m4I]");
+			}
+		}
+
+		public static class StoredInteraction {
+			
+			public int groupIndex;
+			public int interactionIndex;
 			public UniverseAddress galacticAddress;
-			public SeedValue BuildingSeed;
-			public Coordinates BuildingLocation;
-			public String BuildingClass;
-			public Double Time;
-			public String MissionID;
-			public Long MissionSeed;
-			public String ParticipantType;
+			public Long value;
+			public Coordinates position;
+			public PolarCoordinates gpsCoords;
+			
+			public StoredInteraction() {
+				this.groupIndex = -1;
+				this.interactionIndex = -1;
+				this.galacticAddress = null;
+				this.value = null;
+				this.position = null;
+				this.gpsCoords = null;
+			}
+		
+			private static Vector<StoredInteraction> parse(SaveGameData data) {
+				JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","StoredInteractions");
+				if (arrayValue==null) return null;
+				JSON_Array notParsableObjects = new JSON_Array();
+				
+				Vector<StoredInteraction> storedInteractions = new Vector<StoredInteraction>();
+				for (int i=0; i<arrayValue.size(); ++i) {
+					Value value = arrayValue.get(i);
+					JSON_Object objectValue = getObject(value);
+					if (objectValue==null) {
+						notParsableObjects.add(value);
+						continue;
+					}
+					
+					JSON_Array interactions = getArrayValue(objectValue,"Interactions");
+					if (interactions==null) continue;
+					
+					for (int j=0; j<interactions.size(); ++j) {
+						Value interactionValue = interactions.get(j);
+						JSON_Object interaction = getObject(interactionValue);
+						if (interaction==null) {
+							notParsableObjects.add(interactionValue);
+							continue;
+						}
+						StoredInteraction si = new StoredInteraction();
+						si.groupIndex       = i;
+						si.interactionIndex = j;
+						si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
+						si.value            = getIntegerValue(interaction, "Value");
+						si.position         = Coordinates.parse(interaction, "Position");
+						si.gpsCoords        = PolarCoordinates.parse(si.position);
+						
+						storedInteractions.add(si);
+					}
+				}
+				
+				if (!notParsableObjects.isEmpty())
+					SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
+				
+				return storedInteractions;
+			}
 		}
 
-		public static Vector<Marker> parse(SaveGameData data) {
-			return parseObjectArray(Marker::new, (marker,objectValue)->{
-				marker.Table            = getIntegerValue(objectValue, "Table");
-				marker.Event            = getStringValue (objectValue, "Event");
-				marker.galacticAddress  = parseUniverseAddressField(objectValue, "GalacticAddress");
-				marker.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue, "BuildingSeed") );
-				marker.BuildingLocation = Coordinates.parse(objectValue, "BuildingLocation");
-				marker.BuildingClass    = getStringValue (objectValue, "BuildingClass", "BuildingClass");
-				marker.Time             = getFloatValue  (objectValue, "Time");
-				marker.MissionID        = getStringValue (objectValue, "MissionID");
-				marker.MissionSeed      = getIntegerValue(objectValue, "MissionSeed");
-				marker.ParticipantType  = getStringValue (objectValue, "ParticipantType", "ParticipantType");
-			}, "MarkerStack", data.json_data,"PlayerStateData","MarkerStack");
+		public final static class MissionProgress {
+			
+			public final static class Mission {
+				public String Mission = null;
+				public Long Progress = null;
+				public Long Seed = null;
+				public Long Data = null;
+				public Vector<Participant> Participants = null;
+			}
+			public final static class Participant {
+				public UniverseAddress UA = null;
+				public SeedValue BuildingSeed = null;
+				public Coordinates BuildingLocation = null;
+				public String ParticipantType = null;
+			}
+			
+			public static Vector<Mission> parse(SaveGameData data) {
+				return parseObjectArray(Mission::new, (mission,objectValue)->{
+					mission.Mission      = getStringValue (objectValue, "Mission");
+					mission.Progress     = getIntegerValue(objectValue, "Progress");
+					mission.Seed         = getIntegerValue(objectValue, "Seed");
+					mission.Data         = getIntegerValue(objectValue, "Data");
+					mission.Participants = parseObjectArray(Participant::new, (participant,objectValue2)->{
+						participant.UA               = parseUniverseAddressField(objectValue2, "UA");
+						participant.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue2, "BuildingSeed") );
+						if (hasValue(objectValue2, "BuildingLocation"))
+							participant.BuildingLocation = Coordinates.parse(objectValue2, "BuildingLocation");
+						participant.ParticipantType  = getStringValue (objectValue2, "ParticipantType", "ParticipantType");
+					}, "MissionProgress.Participants", objectValue,"Participants");
+				}, "MissionProgress", data.json_data,"PlayerStateData","MissionProgress");
+			}
+			
 		}
+
+		public final static class MarkerStack {
+			
+			public final static class Marker {
+		
+				public Long Table;
+				public String Event;
+				public UniverseAddress galacticAddress;
+				public SeedValue BuildingSeed;
+				public Coordinates BuildingLocation;
+				public String BuildingClass;
+				public Double Time;
+				public String MissionID;
+				public Long MissionSeed;
+				public String ParticipantType;
+			}
+		
+			public static Vector<Marker> parse(SaveGameData data) {
+				return parseObjectArray(Marker::new, (marker,objectValue)->{
+					marker.Table            = getIntegerValue(objectValue, "Table");
+					marker.Event            = getStringValue (objectValue, "Event");
+					marker.galacticAddress  = parseUniverseAddressField(objectValue, "GalacticAddress");
+					marker.BuildingSeed     = SeedValue.parse( getArrayValue(objectValue, "BuildingSeed") );
+					marker.BuildingLocation = Coordinates.parse(objectValue, "BuildingLocation");
+					marker.BuildingClass    = getStringValue (objectValue, "BuildingClass", "BuildingClass");
+					marker.Time             = getFloatValue  (objectValue, "Time");
+					marker.MissionID        = getStringValue (objectValue, "MissionID");
+					marker.MissionSeed      = getIntegerValue(objectValue, "MissionSeed");
+					marker.ParticipantType  = getStringValue (objectValue, "ParticipantType", "ParticipantType");
+				}, "MarkerStack", data.json_data,"PlayerStateData","MarkerStack");
+			}
+		}
+
 	}
 	
 	public final static class General {

@@ -98,11 +98,9 @@ public class SaveGameView extends JPanel {
 			
 			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data));
 			
-			if (data.storedInteractions!=null) rawDataPanel.addPanel("Stored Interactions",new SimplePanels.StoredInteractionsPanel(data));
-			if (data.markerStack       !=null) rawDataPanel.addPanel("Marker Stack",new SimplePanels.MarkerStackPanel(data));
+			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data);
+			if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data));
 			rawDataPanel.addPanel("Atlas Stations",new SimplePanels.AtlasStationAdressDataPanel(data));
-			if (data.missionProgress   !=null) rawDataPanel.addPanel("Mission Progress",new SimplePanels.MissionProgressPanel(data));
-			if (data.visitedSystems    !=null) rawDataPanel.addPanel("Visited Systems",new SimplePanels.VisitedSystemsPanel(data));
 			
 			tabbedPane.addTab("Raw Data",rawDataPanel);
 		}
