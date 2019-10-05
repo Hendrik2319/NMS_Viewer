@@ -6345,6 +6345,23 @@ biome=Toxic
 with water
 resources=Em,NH3,Ag
 
+[Sys01DE00FDD7F684]
+name=Idliggj-Pame
+race=Korvax
+conflict=1
+conflict_label=friedlich
+economy=3
+economy_label=wohlhabend
+atlasinterface=false
+blackhole=false
+short=3 Planeten
+info=
+
+[Pln11DE00FDD7F684]
+name=Mahabile
+biome=Barren
+resources=Cu,Py,Fe__
+
 [Reg000000FED80684]
 name=Iryatsiy-Rand
 
