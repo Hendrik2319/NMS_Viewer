@@ -1809,7 +1809,10 @@
 ^U_EXO_ENG1.type=ExocraftExtensionUpgradeM
 ^U_EXO_ENG1.image=_self.ExoDriveUpgradeModule.png
 ^U_EXO_ENG1.imageBG=5B9352
-^U_EXO_ENG4=
+^U_EXO_ENG4=Exo-Fahrzeug-Antrieb-Modul (S)
+^U_EXO_ENG4.type=ExocraftExtensionUpgradeM
+^U_EXO_ENG4.image=_self.ExoDriveUpgradeModule.png
+^U_EXO_ENG4.imageBG=F0A92B
 ^U_EXO_SUB4=Humboldt-Antriebsmodul (S)
 ^U_EXO_SUB4.type=ExocraftExtensionUpgradeM
 ^U_EXO_SUB4.imageBG=F0A92B
@@ -1919,7 +1922,10 @@
 ^U_SHIPGUN3.type=ShipWeaponUpgradeM
 ^U_SHIPGUN3.image=NmsTech_Heat_Capacitor_Icon_13.png
 ^U_SHIPGUN3.imageBG=7C4562
-^U_SHIPGUN4=
+^U_SHIPGUN4=Photonenkanonen-Modul (S)
+^U_SHIPGUN4.type=ShipWeaponUpgradeM
+^U_SHIPGUN4.image=NmsTech_Heat_Capacitor_Icon_13.png
+^U_SHIPGUN4.imageBG=F0A92B
 ^U_SHIPLAS2=Phasenstrahler-Modul (B)
 ^U_SHIPLAS2.type=ShipWeaponUpgradeM
 ^U_SHIPLAS2.image=NmsCommodity_QuantumAccelerator_icon.png

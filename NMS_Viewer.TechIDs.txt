@@ -601,7 +601,7 @@
 ^SUB_ENGINE.imageBG=085C78
 ^SUB_GUN=Nautilon-Kanone
 ^SUB_GUN.type=ExocraftWeapon
-^SUB_GUN.image=_self.RENDER.VEHICLE_NautilonCanon.png
+^SUB_GUN.image=RENDER.SUBMARINECANNON.png
 ^SUB_GUN.imageBG=085C78
 ^SUB_LASER=Tethys-Strahl
 ^SUB_LASER.type=ExocraftWeapon

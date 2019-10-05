@@ -5283,6 +5283,33 @@ class=Yellow
 short=1 Planet
 info=
 
+[Reg000000FE5F33B9]
+name=Stewan-Nebel
+
+[Sys015A00FE5F33B9]
+name=Nagordo
+race=Korvax
+conflict=2
+conflict_label=unregelmäßig
+economy=2
+economy_label=komfortabel
+atlasinterface=false
+blackhole=false
+class=Blue
+
+[Pln115A00FE5F33B9]
+name=Zawar XIII
+biome=Lush
+aggrSentinels
+with water
+gravitino balls
+resources=In,Pf,Na
+
+[Pln215A00FE5F33B9]
+name=Satchar VII
+biome=Airless
+resources=In,Na,Sr_Rost
+
 [Reg000000001B0400]
 name=Dunyalgo-Wolke
 
@@ -6247,6 +6274,26 @@ with water
 resources=Cu,U,Co
 short=
 info=<ParsedPlanetaryResources> Cu, U, Co
+
+[Sys01FE00FCD7F684]
+name=Iexius-Coz XVII
+unexplored
+atlasinterface=false
+blackhole=false
+class=Red
+
+[Pln11FE00FCD7F684]
+name=Sraelis Gamma
+biome=Exotic_Mega
+resources=Cd,P,Co
+short="Roter Dunst"
+info="Gelb-Filter": alles ist gelb ... am Boden wieder alles Ok
+
+[Pln21FE00FCD7F684]
+name=Funast Omega
+biome=Irradiated
+is extreme
+resources=Cd_,U,Fe__
 
 [Sys021100FCD7F684]
 name=Nidika-Urod XVIII
