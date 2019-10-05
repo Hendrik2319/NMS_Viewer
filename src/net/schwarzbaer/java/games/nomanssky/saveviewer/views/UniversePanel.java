@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
@@ -385,6 +386,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private GenericTreeNode<?> selectedNode;
 	private GenericTreeNode<?> clickedNode;
 	private TreePath clickedTreePath;
+	private int[] markerList;
+	private float selectedMarkerIndex;
 	
 	private Contextmenu_Other       contextMenu_Other;
 	private Contextmenu_Region      contextMenu_Region;
@@ -393,6 +396,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	
 	private Window mainWindow;
 	
+	private SearchBar             searchBar;
 	private AbstractInfoPanel     currentInfoPanel;
 	private InfoPanel_Other       infoPanel_Other;
 	private InfoPanel_SolarSystem infoPanel_SolarSystem;
@@ -404,17 +408,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		this.mainWindow = mainWindow;
 		this.galaxyMapPanel = null;
 		
+		markerList = new int[0];
+		selectedMarkerIndex = Float.NaN;
+		
 		selectedNode = null;
 		TreeListener listener = new TreeListener();
 		
 		treeModel = new DefaultTreeModel(treeRoot = new UniverseNode(data.universe));
-		treeScrollPane = new JScrollPane(tree = new JTree(treeModel));
+		tree = new JTree(treeModel);
 		tree.addTreeSelectionListener(listener);
 		tree.addMouseListener(listener);
 		tree.setCellRenderer(new UniverseTreeCellRenderer(data));
 		tree.setRowHeight(TreeIconHeight+1);
-		expandFullTree();
-		scrollToCurrentPosition();
+		
+		treeScrollPane = new JScrollPane(tree);
 		
 		contextMenu_Other       = new Contextmenu_Other();
 		contextMenu_SolarSystem = new Contextmenu_SolarSystem();
@@ -425,12 +432,25 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		infoPanel_SolarSystem = new InfoPanel_SolarSystem();
 		infoPanel_Planet      = new InfoPanel_Planet();
 		
+		searchBar = new SearchBar();
+		
 		JPanel treePanel = new JPanel(new BorderLayout(3,3));
 		treePanel.add(treeScrollPane,BorderLayout.CENTER);
-		treePanel.add(new SearchBar(),BorderLayout.NORTH);
+		treePanel.add(searchBar,BorderLayout.NORTH);
 		
 		add(treePanel,BorderLayout.CENTER);
 		add(currentInfoPanel = infoPanel_Other,BorderLayout.EAST);
+		
+		JScrollBar verticalScrollBar = treeScrollPane.getVerticalScrollBar();
+		verticalScrollBar.getModel().addChangeListener(e->{
+			if (!verticalScrollBar.getValueIsAdjusting())
+				updateSelectedMarkerIndex();
+		});
+		
+		expandFullTree();
+		scrollToCurrentPosition();
+		
+		updateMarkerList();
 	}
 	
 	public void setGalaxyMapPanel(GalaxyMapPanel galaxyMapPanel) {
@@ -1535,48 +1555,28 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		case FindExtraInfo: {
 			FindExtraInfoDialog dialog = new FindExtraInfoDialog(mainWindow,data.universe);
 			dialog.showDialog();
-			GenericTreeNode<?>[] changedObjects = dialog.getChangedObjects();
-			show(changedObjects);
-			updateChangedObjects(treeRoot,changedObjects);
+			HashSet<GenericTreeNode<?>> changedObjects = dialog.getChangedObjects();
+			showChangedObjects(changedObjects);
+			for (GenericTreeNode<?> node:changedObjects) treeModel.nodeChanged(node); 
+			updateMarkerList();
 			//tree.repaint();
 			} break;
 			
 		case RemoveHighlights: {
-			Vector<GenericTreeNode<?>> changedNodes = new Vector<>(); 
-			GenericTreeNode<?> node = (UniverseNode)data.universe.guiComp;
-			if (node.isHighlighted) {
-				node.isHighlighted = false;
-				changedNodes.addElement(node);
-			}
+			setMarker((UniverseNode)data.universe.guiComp,false);
 			for (Galaxy g:data.universe.galaxies) {
-				node = (GalaxyNode)g.guiComp;
-				if (node.isHighlighted) {
-					node.isHighlighted = false;
-					changedNodes.addElement(node);
-				}
+				setMarker((GalaxyNode)g.guiComp,false);
 				for (Region r:g.regions) {
-					node = (RegionNode)r.guiComp;
-					if (node.isHighlighted) {
-						node.isHighlighted = false;
-						changedNodes.addElement(node);
-					}
+					setMarker((RegionNode)r.guiComp,false);
 					for (SolarSystem s:r.solarSystems) {
-						node = (SolarSystemNode)s.guiComp;
-						if (node.isHighlighted) {
-							node.isHighlighted = false;
-							changedNodes.addElement(node);
-						}
+						setMarker((SolarSystemNode)s.guiComp,false);
 						for (Planet p:s.planets) {
-							node = (PlanetNode)p.guiComp;
-							if (node.isHighlighted) {
-								node.isHighlighted = false;
-								changedNodes.addElement(node);
-							}
+							setMarker((PlanetNode)p.guiComp,false);
 						}
 					}
 				}
 			}
-			updateChangedTreeNodes(changedNodes.toArray(new GenericTreeNode<?>[0]));
+			updateMarkerList();
 			} break;
 			
 		case ShowFullDiscoveredUniverseData:
@@ -1597,17 +1597,28 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void scrollToCurrentPosition() {
-		int currentPosRow = getCurrentPosNode();
-		if (currentPosRow>=0) {
-			JScrollBar scrollBar = treeScrollPane.getVerticalScrollBar();
-			int bar = scrollBar.getVisibleAmount();
-			int max = scrollBar.getMaximum();
-			int min = scrollBar.getMinimum();
-			int value = (currentPosRow*(max-min))/tree.getRowCount() + min - bar/2;
-			value = Math.max(value, min);
-			value = Math.min(value, max-bar);
-			scrollBar.setValue(value);
-		}
+		scrollToPosition(getCurrentPosNode());
+	}
+
+	private void scrollToPosition(int row) {
+		if (row<0) return;
+		JScrollBar scrollBar = treeScrollPane.getVerticalScrollBar();
+		int bar = scrollBar.getVisibleAmount();
+		int max = scrollBar.getMaximum();
+		int min = scrollBar.getMinimum();
+		int value = (row*(max-min))/tree.getRowCount() + min - bar/2;
+		value = Math.max(value, min);
+		value = Math.min(value, max-bar);
+		scrollBar.setValue(value);
+	}
+
+	private int getScrollBarPosition_Row() {
+		JScrollBar scrollBar = treeScrollPane.getVerticalScrollBar();
+		int bar = scrollBar.getVisibleAmount();
+		int max = scrollBar.getMaximum();
+		int min = scrollBar.getMinimum();
+		int value = scrollBar.getValue();
+		return ( (value + bar/2 - min) * tree.getRowCount() ) / (max-min);
 	}
 
 	private int getCurrentPosNode() {
@@ -1627,28 +1638,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	public void highlightRegions(int galaxyIndex, int voxelX, int voxelZ) {
-		Vector<GenericTreeNode<?>> changedObjects = new Vector<>(); 
-		
 		Galaxy g = data.universe.findGalaxy(galaxyIndex);
 		if (g==null) return;
 		
 		for (Region r:g.regions) {
 			if (r.voxelX==voxelX && r.voxelZ==voxelZ) {
 				RegionNode rNode = (RegionNode)r.guiComp;
-				if (!rNode.isHighlighted) {
-					rNode.isHighlighted = true;
-					changedObjects.addElement(rNode);
-				}
+				setMarker(rNode,true);
 			}
 		}
-		updateChangedTreeNodes(changedObjects.toArray(new GenericTreeNode<?>[0]));
-	}
-
-	private void show(GenericTreeNode<?>[] changedObjects) {
-		SaveViewer.log_ln("Changed Objects:");
-		for (GenericTreeNode<?> obj:changedObjects) {
-			SaveViewer.log_ln("   "+obj.toString());
-		}
+		updateMarkerList();
 	}
 
 	private void updateInfoPanel() {
@@ -1689,23 +1688,73 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		if (selectedNode==node) updateInfoPanel();
 	}
 
-	private void updateChangedTreeNodes(GenericTreeNode<?>[] changedTreeNode) {
-		for (GenericTreeNode<?> node:changedTreeNode)
-			treeModel.nodeChanged(node);
+	private void showChangedObjects(HashSet<GenericTreeNode<?>> changedObjects) {
+		SaveViewer.log_ln("Changed Objects:");
+		for (GenericTreeNode<?> obj:changedObjects) {
+			SaveViewer.log_ln("   "+obj.toString());
+		}
 	}
 
-	private void updateChangedObjects(LocalTreeNode node, Object[] changedObjects) {
-		for (LocalTreeNode child:node.getChildren()) {
-			if (child instanceof GenericTreeNode<?>) {
-				Object value = ((GenericTreeNode<?>)child).value;
-				for (Object obj:changedObjects)
-					if (value.equals(obj)) {
-						treeModel.nodeChanged(child);
-						break;
-					}
-			}
-			updateChangedObjects(child, changedObjects);
+	private void setMarker(GenericTreeNode<?> node, boolean b) {
+		if (node.isHighlighted != b) {
+			node.isHighlighted = b;
+			treeModel.nodeChanged(node);
 		}
+	}
+
+	private void updateMarkerList() {
+		markerList = getHighlightedNodes();
+		updateSelectedMarkerIndex();
+	}
+
+	private void updateSelectedMarkerIndex() {
+		selectedMarkerIndex = Float.NaN;
+		int centerRow = getScrollBarPosition_Row();
+		for (int i=-1; i<markerList.length; i++) {
+			int row1 = i>=0 ? markerList[i] : -1;
+			int row2 = i+1<markerList.length ? markerList[i+1] : tree.getRowCount();
+			
+			if (centerRow==row1) {
+				selectedMarkerIndex = i;
+				break;
+			}
+			if (centerRow==row2) {
+				selectedMarkerIndex = i+1;
+				break;
+			}
+			if (row1<centerRow && centerRow<row2) {
+				selectedMarkerIndex = i + (centerRow-row1) / (float)(row2-row1);
+				break;
+			}
+		}
+		searchBar.prevMarker.setEnabled(selectedMarkerIndex>0);
+		searchBar.nextMarker.setEnabled(selectedMarkerIndex<markerList.length-1);
+	}
+
+	private void scrollToMarker(int inc) {
+		if (Float.isNaN(selectedMarkerIndex)) return;
+		
+		if (Math.floor(selectedMarkerIndex) != selectedMarkerIndex) {
+			if (inc<0) selectedMarkerIndex = (float) Math.floor(selectedMarkerIndex);
+			if (inc>0) selectedMarkerIndex = (float) Math.ceil (selectedMarkerIndex);
+		} else selectedMarkerIndex += inc;
+		selectedMarkerIndex = Math.max(selectedMarkerIndex, 0 );
+		selectedMarkerIndex = Math.min(selectedMarkerIndex, markerList.length-1 );
+		
+		scrollToPosition( markerList[ (int) selectedMarkerIndex ] );
+	}
+
+	private int[] getHighlightedNodes() {
+		Vector<Integer> rows = new Vector<>(); 
+		for (int i=0; i<tree.getRowCount(); ++i) {
+			TreePath path = tree.getPathForRow(i);
+			if (path != null) {
+				Object comp = path.getLastPathComponent();
+				if (comp instanceof GenericTreeNode<?> && ((GenericTreeNode<?>)comp).isHighlighted())
+					rows.add(i);
+			}
+		}
+		return rows.stream().mapToInt(i->i).toArray();
 	}
 
 	private void expandFullTree() {
@@ -1914,13 +1963,20 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				setPreferredSize(new Dimension( nColumn*SLOT_RASTER_X+10, nRow*SLOT_RASTER_Y+10 ));
 				
 				MouseAdapter mouse = new MouseAdapter() {
+					private Point clickStart;
+					
 					@Override public void mouseEntered(MouseEvent e) { hovered = getIndexes(e); repaint(); }
 					@Override public void mouseMoved  (MouseEvent e) { hovered = getIndexes(e); repaint(); }
 					@Override public void mouseExited (MouseEvent e) { hovered = null; repaint(); }
-					@Override public void mouseClicked(MouseEvent e) {
-						Point selected = getIndexes(e);
-						if (selected==null) return;
-						GeneralizedID id = resGrid[selected.y][selected.x];
+					
+					
+					@Override public void mousePressed (MouseEvent e) { clickStart = getIndexes(e); }
+					@Override public void mouseReleased(MouseEvent e) { Point clickEnd = getIndexes(e);
+						if (clickEnd==null || !clickEnd.equals(clickStart)) {
+							clickStart = null;
+							return;
+						}
+						GeneralizedID id = resGrid[clickEnd.y][clickEnd.x];
 						
 						Resources resource = getResource(id);
 						if (resources.contains(resource)) resources.remove(resource);
@@ -2026,6 +2082,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private boolean disableUpdates;
 		private PlanetBar planetSearch;
 		private SolarSystemBar solarSystemSearch;
+		private JButton prevMarker;
+		private JButton nextMarker;
 		
 		SearchBar() {
 			super(new GridBagLayout());
@@ -2041,10 +2099,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			c.weighty = 0;
 			c.weightx = 0;
 			
-			add( SaveViewer.createButton("Clear Markers"    , e->clearMarkers()), c);
-			add( SaveViewer.createButton("Find Planet"      , e->planetSearch     .showPopup(treeScrollPane, 3,3)), c);
-			add( SaveViewer.createButton("Find Solar System", e->solarSystemSearch.showPopup(treeScrollPane, 3,3)), c);
-			add( SaveViewer.createButton("Find via Name"    , e->nameSearch       .showPopup(treeScrollPane, 3,3)), c);
+			add( SaveViewer.createButton("Clear Markers"     , e->clearMarkers()), c );
+			add( SaveViewer.createButton("Find Planet"       , e->planetSearch     .showPopup(treeScrollPane, 3,3)), c );
+			add( SaveViewer.createButton("Find Solar System" , e->solarSystemSearch.showPopup(treeScrollPane, 3,3)), c );
+			add( SaveViewer.createButton("Find via Name"     , e->nameSearch       .showPopup(treeScrollPane, 3,3)), c );
+			add( SaveViewer.createButton("Find via ExtraInfo", UniversePanel.this, UniverseTreeActionCommand.FindExtraInfo), c );
+			add( prevMarker = SaveViewer.createButton("<<", e->scrollToMarker(-1)), c );
+			add( nextMarker = SaveViewer.createButton(">>", e->scrollToMarker(+1)), c );
 			
 			c.weightx = 1;
 			add( new JLabel(), c);
@@ -2055,16 +2116,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			planetSearch.clearMarkers();
 			solarSystemSearch.clearMarkers();
 			disableUpdates = false;
-			updateMarkers();
+			updateMarkers(str->{});
 		}
 
-		private void updateMarkers() {
+		private void updateMarkers(Consumer<String> writeResultOuput) {
 			if (disableUpdates) return;
 			boolean isMarked;
 			int markedPlanets = 0;
 			int markedSolarSystems = 0;
+			setMarker((UniverseNode)data.universe.guiComp,false);
 			for (Galaxy g:data.universe.galaxies) {
+				setMarker( (GenericTreeNode<?>)g.guiComp, false );
 				for (Region r:g.regions) {
+					setMarker( (GenericTreeNode<?>)r.guiComp, false );
 					for (SolarSystem s:r.solarSystems) {
 						isMarked = solarSystemSearch.shouldBeMarked(s);
 						setMarker( (GenericTreeNode<?>)s.guiComp, isMarked );
@@ -2077,53 +2141,111 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				}
 			}
-			SaveViewer.log_ln("marked: %d Planets, %d Solar Systems", markedPlanets, markedSolarSystems);
+			updateMarkerList();
+			String resultOuput = generateResultOuput(markedPlanets, markedSolarSystems, -1);
+			//String resultOuput = String.format("%d Planets, %d Solar Systems", markedPlanets, markedSolarSystems);
+			writeResultOuput.accept(resultOuput);
 		}
 
+		private String generateResultOuput(int planets, int solarSystems, int regions) {
+			String str = "";
+			str = addResultOuput(str, planets     , "Planet"      );
+			str = addResultOuput(str, solarSystems, "Solar System");
+			str = addResultOuput(str, regions     , "Region"      );
+			return str;
+			//return String.format("%d Planets, %d Solar Systems, %d Regions", planets, solarSystems, regions);
+		}
 
-		private void setMarker(GenericTreeNode<?> node, boolean b) {
-			if (node.isHighlighted != b) {
-				node.isHighlighted = b;
-				treeModel.nodeChanged(node);
+		private String addResultOuput(String str, int n, String label) {
+			if (n>=0) {
+				String str1;
+				if (n==1) str1 = "1 "+label;
+				else str1 = String.format("%d %ss", n, label);
+				str += (str.isEmpty()?"":", ")+str1;
 			}
+			return str;
 		}
 		
-		private class NameSearch extends PopupDialog {
+		private abstract class AbstractSearchBar extends PopupDialog {
+			private static final long serialVersionUID = 3739974784050333833L;
+			private JTextField statusOutput;
+		
+			protected AbstractSearchBar() {
+				super(mainWindow);
+				JPanel content = new JPanel(new GridBagLayout());
+				content.setBorder(
+					BorderFactory.createCompoundBorder(
+						BorderFactory.createLineBorder(Color.GRAY),
+						BorderFactory.createEmptyBorder(2,5,2,5)
+					)
+				);
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.BOTH;
+				//c.insets = new Insets(2,5,2,5);
+				
+				c.weightx = 1;
+				c.weighty = 1;
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				content.add(createContentPanel(),c);
+				
+				statusOutput = new JTextField(30);
+				statusOutput.setEditable(false);
+				
+				c.weighty = 0;
+				c.weightx = 1;
+				c.gridwidth = 1;
+				content.add(statusOutput,c);
+				c.weightx = 0;
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				content.add( SaveViewer.createButton("Close", e->{ super.hidePopup(); }),c);
+				
+				super.setGUI(content);
+			}
+			
+			protected void setStatus(String str) {
+				statusOutput.setText(str);
+			}
+		
+			@Override
+			public void showPopup(Component parent, int x, int y) {
+				setStatus("");
+				super.showPopup(parent, x, y);
+			}
+
+			@Override protected void setGUI(JPanel content) { throw new UnsupportedOperationException(); }
+			//@Override protected void hidePopup() { throw new UnsupportedOperationException(); }
+		
+			protected abstract Component createContentPanel();
+		}
+
+		private class NameSearch extends AbstractSearchBar {
 			private static final long serialVersionUID = 2446633626490169526L;
 			
 			private SearchFieldWithPopup textField = null;
 			private boolean searchCaseSensitive = false;
 			
-			NameSearch() {
-				super(mainWindow);
+			NameSearch() {}
+
+			@Override
+			protected Component createContentPanel() {
 				JPanel content = new JPanel(new GridBagLayout());
-				content.setBorder(
-						BorderFactory.createCompoundBorder(
-								BorderFactory.createLineBorder(Color.GRAY),
-								BorderFactory.createEmptyBorder(2,5,2,5)
-						)
-				);
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.BOTH;
+				c.weighty = 1;
+				c.insets = new Insets(2,2,2,2);
 				
 				textField = new SearchFieldWithPopup(20, this::search, this::select);
 				textField.setMaxNameListLength(5);
 				
-				GridBagConstraints c = new GridBagConstraints();
-				c.fill = GridBagConstraints.BOTH;
-				
 				c.weightx = 1;
-				c.weighty = 1;
-				c.insets = new Insets(2,5,2,5);
-				
-				c.gridwidth = 1;
 				content.add(textField,c);
+				c.weightx = 0;
 				content.add(SaveViewer.createCheckbox("case sensitive", searchCaseSensitive, b->{
 					searchCaseSensitive = b;
 					textField.updateSearch();
 				}),c);
 				
-				c.gridwidth = GridBagConstraints.REMAINDER;
-				content.add( SaveViewer.createButton("Close", e->hidePopup()),c);
-				setGUI(content);
+				return content;
 			}
 
 			private void select(String name) {
@@ -2138,10 +2260,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				int markedSolarSystems = 0;
 				int markedRegions = 0;
 				for (Galaxy g:data.universe.galaxies) {
+					setMarker( (GenericTreeNode<?>)g.guiComp, false );
 					for (Region r:g.regions) {
 						isMarked = shouldBeMarked(searchStr,r,fittingNames);
 						setMarker( (GenericTreeNode<?>)r.guiComp, isMarked );
-						if (isMarked) ++markedSolarSystems;
+						if (isMarked) ++markedRegions;
 						
 						for (SolarSystem s:r.solarSystems) {
 							isMarked = shouldBeMarked(searchStr,s,fittingNames);
@@ -2156,7 +2279,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						}
 					}
 				}
-				SaveViewer.log_ln("marked: %d Planets, %d Solar Systems, %d Regions  \"%s\"", markedPlanets, markedSolarSystems, markedRegions, searchStr);
+				updateMarkerList();
+				String resultOuput = generateResultOuput(markedPlanets, markedSolarSystems, markedRegions);
+				setStatus(resultOuput);
+				//SaveViewer.log_ln("marked: %d Planets, %d Solar Systems, %d Regions  \"%s\"", markedPlanets, markedSolarSystems, markedRegions, searchStr);
+				
 				return fittingNames;
 			}
 
@@ -2194,18 +2321,19 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		
-		private abstract class AbstractSearchBar<ObjType> extends PopupDialog {
+		private abstract class ObjParameterSearchBar<ObjType> extends AbstractSearchBar {
 			private static final long serialVersionUID = 606788005699319541L;
 
-			AbstractSearchBar() {
-				super(mainWindow);
+			ObjParameterSearchBar() {}
+
+			@Override protected Component createContentPanel() {
 				JPanel content = new JPanel(new GridBagLayout());
-				content.setBorder(
-						BorderFactory.createCompoundBorder(
-								BorderFactory.createLineBorder(Color.GRAY),
-								BorderFactory.createEmptyBorder(2,5,2,5)
-						)
-				);
+//				content.setBorder(
+//						BorderFactory.createCompoundBorder(
+//								BorderFactory.createLineBorder(Color.GRAY),
+//								BorderFactory.createEmptyBorder(2,5,2,5)
+//						)
+//				);
 				
 				JPanel left  = new JPanel(new GridBagLayout());
 				JPanel right = new JPanel(new GridBagLayout());
@@ -2223,20 +2351,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				content.add(right,c);
 				
-				c.gridwidth = GridBagConstraints.REMAINDER;
-				content.add( SaveViewer.createButton("Close", e->{ super.hidePopup(); }),c);
-				super.setGUI(content);
+				return content;
 			}
-
-			@Override protected void setGUI(JPanel content) { throw new UnsupportedOperationException(); }
-			@Override protected void hidePopup() { throw new UnsupportedOperationException(); }
-
+			
+			protected void updateMarkers() { SearchBar.this.updateMarkers(this::setStatus); }
 			protected abstract void setContent(JPanel left, JPanel right, GridBagConstraints c);
 			public abstract void clearMarkers();
 			public abstract boolean shouldBeMarked(ObjType obj);
 		}
 		
-		private class SolarSystemBar extends AbstractSearchBar<SolarSystem> {
+		private class SolarSystemBar extends ObjParameterSearchBar<SolarSystem> {
 			private static final long serialVersionUID = 7635343276037663444L;
 			
 			private Gui.IconComboBox<Race> cmbbxRace;
@@ -2406,7 +2530,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		
-		private class PlanetBar extends AbstractSearchBar<Planet> {
+		private class PlanetBar extends ObjParameterSearchBar<Planet> {
 			private static final long serialVersionUID = -5056089942590204797L;
 			
 			private Gui.IconComboBox<Biome> cmbbxBiome;
@@ -2668,9 +2792,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				btnOK.setText("Remove markers in tree view");
 		}
 
-		public GenericTreeNode<?>[] getChangedObjects() {
-			if (tableModel!=null) return tableModel.changedObj.toArray(new GenericTreeNode<?>[0]);
-			return new GenericTreeNode<?>[0];
+		public HashSet<GenericTreeNode<?>> getChangedObjects() {
+			if (tableModel!=null) return tableModel.changedObj;
+			return new HashSet<>();
 		}
 
 		@Override
@@ -2900,6 +3024,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (!selected) component.setForeground(TEXTCOLOR__CURRENT_POS);
 					component.setFont(boldfont);
 				} 
+				if (uniobj.containsCurrPos) {
+					if (!selected) component.setForeground(TEXTCOLOR__CURRENT_POS);
+				} 
 			}
 			if (region!=null) {
 				if (!region.hasName()) {
@@ -2911,7 +3038,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						component.setForeground(TEXTCOLOR__NEAR_CURRENT_POS);
 				}
 			}
-			if (node.isHighlighted) {
+			if (node.isHighlighted()) {
 				if (!selected) component.setForeground(TEXTCOLOR__HIGHLIGHTED);
 				component.setFont(boldfont);
 			}
@@ -3022,6 +3149,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			createChildren();
 		}
 
+		public boolean isHighlighted() { return isHighlighted; }
 		@Override public boolean getAllowsChildren() { return type!=SaveGameData.UniverseObject.Type.Planet; }
 		@Override protected String getLabel() { return value.toString(); }
 		@Override protected Comparator<Integer> getSorter() { return null; }

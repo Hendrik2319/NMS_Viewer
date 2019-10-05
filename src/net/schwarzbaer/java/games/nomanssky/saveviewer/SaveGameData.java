@@ -38,6 +38,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamID
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase.BaseType;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints.TeleportHost;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
@@ -2776,8 +2778,8 @@ public class SaveGameData {
 			
 			currentUniverseAddress = parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
 			if (currentUniverseAddress!=null) {
-				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->obj.isCurrPos = true);
-				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->obj.isCurrPos = true);
+				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->{ if (obj instanceof Planet     ) obj.isCurrPos=true; else obj.containsCurrPos=true; });
+				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->{ if (obj instanceof SolarSystem) obj.isCurrPos=true; else obj.containsCurrPos=true; });
 			}
 			if (hasValue(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
 				anomalyUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
@@ -3198,6 +3200,7 @@ public class SaveGameData {
 
 		public static class ObjectWithSource extends UniverseObject {
 			
+			public boolean containsCurrPos = false;
 			public boolean isCurrPos = false;
 			public boolean foundInStats = false;
 			public boolean foundInVisitedSystems = false;
@@ -3216,7 +3219,7 @@ public class SaveGameData {
 			}
 			
 			public boolean hasSourceID() {
-				return isCurrPos ||
+				return containsCurrPos || isCurrPos ||
 						foundInStats ||
 						foundInVisitedSystems ||
 						!foundInDiscAvail            .isEmpty() ||
@@ -3229,7 +3232,7 @@ public class SaveGameData {
 			
 			public String getSourceIDStr() {
 				StringBuilder sb = new StringBuilder();
-				if (isCurrPos                              ) {                                    sb.append("CP"); }
+				if (containsCurrPos || isCurrPos           ) {                                    sb.append("CP"); }
 				if (foundInStats                           ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
 				if (foundInVisitedSystems                  ) { if (sb.length()>0) sb.append('|'); sb.append("VS"); }
 				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
@@ -3242,7 +3245,8 @@ public class SaveGameData {
 			
 			public String getLongSourceIDStr() {
 				StringBuilder sb = new StringBuilder();
-				if (isCurrPos                              ) {                                     sb.append("Current Position"); }
+				if (containsCurrPos                        ) {                                     sb.append("Contains Current Position"); }
+				if (isCurrPos                              ) { if (sb.length()>0) sb.append(", "); sb.append("Current Position"); }
 				if (foundInStats                           ) { if (sb.length()>0) sb.append(", "); sb.append("Status Values"); }
 				if (foundInVisitedSystems                  ) { if (sb.length()>0) sb.append(", "); sb.append("Visited Systems"); }
 				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Store"+toString(foundInDiscStore)); }
