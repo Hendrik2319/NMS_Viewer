@@ -535,7 +535,8 @@ public class SimplePanels {
 			super(data,"DDATable",true,SaveViewer.DEBUG,true,data.discoveryData.availableData,
 				new ColumnID[] {
 					new ColumnID("Timestamp"       , TimeStamp.class, 50,-1,140,140, availData->availData.TSrec),
-					new ColumnID("Universe Address",    String.class, 50,-1,160,160, availData->availData.DD.UA==null ? "" : availData.DD.UA.getExtendedSigBoostCode()),
+					new ColumnID("Universe Address",    String.class, 50,-1,160,160, availData->availData.DD.UA==null ? "" : availData.DD.UA.getAddressStr()),
+					new ColumnID("Universe Address",    String.class, 50,-1,160,160, availData->availData.DD.UA==null ? "" : availData.DD.UA.getCoordinates()),
 					new ColumnID("Data Type"       ,    String.class, 50,-1, 90, 90, availData->availData.DD.DT==null ? "" : availData.DD.DT),
 					new ColumnID("DD_VP"           ,    String.class, 50,-1,300,300, availData->availData.DD.VP==null ? "" : toHexArray(availData.DD.VP)),
 				}
@@ -555,7 +556,8 @@ public class SimplePanels {
 		public DiscoveredDataStoredPanel(SaveGameData data) {
 			super(data,"DDSTable",true,SaveViewer.DEBUG,true,data.discoveryData.storeData,
 				new ColumnID[] {
-					new ColumnID("DD_UA"  ,    String.class, 50,-1,160,160, storeData->storeData.DD.UA  ==null ? "" : storeData.DD.UA.getExtendedSigBoostCode()),
+					new ColumnID("DD_UA"  ,    String.class, 50,-1,160,160, storeData->storeData.DD.UA  ==null ? "" : storeData.DD.UA.getAddressStr()),
+					new ColumnID("DD_UA"  ,    String.class, 50,-1,160,160, storeData->storeData.DD.UA  ==null ? "" : storeData.DD.UA.getCoordinates()),
 					new ColumnID("DD_DT"  ,    String.class, 50,-1, 90, 90, storeData->storeData.DD.DT  ==null ? "" : storeData.DD.DT),
 					new ColumnID("DD_VP"  ,    String.class, 50,-1,300,300, storeData->storeData.DD.VP  ==null ? "" : toHexArray(storeData.DD.VP)),
 					new ColumnID("DM"     ,    String.class, 20,-1, 40, 40, storeData->storeData.DM     ==null ? "" : storeData.DM),

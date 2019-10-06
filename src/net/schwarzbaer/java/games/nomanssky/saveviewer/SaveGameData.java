@@ -38,8 +38,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamID
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase.BaseType;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints.TeleportHost;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
@@ -830,7 +828,7 @@ public class SaveGameData {
 				te.name             = getStringValue(objectValue, "Name");
 				
 				if (te.universeAddress!=null) {
-					data.universe.getOrCreate(te.universeAddress,obj->obj.foundInTeleportEndpoints.add(teleportEndpoints.size()));
+					data.universe.getOrCreate(te.universeAddress,obj->obj.foundInTeleportEndpoints.add(teleportEndpoints.size()),obj->obj.containsTeleportEndpoints=true);
 				}
 				
 				teleportEndpoints.add(te);
@@ -876,7 +874,7 @@ public class SaveGameData {
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
 			
 			if (pb.galacticAddress!=null) {
-				universe.getOrCreate(pb.galacticAddress,obj->obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size()));
+				universe.getOrCreate(pb.galacticAddress,obj->obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size()),obj->obj.containsPersistentPlayerBases=true);
 			}
 			
 			persistentPlayerBases.add(pb);
@@ -1025,7 +1023,7 @@ public class SaveGameData {
 			parseBuildingObject(objectValue, bbo, "BaseBuildingObjects", i);
 			
 			if (bbo.galacticAddress!=null) {
-				universe.getOrCreate(bbo.galacticAddress,obj->obj.foundInBaseBuildingObjects.add(vector.size()));
+				universe.getOrCreate(bbo.galacticAddress,obj->obj.foundInBaseBuildingObjects.add(vector.size()),obj->obj.containsBaseBuildingObjects=true);
 			}
 			
 			vector.add(bbo);
@@ -2145,20 +2143,6 @@ public class SaveGameData {
 		
 	}
 	
-	private void parseDiscoveryData() {
-		JSON_Array arrayValue_Store     = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
-		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
-		
-		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
-		discoveryData.findPlanetsAndSolarSystems();
-		discoveryData.findAdditionalPlanetsAndSolarSystems();
-		
-		if (!discoveryData.notParsedStoreData.isEmpty())
-			SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
-		if (!discoveryData.notParsedAvailableData.isEmpty())
-			SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
-	}
-
 	public final static class KnownSteamIDs {
 		private HashMap<String,String> data;
 		
@@ -2233,6 +2217,20 @@ public class SaveGameData {
 			if (steamName==null) return str;
 			return "[SteamID of \""+steamName+"\"]";
 		}
+	}
+
+	private void parseDiscoveryData() {
+		JSON_Array arrayValue_Store     = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
+		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
+		
+		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
+		discoveryData.findPlanetsAndSolarSystems();
+		discoveryData.findAdditionalPlanetsAndSolarSystems();
+		
+		if (!discoveryData.notParsedStoreData.isEmpty())
+			SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+		if (!discoveryData.notParsedAvailableData.isEmpty())
+			SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
 	}
 
 	public final static class DiscoveryData {
@@ -2420,8 +2418,8 @@ public class SaveGameData {
 			for (int i=0; i<storeData.size(); i++) {
 				StoreData data = storeData.get(i);
 				int index = i;
-				Universe.DiscoverableObject obj = getDiscNameObj(data.DD,obj_->obj_.foundInDiscStore.add(index));
-				if (obj!=null) {
+				Universe.DiscoverableObject obj = getDiscNameObj(data.DD,obj_->obj_.foundInDiscStore.add(index),obj_->obj_.containsDiscStoreObj=true);
+				if (obj!=null && objTypeEqualsDT(obj.type,data.DD.DT)) {
 					
 					if (data.OWS.userName!=null) {
 						if (obj.hasDiscoverer())
@@ -2441,20 +2439,31 @@ public class SaveGameData {
 			for (int i=0; i<availableData.size(); i++) {
 				AvailableData data = availableData.get(i);
 				int index = i;
-				getDiscNameObj(data.DD,obj_->obj_.foundInDiscAvail.add(index));
+				getDiscNameObj(data.DD,obj_->obj_.foundInDiscAvail.add(index),obj_->obj_.containsDiscAvailObj=true);
 			}
 		}
 
-		private Universe.DiscoverableObject getDiscNameObj(DDblock dd, Consumer<ObjectWithSource> getSource) {
+		private boolean objTypeEqualsDT(UniverseObject.Type type, String DT) {
+			switch (type) {
+			case Universe:
+			case Galaxy:
+			case Region: return false;
+			case SolarSystem: return "SolarSystem".equals(DT);
+			case Planet     : return "Planet"     .equals(DT);
+			}
+			return false;
+		}
+
+		private Universe.DiscoverableObject getDiscNameObj(DDblock dd, Consumer<ObjectWithSource> getSource, Consumer<ObjectWithSource> getParentSource) {
 			if (dd.DT==null || dd.UA==null) return null;
 				
 			Universe.DiscoverableObject discnameObj = null;
 			
-			if (dd.DT.equals("Planet") && dd.UA.isPlanet())
-				discnameObj = data.universe.getOrCreatePlanet(dd.UA,getSource);
+			if (dd.UA.isPlanet())
+				discnameObj = data.universe.getOrCreatePlanet(dd.UA,getSource,getParentSource);
 			
-			if (dd.DT.equals("SolarSystem") && dd.UA.isSolarSystem())
-				discnameObj = data.universe.getOrCreateSolarSystem(dd.UA,getSource);
+			if (dd.UA.isSolarSystem())
+				discnameObj = data.universe.getOrCreateSolarSystem(dd.UA,getSource,getParentSource);
 				
 			return discnameObj;
 		}
@@ -2778,8 +2787,8 @@ public class SaveGameData {
 			
 			currentUniverseAddress = parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
 			if (currentUniverseAddress!=null) {
-				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->{ if (obj instanceof Planet     ) obj.isCurrPos=true; else obj.containsCurrPos=true; });
-				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->{ if (obj instanceof SolarSystem) obj.isCurrPos=true; else obj.containsCurrPos=true; });
+				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
+				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 			}
 			if (hasValue(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
 				anomalyUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
@@ -2855,7 +2864,7 @@ public class SaveGameData {
 				sys.ua = new UniverseAddress((((long)sysIndex&0xFFF)<<40) | (((long)voxelY&0xFF)<<24) | (((long)voxelZ&0xFFF)<<12) | ((long)voxelX&0xFFF));
 				sys.extra = (int) ((addr>>44)&0xFFFFF);
 				
-				data.universe.getOrCreate(sys.ua,obj->obj.foundInVisitedSystems = true);
+				data.universe.getOrCreate(sys.ua,obj->obj.foundInVisitedSystems=true);
 				
 				return sys;
 			}, "VisitedSystems", data.json_data, "PlayerStateData", "VisitedSystems");
@@ -3147,21 +3156,31 @@ public class SaveGameData {
 				if (g.galaxyIndex==galaxyIndex)
 					return g;
 			return null;
+			
 		}
-
+		
 		public ObjectWithSource getOrCreate(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
-			if (ua.isPlanet     ()) return getOrCreatePlanet     (ua,setSource);
-			if (ua.isSolarSystem()) return getOrCreateSolarSystem(ua,setSource);
-			if (ua.isRegion     ()) return getOrCreateRegion     (ua,setSource);
+			return getOrCreate(ua, setSource, setSource);
+		}
+		public ObjectWithSource getOrCreate(UniverseAddress ua, Consumer<ObjectWithSource> setSource, Consumer<ObjectWithSource> setParentsSource) {
+			if (ua.isPlanet     ()) return getOrCreatePlanet     (ua,setSource,setParentsSource);
+			if (ua.isSolarSystem()) return getOrCreateSolarSystem(ua,setSource,setParentsSource);
+			if (ua.isRegion     ()) return getOrCreateRegion     (ua,setSource,setParentsSource);
 			return getOrCreateGalaxy(ua,setSource);
 		}
 
 		public Planet getOrCreatePlanet(long address, Consumer<ObjectWithSource> setSource) {
-			return getOrCreatePlanet(new UniverseAddress(address),setSource);
+			return getOrCreatePlanet(address, setSource, setSource);
+		}
+		public Planet getOrCreatePlanet(long address, Consumer<ObjectWithSource> setSource, Consumer<ObjectWithSource> setParentsSource) {
+			return getOrCreatePlanet(new UniverseAddress(address),setSource,setParentsSource);
 		}
 
 		public Planet getOrCreatePlanet(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
-			SolarSystem solarSystem = getOrCreateSolarSystem(ua,setSource);
+			return getOrCreatePlanet(ua, setSource, setSource);
+		}
+		public Planet getOrCreatePlanet(UniverseAddress ua, Consumer<ObjectWithSource> setSource, Consumer<ObjectWithSource> setParentsSource) {
+			SolarSystem solarSystem = getOrCreateSolarSystem(ua,setParentsSource);
 			
 			Planet planet = solarSystem.findPlanet(ua.planetIndex);
 			if (planet==null) solarSystem.addPlanet(planet=new Planet(solarSystem,ua.planetIndex));
@@ -3171,7 +3190,10 @@ public class SaveGameData {
 		}
 
 		public SolarSystem getOrCreateSolarSystem(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
-			Region region = getOrCreateRegion(ua,setSource);
+			return getOrCreateSolarSystem(ua, setSource, setSource);
+		}
+		public SolarSystem getOrCreateSolarSystem(UniverseAddress ua, Consumer<ObjectWithSource> setSource, Consumer<ObjectWithSource> setParentsSource) {
+			Region region = getOrCreateRegion(ua,setParentsSource);
 			
 			SolarSystem solarSystem = region.findSolarSystem(ua.solarSystemIndex);
 			if (solarSystem==null) region.addSolarSystem(solarSystem=new SolarSystem(region,ua.solarSystemIndex));
@@ -3181,7 +3203,10 @@ public class SaveGameData {
 		}
 
 		public Region getOrCreateRegion(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
-			Galaxy galaxy = getOrCreateGalaxy(ua,setSource);
+			return getOrCreateRegion(ua, setSource, setSource);
+		}
+		public Region getOrCreateRegion(UniverseAddress ua, Consumer<ObjectWithSource> setSource, Consumer<ObjectWithSource> setParentsSource) {
+			Galaxy galaxy = getOrCreateGalaxy(ua,setParentsSource);
 			
 			Region region = galaxy.findRegion(ua.voxelX,ua.voxelY,ua.voxelZ);
 			if (region==null) galaxy.addRegion(region=new Region(galaxy,ua.voxelX,ua.voxelY,ua.voxelZ));
@@ -3200,7 +3225,6 @@ public class SaveGameData {
 
 		public static class ObjectWithSource extends UniverseObject {
 			
-			public boolean containsCurrPos = false;
 			public boolean isCurrPos = false;
 			public boolean foundInStats = false;
 			public boolean foundInVisitedSystems = false;
@@ -3209,6 +3233,12 @@ public class SaveGameData {
 			public HashSet<Integer> foundInPersistentPlayerBases = new HashSet<>();
 			public HashSet<Integer> foundInBaseBuildingObjects = new HashSet<>();
 			public HashSet<Integer> foundInTeleportEndpoints = new HashSet<>();
+			public boolean containsCurrPos = false;
+			public boolean containsTeleportEndpoints = false;
+			public boolean containsBaseBuildingObjects = false;
+			public boolean containsPersistentPlayerBases = false;
+			public boolean containsDiscStoreObj = false;
+			public boolean containsDiscAvailObj = false;
 			
 			protected ObjectWithSource(Type type) {
 				super(type);
@@ -3219,14 +3249,18 @@ public class SaveGameData {
 			}
 			
 			public boolean hasSourceID() {
-				return containsCurrPos || isCurrPos ||
+				return isCurrPos || containsCurrPos || 
 						foundInStats ||
 						foundInVisitedSystems ||
 						!foundInDiscAvail            .isEmpty() ||
 						!foundInDiscStore            .isEmpty() ||
-						!foundInPersistentPlayerBases.isEmpty() ||
+						!foundInTeleportEndpoints    .isEmpty() ||
 						!foundInBaseBuildingObjects  .isEmpty() ||
-						!foundInTeleportEndpoints    .isEmpty()    
+						!foundInPersistentPlayerBases.isEmpty() ||
+						containsTeleportEndpoints ||
+						containsBaseBuildingObjects ||
+						containsPersistentPlayerBases ||
+						containsDiscStoreObj || containsDiscAvailObj
 						;
 			}
 			
@@ -3236,28 +3270,38 @@ public class SaveGameData {
 				if (foundInStats                           ) { if (sb.length()>0) sb.append('|'); sb.append("St"); }
 				if (foundInVisitedSystems                  ) { if (sb.length()>0) sb.append('|'); sb.append("VS"); }
 				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
+				if (containsDiscStoreObj                   ) { if (sb.length()>0) sb.append('|'); sb.append("DS"); }
 				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
-				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("PB"); }
-				if (!foundInBaseBuildingObjects  .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("BBO"); }
+				if (containsDiscAvailObj                   ) { if (sb.length()>0) sb.append('|'); sb.append("DA"); }
 				if (!foundInTeleportEndpoints    .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("TE"); }
+				if (containsTeleportEndpoints              ) { if (sb.length()>0) sb.append('|'); sb.append("TE"); }
+				if (!foundInBaseBuildingObjects  .isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("BBO"); }
+				if (containsBaseBuildingObjects            ) { if (sb.length()>0) sb.append('|'); sb.append("BBO"); }
+				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append('|'); sb.append("PB"); }
+				if (containsPersistentPlayerBases          ) { if (sb.length()>0) sb.append('|'); sb.append("PB"); }
 				return "<"+sb.toString()+">";
 			}
 			
 			public String getLongSourceIDStr() {
 				StringBuilder sb = new StringBuilder();
-				if (containsCurrPos                        ) {                                     sb.append("Contains Current Position"); }
-				if (isCurrPos                              ) { if (sb.length()>0) sb.append(", "); sb.append("Current Position"); }
+				if (isCurrPos                              ) {                                     sb.append("Current Position"); }
+				if (containsCurrPos                        ) { if (sb.length()>0) sb.append(", "); sb.append("Contains Current Position"); }
 				if (foundInStats                           ) { if (sb.length()>0) sb.append(", "); sb.append("Status Values"); }
 				if (foundInVisitedSystems                  ) { if (sb.length()>0) sb.append(", "); sb.append("Visited Systems"); }
-				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Store"+toString(foundInDiscStore)); }
-				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Avail."+toString(foundInDiscAvail)); }
-				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("PlayerBase"+toString(foundInPersistentPlayerBases)); }
-				if (!foundInBaseBuildingObjects  .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("BaseBuildingObject("+toString(foundInBaseBuildingObjects)); }
-				if (!foundInTeleportEndpoints    .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("TeleportEndpoint"+toString(foundInTeleportEndpoints)); }
+				if (!foundInDiscStore            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Store"     +toString(foundInDiscStore)); }
+				if (!foundInDiscAvail            .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("Discov.-Avail."    +toString(foundInDiscAvail)); }
+				if (!foundInPersistentPlayerBases.isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("PlayerBase"        +toString(foundInPersistentPlayerBases)); }
+				if (!foundInBaseBuildingObjects  .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("BaseBuildingObject"+toString(foundInBaseBuildingObjects)); }
+				if (!foundInTeleportEndpoints    .isEmpty()) { if (sb.length()>0) sb.append(", "); sb.append("TeleportEndpoint"  +toString(foundInTeleportEndpoints)); }
+				if (containsDiscStoreObj                   ) { if (sb.length()>0) sb.append(", "); sb.append("Contains Discov.Store Objects"); }
+				if (containsDiscAvailObj                   ) { if (sb.length()>0) sb.append(", "); sb.append("Contains Discov.-Avail. Objects"); }
+				if (containsTeleportEndpoints              ) { if (sb.length()>0) sb.append(", "); sb.append("Contains TeleportEndpoints"); }
+				if (containsBaseBuildingObjects            ) { if (sb.length()>0) sb.append(", "); sb.append("Contains BaseBuildingObjects"); }
+				if (containsPersistentPlayerBases          ) { if (sb.length()>0) sb.append(", "); sb.append("Contains PlayerBases"); }
 				return "<"+sb.toString()+">";
 			}
 
-			private String toString(HashSet<Integer> intSet) {
+			private static String toString(HashSet<Integer> intSet) {
 				String str="";
 				for (int i: intSet) {
 					if (!str.isEmpty()) str+=",";
