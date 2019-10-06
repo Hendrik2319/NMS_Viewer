@@ -649,6 +649,7 @@
 ^UP_ENGY3#97339.upgradeClass=S
 ^UP_EXSUB4#44141=Hydrothermale Turbinensteuerung
 ^UP_EXSUB4#44141.type=ExocraftExtensionUpgrade
+^UP_EXSUB4#44141.image=RENDER.SUBMARINEENGINEMOD.png
 ^UP_EXSUB4#44141.imageBG=F0A92B
 ^UP_EXSUB4#44141.upgradeClass=S
 ^UP_HYP4#30637=Makellose Superluminare

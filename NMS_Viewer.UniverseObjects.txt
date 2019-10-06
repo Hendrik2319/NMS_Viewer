@@ -134,6 +134,39 @@ info=<ParsedPlanetaryResources> Cd, P, NaCl
 short=Monochrom-Rot
 info=
 
+[Reg000000FFEC5918]
+name=Xegibbuyf-Quadrant
+
+[Sys014000FFEC5918]
+name=Kimmot-Rol XIV
+race=Korvax
+conflict=2
+conflict_label=reizbar
+economy=2
+economy_label=In Entwicklung
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=4 Planeten
+info=
+
+[Pln114000FFEC5918]
+name=Sohannar
+biome=Lush
+resources=Cu,Pf,Co
+
+[Pln214000FFEC5918]
+name=Iffalla Delta
+biome=Barren
+is extreme
+with water
+resources=Cu_,Py,Co
+
+[Pln314000FFEC5918]
+name=Icyo Gamma
+biome=Frozen
+resources=Cu,CO2,Na
+
 [Reg00000002FDC947]
 name=Eyerand-Nebel
 
@@ -437,6 +470,14 @@ blackholetarget=003C0000BF1C2A
 class=Yellow
 short=6 Planeten
 info=
+
+[Reg000000FC500B29]
+
+[Sys00E600FC500B29]
+atlasinterface=false
+blackhole=false
+
+[Pln20E600FC500B29]
 
 [Reg000000FEE1BB85]
 name=Iyomin-Quadrant
@@ -5609,6 +5650,14 @@ info=Extrem heißer Planet
 short=Grav??
 info=Gravitinio-Balls ???
 
+[Reg0000000843F557]
+
+[Sys01BD000843F557]
+atlasinterface=false
+blackhole=false
+
+[Pln11BD000843F557]
+
 [Reg000000FFF37590]
 name=Koenpa
 
@@ -6295,6 +6344,28 @@ biome=Irradiated
 is extreme
 resources=Cd_,U,Fe__
 
+[Sys020000FCD7F684]
+name=Ugcodo-Wakaw IX
+race=Gek
+conflict=2
+conflict_label=gewalttätig
+economy=2
+economy_label=angemessen
+atlasinterface=false
+blackhole=false
+class=Blue
+short=5 Planeten
+info=
+
+[Pln120000FCD7F684]
+name=Yush 95/S8
+biome=Lush
+aggrSentinels
+with water
+gravitino balls
+remembrance terminal
+resources=In,Pf,Ag
+
 [Sys021100FCD7F684]
 name=Nidika-Urod XVIII
 race=Korvax
@@ -6424,3 +6495,11 @@ buriedTreasure=AncientBones
 resources=In_,Pf,Fe__
 short=Portal
 info=+6.01, -37.70
+
+[Reg000000F90F56DB]
+
+[Sys00A400F90F56DB]
+atlasinterface=false
+blackhole=false
+
+[Pln30A400F90F56DB]
