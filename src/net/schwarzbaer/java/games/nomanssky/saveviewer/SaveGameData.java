@@ -67,8 +67,8 @@ public class SaveGameData {
 	public Long version;
 	public final General general;
 	public final Universe universe;
-	public final DiscoveryData discoveryData;
 	public final ExperimentalData experimentalData;
+	public DiscoveryData discoveryData = null;
 	public Stats stats = null;
 	public KnownWords knownWords = null;
 	public KnownWords knownWords2 = null;
@@ -102,7 +102,6 @@ public class SaveGameData {
 		
 		this.general = new General(this);
 		this.universe = new Universe();
-		this.discoveryData = new DiscoveryData(this);
 		this.experimentalData = new ExperimentalData(this);
 	}
 
@@ -122,7 +121,7 @@ public class SaveGameData {
 		knownBlueprints = KnownBlueprints.parse(this);
 		knownWords  = parseKnownWords("KnownWords","Word","Races");
 		knownWords2 = parseKnownWords("[KnownWords2]","[Word]","Races");
-		parseDiscoveryData();
+		discoveryData = DiscoveryData.parse(this);
 		inventories = Inventories.parseInventories(this);
 		parseBaseBuildingObjects();
 		parsePersistentPlayerBases();
@@ -2219,25 +2218,10 @@ public class SaveGameData {
 		}
 	}
 
-	private void parseDiscoveryData() {
-		JSON_Array arrayValue_Store     = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
-		JSON_Array arrayValue_Available = getArrayValue(json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
-		
-		discoveryData.parseJsonArrays(arrayValue_Store,arrayValue_Available);
-		discoveryData.findPlanetsAndSolarSystems();
-		discoveryData.findAdditionalPlanetsAndSolarSystems();
-		
-		if (!discoveryData.notParsedStoreData.isEmpty())
-			SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
-		if (!discoveryData.notParsedAvailableData.isEmpty())
-			SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
-	}
-
 	public final static class DiscoveryData {
 		
 		enum SourceArray { AvailableData, StoreData }
 		
-		private SaveGameData data;
 		public Vector<StoreData> storeData;
 		public Vector<AvailableData> availableData;
 		JSON_Array notParsedStoreData;
@@ -2247,8 +2231,7 @@ public class SaveGameData {
 		public int availDiscoveredItemOnPlanets;
 		public int availDiscoveredItemInSolarSystms;
 		
-		public DiscoveryData(SaveGameData data) {
-			this.data = data;
+		public DiscoveryData() {
 			this.storeData = new Vector<>();
 			this.availableData = new Vector<>();
 			notParsedStoreData     = new JSON_Array();
@@ -2258,12 +2241,34 @@ public class SaveGameData {
 			availDiscoveredItemOnPlanets = 0;
 			availDiscoveredItemInSolarSystms = 0;
 		}
-		
-		public void parseJsonArrays(JSON_Array arrStore, JSON_Array arrAvailable) {
+
+		public static DiscoveryData parse(SaveGameData data) {
+			JSON_Array arrayValue_Store     = getArrayValue(data.json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
+			JSON_Array arrayValue_Available = getArrayValue(data.json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
+			
+			DiscoveryData discoveryData = new DiscoveryData();
+			
+			discoveryData.parseStoreArray(arrayValue_Store);
+			discoveryData.parseAvailArray(arrayValue_Available);
+			discoveryData.findPlanetsAndSolarSystems(data);
+			discoveryData.findAdditionalPlanetsAndSolarSystems(data);
+			
+			if (!discoveryData.notParsedStoreData.isEmpty())
+				SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+			if (!discoveryData.notParsedAvailableData.isEmpty())
+				SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+			
+			return discoveryData;
+		}
+
+		private void parseStoreArray(JSON_Array arrStore) {
+			storeData.clear();
+			notParsedStoreData.clear();
+			
 			if (arrStore!=null) {
 				for (Value objValue:arrStore) {
 					JSON_Object object = getObject(objValue);
-					if (object==null) { notParsedAvailableData.add(objValue); continue; }
+					if (object==null) { notParsedStoreData.add(objValue); continue; }
 					
 					StoreData stData = new StoreData();
 					
@@ -2303,6 +2308,11 @@ public class SaveGameData {
 					storeData.add(stData);
 				}
 			}
+		}
+
+		private void parseAvailArray(JSON_Array arrAvailable) {
+			availableData.clear();
+			notParsedAvailableData.clear();
 			
 			if (arrAvailable!=null) {
 				for (Value objValue:arrAvailable) {
@@ -2342,7 +2352,7 @@ public class SaveGameData {
 			}
 		}
 
-		public void findAdditionalPlanetsAndSolarSystems() {
+		public void findAdditionalPlanetsAndSolarSystems(SaveGameData data) {
 			HashSet<UniverseAddress> unknownAdresses = new HashSet<>();
 			HashSet<String> knownTypes = new HashSet<>();
 			
@@ -2350,7 +2360,7 @@ public class SaveGameData {
 			storedDiscoveredItemInSolarSystms = 0;
 			
 			for (StoreData stData:storeData) {
-				UniverseObject.Type universeObject = processDDblock(stData.DD, SourceArray.StoreData, unknownAdresses, knownTypes);
+				UniverseObject.Type universeObject = processDDblock(data, stData.DD, SourceArray.StoreData, unknownAdresses, knownTypes);
 				if (universeObject!=null)
 					switch(universeObject) {
 					case Planet     : ++storedDiscoveredItemOnPlanets; break;
@@ -2363,7 +2373,7 @@ public class SaveGameData {
 			availDiscoveredItemInSolarSystms = 0;
 			
 			for (AvailableData avData:availableData) {
-				UniverseObject.Type universeObject = processDDblock(avData.DD, SourceArray.AvailableData, unknownAdresses, knownTypes);
+				UniverseObject.Type universeObject = processDDblock(data, avData.DD, SourceArray.AvailableData, unknownAdresses, knownTypes);
 				if (universeObject!=null)
 					switch(universeObject) {
 					case Planet     : ++availDiscoveredItemOnPlanets; break;
@@ -2383,7 +2393,7 @@ public class SaveGameData {
 			}
 		}
 		
-		private UniverseObject.Type processDDblock(DDblock DD, SourceArray sourceArray, HashSet<UniverseAddress> unknownAdresses, HashSet<String> knownTypes) {
+		private UniverseObject.Type processDDblock(SaveGameData data, DDblock DD, SourceArray sourceArray, HashSet<UniverseAddress> unknownAdresses, HashSet<String> knownTypes) {
 			if (DD==null) return null;
 			if (DD.DT!=null) {
 				if (DD.DT.equals("Planet"     )) return null;
@@ -2413,33 +2423,33 @@ public class SaveGameData {
 			return null;
 		}
 
-		public void findPlanetsAndSolarSystems() {
+		public void findPlanetsAndSolarSystems(SaveGameData data) {
 			
 			for (int i=0; i<storeData.size(); i++) {
-				StoreData data = storeData.get(i);
+				StoreData stData = storeData.get(i);
 				int index = i;
-				Universe.DiscoverableObject obj = getDiscNameObj(data.DD,obj_->obj_.foundInDiscStore.add(index),obj_->obj_.containsDiscStoreObj=true);
-				if (obj!=null && objTypeEqualsDT(obj.type,data.DD.DT)) {
+				Universe.DiscoverableObject obj = getDiscNameObj(data,stData.DD,obj_->obj_.foundInDiscStore.add(index),obj_->obj_.containsDiscStoreObj=true);
+				if (obj!=null && objTypeEqualsDT(obj.type,stData.DD.DT)) {
 					
-					if (data.OWS.userName!=null) {
+					if (stData.OWS.userName!=null) {
 						if (obj.hasDiscoverer())
-							obj.setDiscoverer(obj.getDiscoverer()+" | "+data.OWS.userName);
+							obj.setDiscoverer(obj.getDiscoverer()+" | "+stData.OWS.userName);
 						else
-							obj.setDiscoverer(data.OWS.userName);
+							obj.setDiscoverer(stData.OWS.userName);
 					}
-					if (data.DM_CN!=null) {
+					if (stData.DM_CN!=null) {
 						if (obj.hasUploadedName())
-							obj.setUploadedName(obj.getUploadedName()+" | "+data.DM_CN);
+							obj.setUploadedName(obj.getUploadedName()+" | "+stData.DM_CN);
 						else
-							obj.setUploadedName(data.DM_CN);
+							obj.setUploadedName(stData.DM_CN);
 					}
 				}
 			}
 			
 			for (int i=0; i<availableData.size(); i++) {
-				AvailableData data = availableData.get(i);
+				AvailableData avData = availableData.get(i);
 				int index = i;
-				getDiscNameObj(data.DD,obj_->obj_.foundInDiscAvail.add(index),obj_->obj_.containsDiscAvailObj=true);
+				getDiscNameObj(data,avData.DD,obj_->obj_.foundInDiscAvail.add(index),obj_->obj_.containsDiscAvailObj=true);
 			}
 		}
 
@@ -2454,7 +2464,7 @@ public class SaveGameData {
 			return false;
 		}
 
-		private Universe.DiscoverableObject getDiscNameObj(DDblock dd, Consumer<ObjectWithSource> getSource, Consumer<ObjectWithSource> getParentSource) {
+		private Universe.DiscoverableObject getDiscNameObj(SaveGameData data, DDblock dd, Consumer<ObjectWithSource> getSource, Consumer<ObjectWithSource> getParentSource) {
 			if (dd.DT==null || dd.UA==null) return null;
 				
 			Universe.DiscoverableObject discnameObj = null;
