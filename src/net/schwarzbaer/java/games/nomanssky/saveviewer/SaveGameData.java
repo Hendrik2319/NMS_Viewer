@@ -2399,18 +2399,22 @@ public class SaveGameData {
 				if (obj.type==Universe.Type.SolarSystem) incDiscoveredItemInSolarSystms.run();
 				
 				if (ddBlock.DT!=null) {
-					obj.addDiscoveredItem(ddBlock.DT, sourceArray);
 					
 					switch (ddBlock.DT) {
 					case "SolarSystem":
 					case "Planet": 
 						if (processDiscoverableObject!=null && objTypeEqualsDT(obj.type,ddBlock.DT) && obj instanceof Universe.DiscoverableObject)
 							processDiscoverableObject.accept((Universe.DiscoverableObject) obj);
+						obj.addDiscoveredItem(ddBlock.DT, sourceArray);
 						break;
 					case "Animal":
 					case "Mineral":
 					case "Sector":
-					case "Flora": break;
+					case "Flora":
+						obj.addDiscoveredItem(ddBlock.DT, sourceArray);
+						break;
+					case "Interactable": // don't add DiscoveredItem
+						break;
 					default:
 						SaveViewer.log_error_ln("Found unknown discovery type in %s: %s", sourceArray, ddBlock.DT);
 						break;
