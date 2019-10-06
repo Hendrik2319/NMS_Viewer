@@ -34,11 +34,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.AssignmentExistsException;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase.BaseType;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints.TeleportHost;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -174,9 +169,9 @@ public class SaveGameData {
 				case HomePlanetBase: {
 					Universe.Planet planet = universe.findPlanet(base.galacticAddress);
 					if (planet!=null) {
-						if (base.baseType==BaseType.ExternalPlanetBase)
+						if (base.baseType==PersistentPlayerBase.BaseType.ExternalPlanetBase)
 							planet.additionalInfos.otherPlayerBases.add(base);
-						if (base.baseType==BaseType.HomePlanetBase) {
+						if (base.baseType==PersistentPlayerBase.BaseType.HomePlanetBase) {
 							planet.additionalInfos.playerBases.add(base);
 							for (BuildingObject bbo:base.objects) {
 								if (bbo.objectID==null) continue;
@@ -202,7 +197,7 @@ public class SaveGameData {
 				if (tel.universeAddress.isPlanet()) {
 					Universe.Planet planet = universe.findPlanet(tel.universeAddress);
 					if (planet!=null) {
-						if (tel.teleportHost==TeleportHost.ExternalBase)
+						if (tel.teleportHost==TeleportEndpoints.TeleportHost.ExternalBase)
 							planet.additionalInfos.teleportEndpointsInOtherPlayerBases.add(tel);
 						else
 							planet.additionalInfos.teleportEndpoints.add(tel);
@@ -683,7 +678,7 @@ public class SaveGameData {
 			if (owner.userName!=null && !owner.userName.isEmpty() && owner.userID!=null && !owner.userID.isEmpty())
 				try {
 					SaveViewer.steamIDs.set(owner.userID, owner.userName);
-				} catch (AssignmentExistsException e) {
+				} catch (KnownSteamIDs.AssignmentExistsException e) {
 					e.printConflict();
 				}
 			
@@ -1156,7 +1151,7 @@ public class SaveGameData {
 		public FreighterClass freighterClass = null; 
 		public UniverseAddress ua = null;
 		public Position pos = null;
-		public Race crewRace = null;
+		public Universe.SolarSystem.Race crewRace = null;
 		public Inventory inventory = null;
 		public Inventory inventoryTech = null;
 		
@@ -1176,9 +1171,9 @@ public class SaveGameData {
 			
 			if (freighter.crewResourceBlock!=null && freighter.crewResourceBlock.filename!=null) {
 				switch (freighter.crewResourceBlock.filename) {
-				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Race.Korvax; break;
-				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Race.Vykeen; break;
-				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Race.Gek; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Korvax; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Vykeen; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Universe.SolarSystem.Race.Gek; break;
 				}
 			}
 			if (freighter.freighterResourceBlock!=null && freighter.freighterResourceBlock.filename!=null) {
@@ -2232,7 +2227,7 @@ public class SaveGameData {
 		public int availDiscoveredItemInSolarSystms;
 		
 		public DiscoveryData() {
-			this.storeData = new Vector<>();
+			this.storeData     = new Vector<>();
 			this.availableData = new Vector<>();
 			notParsedStoreData     = new JSON_Array();
 			notParsedAvailableData = new JSON_Array();
@@ -2243,22 +2238,42 @@ public class SaveGameData {
 		}
 
 		public static DiscoveryData parse(SaveGameData data) {
-			JSON_Array arrayValue_Store     = getArrayValue(data.json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record");
-			JSON_Array arrayValue_Available = getArrayValue(data.json_data,"DiscoveryManagerData","DiscoveryData-v1","Available");
-			
 			DiscoveryData discoveryData = new DiscoveryData();
 			
-			discoveryData.parseStoreArray(arrayValue_Store);
-			discoveryData.parseAvailArray(arrayValue_Available);
-			discoveryData.findPlanetsAndSolarSystems(data);
-			discoveryData.findAdditionalPlanetsAndSolarSystems(data);
+			discoveryData.parseAvailArray(getArrayValue(data.json_data,"DiscoveryManagerData","DiscoveryData-v1","Available"));
+			discoveryData.processAvailableData(data);
 			
-			if (!discoveryData.notParsedStoreData.isEmpty())
-				SaveViewer.log_error_ln("Found "+discoveryData.notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
-			if (!discoveryData.notParsedAvailableData.isEmpty())
-				SaveViewer.log_error_ln("Found "+discoveryData.notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+			discoveryData.parseStoreArray(getArrayValue(data.json_data,"DiscoveryManagerData","DiscoveryData-v1","Store","Record"));
+			discoveryData.processStoreData(data);
 			
 			return discoveryData;
+		}
+
+		private void parseAvailArray(JSON_Array arrAvailable) {
+			availableData.clear();
+			notParsedAvailableData.clear();
+			
+			if (arrAvailable!=null) {
+				for (Value objValue:arrAvailable) {
+					JSON_Object object = getObject(objValue);
+					if (object==null) { notParsedAvailableData.add(objValue); continue; }
+					
+					AvailableData availData = new AvailableData();
+					
+					// TSrec  long --> TimeStamp
+					availData.TSrec = TimeStamp.create( getIntegerValue(object,"TSrec") );
+					
+					// DD.UA  UniverseAddress
+					// DD.DT  String
+					// DD.VP  array of (hex formated Long or direct Long)
+					parseDD(getObjectValue(object,"DD"), availData.DD);
+					
+					availableData.add(availData);
+				}
+			}
+			
+			if (!notParsedAvailableData.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
 		}
 
 		private void parseStoreArray(JSON_Array arrStore) {
@@ -2308,30 +2323,9 @@ public class SaveGameData {
 					storeData.add(stData);
 				}
 			}
-		}
-
-		private void parseAvailArray(JSON_Array arrAvailable) {
-			availableData.clear();
-			notParsedAvailableData.clear();
 			
-			if (arrAvailable!=null) {
-				for (Value objValue:arrAvailable) {
-					JSON_Object object = getObject(objValue);
-					if (object==null) { notParsedAvailableData.add(objValue); continue; }
-					
-					AvailableData availData = new AvailableData();
-					
-					// TSrec  long --> TimeStamp
-					availData.TSrec = TimeStamp.create( getIntegerValue(object,"TSrec") );
-					
-					// DD.UA  UniverseAddress
-					// DD.DT  String
-					// DD.VP  array of (hex formated Long or direct Long)
-					parseDD(getObjectValue(object,"DD"), availData.DD);
-					
-					availableData.add(availData);
-				}
-			}
+			if (!notParsedStoreData.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
 		}
 
 		private void parseDD(JSON_Object ddObj, DDblock dd) {
@@ -2352,104 +2346,76 @@ public class SaveGameData {
 			}
 		}
 
-		public void findAdditionalPlanetsAndSolarSystems(SaveGameData data) {
-			HashSet<UniverseAddress> unknownAdresses = new HashSet<>();
-			HashSet<String> knownTypes = new HashSet<>();
-			
-			storedDiscoveredItemOnPlanets = 0;
-			storedDiscoveredItemInSolarSystms = 0;
-			
-			for (StoreData stData:storeData) {
-				UniverseObject.Type universeObject = processDDblock(data, stData.DD, SourceArray.StoreData, unknownAdresses, knownTypes);
-				if (universeObject!=null)
-					switch(universeObject) {
-					case Planet     : ++storedDiscoveredItemOnPlanets; break;
-					case SolarSystem: ++storedDiscoveredItemInSolarSystms; break;
-					default: break;
-					}
-			}
-			
+		private void processAvailableData(SaveGameData data) {
 			availDiscoveredItemOnPlanets = 0;
 			availDiscoveredItemInSolarSystms = 0;
-			
-			for (AvailableData avData:availableData) {
-				UniverseObject.Type universeObject = processDDblock(data, avData.DD, SourceArray.AvailableData, unknownAdresses, knownTypes);
-				if (universeObject!=null)
-					switch(universeObject) {
-					case Planet     : ++availDiscoveredItemOnPlanets; break;
-					case SolarSystem: ++availDiscoveredItemInSolarSystms; break;
-					default: break;
-					}
+			for (int i=0; i<availableData.size(); i++) {
+				int index = i;
+				AvailableData avData = availableData.get(i);
+				processDD(data, avData.DD, SourceArray.AvailableData,
+						(obj)->obj.foundInDiscAvail.add(index), obj->obj.containsDiscAvailObj=true,
+						() -> ++availDiscoveredItemOnPlanets, () -> ++availDiscoveredItemInSolarSystms,
+						null);
 			}
-			
-//			System.out.println("Known Types ["+knownTypes.size()+"]");
-//			for (String type:knownTypes)
-//				System.out.println("   "+type);
-			
-			if (!unknownAdresses.isEmpty()) {
-				SaveViewer.log_error_ln("Found undiscovered addresses ["+unknownAdresses.size()+"]");
-				for (UniverseAddress ua:unknownAdresses)
-					SaveViewer.log_error_ln("   "+ua.getCoordinates());
-			}
-		}
-		
-		private UniverseObject.Type processDDblock(SaveGameData data, DDblock DD, SourceArray sourceArray, HashSet<UniverseAddress> unknownAdresses, HashSet<String> knownTypes) {
-			if (DD==null) return null;
-			if (DD.DT!=null) {
-				if (DD.DT.equals("Planet"     )) return null;
-				if (DD.DT.equals("SolarSystem")) return null;
-				knownTypes.add(DD.DT);
-			}
-			
-			if (DD.UA==null) return null;
-			
-			if (DD.UA.isPlanet()) {
-				Universe.Planet planet = data.universe.findPlanet(DD.UA);
-				if (planet==null)
-					unknownAdresses.add(DD.UA);
-				else
-					planet.addDiscoveredItem(DD.DT,sourceArray);
-				return UniverseObject.Type.Planet;
-			}
-			
-			if (DD.UA.isSolarSystem()) {
-				Universe.SolarSystem solarSystem = data.universe.findSolarSystem(DD.UA);
-				if (solarSystem==null)
-					unknownAdresses.add(DD.UA);
-				else
-					solarSystem.addDiscoveredItem(DD.DT,sourceArray);
-				return UniverseObject.Type.SolarSystem;
-			}
-			return null;
 		}
 
-		public void findPlanetsAndSolarSystems(SaveGameData data) {
-			
+		private void processStoreData(SaveGameData data) {
+			storedDiscoveredItemOnPlanets = 0;
+			storedDiscoveredItemInSolarSystms = 0;
 			for (int i=0; i<storeData.size(); i++) {
-				StoreData stData = storeData.get(i);
 				int index = i;
-				Universe.DiscoverableObject obj = getDiscNameObj(data,stData.DD,obj_->obj_.foundInDiscStore.add(index),obj_->obj_.containsDiscStoreObj=true);
-				if (obj!=null && objTypeEqualsDT(obj.type,stData.DD.DT)) {
+				StoreData stData = storeData.get(i);
+				processDD(data, stData.DD, SourceArray.StoreData,
+						obj->obj.foundInDiscStore.add(index), obj->obj.containsDiscStoreObj=true,
+						() -> ++storedDiscoveredItemOnPlanets, () -> ++storedDiscoveredItemInSolarSystms,
+						discObj->processDiscoverableObject(stData,discObj));
+			}
+		}
+
+		private void processDiscoverableObject(StoreData stData, Universe.DiscoverableObject discObj) {
+			if (stData.OWS.userName!=null) {
+				if (discObj.hasDiscoverer())
+					discObj.setDiscoverer(discObj.getDiscoverer()+" | "+stData.OWS.userName);
+				else
+					discObj.setDiscoverer(stData.OWS.userName);
+			}
+			if (stData.DM_CN!=null) {
+				if (discObj.hasUploadedName())
+					discObj.setUploadedName(discObj.getUploadedName()+" | "+stData.DM_CN);
+				else
+					discObj.setUploadedName(stData.DM_CN);
+			}
+		}
+
+		private void processDD(SaveGameData data, DDblock ddBlock, SourceArray sourceArray,
+				Consumer<Universe.ObjectWithSource> setSource, Consumer<Universe.ObjectWithSource> setParentsSource,
+				Runnable incDiscoveredItemOnPlanets, Runnable incDiscoveredItemInSolarSystms,
+				Consumer<Universe.DiscoverableObject> processDiscoverableObject) {
+			
+			if (ddBlock.UA!=null) {
+				
+				Universe.ObjectWithSource obj = data.universe.getOrCreate( ddBlock.UA, setSource, setParentsSource );
+				if (obj.type==Universe.Type.Planet     ) incDiscoveredItemOnPlanets.run();
+				if (obj.type==Universe.Type.SolarSystem) incDiscoveredItemInSolarSystms.run();
+				
+				if (ddBlock.DT!=null) {
+					obj.addDiscoveredItem(ddBlock.DT, sourceArray);
 					
-					if (stData.OWS.userName!=null) {
-						if (obj.hasDiscoverer())
-							obj.setDiscoverer(obj.getDiscoverer()+" | "+stData.OWS.userName);
-						else
-							obj.setDiscoverer(stData.OWS.userName);
-					}
-					if (stData.DM_CN!=null) {
-						if (obj.hasUploadedName())
-							obj.setUploadedName(obj.getUploadedName()+" | "+stData.DM_CN);
-						else
-							obj.setUploadedName(stData.DM_CN);
+					switch (ddBlock.DT) {
+					case "SolarSystem":
+					case "Planet": 
+						if (processDiscoverableObject!=null && objTypeEqualsDT(obj.type,ddBlock.DT) && obj instanceof Universe.DiscoverableObject)
+							processDiscoverableObject.accept((Universe.DiscoverableObject) obj);
+						break;
+					case "Animal":
+					case "Mineral":
+					case "Sector":
+					case "Flora": break;
+					default:
+						SaveViewer.log_error_ln("Found unknown discovery type in %s: %s", sourceArray, ddBlock.DT);
+						break;
 					}
 				}
-			}
-			
-			for (int i=0; i<availableData.size(); i++) {
-				AvailableData avData = availableData.get(i);
-				int index = i;
-				getDiscNameObj(data,avData.DD,obj_->obj_.foundInDiscAvail.add(index),obj_->obj_.containsDiscAvailObj=true);
 			}
 		}
 
@@ -2462,20 +2428,6 @@ public class SaveGameData {
 			case Planet     : return "Planet"     .equals(DT);
 			}
 			return false;
-		}
-
-		private Universe.DiscoverableObject getDiscNameObj(SaveGameData data, DDblock dd, Consumer<ObjectWithSource> getSource, Consumer<ObjectWithSource> getParentSource) {
-			if (dd.DT==null || dd.UA==null) return null;
-				
-			Universe.DiscoverableObject discnameObj = null;
-			
-			if (dd.UA.isPlanet())
-				discnameObj = data.universe.getOrCreatePlanet(dd.UA,getSource,getParentSource);
-			
-			if (dd.UA.isSolarSystem())
-				discnameObj = data.universe.getOrCreateSolarSystem(dd.UA,getSource,getParentSource);
-				
-			return discnameObj;
 		}
 
 		public static class StoreData {
@@ -3250,8 +3202,25 @@ public class SaveGameData {
 			public boolean containsDiscStoreObj = false;
 			public boolean containsDiscAvailObj = false;
 			
+			public final HashMap<String,Integer> discoveredItems_Avail;
+			public final HashMap<String,Integer> discoveredItems_Store;
+			
 			protected ObjectWithSource(Type type) {
 				super(type);
+				
+				discoveredItems_Avail = new HashMap<>();
+				discoveredItems_Store = new HashMap<>();
+			}
+
+			public void addDiscoveredItem(String itemLabel, DiscoveryData.SourceArray sourceArray) {
+				HashMap<String, Integer> map = null;
+				switch (sourceArray) {
+				case AvailableData: map = discoveredItems_Avail; break;
+				case StoreData    : map = discoveredItems_Store; break;
+				}
+				Integer value = map.get(itemLabel);
+				if (value==null) map.put(itemLabel, 1);
+				else             map.put(itemLabel, value+1);
 			}
 			
 			public boolean isNotUploaded() {
@@ -3430,9 +3399,6 @@ public class SaveGameData {
 			
 			public final Vector<ExtraInfo> extraInfos;
 			
-			public final HashMap<String,Integer> discoveredItems_Avail;
-			public final HashMap<String,Integer> discoveredItems_Store;
-			
 			protected DiscoverableObject(Type type) {
 				super(type);
 				
@@ -3443,9 +3409,6 @@ public class SaveGameData {
 				discoverer = null;
 				
 				this.extraInfos = new Vector<>();
-				
-				discoveredItems_Avail = new HashMap<>();
-				discoveredItems_Store = new HashMap<>();
 			}
 
 			protected String getCombinedExtraInfoLabels(String...extraStrs) {
@@ -3461,17 +3424,6 @@ public class SaveGameData {
 						sb.append(str);
 					}
 				return sb.toString();
-			}
-
-			public void addDiscoveredItem(String itemLabel, DiscoveryData.SourceArray sourceArray) {
-				HashMap<String, Integer> map = null;
-				switch (sourceArray) {
-				case AvailableData: map = discoveredItems_Avail; break;
-				case StoreData    : map = discoveredItems_Store; break;
-				}
-				Integer value = map.get(itemLabel);
-				if (value==null) map.put(itemLabel, 1);
-				else             map.put(itemLabel, value+1);
 			}
 
 			

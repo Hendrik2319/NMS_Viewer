@@ -83,6 +83,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject.ExtraInfo;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.ObjectWithSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.Biome;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Planet.BuriedTreasure;
@@ -490,6 +491,26 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		protected void appendln(                                               ) { append(               "\r\n"         ); }
 		protected void appendln(               String format, Object...objects ) { append(        format+"\r\n", objects); }
 		protected void appendln(Locale locale, String format, Object...objects ) { append(locale, format+"\r\n", objects); }
+
+		protected void showObjectWithSource(ObjectWithSource obj) {
+			appendln();
+			appendln("Source: %s", obj.getLongSourceIDStr());
+			
+			if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
+				appendln();
+				appendln("Discovered Items:");
+				if (!obj.discoveredItems_Avail.isEmpty()) {
+					appendln("   available:");
+					for (String item:new TreeSet<>(obj.discoveredItems_Avail.keySet()))
+						appendln("      %s: %d", item, obj.discoveredItems_Avail.get(item));
+				}
+				if (!obj.discoveredItems_Store.isEmpty()) {
+					appendln("   stored:");
+					for (String item:new TreeSet<>(obj.discoveredItems_Store.keySet()))
+						appendln("      %s: %d", item, obj.discoveredItems_Store.get(item));
+				}
+			}
+		}
 	}
 	
 	private class InfoPanel_Other extends AbstractInfoPanel {
@@ -510,10 +531,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			case Region:
 				n = selectedNode.getDataChildrenCount();
+				Region region = ((RegionNode)selectedNode).value;
 				appendln("%d known solar system%s", n, n>1?"s":"");
-				ua = ((RegionNode)selectedNode).value.getUniverseAddress();
+				ua = region.getUniverseAddress();
 				appendln("Universe Coordinates      : %s", ua.getCoordinates_Region());
 				appendln("Reduced SignalBoster Code : %s", ua.getReducedSigBoostCode());
+				
+				showObjectWithSource(region);
 				
 				distance_center  = ua.getDistToCenter_inRegionUnits();
 				distance_currPos = ua.getDistToOther_inRegionUnits(data.general.currentUniverseAddress);
@@ -528,6 +552,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			case Galaxy:
 				n = selectedNode.getDataChildrenCount();
 				appendln("%d known region%s\r\n", n, n>1?"s":"");
+				showObjectWithSource(((GalaxyNode)selectedNode).value);
 				break;
 				
 			case Universe:
@@ -541,7 +566,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private static abstract class InfoPanel_UniverseObject extends AbstractInfoPanel {
+	private static abstract class InfoPanel_DiscoverableObject extends AbstractInfoPanel {
 		private static final long serialVersionUID = -8235731718380188431L;
 		
 		private SimplifiedTable extraInfoTable;
@@ -550,7 +575,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JPanel rightValuePanel;
 		private GridBagConstraints c;
 		
-		InfoPanel_UniverseObject(UniversePanel universePanel, boolean useValuePanel) {
+		InfoPanel_DiscoverableObject(UniversePanel universePanel, boolean useValuePanel) {
 			this.universePanel = universePanel;
 			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
 			JScrollPane extraInfoTableScrollPane = new JScrollPane(extraInfoTable);
@@ -590,7 +615,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			panel.add(comp,c);
 		}
 
-		protected void showDiscNameObj(GenericTreeNode<?> node, Universe.DiscoverableObject obj) {
+		protected void showDiscoverableObject(GenericTreeNode<?> node, DiscoverableObject obj) {
 			appendln();
 			
 			//textArea.append(String.format("selected : %s\r\n\r\n", obj.isSelected));
@@ -601,23 +626,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			if (obj.hasUploadedName   ())   appendln("Uploaded Name : %s", obj.getUploadedName());
 			if (obj.hasDiscoverer     ())   appendln("Discovered by : %s", obj.getDiscoverer());
 			
-			appendln("Source: %s", obj.getLongSourceIDStr());
 			
-			if (!obj.discoveredItems_Avail.isEmpty() || !obj.discoveredItems_Store.isEmpty()) {
-				appendln("Discovered Items:");
-				if (!obj.discoveredItems_Avail.isEmpty()) {
-					appendln("   available:");
-					for (String item:new TreeSet<>(obj.discoveredItems_Avail.keySet()))
-						appendln("      %s: %d", item, obj.discoveredItems_Avail.get(item));
-				}
-				if (!obj.discoveredItems_Store.isEmpty()) {
-					appendln("   stored:");
-					for (String item:new TreeSet<>(obj.discoveredItems_Store.keySet()))
-						appendln("      %s: %d", item, obj.discoveredItems_Store.get(item));
-				}
-			}
 			extraInfoTable.setModel(new ExtraInfoTableModel(node, obj instanceof Planet, obj.extraInfos));
 	//			extraInfoTableModel.setData(obj.extraInfos);
+			
+			showObjectWithSource(obj);
 		}
 
 		private enum ExtraInfoColumnID implements SimplifiedColumnIDInterface {
@@ -709,7 +722,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private class InfoPanel_SolarSystem extends InfoPanel_UniverseObject {
+	private class InfoPanel_SolarSystem extends InfoPanel_DiscoverableObject {
 		private static final long serialVersionUID = 1050112094455682248L;
 		
 		private SolarSystemNode node;
@@ -941,7 +954,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				appendln(Locale.ENGLISH,"    -> Region size: %1.2f ly", distance_LY/distance_reg);
 			}
 			
-			showDiscNameObj(node,system);
+			showDiscoverableObject(node,system);
 			
 			if (!system.additionalInfos.isEmpty()) {
 				appendln();
@@ -1066,7 +1079,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private class InfoPanel_Planet extends InfoPanel_UniverseObject {
+	private class InfoPanel_Planet extends InfoPanel_DiscoverableObject {
 		private static final long serialVersionUID = -5303591976120968332L;
 		
 		private JLabel portalGlyphs;
@@ -1174,7 +1187,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			appendln("Portal Glyph Code          : %012X"  , portalGlyphCode);
 			appendln("Extended SignalBoster Code : %s"     , ua.getExtendedSigBoostCode());
 			
-			showDiscNameObj(node,planet);
+			showDiscoverableObject(node,planet);
 			
 			if (!planet.additionalInfos.isEmpty()) {
 				appendln();
@@ -3005,26 +3018,30 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private void setValues(JLabel component, boolean selected, GenericTreeNode<?> node) {
 			component.setIcon(getIcon(node));
 			component.setFont(standardFont);
-			Universe.DiscoverableObject uniobj = null;
+			Universe.DiscoverableObject discObj = null;
+			Universe.ObjectWithSource obj = null;
 			Region region = null;
-			if (node instanceof      RegionNode) region = ((     RegionNode)node).value;
-			if (node instanceof SolarSystemNode) uniobj = ((SolarSystemNode)node).value;
-			if (node instanceof      PlanetNode) uniobj = ((     PlanetNode)node).value;
-			if (uniobj != null) {
-				if (!uniobj.hasOriginalName()) {
+			if (node.value instanceof ObjectWithSource) obj = (ObjectWithSource) node.value;
+			if (node instanceof      RegionNode) obj = region = ((     RegionNode)node).value;
+			if (node instanceof SolarSystemNode) obj = discObj = ((SolarSystemNode)node).value;
+			if (node instanceof      PlanetNode) obj = discObj = ((     PlanetNode)node).value;
+			if (discObj!=null) {
+				if (!discObj.hasOriginalName()) {
 					if (!selected) component.setForeground(TEXTCOLOR__WITHOUT_NAME);
-				} else
-				if (uniobj.isNotUploaded()) {
+				}
+			}
+			if (obj!=null) {
+				if (obj.isNotUploaded()) {
 					if (!selected) component.setForeground(TEXTCOLOR__NOT_UPLOADED);
 				}
-				if (!uniobj.hasSourceID()) {
+				if (!obj.hasSourceID()) {
 					if (!selected) component.setForeground(TEXTCOLOR__ONLY_IN_DB);
 				} 
-				if (uniobj.isCurrPos) {
+				if (obj.isCurrPos) {
 					if (!selected) component.setForeground(TEXTCOLOR__CURRENT_POS);
 					component.setFont(boldfont);
 				} 
-				if (uniobj.containsCurrPos) {
+				if (obj.containsCurrPos) {
 					if (!selected) component.setForeground(TEXTCOLOR__CURRENT_POS);
 				} 
 			}
