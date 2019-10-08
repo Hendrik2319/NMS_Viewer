@@ -846,6 +846,7 @@
 ^UT_TRANSLATE1.imageBG=0063B6
 ^UT_TRANSLATE1.upgradeClass=B
 ^UT_TRANSLATE2=
+^UT_TRANSLATE2.type=ExosuitExtension
 ^UT_TRANSLATE3=Perfektionierter Übersetzer
 ^UT_TRANSLATE3.type=ExosuitExtension
 ^UT_TRANSLATE3.image=Circuit_Board_icon.png

@@ -3120,6 +3120,28 @@ class=Yellow
 short=1 Planet
 info=
 
+[Reg000000066C8F03]
+name=Upkanan-Zufluss
+
+[Sys014E00066C8F03]
+name=Ogkanub-Fle
+race=Korvax
+conflict=3
+conflict_label=zerstörerisch
+economy=2
+economy_label=nachhaltig
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln314E00066C8F03]
+name=Locharam VI
+biome=Lush
+with water
+resources=Cu,Pf,NaCl
+
 [Reg000000FE5CAF06]
 name=Hoveli-Cluster
 
@@ -3735,6 +3757,50 @@ oldname=Lutieneralat
 
 [Pln30010008008FF8]
 oldname=Perthymeng Avndas
+
+[Reg000000F9001FFB]
+name=Udyigro-Sektor
+
+[Sys00D800F9001FFB]
+name=Urorai IV
+race=Korvax
+conflict=1
+conflict_label=mild
+economy=2
+economy_label=angemessen
+atlasinterface=false
+blackhole=false
+class=Green
+short=5 Planeten
+info=
+short=Station mit Schwarz-Roter Atmosphere
+info=
+
+[Pln10D800F9001FFB]
+name=Eign
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Fe__
+short=Schwarz-Rote Atmosphere
+info=
+
+[Pln50D800F9001FFB]
+name=Aquanar Gotsu
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Co
+
+[Reg000000F9000FFC]
+
+[Sys01A700F9000FFC]
+atlasinterface=false
+blackhole=false
+
+[Reg000000F9002FFC]
+
+[Sys008700F9002FFC]
+atlasinterface=false
+blackhole=false
 
 [Reg0000000253AFFC]
 name=Uutare-Band
