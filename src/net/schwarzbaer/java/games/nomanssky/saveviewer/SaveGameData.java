@@ -1118,23 +1118,27 @@ public class SaveGameData {
 		
 		private static KnownBlueprints parse(SaveGameData data) {
 			KnownBlueprints knownBlueprints = new KnownBlueprints();
-			knownBlueprints.technologies   = parseBlueprintArray(data, "Technology" , GameInfos.techIDs   , "KnownTech"                 , data.json_data, "PlayerStateData","KnownTech"    );
-			knownBlueprints.products       = parseBlueprintArray(data, "Product"    , GameInfos.productIDs, "KnownProducts"             , data.json_data, "PlayerStateData","KnownProducts");
-			knownBlueprints.quicksilvers   = parseBlueprintArray(data, "Quicksilver", GameInfos.productIDs, "[KnownQuicksilverSpecials]", data.json_data, "PlayerStateData","[KnownQuicksilverSpecials]");
+			knownBlueprints.technologies   = parseBlueprintArray(data, "Technology" , GameInfos.techIDs   , GeneralizedID.Usage.Type.Blueprint         , "KnownTech"                 , data.json_data, "PlayerStateData","KnownTech"    );
+			knownBlueprints.products       = parseBlueprintArray(data, "Product"    , GameInfos.productIDs, GeneralizedID.Usage.Type.Blueprint         , "KnownProducts"             , data.json_data, "PlayerStateData","KnownProducts");
+			knownBlueprints.quicksilvers   = parseBlueprintArray(data, "Quicksilver", GameInfos.productIDs, GeneralizedID.Usage.Type.QuicksilverSpecial, "[KnownQuicksilverSpecials]", data.json_data, "PlayerStateData","[KnownQuicksilverSpecials]");
 			if (hasValue(data.json_data, "PlayerStateData","[KnownRecipes]"))
 				knownBlueprints.recipes = parseStringArray("[KnownRecipes]", data.json_data, "PlayerStateData","[KnownRecipes]");
 			return knownBlueprints;
 		}
 		
-		private static Vector<GeneralizedID> parseBlueprintArray(SaveGameData data, String blueprintCategory, IDMap map, String sourceLabel, JSON_Object jsonObject, Object... path) {
+		private static Vector<GeneralizedID> parseBlueprintArray(SaveGameData data, String blueprintCategory, IDMap map, GameInfos.GeneralizedID.Usage.Type usageType, String sourceLabel, JSON_Object jsonObject, Object... path) {
 			if (!hasValue(jsonObject, path)) return null;
 			return parseArray((value,i)->{
 				
 				String id = getString(value);
 				if (id==null) return null;
 				
-				GeneralizedID generalizedID = map.get(id,data,GeneralizedID.Usage.Type.Blueprint);
-				if (generalizedID==null) return null;
+				//GameInfos.GeneralizedID.Usage.Type usageType = GeneralizedID.Usage.Type.Blueprint;
+				GeneralizedID generalizedID = map.get(id,data,usageType);
+				if (generalizedID==null) {
+					SaveViewer.log_error_ln("Can't find ID \"%s\" in %s", id, map.getLabel());
+					return null;
+				}
 				
 				generalizedID.getUsage(data).addBlueprintUsage(blueprintCategory,i);
 				return generalizedID;

@@ -289,7 +289,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):("["+slot.id.id+"]"))+"\r\n");
 					textarea.append("   Type  : "+(slot.type==null?slot.typeStr:slot.type)+"\r\n");
 					if (slot.id!=null && slot.id.type!=null)
-						textarea.append("           "+slot.id.type.getLabel()+"\r\n");
+						textarea.append("           "+slot.id.type.label+"\r\n");
 					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
 					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
 					if (slot.specialSlotType!=null)

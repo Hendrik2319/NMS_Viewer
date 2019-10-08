@@ -33,7 +33,6 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Consumer;
@@ -800,9 +799,9 @@ public class GameInfos {
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
-	public static final IDMap productIDs   = new IDMap();
-	public static final IDMap techIDs      = new IDMap();
-	public static final IDMap substanceIDs = new IDMap();
+	public static final IDMap productIDs   = new IDMap("ProductIDs");
+	public static final IDMap techIDs      = new IDMap("TechIDs");
+	public static final IDMap substanceIDs = new IDMap("SubstanceIDs");
 	
 	public static void removeUsages(SaveGameData oldData) {
 		for (GeneralizedID id:productIDs  .getValues()) id.usage.remove(oldData);
@@ -819,16 +818,24 @@ public class GameInfos {
 	}
 
 	public static class IDMap {
-		private HashMap<String, GeneralizedID> map;
+		private final HashMap<String, GeneralizedID> map;
+		private final String label;
 		
-		public IDMap() {
+		public IDMap(String label) {
+			this.label = label;
 			map = new HashMap<>();
 		}
-	
+		
+		public String getLabel() {
+			return label;
+		}
+		
+		public void forEach(Consumer<GeneralizedID> action) {
+			map.values().forEach(action);
+		}
+		
 		public Iterable<GeneralizedID> getValues() {
-			return new Iterable<GeneralizedID>() {
-				@Override public Iterator<GeneralizedID> iterator() { return map.values().iterator(); }
-			}; 
+			return () -> map.values().iterator(); 
 		}
 	
 		public Vector<GeneralizedID> getSortedValues() {
@@ -840,9 +847,7 @@ public class GameInfos {
 		public Iterable<String> getSortedKeys() {
 			Vector<String> vector = new Vector<String>(map.keySet());
 			vector.sort(null);
-			return new Iterable<String>() {
-				@Override public Iterator<String> iterator() { return vector.iterator(); }
-			}; 
+			return () -> vector.iterator(); 
 		}
 	
 //		public void set(String id, GeneralizedID generalizedID) {
@@ -1027,17 +1032,18 @@ public class GameInfos {
 			PlantProduct              ("Frucht"),
 			RaceGift                  ("Völker-Geschenk"),
 			Special                   ("Speziell"),
+			Bait                      ("Köder"),
+			Ingredient                ("Zutat"),
 			Treasure                  ("Schatz"),
 			PlanetTrophy              ("Planeten-Trophäe"),
 			;
 			
-			private String label;
-			//public boolean isUpgrade;
+			public final String label;
+			public final boolean isUpgradeModule;
 			
 			Type(String label) { this(label,false); }
-			Type(String label, boolean isUpgrade) { this.label = label; /*this.isUpgrade = isUpgrade;*/ }
+			Type(String label, boolean isUpgradeModule) { this.label = label; this.isUpgradeModule = isUpgradeModule; }
 			
-			public String getLabel() { return label; }
 			public static Type getType(String str) {
 				try { return valueOf(str); }
 				catch (Exception e) { return null; }
@@ -1151,7 +1157,7 @@ public class GameInfos {
 	
 		public static class Usage {
 			public enum Type {
-				BuildingObject("Bo"), Blueprint("Bl"), InventorySlot("In");
+				BuildingObject("Bo"), Blueprint("Bl"), QuicksilverSpecial("QS"), InventorySlot("In");
 				
 				private final String keyChar;
 				Type(String keyChar) { this.keyChar = keyChar; }
@@ -1235,7 +1241,7 @@ public class GameInfos {
 					updateAfterContextMenuAction(setType(value),null);
 				}
 				@Override public void configureMenuItem(JMenuItem menuItem, Type value) {
-					menuItem.setText(value==null?"<none>":value.getLabel());
+					menuItem.setText(value==null?"<none>":value.label);
 				}
 			};
 			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Std     = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType);
@@ -1577,7 +1583,8 @@ public class GameInfos {
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
 					new ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			NonStringRenderer<GeneralizedID.Type> typeRenderer =
-					new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; });
+					new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
+						return ((GeneralizedID.Type)t).label; return null; });
 			typeCellEditor.setRenderer(typeRenderer);
 			setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
 			setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
@@ -1689,7 +1696,7 @@ public class GameInfos {
 		private enum GeneralizedIDColumnID implements Tables.SimplifiedColumnIDInterface {
 			Obsolete("Obs"          ,                    String.class,  10,-1, 30, 30),
 			ID      ("ID"           ,                    String.class,  80,-1,120,120),
-			Type    ("Type"         ,        GeneralizedID.Type.class, 100,-1,160,160),
+			Type    ("Type"         ,        GeneralizedID.Type.class, 100,-1,200,200),
 			Symbol  ("Sym."         ,                    String.class,  10,-1, 30, 30),
 			Label   ("Label"        ,                    String.class, 150,-1,200,200),
 			Image   ("Image"        ,                    String.class, 150,-1,250,250),
@@ -1967,7 +1974,8 @@ public class GameInfos {
 				id.type = (GeneralizedID.Type)cmbbxTypes.getSelectedItem();
 				dataChanged();
 			});
-			cmbbxTypes.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type) return ((GeneralizedID.Type)t).getLabel(); return null; }));
+			cmbbxTypes.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
+				return ((GeneralizedID.Type)t).label; return null; }));
 			
 			JComboBox<String> cmbbxImages = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
 			cmbbxImages.setSelectedItem(id.getImageFileName());
