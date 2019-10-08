@@ -569,7 +569,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static abstract class InfoPanel_DiscoverableObject extends AbstractInfoPanel {
 		private static final long serialVersionUID = -8235731718380188431L;
 		
-		private SimplifiedTable extraInfoTable;
+		private SimplifiedTable<ExtraInfoColumnID> extraInfoTable;
 		private UniversePanel universePanel;
 		private JPanel leftValuePanel;
 		private JPanel rightValuePanel;
@@ -577,7 +577,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		InfoPanel_DiscoverableObject(UniversePanel universePanel, boolean useValuePanel) {
 			this.universePanel = universePanel;
-			extraInfoTable = new SimplifiedTable("ExtraInfoTable",true,SaveViewer.DEBUG,true);
+			extraInfoTable = new SimplifiedTable<>("ExtraInfoTable",true,SaveViewer.DEBUG,true);
 			JScrollPane extraInfoTableScrollPane = new JScrollPane(extraInfoTable);
 			extraInfoTableScrollPane.setPreferredSize(new Dimension(500, 60));;
 			
@@ -2767,7 +2767,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private static final long serialVersionUID = -356863578675221086L;
 		
 		private Universe universe;
-		private SimplifiedTable table;
+		private SimplifiedTable<FoundExtraInfoColumnID> table;
 		private FoundExtraInfoTableModel tableModel;
 
 		private JButton btnOK;
@@ -2776,7 +2776,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(parent, "Find Universe Object", ModalityType.APPLICATION_MODAL);
 			this.universe = universe;
 			
-			table = new SimplifiedTable("FindObjectDialog",false,SaveViewer.DEBUG,true);
+			table = new SimplifiedTable<>("FindObjectDialog",false,SaveViewer.DEBUG,true);
 			table.setPreferredScrollableViewportSize(new Dimension(500, 600));;
 			tableModel = null;
 			

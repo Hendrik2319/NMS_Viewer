@@ -27,6 +27,7 @@ import javax.swing.SortOrder;
 import javax.swing.border.Border;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
@@ -109,18 +110,18 @@ public class TableView {
 	
 	}
 
-	public static class SimplifiedTable extends JTable implements Gui.ContextMenuInvoker.ContextMenuInvokeListener {
+	public static class SimplifiedTable<ColumnID extends Tables.SimplifiedColumnIDInterface> extends JTable implements Gui.ContextMenuInvoker.ContextMenuInvokeListener {
 		private static final long serialVersionUID = 6963749333892762675L;
 		private boolean useRowSorter;
 		@SuppressWarnings("unused")
 		private String name;
-		private DebugTableContextMenu contextMenu;
+		private JPopupMenu contextMenu;
 		private TableCellRenderer overallCellRenderer;
 		private NewRowSorter rowSorter;
 		private RowSorterListener rowSorterListener;
 		private int[] selectedRowsM;
 		private Vector<ContextMenuInvokeListener> cmiListeners;
-		private SimplifiedTableModel<?> simplifiedTableModel;
+		private SimplifiedTableModel<ColumnID> simplifiedTableModel;
 		
 		public SimplifiedTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super();
@@ -131,24 +132,49 @@ public class TableView {
 			this.rowSorterListener = null;
 			this.overallCellRenderer = null;
 			this.simplifiedTableModel = null;
+			
 			if (disableAutoResize)
 				setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-			if (installDebugContextMenu) {
-				contextMenu = new DebugTableContextMenu(this);
-				Gui.ContextMenuInvoker menuInvoker = new Gui.ContextMenuInvoker(this, contextMenu);
-				menuInvoker.addContextMenuInvokeListener(this);
-			} else contextMenu=null;
+			
+			if (installDebugContextMenu) contextMenu = new DebugTableContextMenu(this);
+			else contextMenu = new JPopupMenu();
+			Gui.ContextMenuInvoker menuInvoker = new Gui.ContextMenuInvoker(this, contextMenu);
+			menuInvoker.addContextMenuInvokeListener(this);
+			
 			//setAutoCreateRowSorter(useRowSorter);
 			cmiListeners = new Vector<>();
 		}
 		
-		public SimplifiedTable(String name, SimplifiedTableModel<?> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
+		public SimplifiedTable(String name, SimplifiedTableModel<ColumnID> dataModel, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
 			dataModel.setTable(this);
 			setModel(dataModel);
 		}
 		
-		public DebugTableContextMenu getDebugTableContextMenu() {
+		public TableColumn getColumn(ColumnID columnID) {
+			TableColumnModel columnModel = getColumnModel();
+			if (columnModel==null) return null;
+			
+			if (simplifiedTableModel==null) return null;
+			int columnIndex = simplifiedTableModel.getColumn(columnID);
+			if (columnIndex<0) return null;
+			
+			return columnModel.getColumn(convertColumnIndexToView(columnIndex));
+		}
+		
+		public void setCellRenderer(ColumnID columnID, TableCellRenderer cellRenderer) {
+			TableColumn column = getColumn(columnID);
+			if (column==null) return;
+			column.setCellRenderer(cellRenderer);
+		}
+	
+		public void setCellEditor(ColumnID columnID, TableCellEditor cellEditor) {
+			TableColumn column = getColumn(columnID);
+			if (column==null) return;
+			column.setCellEditor(cellEditor);
+		}
+		
+		public JPopupMenu getContextMenu() {
 			return contextMenu;
 		}
 
@@ -223,7 +249,13 @@ public class TableView {
 			return simplifiedTableModel;
 		}
 
-		public void setModel(SimplifiedTableModel<?> dataModel) {
+		@Override
+		public void setModel(TableModel dataModel) {
+			this.simplifiedTableModel = null;
+			super.setModel(dataModel);
+		}
+
+		public void setModel(SimplifiedTableModel<ColumnID> dataModel) {
 			super.setModel(this.simplifiedTableModel = dataModel);
 			dataModel.setColumnWidths(this);
 			if (useRowSorter) {
@@ -276,7 +308,7 @@ public class TableView {
 		}
 	}
 	
-	public static class VerySimpleTable<DataType> extends SimplifiedTable {
+	public static class VerySimpleTable<DataType> extends SimplifiedTable<VerySimpleTable.ColumnID<DataType>> {
 		private static final long serialVersionUID = -5521097765178758216L;
 		private VerySimpleTableModel<DataType> tableModel;
 

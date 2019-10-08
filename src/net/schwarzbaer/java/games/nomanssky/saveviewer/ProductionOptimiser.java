@@ -88,8 +88,8 @@ class ProductionOptimiser implements ActionListener {
 	private FileChooser fileChooser = null;
 	private Disabler<ActionCommand> disabler = null;
 	
-	private TableView.SimplifiedTable baseInputsTable = null;
-	private TableView.SimplifiedTable   productsTable = null;
+	private TableView.SimplifiedTable<BaseInputsTableColumnID> baseInputsTable = null;
+	private TableView.SimplifiedTable<ProductsTableColumnID>   productsTable   = null;
 	private BaseInputsTableModel baseInputsTableModel = null;
 	private   ProductsTableModel   productsTableModel = null;
 	private InputList inputList = null;
@@ -120,7 +120,7 @@ class ProductionOptimiser implements ActionListener {
 		inputList = new InputList();
 		
 		baseInputsTableModel = new BaseInputsTableModel();
-		baseInputsTable = new TableView.SimplifiedTable("BaseInputsTable", baseInputsTableModel, true, true, false);
+		baseInputsTable = new TableView.SimplifiedTable<>("BaseInputsTable", baseInputsTableModel, true, true, false);
 		baseInputsTable.setCellRendererForAllColumns(baseInputsTableModel.createCellRenderer(), true);
 		JCheckBox rendererCheckBox = new JCheckBox();
 		rendererCheckBox.setHorizontalAlignment(JCheckBox.CENTER);
@@ -130,7 +130,7 @@ class ProductionOptimiser implements ActionListener {
 		baseInputsTableScrollPane.setPreferredSize(new Dimension(getSumofColWidths(BaseInputsTableColumnID.values())+50,200));
 		
 		productsTableModel = new ProductsTableModel();
-		productsTable = new TableView.SimplifiedTable("ProductsTable", productsTableModel, true, true, false);
+		productsTable = new TableView.SimplifiedTable<>("ProductsTable", productsTableModel, true, true, false);
 		productsTable.setCellRendererForAllColumns(productsTableModel.createCellRenderer(), true);
 		productsTable.setDefaultEditor(Input.class, new DefaultCellEditor(new JComboBox<Input>(inputList)));
 		JScrollPane productsTableScrollPane = new JScrollPane(productsTable);

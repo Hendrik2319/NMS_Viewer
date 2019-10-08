@@ -47,6 +47,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -72,7 +73,6 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 
 class RecipeAnalyser implements ActionListener {
 	private static final String RECIPE_ANALYSER_CFG = "NMS_Viewer.RecipeAnalyser.cfg";
@@ -113,8 +113,8 @@ class RecipeAnalyser implements ActionListener {
 	private StatusFields              statusFields = null;
 	private TextAreaDialog            resultDialog = null;
 	
-	private TableView.SimplifiedTable ingredientsTable = null;
-	private TableView.SimplifiedTable recipesTable = null;
+	private TableView.SimplifiedTable<DataModel.IngredientsTableColumnID> ingredientsTable = null;
+	private TableView.SimplifiedTable<DataModel.RecipesTableColumnID>     recipesTable     = null;
 	
 	private JTable                    rawIngredientsTable = null;
 	private JTable                    rawRecipesTable = null;
@@ -217,7 +217,7 @@ class RecipeAnalyser implements ActionListener {
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
 		
-		ingredientsTable = new TableView.SimplifiedTable("IngredientsTable", true, true, false);
+		ingredientsTable = new TableView.SimplifiedTable<>("IngredientsTable", true, true, false);
 		ingredientsTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JCheckBox()));
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new Boolean[] {true, false})));
@@ -254,8 +254,8 @@ class RecipeAnalyser implements ActionListener {
 			updateGuiAccess();
 		});
 		
-		DebugTableContextMenu contextMenu;
-		contextMenu = ingredientsTable.getDebugTableContextMenu();
+		JPopupMenu contextMenu;
+		contextMenu = ingredientsTable.getContextMenu();
 		contextMenu.addSeparator();
 		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		contextMenu.add(miFindRecipeChain);
@@ -269,7 +269,7 @@ class RecipeAnalyser implements ActionListener {
 		contextMenu.add(SaveViewer.createMenuItem("Unset InStock for selected ingredients", this, disabler, ActionCommand.UnsetInStock));
 		contextMenu.add(miHighlightProducible);
 		
-		recipesTable = new TableView.SimplifiedTable("RecipesTable", true, true, false);
+		recipesTable = new TableView.SimplifiedTable<>("RecipesTable", true, true, false);
 		recipesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
 		JMenuItem miMarkRecipeAsWrong = SaveViewer.createCheckBoxMenuItem("Recipe is wrong", this, disabler, ActionCommand.MarkRecipeAsWrong);
@@ -286,7 +286,7 @@ class RecipeAnalyser implements ActionListener {
 			updateGuiAccess();
 		});
 		
-		contextMenu = recipesTable.getDebugTableContextMenu();
+		contextMenu = recipesTable.getContextMenu();
 		contextMenu.addSeparator();
 		contextMenu.add(miMarkRecipeAsWrong);
 		
@@ -875,8 +875,8 @@ class RecipeAnalyser implements ActionListener {
 		private RecipeAnalyser gui = null;
 		private StatusFields              statusFields = null;
 		
-		private TableView.SimplifiedTable ingredientsTable = null;
-		private TableView.SimplifiedTable recipesTable = null;
+		private TableView.SimplifiedTable<IngredientsTableColumnID> ingredientsTable = null;
+		private TableView.SimplifiedTable<RecipesTableColumnID>      recipesTable    = null;
 		
 		private JTable                    rawIngredientsTable = null;
 		private JTable                    rawRecipesTable = null;

@@ -52,9 +52,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
@@ -1208,7 +1205,7 @@ public class GameInfos {
 	
 		private Window mainwindow;
 	
-		private SimplifiedTable table;
+		private SimplifiedTable<GeneralizedIDColumnID> table;
 		private GeneralizedIDTableModel tableModel;
 		private GeneralizedID clickedID;
 		private Point clickedCell;
@@ -1225,7 +1222,7 @@ public class GameInfos {
 			clickedID = null;
 			clickedCell = null;
 			tableModel = new GeneralizedIDTableModel(this,idMap);
-			table = new SimplifiedTable(tableLabel,tableModel,true,false,true);
+			table = new SimplifiedTable<>(tableLabel,tableModel,true,false,true);
 			table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION, true);
 			table.getSelectionModel().addListSelectionListener(e->{
 				if (table.getSelectedRowCount()==1)
@@ -1577,8 +1574,8 @@ public class GameInfos {
 			NonStringRenderer<GeneralizedID.UpgradeClass> upgradeClassRenderer =
 					new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; });
 			upgradeClassCellEditor.setRenderer(upgradeClassRenderer);
-			setCellEditor  (GeneralizedIDColumnID.UpgrCls, upgradeClassCellEditor);
-			setCellRenderer(GeneralizedIDColumnID.UpgrCls, upgradeClassRenderer);
+			table.setCellEditor  (GeneralizedIDColumnID.UpgrCls, upgradeClassCellEditor);
+			table.setCellRenderer(GeneralizedIDColumnID.UpgrCls, upgradeClassRenderer);
 			
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
 					new ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
@@ -1586,8 +1583,8 @@ public class GameInfos {
 					new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
 						return ((GeneralizedID.Type)t).label; return null; });
 			typeCellEditor.setRenderer(typeRenderer);
-			setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
-			setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
+			table.setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
+			table.setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
 			
 			ComboboxCellEditor<String> imageCellEditor =
 					new ComboboxCellEditor<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
@@ -1597,7 +1594,7 @@ public class GameInfos {
 					tableModel.updateTableColumn(GeneralizedIDColumnID.Image);
 				}
 			});
-			setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
+			table.setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
 					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues));
@@ -1609,30 +1606,8 @@ public class GameInfos {
 			
 			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
 			colorCellEditor.setRenderer(colorRenderer);
-			setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
-			setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
-		}
-	
-		private void setCellRenderer(GeneralizedIDColumnID columnID, TableCellRenderer cellRenderer) {
-			TableColumn column = getColumn(columnID);
-			if (column==null) return;
-			column.setCellRenderer(cellRenderer);
-		}
-	
-		private void setCellEditor(GeneralizedIDColumnID columnID, TableCellEditor cellEditor) {
-			TableColumn column = getColumn(columnID);
-			if (column==null) return;
-			column.setCellEditor(cellEditor);
-		}
-	
-		private TableColumn getColumn(GeneralizedIDColumnID columnID) {
-			TableColumnModel columnModel = table.getColumnModel();
-			if (columnModel==null) return null;
-			
-			int columnIndex = tableModel.getColumn(columnID);
-			if (columnIndex<0) return null;
-			
-			return columnModel.getColumn(columnIndex);
+			table.setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
+			table.setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
 		}
 	
 		private void showID(GeneralizedID id) {

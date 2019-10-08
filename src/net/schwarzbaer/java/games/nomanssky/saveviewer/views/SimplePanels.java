@@ -116,7 +116,7 @@ public class SimplePanels {
 			textArea.setEditable(false);
 			
 			LocalTableModel tableModel = new LocalTableModel();
-			SimplifiedTable table = new SimplifiedTable("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
+			SimplifiedTable<ColumnID> table = new SimplifiedTable<>("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 			table.getSelectionModel().addListSelectionListener(e->{
 				textArea.setText("");
@@ -955,7 +955,7 @@ public class SimplePanels {
 			},true);
 			//JScrollPane tableScrollPane = new JScrollPane(table);
 			
-			TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
+			JPopupMenu contextMenu = table.getContextMenu();
 			contextMenu.addSeparator();
 			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
 			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->table.getModel_VerySimpleTableModel().initiateColumnUpdate(table.getColumn(2))));
@@ -1133,10 +1133,10 @@ public class SimplePanels {
 				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
 				
 				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(this.playerbase.objects);
-				SimplifiedTable table = new SimplifiedTable("BaseObjectsTable",tableModel,true,SaveViewer.DEBUG,true);
+				SimplifiedTable<BaseObjectsColumnID> table = new SimplifiedTable<>("BaseObjectsTable",tableModel,true,SaveViewer.DEBUG,true);
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
-				TableView.DebugTableContextMenu contextMenu = table.getDebugTableContextMenu();
+				JPopupMenu contextMenu = table.getContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
 				addVRMLtasks(contextMenu);

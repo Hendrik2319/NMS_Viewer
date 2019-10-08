@@ -19,12 +19,12 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.Simplifie
 class StatsPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = -1541256209397699528L;
 	
-	private SimplifiedTable table;
+	private SimplifiedTable<StatsTableColumnID> table;
 	
 	public StatsPanel(SaveGameData data) {
 		super(data);
 		
-		table = new SimplifiedTable("StatsTable",true,SaveViewer.DEBUG,true);
+		table = new SimplifiedTable<>("StatsTable",true,SaveViewer.DEBUG,true);
 		JScrollPane tableScrollPane = new JScrollPane(table);
 		tableScrollPane.setPreferredSize(new Dimension(600, 500));
 		
@@ -78,19 +78,19 @@ class StatsPanel extends SaveGameViewTabPanel {
 		@Override public Tables.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 
-	private static class StatsTableModel extends Tables.SimplifiedTableModel<StatsPanel.StatsTableColumnID> {
+	private static class StatsTableModel extends Tables.SimplifiedTableModel<StatsTableColumnID> {
 		
 		private Vector<StatValue> statsList;
 		
 		public StatsTableModel(Vector<StatValue> statsList) {
-			super(StatsPanel.StatsTableColumnID.values());
+			super(StatsTableColumnID.values());
 			this.statsList = statsList;
 		}
 	
 		@Override public int getRowCount() { return statsList.size(); }
 	
 		@Override
-		public Object getValueAt(int rowIndex, int columnIndex, StatsPanel.StatsTableColumnID columnID) {
+		public Object getValueAt(int rowIndex, int columnIndex, StatsTableColumnID columnID) {
 			StatValue statValue = statsList.get(rowIndex);
 			
 			if (statValue==null) return null;
@@ -107,12 +107,12 @@ class StatsPanel extends SaveGameViewTabPanel {
 		}
 	
 		@Override
-		protected boolean isCellEditable(int rowIndex, int columnIndex, StatsPanel.StatsTableColumnID columnID) {
+		protected boolean isCellEditable(int rowIndex, int columnIndex, StatsTableColumnID columnID) {
 			return columnID==StatsTableColumnID.Name;
 		}
 	
 		@Override
-		protected void setValueAt(Object aValue, int rowIndex, int columnIndex, StatsPanel.StatsTableColumnID columnID) {
+		protected void setValueAt(Object aValue, int rowIndex, int columnIndex, StatsTableColumnID columnID) {
 			if (columnID!=StatsTableColumnID.Name) { fireTableCellUpdate(rowIndex, columnIndex); return; }
 			
 			StatValue statValue = statsList.get(rowIndex);

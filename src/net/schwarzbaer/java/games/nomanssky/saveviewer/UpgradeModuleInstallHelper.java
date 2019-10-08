@@ -1,9 +1,13 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,16 +21,22 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.function.Function;
 
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TableModelListener;
@@ -37,12 +47,19 @@ import net.schwarzbaer.gui.FileChooser;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
+import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
+import net.schwarzbaer.gui.Tables.NonStringRenderer;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 final class UpgradeModuleInstallHelper implements ActionListener {
 	
 	private static final String CFG = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
-	private static HashMap<String,GeneralizedID> knownUpgradeModules;
+	private static final Comparator<GeneralizedID> compareGeneralizedIDs =
+			Comparator.<GeneralizedID,GeneralizedID.Type>comparing(id->id.type).thenComparing(id->id.id);
 
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
@@ -53,12 +70,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	static void start(boolean standalone) {
-		knownUpgradeModules = new HashMap<>();
-		GameInfos.productIDs.forEach(id->{
-			if (id.type!=null && id.type.isUpgradeModule)
-				knownUpgradeModules.put(id.id,id);
-		});
-		//knownUpgradeModules.sort(Comparator.<GeneralizedID,GeneralizedID.Type>comparing(id->id.type).thenComparing(id->id.label));
 		
 		new UpgradeModuleInstallHelper()
 			.readConfig()
@@ -67,6 +78,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			.openLastDataFile();
 	}
 
+	private static Vector<GeneralizedID> sorted(Collection<GeneralizedID> set) {
+		Vector<GeneralizedID> vector = new Vector<>(set);
+		vector.sort(compareGeneralizedIDs);
+		return vector;
+	}
+	
+	private final HashMap<String,GeneralizedID> knownUpgradeModuleIDs;
+
 	private Disabler<ActionCommand> disabler = null;
 	private StandardMainWindow mainwindow = null;
 	private JPanel contentPane = null;
@@ -74,7 +93,19 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 	private Config config = new Config();
 	private Session currentSession = null;
-
+	
+	private UpgradeModuleInstallHelper() {
+		knownUpgradeModuleIDs = new HashMap<>();
+		GameInfos.productIDs.forEach(id->{
+			if (id.type!=null && id.type.isUpgradeModule)
+				knownUpgradeModuleIDs.put(id.id,id);
+		});
+		//knownUpgradeModules.forEach((str,id)->{
+		//	SaveViewer.log_ln("[%s] -> \"%s\"", str, id);
+		//});
+		//Vector<GeneralizedID> vector = sorted(knownUpgradeModules.values());
+	}
+	
 	private UpgradeModuleInstallHelper readConfig() {
 		config.readFromFile(new File(CFG));
 		return this;
@@ -154,7 +185,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		switch (ActionCommand.valueOf(e.getActionCommand())) {
 		case NewSession: {
-			EditSessionDialog dlg = new EditSessionDialog(mainwindow,"New Session",null);
+			EditSessionDialog dlg = new EditSessionDialog(mainwindow,"New Session",null,config.knownModules);
 			dlg.showDialog();
 			Session newSession = dlg.getResult();
 			if (newSession!=null) {
@@ -162,15 +193,17 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				config.currentSessionFile = null;
 				updateTables();
 				updateWindowTitle();
+				updateGUIaccess();
 			}
 		} break;
 		case EditSession: {
-			EditSessionDialog dlg = new EditSessionDialog(mainwindow,"Edit Session",currentSession);
+			EditSessionDialog dlg = new EditSessionDialog(mainwindow,"Edit Session",currentSession,config.knownModules);
 			dlg.showDialog();
 			Session newSession = dlg.getResult();
 			if (newSession!=null) {
 				currentSession = newSession;
 				updateTables();
+				updateGUIaccess();
 			}
 		} break;
 		
@@ -183,6 +216,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					config.currentSessionFile = file;
 					updateTables();
 					updateWindowTitle();
+					updateGUIaccess();
 				}
 			}
 			break;
@@ -199,6 +233,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				currentSession.saveFile(file);
 				config.currentSessionFile = file;
 				updateWindowTitle();
+				updateGUIaccess();
 			}
 			break;
 		}
@@ -223,21 +258,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		return newMap;
 	}
 
-	private static class Config {
+	private class Config {
 		File currentSessionFile;
-		HashMap<GeneralizedID,KnownModuleValues> knownModuleValues;
+		HashMap<GeneralizedID,KnownModule> knownModules;
 		
 		Config() {
 			currentSessionFile = null;
-			knownModuleValues = new HashMap<>();
+			knownModules = new HashMap<>();
 		}
 
 		public void readFromFile(File file) {
 			currentSessionFile = null;
-			knownModuleValues.clear();;
-			
-			KnownModuleValues knownModule = null;
-			KnownModuleValues.KnownModuleValue knownValue = null;
+			knownModules.clear();
+			KnownModule knownModule = null;
+			KnownModule.KnownModuleValue knownValue = null;
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 				String line;
 				while ( (line=in.readLine())!=null ) {
@@ -247,21 +281,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					}
 					if (line.startsWith("ModuleID=")) {
 						String str = line.substring("ModuleID=".length());
-						GeneralizedID moduleID = knownUpgradeModules.get(str);
+						GeneralizedID moduleID = knownUpgradeModuleIDs.get(str);
 						if (moduleID==null) {
 							SaveViewer.log_error_ln("Can't find UpgradeModule for ID \"%s\"", str);
 							knownModule = null;
 						} else
-							knownModuleValues.put( moduleID, knownModule = new KnownModuleValues(moduleID) );
+							knownModules.put( moduleID, knownModule = new KnownModule(moduleID) );
 					}
 					if (line.startsWith("value.label=") && knownModule!=null) {
 						String str = line.substring("value.label=".length());
-						knownModule.values.add( knownValue = new KnownModuleValues.KnownModuleValue() );
+						knownModule.values.add( knownValue = new KnownModule.KnownModuleValue() );
 						knownValue.label = str;
 					}
 					if (line.startsWith("value.format=") && knownValue!=null) {
 						String str = line.substring("value.format=".length());
-						try { knownValue.format = KnownModuleValues.KnownModuleValue.Format.valueOf(str); }
+						try { knownValue.format = KnownModule.KnownModuleValue.Format.valueOf(str); }
 						catch (Exception e) { knownValue.format = null; }
 					}
 					if (line.startsWith("value.min=") && knownValue!=null) {
@@ -280,6 +314,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			for (GeneralizedID id:knownUpgradeModuleIDs.values()) {
+				if (!knownModules.containsKey(id)) {
+					knownModules.put( id, new KnownModule(id) );
+				}
+			}
 		}
 		
 		public void writeToFile(File file) {
@@ -287,10 +326,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				if (currentSessionFile!=null) out.printf("LastSessionFile=%s%n", currentSessionFile.getAbsolutePath());
 				
-				knownModuleValues.forEach((id,values)->{
+				knownModules.forEach((id,values)->{
 					out.println();                      // decoration only :)
 					out.println("[KnownModuleValues]"); // decoration only :)
-					Debug.Assert(id!=values.moduleID);
+					Debug.Assert(id==values.moduleID);
 					out.printf("ModuleID=%s%n", values.moduleID.id);
 					values.values.forEach(v->{
 						out.printf("value.label=%s%n", v.label);
@@ -306,12 +345,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 	
-	private static class KnownModuleValues {
+	private static class KnownModule {
 		
 		GeneralizedID moduleID;
 		Vector<KnownModuleValue> values;
 		
-		KnownModuleValues(GeneralizedID moduleID) {
+		KnownModule(GeneralizedID moduleID) {
 			this.moduleID = moduleID;
 			values = new Vector<>();
 		}
@@ -324,39 +363,25 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 	
-	private static class InstalledModule {
+	private static class InstalledUpgrade {
 		
-		final KnownModuleValues base;
+		final KnownModule base;
 		String label1;
 		String label2;
-		Vector<InstalledModuleValue> values;
+		HashMap<KnownModule.KnownModuleValue,Float> values;
 		
 		@SuppressWarnings("unused")
-		InstalledModule(KnownModuleValues base) {
+		InstalledUpgrade(KnownModule base) {
 			this.base = base;
 			label1 = "";
 			label2 = "";
-			values = new Vector<>();
+			values = new HashMap<>();
 		}
-		InstalledModule(InstalledModule module) {
+		InstalledUpgrade(InstalledUpgrade module) {
 			base = module.base;
 			label1 = module.label1;
 			label2 = module.label2;
-			values = cloneVector(module.values, InstalledModuleValue::new);
-		}
-
-		private static class InstalledModuleValue {
-			
-			final KnownModuleValues.KnownModuleValue base;
-			float value;
-			
-			InstalledModuleValue(KnownModuleValues.KnownModuleValue base, float value) {
-				this.base = base;
-				this.value = value;
-			}
-			InstalledModuleValue(InstalledModuleValue modValue) {
-				this(modValue.base,modValue.value);
-			}
+			values = cloneHashMap(module.values, null, null);
 		}
 	}
 	
@@ -384,36 +409,56 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		private static class SessionBlock {
 			
-			KnownModuleValues module;
+			KnownModule module;
 			int amount;
-			Vector<InstalledModule> installedModules;
+			Vector<Integer> installPos;
+			Vector<InstalledUpgrade> installedModules;
 			
-			@SuppressWarnings("unused")
-			public SessionBlock(KnownModuleValues module) {
+			public SessionBlock(KnownModule module) {
 				this.module = module;
 				amount = 0;
+				installPos = new Vector<>();
 				installedModules = new Vector<>();
 			}
 			public SessionBlock(SessionBlock block) {
 				module = block.module;
 				amount = block.amount;
-				installedModules = cloneVector(block.installedModules,InstalledModule::new);
+				installPos = cloneVector(block.installPos,null);
+				installedModules = cloneVector(block.installedModules,InstalledUpgrade::new);
+			}
+			public Integer getInstallPos(int i) {
+				if (i<installPos.size()) return installPos.get(i);
+				return null;
+			}
+			public void setInstallPos(int i, Integer newPos) {
+				while (i>=installPos.size()) installPos.add(null);
+				installPos.set(i, newPos);
 			}
 		}
 	}
 
-	private static final class EditSessionDialog extends StandardDialog {
+	private static final class EditSessionDialog extends StandardDialog implements ActionListener {
 		private static final long serialVersionUID = 687525027915443491L;
 		private Session session;
 		private Session result;
+		private Disabler<ActionCommand> disabler;
+		private JPanel contentPane;
+		private JScrollPane moduleTablePanel;
+		private JPanel installOrderPanel;
+		private TableView.SimplifiedTable<ColumnID> moduleTable;
+		private HashMap<GeneralizedID, KnownModule> knownModules;
 
-		public EditSessionDialog(Window parent, String title, Session session) {
+		public EditSessionDialog(Window parent, String title, Session session, HashMap<GeneralizedID, KnownModule> knownModules) {
 			super(parent, title);
+			this.knownModules = knownModules;
 			this.session = session==null ? new Session() : new Session(session);
 			this.result = null;
 			
-			JTable table = new JTable(new SessionTableModel(this.session));
-			JScrollPane tableScrollPane = new JScrollPane(table);
+			disabler = new Disabler<>();
+			disabler.setCareFor(ActionCommand.values());
+			
+			moduleTablePanel = createModuleTablePanel();
+			installOrderPanel = (JPanel)null;
 			
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
@@ -422,85 +467,328 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			c.weightx = 1;
 			buttonPanel.add(new JLabel(),c);
 			c.weightx = 0;
-			buttonPanel.add(SaveViewer.createButton("Ok"    , e->{ result = this.session; closeDialog(); }),c);
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->{ result = null; closeDialog(); }),c);
+			buttonPanel.add(SaveViewer.createButton("Select Modules"   , this, disabler, ActionCommand.SelectModules),c);
+			buttonPanel.add(SaveViewer.createButton("Set Install Order", this, disabler, ActionCommand.SetInstallOrder),c);
+			buttonPanel.add(SaveViewer.createButton("Finish", this, disabler, ActionCommand.Finish),c);
+			buttonPanel.add(SaveViewer.createButton("Cancel", this, disabler, ActionCommand.Cancel),c);
 			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.add(tableScrollPane,BorderLayout.CENTER);
+			contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+			contentPane.add(moduleTablePanel,BorderLayout.CENTER);
 			contentPane.add(buttonPanel,BorderLayout.SOUTH);
 			
+			int prefWidth = Arrays.stream(ColumnID.values()).mapToInt(columnID->columnID.columnConfig.prefWidth).sum();
+			contentPane.setPreferredSize(new Dimension(prefWidth+50,200));
+			
+			updateButtonAccess();
 			createGUI(contentPane);
+		}
+
+		private void updateButtonAccess() {
+			disabler.setEnable(ac->{
+				switch (ac) {
+				case Cancel: return true;
+				case Finish: return computeAmountOfModules()>0 && areAllInstallPosDefined();
+				
+				case SetInstallOrder: return installOrderPanel==null;
+				case SelectModules  : return moduleTablePanel ==null;
+				}
+				return null;
+			});
+		}
+
+		enum ActionCommand { SelectModules, SetInstallOrder, Finish, Cancel }
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			switch (ActionCommand.valueOf(e.getActionCommand())) {
+			
+			case Cancel: result = null        ; closeDialog(); break;
+			case Finish: result = this.session; closeDialog(); break;
+			
+			case SelectModules:
+				contentPane.remove(installOrderPanel);
+				installOrderPanel = null;
+				moduleTablePanel = createModuleTablePanel();
+				contentPane.add(moduleTablePanel,BorderLayout.CENTER);
+				contentPane.revalidate();
+				contentPane.repaint();
+				updateButtonAccess();
+				break;
+				
+			case SetInstallOrder:
+				if (moduleTable.isEditing())
+					moduleTable.getCellEditor().stopCellEditing();
+				contentPane.remove(moduleTablePanel);
+				moduleTablePanel = null;
+				installOrderPanel = createInstallOrderPanel();
+				contentPane.add(installOrderPanel,BorderLayout.CENTER);
+				contentPane.revalidate();
+				contentPane.repaint();
+				updateButtonAccess();
+				break;
+			}
+		}
+
+		private JScrollPane createModuleTablePanel() {
+			SessionTableModel sessionTableModel = new SessionTableModel();
+			moduleTable = new TableView.SimplifiedTable<>("", sessionTableModel, true, SaveViewer.DEBUG, true);
+			
+			ComboboxCellEditor<GeneralizedID> cellEditor =
+					new ComboboxCellEditor<GeneralizedID>(SaveViewer.addNull(sorted(knownModules.keySet())));
+			
+			NonStringRenderer<GeneralizedID> renderer =
+					new NonStringRenderer<GeneralizedID>(obj->{
+						if (obj instanceof GeneralizedID) {
+							GeneralizedID id = (GeneralizedID) obj;
+							String label = id.label;
+							if (label==null || label.isEmpty()) label = id.id;
+							return label;
+						}
+						return "<none>";
+					});
+			cellEditor.setRenderer(renderer);
+			moduleTable.setCellEditor  (ColumnID.Label, cellEditor);
+			moduleTable.setCellRenderer(ColumnID.Label, renderer);
+			
+			return new JScrollPane(moduleTable);
+		}
+
+		private JPanel createInstallOrderPanel() {
+			JPanel panel = new JPanel(new GridBagLayout());
+			panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.insets = new Insets(2, 2, 2, 2);
+			
+			int n = computeAmountOfModules();
+			
+			JRadioButton[][] btns = new JRadioButton[n][n];
+			
+			c.weighty = 0;
+			c.gridy = 0;
+			c.gridx = 1;
+			panel.add(createLabel("Unset", true),c);
+			for (int i=0; i<n; i++) {
+				c.gridx = i+2;
+				panel.add(createLabel("("+(i+1)+")", true),c);
+			}
+			int row = 0;
+			for (GeneralizedID id:sorted(session.blocks.keySet())) {
+				Session.SessionBlock block = session.blocks.get(id);
+				Debug.Assert(id==block.module.moduleID);
+				for (int i=0; i<block.amount; i++, row++) {
+					int index = i;
+					c.gridy = row+1;
+					c.weightx = 0;
+					
+					c.gridx = 0;
+					panel.add(createLabel("("+(i+1)+") "+block.module.moduleID.label, true),c);
+					
+					c.gridx = 1;
+					ButtonGroup bg = new ButtonGroup();
+					Integer pos = block.getInstallPos(i);
+					panel.add(SaveViewer.createRadioButton("", bg, pos==null, true, e->setOrder(block,index,null,btns)),c);
+					
+					for (int col=0; col<n; col++) {
+						int newPos = col;
+						c.gridx = col+2;
+						boolean isSelected = pos!=null && pos.intValue()==col;
+						panel.add(btns[col][row] = SaveViewer.createRadioButton("", bg, isSelected, true, e->setOrder(block,index,newPos,btns)),c);
+					}
+					c.weightx = 1;
+					c.gridx = n+2;
+					panel.add(new JLabel(),c);
+				}
+			}
+			c.gridy = n+1;
+			c.gridx = 0;
+			c.weightx = 1;
+			c.weighty = 1;
+			c.gridwidth = GridBagConstraints.REMAINDER;
+			panel.add(new JLabel(),c);
+			
+			for (GeneralizedID id:session.blocks.keySet()) {
+				Session.SessionBlock block = session.blocks.get(id);
+				Debug.Assert(id==block.module.moduleID);
+				for (int i=0; i<block.amount; i++) {
+					Integer pos = block.getInstallPos(i);
+					if (pos!=null)
+						setEnabled(btns[pos],false);
+				}
+			}
+			
+			return panel;
+		}
+
+		private Component createLabel(String string, boolean centered) {
+			return new JLabel(string, centered ? JLabel.CENTER : JLabel.LEFT);
+		}
+
+		private int computeAmountOfModules() {
+			int n=0;
+			for (GeneralizedID id:session.blocks.keySet()) {
+				Session.SessionBlock block = session.blocks.get(id);
+				Debug.Assert(id==block.module.moduleID);
+				n += block.amount;
+			}
+			return n;
+		}
+
+		private boolean areAllInstallPosDefined() {
+			for (GeneralizedID id:session.blocks.keySet()) {
+				Session.SessionBlock block = session.blocks.get(id);
+				for (int i=0; i<block.amount; i++)
+					if (block.getInstallPos(i)==null)
+						return false;
+			}
+			return true;
+		}
+
+		private void setOrder(Session.SessionBlock block, int i, Integer newPos, JRadioButton[][] btns) {
+			Integer pos = block.getInstallPos(i);
+			if (pos!=null)
+				setEnabled(btns[pos],true);
+			
+			block.setInstallPos(i, newPos);
+			if (newPos!=null)
+				setEnabled(btns[newPos],false);
+			
+			updateButtonAccess();
+		}
+
+		private void setEnabled(JRadioButton[] btns, boolean enabled) {
+			for (JRadioButton btn:btns) btn.setEnabled(enabled);
 		}
 
 		public Session getResult() {
 			return result;
 		}
+		
+		private enum ColumnID implements SimplifiedColumnIDInterface {
+			ID    ("ID"    ,        String.class, 20,-1,120,120),
+			Type  ("Type"  ,        String.class, 20,-1,200,200),
+			Label ("Name"  , GeneralizedID.class, 20,-1,200,200),
+			Amount("Amount",       Integer.class, 20,-1, 50, 50),
+			;
+			
+			private SimplifiedColumnConfig columnConfig;
+			
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
 	
-		private class SessionTableModel implements TableModel {
+		private class SessionTableModel extends Tables.SimplifiedTableModel<ColumnID> {
 
-			private Session session;
+			private Vector<GeneralizedID> sortedIDs;
 
-			public SessionTableModel(Session session) {
-				this.session = session;
+			public SessionTableModel() {
+				super(ColumnID.values());
+				sortedIDs = sorted(session.blocks.keySet());
 			}
 
-			@Override
-			public int getRowCount() {
-				// TODO Auto-generated method stub
-				return 0;
-			}
+			@Override public int getRowCount() { return sortedIDs.size()+1; }
 
 			@Override
-			public int getColumnCount() {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-
-			@Override
-			public String getColumnName(int columnIndex) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Class<?> getColumnClass(int columnIndex) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public boolean isCellEditable(int rowIndex, int columnIndex) {
-				// TODO Auto-generated method stub
+			protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) {
+				if (rowIndex>=sortedIDs.size())
+					return columnID==ColumnID.Label;
+				switch (columnID) {
+				case ID:
+				case Type:
+					return false;
+				case Label:
+				case Amount:
+					return true;
+				}
 				return false;
 			}
 
 			@Override
-			public Object getValueAt(int rowIndex, int columnIndex) {
-				// TODO Auto-generated method stub
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
+				if (rowIndex>=sortedIDs.size()) return null;
+				
+				GeneralizedID id = sortedIDs.get(rowIndex);
+				Session.SessionBlock block = session.blocks.get(id);
+				Debug.Assert(id==block.module.moduleID);
+				
+				switch (columnID) {
+				case ID    : return id.id;
+				case Type  : return id.type==null ? null : id.type.label;
+				case Label : return id;
+				case Amount: return block.amount;
+				}
 				return null;
 			}
 
 			@Override
-			public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-				// TODO Auto-generated method stub
+			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ColumnID columnID) {
+				if (rowIndex>=sortedIDs.size()) {
+					Debug.Assert(columnID==ColumnID.Label);
+					if (aValue instanceof GeneralizedID) {
+						GeneralizedID id = (GeneralizedID) aValue;
+						int row = sortedIDs.indexOf(id);
+						if (row>=0)
+							JOptionPane.showMessageDialog(table, "You can't select a module twice. (-> Row "+(row+1)+")", "Module already selected", JOptionPane.ERROR_MESSAGE);
+						else {
+							sortedIDs.add(id);
+							KnownModule module = knownModules.get(id);
+							Debug.Assert(module!=null);
+							Debug.Assert(id==module.moduleID);
+							session.blocks.put(id, new Session.SessionBlock(module));
+							fireTableRowAdded(sortedIDs.size()-1);
+						}
+					}
+					return;
+				}
 				
-			}
-
-			@Override
-			public void addTableModelListener(TableModelListener l) {
-				// TODO Auto-generated method stub
+				switch (columnID) {
 				
-			}
-
-			@Override
-			public void removeTableModelListener(TableModelListener l) {
-				// TODO Auto-generated method stub
+				case ID:
+				case Type:
+					Debug.Assert(false);
+					break;
 				
+				case Label:
+					if (aValue instanceof GeneralizedID) {
+						GeneralizedID id = (GeneralizedID) aValue;
+						int row = sortedIDs.indexOf(id);
+						if (row>=0 && row==rowIndex) row = sortedIDs.indexOf(id,rowIndex+1);
+						if (row>=0)
+							JOptionPane.showMessageDialog(table, "You can't select a module twice. (-> Row "+(row+1)+")", "Module already selected", JOptionPane.ERROR_MESSAGE);
+						else {
+							GeneralizedID oldID = sortedIDs.get(rowIndex);
+							session.blocks.remove(oldID);
+							sortedIDs.set(rowIndex,id);
+							KnownModule module = knownModules.get(id);
+							session.blocks.put(id, new Session.SessionBlock(module));
+							fireTableRowUpdate(rowIndex);
+						}
+					} else if (aValue==null) {
+						GeneralizedID id = sortedIDs.get(rowIndex);
+						Debug.Assert(id!=null);
+						sortedIDs.remove(rowIndex);
+						session.blocks.remove(id);
+						fireTableRowRemoved(rowIndex);
+					}
+					break;
+					
+				case Amount: {
+					GeneralizedID id = sortedIDs.get(rowIndex);
+					Debug.Assert(id!=null);
+					Session.SessionBlock block = session.blocks.get(id);
+					Debug.Assert(block!=null);
+					block.amount = aValue==null ? 0 : ((Integer)aValue).intValue();
+				} break;
+				}
 			}
 			
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static class InstalledModulesTableModel implements TableModel {
 
 		@Override

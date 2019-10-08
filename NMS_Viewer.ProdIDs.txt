@@ -1956,7 +1956,7 @@
 ^U_SHIPSHIELD3.type=ShipExtensionUpgradeM
 ^U_SHIPSHIELD3.image=Product.shielding2.Schildplatte.png
 ^U_SHIPSHIELD3.imageBG=7C4562
-^U_SHIPSHIELD4=Raumschiffschild-Modul (A) 
+^U_SHIPSHIELD4=Raumschiffschild-Modul (S) 
 ^U_SHIPSHIELD4.type=ShipExtensionUpgradeM
 ^U_SHIPSHIELD4.image=Product.shielding2.Schildplatte.png
 ^U_SHIPSHIELD4.imageBG=F0A92B

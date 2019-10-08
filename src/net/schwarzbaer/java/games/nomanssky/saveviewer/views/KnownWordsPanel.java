@@ -19,8 +19,8 @@ class KnownWordsPanel extends SaveGameViewTabPanel {
 	public KnownWordsPanel(SaveGameData data, KnownWords knownWords) {
 		super(data);
 		
-		KnownWordsPanel.KnownWordsTableModel tableModel = new KnownWordsTableModel(knownWords);
-		SimplifiedTable table = new SimplifiedTable("KnownWords",tableModel,true,SaveViewer.DEBUG,true);
+		KnownWordsTableModel tableModel = new KnownWordsTableModel(knownWords);
+		SimplifiedTable<KnownWordsTableColumnID> table = new SimplifiedTable<>("KnownWords",tableModel,true,SaveViewer.DEBUG,true);
 		JScrollPane tableScrollPane = new JScrollPane(table);
 		
 		add(tableScrollPane,BorderLayout.CENTER);
@@ -42,20 +42,20 @@ class KnownWordsPanel extends SaveGameViewTabPanel {
 		@Override public Tables.SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
 	}
 
-	private static class KnownWordsTableModel extends Tables.SimplifiedTableModel<KnownWordsPanel.KnownWordsTableColumnID> {
+	private static class KnownWordsTableModel extends Tables.SimplifiedTableModel<KnownWordsTableColumnID> {
 	
 		private static final int ADDITIONAL_ROWS = 2;
 		private KnownWords knownWords;
 		private int numberOfRaces;
 		
 		public KnownWordsTableModel(KnownWords knownWords) {
-			super(new KnownWordsPanel.KnownWordsTableColumnID[]{ KnownWordsTableColumnID.WordID, KnownWordsTableColumnID.TranslatedWord });
+			super(new KnownWordsTableColumnID[]{ KnownWordsTableColumnID.WordID, KnownWordsTableColumnID.TranslatedWord });
 			this.knownWords = knownWords;
 			numberOfRaces = this.knownWords.wordCounts.length;
 		}
 		
 		@Override
-		protected KnownWordsPanel.KnownWordsTableColumnID getColumnID(int columnIndex) {
+		protected KnownWordsTableColumnID getColumnID(int columnIndex) {
 			if (columnIndex<columns.length) return super.getColumnID(columnIndex);
 			if (columnIndex<columns.length+numberOfRaces) return KnownWordsTableColumnID.Race;
 			return null;

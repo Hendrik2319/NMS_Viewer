@@ -77,9 +77,9 @@ public class ResourceHotSpots implements ActionListener {
 	private static final String RESOURCE_HOTSPOTS_CFG = "NMS_Viewer.ResourceHotSpots.cfg";
 
 	private StandardMainWindow mainwindow = null;
-	private TableView.SimplifiedTable referencePointsTable = null;
-	private TableView.SimplifiedTable circlesTable = null;
-	private TableView.SimplifiedTable hotSpotsTable = null;
+	private TableView.SimplifiedTable<ReferencePointsTableColumnID> referencePointsTable = null;
+	private TableView.SimplifiedTable<CirclesTableColumnID>         circlesTable = null;
+	private TableView.SimplifiedTable<HotSpotsTableColumnID>        hotSpotsTable = null;
 	private Disabler<ActionCommand>   disabler = null;
 
 	private ReferencePointsTableModel referencePointsTableModel = null;
@@ -209,21 +209,21 @@ public class ResourceHotSpots implements ActionListener {
 			windowConfig = new WindowConfig();
 		
 		referencePointsTableModel = new ReferencePointsTableModel();
-		referencePointsTable = new TableView.SimplifiedTable("ReferencePoints", referencePointsTableModel, true, true, true);
+		referencePointsTable = new TableView.SimplifiedTable<>("ReferencePoints", referencePointsTableModel, true, true, true);
 		referencePointsTableModel.configureTable(referencePointsTable);
 		JScrollPane referencePointsTableScrollPane = new JScrollPane(referencePointsTable);
 		referencePointsTableScrollPane.setPreferredSize(new Dimension(400, 200));
 		referencePointsTableScrollPane.setBorder(createCompoundBorder("Reference Points"));
 		
 		circlesTableModel = new CirclesTableModel();
-		circlesTable = new TableView.SimplifiedTable("Circles", circlesTableModel, true, true, true);
+		circlesTable = new TableView.SimplifiedTable<>("Circles", circlesTableModel, true, true, true);
 		circlesTableModel.configureTable(circlesTable);
 		JScrollPane circlesTableScrollPane = new JScrollPane(circlesTable);
 		circlesTableScrollPane.setPreferredSize(new Dimension(400, 200));
 		circlesTableScrollPane.setBorder(createCompoundBorder("Circles"));
 		
 		hotSpotsTableModel = new HotSpotsTableModel(this::updateHotSpotSubstanceSelect);
-		hotSpotsTable = new TableView.SimplifiedTable("HotSpots", hotSpotsTableModel, true, true, true);
+		hotSpotsTable = new TableView.SimplifiedTable<>("HotSpots", hotSpotsTableModel, true, true, true);
 		hotSpotsTableModel.configureTable(hotSpotsTable);
 		JScrollPane hotSpotsTableScrollPane = new JScrollPane(hotSpotsTable);
 		hotSpotsTableScrollPane.setPreferredSize(new Dimension(400, 300));
