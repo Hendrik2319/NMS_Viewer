@@ -1391,6 +1391,14 @@
 ^PROC_PLNT#08099.type=Treasure
 ^PROC_PLNT#08099.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#08099.imageBG=460C34
+^PROC_PLNT#12076=Empfindliche Flora (selten)
+^PROC_PLNT#12076.type=Treasure
+^PROC_PLNT#12076.image=Artifact.DelicateFlora.png
+^PROC_PLNT#12076.imageBG=DC9401
+^PROC_PLNT#15578=Empfindliche Flora (gewöhnlich
+^PROC_PLNT#15578.type=Treasure
+^PROC_PLNT#15578.image=Artifact.DelicateFlora.png
+^PROC_PLNT#15578.imageBG=153250
 ^PROC_PLNT#16002=Empfindliche Flora (ungewöhnlich)
 ^PROC_PLNT#16002.type=Treasure
 ^PROC_PLNT#16002.image=Artifact.DelicateFlora.png
@@ -1490,6 +1498,10 @@
 ^PROC_TOOL#93752.type=Treasure
 ^PROC_TOOL#93752.image=Artifact.LostArtifact.png
 ^PROC_TOOL#93752.imageBG=460C34
+^PROC_TOOL#94182=Vergessenes Artefakt (ungewöhnlich)
+^PROC_TOOL#94182.type=Treasure
+^PROC_TOOL#94182.image=Artifact.LostArtifact.png
+^PROC_TOOL#94182.imageBG=460C34
 ^PROC_TOOL#94823=Vergessenes Artefakt (selten)
 ^PROC_TOOL#94823.type=Treasure
 ^PROC_TOOL#94823.image=Artifact.LostArtifact.png

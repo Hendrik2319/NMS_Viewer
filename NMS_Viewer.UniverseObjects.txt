@@ -6390,6 +6390,45 @@ resources=Cu,U,Co
 short=
 info=<ParsedPlanetaryResources> Cu, U, Co
 
+[Sys01E700FCD7F684]
+name=Eichua
+race=Gek
+conflict=1
+conflict_label=stabil
+economy=2
+economy_label=Mittlere Versorgung
+atlasinterface=false
+blackhole=false
+class=Green
+short=6 Planeten
+info=
+
+[Pln11E700FCD7F684]
+
+[Pln21E700FCD7F684]
+name=Omyardal Minoris
+biome=Exotic_Mega
+resources=Em,NH3,Fe__
+short=dunkel-rot
+info=
+
+[Pln31E700FCD7F684]
+
+[Pln51E700FCD7F684]
+
+[Sys01FD00FCD7F684]
+name=Rotangc
+race=Korvax
+conflict=1
+conflict_label=niedrig
+economy=3
+economy_label=gedeihend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=2 Planeten
+info=
+
 [Sys01FE00FCD7F684]
 name=Iexius-Coz XVII
 unexplored
