@@ -185,13 +185,13 @@ public class SaveViewer implements ActionListener {
 		toolbarIS = new IconSource<ToolbarIcons>(16,16){
 			@Override protected int getIconIndexInImage(ToolbarIcons key) {
 				switch(key) {
+				case Compare     : return 0;
 				case SwitchFolder: return 1;
 				case Open        : return 1;
-				case Compare     : return 0;
 				case Save        : return 2;
 				case SaveAs      : return 3;
-				case Close       : return 5;
 				case Reload      : return 4;
+				case Close       : return 5;
 				case ComputePortalGlyphs: return 6;
 				case Cut   : return 7;
 				case Copy  : return 8;
@@ -199,7 +199,8 @@ public class SaveViewer implements ActionListener {
 				case Delete: return 10;
 				}
 			 	throw new IllegalArgumentException("Unknown icon key: "+key);
-			}};
+			}
+		};
 		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
 	}
 
@@ -368,7 +369,7 @@ public class SaveViewer implements ActionListener {
 		SwitchToGameFolder, SwitchToBackupFolder,
 		TabSelected, ComputeCoordinates, SelectCoordinates,
 		RefreshExtraImages, ShowExtraImages,
-		OpenRecipeAnalyser, OpenProductionOptimiser,
+		OpenRecipeAnalyser, OpenProductionOptimiser, OpenUpgradeModuleInstallHelper,
 		WriteKnownSteamIDsToHTML,
 		  save_hg( 0,  "save.hg","save.hg"),
 		 save2_hg( 1, "save2.hg","..2"    ),
@@ -504,10 +505,13 @@ public class SaveViewer implements ActionListener {
 		case OpenRecipeAnalyser:
 			RecipeAnalyser.start(false);
 			break;
-			
 		case OpenProductionOptimiser:
 			ProductionOptimiser.start(false);
 			break;
+		case OpenUpgradeModuleInstallHelper:
+			UpgradeModuleInstallHelper.start(false);
+			break;
+			
 		case WriteKnownSteamIDsToHTML:
 			FileExport.writeKnownSteamIDsToHTML();
 			break;
@@ -1080,11 +1084,14 @@ public class SaveViewer implements ActionListener {
 			toolBar.addSeparator();
 			toolBar.add(createButton("Compute Coordinates" , ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates"  , ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
-			toolBar.add(createButton("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
-			toolBar.add(createButton("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
-			toolBar.addSeparator();
-			toolBar.add(createButton("Recipe Analyser"     , ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
-			toolBar.add(createButton("Production Optimiser", ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
+			
+			JPopupMenu toolsMenu = new JPopupMenu("Tools");
+			toolsMenu.add(createMenuItem("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
+			toolsMenu.add(createMenuItem("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
+			toolsMenu.addSeparator();
+			toolsMenu.add(createMenuItem("Recipe Analyser"     , ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
+			toolsMenu.add(createMenuItem("Production Optimiser", ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
+			toolsMenu.add(createMenuItem("UpgradeModule InstallHelper", ToolbarIcons.Open, ActionCommand.OpenUpgradeModuleInstallHelper,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
 			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", ToolbarIcons.SwitchFolder, ActionCommand.WriteKnownSteamIDsToHTML,true));
@@ -1099,15 +1106,17 @@ public class SaveViewer implements ActionListener {
 			extraMenu.add(createMenuItem("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			extraMenu.add(createMenuItem("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
 
-			JButton extrabutton; 
 			toolBar.addSeparator();
-			toolBar.add(extrabutton = createButton("Extra", null, true));
-			extrabutton.addActionListener(e->{
-				//extrabutton.getX
-				extraMenu.show(extrabutton,0,extrabutton.getHeight());
-			});
-			
-			
+			toolBar.add(createButton("Tools", toolsMenu, true));
+			toolBar.add(createButton("Extra", extraMenu, true));
+		}
+
+		private JButton createButton(String title, JPopupMenu popupMenu, boolean enabled) {
+			JButton button = new JButton(title);
+			if (popupMenu!=null)
+				button.addActionListener(e->popupMenu.show(button,0,button.getHeight()));
+			button.setEnabled(enabled);
+			return button;
 		}
 
 		private JButton createButton(String title, ToolbarIcons iconKey, boolean enabled) {
