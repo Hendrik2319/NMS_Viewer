@@ -1321,16 +1321,22 @@ public class SaveGameData {
 			String inventoryLabel     = baseLabel;
 			String inventoryTechLabel = baseLabel+" (Tech)";
 			
-			vehicle.name = getStringValue(vehicleData,"Name");
-			String classStr = vehicle.getVehicleClass();
-			vehicle.isPrimary = isPrimary;
-			
-			if (vehicle.name!=null && !vehicle.name.isEmpty()) inventoryLabel += " \""+vehicle.name+"\"";
-			if (classStr!=null   ) inventoryLabel += " <"+classStr+">";
-			if (vehicle.isPrimary) inventoryLabel += "   [Primary]";
-			
 			vehicle.inventory     = Inventories.parse(data,getObjectValue(vehicleData,"Inventory"         ), inventoryLabel    , dataSourcePath+".Inventory");
 			vehicle.inventoryTech = Inventories.parse(data,getObjectValue(vehicleData,"Inventory_TechOnly"), inventoryTechLabel, dataSourcePath+".Inventory_TechOnly");
+			
+			vehicle.name = getStringValue(vehicleData,"Name");
+			vehicle.isPrimary = isPrimary;
+			
+			if (vehicle.inventory!=null) {
+				if (vehicle.name!=null && !vehicle.name.isEmpty()) inventoryLabel += " \""+vehicle.name+"\"";
+				String iClass = vehicle.inventory.inventoryClass;
+				Integer validSlots = vehicle.inventory.validSlots;
+				String vClass = vehicle.getVehicleClass();
+				inventoryLabel += String.format("<%s%s-%s>", vClass==null?"":vClass+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
+				if (vehicle.isPrimary) inventoryLabel += "   [Primary]";
+				
+				vehicle.inventory.label = inventoryLabel;
+			}
 			
 			Consumer<TextAreaOutput> extraInfosOutput = vehicle.getExtraInfosOutput();
 			if (vehicle.inventory!=null && extraInfosOutput!=null) {
@@ -1591,7 +1597,7 @@ public class SaveGameData {
 					}
 				}
 		
-				public final String label;
+				public String label;
 				public Long width;
 				public Long height;
 				public Long version;

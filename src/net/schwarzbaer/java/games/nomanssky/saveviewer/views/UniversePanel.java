@@ -866,12 +866,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			addCompToLeft (cmbbxRace           , 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (cmbbxStarClass      , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToLeft (llbConflict.cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbEconomy .cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbEconomy .cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbEconomy .btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbConflict.cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToLeft (chkbxUnexplored     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			addCompToRight(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
