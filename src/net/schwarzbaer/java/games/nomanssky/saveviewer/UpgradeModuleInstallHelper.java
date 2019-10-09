@@ -37,6 +37,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TableModelListener;
@@ -326,18 +327,19 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				if (currentSessionFile!=null) out.printf("LastSessionFile=%s%n", currentSessionFile.getAbsolutePath());
 				
-				knownModules.forEach((id,values)->{
+				for (GeneralizedID id:sorted(knownModules.keySet())) {
+					KnownModule module = knownModules.get(id);
 					out.println();                      // decoration only :)
 					out.println("[KnownModuleValues]"); // decoration only :)
-					Debug.Assert(id==values.moduleID);
-					out.printf("ModuleID=%s%n", values.moduleID.id);
-					values.values.forEach(v->{
+					Debug.Assert(id==module.moduleID);
+					out.printf("ModuleID=%s%n", module.moduleID.id);
+					module.values.forEach(v->{
 						out.printf("value.label=%s%n", v.label);
 						if (v.format!=null) out.printf("value.format=%s%n", v.format);
 						if (v.min!=null && !Float.isNaN(v.min)) out.printf("value.min=%1.3f%n", v.min);
 						if (v.max!=null && !Float.isNaN(v.max)) out.printf("value.max=%1.3f%n", v.max);
 					});
-				});
+				}
 				
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -447,18 +449,22 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private JPanel installOrderPanel;
 		private TableView.SimplifiedTable<ColumnID> moduleTable;
 		private HashMap<GeneralizedID, KnownModule> knownModules;
+		private JTextArea numberOfCyclesOutput;
+		
+		private int nModules;
 
 		public EditSessionDialog(Window parent, String title, Session session, HashMap<GeneralizedID, KnownModule> knownModules) {
 			super(parent, title);
 			this.knownModules = knownModules;
 			this.session = session==null ? new Session() : new Session(session);
 			this.result = null;
+			nModules = 0;
 			
 			disabler = new Disabler<>();
 			disabler.setCareFor(ActionCommand.values());
 			
 			moduleTablePanel = createModuleTablePanel();
-			installOrderPanel = (JPanel)null;
+			installOrderPanel = null;
 			
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
@@ -478,8 +484,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			contentPane.add(buttonPanel,BorderLayout.SOUTH);
 			
 			int prefWidth = Arrays.stream(ColumnID.values()).mapToInt(columnID->columnID.columnConfig.prefWidth).sum();
-			contentPane.setPreferredSize(new Dimension(prefWidth+50,200));
+			contentPane.setPreferredSize(new Dimension(prefWidth+50,500));
 			
+			updateNumberOfModules();
 			updateButtonAccess();
 			createGUI(contentPane);
 		}
@@ -488,7 +495,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			disabler.setEnable(ac->{
 				switch (ac) {
 				case Cancel: return true;
-				case Finish: return computeAmountOfModules()>0 && areAllInstallPosDefined();
+				case Finish: return nModules>0 && areAllInstallPosDefined();
 				
 				case SetInstallOrder: return installOrderPanel==null;
 				case SelectModules  : return moduleTablePanel ==null;
@@ -555,21 +562,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 
 		private JPanel createInstallOrderPanel() {
+			updateNumberOfModules();
+			
 			JPanel panel = new JPanel(new GridBagLayout());
 			panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
 			c.insets = new Insets(2, 2, 2, 2);
 			
-			int n = computeAmountOfModules();
-			
-			JRadioButton[][] btns = new JRadioButton[n][n];
+			JRadioButton[][] btns = new JRadioButton[nModules][nModules];
 			
 			c.weighty = 0;
 			c.gridy = 0;
 			c.gridx = 1;
 			panel.add(createLabel("Unset", true),c);
-			for (int i=0; i<n; i++) {
+			for (int i=0; i<nModules; i++) {
 				c.gridx = i+2;
 				panel.add(createLabel("("+(i+1)+")", true),c);
 			}
@@ -583,30 +590,31 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					c.weightx = 0;
 					
 					c.gridx = 0;
-					panel.add(createLabel("("+(i+1)+") "+block.module.moduleID.label, true),c);
+					panel.add(createLabel("("+(i+1)+") "+block.module.moduleID.label, false),c);
 					
 					c.gridx = 1;
 					ButtonGroup bg = new ButtonGroup();
 					Integer pos = block.getInstallPos(i);
 					panel.add(SaveViewer.createRadioButton("", bg, pos==null, true, e->setOrder(block,index,null,btns)),c);
 					
-					for (int col=0; col<n; col++) {
+					for (int col=0; col<nModules; col++) {
 						int newPos = col;
 						c.gridx = col+2;
 						boolean isSelected = pos!=null && pos.intValue()==col;
 						panel.add(btns[col][row] = SaveViewer.createRadioButton("", bg, isSelected, true, e->setOrder(block,index,newPos,btns)),c);
 					}
 					c.weightx = 1;
-					c.gridx = n+2;
+					c.gridx = nModules+2;
 					panel.add(new JLabel(),c);
 				}
 			}
-			c.gridy = n+1;
+			c.gridy = nModules+1;
 			c.gridx = 0;
 			c.weightx = 1;
 			c.weighty = 1;
 			c.gridwidth = GridBagConstraints.REMAINDER;
-			panel.add(new JLabel(),c);
+			numberOfCyclesOutput = new JTextArea();
+			panel.add(new JScrollPane(numberOfCyclesOutput),c);
 			
 			for (GeneralizedID id:session.blocks.keySet()) {
 				Session.SessionBlock block = session.blocks.get(id);
@@ -618,6 +626,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				}
 			}
 			
+			computeNumberOfCycles();
 			return panel;
 		}
 
@@ -625,14 +634,131 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			return new JLabel(string, centered ? JLabel.CENTER : JLabel.LEFT);
 		}
 
-		private int computeAmountOfModules() {
-			int n=0;
+		private void computeNumberOfCycles() {
+			
+			GeneralizedID[][] sequences = new GeneralizedID[nModules][];
+			sequences[0] = createBaseSequence();
+			if (sequences[0]==null) {
+				numberOfCyclesOutput.setText("Finalize install order to determine number of cycles.");
+				return;
+			}
+			
+			numberOfCyclesOutput.setText("");
+			
+			for (int i=1; i<nModules; ++i) {
+				sequences[i] = shiftSequences(sequences[i-1]);
+			}
+			
+			//showSequences(sequences,sortedIDs);
+			
+			for (int i0=nModules-1; i0>=0; --i0) {
+				GeneralizedID[] sequ0 = sequences[i0];
+				for (int i1=i0+1; i1<nModules; ++i1) {
+					GeneralizedID[] sequ1 = sequences[i1];
+					for (int i=0; i<nModules; ++i) {
+						if (sequ0[i]==sequ1[i])
+							sequ1[i] = null;
+					}
+				}
+			}
+			//showSequences(sequences,sortedIDs);
+			
+			int numberOfCycles = 0;
+			for (int i=0; i<nModules; ++i) {
+				boolean isNull = true;
+				for (int j=0; j<nModules; ++j)
+					if (sequences[i][j]!=null) { isNull = false; break; }
+				if (isNull)
+					sequences[i] = null;
+				else
+					++numberOfCycles;
+			}
+			SaveViewer.append_ln(numberOfCyclesOutput, "Number of cycles: %d", numberOfCycles);
+			
+			Vector<GeneralizedID> sortedIDs = sorted(session.blocks.keySet());
+			SaveViewer.append_ln(numberOfCyclesOutput, "Modules:");
+			for (int i=0; i<sortedIDs.size(); ++i) {
+				GeneralizedID id = sortedIDs.get(i);
+				int amount = session.blocks.get(id).amount;
+				SaveViewer.append_ln(numberOfCyclesOutput, "   %2d  :  %s  (%dx)", i+1, id.toString(), amount);
+			}
+			SaveViewer.append_ln(numberOfCyclesOutput, "    ##  Dummy Module");
+			
+			SaveViewer.append_ln(numberOfCyclesOutput, "Sequences:  [%d]", numberOfCycles);
+			for (int i=0; i<nModules; ++i) {
+				if (sequences[i]!=null) {
+					SaveViewer.append(numberOfCyclesOutput, "[%2d] ", i+1);
+					String str = "";
+					boolean isEnd = true;
+					for (int j=nModules-1; j>=0; --j) {
+						GeneralizedID id = sequences[i][j];
+						if (id==null) {
+							if (!isEnd) {
+								if (!str.isEmpty()) str = ' '+str;
+								str = "##"+str; 
+							}
+						} else {
+							isEnd = false;
+							if (!str.isEmpty()) str = ' '+str;
+							str = String.format("%2d%s", sortedIDs.indexOf(id)+1, str); 
+						}
+					}
+					SaveViewer.append_ln(numberOfCyclesOutput, str);
+				}
+			}
+		}
+
+		@SuppressWarnings("unused")
+		private void showSequences(GeneralizedID[][] sequences, Vector<GeneralizedID> sortedIDs) {
+			SaveViewer.log_ln("Sequences:");
+			for (int i=0; i<nModules; ++i) {
+				SaveViewer.log("[%2d] ", i);
+				if (sequences[i] == null)
+					SaveViewer.log_ln(" <null>");
+				else {
+					String str = "";
+					for (int j=0; j<nModules; ++j) {
+						GeneralizedID id = sequences[i][j];
+						if (id==null) {
+							if (!str.isEmpty()) str += ',';
+							str += "--"; 
+						} else {
+							if (!str.isEmpty()) str += ',';
+							str += String.format("%2d", sortedIDs.indexOf(id)+1); 
+						}
+					}
+					SaveViewer.log_ln(" %s", str);
+				}
+			}
+		}
+
+		private GeneralizedID[] shiftSequences(GeneralizedID[] sequence) {
+			GeneralizedID[] newSequences = Arrays.copyOf( Arrays.copyOfRange(sequence, 1, sequence.length), sequence.length);
+			newSequences[sequence.length-1] = sequence[0];
+			return newSequences;
+		}
+
+		private GeneralizedID[] createBaseSequence() {
+			GeneralizedID[] baseSequence = new GeneralizedID[nModules];
+			
+			for (GeneralizedID id:session.blocks.keySet()) {
+				Session.SessionBlock block = session.blocks.get(id);
+				for (int i=0; i<block.amount; i++) {
+					Integer pos = block.getInstallPos(i);
+					if (pos==null) return null;
+					baseSequence[pos] = id;
+				}
+			}
+			return baseSequence;
+		}
+
+		private void updateNumberOfModules() {
+			nModules = 0;
 			for (GeneralizedID id:session.blocks.keySet()) {
 				Session.SessionBlock block = session.blocks.get(id);
 				Debug.Assert(id==block.module.moduleID);
-				n += block.amount;
+				nModules += block.amount;
 			}
-			return n;
 		}
 
 		private boolean areAllInstallPosDefined() {
@@ -654,6 +780,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			if (newPos!=null)
 				setEnabled(btns[newPos],false);
 			
+			computeNumberOfCycles();
 			updateButtonAccess();
 		}
 
@@ -693,22 +820,29 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 			@Override
 			protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) {
-				if (rowIndex>=sortedIDs.size())
-					return columnID==ColumnID.Label;
 				switch (columnID) {
 				case ID:
 				case Type:
 					return false;
+					
 				case Label:
-				case Amount:
 					return true;
+					
+				case Amount:
+					return rowIndex<sortedIDs.size();
 				}
 				return false;
 			}
 
 			@Override
 			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
-				if (rowIndex>=sortedIDs.size()) return null;
+				if (rowIndex>=sortedIDs.size()) {
+					switch (columnID) {
+					case Amount: return nModules;
+					default: break;
+					}
+					return null;
+				}
 				
 				GeneralizedID id = sortedIDs.get(rowIndex);
 				Session.SessionBlock block = session.blocks.get(id);
@@ -781,6 +915,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					Session.SessionBlock block = session.blocks.get(id);
 					Debug.Assert(block!=null);
 					block.amount = aValue==null ? 0 : ((Integer)aValue).intValue();
+					updateNumberOfModules();
+					fireTableRowUpdate(sortedIDs.size());
 				} break;
 				}
 			}

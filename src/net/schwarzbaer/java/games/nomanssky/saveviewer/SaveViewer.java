@@ -62,6 +62,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
@@ -1279,6 +1280,9 @@ public class SaveViewer implements ActionListener {
 		vec.insertElementAt(null,0);
 		return vec;
 	}
+	
+	public static void append_ln      ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format+"%n",values)); }
+	public static void append         ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format     ,values)); }
 
 	public static void log_ln      ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format+"\r\n",values); }
 	public static void log         ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format       ,values); }
