@@ -447,6 +447,32 @@ blackhole=false
 [Sys007900F8C07A8D]
 blackhole=true
 
+[Reg000000FA43CAAE]
+name=Ryoea-Quadrant
+
+[Sys009F00FA43CAAE]
+name=Rajans-Isrom
+race=Vykeen
+conflict=2
+conflict_label=gewalttätig
+economy=3
+economy_label=opulent
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=2 Planeten
+info=
+
+[Pln109F00FA43CAAE]
+name=Nukih 91/F9
+biome=Lush
+resources=Cu,Pf,Ag
+
+[Pln209F00FA43CAAE]
+name=Abnockle II
+biome=Scorched
+resources=Cu,P,Fe__
+
 [Reg000000FC234ACE]
 name=Der Arm von Jalibbyifi
 
@@ -470,6 +496,40 @@ blackholetarget=003C0000BF1C2A
 class=Yellow
 short=6 Planeten
 info=
+
+[Reg0000000340AB14]
+name=Kryume-Masse
+
+[Sys0127000340AB14]
+name=Enhets
+race=Gek
+conflict=2
+conflict_label=streitlustig
+economy=2
+economy_label=nachhaltig
+atlasinterface=false
+blackhole=false
+class=Green
+short=5 Planeten
+info=
+
+[Pln1127000340AB14]
+name=Emboul
+biome=Scorched
+resources=Em,P,Fe__
+
+[Pln3127000340AB14]
+name=Rias 42/P5
+biome=Irradiated
+with water
+resources=Em,U,NaCl
+
+[Pln4127000340AB14]
+name=Nawa 15/U1
+biome=Exotic_Mega
+is extreme
+with water
+resources=Em_,NH3,Ag
 
 [Reg000000FC500B29]
 
@@ -6283,6 +6343,19 @@ biome=Irradiated
 resources=Cu,U,NaCl
 short=
 info=<ParsedPlanetaryResources> Cu, U, NaCl
+
+[Sys006F00FCD7F684]
+name=Yuduhshi
+race=Vykeen
+conflict=3
+conflict_label=zerstörerisch
+economy=3
+economy_label=Hohe Versorgung
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=3 Planeten
+info=
 
 [Sys007000FCD7F684]
 name=Magogal
