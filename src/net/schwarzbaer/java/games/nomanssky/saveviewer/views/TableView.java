@@ -101,8 +101,10 @@ public class TableView {
 			case ShowWidths: {
 				TableColumnModel columnModel = table.getColumnModel();
 				int[] widths = new int[columnModel.getColumnCount()];
-				for (int i=0; i<columnModel.getColumnCount(); ++i)
-					widths[i] = columnModel.getColumn(i).getWidth();
+				for (int i=0; i<columnModel.getColumnCount(); ++i) {
+					TableColumn column = columnModel.getColumn(i);
+					widths[column.getModelIndex()] = column.getWidth();
+				}
 				SaveViewer.log_ln(Arrays.toString(widths));
 			} break;
 			}
@@ -273,12 +275,23 @@ public class TableView {
 				tableColumnModel.getColumn(i).setCellRenderer(renderer);
 		}
 
-		public void setCellRenderer(TableCellRenderer renderer, Predicate<Integer> forThisColumn) {
+		public void setCellRendererByIndex(TableCellRenderer renderer, Predicate<Integer> forThisColumn) {
 			this.overallCellRenderer = null;
 			TableColumnModel tableColumnModel = getColumnModel();
 			for (int i=0; i<tableColumnModel.getColumnCount(); ++i)
-				if (forThisColumn.test(i))
+				if (forThisColumn.test(convertColumnIndexToModel(i)))
 					tableColumnModel.getColumn(i).setCellRenderer(renderer);
+		}
+
+		public void setCellRendererByColumnID(TableCellRenderer renderer, Predicate<ColumnID> forThisColumn) {
+			if (simplifiedTableModel==null) return;
+			this.overallCellRenderer = null;
+			TableColumnModel tableColumnModel = getColumnModel();
+			for (int i=0; i<tableColumnModel.getColumnCount(); ++i) {
+				ColumnID columnID = simplifiedTableModel.getColumnID(convertColumnIndexToModel(i));
+				if (columnID!=null && forThisColumn.test(columnID))
+					tableColumnModel.getColumn(i).setCellRenderer(renderer);
+			}
 		}
 
 		public void stopCellEditing() {

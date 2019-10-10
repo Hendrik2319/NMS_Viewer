@@ -55,7 +55,7 @@ class KnownWordsPanel extends SaveGameViewTabPanel {
 		}
 		
 		@Override
-		protected KnownWordsTableColumnID getColumnID(int columnIndex) {
+		public KnownWordsTableColumnID getColumnID(int columnIndex) {
 			if (columnIndex<columns.length) return super.getColumnID(columnIndex);
 			if (columnIndex<columns.length+numberOfRaces) return KnownWordsTableColumnID.Race;
 			return null;

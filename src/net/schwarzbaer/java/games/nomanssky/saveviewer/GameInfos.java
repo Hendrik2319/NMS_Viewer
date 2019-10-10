@@ -1772,7 +1772,7 @@ public class GameInfos {
 			}
 	
 			@Override
-			protected GeneralizedIDColumnID getColumnID(int columnIndex) {
+			public GeneralizedIDColumnID getColumnID(int columnIndex) {
 				if (columnIndex>=columns.length) return GeneralizedIDColumnID.Usage;
 				return super.getColumnID(columnIndex);
 			}

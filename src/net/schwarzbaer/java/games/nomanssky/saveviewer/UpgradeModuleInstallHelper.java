@@ -11,6 +11,8 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,23 +28,33 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Vector;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import net.schwarzbaer.gui.Disabler;
@@ -100,6 +112,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 	private Config config = new Config();
 	private Session currentSession = null;
+	private TablePanel tablePanel;
 	
 	private UpgradeModuleInstallHelper() {
 		knownUpgradeModuleIDs = new HashMap<>();
@@ -124,6 +137,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	private UpgradeModuleInstallHelper openLastDataFile() {
+		openSession(config.currentSessionFile);
 		return this;
 	}
 
@@ -139,7 +153,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
 		
-		contentPane = new JPanel(new GridLayout(0,1,3,3));
+		
+		contentPane = new JPanel(new BorderLayout(3,3));
+		contentPane.add(tablePanel = new TablePanel(),BorderLayout.CENTER);
 		
 		
 		JMenu menuData = new JMenu("Data");
@@ -183,9 +199,155 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	private void updateWindowTitle() {
 		mainwindow.setTitle("UpgradeModule InstallHelper - "+( config.currentSessionFile==null ? "<New Session>" : "\""+config.currentSessionFile.getName()+"\"" ));
 	}
+	
+	private enum TableContextMenuCommands { AddValue, EditValue  }
+	
+	private class TablePanel extends JScrollPane {
+		private static final long serialVersionUID = -1092343150495411023L;
+		
+		private JPanel tablePanel;
+		private TableContextMenu tableContextMenu;
+		private HashMap<GeneralizedID, InstalledModulesTableModel> tables;
+		
+		TablePanel() {
+			tables = new HashMap<>();
+			tableContextMenu = new TableContextMenu();
+			tablePanel = new JPanel(new GridLayout(0,1,3,3));
+			setViewportView(tablePanel);
+			setPreferredSize(new Dimension(600,500));
+		}
 
-	private void updateTables() {
-		// TODO Auto-generated method stub
+		private void updateTables() {
+			tablePanel.removeAll();
+			tables.clear();
+			
+			if (currentSession==null) return;
+			
+			for (GeneralizedID id:sortedID(currentSession.blocks.keySet())) {
+				Debug.Assert(id!=null);
+				Session.SessionBlock block = currentSession.blocks.get(id);
+				
+				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(block,currentSession.nModules);
+				tables.put(id, tableModel);
+				
+				JTable table = new JTable(tableModel);
+				table.addMouseListener(new MouseAdapter() {
+					@Override public void mouseClicked(MouseEvent e) {
+						if (e.getButton()==MouseEvent.BUTTON3) {
+							int col = table.columnAtPoint(e.getPoint());
+							int row = table.rowAtPoint(e.getPoint());
+							tableContextMenu.setBlock(id,row,col);
+							tableContextMenu.show(table, e.getX(), e.getY());
+						}
+					}
+				});
+				table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+				table.setPreferredScrollableViewportSize(table.getPreferredSize());
+				
+				tableModel.setTable(table);
+				tableModel.setColumnWidths();
+				
+				JScrollPane tableScrollPane = new JScrollPane(table);
+				tableScrollPane.setWheelScrollingEnabled(false);
+				tableScrollPane.addMouseWheelListener(e->scrollTables(e.getPreciseWheelRotation()));
+				tableScrollPane.setBorder(
+					BorderFactory.createCompoundBorder(
+						BorderFactory.createTitledBorder(id.getName()),
+						BorderFactory.createLineBorder(Color.GRAY)
+					)
+				);
+				
+				tablePanel.add(tableScrollPane);
+			}
+			tablePanel.revalidate();
+			tablePanel.repaint();
+		}
+
+		private void scrollTables(double wheelRotation) {
+			//System.out.println("WheelRotation: "+wheelRotation);
+			JScrollBar scrollBar = getVerticalScrollBar();
+			if (scrollBar!=null) {
+				int minimum = scrollBar.getMinimum();
+				int maximum = scrollBar.getMaximum();
+				int visibleAmount = scrollBar.getVisibleAmount();
+				int value = scrollBar.getValue();
+				value += (int)(wheelRotation*20);
+				value = Math.min(Math.max(minimum, value), maximum-visibleAmount);
+				scrollBar.setValue(value);
+			}
+		}
+
+		private class TableContextMenu extends JPopupMenu implements ActionListener {
+			private static final long serialVersionUID = -8902930861450278308L;
+			
+			private JMenuItem miAddValue;
+			private JMenuItem miEditValue;
+			
+			@SuppressWarnings("unused")
+			private GeneralizedID id = null;
+			private Session.SessionBlock block = null;
+			private KnownModule.ValueDefinition vd = null;
+			private InstalledModulesTableModel tableModel = null;
+			@SuppressWarnings("unused")
+			private int rowIndex = -1;
+			private int columnIndex = -1;
+
+			TableContextMenu() {
+				super("TableContextMenu");
+				miAddValue  = SaveViewer.createMenuItem("Add Value" , this, TableContextMenuCommands.AddValue);
+				miEditValue = SaveViewer.createMenuItem("Edit Value", this, TableContextMenuCommands.EditValue);
+				add(miAddValue);
+				add(miEditValue);
+			}
+		
+			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
+				this.id = id;
+				this.rowIndex = rowIndex;
+				this.columnIndex = columnIndex;
+				block = currentSession==null ? null : currentSession.blocks.get(id);
+				tableModel = tables.get(id);
+				Debug.Assert(tableModel!=null);
+				vd = tableModel.getVD(columnIndex);
+				
+				miAddValue .setText(String.format("Add Value to %s", id.getName()));
+				miEditValue.setText(String.format("Edit Value %s of %s", vd==null?"??":vd.label, id.getName()));
+				miEditValue.setEnabled(vd!=null);
+			}
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ValueDefDialog dlg;
+				KnownModule.ValueDefinition resultVD;
+				switch (TableContextMenuCommands.valueOf(e.getActionCommand())) {
+				case AddValue:
+					if (block==null) return;
+					dlg = new ValueDefDialog(mainwindow,"Add Value",new KnownModule.ValueDefinition(block.module,0));
+					dlg.showDialog();
+					resultVD = dlg.getResult();
+					if (resultVD!=null) {
+						KnownModule.ValueDefinition newVD = new KnownModule.ValueDefinition(block.module);
+						newVD.setValues(resultVD);
+						block.module.values.add(newVD);
+						tableModel.fireTableColumnAdded();
+						writeConfig();
+					}
+					break;
+					
+				case EditValue:
+					if (block==null || vd==null) return;
+					dlg = new ValueDefDialog(mainwindow,"Edit Value",new KnownModule.ValueDefinition(vd,0));
+					dlg.showDialog();
+					resultVD = dlg.getResult();
+					if (resultVD!=null) {
+						vd.setValues(resultVD);
+						tableModel.fireTableHeaderChanged(columnIndex);
+						tableModel.fireTableColumnChanged(columnIndex);
+						writeConfig();
+					}
+					break;
+				}
+			}
+		}
 	}
 
 	@Override
@@ -199,7 +361,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				currentSession = newSession;
 				config.currentSessionFile = null;
 				writeConfig();
-				updateTables();
+				tablePanel.updateTables();
 				updateWindowTitle();
 				updateGUIaccess();
 			}
@@ -210,28 +372,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			Session newSession = dlg.getResult();
 			if (newSession!=null) {
 				currentSession = newSession;
-				updateTables();
+				tablePanel.updateTables();
 				updateGUIaccess();
 			}
 		} break;
 		
 		case OpenSession:
-			if (fileChooser.showOpenDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
-				File file = fileChooser.getSelectedFile();
-				SaveViewer.runWithProgressDialog(mainwindow, "Open Session", pd->{
-					Session newSession = Session.openFile(file, knownUpgradeModuleIDs::get, config.knownModules::get);
-					if (newSession!=null) {
-						currentSession = newSession;
-						config.currentSessionFile = file;
-						writeConfig();
-						SaveViewer.runInEventThreadAndWait(()->{
-							updateTables();
-							updateWindowTitle();
-							updateGUIaccess();
-						});
-					}
-				});
-			}
+			if (fileChooser.showOpenDialog(mainwindow)==FileChooser.APPROVE_OPTION)
+				openSession(fileChooser.getSelectedFile());
 			break;
 			
 		case SaveSession:
@@ -257,6 +405,25 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			break;
 		}
+	}
+
+	private void openSession(File file) {
+		if (file==null) return;
+		SaveViewer.runWithProgressDialog(mainwindow, "Open Session", pd->{
+			Session newSession = Session.openFile(file, knownUpgradeModuleIDs::get, config.knownModules::get);
+			if (newSession!=null) {
+				currentSession = newSession;
+				if (config.currentSessionFile != file) {
+					config.currentSessionFile = file;
+					writeConfig();
+				}
+				SaveViewer.runInEventThreadAndWait(()->{
+					tablePanel.updateTables();
+					updateWindowTitle();
+					updateGUIaccess();
+				});
+			}
+		});
 	}
 	
 	private static <V> Vector<V> cloneVector( Vector<V> vec, Function<V,V> cloneV ) {
@@ -432,7 +599,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 
 		private static class ValueDefinition {
-			enum Format { PercentPlus, PercentMinus, Activated, FloatPlus, Lightyears }
+			enum Format {
+				PercentPlus, PercentMinus, Activated, FloatPlus, Lightyears,
+				;
+				public String getFormatedValue(float value) {
+					switch (this) {
+					case Activated   : return Math.abs(value)>=1 ? "aktiviert" : "";
+					case FloatPlus   : return String.format(Locale.ENGLISH, "+%1.1f"   , Math.abs(value));
+					case Lightyears  : return String.format(Locale.ENGLISH, "%1.0f Lj.", Math.abs(value));
+					case PercentMinus: return String.format(Locale.ENGLISH, "-%1.0f%%", Math.abs(value));
+					case PercentPlus : return String.format(Locale.ENGLISH, "+%1.0f%%", Math.abs(value));
+					}
+					return null;
+				}
+			}
 			final static PoolOfUniqueIDs uniqueIDs = new PoolOfUniqueIDs();
 			
 			final KnownModule module;
@@ -441,17 +621,23 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			Format format;
 			Float min,max;
 			
-			@SuppressWarnings("unused")
 			ValueDefinition(KnownModule module) {
 				this(module,uniqueIDs.createNewID());
+			}
+			ValueDefinition(ValueDefinition vd, long uniqueID) {
+				this(vd.module,uniqueID);
+				setValues(vd);
 			}
 			ValueDefinition(KnownModule module, long uniqueID) {
 				this.module = module;
 				this.uniqueID = uniqueID;
-				label = "";
-				format = null;
-				min = null;
-				max = null;
+				setValues(null);
+			}
+			public void setValues(ValueDefinition vd) {
+				label  = vd==null ? ""   : vd.label ;
+				format = vd==null ? null : vd.format;
+				min    = vd==null ? null : vd.min   ;
+				max    = vd==null ? null : vd.max   ;
 			}
 		}
 	}
@@ -474,6 +660,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			label1 = module.label1;
 			label2 = module.label2;
 			values = cloneHashMap(module.values, null, null);
+		}
+		public String getFormatedValue(KnownModule.ValueDefinition vd) {
+			if (vd==null) return null;
+			Float value = values.get(vd);
+			if (value==null) return null;
+			return vd.format.getFormatedValue(value);
 		}
 	}
 	
@@ -716,6 +908,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
+			session.updateNumberOfModules();
+			session.computeNumberOfCycles();
 			return session;
 		}
 
@@ -1266,31 +1461,144 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 
-	@SuppressWarnings("unused")
-	private static class InstalledModulesTableModel implements TableModel {
+	private static final class ValueDefDialog extends StandardDialog {
+		private static final long serialVersionUID = 6065280492964277262L;
+		
+		private KnownModule.ValueDefinition tempVD;
+		private KnownModule.ValueDefinition result;
 
-		@Override
-		public int getRowCount() {
-			// TODO Auto-generated method stub
-			return 0;
+		public ValueDefDialog(Window parent, String title, KnownModule.ValueDefinition tempVD) {
+			super(parent, title);
+			this.tempVD = new KnownModule.ValueDefinition(tempVD,0);
+			this.result = null;
+			
+			JTextField txtfldModule = new JTextField(40);
+			txtfldModule.setEditable(false);
+			txtfldModule.setText(this.tempVD.module.moduleID.getName());
+			
+			JTextField txtfldLabel = SaveViewer.createTextField(this.tempVD.label, (String str)->this.tempVD.label = str);
+			JTextField txtfldMin   = SaveViewer.createTextField(this.tempVD.min==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.min), (String str)->this.tempVD.min = parseFloat(str));
+			JTextField txtfldMax   = SaveViewer.createTextField(this.tempVD.max==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.max), (String str)->this.tempVD.max = parseFloat(str));
+			
+			JComboBox<KnownModule.ValueDefinition.Format> cmbbxFormat = new JComboBox<>(KnownModule.ValueDefinition.Format.values());
+			cmbbxFormat.setSelectedItem(this.tempVD.format);
+			SaveViewer.setComp(cmbbxFormat, null, null, true, format->this.tempVD.format = format);
+			
+			JPanel contentPane = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.HORIZONTAL;
+			c.weighty = 0;
+			c.weightx = 0; c.gridx=0;
+			c.gridy=0; contentPane.add(new JLabel("Module: "),c);
+			c.gridy=1; contentPane.add(new JLabel("Label: "),c);
+			c.gridy=2; contentPane.add(new JLabel("format: "),c);
+			c.gridy=3; contentPane.add(new JLabel("Min: "),c);
+			c.gridy=4; contentPane.add(new JLabel("Max: "),c);
+			
+			c.weightx = 1; c.gridx=1;
+			c.gridy=0; contentPane.add(txtfldModule,c);
+			c.gridy=1; contentPane.add(txtfldLabel,c);
+			c.gridy=2; contentPane.add(cmbbxFormat,c);
+			c.gridy=3; contentPane.add(txtfldMin,c);
+			c.gridy=4; contentPane.add(txtfldMax,c);
+			
+			createGUI(
+				contentPane,
+				SaveViewer.createButton("Ok"    , e->{ result=this.tempVD; closeDialog(); }),
+				SaveViewer.createButton("Cancel", e->{ result=null       ; closeDialog(); })
+			);
+		}
+
+		private Float parseFloat(String str) {
+			try {
+				return Float.parseFloat(str);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
+
+		public KnownModule.ValueDefinition getResult() {
+			return result;
+		}
+	
+	}
+
+	private static final class InstalledModulesTableModel implements TableModel {
+
+		private static final int COLUMN_INDEX  = 0;
+		private static final int COLUMN_LABEL1 = COLUMN_INDEX +1;
+		private static final int COLUMN_LABEL2 = COLUMN_LABEL1+1;
+		private static final int STANDARD_COLUMNS = COLUMN_LABEL2+1;
+		
+		private JTable table;
+		private Vector<TableModelListener> tableModelListeners;
+		
+		private Session.SessionBlock block;
+		private int nModules;
+
+		public InstalledModulesTableModel(Session.SessionBlock block, int nModules) {
+			this.block = block;
+			this.nModules = nModules;
+			tableModelListeners = new Vector<>();
+		}
+
+		public void setTable(JTable table) {
+			this.table = table;
+		}
+
+		public void setColumnWidths() {
+			TableColumnModel columnModel = table.getColumnModel();
+			for (int i=0; i<columnModel.getColumnCount(); ++i)
+				setColumnWidths(columnModel.getColumn(i));
+		}
+
+		private void setColumnWidths(TableColumn column) {
+			if (column==null) return;
+			switch (column.getModelIndex()) {
+			case  COLUMN_INDEX : setColumnWidths(column, 20, 30); break;
+			case  COLUMN_LABEL1: setColumnWidths(column, 20,150); break;
+			case  COLUMN_LABEL2: setColumnWidths(column, 20,150); break;
+			default: setColumnWidths(column, 20, 70); break;
+			}
+		}
+
+		private void setColumnWidths(TableColumn column, int minWidth, int prefWidth) {
+			column.setMinWidth(minWidth);
+			column.setPreferredWidth(prefWidth);
+			column.setWidth(prefWidth);
+		}
+
+		@Override public int getRowCount   () { return nModules; }
+		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size(); }
+		@Override public Class<?> getColumnClass(int columnIndex) { return String.class; }
+
+		private KnownModule.ValueDefinition getVD(int columnIndex) {
+			int index = columnIndex-STANDARD_COLUMNS;
+			if (index<0 || index>=block.module.values.size()) return null;
+			return block.module.values.get(index);
+		}
+
+		@Override public String getColumnName(int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX : return "#";
+			case COLUMN_LABEL1: return "Label 1";
+			case COLUMN_LABEL2: return "Label 2";
+			default: return getVD(columnIndex).label;
+			}
 		}
 
 		@Override
-		public int getColumnCount() {
-			// TODO Auto-generated method stub
-			return 0;
-		}
-
-		@Override
-		public String getColumnName(int columnIndex) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			// TODO Auto-generated method stub
-			return null;
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			InstalledUpgrade upgrade = null;
+			if (rowIndex<block.installedModules.size())
+				upgrade = block.installedModules.get(rowIndex);
+			
+			switch (columnIndex) {
+			case COLUMN_INDEX :  return String.format("[%02d]", rowIndex+1);
+			case COLUMN_LABEL1:  return upgrade==null ? null : upgrade.label1;
+			case COLUMN_LABEL2:  return upgrade==null ? null : upgrade.label2;
+			default: return upgrade==null ? null : upgrade.getFormatedValue(getVD(columnIndex));
+			}
 		}
 
 		@Override
@@ -1300,27 +1608,42 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 
 		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
 			// TODO Auto-generated method stub
 			
 		}
 
-		@Override
-		public void addTableModelListener(TableModelListener l) {
-			// TODO Auto-generated method stub
-			
+		@Override public void    addTableModelListener(TableModelListener l) { tableModelListeners.   add(l); }
+		@Override public void removeTableModelListener(TableModelListener l) { tableModelListeners.remove(l); }
+		
+		private void fireTableEvent(TableModelEvent e) {
+			tableModelListeners.forEach(l->l.tableChanged(e));
 		}
 
-		@Override
-		public void removeTableModelListener(TableModelListener l) {
-			// TODO Auto-generated method stub
-			
+		@SuppressWarnings("unused")
+		public void fireTableUpdate() {
+			fireTableEvent(new TableModelEvent(this));
+		}
+		@SuppressWarnings("unused")
+		public void fireTableRowChanged(int rowIndex) {
+			fireTableEvent(new TableModelEvent(this,rowIndex,rowIndex,TableModelEvent.ALL_COLUMNS,TableModelEvent.UPDATE));
+		}
+		public void fireTableCellChanged(int rowIndex, int columnIndex) {
+			fireTableEvent(new TableModelEvent(this,rowIndex,rowIndex,columnIndex,TableModelEvent.UPDATE));
+		}
+		public void fireTableHeaderChanged(int columnIndex) {
+			fireTableCellChanged(TableModelEvent.HEADER_ROW,columnIndex);
+			setColumnWidths();
+		}
+
+		public void fireTableColumnChanged(int columnIndex) {
+			fireTableEvent(new TableModelEvent(this,0,getRowCount()-1,columnIndex,TableModelEvent.UPDATE));
+		}
+		public void fireTableColumnInserted(int columnIndex) {
+			fireTableEvent(new TableModelEvent(this,0,getRowCount()-1,columnIndex,TableModelEvent.INSERT));
+		}
+		public void fireTableColumnAdded() {
+			fireTableColumnInserted(getColumnCount()-1);
 		}
 		
 	}
