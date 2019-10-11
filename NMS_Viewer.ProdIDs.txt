@@ -1387,6 +1387,14 @@
 ^PROC_LOOT#24892.type=Treasure
 ^PROC_LOOT#24892.image=Artifact.UnearthedTreasure.png
 ^PROC_LOOT#24892.imageBG=460C34
+^PROC_LOOT#25088=Ausgegrabener Schatz (gewöhnlich)
+^PROC_LOOT#25088.type=Treasure
+^PROC_LOOT#25088.image=Artifact.UnearthedTreasure.png
+^PROC_LOOT#25088.imageBG=153250
+^PROC_LOOT#25813=Ausgegrabener Schatz (ungewöhnlich)
+^PROC_LOOT#25813.type=Treasure
+^PROC_LOOT#25813.image=Artifact.UnearthedTreasure.png
+^PROC_LOOT#25813.imageBG=460C34
 ^PROC_PLNT#01935=Empfindliche Flora (gewöhnlich)
 ^PROC_PLNT#01935.type=Treasure
 ^PROC_PLNT#01935.image=Artifact.DelicateFlora.png
@@ -1403,6 +1411,10 @@
 ^PROC_PLNT#12076.type=Treasure
 ^PROC_PLNT#12076.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#12076.imageBG=DC9401
+^PROC_PLNT#13665=Empfindliche Flora (ungewöhnlich
+^PROC_PLNT#13665.type=Treasure
+^PROC_PLNT#13665.image=Artifact.DelicateFlora.png
+^PROC_PLNT#13665.imageBG=460C34
 ^PROC_PLNT#15578=Empfindliche Flora (gewöhnlich
 ^PROC_PLNT#15578.type=Treasure
 ^PROC_PLNT#15578.image=Artifact.DelicateFlora.png

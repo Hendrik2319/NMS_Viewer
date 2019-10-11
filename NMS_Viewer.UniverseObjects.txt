@@ -300,6 +300,34 @@ class=Yellow
 short=2 Planeten
 info=
 
+[Reg000000072799A3]
+name=Tozoschu-Sektor
+
+[Sys003900072799A3]
+name=Tousov
+race=Korvax
+conflict=1
+conflict_label=nicht bedrohlich
+economy=1
+economy_label=erfolglos
+atlasinterface=false
+blackhole=false
+remembrance terminal
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln103900072799A3]
+name=Nokong
+biome=Scorched
+is extreme
+resources=Cu_,P,Na
+
+[Pln203900072799A3]
+name=Lagon
+biome=Frozen
+resources=Cu,CO2,Fe__
+
 [Reg000000FCCE59C1]
 name=Wibereb
 
@@ -6283,6 +6311,22 @@ name=Despinan III
 biome=Toxic
 buriedTreasure=AncientBones
 resources=Cu,NH3,Na
+
+[Sys005400FCD7F684]
+name=Rolegze-Netys
+race=Gek
+conflict=2
+conflict_label=reizbar
+economy=3
+economy_label=reich
+atlasinterface=false
+blackhole=false
+remembrance terminal
+class=Yellow
+short=4 Planeten
+info=
+short=Erinnerungsterminal mit Karte
+info=
 
 [Sys006A00FCD7F684]
 name=Onubri IV
