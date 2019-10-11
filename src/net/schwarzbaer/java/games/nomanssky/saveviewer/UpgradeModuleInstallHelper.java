@@ -11,6 +11,11 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.HierarchyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
@@ -26,11 +31,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
@@ -51,8 +58,11 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
@@ -68,6 +78,7 @@ import net.schwarzbaer.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 final class UpgradeModuleInstallHelper implements ActionListener {
@@ -200,156 +211,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		mainwindow.setTitle("UpgradeModule InstallHelper - "+( config.currentSessionFile==null ? "<New Session>" : "\""+config.currentSessionFile.getName()+"\"" ));
 	}
 	
-	private enum TableContextMenuCommands { AddValue, EditValue  }
+	private enum TableContextMenuCommands { AddValue, EditValue, RemoveValue  }
 	
-	private class TablePanel extends JScrollPane {
-		private static final long serialVersionUID = -1092343150495411023L;
-		
-		private JPanel tablePanel;
-		private TableContextMenu tableContextMenu;
-		private HashMap<GeneralizedID, InstalledModulesTableModel> tables;
-		
-		TablePanel() {
-			tables = new HashMap<>();
-			tableContextMenu = new TableContextMenu();
-			tablePanel = new JPanel(new GridLayout(0,1,3,3));
-			setViewportView(tablePanel);
-			setPreferredSize(new Dimension(600,500));
-		}
-
-		private void updateTables() {
-			tablePanel.removeAll();
-			tables.clear();
-			
-			if (currentSession==null) return;
-			
-			for (GeneralizedID id:sortedID(currentSession.blocks.keySet())) {
-				Debug.Assert(id!=null);
-				Session.SessionBlock block = currentSession.blocks.get(id);
-				
-				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(block,currentSession.nModules);
-				tables.put(id, tableModel);
-				
-				JTable table = new JTable(tableModel);
-				table.addMouseListener(new MouseAdapter() {
-					@Override public void mouseClicked(MouseEvent e) {
-						if (e.getButton()==MouseEvent.BUTTON3) {
-							int col = table.columnAtPoint(e.getPoint());
-							int row = table.rowAtPoint(e.getPoint());
-							tableContextMenu.setBlock(id,row,col);
-							tableContextMenu.show(table, e.getX(), e.getY());
-						}
-					}
-				});
-				table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-				table.setPreferredScrollableViewportSize(table.getPreferredSize());
-				
-				tableModel.setTable(table);
-				tableModel.setColumnWidths();
-				
-				JScrollPane tableScrollPane = new JScrollPane(table);
-				tableScrollPane.setWheelScrollingEnabled(false);
-				tableScrollPane.addMouseWheelListener(e->scrollTables(e.getPreciseWheelRotation()));
-				tableScrollPane.setBorder(
-					BorderFactory.createCompoundBorder(
-						BorderFactory.createTitledBorder(id.getName()),
-						BorderFactory.createLineBorder(Color.GRAY)
-					)
-				);
-				
-				tablePanel.add(tableScrollPane);
-			}
-			tablePanel.revalidate();
-			tablePanel.repaint();
-		}
-
-		private void scrollTables(double wheelRotation) {
-			//System.out.println("WheelRotation: "+wheelRotation);
-			JScrollBar scrollBar = getVerticalScrollBar();
-			if (scrollBar!=null) {
-				int minimum = scrollBar.getMinimum();
-				int maximum = scrollBar.getMaximum();
-				int visibleAmount = scrollBar.getVisibleAmount();
-				int value = scrollBar.getValue();
-				value += (int)(wheelRotation*20);
-				value = Math.min(Math.max(minimum, value), maximum-visibleAmount);
-				scrollBar.setValue(value);
-			}
-		}
-
-		private class TableContextMenu extends JPopupMenu implements ActionListener {
-			private static final long serialVersionUID = -8902930861450278308L;
-			
-			private JMenuItem miAddValue;
-			private JMenuItem miEditValue;
-			
-			@SuppressWarnings("unused")
-			private GeneralizedID id = null;
-			private Session.SessionBlock block = null;
-			private KnownModule.ValueDefinition vd = null;
-			private InstalledModulesTableModel tableModel = null;
-			@SuppressWarnings("unused")
-			private int rowIndex = -1;
-			private int columnIndex = -1;
-
-			TableContextMenu() {
-				super("TableContextMenu");
-				miAddValue  = SaveViewer.createMenuItem("Add Value" , this, TableContextMenuCommands.AddValue);
-				miEditValue = SaveViewer.createMenuItem("Edit Value", this, TableContextMenuCommands.EditValue);
-				add(miAddValue);
-				add(miEditValue);
-			}
-		
-			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
-				this.id = id;
-				this.rowIndex = rowIndex;
-				this.columnIndex = columnIndex;
-				block = currentSession==null ? null : currentSession.blocks.get(id);
-				tableModel = tables.get(id);
-				Debug.Assert(tableModel!=null);
-				vd = tableModel.getVD(columnIndex);
-				
-				miAddValue .setText(String.format("Add Value to %s", id.getName()));
-				miEditValue.setText(String.format("Edit Value %s of %s", vd==null?"??":vd.label, id.getName()));
-				miEditValue.setEnabled(vd!=null);
-			}
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				ValueDefDialog dlg;
-				KnownModule.ValueDefinition resultVD;
-				switch (TableContextMenuCommands.valueOf(e.getActionCommand())) {
-				case AddValue:
-					if (block==null) return;
-					dlg = new ValueDefDialog(mainwindow,"Add Value",new KnownModule.ValueDefinition(block.module,0));
-					dlg.showDialog();
-					resultVD = dlg.getResult();
-					if (resultVD!=null) {
-						KnownModule.ValueDefinition newVD = new KnownModule.ValueDefinition(block.module);
-						newVD.setValues(resultVD);
-						block.module.values.add(newVD);
-						tableModel.fireTableColumnAdded();
-						writeConfig();
-					}
-					break;
-					
-				case EditValue:
-					if (block==null || vd==null) return;
-					dlg = new ValueDefDialog(mainwindow,"Edit Value",new KnownModule.ValueDefinition(vd,0));
-					dlg.showDialog();
-					resultVD = dlg.getResult();
-					if (resultVD!=null) {
-						vd.setValues(resultVD);
-						tableModel.fireTableHeaderChanged(columnIndex);
-						tableModel.fireTableColumnChanged(columnIndex);
-						writeConfig();
-					}
-					break;
-				}
-			}
-		}
-	}
-
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		switch (ActionCommand.valueOf(e.getActionCommand())) {
@@ -1491,16 +1354,18 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			c.weightx = 0; c.gridx=0;
 			c.gridy=0; contentPane.add(new JLabel("Module: "),c);
 			c.gridy=1; contentPane.add(new JLabel("Label: "),c);
-			c.gridy=2; contentPane.add(new JLabel("format: "),c);
-			c.gridy=3; contentPane.add(new JLabel("Min: "),c);
-			c.gridy=4; contentPane.add(new JLabel("Max: "),c);
+			c.gridy=2; c.gridx=0; contentPane.add(new JLabel("Format: "),c);
+			c.gridy=2; c.gridx=2; contentPane.add(new JLabel("  Min: "),c);
+			c.gridy=2; c.gridx=4; contentPane.add(new JLabel("  Max: "),c);
 			
 			c.weightx = 1; c.gridx=1;
+			c.gridwidth = 5;
 			c.gridy=0; contentPane.add(txtfldModule,c);
 			c.gridy=1; contentPane.add(txtfldLabel,c);
-			c.gridy=2; contentPane.add(cmbbxFormat,c);
-			c.gridy=3; contentPane.add(txtfldMin,c);
-			c.gridy=4; contentPane.add(txtfldMax,c);
+			c.gridwidth = 1;
+			c.gridy=2; c.gridx=1; contentPane.add(cmbbxFormat,c);
+			c.gridy=2; c.gridx=3; contentPane.add(txtfldMin,c);
+			c.gridy=2; c.gridx=5; contentPane.add(txtfldMax,c);
 			
 			createGUI(
 				contentPane,
@@ -1523,6 +1388,248 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 	}
 
+	private class TablePanel extends JScrollPane {
+		private static final long serialVersionUID = -1092343150495411023L;
+		
+		private JPanel tablePanel;
+		private TableContextMenu tableContextMenu;
+		private HashMap<GeneralizedID, InstalledModulesTableModel> tables;
+		private LabelCellEditor label1CellEditor;
+		private LabelCellEditor label2CellEditor;
+		
+		TablePanel() {
+			label1CellEditor = new LabelCellEditor(upgrade->upgrade==null?null:upgrade.label1);
+			label2CellEditor = new LabelCellEditor(upgrade->upgrade==null?null:upgrade.label2);
+			tables = new HashMap<>();
+			tableContextMenu = new TableContextMenu();
+			tablePanel = new JPanel(new GridLayout(0,1,3,3));
+			setViewportView(tablePanel);
+			setPreferredSize(new Dimension(600,500));
+		}
+	
+		private void updateTables() {
+			tablePanel.removeAll();
+			tables.clear();
+			
+			if (currentSession==null) return;
+			
+			for (GeneralizedID id:sortedID(currentSession.blocks.keySet())) {
+				Debug.Assert(id!=null);
+				Session.SessionBlock block = currentSession.blocks.get(id);
+				
+				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(block,currentSession.nModules,label1CellEditor,label2CellEditor);
+				tables.put(id, tableModel);
+				
+				JTable table = new JTable(tableModel);
+				table.addMouseListener(new MouseAdapter() {
+					@Override public void mouseClicked(MouseEvent e) {
+						if (e.getButton()==MouseEvent.BUTTON3) {
+							int col = table.columnAtPoint(e.getPoint());
+							int row = table.rowAtPoint(e.getPoint());
+							tableContextMenu.setBlock(id,row,col);
+							tableContextMenu.show(table, e.getX(), e.getY());
+						}
+					}
+				});
+				table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+				table.setPreferredScrollableViewportSize(table.getPreferredSize());
+				
+				tableModel.setTable(table);
+				tableModel.setColumnWidths();
+				tableModel.setCellEditors();
+				
+				JScrollPane tableScrollPane = new JScrollPane(table);
+				tableScrollPane.setWheelScrollingEnabled(false);
+				tableScrollPane.addMouseWheelListener(e->scrollTables(e.getPreciseWheelRotation()));
+				tableScrollPane.setBorder(
+					BorderFactory.createCompoundBorder(
+						BorderFactory.createTitledBorder(id.getName()),
+						BorderFactory.createLineBorder(Color.GRAY)
+					)
+				);
+				
+				tablePanel.add(tableScrollPane);
+			}
+			tablePanel.revalidate();
+			tablePanel.repaint();
+		}
+	
+		private void scrollTables(double wheelRotation) {
+			//System.out.println("WheelRotation: "+wheelRotation);
+			JScrollBar scrollBar = getVerticalScrollBar();
+			if (scrollBar!=null) {
+				int minimum = scrollBar.getMinimum();
+				int maximum = scrollBar.getMaximum();
+				int visibleAmount = scrollBar.getVisibleAmount();
+				int value = scrollBar.getValue();
+				value += (int)(wheelRotation*20);
+				value = Math.min(Math.max(minimum, value), maximum-visibleAmount);
+				scrollBar.setValue(value);
+			}
+		}
+	
+		private class TableContextMenu extends JPopupMenu implements ActionListener {
+			private static final long serialVersionUID = -8902930861450278308L;
+			
+			private JMenuItem miAddValue;
+			private JMenuItem miEditValue;
+			private JMenuItem miRemoveValue;
+			
+			private GeneralizedID id = null;
+			private Session.SessionBlock block = null;
+			private KnownModule.ValueDefinition vd = null;
+			private InstalledModulesTableModel tableModel = null;
+			@SuppressWarnings("unused")
+			private int rowIndex = -1;
+			private int columnIndex = -1;
+	
+			TableContextMenu() {
+				super("TableContextMenu");
+				add(miAddValue    = SaveViewer.createMenuItem("Add Value"   , this, TableContextMenuCommands.AddValue   ));
+				add(miEditValue   = SaveViewer.createMenuItem("Edit Value"  , this, TableContextMenuCommands.EditValue  ));
+				add(miRemoveValue = SaveViewer.createMenuItem("Remove Value", this, TableContextMenuCommands.RemoveValue));
+			}
+		
+			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
+				this.id = id;
+				this.rowIndex = rowIndex;
+				this.columnIndex = columnIndex;
+				block = currentSession==null ? null : currentSession.blocks.get(id);
+				tableModel = tables.get(id);
+				Debug.Assert(tableModel!=null);
+				vd = tableModel.getVD(columnIndex);
+				
+				miAddValue   .setText(String.format("Add Value to %s", id.getName()));
+				miEditValue  .setText(String.format("Edit Value %s of %s", vd==null?"??":vd.label, id.getName()));
+				miEditValue  .setEnabled(vd!=null);
+				miRemoveValue.setText(String.format("Remove Value %s of %s", vd==null?"??":vd.label, id.getName()));
+				miRemoveValue.setEnabled(vd!=null);
+			}
+	
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ValueDefDialog dlg;
+				KnownModule.ValueDefinition resultVD;
+				switch (TableContextMenuCommands.valueOf(e.getActionCommand())) {
+				case AddValue:
+					if (block!=null) {
+						dlg = new ValueDefDialog(mainwindow,"Add Value",new KnownModule.ValueDefinition(block.module,0));
+						dlg.showDialog();
+						resultVD = dlg.getResult();
+						if (resultVD!=null) {
+							KnownModule.ValueDefinition newVD = new KnownModule.ValueDefinition(block.module);
+							newVD.setValues(resultVD);
+							block.module.values.add(newVD);
+							tableModel.fireTableHeaderAdded();
+							writeConfig();
+						}
+					}
+					break;
+					
+				case EditValue:
+					if (block!=null && vd!=null) {
+						dlg = new ValueDefDialog(mainwindow,"Edit Value",new KnownModule.ValueDefinition(vd,0));
+						dlg.showDialog();
+						resultVD = dlg.getResult();
+						if (resultVD!=null) {
+							vd.setValues(resultVD);
+							tableModel.fireTableHeaderChanged(columnIndex);
+							writeConfig();
+						}
+					}
+					break;
+					
+				case RemoveValue:
+					if (block!=null && vd!=null) {
+						String msg = String.format("Do you really want to remove Value %s of %s?", vd==null?"??":vd.label, id.getName());
+						if (JOptionPane.showConfirmDialog(mainwindow, msg, "Remove Value", JOptionPane.YES_NO_CANCEL_OPTION)==JOptionPane.YES_OPTION) {
+							block.module.values.remove(vd);
+							tableModel.fireTableHeaderRemoved(columnIndex);
+							writeConfig();
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		private class LabelCellEditor implements TableCellEditor {
+			
+			private TextFieldWithSuggestions editorComp;
+			private Vector<CellEditorListener> cellEditorListeners;
+			private Object result;
+			private Function<InstalledUpgrade, String> getString;
+
+			LabelCellEditor(Function<InstalledUpgrade,String> getString) {
+				this.getString = getString;
+				editorComp = new Gui.TextFieldWithSuggestions(1, this::collectSuggestions, this::selectFinally);
+				editorComp.addActionListener(e->selectFinally(editorComp.getText()));
+				editorComp.addFocusListener(new FocusListener() {
+					@Override public void focusLost  (FocusEvent e) { if (!editorComp.isShowing()) editorComp.hideList(); }
+					@Override public void focusGained(FocusEvent e) {}
+				});
+				cellEditorListeners = new Vector<>();
+				result = null;
+			}
+
+			@Override
+			public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+				result = value;
+				editorComp.setText( value==null ? null : value.toString(), true );
+				return editorComp;
+			}
+
+			@Override
+			public boolean stopCellEditing() {
+				selectFinally(editorComp.getText());
+				return true;
+			}
+
+			@Override
+			public void cancelCellEditing() {
+				editorComp.hideList();
+				fireEditingCanceledEvent();
+			}
+
+			private void selectFinally(String str) {
+				result = str;
+				editorComp.hideList();
+				fireEditingStoppedEvent();
+			}
+
+			private HashSet<String> collectSuggestions(String str) {
+				String lowerCaseStr = str.toLowerCase();
+				HashSet<String> suggestions = new HashSet<>();
+				if (currentSession!=null) {
+					currentSession.blocks.forEach((id,block)->{
+						block.installedModules.forEach(upgrade->{
+							String upgradeStr = getString.apply(upgrade);
+							if (upgradeStr!=null && upgradeStr.toLowerCase().contains(lowerCaseStr))
+								suggestions.add(upgradeStr);
+						});
+					}); 
+				}
+				return suggestions;
+			}
+
+			@Override public Object  getCellEditorValue() { return result; }
+			@Override public boolean isCellEditable  (EventObject anEvent) { return true; }
+			@Override public boolean shouldSelectCell(EventObject anEvent) { return true; }
+		
+			@Override public void    addCellEditorListener(CellEditorListener l) { cellEditorListeners.   add(l); }
+			@Override public void removeCellEditorListener(CellEditorListener l) { cellEditorListeners.remove(l); }
+			
+			private void notifyCellEditorListeners(BiConsumer<CellEditorListener,ChangeEvent> action) {
+				ChangeEvent e = new ChangeEvent(this);
+				for (int i=0; i<cellEditorListeners.size(); i++)
+					action.accept(cellEditorListeners.get(i),e);
+			}
+			private void fireEditingCanceledEvent() { notifyCellEditorListeners(CellEditorListener::editingCanceled); }
+			private void fireEditingStoppedEvent () { notifyCellEditorListeners(CellEditorListener::editingStopped); }
+		
+		}
+	}
+
 	private static final class InstalledModulesTableModel implements TableModel {
 
 		private static final int COLUMN_INDEX  = 0;
@@ -1535,10 +1642,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		private Session.SessionBlock block;
 		private int nModules;
+		private TablePanel.LabelCellEditor label1CellEditor;
+		private TablePanel.LabelCellEditor label2CellEditor;
 
-		public InstalledModulesTableModel(Session.SessionBlock block, int nModules) {
+		public InstalledModulesTableModel(Session.SessionBlock block, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor) {
 			this.block = block;
 			this.nModules = nModules;
+			this.label1CellEditor = label1CellEditor;
+			this.label2CellEditor = label2CellEditor;
 			tableModelListeners = new Vector<>();
 		}
 
@@ -1546,20 +1657,38 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			this.table = table;
 		}
 
-		public void setColumnWidths() {
+		private void forEachColumn(BiConsumer<TableColumn,Integer> action) {
 			TableColumnModel columnModel = table.getColumnModel();
-			for (int i=0; i<columnModel.getColumnCount(); ++i)
-				setColumnWidths(columnModel.getColumn(i));
+			for (int i=0; i<columnModel.getColumnCount(); ++i) {
+				TableColumn column = columnModel.getColumn(i);
+				action.accept(column, column.getModelIndex());
+			}
 		}
 
-		private void setColumnWidths(TableColumn column) {
-			if (column==null) return;
-			switch (column.getModelIndex()) {
-			case  COLUMN_INDEX : setColumnWidths(column, 20, 30); break;
-			case  COLUMN_LABEL1: setColumnWidths(column, 20,150); break;
-			case  COLUMN_LABEL2: setColumnWidths(column, 20,150); break;
-			default: setColumnWidths(column, 20, 70); break;
-			}
+		public void setCellEditors() {
+			forEachColumn((column, columnIndex) -> {
+				if (column==null) return;
+				switch (columnIndex) {
+				case  COLUMN_INDEX :
+					break;
+				case  COLUMN_LABEL1: column.setCellEditor(label1CellEditor); break;
+				case  COLUMN_LABEL2: column.setCellEditor(label2CellEditor); break;
+				default:
+					break;
+				}
+			});
+		}
+
+		public void setColumnWidths() {
+			forEachColumn((column, columnIndex) -> {
+				if (column==null) return;
+				switch (columnIndex) {
+				case  COLUMN_INDEX : setColumnWidths(column, 20, 30); break;
+				case  COLUMN_LABEL1: setColumnWidths(column, 20,150); break;
+				case  COLUMN_LABEL2: setColumnWidths(column, 20,150); break;
+				default: setColumnWidths(column, 20, 70); break;
+				}
+			});
 		}
 
 		private void setColumnWidths(TableColumn column, int minWidth, int prefWidth) {
@@ -1594,23 +1723,41 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				upgrade = block.installedModules.get(rowIndex);
 			
 			switch (columnIndex) {
-			case COLUMN_INDEX :  return String.format("[%02d]", rowIndex+1);
-			case COLUMN_LABEL1:  return upgrade==null ? null : upgrade.label1;
-			case COLUMN_LABEL2:  return upgrade==null ? null : upgrade.label2;
-			default: return upgrade==null ? null : upgrade.getFormatedValue(getVD(columnIndex));
+			case COLUMN_INDEX : return String.format("[%02d]", rowIndex+1);
+			case COLUMN_LABEL1: return upgrade==null ? null : upgrade.label1;
+			case COLUMN_LABEL2: return upgrade==null ? null : upgrade.label2;
+			default:            return upgrade==null ? null : upgrade.getFormatedValue(getVD(columnIndex));
 			}
 		}
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			// TODO Auto-generated method stub
-			return false;
+			switch (columnIndex) {
+			case COLUMN_INDEX : return false;
+			case COLUMN_LABEL1:
+			case COLUMN_LABEL2:
+			default: return true;
+			}
 		}
 
 		@Override
 		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			// TODO Auto-generated method stub
+			InstalledUpgrade upgrade = null;
+			if (rowIndex<block.installedModules.size())
+				upgrade = block.installedModules.get(rowIndex);
+			if (upgrade==null) {
+				while(rowIndex>=block.installedModules.size())
+					block.installedModules.add(null);
+				upgrade = new InstalledUpgrade(block.module);
+				block.installedModules.set(rowIndex,upgrade);
+			}
 			
+			switch (columnIndex) {
+			case COLUMN_INDEX : Debug.Assert(false); break;
+			case COLUMN_LABEL1: upgrade.label1 = (String)aValue; break;
+			case COLUMN_LABEL2: upgrade.label2 = (String)aValue; break;
+			default: //upgrade.parseFormatedValue(getVD(columnIndex),(String)aValue); // TODO
+			}
 		}
 
 		@Override public void    addTableModelListener(TableModelListener l) { tableModelListeners.   add(l); }
@@ -1619,31 +1766,74 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private void fireTableEvent(TableModelEvent e) {
 			tableModelListeners.forEach(l->l.tableChanged(e));
 		}
+		private TableModelEvent createTableModelEvent() {
+			return new TableModelEvent(this);
+		}
+
+		private TableModelEvent createTableModelEvent(int firstRow, int lastRow, int column, int type) {
+			String typeStr;
+			switch (type) {
+			case TableModelEvent.UPDATE: typeStr = "UPDATE"; break;
+			case TableModelEvent.INSERT: typeStr = "INSERT"; break;
+			case TableModelEvent.DELETE: typeStr = "DELETE"; break;
+			default: typeStr = "["+type+"]"; break;
+			}
+			System.out.printf("new TableModelEvent(this, firstRow:%d, lastRow:%d, column:%d, type:%s)%n", firstRow,lastRow,column,typeStr);
+			return new TableModelEvent(this,firstRow,lastRow,column,type);
+		}
 
 		@SuppressWarnings("unused")
 		public void fireTableUpdate() {
-			fireTableEvent(new TableModelEvent(this));
+			fireTableEvent(createTableModelEvent());
+		}
+		
+		// TableRowEvent
+		private void fireTableRowEvent(int rowIndex, int type) {
+			fireTableEvent(createTableModelEvent(rowIndex,rowIndex,TableModelEvent.ALL_COLUMNS,type));
 		}
 		@SuppressWarnings("unused")
 		public void fireTableRowChanged(int rowIndex) {
-			fireTableEvent(new TableModelEvent(this,rowIndex,rowIndex,TableModelEvent.ALL_COLUMNS,TableModelEvent.UPDATE));
+			fireTableRowEvent(rowIndex,TableModelEvent.UPDATE);
 		}
+		
+		// TableCellEvent
+		private void fireTableCellEvent(int rowIndex, int columnIndex, int type) {
+			fireTableEvent(createTableModelEvent(rowIndex,rowIndex,columnIndex,type));
+		}
+		@SuppressWarnings("unused")
 		public void fireTableCellChanged(int rowIndex, int columnIndex) {
-			fireTableEvent(new TableModelEvent(this,rowIndex,rowIndex,columnIndex,TableModelEvent.UPDATE));
+			fireTableCellEvent(rowIndex,columnIndex,TableModelEvent.UPDATE);
 		}
-		public void fireTableHeaderChanged(int columnIndex) {
-			fireTableCellChanged(TableModelEvent.HEADER_ROW,columnIndex);
+		
+		// TableColumnEvent
+		private void fireTableColumnEvent(int columnIndex, int type) {
+			fireTableEvent(createTableModelEvent(0,getRowCount()-1,columnIndex,type));
+		}
+		@SuppressWarnings("unused")
+		public void fireTableColumnRemoved(int columnIndex) {
+			fireTableColumnEvent(columnIndex,TableModelEvent.DELETE);
+		}
+		@SuppressWarnings("unused")
+		public void fireTableColumnChanged(int columnIndex) {
+			fireTableColumnEvent(columnIndex,TableModelEvent.UPDATE);
+		}
+		@SuppressWarnings("unused")
+		public void fireTableColumnInserted(int columnIndex) {
+			fireTableColumnEvent(columnIndex,TableModelEvent.INSERT);
+		}
+		
+		private void fireTableHeaderEvent(int columnIndex, int type) {
+			fireTableEvent(createTableModelEvent(TableModelEvent.HEADER_ROW,TableModelEvent.HEADER_ROW,columnIndex,type));
 			setColumnWidths();
 		}
-
-		public void fireTableColumnChanged(int columnIndex) {
-			fireTableEvent(new TableModelEvent(this,0,getRowCount()-1,columnIndex,TableModelEvent.UPDATE));
+		public void fireTableHeaderChanged(int columnIndex) {
+			fireTableHeaderEvent(columnIndex, TableModelEvent.UPDATE);
 		}
-		public void fireTableColumnInserted(int columnIndex) {
-			fireTableEvent(new TableModelEvent(this,0,getRowCount()-1,columnIndex,TableModelEvent.INSERT));
+		public void fireTableHeaderRemoved(int columnIndex) {
+			fireTableHeaderEvent(columnIndex, TableModelEvent.DELETE);
 		}
-		public void fireTableColumnAdded() {
-			fireTableColumnInserted(getColumnCount()-1);
+		public void fireTableHeaderAdded() {
+			fireTableHeaderEvent(getColumnCount()-1, TableModelEvent.INSERT);
 		}
 		
 	}

@@ -74,7 +74,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.PopupDialog;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.SearchFieldWithPopup;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
@@ -2234,7 +2234,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private class NameSearch extends AbstractSearchBar {
 			private static final long serialVersionUID = 2446633626490169526L;
 			
-			private SearchFieldWithPopup textField = null;
+			private TextFieldWithSuggestions textField = null;
 			private boolean searchCaseSensitive = false;
 			
 			NameSearch() {}
@@ -2247,21 +2247,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				c.weighty = 1;
 				c.insets = new Insets(2,2,2,2);
 				
-				textField = new SearchFieldWithPopup(20, this::search, this::select);
-				textField.setMaxNameListLength(5);
+				textField = new TextFieldWithSuggestions(20, this::search, this::suggestionSelected);
+				textField.setMaxSuggestionsListLength(5);
 				
 				c.weightx = 1;
 				content.add(textField,c);
 				c.weightx = 0;
 				content.add(SaveViewer.createCheckbox("case sensitive", searchCaseSensitive, b->{
 					searchCaseSensitive = b;
-					textField.updateSearch();
+					textField.updateSuggestions();
 				}),c);
 				
 				return content;
 			}
 
-			private void select(String name) {
+			private void suggestionSelected(String name) {
 				search(name);
 				hidePopup();
 			}

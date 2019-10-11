@@ -1029,63 +1029,88 @@ public class Gui {
 		}
 	}
 	
-	public static class SearchFieldWithPopup extends JTextField {
+	public static class TextFieldWithSuggestions extends JTextField {
 		private static final long serialVersionUID = -8505198126697979409L;
 		
-		private String searchStr = null;
-		private JPopupMenu fittingNamesPopup = null;
+		private String inputStr = null;
+		private JPopupMenu suggestionsPopup = null;
 
-		private Function<String, HashSet<String>> getFittingNames;
-		private Consumer<String> selectFinally;
+		private Function<String, HashSet<String>> collectSuggestions;
+		private Consumer<String> suggestionSelected;
 
-		private int maxNameListLength;
+		private int minInputLength = 3;
+		private int maxSuggestionsListLength = 5;
+		private boolean ignoreCaretEvents = false;
 		
-		public SearchFieldWithPopup(int columns, Function<String,HashSet<String>> getFittingNames, Consumer<String> selectFinally) {
+		public interface Caller {
+			HashSet<String> collectSuggestions(String str);
+			void suggestionSelected(String str);
+		}
+		
+		public TextFieldWithSuggestions(int columns, Caller caller) {
+			this(columns, caller::collectSuggestions, caller::suggestionSelected);
+		}
+		public TextFieldWithSuggestions(int columns, Function<String,HashSet<String>> collectSuggestions, Consumer<String> suggestionSelected) {
 			super(columns);
-			this.getFittingNames = getFittingNames;
-			this.selectFinally = selectFinally;
+			this.collectSuggestions = collectSuggestions;
+			this.suggestionSelected = suggestionSelected;
 			
-			fittingNamesPopup = new JPopupMenu("Fitting Names");
-			addCaretListener(e -> updateSearch(false));
+			suggestionsPopup = new JPopupMenu("Suggestions");
+			addCaretListener(e -> { if (!ignoreCaretEvents) updateSuggestions(false); });
 		}
 		
-		public void updateSearch() {
-			updateSearch(true);
+		public void hideList() {
+			suggestionsPopup.setVisible(false);
 		}
-		private void updateSearch(boolean forceUpdate) {
+		
+		public void setText(String str, boolean ignoreCaretEvents) {
+			this.ignoreCaretEvents = ignoreCaretEvents;
+			setText(str);
+			this.ignoreCaretEvents = false;
+		}
+		
+		public void setMaxSuggestionsListLength(int maxSuggestionsListLength) {
+			this.maxSuggestionsListLength = maxSuggestionsListLength;
+		}
+		public void setMinInputLength(int minInputLength) {
+			this.minInputLength = minInputLength;
+		}
+		
+		public void updateSuggestions() {
+			updateSuggestions(true);
+		}
+		private void updateSuggestions(boolean forceUpdate) {
 			String newStr = getText();
-			if (!forceUpdate && newStr.equals(searchStr)) return;
-			searchStr = newStr;
+			if (!forceUpdate && newStr.equals(inputStr)) return;
 			
-			fittingNamesPopup.setVisible(false);
+			inputStr = newStr;
+			suggestionsPopup.setVisible(false);
+			if (!forceUpdate && inputStr.length()<minInputLength) return;
 			
-			HashSet<String> fittingNames = getFittingNames.apply(searchStr);
-			if (fittingNames.isEmpty()) return;
+			HashSet<String> suggestionsSet = collectSuggestions.apply(inputStr);
+			if (suggestionsSet.isEmpty()) return;
 			
-			Vector<String> names = new Vector<>(fittingNames);
-			names.sort(Comparator.<String,String>comparing(String::toLowerCase));
+			Vector<String> suggestions = new Vector<>(suggestionsSet);
+			suggestions.sort(Comparator.<String,String>comparing(String::toLowerCase));
 			
-			fittingNamesPopup.removeAll();
-			for (int i=0; i<names.size(); i++) {
-				if (i>=maxNameListLength) {
-					int n = i-maxNameListLength+1;
-					fittingNamesPopup.add(SaveViewer.createMenuItem("... and "+n+" more",null,false));
+			suggestionsPopup.removeAll();
+			for (int i=0; i<suggestions.size(); i++) {
+				if (i>=maxSuggestionsListLength) {
+					int n = i-maxSuggestionsListLength+1;
+					suggestionsPopup.add(SaveViewer.createMenuItem("... and "+n+" more",null,false));
 					break;
 				}
-				String name = names.get(i);
-				fittingNamesPopup.add(SaveViewer.createMenuItem(name,e->{
-					searchStr = name;
-					setText(searchStr);
-					selectFinally.accept(name);
+				String name = suggestions.get(i);
+				suggestionsPopup.add(SaveViewer.createMenuItem(name,e->{
+					inputStr = name;
+					suggestionsPopup.setVisible(false);
+					setText(inputStr,true);
+					suggestionSelected.accept(name);
 				}));
 			}
 			
-			fittingNamesPopup.show(this, 0, getHeight()+1);
+			suggestionsPopup.show(this, 0, getHeight()+1);
 			requestFocusInWindow();
-		}
-
-		public void setMaxNameListLength(int maxNameListLength) {
-			this.maxNameListLength = maxNameListLength;
 		}
 	}
 	
