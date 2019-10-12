@@ -11,10 +11,14 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -141,7 +145,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		return this;
 	}
 
-	private UpgradeModuleInstallHelper writeConfig() {
+	private synchronized UpgradeModuleInstallHelper writeConfig() {
 		config.writeToFile(new File(CFG));
 		return this;
 	}
@@ -163,7 +167,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
 		
-		
 		contentPane = new JPanel(new BorderLayout(3,3));
 		contentPane.add(tablePanel = new TablePanel(),BorderLayout.CENTER);
 		
@@ -181,9 +184,29 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		mainwindow = new StandardMainWindow("UpgradeModule InstallHelper", standalone ? DefaultCloseOperation.EXIT_ON_CLOSE : DefaultCloseOperation.DISPOSE_ON_CLOSE);
 		mainwindow.startGUI(contentPane, menuBar);
+		mainwindow.addComponentListener(new ComponentListener() {
+			@Override public void componentShown(ComponentEvent e) {}
+			@Override public void componentMoved(ComponentEvent e) {}
+			@Override public void componentHidden(ComponentEvent e) {}
+			
+			@Override public void componentResized(ComponentEvent e) {
+				config.windowSize=mainwindow.getSize(config.windowSize);
+			}
+		});
+		mainwindow.addWindowListener(new WindowAdapter() {
+			@Override public void windowClosing(WindowEvent e) {
+				SaveViewer.log_ln("windowClosing");
+				writeConfig();
+			}
+		});
 		
 		updateWindowTitle();
 		updateGUIaccess();
+		if (config.windowSize!=null) {
+			config.windowSize.width  = Math.max(config.windowSize.width , mainwindow.getWidth ());
+			config.windowSize.height = Math.max(config.windowSize.height, mainwindow.getHeight());
+			mainwindow.setSizeCenteredOnScreen(config.windowSize);
+		}
 		
 		return this;
 	}
@@ -308,11 +331,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	private class Config {
+		Dimension windowSize;
 		File currentSessionFile;
 		HashMap<GeneralizedID,KnownModule> knownModules;
 		
 		Config() {
 			currentSessionFile = null;
+			windowSize = null;
 			knownModules = new HashMap<>();
 		}
 
@@ -329,6 +354,27 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						String str = line.substring("LastSessionFile=".length());
 						currentSessionFile = new File(str);
 					}
+					if (line.startsWith("WindowWidth=")) {
+						String str = line.substring("WindowWidth=".length());
+						try {
+							int val = Integer.parseInt(str);
+							if (windowSize==null) windowSize=new Dimension();
+							windowSize.width = val;
+						} catch (NumberFormatException e) {
+							SaveViewer.log_error_ln("Can't parse WindowWidth as integer in \"%s\"", str);
+						}
+					}
+					if (line.startsWith("WindowHeight=")) {
+						String str = line.substring("WindowHeight=".length());
+						try {
+							int val = Integer.parseInt(str);
+							if (windowSize==null) windowSize=new Dimension();
+							windowSize.height = val;
+						} catch (NumberFormatException e) {
+							SaveViewer.log_error_ln("Can't parse WindowHeight as integer in \"%s\"", str);
+						}
+					}
+					
 					if (line.startsWith("ModuleID=")) {
 						String str = line.substring("ModuleID=".length());
 						GeneralizedID moduleID = knownUpgradeModuleIDs.get(str);
@@ -387,6 +433,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
 				
 				if (currentSessionFile!=null) out.printf("LastSessionFile=%s%n", currentSessionFile.getAbsolutePath());
+				if (windowSize!=null) {
+					out.printf("WindowWidth=%d%n", windowSize.width);
+					out.printf("WindowHeight=%d%n", windowSize.height);
+				}
 				
 				for (GeneralizedID id:sortedID(knownModules.keySet())) {
 					KnownModule module = knownModules.get(id);
@@ -1739,9 +1789,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						case PercentMinus:
 						case PercentPlus:
 							alignment = JLabel.RIGHT;
-							if (value instanceof Float) {
+							if (value instanceof Float)
 								label.setText(format.getFormatedValue((Float) value));
-							}
 							break;
 						}
 						break;
