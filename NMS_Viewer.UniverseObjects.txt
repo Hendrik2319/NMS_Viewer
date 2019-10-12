@@ -2869,6 +2869,8 @@ resources=Cu,Pf,NaCl
 short=
 info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
+[Pln503100006A5E0D]
+
 [Sys007300006A5E0D]
 name=Ryangxin
 race=Gek
@@ -3871,6 +3873,12 @@ with water
 resources=Em,NH3,Fe__
 short=Schwarz-Rote Atmosphere
 info=
+
+[Pln20D800F9001FFB]
+name=Ikon Sigma
+biome=Barren
+is extreme
+resources=Em_,Py,NaCl
 
 [Pln50D800F9001FFB]
 name=Aquanar Gotsu
@@ -6655,6 +6663,25 @@ name=Mahabile
 biome=Barren
 resources=Cu,Py,Fe__
 
+[Sys01E200FDD7F684]
+name=Labokbe IX
+race=Vykeen
+conflict=3
+conflict_label=gefährlich
+economy=3
+economy_label=gedeihend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln21E200FDD7F684]
+name=Neu: Leced
+biome=Lush
+with water
+resources=Cu,Pf,NaCl
+
 [Reg000000FED80684]
 name=Iryatsiy-Rand
 
@@ -6725,3 +6752,25 @@ atlasinterface=false
 blackhole=false
 
 [Pln30A400F90F56DB]
+
+[Reg000006006A5E0D]
+name=Mawurdoyl-Nebel
+
+[Sys003106006A5E0D]
+name=Pochun-Ibl
+race=Korvax
+conflict=1
+conflict_label=entspannt
+economy=2
+economy_label=erfolgversprechend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln303106006A5E0D]
+name=Yominor
+biome=Irradiated
+buriedTreasure=AncientBones
+resources=Cu,U,Fe__

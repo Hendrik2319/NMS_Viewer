@@ -1510,6 +1510,10 @@
 ^PROC_TOOL#88879.type=Treasure
 ^PROC_TOOL#88879.image=Artifact.LostArtifact.png
 ^PROC_TOOL#88879.imageBG=153250
+^PROC_TOOL#88899=Vergessenes Artefakt (gewöhnlich)
+^PROC_TOOL#88899.type=Treasure
+^PROC_TOOL#88899.image=Artifact.LostArtifact.png
+^PROC_TOOL#88899.imageBG=153250
 ^PROC_TOOL#91169=Vergessenes Artefakt (ungewöhnlich)
 ^PROC_TOOL#91169.type=Treasure
 ^PROC_TOOL#91169.image=Artifact.LostArtifact.png
