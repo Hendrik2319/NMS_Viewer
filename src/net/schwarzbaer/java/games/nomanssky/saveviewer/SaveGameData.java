@@ -2738,6 +2738,7 @@ public class SaveGameData {
 		
 		private SaveGameData data;
 		public UniverseAddress currentUniverseAddress = null;
+		public Long currentBaseGalaxy = null;
 		public UniverseAddress anomalyUA = null;
 		public UniverseAddress graveUA = null;
 		public Position anomalyPos = null;
@@ -2766,6 +2767,9 @@ public class SaveGameData {
 				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 			}
+			if (hasValue(data.json_data, "PlayerStateData","[CurrentBaseGalaxy]"))
+				currentBaseGalaxy = getIntegerValue( data.json_data, "PlayerStateData","[CurrentBaseGalaxy]");
+			
 			if (hasValue(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
 				anomalyUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
 			graveUA       = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
@@ -3023,6 +3027,7 @@ public class SaveGameData {
 		}
 
 		public double getDistToOther_inRegionUnits(UniverseAddress other) {
+			if (this.galaxyIndex!=other.galaxyIndex) return Double.POSITIVE_INFINITY;
 			return Math.sqrt(
 					(voxelX-other.voxelX)*(voxelX-other.voxelX)+
 					(voxelY-other.voxelY)*(voxelY-other.voxelY)+

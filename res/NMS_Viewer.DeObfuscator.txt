@@ -407,7 +407,7 @@ Fk@ AnomalyMatrixLookAt
 d72 AnomalyMatrixUp
 Yel AnomalyPosition
 
-QQp [??? QQp PlayerStateData Int:0]
+QQp [CurrentBaseGalaxy]
 Bur [??? Bur PlayerStateData Bool:false]
 Ue9 [??? Ue9 PlayerStateData Bool:true]
 9hR [??? 9hR PlayerStateData Int:11]

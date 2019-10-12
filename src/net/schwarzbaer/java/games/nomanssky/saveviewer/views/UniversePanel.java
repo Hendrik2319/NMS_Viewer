@@ -546,7 +546,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_center, distance_center*400);
 				appendln();
 				appendln(               "Distance to Current Position:");
-				appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_currPos, distance_currPos*400);
+				if (Double.isInfinite(distance_currPos))
+					appendln(Locale.ENGLISH,"    computed: infinite");
+				else
+					appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_currPos, distance_currPos*400);
 				break;
 				
 			case Galaxy:
@@ -941,7 +944,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				distance_reg = ua.getDistToOther_inRegionUnits( data.general.currentUniverseAddress );
 				appendln();
 				appendln(               "Distance to current position:");
-				appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_reg, distance_reg*400);
+				if (Double.isInfinite(distance_reg))
+					appendln(Locale.ENGLISH,"    computed: infinite");
+				else
+					appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_reg, distance_reg*400);
 			}
 			
 			distance_reg = ua.getDistToCenter_inRegionUnits();

@@ -577,7 +577,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 
 		public void showDistCircle( RegionData.RegionCoord coords) {
 			if (coords!=null)
-				distCircle = new SaveGameData.Point3D(coords.voxelX,0,coords.voxelZ).length()-0.5;
+				distCircle = new SaveGameData.Point3D(coords.voxelX,0,coords.voxelZ).length();
 			else
 				distCircle = null;
 			repaint();
@@ -738,8 +738,10 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				graphics.setColor(rs.isReachableByTeleport?COLOR_KNOWN_REGION_WITH_TELEPORT:COLOR_KNOWN_REGION);
 				graphics.fillRect(rc.voxelX+MAP_CENTER_X, rc.voxelZ+MAP_CENTER_Y, 1, 1);
 			});
-			graphics.setColor(COLOR_CURRENT_POS);
-			graphics.fillRect(currentPos.voxelX+MAP_CENTER_X, currentPos.voxelZ+MAP_CENTER_Y, 1, 1);
+			if (regionData.galaxy.galaxyIndex == currentPos.galaxyIndex) {
+				graphics.setColor(COLOR_CURRENT_POS);
+				graphics.fillRect(currentPos.voxelX+MAP_CENTER_X, currentPos.voxelZ+MAP_CENTER_Y, 1, 1);
+			}
 			
 			graphics.setColor(COLOR_GALAXY_CENTER);
 			graphics.fillRect(MAP_CENTER_X, MAP_CENTER_Y, 1, 1);
@@ -869,20 +871,22 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 					
 					g2.setColor(COLOR_KNOWN_REGION);
 					regionData.forEachRegion((rc,rs)->{
-						if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+						if (regionData.galaxy.galaxyIndex==currentPos.galaxyIndex && rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 						if (rs.isReachableByTeleport) return;
 						fillBox(g2, maxX, maxY, rc.voxelX, rc.voxelZ);
 					});
 					
 					g2.setColor(COLOR_KNOWN_REGION_WITH_TELEPORT);
 					regionData.forEachRegion((rc,rs)->{
-						if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+						if (regionData.galaxy.galaxyIndex==currentPos.galaxyIndex && rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 						if (!rs.isReachableByTeleport) return;
 						fillBox(g2, maxX, maxY, rc.voxelX, rc.voxelZ);
 					});
 					
-					g2.setColor(COLOR_CURRENT_POS);
-					fillBox(g2, maxX, maxY, currentPos.voxelX, currentPos.voxelZ);
+					if (regionData.galaxy.galaxyIndex==currentPos.galaxyIndex) {
+						g2.setColor(COLOR_CURRENT_POS);
+						fillBox(g2, maxX, maxY, currentPos.voxelX, currentPos.voxelZ);
+					}
 					
 					g2.setColor(COLOR_GALAXY_CENTER);
 					fillBox(g2, maxX,maxY,0,0);
@@ -939,20 +943,22 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 				
 				g2.setColor(COLOR_KNOWN_REGION);
 				regionData.forEachRegion((rc,rs)->{
-					if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+					if (regionData.galaxy.galaxyIndex==currentPos.galaxyIndex && rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 					if (rs.isReachableByTeleport) return;
 					drawMarker(g2, rc.voxelX, rc.voxelZ, markerSize);
 				});
 				
 				g2.setColor(COLOR_KNOWN_REGION_WITH_TELEPORT);
 				regionData.forEachRegion((rc,rs)->{
-					if (rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
+					if (regionData.galaxy.galaxyIndex==currentPos.galaxyIndex && rc.voxelX==currentPos.voxelX && rc.voxelZ==currentPos.voxelZ) return;
 					if (!rs.isReachableByTeleport) return;
 					drawMarker(g2, rc.voxelX, rc.voxelZ, markerSize);
 				});
 				
-				g2.setColor(COLOR_CURRENT_POS);
-				drawMarker(g2, currentPos.voxelX, currentPos.voxelZ, markerSize);
+				if (regionData.galaxy.galaxyIndex==currentPos.galaxyIndex) {
+					g2.setColor(COLOR_CURRENT_POS);
+					drawMarker(g2, currentPos.voxelX, currentPos.voxelZ, markerSize);
+				}
 				
 				g2.setColor(COLOR_GALAXY_CENTER);
 				drawMarker(g2, 0,0, markerSize);
