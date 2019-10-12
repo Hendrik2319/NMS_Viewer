@@ -1443,6 +1443,10 @@
 ^PROC_PLNT#23359.type=Treasure
 ^PROC_PLNT#23359.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#23359.imageBG=DC9401
+^PROC_PLNT#24378=Empfindliche Flora (gewöhnlich)
+^PROC_PLNT#24378.type=Treasure
+^PROC_PLNT#24378.image=Artifact.DelicateFlora.png
+^PROC_PLNT#24378.imageBG=153250
 ^PROC_PLNT#26246=Empfindliche Flora (selten)
 ^PROC_PLNT#26246.type=Treasure
 ^PROC_PLNT#26246.image=Artifact.DelicateFlora.png

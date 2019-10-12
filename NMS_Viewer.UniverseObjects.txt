@@ -2923,6 +2923,24 @@ resources=Cd,Au,Co
 short=
 info=<ParsedPlanetaryResources> Cd, Au, Co
 
+[Sys020900006A5E0D]
+name=Hogarme
+race=Vykeen
+conflict=1
+conflict_label=sanft
+economy=2
+economy_label=In Entwicklung
+atlasinterface=false
+blackhole=false
+class=Green
+
+[Pln320900006A5E0D]
+name=Yurih 35/R9
+biome=Exotic_Mega
+aggrSentinels
+gravitino balls
+resources=Em,NH3,NaCl
+
 [Reg00000000FCFE0E]
 name=Viksvan
 
