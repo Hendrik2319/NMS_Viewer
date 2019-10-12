@@ -39,6 +39,7 @@ import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -59,6 +60,7 @@ import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -338,16 +340,16 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					}
 					if (line.startsWith("value.uniqueID=") && knownModule!=null) {
 						String str = line.substring("value.uniqueID=".length());
-						long uniqueID;
 						try {
-							uniqueID = Long.parseLong(str,16);
+							long uniqueID = Long.parseLong(str,16);
 							Debug.Assert(KnownModule.ValueDefinition.uniqueIDs.notExists(uniqueID));
 							KnownModule.ValueDefinition.uniqueIDs.add(uniqueID);
+							knownModule.values.add( knownValue = new KnownModule.ValueDefinition(knownModule,uniqueID) );
 						}
 						catch (NumberFormatException e) {
-							uniqueID = 0;
+							SaveViewer.log_error_ln("Can't parse <value.uniqueID> as hex long: \"%s\"", str);
+							knownValue = null;
 						}
-						knownModule.values.add( knownValue = new KnownModule.ValueDefinition(knownModule,uniqueID) );
 					}
 					if (line.startsWith("value.label=") && knownModule!=null) {
 						String str = line.substring("value.label=".length());
@@ -397,8 +399,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						out.printf("value.uniqueID=%016X%n", vd.uniqueID);
 						out.printf("value.label=%s%n", vd.label);
 						if (vd.format!=null) out.printf("value.format=%s%n", vd.format);
-						if (vd.min!=null && !Float.isNaN(vd.min)) out.printf("value.min=%1.3f%n", vd.min);
-						if (vd.max!=null && !Float.isNaN(vd.max)) out.printf("value.max=%1.3f%n", vd.max);
+						if (vd.min!=null && !Float.isNaN(vd.min)) out.printf(Locale.ENGLISH, "value.min=%1.3e%n", vd.min);
+						if (vd.max!=null && !Float.isNaN(vd.max)) out.printf(Locale.ENGLISH, "value.max=%1.3e%n", vd.max);
 					});
 				}
 				
@@ -432,7 +434,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 		public long createNewID() {
 			long id;
-			while ( exists(id = rnd.nextLong()) );
+			while ( exists(id=rnd.nextLong()) || id<0 );
 			add(id);
 			return id;
 		}
@@ -458,7 +460,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			return null;
 		}
 
-		private static class ValueDefinition {
+		private static class ValueDefinition implements Comparable<ValueDefinition> {
 			enum Format {
 				PercentPlus, PercentMinus, Activated, FloatPlus, Lightyears,
 				;
@@ -499,6 +501,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				min    = vd==null ? null : vd.min   ;
 				max    = vd==null ? null : vd.max   ;
 			}
+			@Override public int compareTo( ValueDefinition other) {
+				return (int) (this.uniqueID - other.uniqueID);
+			}
+			
 		}
 	}
 	
@@ -521,6 +527,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			label2 = module.label2;
 			values = cloneHashMap(module.values, null, null);
 		}
+		@SuppressWarnings("unused")
 		public String getFormatedValue(KnownModule.ValueDefinition vd) {
 			if (vd==null) return null;
 			Float value = values.get(vd);
@@ -821,7 +828,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							Float value = upgrade.values.get(vd);
 							if (value!=null) {
 								out.printf("value.uniqueID=%016X%n", vd.uniqueID);
-								out.printf("value.value=%1.7e%n", value);
+								out.printf(Locale.ENGLISH,"value.value=%1.7e%n", value);
 							}
 						}
 						out.println();
@@ -884,6 +891,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			public HashSet<KnownModule.ValueDefinition> collectKnownValueOfInstalledModules() {
 				HashSet<KnownModule.ValueDefinition> knownValues = new HashSet<>();
 				installedModules.forEach(upgrade->{
+					if (upgrade==null) return;
 					upgrade.values.forEach((valueDefinition,value)->{
 						Debug.Assert(valueDefinition.module == module);
 						knownValues.add(valueDefinition);
@@ -1432,8 +1440,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				table.setPreferredScrollableViewportSize(table.getPreferredSize());
 				
 				tableModel.setTable(table);
-				tableModel.setColumnWidths();
-				tableModel.setCellEditors();
 				
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				tableScrollPane.setWheelScrollingEnabled(false);
@@ -1629,6 +1635,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 	private static final class InstalledModulesTableModel implements TableModel {
 
+		private static final String CELLEDITORVALUE_ACTIVATED = "akt.";
+		private static final String CELLEDITORVALUE_NOTACTIVATED = "";
 		private static final int COLUMN_INDEX  = 0;
 		private static final int COLUMN_LABEL1 = COLUMN_INDEX +1;
 		private static final int COLUMN_LABEL2 = COLUMN_LABEL1+1;
@@ -1639,8 +1647,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		private Session.SessionBlock block;
 		private int nModules;
-		private TablePanel.LabelCellEditor label1CellEditor;
-		private TablePanel.LabelCellEditor label2CellEditor;
+		private TableCellEditor label1CellEditor;
+		private TableCellEditor label2CellEditor;
+		private TableCellEditor cellEditor_Activated;
+		private TableCellEditor cellEditor_Other;
+		private MyTableCellRenderer defaultTableCellRenderer;
 
 		public InstalledModulesTableModel(Session.SessionBlock block, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor) {
 			this.block = block;
@@ -1648,10 +1659,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			this.label1CellEditor = label1CellEditor;
 			this.label2CellEditor = label2CellEditor;
 			tableModelListeners = new Vector<>();
+			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
+			cellEditor_Other = new DefaultCellEditor(new JTextField());
+			defaultTableCellRenderer = new MyTableCellRenderer();
 		}
 
 		public void setTable(JTable table) {
 			this.table = table;
+			prepareTable();
 		}
 
 		private void forEachColumn(BiConsumer<TableColumn,Integer> action) {
@@ -1662,21 +1677,83 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 		}
 
-		public void setCellEditors() {
+		private void prepareTable() {
+			setColumnWidths();
+			setCellEditors();
+			setCellRenderers();
+		}
+
+		private void setCellEditors() {
 			forEachColumn((column, columnIndex) -> {
 				if (column==null) return;
-				switch (columnIndex) {
-				case  COLUMN_INDEX :
-					break;
-				case  COLUMN_LABEL1: column.setCellEditor(label1CellEditor); break;
-				case  COLUMN_LABEL2: column.setCellEditor(label2CellEditor); break;
-				default:
-					break;
-				}
+				column.setCellEditor(getCellEditor(columnIndex));
 			});
 		}
 
-		public void setColumnWidths() {
+		private TableCellEditor getCellEditor(int columnIndex) {
+			switch (columnIndex) {
+			case  COLUMN_INDEX : break;
+			case  COLUMN_LABEL1: return label1CellEditor;
+			case  COLUMN_LABEL2: return label2CellEditor;
+			default:
+				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+				switch (format) {
+				case Activated: return cellEditor_Activated;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: break;
+				}
+				break;
+			}
+			return cellEditor_Other;
+		}
+
+		private void setCellRenderers() {
+			forEachColumn((column, columnIndex) -> {
+				if (column==null) return;
+				column.setCellRenderer(defaultTableCellRenderer);
+			});
+		}
+		
+		private class MyTableCellRenderer extends DefaultTableCellRenderer {
+			private static final long serialVersionUID = 7128510133641722765L;
+
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
+				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
+				if (component instanceof JLabel) {
+					JLabel label = (JLabel) component;
+					int alignment = JLabel.LEFT;
+					
+					switch (columnIndex) {
+					case  COLUMN_INDEX : alignment = JLabel.CENTER; break;
+					case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
+					case  COLUMN_LABEL2: alignment = JLabel.LEFT; break;
+					default:
+						KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+						switch (format) {
+						case Activated: alignment = JLabel.CENTER; break;
+						case FloatPlus: 
+						case Lightyears:
+						case PercentMinus:
+						case PercentPlus:
+							alignment = JLabel.RIGHT;
+							if (value instanceof Float) {
+								label.setText(format.getFormatedValue((Float) value));
+							}
+							break;
+						}
+						break;
+					}
+					
+					label.setHorizontalAlignment(alignment);
+				}
+				return component;
+			}
+		}
+
+		private void setColumnWidths() {
 			forEachColumn((column, columnIndex) -> {
 				if (column==null) return;
 				switch (columnIndex) {
@@ -1696,20 +1773,40 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 		@Override public int getRowCount   () { return nModules; }
 		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size(); }
-		@Override public Class<?> getColumnClass(int columnIndex) { return String.class; }
-
+		
 		private KnownModule.ValueDefinition getVD(int columnIndex) {
 			int index = columnIndex-STANDARD_COLUMNS;
 			if (index<0 || index>=block.module.values.size()) return null;
 			return block.module.values.get(index);
 		}
 
-		@Override public String getColumnName(int columnIndex) {
+		@Override
+		public String getColumnName(int columnIndex) {
 			switch (columnIndex) {
 			case COLUMN_INDEX : return "#";
 			case COLUMN_LABEL1: return "Label 1";
 			case COLUMN_LABEL2: return "Label 2";
 			default: return getVD(columnIndex).label;
+			}
+		}
+
+		@Override
+		public Class<?> getColumnClass(int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX :
+			case COLUMN_LABEL1:
+			case COLUMN_LABEL2:
+				return String.class;
+			default:
+				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+				switch (format) {
+				case Activated: return String.class;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: break;
+				}
+				return Float.class;
 			}
 		}
 
@@ -1723,7 +1820,18 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_INDEX : return String.format("[%02d]", rowIndex+1);
 			case COLUMN_LABEL1: return upgrade==null ? null : upgrade.label1;
 			case COLUMN_LABEL2: return upgrade==null ? null : upgrade.label2;
-			default:            return upgrade==null ? null : upgrade.getFormatedValue(getVD(columnIndex));
+			default:
+				if (upgrade==null) return null;
+				KnownModule.ValueDefinition vd = getVD(columnIndex);
+				Float value = upgrade.values.get(vd);
+				switch (vd.format) {
+				case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: break;
+				}
+				return value;
 			}
 		}
 
@@ -1753,7 +1861,26 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_INDEX : Debug.Assert(false); break;
 			case COLUMN_LABEL1: upgrade.label1 = (String)aValue; break;
 			case COLUMN_LABEL2: upgrade.label2 = (String)aValue; break;
-			default: //upgrade.parseFormatedValue(getVD(columnIndex),(String)aValue); // TODO
+			default:
+				KnownModule.ValueDefinition vd = getVD(columnIndex);
+				Float value = null;
+				switch (vd.format) {
+				case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: value = parseFloat((String)aValue); break;
+				}
+				upgrade.values.put(vd, value);
+				break;
+			}
+		}
+
+		private Float parseFloat(String str) {
+			try {
+				return Float.parseFloat(str.replace(',','.'));
+			} catch (NumberFormatException e) {
+				return null;
 			}
 		}
 
@@ -1768,14 +1895,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 
 		private TableModelEvent createTableModelEvent(int firstRow, int lastRow, int column, int type) {
-			String typeStr;
-			switch (type) {
-			case TableModelEvent.UPDATE: typeStr = "UPDATE"; break;
-			case TableModelEvent.INSERT: typeStr = "INSERT"; break;
-			case TableModelEvent.DELETE: typeStr = "DELETE"; break;
-			default: typeStr = "["+type+"]"; break;
-			}
-			System.out.printf("new TableModelEvent(this, firstRow:%d, lastRow:%d, column:%d, type:%s)%n", firstRow,lastRow,column,typeStr);
+			//String typeStr;
+			//switch (type) {
+			//case TableModelEvent.UPDATE: typeStr = "UPDATE"; break;
+			//case TableModelEvent.INSERT: typeStr = "INSERT"; break;
+			//case TableModelEvent.DELETE: typeStr = "DELETE"; break;
+			//default: typeStr = "["+type+"]"; break;
+			//}
+			//System.out.printf("new TableModelEvent(this, firstRow:%d, lastRow:%d, column:%d, type:%s)%n", firstRow,lastRow,column,typeStr);
 			return new TableModelEvent(this,firstRow,lastRow,column,type);
 		}
 
@@ -1821,7 +1948,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		private void fireTableHeaderEvent(int columnIndex, int type) {
 			fireTableEvent(createTableModelEvent(TableModelEvent.HEADER_ROW,TableModelEvent.HEADER_ROW,columnIndex,type));
-			setColumnWidths();
+			prepareTable();
 		}
 		public void fireTableHeaderChanged(int columnIndex) {
 			fireTableHeaderEvent(columnIndex, TableModelEvent.UPDATE);
@@ -1832,6 +1959,5 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		public void fireTableHeaderAdded() {
 			fireTableHeaderEvent(getColumnCount()-1, TableModelEvent.INSERT);
 		}
-		
 	}
 }
