@@ -70,6 +70,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.border.CompoundBorder;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -1456,5 +1457,12 @@ public class SaveViewer implements ActionListener {
 				}
 			});
 		}
+	}
+	
+	public static CompoundBorder createTitledBorderForScrollPane(String title) {
+		return BorderFactory.createCompoundBorder(
+				BorderFactory.createTitledBorder(title),
+				BorderFactory.createLineBorder(Color.GRAY)
+		);
 	}
 }

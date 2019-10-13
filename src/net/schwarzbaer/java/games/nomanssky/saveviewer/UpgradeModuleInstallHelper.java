@@ -55,6 +55,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -66,6 +67,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
@@ -85,6 +87,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggesti
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 final class UpgradeModuleInstallHelper implements ActionListener {
+	private static final Color COLOR_NOTCURRENTSEQUENCE = Color.LIGHT_GRAY;
+	private static final Color COLOR_CURRENTSEQUENCE = Color.WHITE;
+	private static final Color COLOR_CURRENTMODULE = new Color(0xFFD000);
 	
 	private static final String CFG = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
 	private static final Comparator<GeneralizedID> compareGeneralizedIDs =
@@ -116,17 +121,26 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	private static Iterable<KnownModule.ValueDefinition> sortedVD(Collection<KnownModule.ValueDefinition> set) {
 		return ()->set.stream().sorted().iterator();
 	}
+
+	private static String getLabelOrID(GeneralizedID id) {
+		String label = id.label;
+		if (label==null || label.isEmpty()) label = id.id;
+		return label;
+	}
 	
 	private final HashMap<String,GeneralizedID> knownUpgradeModuleIDs;
 
 	private Disabler<ActionCommand> disabler = null;
 	private StandardMainWindow mainwindow = null;
-	private JPanel contentPane = null;
+	private JSplitPane contentPane = null;
 	private FileChooser fileChooser = null;
 	
 	private Config config = new Config();
 	private Session currentSession = null;
-	private TablePanel tablePanel;
+	private TablePanel tablePanel = null;
+	private ModulePanel modulePanel = null;
+	private SequencesTableModel sequencesTableModel = null;
+	private InstallIterator installIterator = new InstallIterator();
 	
 	private UpgradeModuleInstallHelper() {
 		knownUpgradeModuleIDs = new HashMap<>();
@@ -156,7 +170,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	enum ActionCommand {
-		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession,
+		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstalling, StopInstalling, InstallNext,
 		;
 	}
 	
@@ -167,8 +181,50 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
 		
-		contentPane = new JPanel(new BorderLayout(3,3));
-		contentPane.add(tablePanel = new TablePanel(),BorderLayout.CENTER);
+		modulePanel = new ModulePanel();
+		modulePanel.setBorder( BorderFactory.createTitledBorder("Modules"));
+		
+		sequencesTableModel = new SequencesTableModel();
+		JTable sequencesTable = new JTable(sequencesTableModel);
+		sequencesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		sequencesTableModel.setTable(sequencesTable);
+		
+		JScrollPane sequencesPanel = new JScrollPane(sequencesTable);
+		sequencesPanel.setBorder( SaveViewer.createTitledBorderForScrollPane("Sequences") );
+		//sequencesPanel.setPreferredSize(new Dimension(200,400));
+		
+		
+		GridBagConstraints c = new GridBagConstraints();
+		c.fill = GridBagConstraints.BOTH;
+		
+		c.weightx = 1;
+		c.gridx = GridBagConstraints.RELATIVE;
+		c.gridy = GridBagConstraints.RELATIVE;
+		JPanel buttonPanel = new JPanel(new GridBagLayout());
+		buttonPanel.add(SaveViewer.createButton("Start", this, disabler, ActionCommand.StartInstalling),c);
+		buttonPanel.add(SaveViewer.createButton("Next" , this, disabler, ActionCommand.InstallNext),c);
+		buttonPanel.add(SaveViewer.createButton("Stop" , this, disabler, ActionCommand.StopInstalling),c);
+		
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		JPanel sessionPanel = new JPanel(new GridBagLayout());
+		c.weighty = 0;
+		sessionPanel.add(modulePanel,c);
+		sessionPanel.add(sequencesPanel,c);
+		sessionPanel.add(buttonPanel,c);
+		c.weighty = 1;
+		sessionPanel.add(new JLabel(),c);
+		
+		contentPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		contentPane.setLeftComponent(sessionPanel);
+		contentPane.setRightComponent(tablePanel = new TablePanel());
+		contentPane.setResizeWeight(0);
+		contentPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e->config.windowSplit = contentPane.getDividerLocation());
+		//contentPane = new JPanel(new BorderLayout(3,3));
+		//contentPane.add(tablePanel = new TablePanel(),BorderLayout.CENTER);
+		
+		if (config.windowSplit!=null) {
+			contentPane.setDividerLocation(config.windowSplit);
+		}
 		
 		
 		JMenu menuData = new JMenu("Data");
@@ -210,15 +266,24 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		return this;
 	}
-	
+
 	private void updateGUIaccess() {
 		disabler.setEnable(ac->{
 			switch (ac) {
 			case NewSession:
 			case OpenSession:
-				return true;
+				return !installIterator.isRunning();
 				
 			case EditSession:
+			case StartInstalling:
+				return currentSession!=null && !installIterator.isRunning();
+				
+			case StopInstalling:
+				return currentSession!=null && installIterator.isRunning();
+				
+			case InstallNext:
+				return currentSession!=null && installIterator.isRunning() && !installIterator.hasReachedEnd();
+				
 			case SaveSessionAs:
 				return currentSession!=null;
 				
@@ -246,7 +311,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				currentSession = newSession;
 				config.currentSessionFile = null;
 				writeConfig();
-				tablePanel.updateTables();
+				updateDataInGui();
 				updateWindowTitle();
 				updateGUIaccess();
 			}
@@ -257,7 +322,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			Session newSession = dlg.getResult();
 			if (newSession!=null) {
 				currentSession = newSession;
-				tablePanel.updateTables();
+				updateDataInGui();
 				updateGUIaccess();
 			}
 		} break;
@@ -289,7 +354,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				});
 			}
 			break;
+			
+		case StartInstalling: installIterator.start(); updateGUIaccess(); break;
+		case StopInstalling : installIterator.stop (); updateGUIaccess(); break;
+		case InstallNext    : installIterator.next (); updateGUIaccess(); break;
 		}
+	}
+
+	private void updateDataInGui() {
+		tablePanel.updateTables();
+		Vector<GeneralizedID> modules = sortedID(currentSession.blocks.keySet());
+		GeneralizedID[][] sequences = currentSession.sequences;
+		modulePanel.updateModules(modules);
+		sequencesTableModel.updateSequences(modules,sequences,currentSession.nModules);
+		installIterator.update();
 	}
 
 	private void openSession(File file) {
@@ -303,7 +381,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					writeConfig();
 				}
 				SaveViewer.runInEventThreadAndWait(()->{
-					tablePanel.updateTables();
+					updateDataInGui();
 					updateWindowTitle();
 					updateGUIaccess();
 				});
@@ -332,18 +410,23 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 	private class Config {
 		Dimension windowSize;
+		Integer windowSplit;
 		File currentSessionFile;
 		HashMap<GeneralizedID,KnownModule> knownModules;
 		
 		Config() {
 			currentSessionFile = null;
-			windowSize = null;
 			knownModules = new HashMap<>();
+			windowSize = null;
+			windowSplit = null;
 		}
 
 		public void readFromFile(File file) {
 			currentSessionFile = null;
 			knownModules.clear();
+			windowSize = null;
+			windowSplit = null;
+			
 			KnownModule.ValueDefinition.uniqueIDs.clearPool();
 			KnownModule knownModule = null;
 			KnownModule.ValueDefinition knownValue = null;
@@ -372,6 +455,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							windowSize.height = val;
 						} catch (NumberFormatException e) {
 							SaveViewer.log_error_ln("Can't parse WindowHeight as integer in \"%s\"", str);
+						}
+					}
+					if (line.startsWith("WindowSplit=")) {
+						String str = line.substring("WindowSplit=".length());
+						try {
+							windowSplit = Integer.parseInt(str);
+						} catch (NumberFormatException e) {
+							SaveViewer.log_error_ln("Can't parse WindowSplit as integer in \"%s\"", str);
 						}
 					}
 					
@@ -437,6 +528,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					out.printf("WindowWidth=%d%n", windowSize.width);
 					out.printf("WindowHeight=%d%n", windowSize.height);
 				}
+				if (windowSplit!=null) {
+					out.printf("WindowSplit=%d%n", windowSplit);
+				}
 				
 				for (GeneralizedID id:sortedID(knownModules.keySet())) {
 					KnownModule module = knownModules.get(id);
@@ -457,6 +551,62 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	private final class InstallIterator {
+
+		private int currentSequence;
+		private int currentModule;
+		private boolean isRunning;
+
+		public void update() {
+			currentSequence = 0;
+			currentModule = 0;
+			isRunning = false;
+		}
+
+		public boolean hasReachedEnd() {
+			if (currentSession==null) return true;
+			if (currentSequence>=currentSession.sequences.length  ) return true;
+			if (currentSequence< currentSession.sequences.length-1) return false;
+			return currentModule >= currentSession.sequences[currentSequence].length-1;
+		}
+
+		public boolean isRunning() {
+			return isRunning;
+		}
+
+		public void start() {
+			currentSequence = 0;
+			currentModule = 0;
+			isRunning = true;
+			Debug.Assert(currentSequence < currentSession.sequences.length);
+			Debug.Assert(currentModule < currentSession.sequences[currentSequence].length);
+			sequencesTableModel.setCurrentModule(currentSequence,currentModule);
+			tablePanel.setCurrentModule(currentSession.sequences[currentSequence][currentModule],currentModule);
+		}
+
+		public void stop() {
+			isRunning = false;
+			sequencesTableModel.clearCurrentModule();
+			tablePanel.clearCurrentModule();
+		}
+
+		public void next() {
+			Debug.Assert(currentSession!=null);
+			Debug.Assert(currentSession.sequences!=null);
+			Debug.Assert(currentSequence < currentSession.sequences.length);
+			++currentModule;
+			if (currentModule>=currentSession.sequences[currentSequence].length) {
+				currentModule=0;
+				++currentSequence;
+			}
+			Debug.Assert(currentSequence < currentSession.sequences.length);
+			Debug.Assert(currentModule < currentSession.sequences[currentSequence].length);
+			
+			sequencesTableModel.setCurrentModule(currentSequence,currentModule);
+			tablePanel.setCurrentModule(currentSession.sequences[currentSequence][currentModule],currentModule);
 		}
 	}
 	
@@ -619,6 +769,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		public void computeNumberOfCycles() {
 			sequences = new GeneralizedID[nModules][];
 			sequences[0] = createBaseSequence();
+			//Vector<GeneralizedID> sortedIDs = sortedID(blocks.keySet());
 			
 			if (sequences[0] == null) {
 				sequences = null;
@@ -643,16 +794,23 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			//showSequences(sequences,sortedIDs);
 			
-			numberOfCycles = 0;
+			Vector<GeneralizedID[]> nonNullSequences = new Vector<>();
 			for (int i=0; i<nModules; ++i) {
 				boolean isNull = true;
-				for (int j=0; j<nModules; ++j)
-					if (sequences[i][j]!=null) { isNull = false; break; }
-				if (isNull)
-					sequences[i] = null;
-				else
-					++numberOfCycles;
+				for (int j=nModules-1; j>=0; --j)
+					if (sequences[i][j]!=null) {
+						if (j<nModules-1)
+							sequences[i] = Arrays.copyOf(sequences[i], j+1);
+						isNull = false;
+						break;
+					}
+				if (!isNull)
+					nonNullSequences.add(sequences[i]);
 			}
+			sequences = nonNullSequences.toArray(new GeneralizedID[nonNullSequences.size()][]);
+			//showSequences(sequences,sortedIDs);
+			
+			numberOfCycles = sequences.length;
 		}
 
 		private GeneralizedID[] createBaseSequence() {
@@ -661,7 +819,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			for (GeneralizedID id:blocks.keySet()) {
 				Session.SessionBlock block = blocks.get(id);
 				for (int i=0; i<block.amount; i++) {
-					Integer pos = block.getInstallPos(i);
+					Integer pos = block.getInstallPos(i,nModules);
 					if (pos==null) return null;
 					baseSequence[pos] = id;
 				}
@@ -678,13 +836,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		@SuppressWarnings("unused")
 		private void showSequences(GeneralizedID[][] sequences, Vector<GeneralizedID> sortedIDs) {
 			SaveViewer.log_ln("Sequences:");
-			for (int i=0; i<nModules; ++i) {
+			for (int i=0; i<sequences.length; ++i) {
 				SaveViewer.log("[%2d] ", i);
 				if (sequences[i] == null)
 					SaveViewer.log_ln(" <null>");
 				else {
 					String str = "";
-					for (int j=0; j<nModules; ++j) {
+					for (int j=0; j<sequences[i].length; ++j) {
 						GeneralizedID id = sequences[i][j];
 						if (id==null) {
 							if (!str.isEmpty()) str += ',';
@@ -930,9 +1088,15 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				installPos = cloneVector(block.installPos,null);
 				installedModules = cloneVector(block.installedModules,InstalledUpgrade::new);
 			}
-			public Integer getInstallPos(int i) {
-				if (i<installPos.size()) return installPos.get(i);
-				return null;
+			public Integer getInstallPos(int i, int nModules) {
+				if (i>=installPos.size())
+					return null;
+				
+				Integer pos = installPos.get(i);
+				if (pos==null || pos<0 || nModules<=pos)
+					return null;
+				
+				return pos;
 			}
 			public void setInstallPos(int i, Integer newPos) {
 				while (i>=installPos.size()) installPos.add(null);
@@ -1018,9 +1182,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private boolean areAllInstallPosDefined() {
 			for (GeneralizedID id:session.blocks.keySet()) {
 				Session.SessionBlock block = session.blocks.get(id);
-				for (int i=0; i<block.amount; i++)
-					if (block.getInstallPos(i)==null)
+				for (int i=0; i<block.amount; i++) {
+					Integer pos = block.getInstallPos(i,session.nModules);
+					if (pos==null)
 						return false;
+				}
 			}
 			return true;
 		}
@@ -1094,12 +1260,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				NonStringRenderer<GeneralizedID> renderer =
 						new NonStringRenderer<GeneralizedID>(obj->{
-							if (obj instanceof GeneralizedID) {
-								GeneralizedID id = (GeneralizedID) obj;
-								String label = id.label;
-								if (label==null || label.isEmpty()) label = id.id;
-								return label;
-							}
+							if (obj instanceof GeneralizedID)
+								return getLabelOrID((GeneralizedID) obj);
 							return "<none>";
 						});
 				cellEditor.setRenderer(renderer);
@@ -1268,7 +1430,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						
 						c.gridx = 1;
 						ButtonGroup bg = new ButtonGroup();
-						Integer pos = block.getInstallPos(i);
+						Integer pos = block.getInstallPos(i,session.nModules);
 						add(SaveViewer.createRadioButton("", bg, pos==null, true, e->setOrder(block,index,null,btns)),c);
 						
 						for (int col=0; col<session.nModules; col++) {
@@ -1294,7 +1456,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					Session.SessionBlock block = session.blocks.get(id);
 					Debug.Assert(id==block.module.moduleID);
 					for (int i=0; i<block.amount; i++) {
-						Integer pos = block.getInstallPos(i);
+						Integer pos = block.getInstallPos(i,session.nModules);
 						if (pos!=null)
 							setEnabled(btns[pos],false);
 					}
@@ -1308,7 +1470,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 
 			private void setOrder(Session.SessionBlock block, int i, Integer newPos, JRadioButton[][] btns) {
-				Integer pos = block.getInstallPos(i);
+				Integer pos = block.getInstallPos(i,session.nModules);
 				if (pos!=null)
 					setEnabled(btns[pos],true);
 				
@@ -1348,28 +1510,22 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				SaveViewer.append_ln(numberOfCyclesOutput, "    ##  Dummy Module");
 				
 				SaveViewer.append_ln(numberOfCyclesOutput, "Sequences:  [%d]", session.numberOfCycles);
-				for (int i=0; i<session.nModules; ++i) {
-					if (session.sequences[i]!=null) {
-						SaveViewer.append(numberOfCyclesOutput, "[%2d] ", i+1);
-						String str = "";
-						boolean isEnd = true;
-						for (int j=session.nModules-1; j>=0; --j) {
-							GeneralizedID id = session.sequences[i][j];
-							if (id==null) {
-								if (!isEnd) {
-									if (!str.isEmpty()) str = ' '+str;
-									str = "##"+str; 
-								}
-							} else {
-								isEnd = false;
-								if (!str.isEmpty()) str = ' '+str;
-								int index = sortedIDs.indexOf(id);
-								Debug.Assert(index>=0);
-								str = String.format("%2d%s", index+1, str); 
-							}
+				for (int i=0; i<session.sequences.length; ++i) {
+					SaveViewer.append(numberOfCyclesOutput, "[%2d] ", i+1);
+					String str = "";
+					for (int j=0; j<session.sequences[i].length; ++j) {
+						GeneralizedID id = session.sequences[i][j];
+						if (id==null) {
+							if (!str.isEmpty()) str += ' ';
+							str += "##"; 
+						} else {
+							if (!str.isEmpty()) str += ' ';
+							int index = sortedIDs.indexOf(id);
+							Debug.Assert(index>=0);
+							str += String.format("%2d", index+1); 
 						}
-						SaveViewer.append_ln(numberOfCyclesOutput, str);
 					}
+					SaveViewer.append_ln(numberOfCyclesOutput, str);
 				}
 			}
 		}
@@ -1443,7 +1599,32 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 	}
 
-	private class TablePanel extends JScrollPane {
+	private final class ModulePanel extends JPanel {
+		private static final long serialVersionUID = -1655733521106002871L;
+
+		ModulePanel() {
+			super(new GridBagLayout());
+		}
+		
+		public void updateModules(Vector<GeneralizedID> modules) {
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.gridwidth = GridBagConstraints.REMAINDER;
+			c.weightx = 1;
+			c.insets = new Insets(0,5,2,5);
+			removeAll();
+			for (int i=0; i<modules.size(); i++) {
+				GeneralizedID module = modules.get(i);
+				String text = String.format("[%d] %s", i+1, module.getName());
+				JLabel label = new JLabel(text,JLabel.LEFT);
+				add(label,c);
+			}
+			revalidate();
+			repaint();
+		}
+	}
+
+	private final class TablePanel extends JScrollPane {
 		private static final long serialVersionUID = -1092343150495411023L;
 		
 		private JPanel tablePanel;
@@ -1462,6 +1643,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			setPreferredSize(new Dimension(600,500));
 		}
 	
+		public void clearCurrentModule() {
+			tables.forEach((id,tableModel)->tableModel.clearCurrentModule());
+		}
+
+		public void setCurrentModule(GeneralizedID currentModule, int currentModuleIndex) {
+			tables.forEach((id,tableModel)->tableModel.setCurrentModule(id==currentModule ? currentModuleIndex : -1));
+		}
+
 		private void updateTables() {
 			tablePanel.removeAll();
 			tables.clear();
@@ -1494,12 +1683,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				tableScrollPane.setWheelScrollingEnabled(false);
 				tableScrollPane.addMouseWheelListener(e->scrollTables(e.getPreciseWheelRotation()));
-				tableScrollPane.setBorder(
-					BorderFactory.createCompoundBorder(
-						BorderFactory.createTitledBorder(id.getName()),
-						BorderFactory.createLineBorder(Color.GRAY)
-					)
-				);
+				tableScrollPane.setBorder( SaveViewer.createTitledBorderForScrollPane(id.getName()) );
 				
 				tablePanel.add(tableScrollPane);
 			}
@@ -1683,254 +1867,44 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 
-	private static final class InstalledModulesTableModel implements TableModel {
-
-		private static final String CELLEDITORVALUE_ACTIVATED = "akt.";
-		private static final String CELLEDITORVALUE_NOTACTIVATED = "";
-		private static final int COLUMN_INDEX  = 0;
-		private static final int COLUMN_LABEL1 = COLUMN_INDEX +1;
-		private static final int COLUMN_LABEL2 = COLUMN_LABEL1+1;
-		private static final int STANDARD_COLUMNS = COLUMN_LABEL2+1;
+	private static abstract class AbstractTableModel implements TableModel {
 		
-		private JTable table;
 		private Vector<TableModelListener> tableModelListeners;
+		protected JTable table;
 		
-		private Session.SessionBlock block;
-		private int nModules;
-		private TableCellEditor label1CellEditor;
-		private TableCellEditor label2CellEditor;
-		private TableCellEditor cellEditor_Activated;
-		private TableCellEditor cellEditor_Other;
-		private MyTableCellRenderer defaultTableCellRenderer;
-
-		public InstalledModulesTableModel(Session.SessionBlock block, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor) {
-			this.block = block;
-			this.nModules = nModules;
-			this.label1CellEditor = label1CellEditor;
-			this.label2CellEditor = label2CellEditor;
+		protected AbstractTableModel() {
 			tableModelListeners = new Vector<>();
-			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
-			cellEditor_Other = new DefaultCellEditor(new JTextField());
-			defaultTableCellRenderer = new MyTableCellRenderer();
+			table = null;
 		}
-
+		
 		public void setTable(JTable table) {
 			this.table = table;
 			prepareTable();
 		}
-
-		private void forEachColumn(BiConsumer<TableColumn,Integer> action) {
+		
+		protected void forEachColumn(BiConsumer<TableColumn,Integer> action) {
 			TableColumnModel columnModel = table.getColumnModel();
 			for (int i=0; i<columnModel.getColumnCount(); ++i) {
 				TableColumn column = columnModel.getColumn(i);
 				action.accept(column, column.getModelIndex());
 			}
 		}
-
-		private void prepareTable() {
-			setColumnWidths();
-			setCellEditors();
-			setCellRenderers();
-		}
-
-		private void setCellEditors() {
-			forEachColumn((column, columnIndex) -> {
-				if (column==null) return;
-				column.setCellEditor(getCellEditor(columnIndex));
-			});
-		}
-
-		private TableCellEditor getCellEditor(int columnIndex) {
-			switch (columnIndex) {
-			case  COLUMN_INDEX : break;
-			case  COLUMN_LABEL1: return label1CellEditor;
-			case  COLUMN_LABEL2: return label2CellEditor;
-			default:
-				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-				switch (format) {
-				case Activated: return cellEditor_Activated;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: break;
-				}
-				break;
-			}
-			return cellEditor_Other;
-		}
-
-		private void setCellRenderers() {
-			forEachColumn((column, columnIndex) -> {
-				if (column==null) return;
-				column.setCellRenderer(defaultTableCellRenderer);
-			});
-		}
 		
-		private class MyTableCellRenderer extends DefaultTableCellRenderer {
-			private static final long serialVersionUID = 7128510133641722765L;
-
-			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
-				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
-				if (component instanceof JLabel) {
-					JLabel label = (JLabel) component;
-					int alignment = JLabel.LEFT;
-					
-					switch (columnIndex) {
-					case  COLUMN_INDEX : alignment = JLabel.CENTER; break;
-					case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
-					case  COLUMN_LABEL2: alignment = JLabel.LEFT; break;
-					default:
-						KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-						switch (format) {
-						case Activated: alignment = JLabel.CENTER; break;
-						case FloatPlus: 
-						case Lightyears:
-						case PercentMinus:
-						case PercentPlus:
-							alignment = JLabel.RIGHT;
-							if (value instanceof Float)
-								label.setText(format.getFormatedValue((Float) value));
-							break;
-						}
-						break;
-					}
-					
-					label.setHorizontalAlignment(alignment);
-				}
-				return component;
-			}
-		}
-
-		private void setColumnWidths() {
+		protected abstract void prepareTable();
+		protected abstract int getPrefColumnWidth(int columnIndex);
+		
+		public void setColumnWidths() {
 			forEachColumn((column, columnIndex) -> {
 				if (column==null) return;
-				switch (columnIndex) {
-				case  COLUMN_INDEX : setColumnWidths(column, 20, 30); break;
-				case  COLUMN_LABEL1: setColumnWidths(column, 20,150); break;
-				case  COLUMN_LABEL2: setColumnWidths(column, 20,150); break;
-				default: setColumnWidths(column, 20, 70); break;
-				}
+				int prefWidth = getPrefColumnWidth(columnIndex);
+				setColumnWidths(column, 20, prefWidth, prefWidth);
 			});
 		}
 
-		private void setColumnWidths(TableColumn column, int minWidth, int prefWidth) {
+		protected void setColumnWidths(TableColumn column, int minWidth, int prefWidth, int currentWidth) {
 			column.setMinWidth(minWidth);
 			column.setPreferredWidth(prefWidth);
-			column.setWidth(prefWidth);
-		}
-
-		@Override public int getRowCount   () { return nModules; }
-		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size(); }
-		
-		private KnownModule.ValueDefinition getVD(int columnIndex) {
-			int index = columnIndex-STANDARD_COLUMNS;
-			if (index<0 || index>=block.module.values.size()) return null;
-			return block.module.values.get(index);
-		}
-
-		@Override
-		public String getColumnName(int columnIndex) {
-			switch (columnIndex) {
-			case COLUMN_INDEX : return "#";
-			case COLUMN_LABEL1: return "Label 1";
-			case COLUMN_LABEL2: return "Label 2";
-			default: return getVD(columnIndex).label;
-			}
-		}
-
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			switch (columnIndex) {
-			case COLUMN_INDEX :
-			case COLUMN_LABEL1:
-			case COLUMN_LABEL2:
-				return String.class;
-			default:
-				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-				switch (format) {
-				case Activated: return String.class;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: break;
-				}
-				return Float.class;
-			}
-		}
-
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			InstalledUpgrade upgrade = null;
-			if (rowIndex<block.installedModules.size())
-				upgrade = block.installedModules.get(rowIndex);
-			
-			switch (columnIndex) {
-			case COLUMN_INDEX : return String.format("[%02d]", rowIndex+1);
-			case COLUMN_LABEL1: return upgrade==null ? null : upgrade.label1;
-			case COLUMN_LABEL2: return upgrade==null ? null : upgrade.label2;
-			default:
-				if (upgrade==null) return null;
-				KnownModule.ValueDefinition vd = getVD(columnIndex);
-				Float value = upgrade.values.get(vd);
-				switch (vd.format) {
-				case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: break;
-				}
-				return value;
-			}
-		}
-
-		@Override
-		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			switch (columnIndex) {
-			case COLUMN_INDEX : return false;
-			case COLUMN_LABEL1:
-			case COLUMN_LABEL2:
-			default: return true;
-			}
-		}
-
-		@Override
-		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			InstalledUpgrade upgrade = null;
-			if (rowIndex<block.installedModules.size())
-				upgrade = block.installedModules.get(rowIndex);
-			if (upgrade==null) {
-				while(rowIndex>=block.installedModules.size())
-					block.installedModules.add(null);
-				upgrade = new InstalledUpgrade(block.module);
-				block.installedModules.set(rowIndex,upgrade);
-			}
-			
-			switch (columnIndex) {
-			case COLUMN_INDEX : Debug.Assert(false); break;
-			case COLUMN_LABEL1: upgrade.label1 = (String)aValue; break;
-			case COLUMN_LABEL2: upgrade.label2 = (String)aValue; break;
-			default:
-				KnownModule.ValueDefinition vd = getVD(columnIndex);
-				Float value = null;
-				switch (vd.format) {
-				case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: value = parseFloat((String)aValue); break;
-				}
-				upgrade.values.put(vd, value);
-				break;
-			}
-		}
-
-		private Float parseFloat(String str) {
-			try {
-				return Float.parseFloat(str.replace(',','.'));
-			} catch (NumberFormatException e) {
-				return null;
-			}
+			column.setWidth(currentWidth);
 		}
 
 		@Override public void    addTableModelListener(TableModelListener l) { tableModelListeners.   add(l); }
@@ -1942,7 +1916,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private TableModelEvent createTableModelEvent() {
 			return new TableModelEvent(this);
 		}
-
+	
 		private TableModelEvent createTableModelEvent(int firstRow, int lastRow, int column, int type) {
 			//String typeStr;
 			//switch (type) {
@@ -1954,7 +1928,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			//System.out.printf("new TableModelEvent(this, firstRow:%d, lastRow:%d, column:%d, type:%s)%n", firstRow,lastRow,column,typeStr);
 			return new TableModelEvent(this,firstRow,lastRow,column,type);
 		}
-
+	
 		@SuppressWarnings("unused")
 		public void fireTableUpdate() {
 			fireTableEvent(createTableModelEvent());
@@ -2008,5 +1982,386 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		public void fireTableHeaderAdded() {
 			fireTableHeaderEvent(getColumnCount()-1, TableModelEvent.INSERT);
 		}
+		public void fireTableHeaderChanged() {
+			fireTableHeaderChanged(TableModelEvent.ALL_COLUMNS);
+		}
+		public void fireTableStructureUpdate() {
+			fireTableHeaderChanged();
+		}
+	}
+
+	private static final class InstalledModulesTableModel extends AbstractTableModel {
+	
+		private static final String CELLEDITORVALUE_ACTIVATED = "akt.";
+		private static final String CELLEDITORVALUE_NOTACTIVATED = "";
+		private static final int COLUMN_INDEX  = 0;
+		private static final int COLUMN_LABEL1 = COLUMN_INDEX +1;
+		private static final int COLUMN_LABEL2 = COLUMN_LABEL1+1;
+		private static final int STANDARD_COLUMNS = COLUMN_LABEL2+1;
+		
+		private Session.SessionBlock block;
+		private int nModules;
+		private TableCellEditor label1CellEditor;
+		private TableCellEditor label2CellEditor;
+		private TableCellEditor cellEditor_Activated;
+		private TableCellEditor cellEditor_Other;
+		private MyTableCellRenderer defaultTableCellRenderer;
+		private int currentModule;
+		private boolean isInstalling;
+	
+		public InstalledModulesTableModel(Session.SessionBlock block, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor) {
+			this.block = block;
+			this.nModules = nModules;
+			this.label1CellEditor = label1CellEditor;
+			this.label2CellEditor = label2CellEditor;
+			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
+			cellEditor_Other = new DefaultCellEditor(new JTextField());
+			defaultTableCellRenderer = new MyTableCellRenderer();
+			isInstalling = false;
+			currentModule = -1;
+		}
+	
+		public void clearCurrentModule() {
+			this.isInstalling = false;
+			this.currentModule = -1;
+			table.repaint();
+		}
+
+		public void setCurrentModule(int currentModule) {
+			this.isInstalling = true;
+			this.currentModule = currentModule;
+			table.repaint();
+		}
+
+		@Override
+		protected void prepareTable() {
+			setColumnWidths();
+			setCellEditors();
+			setCellRenderers();
+		}
+	
+		private void setCellEditors() {
+			forEachColumn((column, columnIndex) -> {
+				if (column==null) return;
+				column.setCellEditor(getCellEditor(columnIndex));
+			});
+		}
+	
+		private TableCellEditor getCellEditor(int columnIndex) {
+			switch (columnIndex) {
+			case  COLUMN_INDEX : break;
+			case  COLUMN_LABEL1: return label1CellEditor;
+			case  COLUMN_LABEL2: return label2CellEditor;
+			default:
+				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+				switch (format) {
+				case Activated: return cellEditor_Activated;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: break;
+				}
+				break;
+			}
+			return cellEditor_Other;
+		}
+	
+		private void setCellRenderers() {
+			forEachColumn((column, columnIndex) -> {
+				if (column==null) return;
+				column.setCellRenderer(defaultTableCellRenderer);
+			});
+		}
+		
+		private class MyTableCellRenderer extends DefaultTableCellRenderer {
+			private static final long serialVersionUID = 7128510133641722765L;
+	
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
+				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
+				if (component instanceof JLabel) {
+					JLabel label = (JLabel) component;
+					int alignment = JLabel.LEFT;
+					
+					switch (columnIndex) {
+					case  COLUMN_INDEX : alignment = JLabel.CENTER; break;
+					case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
+					case  COLUMN_LABEL2: alignment = JLabel.LEFT; break;
+					default:
+						KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+						switch (format) {
+						case Activated: alignment = JLabel.CENTER; break;
+						case FloatPlus: 
+						case Lightyears:
+						case PercentMinus:
+						case PercentPlus:
+							alignment = JLabel.RIGHT;
+							if (value instanceof Float)
+								label.setText(format.getFormatedValue((Float) value));
+							break;
+						}
+						break;
+					}
+					
+					label.setHorizontalAlignment(alignment);
+					
+					if (!isSelected) {
+						Color bg = table.getBackground();
+						if (isInstalling) {
+							if (rowIndex == currentModule) bg = COLOR_CURRENTMODULE;
+							else if (currentModule>=0) bg = COLOR_CURRENTSEQUENCE;
+							else bg = COLOR_NOTCURRENTSEQUENCE;
+						}
+						label.setBackground(bg);
+					}
+				}
+				return component;
+			}
+		}
+		
+		@Override
+		protected int getPrefColumnWidth(int columnIndex) {
+			switch (columnIndex) {
+			case  COLUMN_INDEX : return 30;
+			case  COLUMN_LABEL1: return 150;
+			case  COLUMN_LABEL2: return 150;
+			default: return 70;
+			}
+		}
+	
+		@Override public int getRowCount   () { return nModules; }
+		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size(); }
+		
+		private KnownModule.ValueDefinition getVD(int columnIndex) {
+			int index = columnIndex-STANDARD_COLUMNS;
+			if (index<0 || index>=block.module.values.size()) return null;
+			return block.module.values.get(index);
+		}
+	
+		@Override
+		public String getColumnName(int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX : return "#";
+			case COLUMN_LABEL1: return "Label 1";
+			case COLUMN_LABEL2: return "Label 2";
+			default: return getVD(columnIndex).label;
+			}
+		}
+	
+		@Override
+		public Class<?> getColumnClass(int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX :
+			case COLUMN_LABEL1:
+			case COLUMN_LABEL2:
+				return String.class;
+			default:
+				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+				switch (format) {
+				case Activated: return String.class;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: break;
+				}
+				return Float.class;
+			}
+		}
+	
+		@Override
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			InstalledUpgrade upgrade = null;
+			if (rowIndex<block.installedModules.size())
+				upgrade = block.installedModules.get(rowIndex);
+			
+			switch (columnIndex) {
+			case COLUMN_INDEX : return String.format("[%02d]", rowIndex+1);
+			case COLUMN_LABEL1: return upgrade==null ? null : upgrade.label1;
+			case COLUMN_LABEL2: return upgrade==null ? null : upgrade.label2;
+			default:
+				if (upgrade==null) return null;
+				KnownModule.ValueDefinition vd = getVD(columnIndex);
+				Float value = upgrade.values.get(vd);
+				switch (vd.format) {
+				case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: break;
+				}
+				return value;
+			}
+		}
+	
+		@Override
+		public boolean isCellEditable(int rowIndex, int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX : return false;
+			case COLUMN_LABEL1:
+			case COLUMN_LABEL2:
+			default: return true;
+			}
+		}
+	
+		@Override
+		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+			InstalledUpgrade upgrade = null;
+			if (rowIndex<block.installedModules.size())
+				upgrade = block.installedModules.get(rowIndex);
+			if (upgrade==null) {
+				while(rowIndex>=block.installedModules.size())
+					block.installedModules.add(null);
+				upgrade = new InstalledUpgrade(block.module);
+				block.installedModules.set(rowIndex,upgrade);
+			}
+			
+			switch (columnIndex) {
+			case COLUMN_INDEX : Debug.Assert(false); break;
+			case COLUMN_LABEL1: upgrade.label1 = (String)aValue; break;
+			case COLUMN_LABEL2: upgrade.label2 = (String)aValue; break;
+			default:
+				KnownModule.ValueDefinition vd = getVD(columnIndex);
+				Float value = null;
+				switch (vd.format) {
+				case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
+				case FloatPlus:
+				case Lightyears:
+				case PercentMinus:
+				case PercentPlus: value = parseFloat((String)aValue); break;
+				}
+				upgrade.values.put(vd, value);
+				break;
+			}
+		}
+	
+		private Float parseFloat(String str) {
+			try {
+				return Float.parseFloat(str.replace(',','.'));
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
+	}
+
+	private final static class SequencesTableModel extends AbstractTableModel {
+	
+		private HashMap<GeneralizedID,Integer> modules;
+		private GeneralizedID[][] sequences = null;
+		private int currentSequence = -1;
+		private int currentModule = -1;
+		private TableCellRenderer defaultTableCellRenderer = null;
+		private int nModules = 0;
+
+		SequencesTableModel() {
+			modules = new HashMap<>();
+			defaultTableCellRenderer = new SequencesTableCellRenderer();
+		}
+		
+		private class SequencesTableCellRenderer extends DefaultTableCellRenderer {
+			private static final long serialVersionUID = 4603754735459741145L;
+
+			@Override
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
+				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
+				if (component instanceof JLabel) {
+					JLabel label = (JLabel) component;
+					
+					if (columnIndex==currentSequence) label.setHorizontalAlignment(JLabel.LEFT);
+					else  label.setHorizontalAlignment(JLabel.CENTER);
+					
+					if (!isSelected) {
+						Color background = table.getBackground();
+						if (currentSequence>=0) {
+							if (currentSequence==columnIndex) {
+								if (currentModule==rowIndex) background = COLOR_CURRENTMODULE;
+								else background = COLOR_CURRENTSEQUENCE;
+							} else background = COLOR_NOTCURRENTSEQUENCE;
+						}
+						label.setBackground(background);
+					}
+					
+				}
+				return component;
+			}
+			
+		}
+		
+		public void clearCurrentModule() {
+			setCurrentModule(-1,-1);
+		}
+		
+		public void setCurrentModule(int currentSequence, int currentModule) {
+			this.currentSequence = currentSequence;
+			this.currentModule = currentModule;
+			fireTableStructureUpdate();
+		}
+
+		@Override
+		protected void prepareTable() {
+			setColumnWidths();
+			setCellRenderers();
+		}
+
+		@Override protected int getPrefColumnWidth(int columnIndex) {
+			if (columnIndex==currentSequence) return 170;
+			return 35;
+		}
+		
+		private void setCellRenderers() {
+			forEachColumn((column, columnIndex) -> {
+				if (column==null) return;
+				column.setCellRenderer(defaultTableCellRenderer);
+			});
+		}
+
+		public void updateSequences(Vector<GeneralizedID> modules, GeneralizedID[][] sequences, int nModules) {
+			this.nModules = nModules;
+			currentSequence = -1;
+			currentModule = -1;
+			
+			this.modules.clear();
+			for (int i=0; i<modules.size(); i++) {
+				GeneralizedID module = modules.get(i);
+				Debug.Assert(module!=null);
+				this.modules.put(module,i);
+			}
+			this.sequences = sequences;
+			fireTableHeaderChanged();
+			
+			Dimension size = table.getPreferredSize();
+			table.setPreferredScrollableViewportSize(size);
+		}
+
+		@Override public int getRowCount   () { return nModules; }
+		@Override public int getColumnCount() { return sequences==null ? 0 : sequences.length; }
+		@Override public Class<?> getColumnClass(int c) { return String.class; }
+		@Override public boolean isCellEditable(int r, int c) { return false; }
+		@Override public void setValueAt(Object v, int r, int c) {}
+	
+		@Override public String getColumnName(int columnIndex) {
+			if (columnIndex==currentSequence) return String.format("Sequence %d", columnIndex+1);
+			return String.format("Seq%d", columnIndex+1);
+		}
+	
+		@Override public Object getValueAt(int rowIndex, int columnIndex) {
+			if (sequences==null) return null;
+			
+			if (columnIndex<0 || sequences.length<=columnIndex) return null;
+			GeneralizedID[] sequence = sequences[columnIndex];
+			
+			if (rowIndex<0 || sequence.length<=rowIndex) return null;
+			GeneralizedID id = sequence[rowIndex];
+			if (id==null) {
+				if (columnIndex==currentSequence) return "Dummy";
+				return "DD";
+			}
+			
+			Integer index = modules.get(id);
+			String label = index==null ? "??" : String.format("[%d]", index+1);
+			if (columnIndex==currentSequence) label += " "+getLabelOrID(id);
+			
+			return label;
+		}
+	
 	}
 }
