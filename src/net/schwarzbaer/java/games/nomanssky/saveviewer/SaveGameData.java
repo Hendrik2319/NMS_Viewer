@@ -1546,12 +1546,7 @@ public class SaveGameData {
 						slots[x][y] = slot;
 						
 						if (slot.type!=null && slot.idStr!=null) {
-							IDMap map = null;
-							switch(slot.type) {
-							case Product   : map = GameInfos.productIDs;   break;
-							case Technology: map = GameInfos.techIDs;      break;
-							case Substance : map = GameInfos.substanceIDs; break;
-							}
+							IDMap map = slot.getIDMap();
 							if (map!=null) {
 								slot.id = map.get(slot.idStr,source,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
 								slot.id.getUsage(source).addInventoryUsage(inventoryLabel,x,y);
@@ -1673,6 +1668,16 @@ public class SaveGameData {
 						this(isEmpty);
 						this.indexX = indexX;
 						this.indexY = indexY;
+					}
+
+					public IDMap getIDMap() {
+						if (type!=null)
+							switch(type) {
+							case Product   : return GameInfos.productIDs;
+							case Technology: return GameInfos.techIDs;
+							case Substance : return GameInfos.substanceIDs;
+							}
+						return null;
 					}
 		
 		//			public SaveGameData getSource() {

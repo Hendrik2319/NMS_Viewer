@@ -41,6 +41,7 @@ import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.activation.DataHandler;
 import javax.swing.AbstractButton;
@@ -1400,10 +1401,16 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
-		return createCheckbox(title, l, null, null, isSelected, true);
+		return createCheckbox(title, l, isSelected, true);
+	}
+	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected, boolean enabled) {
+		return createCheckbox(title, l, null, null, isSelected, enabled);
 	}
 	public static JCheckBox createCheckbox(String title, boolean isSelected, Consumer<Boolean> selectionChanged) {
-		return createCheckbox(title, null, null, isSelected, true, selectionChanged);
+		return createCheckbox(title, isSelected, true, selectionChanged);
+	}
+	public static JCheckBox createCheckbox(String title, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
+		return createCheckbox(title, null, null, isSelected, enabled, selectionChanged);
 	}
 	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
 		JCheckBox button = new JCheckBox(title,isSelected);
@@ -1423,26 +1430,70 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static JTextField createTextField(String txt, Consumer<String> setInput) {
-		return createTextField(txt, null, null, setInput);
+		return setTextField(new JTextField(txt), null, null, setInput);
+	}
+	public static JTextField createTextField(String txt, int columns, Consumer<String> setInput) {
+		return setTextField(new JTextField(txt,columns), null, null, setInput);
 	}
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
-		JTextField obj = new JTextField(txt);
-		ActionListener listener = setInput==null ? null : e->setInput.accept(obj.getText());
-		setTextField(obj, listener, disabler, actionCommand);
-		return obj;
+		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
+	}
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
+		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
+	}
+
+	public static JTextField createTextField(String txt, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt), null, null, setInput);
+	}
+	public static JTextField createTextField(String txt, int columns, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt,columns), null, null, setInput);
+	}
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
+	}
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
 	}
 
 	public static JTextField createTextField(String txt, ActionListener l) {
-		return createTextField(txt, l, null, null);
+		return setTextField(new JTextField(txt), l, null, null);
+	}
+	public static JTextField createTextField(String txt, int columns, ActionListener l) {
+		return setTextField(new JTextField(txt,columns), l, null, null);
+	}
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		return setTextField(new JTextField(txt), listener, disabler, actionCommand);
+	}
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		return setTextField(new JTextField(txt,columns), listener, disabler, actionCommand);
 	}
 	
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		JTextField obj = new JTextField(txt);
-		setTextField(obj, listener, disabler, actionCommand);
-		return obj;
+	private static class Setter implements ActionListener {
+		private JTextField comp;
+		private Function<String, String> setInput;
+		private boolean ignoreEvent;
+		Setter(JTextField comp, Function<String,String> setInput) {
+			this.comp = comp;
+			this.setInput = setInput;
+			ignoreEvent = false;
+		}
+		@Override public void actionPerformed(ActionEvent e) {
+			if (ignoreEvent) return;
+			ignoreEvent = true;
+			comp.setText( setInput.apply( comp.getText() ) );
+			ignoreEvent = false;
+		}
 	}
 
-	private static <AC extends Enum<AC>> void setTextField(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
+		ActionListener listener = setInput==null ? null : new Setter(comp,setInput);
+		return setTextField(comp, listener, disabler, actionCommand);
+	}
+	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
+		ActionListener listener = setInput==null ? null : e->setInput.accept(comp.getText());
+		return setTextField(comp, listener, disabler, actionCommand);
+	}
+	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
 		setComp(comp,listener,disabler,actionCommand, true);
 		if (listener!=null) {
 			comp.addFocusListener(new FocusListener() {
@@ -1457,6 +1508,7 @@ public class SaveViewer implements ActionListener {
 				}
 			});
 		}
+		return comp;
 	}
 	
 	public static CompoundBorder createTitledBorderForScrollPane(String title) {

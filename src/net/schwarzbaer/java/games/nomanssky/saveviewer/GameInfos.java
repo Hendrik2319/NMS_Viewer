@@ -11,8 +11,6 @@ import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
@@ -51,14 +49,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.table.TableCellEditor;
 
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.gui.Tables.NonStringRenderer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Type;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Usage;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -817,12 +815,18 @@ public class GameInfos {
 	public static class IDMap {
 		private final HashMap<String, GeneralizedID> map;
 		private final String label;
+		private final TemplateList templateList;
 		
 		public IDMap(String label) {
 			this.label = label;
 			map = new HashMap<>();
+			templateList = new TemplateList();
 		}
 		
+		public TemplateList getTemplateList() {
+			return templateList;
+		}
+
 		public String getLabel() {
 			return label;
 		}
@@ -851,7 +855,7 @@ public class GameInfos {
 //			map.put(id, generalizedID);
 //		}
 		
-		public GeneralizedID get(String id, SaveGameData source, Usage.Type usageType) {
+		public GeneralizedID get(String id, SaveGameData source, GeneralizedID.Usage.Type usageType) {
 			GeneralizedID generalizedID = get(id);
 			generalizedID.getUsage(source).addGeneralUsage(usageType);
 			generalizedID.isObsolete = false;
@@ -878,55 +882,125 @@ public class GameInfos {
 		loadIDsFromFile(FileExport.FILE_TECH_ID     ,techIDs     ,"technology");
 		loadIDsFromFile(FileExport.FILE_SUBSTANCE_ID,substanceIDs,"substance" );
 	}
+	
+	private enum IDFileBlock { Templates, IDs }
 	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
 		File file = new File(filePath);
 		if (!file.isFile()) return;
 		
 		long start = System.currentTimeMillis();
 		SaveViewer.log_ln("Read "+idLabel+" IDs from file \""+filePath+"\"...");
-		String str;
+		String line;
+		IDFileBlock currentBlock = IDFileBlock.IDs;
+		GeneralizedIDTemplate template = null;
+		
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			while ((str=in.readLine())!=null) {
-				int pos = str.indexOf('=');
-				if (pos<0) continue;
+			while ((line=in.readLine())!=null) {
 				
-				String idStr = str.substring(0, pos);
-				String value = str.substring(pos+1);
+				switch (line) {
+				case "[Templates]": currentBlock = IDFileBlock.Templates; break;
+				case "[IDs]"      : currentBlock = IDFileBlock.IDs; break;
+				}
 				
-				if (idStr.endsWith(".obsolete")) {
-					idStr = idStr.substring(0, idStr.length()-".obsolete".length());
-					GeneralizedID id = map.get(idStr);
-					id.isObsolete = true;
-				}
-				else if (idStr.endsWith(".type")) {
-					idStr = idStr.substring(0, idStr.length()-".type".length());
-					GeneralizedID id = map.get(idStr);
-					id.type = GeneralizedID.Type.getType(value);
-				}
-				else if (idStr.endsWith(".symbol")) {
-					idStr = idStr.substring(0, idStr.length()-".symbol".length());
-					GeneralizedID id = map.get(idStr);
-					id.setSymbol(value);
-				}
-				else if (idStr.endsWith(".image")) {
-					idStr = idStr.substring(0, idStr.length()-".image".length());
-					GeneralizedID id = map.get(idStr);
-					id.setImageFileName(value);
-				}
-				else if (idStr.endsWith(".imageBG")) {
-					idStr = idStr.substring(0, idStr.length()-".imageBG".length());
-					GeneralizedID id = map.get(idStr);
-					try { id.setImageBG(Integer.parseInt(value,16)); }
-					catch (NumberFormatException e) {}
-				}
-				else if (idStr.endsWith(".upgradeClass")) {
-					idStr = idStr.substring(0, idStr.length()-".upgradeClass".length());
-					GeneralizedID id = map.get(idStr);
-					id.upgradeClass = GeneralizedID.UpgradeClass.parseValue(value);
-				}
-				else if (idStr.indexOf('.')<0) {
-					GeneralizedID id = map.get(idStr);
-					id.setLabel(value);
+				switch (currentBlock) {
+				
+				case Templates: {
+					if (line.isEmpty()) {
+						if (template!=null) map.templateList.add(template);
+						template = null;
+					}
+					if (line.startsWith("MinValues=")) {
+						if (template!=null) map.templateList.add(template);
+						String str = line.substring("MinValues=".length());
+						try {
+							int minValues = Integer.parseInt(str);
+							template = new GeneralizedIDTemplate(minValues);
+						} catch (NumberFormatException e) {
+							SaveViewer.log_error_ln("Can't parse Templates.MinValues as integer in \"%s\"", str);
+							template = null;
+						}
+					}
+					if (line.startsWith("Label=") && template!=null) {
+						String str = line.substring("Label=".length());
+						template.label = str;
+					}
+					if (line.startsWith("Symbol=") && template!=null) {
+						String str = line.substring("Symbol=".length());
+						template.symbol = str;
+					}
+					if (line.startsWith("Type=") && template!=null) {
+						String str = line.substring("Type=".length());
+						try { template.type = GeneralizedID.Type.valueOf(str); }
+						catch (Exception e) {
+							SaveViewer.log_error_ln("Can't parse Templates.Type as GeneralizedID.Type in \"%s\"", str);
+							template.type = null;
+						}
+					}
+					if (line.startsWith("UpgradeClass=") && template!=null) {
+						String str = line.substring("UpgradeClass=".length());
+						try { template.upgradeClass = GeneralizedID.UpgradeClass.valueOf(str); }
+						catch (Exception e) {
+							SaveViewer.log_error_ln("Can't parse Templates.UpgradeClass as GeneralizedID.UpgradeClass in \"%s\"", str);
+							template.upgradeClass = null;
+						}
+					}
+					if (line.startsWith("Image=") && template!=null) {
+						String str = line.substring("Image=".length());
+						template.imageFileName = str;
+					}
+					if (line.startsWith("Background=") && template!=null) {
+						String str = line.substring("Background=".length());
+						try { template.imageBackground = Integer.parseInt(str, 16); }
+						catch (NumberFormatException e) {
+							SaveViewer.log_error_ln("Can't parse Templates.Background as hex integer in \"%s\"", str);
+							template.imageBackground = null;
+						}
+					}
+				} break;
+					
+				case IDs: {
+					int pos = line.indexOf('=');
+					if (pos<0) continue;
+					
+					String idStr = line.substring(0, pos);
+					String value = line.substring(pos+1);
+					
+					if (idStr.endsWith(".obsolete")) {
+						idStr = idStr.substring(0, idStr.length()-".obsolete".length());
+						GeneralizedID id = map.get(idStr);
+						id.isObsolete = true;
+					}
+					else if (idStr.endsWith(".type")) {
+						idStr = idStr.substring(0, idStr.length()-".type".length());
+						GeneralizedID id = map.get(idStr);
+						id.type = GeneralizedID.Type.getType(value);
+					}
+					else if (idStr.endsWith(".symbol")) {
+						idStr = idStr.substring(0, idStr.length()-".symbol".length());
+						GeneralizedID id = map.get(idStr);
+						id.setSymbol(value);
+					}
+					else if (idStr.endsWith(".image")) {
+						idStr = idStr.substring(0, idStr.length()-".image".length());
+						GeneralizedID id = map.get(idStr);
+						id.setImageFileName(value);
+					}
+					else if (idStr.endsWith(".imageBG")) {
+						idStr = idStr.substring(0, idStr.length()-".imageBG".length());
+						GeneralizedID id = map.get(idStr);
+						try { id.setImageBG(Integer.parseInt(value,16)); }
+						catch (NumberFormatException e) {}
+					}
+					else if (idStr.endsWith(".upgradeClass")) {
+						idStr = idStr.substring(0, idStr.length()-".upgradeClass".length());
+						GeneralizedID id = map.get(idStr);
+						id.upgradeClass = GeneralizedID.UpgradeClass.parseValue(value);
+					}
+					else if (idStr.indexOf('.')<0) {
+						GeneralizedID id = map.get(idStr);
+						id.setLabel(value);
+					}
+				} break;
 				}
 			}
 		}
@@ -966,6 +1040,21 @@ public class GameInfos {
 		
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+			if (!map.templateList.isEmpty()) {
+				out.println("[Templates]");
+				map.templateList.forEachSorted(template->{
+					out.printf("MinValues=%d%n", template.minValues);
+					if (template.label          !=null) out.printf("Label=%s%n"       , template.label          );
+					if (template.symbol         !=null) out.printf("Symbol=%s%n"      , template.symbol         );
+					if (template.type           !=null) out.printf("Type=%s%n"        , template.type           );
+					if (template.upgradeClass   !=null) out.printf("UpgradeClass=%s%n", template.upgradeClass   );
+					if (template.imageFileName  !=null) out.printf("Image=%s%n"       , template.imageFileName  );
+					if (template.imageBackground!=null) out.printf("Background=%06X%n", template.imageBackground);
+					out.println();
+				});
+			}
+			
+			out.println("[IDs]");
 			for (String idStr:map.getSortedKeys()) {
 				GeneralizedID id = map.get(idStr);
 				out.printf("%s=%s\r\n",idStr,id.getLabel());
@@ -981,8 +1070,221 @@ public class GameInfos {
 		
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
+	
+	private static class CreateTemplateDialog extends StandardDialog {
+		private static final long serialVersionUID = -3032594452167487654L;
+		
+		private int minValues;
+		private boolean useLabel;
+		private boolean useSymbol;
+		private boolean useType;
+		private boolean useUpgradeClass;
+		private boolean useImageFileName;
+		private boolean useImageBackground;
+		private JButton btnOk;
+		
+		private GeneralizedIDTemplate result;
 
-	public static class GeneralizedID {
+		public CreateTemplateDialog(Window parent, String title, GeneralizedID id, TemplateList list) {
+			super(parent, title);
+			result = null;
+			minValues = 2;
+			
+			JPanel contentPane = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.gridx = 0;
+			c.gridwidth = 2;
+			boolean en;
+			c.gridy = 0; en = useLabel          =(null!=id.label          ); contentPane.add(SaveViewer.createCheckbox("use Label"       , en, en, b->{ useLabel          =b; check(id,list); }),c);
+			c.gridy = 1; en = useSymbol         =(null!=id.symbol         ); contentPane.add(SaveViewer.createCheckbox("use Symbol"      , en, en, b->{ useSymbol         =b; check(id,list); }),c);
+			c.gridy = 2; en = useType           =(null!=id.type           ); contentPane.add(SaveViewer.createCheckbox("use Type"        , en, en, b->{ useType           =b; check(id,list); }),c);
+			c.gridy = 3; en = useUpgradeClass   =(null!=id.upgradeClass   ); contentPane.add(SaveViewer.createCheckbox("use UpgradeClass", en, en, b->{ useUpgradeClass   =b; check(id,list); }),c);
+			c.gridy = 4; en = useImageFileName  =(null!=id.imageFileName  ); contentPane.add(SaveViewer.createCheckbox("use Image"       , en, en, b->{ useImageFileName  =b; check(id,list); }),c);
+			c.gridy = 5; en = useImageBackground=(null!=id.imageBackground); contentPane.add(SaveViewer.createCheckbox("use Background"  , en, en, b->{ useImageBackground=b; check(id,list); }),c);
+			c.gridwidth = 1;
+			c.gridy = 6;
+			contentPane.add(new JLabel("Min. Number of Values: "),c);
+			c.gridx = 1;
+			contentPane.add(SaveViewer.createTextField(Integer.toString(minValues), 5, (String str)->{
+				try { minValues = Integer.parseInt(str); }
+				catch (NumberFormatException e1) {}
+				return Integer.toString(minValues);
+			}),c);
+			
+			createGUI(contentPane,
+				btnOk = SaveViewer.createButton("Ok", e->{ result = createTemplate(id); closeDialog(); }),
+				SaveViewer.createButton("Cancel", e->{ closeDialog(); })
+			);
+		}
+
+		public GeneralizedIDTemplate getResult() {
+			return result;
+		}
+
+		private GeneralizedIDTemplate createTemplate(GeneralizedID id) {
+			return new GeneralizedIDTemplate(
+				minValues,
+				!useLabel           ? null : id.label,
+				!useSymbol          ? null : id.symbol,
+				!useType            ? null : id.type,
+				!useUpgradeClass    ? null : id.upgradeClass,
+				!useImageFileName   ? null : id.imageFileName,
+				!useImageBackground ? null : id.imageBackground
+			);
+		}
+
+		private void check(GeneralizedID id, TemplateList list) {
+			btnOk.setEnabled(!list.contains(createTemplate(id)));
+		}
+		
+	}
+	
+	private static class TemplateList {
+		private final Vector<GeneralizedIDTemplate> list;
+		
+		TemplateList() {
+			list = new Vector<>();
+		}
+		
+		public boolean isEmpty() {
+			return list.isEmpty();
+		}
+		
+		@SuppressWarnings("unused")
+		public void forEach(Consumer<? super GeneralizedIDTemplate> action) {
+			list.forEach(action);
+		}
+		public void forEachSorted(Consumer<? super GeneralizedIDTemplate> action) {
+			Vector<GeneralizedIDTemplate> vec = new Vector<>(list);
+			vec.sort(null);
+			vec.forEach(action);
+		}
+
+		boolean contains(GeneralizedIDTemplate newTemplate) {
+			for (GeneralizedIDTemplate template:list) {
+				if (template.equals(newTemplate))
+					return true;
+			}
+			return false;
+		}
+		
+		boolean add(GeneralizedIDTemplate newTemplate) {
+			if (contains(newTemplate)) return false;
+			list.add(newTemplate);
+			return true;
+		}
+		
+		GeneralizedIDTemplate get(GeneralizedID id) {
+			GeneralizedIDTemplate result = null;
+			for (GeneralizedIDTemplate template:list) {
+				if (template.fitsTo(id)) {
+					if (result==null) result = template; // 1st hit is ok
+					else return null; // 2nd hit is not
+				}
+			}
+			return result;
+		}
+	}
+
+	private static class GeneralizedIDProto {
+		public String label;
+		public String symbol;
+		public GeneralizedID.Type type;
+		public GeneralizedID.UpgradeClass upgradeClass;
+		protected String imageFileName;
+		protected Integer imageBackground;
+		
+		protected GeneralizedIDProto(String label, String symbol,
+				net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Type type,
+				UpgradeClass upgradeClass, String imageFileName, Integer imageBackground) {
+			this.label = label;
+			this.symbol = symbol;
+			this.type = type;
+			this.upgradeClass = upgradeClass;
+			this.imageFileName = imageFileName;
+			this.imageBackground = imageBackground;
+		}
+		protected GeneralizedIDProto(GeneralizedIDProto id) {
+			this(id.label, id.symbol, id.type, id.upgradeClass, id.imageFileName, id.imageBackground);
+		}
+		
+		boolean equals(GeneralizedIDProto other) {
+			if (!equals(this.label          , other.label          )) return false;
+			if (!equals(this.symbol         , other.symbol         )) return false;
+			if (!equals(this.type           , other.type           )) return false;
+			if (!equals(this.upgradeClass   , other.upgradeClass   )) return false;
+			if (!equals(this.imageFileName  , other.imageFileName  )) return false;
+			if (!equals(this.imageBackground, other.imageBackground)) return false;
+			return true;
+		}
+		
+		<V> boolean equals(V v1, V v2) {
+			if (v1==null && v2==null) return true;
+			if (v1==null || v2==null) return false;
+			return v1.equals(v2);
+		}
+		protected int compareTo(GeneralizedIDProto other) {
+			int val = 0;
+			if (val==0 && this.label          !=null) val = label          .compareTo(other.label          );
+			if (val==0 && this.symbol         !=null) val = symbol         .compareTo(other.symbol         );
+			if (val==0 && this.type           !=null) val = type           .compareTo(other.type           );
+			if (val==0 && this.upgradeClass   !=null) val = upgradeClass   .compareTo(other.upgradeClass   );
+			if (val==0 && this.imageFileName  !=null) val = imageFileName  .compareTo(other.imageFileName  );
+			if (val==0 && this.imageBackground!=null) val = imageBackground.compareTo(other.imageBackground);
+			return val;
+		}
+	}
+
+	private static class GeneralizedIDTemplate extends GeneralizedIDProto implements Comparable<GeneralizedIDTemplate> {
+		int minValues;
+		
+		public GeneralizedIDTemplate(int minValues) {
+			this(minValues,null,null,null,null,null,null);
+		}
+		public GeneralizedIDTemplate(int minValues,
+				String label, String symbol, GeneralizedID.Type type,
+				GeneralizedID.UpgradeClass upgradeClass, String imageFileName, Integer imageBackground) {
+			super(label, symbol, type, upgradeClass, imageFileName, imageBackground);
+			this.minValues = minValues;
+		}
+
+		public GeneralizedIDTemplate(GeneralizedID id, int minValues) {
+			super(id);
+			this.minValues = minValues;
+		}
+
+		boolean fitsTo(GeneralizedID id) {
+			int nValues = 0;
+			if (id.label          !=null) { if (id.label          .equals(label          )) ++nValues; else return false; }
+			if (id.symbol         !=null) { if (id.symbol         .equals(symbol         )) ++nValues; else return false; }
+			if (id.type           !=null) { if (id.type           .equals(type           )) ++nValues; else return false; }
+			if (id.upgradeClass   !=null) { if (id.upgradeClass   .equals(upgradeClass   )) ++nValues; else return false; }
+			if (id.imageFileName  !=null) { if (id.imageFileName  .equals(imageFileName  )) ++nValues; else return false; }
+			if (id.imageBackground!=null) { if (id.imageBackground.equals(imageBackground)) ++nValues; else return false; }
+			return nValues>=minValues;
+		}
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("min="+minValues);
+			if (label          !=null) sb.append(", Lab="  ).append(label          );
+			if (symbol         !=null) sb.append(", Sym="  ).append(symbol         );
+			if (type           !=null) sb.append(", Type=" ).append(type           );
+			if (upgradeClass   !=null) sb.append(", Upgr=" ).append(upgradeClass   );
+			if (imageFileName  !=null) sb.append(", Image=").append(imageFileName  );
+			if (imageBackground!=null) sb.append(", BG="   ).append(imageBackground);
+			return "[ "+sb.toString()+" ]";
+		}
+		@Override
+		public int compareTo(GeneralizedIDTemplate other) {
+			int val = super.compareTo(other);
+			if (val==0) val = this.minValues-other.minValues;
+			return val;
+		}
+	}
+
+	public static class GeneralizedID extends GeneralizedIDProto {
 		
 		public enum Type {
 			MultitoolWeapon           ("Multitool-Waffe"),
@@ -1060,39 +1362,24 @@ public class GameInfos {
 		
 		public final String id;
 		public boolean isObsolete;
-		public String label;
-		public String symbol;
-		public Type type;
-		public UpgradeClass upgradeClass;
-		private String imageFileName;
-		private Integer imageBackground;
 		final HashMap<SaveGameData,Usage> usage;
 		private BufferedImage cachedImage;
 		
 		private GeneralizedID(String id, String label) {
+			super(label,null,null,null,null,null);
 			this.id = id;
 			this.isObsolete = false;
-			this.label = label;
-			this.symbol = null;
-			this.type = null;
-			this.upgradeClass = null;
 			this.usage = new HashMap<>();
-			this.imageFileName = null;
-			this.imageBackground = null;
 			this.cachedImage = null;
 		}
 		public GeneralizedID(String id) {
 			this(id,"");
 		}
 		public GeneralizedID(GeneralizedID other) {
+			super(other);
 			this.id = other.id;
-			this.label = other.label;
-			this.symbol = other.symbol;
-			this.type = other.type;
-			this.upgradeClass = other.upgradeClass;
+			this.isObsolete = other.isObsolete;
 			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
-			this.imageFileName = other.imageFileName;
-			this.imageBackground = other.imageBackground;
 			this.cachedImage = other.cachedImage;
 		}
 		
@@ -1237,7 +1524,7 @@ public class GameInfos {
 				@Override public void setResult(GeneralizedID.Type value) {
 					updateAfterContextMenuAction(setType(value),null);
 				}
-				@Override public void configureMenuItem(JMenuItem menuItem, Type value) {
+				@Override public void configureMenuItem(JMenuItem menuItem, GeneralizedID.Type value) {
 					menuItem.setText(value==null?"<none>":value.label);
 				}
 			};
@@ -1433,10 +1720,10 @@ public class GameInfos {
 			switch(actionCommand) {
 			case EditID: {
 				table.stopCellEditing();
-				EditIdDialog dlg = new EditIdDialog(mainwindow,clickedID);
+				EditIdDialog dlg = new EditIdDialog(mainwindow, clickedID, tableModel.sourceIdMap.templateList);
 				dlg.showDialog();
-				if (dlg.hasDataChanged()) {
-					dlg.transferChangesTo(clickedID);
+				if (dlg.hasIdDataChanged() || dlg.wasIdTemplateAdded()) {
+					if (dlg.hasIdDataChanged()) dlg.transferChangesTo(clickedID);
 					idChanged = true;
 				}
 			} break;
@@ -1635,7 +1922,7 @@ public class GameInfos {
 			for (SaveGameData key:id.usage.keySet()) {
 				textarea.append("\r\n");
 				textarea.append(key.filename+":\r\n");
-				Usage usages = id.usage.get(key);
+				GeneralizedID.Usage usages = id.usage.get(key);
 				if (usages.isEmpty())
 					textarea.append("   none\r\n");
 				for (String str:usages.inventoryUsages) textarea.append("   "+str+"\r\n");
@@ -1848,7 +2135,7 @@ public class GameInfos {
 				case ImgBG   : return SaveViewer.images.getColor( id.getImageBG() );
 				case UpgrCls : return id.upgradeClass;
 				case Usage :
-					Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
+					GeneralizedID.Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
 					if (usage==null) return "";
 					if (usage.isEmpty()) return "";
 					String str = "";;
@@ -1896,154 +2183,170 @@ public class GameInfos {
 	public static class EditIdDialog extends StandardDialog {
 		private static final long serialVersionUID = -4493777651637626630L;
 		
-		private JLabel imageField;
-		private JTextArea textarea;
+		private JLabel imagePreviewField;
+		private JTextArea valueOutput;
 		
+		private TemplateList templateList;
 		private GeneralizedID id;
-		private boolean hasDataChanged;
+		private boolean hasIdDataChanged;
+		private boolean ignoreIdDataChanges;
+		private boolean wasIdTemplateAdded;
 	
 		private Images.ColorListListender colorListListender;
 		private Images.ImageListListener imageListListender;
-	
-		private abstract static class ModifiedJTextField {
-			private JTextField textField;
-			ModifiedJTextField() {
-				textField = new JTextField();
-				textField.setText(getValue());
-				textField.addActionListener(e->setValue(textField.getText()));
-				textField.addFocusListener(new FocusListener() {
-					@Override public void focusGained(FocusEvent e) {}
-					@Override public void focusLost(FocusEvent e) { setValue(textField.getText()); }
-				});
-			}
-			public JTextField getTextField() { return textField; }
-			protected abstract String getValue();
-			protected abstract void setValue(String str);
-		}
+
+		private JTextField txtfldLabel;
+		private JTextField txtfldSymbol;
+
+		private JComboBox<GeneralizedID.Type> cmbbxType;
+		private JComboBox<String> cmbbxBgImage;
+		private JComboBox<Images.NamedColor> cmbbxBgColor;
+		private JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeClass;
 		
-		public EditIdDialog(Window parent, GeneralizedID originalID) {
+		public EditIdDialog(Window parent, GeneralizedID originalID, TemplateList templateList) {
 			super(parent, getDlgTitle(originalID), ModalityType.APPLICATION_MODAL, false);
 			
+			this.templateList = templateList;
 			this.id = new GeneralizedID(originalID);
-			this.hasDataChanged = false;
+			hasIdDataChanged = false;
+			ignoreIdDataChanges = false;
+			wasIdTemplateAdded = false;
 			
-			textarea = new JTextArea();
-			textarea.setEditable(false);
-			JScrollPane textareaScrollPane = new JScrollPane(textarea);
+			valueOutput = new JTextArea();
+			valueOutput.setEditable(false);
+			JScrollPane textareaScrollPane = new JScrollPane(valueOutput);
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
 			
-			JTextField labelTextField = new ModifiedJTextField() {
-				@Override protected String getValue() { return id.getLabel(); }
-				@Override protected void setValue(String str) { id.setLabel(str); setTitle(getDlgTitle(id)); dataChanged(); }
-			}.getTextField();
+			txtfldLabel = SaveViewer.createTextField(
+				id.getLabel(),
+				(String str)->{
+					id.setLabel(str);
+					setTitle(getDlgTitle(id));
+					idDataChanged();
+				}
+			);
 			
-			JTextField symbolTextField = new ModifiedJTextField() {
-				@Override protected String getValue() { return id.getSymbol(); }
-				@Override protected void setValue(String str) { id.setSymbol(str); setTitle(getDlgTitle(id)); dataChanged(); }
-			}.getTextField();
-			symbolTextField.setPreferredSize(new Dimension(50,16));
+			txtfldSymbol = SaveViewer.createTextField(
+				id.getSymbol(),
+				(String str)->{
+					id.setSymbol(str);
+					setTitle(getDlgTitle(id));
+					idDataChanged();
+				}
+			);
 			
-			JComboBox<GeneralizedID.Type> cmbbxTypes = new JComboBox<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
-			cmbbxTypes.setSelectedItem(id.type);
-			cmbbxTypes.addActionListener(e->{
-				id.type = (GeneralizedID.Type)cmbbxTypes.getSelectedItem();
-				dataChanged();
+			cmbbxType = new JComboBox<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
+			cmbbxType.setSelectedItem(id.type);
+			cmbbxType.addActionListener(e->{
+				id.type = (GeneralizedID.Type)cmbbxType.getSelectedItem();
+				idDataChanged();
 			});
-			cmbbxTypes.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
+			cmbbxType.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
 				return ((GeneralizedID.Type)t).label; return null; }));
 			
-			JComboBox<String> cmbbxImages = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
-			cmbbxImages.setSelectedItem(id.getImageFileName());
-			cmbbxImages.addActionListener(e->{ id.setImageFileName((String)cmbbxImages.getSelectedItem()); dataChanged(); });
+			cmbbxBgImage = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
+			cmbbxBgImage.setSelectedItem(id.getImageFileName());
+			cmbbxBgImage.addActionListener(e->{ id.setImageFileName((String)cmbbxBgImage.getSelectedItem()); idDataChanged(); });
 			
 			imageListListender = new Images.ImageListListener() {
 				@Override public void imageListChanged() {
-					cmbbxImages.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(SaveViewer.images.imagesNames)));
-					cmbbxImages.setSelectedItem(id.getImageFileName());
+					cmbbxBgImage.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(SaveViewer.images.imagesNames)));
+					cmbbxBgImage.setSelectedItem(id.getImageFileName());
 				}
 			};
 			
-			JComboBox<Images.NamedColor> cmbbxColors = new JComboBox<Images.NamedColor>(new DefaultComboBoxModel<Images.NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues)));
-			cmbbxColors.setRenderer(new TableView.NamedColorRenderer());
-			cmbbxColors.setSelectedItem(SaveViewer.images.getColor(id.getImageBG()));
-			cmbbxColors.addActionListener(e->{
-				NamedColor namedColor = (Images.NamedColor)cmbbxColors.getSelectedItem();
+			cmbbxBgColor = new JComboBox<Images.NamedColor>(new DefaultComboBoxModel<Images.NamedColor>(SaveViewer.addNull(SaveViewer.images.colorValues)));
+			cmbbxBgColor.setRenderer(new TableView.NamedColorRenderer());
+			cmbbxBgColor.setSelectedItem(SaveViewer.images.getColor(id.getImageBG()));
+			cmbbxBgColor.addActionListener(e->{
+				NamedColor namedColor = (Images.NamedColor)cmbbxBgColor.getSelectedItem();
 				id.setImageBG(namedColor==null?null:namedColor.value);
-				dataChanged();
+				idDataChanged();
 			});
 			
 			colorListListender = new Images.ColorListListender() {
 				@Override public void colorAdded(Images.NamedColor color) {
-					cmbbxColors.addItem(color);
-					cmbbxColors.revalidate();
+					cmbbxBgColor.addItem(color);
+					cmbbxBgColor.revalidate();
 				}
 			};
 			
-			JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeIcon = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
-			cmbbxUpgradeIcon.setRenderer(new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
-			cmbbxUpgradeIcon.setSelectedItem(id.upgradeClass);
-			cmbbxUpgradeIcon.addActionListener(e->{id.upgradeClass=(GeneralizedID.UpgradeClass)cmbbxUpgradeIcon.getSelectedItem(); dataChanged();});
+			cmbbxUpgradeClass = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
+			cmbbxUpgradeClass.setRenderer(new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
+			cmbbxUpgradeClass.setSelectedItem(id.upgradeClass);
+			cmbbxUpgradeClass.addActionListener(e->{id.upgradeClass=(GeneralizedID.UpgradeClass)cmbbxUpgradeClass.getSelectedItem(); idDataChanged();});
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,5,5));
 			buttonPanel.add(createButton("Apply" ,e->{closeDialog();}));
-			buttonPanel.add(createButton("Cancel",e->{hasDataChanged = false; closeDialog();}));
+			buttonPanel.add(createButton("Cancel",e->{hasIdDataChanged = false; closeDialog();}));
+			if (this.templateList!=null)
+				buttonPanel.add(createButton("Define Current Values as Template",e->defineTemplate()));
 			
 			GridBagConstraints c = new GridBagConstraints();
-			GridBagLayout cmbbxPanelLayout = new GridBagLayout();
-			JPanel cmbbxPanel = new JPanel();
-			cmbbxPanel.setLayout(cmbbxPanelLayout);
+			JPanel cmbbxPanel = new JPanel(new GridBagLayout());
 			c.insets = new Insets(1, 0, 1, 0);
 			
-			JButton selectImageButton = createButton("Select Image",e->showImageList(cmbbxImages));
+			JButton selectImageButton = createButton("Select Image",e->showImageList(cmbbxBgImage));
 			JButton    addColorButton = createButton("Add Color"   ,e->SaveViewer.images.showAddColorDialog(EditIdDialog.this,"Add Color"));
 			
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,textareaScrollPane,1,1,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,textareaScrollPane,1,1,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Sym./Label : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,symbolTextField,0,0,1,1, GridBagConstraints.BOTH);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,labelTextField ,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,new JLabel("Label/Sym. : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,c,txtfldLabel ,1,0,1,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,txtfldSymbol,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Type : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxTypes       ,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,new JLabel("Type : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,c,cmbbxType,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Image File : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxImages      ,1,0,2,1, GridBagConstraints.BOTH);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,selectImageButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,new JLabel("Image File : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,c,cmbbxBgImage,1,0,1,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,selectImageButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.HORIZONTAL);
 			
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Background : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxColors   ,1,0,2,1, GridBagConstraints.BOTH);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,addColorButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,new JLabel("Background : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,c,cmbbxBgColor,1,0,1,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,addColorButton,0,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.HORIZONTAL);
 			
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,new JLabel("Upgrade : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
-			addComp(cmbbxPanel,cmbbxPanelLayout,c,cmbbxUpgradeIcon,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addComp(cmbbxPanel,c,new JLabel("Upgrade : ",JLabel.RIGHT),0,0,1,1, GridBagConstraints.HORIZONTAL);
+			addComp(cmbbxPanel,c,cmbbxUpgradeClass,1,0,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
-			imageField = new JLabel();
-			imageField.setBorder(BorderFactory.createEtchedBorder());
-			imageField.setPreferredSize(new Dimension(256,256));
-			imageField.setMinimumSize(new Dimension(256,256));
+			imagePreviewField = new JLabel();
+			imagePreviewField.setBorder(BorderFactory.createEtchedBorder());
+			imagePreviewField.setPreferredSize(new Dimension(256,256));
+			imagePreviewField.setMinimumSize(new Dimension(256,256));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
-			contentPane.add(cmbbxPanel,BorderLayout.WEST);
-			contentPane.add(imageField,BorderLayout.CENTER);
+			contentPane.add(cmbbxPanel,BorderLayout.CENTER);
+			contentPane.add(imagePreviewField,BorderLayout.EAST);
 			contentPane.add(buttonPanel,BorderLayout.SOUTH);
 			
 			showValues();
 			this.createGUI(contentPane);
 		}
 	
+		private void defineTemplate() {
+			if (templateList==null) return;
+			CreateTemplateDialog dlg = new CreateTemplateDialog(this, "Create New Template", id, templateList);
+			dlg.showDialog();
+			GeneralizedIDTemplate template = dlg.getResult();
+			if (template!=null) {
+				boolean successful = templateList.add(template);
+				if (successful) SaveViewer.log_ln("Added a new Template: %s", template);
+				wasIdTemplateAdded |= successful;
+			}
+		}
+
 		private static String getDlgTitle(GeneralizedID id) {
 			return String.format("Set values of ID \"%s\"",id.getName());
 		}
 		
-		private void addComp(JPanel panel, GridBagLayout layout, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
+		private void addComp(JPanel panel, GridBagConstraints c, Component comp, double weightx, double weighty, int gridwidth, int gridheight, int fill) {
 			c.weightx=weightx;
 			c.weighty=weighty;
 			c.gridwidth=gridwidth;
 			c.gridheight=gridheight;
 			c.fill = fill;
-			layout.setConstraints(comp, c);
-			panel.add(comp);
+			panel.add(comp,c);
 		}
 		
 		@Override public void windowOpened(WindowEvent e) {
@@ -2061,7 +2364,7 @@ public class GameInfos {
 			if (dlg.hasChoosen()) {
 				String result = dlg.getImageFileName();
 				id.setImageFileName(result);
-				dataChanged();
+				idDataChanged();
 				cmbbxImages.setSelectedItem(result);
 			}
 		}
@@ -2072,31 +2375,50 @@ public class GameInfos {
 			return button;
 		}
 	
-		private void dataChanged() {
-			hasDataChanged = true;
+		private void idDataChanged() {
+			if (ignoreIdDataChanges) return;
+			hasIdDataChanged = true;
 			showValues();
+			if (templateList!=null) {
+				SwingUtilities.invokeLater(()->{
+					GeneralizedIDTemplate template = templateList.get(id);
+					if (template!=null && !template.equals(id)) {
+						JOptionPane.showMessageDialog(this, "Found a matching template. Values will be set.", "Matching Template Found", JOptionPane.INFORMATION_MESSAGE);
+						ignoreIdDataChanges = true;
+						if (id.label          ==null) { id.label          = template.label ;           txtfldLabel .setText( id.getLabel ()); }
+						if (id.symbol         ==null) { id.symbol         = template.symbol;           txtfldSymbol.setText( id.getSymbol()); }
+						if (id.type           ==null) { id.type           = template.type  ;           cmbbxType        .setSelectedItem(id.type); }
+						if (id.imageFileName  ==null) { id.setImageFileName(template.imageFileName  ); cmbbxBgImage     .setSelectedItem(id.getImageFileName()); }
+						if (id.imageBackground==null) { id.setImageBG      (template.imageBackground); cmbbxBgColor     .setSelectedItem(SaveViewer.images.getColor(id.getImageBG())); }
+						if (id.upgradeClass   ==null) { id.upgradeClass   = template.upgradeClass;     cmbbxUpgradeClass.setSelectedItem(id.upgradeClass); }
+						showValues();
+						ignoreIdDataChanges = false;
+					}
+				});
+			}
 		}
 
 		private void showValues() {
-			textarea.setText("");
+			valueOutput.setText("");
 			
-			textarea.append("ID     : "+(id.id    ==null?"--------":id.id    )+"\r\n");
-			textarea.append("Label  : "+(id.label ==null?"--------":id.label )+"\r\n");
-			textarea.append("Symbol : "+(id.symbol==null?"--------":id.symbol)+"\r\n");
-			textarea.append("Type   : "+(id.type  ==null?"--------":id.type.label)+"\r\n");
-			textarea.append("Image  : "+(id.hasImageFileName  ()?id.getImageFileName():"<none>")+"\r\n");
-			textarea.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
+			valueOutput.append("ID     : "+(id.id    ==null?"--------":id.id    )+"\r\n");
+			valueOutput.append("Label  : "+(id.label ==null?"--------":id.label )+"\r\n");
+			valueOutput.append("Symbol : "+(id.symbol==null?"--------":id.symbol)+"\r\n");
+			valueOutput.append("Type   : "+(id.type  ==null?"--------":id.type.label)+"\r\n");
+			valueOutput.append("Image  : "+(id.hasImageFileName  ()?id.getImageFileName():"<none>")+"\r\n");
+			valueOutput.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
 			
 			BufferedImage image = id.getImage();
 			if (image==null) {
-				imageField.setIcon(null);
+				imagePreviewField.setIcon(null);
 			} else {
-				imageField.setIcon(new ImageIcon(image));
-				imageField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
+				imagePreviewField.setIcon(new ImageIcon(image));
+				imagePreviewField.setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));							
 			}
 		}
 	
-		public boolean hasDataChanged() { return hasDataChanged; }
+		public boolean wasIdTemplateAdded() { return wasIdTemplateAdded; }
+		public boolean hasIdDataChanged() { return hasIdDataChanged; }
 		public void transferChangesTo(GeneralizedID id) {
 			id.label  = this.id.label;
 			id.symbol = this.id.symbol;

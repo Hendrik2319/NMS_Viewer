@@ -1,3 +1,107 @@
+[Templates]
+MinValues=2
+Label=Ausgegrabene Knochen (gewöhnlich)
+Type=Treasure
+Image=PRODUCT.BONES.COMMON.png
+Background=153250
+
+MinValues=2
+Label=Ausgegrabene Knochen (ungewöhnlich)
+Type=Treasure
+Image=PRODUCT.BONES.UNCOMMON.png
+Background=460C34
+
+MinValues=2
+Label=Ausgegrabener Schatz (gewöhnlich)
+Type=Treasure
+Image=Artifact.UnearthedTreasure.png
+Background=153250
+
+MinValues=2
+Label=Ausgegrabener Schatz (selten)
+Type=Treasure
+Image=Artifact.UnearthedTreasure.png
+Background=DC9401
+
+MinValues=2
+Label=Ausgegrabener Schatz (ungewöhnlich)
+Type=Treasure
+Image=Artifact.UnearthedTreasure.png
+Background=460C34
+
+MinValues=2
+Label=Biologische Probe (gewöhnlich)
+Type=Treasure
+Image=Artifact.BiologicalSample.png
+Background=153250
+
+MinValues=2
+Label=Biologische Probe (selten)
+Type=Treasure
+Image=Artifact.BiologicalSample.png
+Background=DC9401
+
+MinValues=2
+Label=Biologische Probe (ungewöhnlich)
+Type=Treasure
+Image=Artifact.BiologicalSample.png
+Background=460C34
+
+MinValues=2
+Label=Empfindliche Flora (gewöhnlich)
+Type=Treasure
+Image=Artifact.DelicateFlora.png
+Background=153250
+
+MinValues=2
+Label=Empfindliche Flora (selten)
+Type=Treasure
+Image=Artifact.DelicateFlora.png
+Background=DC9401
+
+MinValues=2
+Label=Empfindliche Flora (ungewöhnlich)
+Type=Treasure
+Image=Artifact.DelicateFlora.png
+Background=460C34
+
+MinValues=2
+Label=Vergessenes Artefakt (gewöhnlich)
+Type=Treasure
+Image=Artifact.LostArtifact.png
+Background=153250
+
+MinValues=2
+Label=Vergessenes Artefakt (selten)
+Type=Treasure
+Image=Artifact.LostArtifact.png
+Background=DC9401
+
+MinValues=2
+Label=Vergessenes Artefakt (ungewöhnlich)
+Type=Treasure
+Image=Artifact.LostArtifact.png
+Background=460C34
+
+MinValues=2
+Label=Wiederverwerteter Schrott (gewöhnlich)
+Type=Treasure
+Image=PRODUCT.SALVAGE.COMMON.png
+Background=153250
+
+MinValues=2
+Label=Wiederverwerteter Schrott (selten)
+Type=Treasure
+Image=PRODUCT.SALVAGE.RARE.png
+Background=DC9401
+
+MinValues=2
+Label=Wiederverwerteter Schrott (ungewöhnlich)
+Type=Treasure
+Image=PRODUCT.SALVAGE.UNCOMMON.png
+Background=460C34
+
+[IDs]
 ^ACCESS1=AtlasPass V1
 ^ACCESS1.type=Special
 ^ACCESS1.image=Product.atlaspass.png
@@ -1189,7 +1293,7 @@
 ^PROC_BIO#17097.type=Treasure
 ^PROC_BIO#17097.image=Artifact.BiologicalSample.png
 ^PROC_BIO#17097.imageBG=153250
-^PROC_BIO#18063=Biologische Probe (selten
+^PROC_BIO#18063=Biologische Probe (selten)
 ^PROC_BIO#18063.type=Treasure
 ^PROC_BIO#18063.image=Artifact.BiologicalSample.png
 ^PROC_BIO#18063.imageBG=DC9401
@@ -1403,7 +1507,7 @@
 ^PROC_LOOT#25813.type=Treasure
 ^PROC_LOOT#25813.image=Artifact.UnearthedTreasure.png
 ^PROC_LOOT#25813.imageBG=460C34
-^PROC_PLNT#01038=Empfindliche Flora (ungewöhnlich
+^PROC_PLNT#01038=Empfindliche Flora (ungewöhnlich)
 ^PROC_PLNT#01038.type=Treasure
 ^PROC_PLNT#01038.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#01038.imageBG=460C34
@@ -1423,11 +1527,11 @@
 ^PROC_PLNT#12076.type=Treasure
 ^PROC_PLNT#12076.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#12076.imageBG=DC9401
-^PROC_PLNT#13665=Empfindliche Flora (ungewöhnlich
+^PROC_PLNT#13665=Empfindliche Flora (ungewöhnlich)
 ^PROC_PLNT#13665.type=Treasure
 ^PROC_PLNT#13665.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#13665.imageBG=460C34
-^PROC_PLNT#15578=Empfindliche Flora (gewöhnlich
+^PROC_PLNT#15578=Empfindliche Flora (gewöhnlich)
 ^PROC_PLNT#15578.type=Treasure
 ^PROC_PLNT#15578.image=Artifact.DelicateFlora.png
 ^PROC_PLNT#15578.imageBG=153250

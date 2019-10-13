@@ -41,6 +41,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
@@ -176,10 +177,11 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			String cbValue;
 			switch(ActionCommand.valueOf(e.getActionCommand())) {
 			case EditID: {
-				GameInfos.EditIdDialog dlg = new GameInfos.EditIdDialog(mainwindow,clickedSlot.id);
+				IDMap map = clickedSlot.getIDMap();
+				GameInfos.EditIdDialog dlg = new GameInfos.EditIdDialog(mainwindow, clickedSlot.id, map==null ? null : map.getTemplateList());
 				dlg.showDialog();
-				if (dlg.hasDataChanged()) {
-					dlg.transferChangesTo(clickedSlot.id);
+				if (dlg.hasIdDataChanged() || dlg.wasIdTemplateAdded()) {
+					if (dlg.hasIdDataChanged()) dlg.transferChangesTo(clickedSlot.id);
 					updateAfterChangedIDdata();
 				}
 			} break;
