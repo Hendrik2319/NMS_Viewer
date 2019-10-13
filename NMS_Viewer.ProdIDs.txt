@@ -1153,6 +1153,10 @@
 ^PROC_BIO#09589.type=Treasure
 ^PROC_BIO#09589.image=Artifact.BiologicalSample.png
 ^PROC_BIO#09589.imageBG=153250
+^PROC_BIO#11072=Biologische Probe (ungewöhnlich)
+^PROC_BIO#11072.type=Treasure
+^PROC_BIO#11072.image=Artifact.BiologicalSample.png
+^PROC_BIO#11072.imageBG=460C34
 ^PROC_BIO#12109=Biologische Probe (gewöhnlich)
 ^PROC_BIO#12109.type=Treasure
 ^PROC_BIO#12109.image=Artifact.BiologicalSample.png
@@ -1181,6 +1185,10 @@
 ^PROC_BIO#16868.type=Treasure
 ^PROC_BIO#16868.image=Artifact.BiologicalSample.png
 ^PROC_BIO#16868.imageBG=DC9401
+^PROC_BIO#17097=Biologische Probe (gewöhnlich)
+^PROC_BIO#17097.type=Treasure
+^PROC_BIO#17097.image=Artifact.BiologicalSample.png
+^PROC_BIO#17097.imageBG=153250
 ^PROC_BIO#18063=Biologische Probe (selten
 ^PROC_BIO#18063.type=Treasure
 ^PROC_BIO#18063.image=Artifact.BiologicalSample.png
@@ -1395,6 +1403,10 @@
 ^PROC_LOOT#25813.type=Treasure
 ^PROC_LOOT#25813.image=Artifact.UnearthedTreasure.png
 ^PROC_LOOT#25813.imageBG=460C34
+^PROC_PLNT#01038=Empfindliche Flora (ungewöhnlich
+^PROC_PLNT#01038.type=Treasure
+^PROC_PLNT#01038.image=Artifact.DelicateFlora.png
+^PROC_PLNT#01038.imageBG=460C34
 ^PROC_PLNT#01935=Empfindliche Flora (gewöhnlich)
 ^PROC_PLNT#01935.type=Treasure
 ^PROC_PLNT#01935.image=Artifact.DelicateFlora.png

@@ -4219,9 +4219,14 @@ info=
 name=Acert X
 biome=Lush
 with water
+remembrance terminal
 resources=Cu,Pf,Ag
 
 [Pln20960002FFA005]
+name=Ramena Majoris
+biome=Irradiated
+with water
+resources=Cu,U,NaCl
 
 [Sys00BC0002FFA005]
 atlasinterface=false
@@ -5846,6 +5851,8 @@ name=Otosuh IX
 race=Korvax
 conflict=1
 conflict_label=belanglos
+economy=2
+economy_label=zufriedenstellend
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -5873,8 +5880,13 @@ resources=Cu,Pf,Fe__
 [Sys006F00FFF37590]
 name=Illgasins
 race=Vykeen
+conflict=3
+conflict_label=beängstigend
+economy=1
+economy_label=scheiternd
 atlasinterface=false
 blackhole=false
+class=Yellow
 short=4 Planeten
 info=
 
@@ -5894,6 +5906,8 @@ name=Erleisla
 race=Gek
 conflict=2
 conflict_label=streitlustig
+economy=2
+economy_label=nachhaltig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -5904,6 +5918,41 @@ info=
 name=Stbur XVII
 biome=Frozen
 resources=Cu,CO2,NaCl
+
+[Reg000000FFF38590]
+name=Niezhi-Untiefe
+
+[Sys018500FFF38590]
+name=Huweyfa
+race=Gek
+conflict=3
+conflict_label=gefährlich
+economy=2
+economy_label=ausgeglichen
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln318500FFF38590]
+name=Etiago Majoris
+biome=Scorched
+buriedTreasure=AncientBones
+resources=Cu,P,NaCl
+
+[Sys01EC00FFF38590]
+name=Jiyuejeell
+race=Korvax
+conflict=1
+conflict_label=stabil
+economy=3
+economy_label=boomend
+atlasinterface=false
+blackhole=false
+class=Blue
+short=2 Planeten
+info=
 
 [Reg00000003CC45B8]
 name=Aygans-Quadrant
