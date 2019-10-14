@@ -175,7 +175,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	enum ActionCommand {
-		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, ShowFinalInstallation,
+		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, DefineFinalInstallation,
 		;
 	}
 	
@@ -196,8 +196,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		sequencesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		sequencesTableModel.setTable(sequencesTable);
 		
-		JScrollPane sequencesPanel = new JScrollPane(sequencesTable);
-		sequencesPanel.setBorder( SaveViewer.createTitledBorderForScrollPane("Sequences") );
+		JScrollPane sequencesTableScrollPane = new JScrollPane(sequencesTable);
+		sequencesTableScrollPane.setBorder( SaveViewer.createTitledBorderForScrollPane("Sequences") );
+		sequencesTableScrollPane.setMinimumSize(new Dimension(200,150));
 		//sequencesPanel.setPreferredSize(new Dimension(200,400));
 		
 		
@@ -218,17 +219,19 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		finalSequenceTableModel = new FinalSequenceTableModel();
 		JTable finalSequenceTable = new JTable(finalSequenceTableModel);
 		finalSequenceTableModel.setTable(finalSequenceTable);
+		JScrollPane finalSequenceTableScrollPane = new JScrollPane(finalSequenceTable);
+		finalSequenceTableScrollPane.setMinimumSize(new Dimension(200,150));
 		
 		JPanel finalSequencePanel = new JPanel(new GridBagLayout());
 		finalSequencePanel.setBorder( BorderFactory.createTitledBorder("Final Installation Sequence"));
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.weightx = 1;
 		c.weighty = 0;
-		finalSequencePanel.add(new JScrollPane(finalSequenceTable),c);
+		finalSequencePanel.add(finalSequenceTableScrollPane,c);
 		c.gridwidth = 1;
 		c.weightx = 0;
 		c.weighty = 0;
-		finalSequencePanel.add(SaveViewer.createCheckbox("Show in Module Tables", disabler, ActionCommand.ShowFinalInstallation, false, true, tablePanel::showFinalInstallation),c);
+		finalSequencePanel.add(SaveViewer.createCheckbox("Define in Module Tables", disabler, ActionCommand.DefineFinalInstallation, false, true, tablePanel::defineFinalInstallation),c);
 		c.weightx = 1;
 		finalSequencePanel.add(new JLabel(),c);
 		
@@ -237,7 +240,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		JPanel sessionPanel = new JPanel(new GridBagLayout());
 		c.weighty = 0;
 		sessionPanel.add(modulePanel,c);
-		sessionPanel.add(sequencesPanel,c);
+		sessionPanel.add(sequencesTableScrollPane,c);
 		sessionPanel.add(installationTestButtonsPanel,c);
 		sessionPanel.add(finalSequencePanel,c);
 		c.weighty = 1;
@@ -269,6 +272,17 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		mainwindow = new StandardMainWindow("UpgradeModule InstallHelper", standalone ? DefaultCloseOperation.EXIT_ON_CLOSE : DefaultCloseOperation.DISPOSE_ON_CLOSE);
 		mainwindow.startGUI(contentPane, menuBar);
+		
+		updateWindowTitle();
+		updateGUIaccess();
+		if (config.windowSize!=null) {
+			//SaveViewer.log_ln("MainWindow.setSize0: %s", config.windowSize);
+			config.windowSize.width  = Math.max(config.windowSize.width , mainwindow.getWidth ());
+			config.windowSize.height = Math.max(config.windowSize.height, mainwindow.getHeight());
+			//SaveViewer.log_ln("MainWindow.setSize1: %s", config.windowSize);
+			mainwindow.setSizeCenteredOnScreen(config.windowSize);
+		}
+		
 		mainwindow.addComponentListener(new ComponentListener() {
 			@Override public void componentShown(ComponentEvent e) {}
 			@Override public void componentMoved(ComponentEvent e) {}
@@ -276,6 +290,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			
 			@Override public void componentResized(ComponentEvent e) {
 				config.windowSize=mainwindow.getSize(config.windowSize);
+				//SaveViewer.log_ln("MainWindow.Resized: %s", config.windowSize);
 			}
 		});
 		mainwindow.addWindowListener(new WindowAdapter() {
@@ -284,14 +299,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				writeConfig();
 			}
 		});
-		
-		updateWindowTitle();
-		updateGUIaccess();
-		if (config.windowSize!=null) {
-			config.windowSize.width  = Math.max(config.windowSize.width , mainwindow.getWidth ());
-			config.windowSize.height = Math.max(config.windowSize.height, mainwindow.getHeight());
-			mainwindow.setSizeCenteredOnScreen(config.windowSize);
-		}
 		
 		return this;
 	}
@@ -305,7 +312,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 			case EditSession:
 			case StartInstallationTests:
-			case ShowFinalInstallation:
+			case DefineFinalInstallation:
 				return currentSession!=null && !testInstallsIterator.isRunning();
 				
 			case StopInstallationTests:
@@ -327,8 +334,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	private void updateWindowTitle() {
 		mainwindow.setTitle("UpgradeModule InstallHelper - "+( config.currentSessionFile==null ? "<New Session>" : "\""+config.currentSessionFile.getName()+"\"" ));
 	}
-	
-	private enum TableContextMenuCommands { AddValue, EditValue, RemoveValue  }
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -389,7 +394,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		case StopInstallationTests : testInstallsIterator.stop (); updateGUIaccess(); break;
 		case InstallNext           : testInstallsIterator.next (); updateGUIaccess(); break;
 		
-		case ShowFinalInstallation: break;
+		case DefineFinalInstallation: break;
 		}
 	}
 
@@ -1704,6 +1709,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 
+	private enum TableContextMenuCommands { AddValueDefinition, EditValueDefinition, RemoveValueDefinition, AddAllToMinMax, AddColumnToMinMax  }
+
 	private final class TablePanel extends JScrollPane {
 		private static final long serialVersionUID = -1092343150495411023L;
 		
@@ -1723,8 +1730,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			setPreferredSize(new Dimension(600,500));
 		}
 	
-		public void showFinalInstallation(boolean showFinalInstallation) {
-			tables.forEach((id,tableModel)->tableModel.showFinalInstallation(showFinalInstallation));
+		public void defineFinalInstallation(boolean defineFinalInstallation) {
+			tables.forEach((id,tableModel)->tableModel.defineFinalInstallation(defineFinalInstallation));
 		}
 
 		public void clearCurrentInstallTestModule() {
@@ -1798,6 +1805,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private class TableContextMenu extends JPopupMenu implements ActionListener {
 			private static final long serialVersionUID = -8902930861450278308L;
 			
+			private JMenuItem miAddColumnToMinMax;
+			
 			private JMenuItem miAddValue;
 			private JMenuItem miEditValue;
 			private JMenuItem miRemoveValue;
@@ -1809,27 +1818,33 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			@SuppressWarnings("unused")
 			private int rowIndex = -1;
 			private int columnIndex = -1;
+
 	
 			TableContextMenu() {
 				super("TableContextMenu");
-				add(miAddValue    = SaveViewer.createMenuItem("Add Value"   , this, TableContextMenuCommands.AddValue   ));
-				add(miEditValue   = SaveViewer.createMenuItem("Edit Value"  , this, TableContextMenuCommands.EditValue  ));
-				add(miRemoveValue = SaveViewer.createMenuItem("Remove Value", this, TableContextMenuCommands.RemoveValue));
+				add(                      SaveViewer.createMenuItem("Add All Values to respective Value Ranges", this, TableContextMenuCommands.AddAllToMinMax   ));
+				add(miAddColumnToMinMax = SaveViewer.createMenuItem("Add Values of this Column to Value Range" , this, TableContextMenuCommands.AddColumnToMinMax));
+				addSeparator();;
+				add(miAddValue    = SaveViewer.createMenuItem("", this, TableContextMenuCommands.AddValueDefinition   ));
+				add(miEditValue   = SaveViewer.createMenuItem("", this, TableContextMenuCommands.EditValueDefinition  ));
+				add(miRemoveValue = SaveViewer.createMenuItem("", this, TableContextMenuCommands.RemoveValueDefinition));
 			}
 		
 			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
 				this.id = id;
 				this.rowIndex = rowIndex;
 				this.columnIndex = columnIndex;
+				Debug.Assert(id!=null);
 				block = currentSession==null ? null : currentSession.blocks.get(id);
 				tableModel = tables.get(id);
 				Debug.Assert(tableModel!=null);
 				vd = tableModel.getVD(columnIndex);
 				
-				miAddValue   .setText(String.format("Add Value to %s", id.getName()));
-				miEditValue  .setText(String.format("Edit Value %s of %s", vd==null?"??":vd.label, id.getName()));
+				miAddColumnToMinMax.setEnabled(vd!=null);
+				miAddValue   .setText(String.format("Add New Value Definition to %s", id.getName()));
+				miEditValue  .setText(String.format("Edit [%s] of %s", vd==null?"??":vd.label, id.getName()));
 				miEditValue  .setEnabled(vd!=null);
-				miRemoveValue.setText(String.format("Remove Value %s of %s", vd==null?"??":vd.label, id.getName()));
+				miRemoveValue.setText(String.format("Remove [%s] of %s", vd==null?"??":vd.label, id.getName()));
 				miRemoveValue.setEnabled(vd!=null);
 			}
 	
@@ -1838,7 +1853,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				ValueDefDialog dlg;
 				KnownModule.ValueDefinition resultVD;
 				switch (TableContextMenuCommands.valueOf(e.getActionCommand())) {
-				case AddValue:
+				case AddValueDefinition:
 					if (block!=null) {
 						dlg = new ValueDefDialog(mainwindow,"Add Value",new KnownModule.ValueDefinition(block.module,0));
 						dlg.showDialog();
@@ -1853,7 +1868,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					}
 					break;
 					
-				case EditValue:
+				case EditValueDefinition:
 					if (block!=null && vd!=null) {
 						dlg = new ValueDefDialog(mainwindow,"Edit Value",new KnownModule.ValueDefinition(vd,0));
 						dlg.showDialog();
@@ -1866,7 +1881,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					}
 					break;
 					
-				case RemoveValue:
+				case RemoveValueDefinition:
 					if (block!=null && vd!=null) {
 						String msg = String.format("Do you really want to remove Value %s of %s?", vd==null?"??":vd.label, id.getName());
 						if (JOptionPane.showConfirmDialog(mainwindow, msg, "Remove Value", JOptionPane.YES_NO_CANCEL_OPTION)==JOptionPane.YES_OPTION) {
@@ -1876,7 +1891,36 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						}
 					}
 					break;
+					
+				case AddAllToMinMax:
+					if (block!=null) {
+						block.module.values.forEach(vd->addToMinMax(block.installedModules,vd));
+						tableModel.fireTableUpdate();
+						writeConfig();
+					}
+					break;
+					
+				case AddColumnToMinMax:
+					if (block!=null && vd!=null) {
+						addToMinMax(block.installedModules,vd);
+						tableModel.fireTableColumnChanged(columnIndex);
+						writeConfig();
+					}
+					break;
 				}
+			}
+
+			private void addToMinMax(Vector<InstalledUpgrade> modules, KnownModule.ValueDefinition vd) {
+				Debug.Assert(vd!=null);
+				modules.forEach(upgrade->{
+					if (upgrade!=null) {
+						Float value = upgrade.values.get(vd);
+						if (value!=null) {
+							vd.min = vd.min==null ? value : Math.min(vd.min, value);
+							vd.max = vd.max==null ? value : Math.max(vd.max, value);
+						}
+					}
+				});
 			}
 		}
 
@@ -1954,6 +1998,56 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			private void fireEditingCanceledEvent() { notifyCellEditorListeners(CellEditorListener::editingCanceled); }
 			private void fireEditingStoppedEvent () { notifyCellEditorListeners(CellEditorListener::editingStopped); }
 		
+		}
+	}
+
+	private static class ColorRange {
+		
+		private Vector<ColorPos> range;
+		
+		public ColorRange() {
+			range = new Vector<>();
+		}
+
+		public void add(float f, Color color) {
+			Debug.Assert(color!=null);
+			Debug.Assert(!Float.isNaN(f));
+			range.add(new ColorPos(f,color));
+			range.sort(Comparator.<ColorPos>comparingDouble(cp->cp.f));
+		}
+
+		public Color computeColor(float f) {
+			if (range.isEmpty()) return null;
+			if (f >= range. lastElement().f) return range. lastElement().color;
+			if (f <= range.firstElement().f) return range.firstElement().color;
+			for (int i=1; i<range.size(); ++i) {
+				ColorPos prevPos = range.get(i-1);
+				ColorPos nextPos = range.get(i);
+				if (f==nextPos.f) return nextPos.color;
+				if (f>nextPos.f) continue;
+				return computeColor(f,prevPos.f,prevPos.color,nextPos.f,nextPos.color);
+			}
+			return null;
+		}
+		
+		private Color computeColor(float f, float f1, Color c1, float f2, Color c2) {
+			float f0 = (f-f1)/(f2-f1);
+			f0 = Math.min(Math.max(0, f0), 1);
+			float[] rgb1 = c1.getRGBColorComponents(new float[3]);
+			float[] rgb2 = c2.getRGBColorComponents(new float[3]);
+			rgb1[0] = (rgb2[0]-rgb1[0])*f0 + rgb1[0];
+			rgb1[1] = (rgb2[1]-rgb1[1])*f0 + rgb1[1];
+			rgb1[2] = (rgb2[2]-rgb1[2])*f0 + rgb1[2];
+			return new Color(rgb1[0], rgb1[1], rgb1[2]);
+		}
+
+		private static class ColorPos {
+			Color color;
+			float f;
+			public ColorPos(float f, Color color) {
+				this.f = f;
+				this.color = color;
+			}
 		}
 	}
 
@@ -2049,7 +2143,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		public void fireTableColumnRemoved(int columnIndex) {
 			fireTableColumnEvent(columnIndex,TableModelEvent.DELETE);
 		}
-		@SuppressWarnings("unused")
 		public void fireTableColumnChanged(int columnIndex) {
 			fireTableColumnEvent(columnIndex,TableModelEvent.UPDATE);
 		}
@@ -2099,7 +2192,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private MyTableCellRenderer defaultTableCellRenderer;
 		private int currentInstallTestModule;
 		private boolean installTestAreRunning;
-		private boolean showFinalInstallation;
+		private boolean defineFinalInstallation;
 		private DefaultCellEditor cellEditor_Checkbox;
 		private Runnable updateAfterChangeOnFinalSequence;
 	
@@ -2117,11 +2210,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			defaultTableCellRenderer = new MyTableCellRenderer();
 			installTestAreRunning = false;
 			currentInstallTestModule = -1;
-			showFinalInstallation = false;
+			defineFinalInstallation = false;
 		}
 	
-		public void showFinalInstallation(boolean showFinalInstallation) {
-			this.showFinalInstallation = showFinalInstallation;
+		public void defineFinalInstallation(boolean defineFinalInstallation) {
+			this.defineFinalInstallation = defineFinalInstallation;
 			fireTableStructureUpdate();
 		}
 
@@ -2129,7 +2222,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			boolean stoppingInstallTests = installTestAreRunning;
 			installTestAreRunning = false;
 			currentInstallTestModule = -1;
-			if (showFinalInstallation && stoppingInstallTests) fireTableStructureUpdate();
+			if (defineFinalInstallation && stoppingInstallTests) fireTableStructureUpdate();
 			else table.repaint();
 		}
 
@@ -2137,7 +2230,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			boolean startingInstallTests = !installTestAreRunning;
 			installTestAreRunning = true;
 			currentInstallTestModule = currentModule;
-			if (showFinalInstallation && startingInstallTests) fireTableStructureUpdate();
+			if (defineFinalInstallation && startingInstallTests) fireTableStructureUpdate();
 			else table.repaint();
 		}
 
@@ -2187,9 +2280,15 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private class MyTableCellRenderer extends DefaultTableCellRenderer {
 			private static final long serialVersionUID = 7128510133641722765L;
 			
-			CheckBoxRendererComponent checkBox;
+			private CheckBoxRendererComponent checkBox;
+			private ColorRange colorRange;
+			
 			MyTableCellRenderer() {
 				checkBox = new CheckBoxRendererComponent();
+				colorRange = new ColorRange();
+				colorRange.add(0.00f, Color.WHITE);
+				colorRange.add(0.75f, new Color(0xFFD000));
+				colorRange.add(1.00f, new Color(0xFF7F00));
 			}
 
 			@Override
@@ -2224,7 +2323,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
 							KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
 							switch (format) {
-							case Activated: alignment = JLabel.CENTER; break;
+							case Activated:
+								alignment = JLabel.CENTER;
+								break;
 							case FloatPlus: 
 							case Lightyears:
 							case PercentMinus:
@@ -2241,7 +2342,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					label.setHorizontalAlignment(alignment);
 				}
 				if (!isSelected) {
-					Color bg = table.getBackground();
+					Color bg = null;
 					if (installTestAreRunning) {
 						if (rowIndex == currentInstallTestModule)
 							bg = COLOR_CURRENTMODULE;
@@ -2250,17 +2351,30 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						else
 							bg = COLOR_NOTCURRENTSEQUENCE;
 						
-					} else if (showFinalInstallation) {
-						if (rowIndex<finalSequence.length) {
-							GeneralizedID finalID = finalSequence[rowIndex];
-							if (finalID==block.module.moduleID)
-								bg = COLOR_CURRENTMODULE;
-							else if (finalID==null)
-								bg = COLOR_CURRENTSEQUENCE;
-							else
-								bg = COLOR_NOTCURRENTSEQUENCE;
+					} else {
+						if (defineFinalInstallation) {
+							if (rowIndex<finalSequence.length) {
+								GeneralizedID finalID = finalSequence[rowIndex];
+								if (finalID==block.module.moduleID)
+									bg = COLOR_CURRENTMODULE;
+								else if (finalID!=null)
+									bg = COLOR_NOTCURRENTSEQUENCE;
+							}
 						}
 					}
+					if (bg==null && value instanceof Float) {
+						float fValue = (Float) value;
+						int valueIndex = columnIndex-STANDARD_COLUMNS;
+						if (0<=valueIndex && valueIndex<block.module.values.size()) {
+							KnownModule.ValueDefinition vd = getVD(columnIndex);
+							if (vd.min!=null && vd.max!=null) {
+								float f = vd.max==vd.min ? 1.0f : (fValue-vd.min)/(vd.max-vd.min);
+								f = Math.min(Math.max(0, f), 1);
+								bg = colorRange.computeColor(f);
+							}
+						}
+					}
+					if (bg==null) bg = table.getBackground();
 					component.setBackground(bg);
 				}
 				return component;
@@ -2283,7 +2397,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	
 		@Override public int getRowCount   () { return nModules; }
-		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size() + (showFinalInstallation&&!installTestAreRunning ? 2 : 0); }
+		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size() + (defineFinalInstallation&&!installTestAreRunning ? 2 : 0); }
 		
 		private KnownModule.ValueDefinition getVD(int columnIndex) {
 			int index = columnIndex-STANDARD_COLUMNS;
@@ -2370,7 +2484,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			default:
 				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) return true;
 				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
-					if (rowIndex<finalSequence.length && showFinalInstallation && !installTestAreRunning) {
+					if (rowIndex<finalSequence.length && defineFinalInstallation && !installTestAreRunning) {
 						GeneralizedID finalID = finalSequence[rowIndex];
 						return finalID==null || finalID==block.module.moduleID;
 					}
