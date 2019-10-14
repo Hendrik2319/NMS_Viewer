@@ -44,6 +44,7 @@ import java.util.function.Function;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -78,6 +79,7 @@ import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
@@ -140,7 +142,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	private TablePanel tablePanel = null;
 	private ModulePanel modulePanel = null;
 	private SequencesTableModel sequencesTableModel = null;
-	private InstallIterator installIterator = new InstallIterator();
+	private TestInstallsIterator testInstallsIterator = new TestInstallsIterator();
+	private FinalSequenceTableModel finalSequenceTableModel = null;
 	
 	private UpgradeModuleInstallHelper() {
 		knownUpgradeModuleIDs = new HashMap<>();
@@ -155,11 +158,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 	
 	private UpgradeModuleInstallHelper readConfig() {
+		SaveViewer.log_ln("read config from file \"%s\"", CFG);
 		config.readFromFile(new File(CFG));
 		return this;
 	}
 
-	private synchronized UpgradeModuleInstallHelper writeConfig() {
+	private UpgradeModuleInstallHelper writeConfig() {
+		SaveViewer.log_ln("write config to file \"%s\"", CFG);
 		config.writeToFile(new File(CFG));
 		return this;
 	}
@@ -170,7 +175,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	enum ActionCommand {
-		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstalling, StopInstalling, InstallNext,
+		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, ShowFinalInstallation,
 		;
 	}
 	
@@ -180,6 +185,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
+		
+		tablePanel = new TablePanel();
 		
 		modulePanel = new ModulePanel();
 		modulePanel.setBorder( BorderFactory.createTitledBorder("Modules"));
@@ -197,26 +204,48 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
 		
-		c.weightx = 1;
 		c.gridx = GridBagConstraints.RELATIVE;
 		c.gridy = GridBagConstraints.RELATIVE;
-		JPanel buttonPanel = new JPanel(new GridBagLayout());
-		buttonPanel.add(SaveViewer.createButton("Start", this, disabler, ActionCommand.StartInstalling),c);
-		buttonPanel.add(SaveViewer.createButton("Next" , this, disabler, ActionCommand.InstallNext),c);
-		buttonPanel.add(SaveViewer.createButton("Stop" , this, disabler, ActionCommand.StopInstalling),c);
+		JPanel installationTestButtonsPanel = new JPanel(new GridBagLayout());
+		installationTestButtonsPanel.setBorder( BorderFactory.createTitledBorder("Installation Tests"));
+		c.weightx = 0;
+		installationTestButtonsPanel.add(SaveViewer.createButton("Start", this, disabler, ActionCommand.StartInstallationTests),c);
+		installationTestButtonsPanel.add(SaveViewer.createButton("Next" , this, disabler, ActionCommand.InstallNext),c);
+		installationTestButtonsPanel.add(SaveViewer.createButton("Stop" , this, disabler, ActionCommand.StopInstallationTests),c);
+		c.weightx = 1;
+		installationTestButtonsPanel.add(new JLabel(),c);
+		
+		finalSequenceTableModel = new FinalSequenceTableModel();
+		JTable finalSequenceTable = new JTable(finalSequenceTableModel);
+		finalSequenceTableModel.setTable(finalSequenceTable);
+		
+		JPanel finalSequencePanel = new JPanel(new GridBagLayout());
+		finalSequencePanel.setBorder( BorderFactory.createTitledBorder("Final Installation Sequence"));
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		c.weightx = 1;
+		c.weighty = 0;
+		finalSequencePanel.add(new JScrollPane(finalSequenceTable),c);
+		c.gridwidth = 1;
+		c.weightx = 0;
+		c.weighty = 0;
+		finalSequencePanel.add(SaveViewer.createCheckbox("Show in Module Tables", disabler, ActionCommand.ShowFinalInstallation, false, true, tablePanel::showFinalInstallation),c);
+		c.weightx = 1;
+		finalSequencePanel.add(new JLabel(),c);
+		
 		
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		JPanel sessionPanel = new JPanel(new GridBagLayout());
 		c.weighty = 0;
 		sessionPanel.add(modulePanel,c);
 		sessionPanel.add(sequencesPanel,c);
-		sessionPanel.add(buttonPanel,c);
+		sessionPanel.add(installationTestButtonsPanel,c);
+		sessionPanel.add(finalSequencePanel,c);
 		c.weighty = 1;
 		sessionPanel.add(new JLabel(),c);
 		
 		contentPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		contentPane.setLeftComponent(sessionPanel);
-		contentPane.setRightComponent(tablePanel = new TablePanel());
+		contentPane.setRightComponent(tablePanel);
 		contentPane.setResizeWeight(0);
 		contentPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e->config.windowSplit = contentPane.getDividerLocation());
 		//contentPane = new JPanel(new BorderLayout(3,3));
@@ -251,7 +280,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		});
 		mainwindow.addWindowListener(new WindowAdapter() {
 			@Override public void windowClosing(WindowEvent e) {
-				SaveViewer.log_ln("windowClosing");
+				//SaveViewer.log_ln("windowClosing");
 				writeConfig();
 			}
 		});
@@ -272,17 +301,18 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			switch (ac) {
 			case NewSession:
 			case OpenSession:
-				return !installIterator.isRunning();
+				return !testInstallsIterator.isRunning();
 				
 			case EditSession:
-			case StartInstalling:
-				return currentSession!=null && !installIterator.isRunning();
+			case StartInstallationTests:
+			case ShowFinalInstallation:
+				return currentSession!=null && !testInstallsIterator.isRunning();
 				
-			case StopInstalling:
-				return currentSession!=null && installIterator.isRunning();
+			case StopInstallationTests:
+				return currentSession!=null && testInstallsIterator.isRunning();
 				
 			case InstallNext:
-				return currentSession!=null && installIterator.isRunning() && !installIterator.hasReachedEnd();
+				return currentSession!=null && testInstallsIterator.isRunning() && !testInstallsIterator.hasReachedEnd();
 				
 			case SaveSessionAs:
 				return currentSession!=null;
@@ -355,9 +385,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			break;
 			
-		case StartInstalling: installIterator.start(); updateGUIaccess(); break;
-		case StopInstalling : installIterator.stop (); updateGUIaccess(); break;
-		case InstallNext    : installIterator.next (); updateGUIaccess(); break;
+		case StartInstallationTests: testInstallsIterator.start(); updateGUIaccess(); break;
+		case StopInstallationTests : testInstallsIterator.stop (); updateGUIaccess(); break;
+		case InstallNext           : testInstallsIterator.next (); updateGUIaccess(); break;
+		
+		case ShowFinalInstallation: break;
 		}
 	}
 
@@ -367,7 +399,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		GeneralizedID[][] sequences = currentSession.sequences;
 		modulePanel.updateModules(modules);
 		sequencesTableModel.updateSequences(modules,sequences,currentSession.nModules);
-		installIterator.update();
+		testInstallsIterator.update();
+		finalSequenceTableModel.update(currentSession.finalSequence);
 	}
 
 	private void openSession(File file) {
@@ -554,7 +587,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 	
-	private final class InstallIterator {
+	private final class TestInstallsIterator {
 
 		private int currentSequence;
 		private int currentModule;
@@ -584,13 +617,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			Debug.Assert(currentSequence < currentSession.sequences.length);
 			Debug.Assert(currentModule < currentSession.sequences[currentSequence].length);
 			sequencesTableModel.setCurrentModule(currentSequence,currentModule);
-			tablePanel.setCurrentModule(currentSession.sequences[currentSequence][currentModule],currentModule);
+			tablePanel.setCurrentInstallTestModule(currentSession.sequences[currentSequence][currentModule],currentModule);
 		}
 
 		public void stop() {
 			isRunning = false;
 			sequencesTableModel.clearCurrentModule();
-			tablePanel.clearCurrentModule();
+			tablePanel.clearCurrentInstallTestModule();
 		}
 
 		public void next() {
@@ -606,7 +639,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			Debug.Assert(currentModule < currentSession.sequences[currentSequence].length);
 			
 			sequencesTableModel.setCurrentModule(currentSequence,currentModule);
-			tablePanel.setCurrentModule(currentSession.sequences[currentSequence][currentModule],currentModule);
+			tablePanel.setCurrentInstallTestModule(currentSession.sequences[currentSequence][currentModule],currentModule);
 		}
 	}
 	
@@ -739,22 +772,22 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	private static class Session {
 		
 		HashMap<GeneralizedID,SessionBlock> blocks;
+		GeneralizedID[] finalSequence;
 		
 		int nModules;
 		GeneralizedID[][] sequences;
-		int numberOfCycles;
 		
 		Session() {
 			nModules = 0;
 			sequences = null;
-			numberOfCycles = 0;
+			finalSequence = null;
 			blocks = new HashMap<>();
 		}
 
 		Session(Session session) {
 			blocks = cloneHashMap(session.blocks,null,SessionBlock::new);
 			updateNumberOfModules();
-			computeNumberOfCycles();
+			computeSequences();
 		}
 
 		void updateNumberOfModules() {
@@ -764,9 +797,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				Debug.Assert(id==block.module.moduleID);
 				nModules += block.amount;
 			}
+			finalSequence = new GeneralizedID[nModules];
+			Arrays.fill(finalSequence, null);
 		}
 
-		public void computeNumberOfCycles() {
+		public void computeSequences() {
 			sequences = new GeneralizedID[nModules][];
 			sequences[0] = createBaseSequence();
 			//Vector<GeneralizedID> sortedIDs = sortedID(blocks.keySet());
@@ -809,8 +844,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			sequences = nonNullSequences.toArray(new GeneralizedID[nonNullSequences.size()][]);
 			//showSequences(sequences,sortedIDs);
-			
-			numberOfCycles = sequences.length;
 		}
 
 		private GeneralizedID[] createBaseSequence() {
@@ -857,126 +890,161 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 		}
 		
+		private enum SessionFileChapter { FinalSequence, UpgradeModule, InstalledUpgrade }
 		static Session openFile(File file, Function<String,GeneralizedID> getID, Function<GeneralizedID, KnownModule> getKnownModule) {
 			Session session = new Session();
 			
+			SessionFileChapter currentChapter = null;
 			SessionBlock block = null;
 			Vector<KnownModule.ValueDefinition> announcedValueDefinitions = new Vector<>();
 			KnownModule.ValueDefinition announcedValueDefinition = null;
 			InstalledUpgrade installedUpgrade = null;
 			KnownModule.ValueDefinition usedValueDefinition = null;
+			Vector<GeneralizedID> tempFinalSequence = new Vector<>();
 			
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
 				String line;
 				while ( (line=in.readLine())!=null ) {
-					
-					// SessionBlock
-					if (line.startsWith("ModuleID=")) {
-						String str = line.substring("ModuleID=".length());
-						
-						GeneralizedID id = getID.apply(str);
-						if (id==null)
-							SaveViewer.log_error_ln("Can't find GeneralizedID for \"%s\".", str);
-						
-						KnownModule module = null;
-						if (id!=null) {
-							module = getKnownModule.apply(id);
-							if (module==null)
-								SaveViewer.log_error_ln("Can't find KnownModule for GeneralizedID \"%s\".", id);
-						}
-						
-						block = null;
-						announcedValueDefinition = null;
-						announcedValueDefinitions.clear();
-						installedUpgrade = null;
-						usedValueDefinition = null;
-						
-						if (module!=null)
-							session.blocks.put(id, block = new SessionBlock(module));
-					}
-					if (line.startsWith("Amount=") && block!=null) {
-						String str = line.substring("Amount=".length());
-						try { block.amount = Integer.parseInt(str); }
-						catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse <block.amount> as integer: \"%s\"", str);
-							block.amount = 0;
-						}
-					}
-					if (line.startsWith("InstallPos=") && block!=null) {
-						String str = line.substring("InstallPos=".length());
-						block.installPos = parseInstallPos(str);
+					switch (line) {
+					case "[FinalSequence]"   : currentChapter = SessionFileChapter.FinalSequence; break;
+					case "[UpgradeModule]"   : currentChapter = SessionFileChapter.UpgradeModule; break;
+					case "[InstalledUpgrade]": currentChapter = SessionFileChapter.InstalledUpgrade; break;
 					}
 					
-					// KnownModule.ValueDefinition  -->  usedValueDefinitions
-					if (line.startsWith("valueDef.uniqueID=") && block!=null) {
-						String str = line.substring("valueDef.uniqueID=".length());
-						try {
-							long uniqueID = Long.parseLong(str,16);
-							announcedValueDefinition = new KnownModule.ValueDefinition(block.module,uniqueID);
-							announcedValueDefinitions.add(announcedValueDefinition);
+					switch (currentChapter) {
+					case FinalSequence:
+						if (line.equals("[FinalSequence]")) {
+							tempFinalSequence.clear();
 						}
-						catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse <valueDef.uniqueID> as hex long: \"%s\"", str);
-							announcedValueDefinition = null;
+						if (line.startsWith("ModuleID=")) {
+							String str = line.substring("ModuleID=".length());
+							tempFinalSequence.add(str.isEmpty() ? null : getID.apply(str));
 						}
-					}
-					if (line.startsWith("valueDef.label=") && announcedValueDefinition!=null) {
-						String str = line.substring("valueDef.label=".length());
-						announcedValueDefinition.label = str;
-					}
-					if (line.startsWith("valueDef.format=") && announcedValueDefinition!=null) {
-						String str = line.substring("valueDef.format=".length());
-						try { announcedValueDefinition.format = KnownModule.ValueDefinition.Format.valueOf(str); }
-						catch (Exception e) {
-							SaveViewer.log_error_ln("Can't parse <valueDef.format> as KnownModule.ValueDefinition.Format: \"%s\"", str);
-							announcedValueDefinition.format = null;
-						}
-					}
+						break;
 					
-					// InstalledUpgrade  -->  block.installedModules
-					if (line.equals("[InstalledUpgrade]") && block!=null) {
-						if (block.installedModules.isEmpty()) {
-							checkValueDefinitions(block.module,announcedValueDefinitions);
+					case UpgradeModule: // SessionBlock
+						if (line.startsWith("ModuleID=")) {
+							String str = line.substring("ModuleID=".length());
+							
+							GeneralizedID id = getID.apply(str);
+							if (id==null)
+								SaveViewer.log_error_ln("Can't find GeneralizedID for \"%s\".", str);
+							
+							KnownModule module = null;
+							if (id!=null) {
+								module = getKnownModule.apply(id);
+								if (module==null)
+									SaveViewer.log_error_ln("Can't find KnownModule for GeneralizedID \"%s\".", id);
+							}
+							
+							block = null;
 							announcedValueDefinition = null;
 							announcedValueDefinitions.clear();
+							installedUpgrade = null;
 							usedValueDefinition = null;
+							
+							if (module!=null)
+								session.blocks.put(id, block = new SessionBlock(module));
 						}
-						block.installedModules.add(installedUpgrade = new InstalledUpgrade(block.module));
-					}
-					if (line.startsWith("upgrade.label1=") && installedUpgrade!=null) {
-						String str = line.substring("upgrade.label1=".length());
-						installedUpgrade.label1 = str;
-					}
-					if (line.startsWith("upgrade.label2=") && installedUpgrade!=null) {
-						String str = line.substring("upgrade.label2=".length());
-						installedUpgrade.label2 = str;
+						if (line.startsWith("Amount=") && block!=null) {
+							String str = line.substring("Amount=".length());
+							try { block.amount = Integer.parseInt(str); }
+							catch (NumberFormatException e) {
+								SaveViewer.log_error_ln("Can't parse <block.amount> as integer: \"%s\"", str);
+								block.amount = 0;
+							}
+						}
+						if (line.startsWith("InstallPos=") && block!=null) {
+							String str = line.substring("InstallPos=".length());
+							block.installPos = parseInstallPos(str);
+						}
+						
+						// KnownModule.ValueDefinition  -->  usedValueDefinitions
+						if (line.startsWith("valueDef.uniqueID=") && block!=null) {
+							String str = line.substring("valueDef.uniqueID=".length());
+							try {
+								long uniqueID = Long.parseLong(str,16);
+								announcedValueDefinition = new KnownModule.ValueDefinition(block.module,uniqueID);
+								announcedValueDefinitions.add(announcedValueDefinition);
+							}
+							catch (NumberFormatException e) {
+								SaveViewer.log_error_ln("Can't parse <valueDef.uniqueID> as hex long: \"%s\"", str);
+								announcedValueDefinition = null;
+							}
+						}
+						if (line.startsWith("valueDef.label=") && announcedValueDefinition!=null) {
+							String str = line.substring("valueDef.label=".length());
+							announcedValueDefinition.label = str;
+						}
+						if (line.startsWith("valueDef.format=") && announcedValueDefinition!=null) {
+							String str = line.substring("valueDef.format=".length());
+							try { announcedValueDefinition.format = KnownModule.ValueDefinition.Format.valueOf(str); }
+							catch (Exception e) {
+								SaveViewer.log_error_ln("Can't parse <valueDef.format> as KnownModule.ValueDefinition.Format: \"%s\"", str);
+								announcedValueDefinition.format = null;
+							}
+						}
+						break;
+						
+					case InstalledUpgrade:
+						// InstalledUpgrade  -->  block.installedModules
+						if (line.equals("[InstalledUpgrade]") && block!=null) {
+							if (block.installedModules.isEmpty()) {
+								checkValueDefinitions(block.module,announcedValueDefinitions);
+								announcedValueDefinition = null;
+								announcedValueDefinitions.clear();
+								usedValueDefinition = null;
+							}
+						}
+						if (line.startsWith("index=") && block!=null) {
+							String str = line.substring("index=".length());
+							try {
+								int index = Integer.parseInt(str);
+								while (index>=block.installedModules.size()) block.installedModules.add(null);
+								block.installedModules.set(index, installedUpgrade = new InstalledUpgrade(block.module));
+							}
+							catch (NumberFormatException e) {
+								SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.index> as integer: \"%s\"", str);
+								installedUpgrade = null;
+							}
+						}
+						if (line.startsWith("upgrade.label1=") && installedUpgrade!=null) {
+							String str = line.substring("upgrade.label1=".length());
+							installedUpgrade.label1 = str;
+						}
+						if (line.startsWith("upgrade.label2=") && installedUpgrade!=null) {
+							String str = line.substring("upgrade.label2=".length());
+							installedUpgrade.label2 = str;
+						}
+						
+						// uniqueID  -->  usedValueDefinition
+						if (line.startsWith("value.uniqueID=") && installedUpgrade!=null) {
+							String str = line.substring("value.uniqueID=".length());
+							try {
+								long uniqueID = Long.parseLong(str,16);
+								usedValueDefinition = block.module.getValueDefinition(uniqueID);
+								if (usedValueDefinition==null)
+									SaveViewer.log_error_ln("Can't find ValueDefinition with UniqueID[%s].", str);
+							}
+							catch (NumberFormatException e) {
+								SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.value.uniqueID> as hex long: \"%s\"", str);
+								usedValueDefinition = null;
+							}
+						}
+						// value + usedValueDefinition  -->  InstalledUpgrade.values
+						if (line.startsWith("value.value=") && usedValueDefinition!=null) {
+							String str = line.substring("value.value=".length());
+							Float value;
+							try { value = Float.parseFloat(str); }
+							catch (NumberFormatException e) {
+								SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.value> as Float: \"%s\"", str);
+								value = null;
+							}
+							installedUpgrade.values.put(usedValueDefinition, value);
+						}
+						break;
 					}
 					
-					// uniqueID  -->  usedValueDefinition
-					if (line.startsWith("value.uniqueID=") && installedUpgrade!=null) {
-						String str = line.substring("value.uniqueID=".length());
-						try {
-							long uniqueID = Long.parseLong(str,16);
-							usedValueDefinition = block.module.getValueDefinition(uniqueID);
-							if (usedValueDefinition==null)
-								SaveViewer.log_error_ln("Can't find ValueDefinition with UniqueID[%s].", str);
-						}
-						catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.value.uniqueID> as hex long: \"%s\"", str);
-							usedValueDefinition = null;
-						}
-					}
-					// value + usedValueDefinition  -->  InstalledUpgrade.values
-					if (line.startsWith("value.value=") && usedValueDefinition!=null) {
-						String str = line.substring("value.value=".length());
-						Float value;
-						try { value = Float.parseFloat(str); }
-						catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.value> as Float: \"%s\"", str);
-							value = null;
-						}
-						installedUpgrade.values.put(usedValueDefinition, value);
-					}
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -985,7 +1053,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			
 			session.updateNumberOfModules();
-			session.computeNumberOfCycles();
+			session.computeSequences();
+			session.finalSequence = tempFinalSequence.toArray(new GeneralizedID[tempFinalSequence.size()]);
 			return session;
 		}
 
@@ -1012,6 +1081,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 		void saveFile(File file) {
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+				out.println("[FinalSequence]");
+				for (GeneralizedID id:finalSequence) {
+					out.printf("ModuleID=%s%n", id==null ? "" : id.id);
+				}
+				out.println();
+				
 				for (GeneralizedID id:sortedID(blocks.keySet())) {
 					SessionBlock block = blocks.get(id);
 					Debug.Assert(id==block.module.moduleID);
@@ -1027,19 +1102,24 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						if (vd.format!=null) out.printf("valueDef.format=%s%n", vd.format);
 					}
 					out.println();
-					for (InstalledUpgrade upgrade:block.installedModules) {
-						Debug.Assert(block.module == upgrade.base);
-						out.println("[InstalledUpgrade]");
-						out.printf("upgrade.label1=%s%n", upgrade.label1);
-						out.printf("upgrade.label2=%s%n", upgrade.label2);
-						for (KnownModule.ValueDefinition vd:sortedVD(upgrade.values.keySet())) {
-							Float value = upgrade.values.get(vd);
-							if (value!=null) {
-								out.printf("value.uniqueID=%016X%n", vd.uniqueID);
-								out.printf(Locale.ENGLISH,"value.value=%1.7e%n", value);
+					
+					for (int i=0; i<block.installedModules.size(); ++i) {
+						InstalledUpgrade upgrade = block.installedModules.get(i);
+						if (upgrade!=null) {
+							Debug.Assert(block.module == upgrade.base);
+							out.println("[InstalledUpgrade]");
+							out.printf("index=%d%n", i);
+							out.printf("upgrade.label1=%s%n", upgrade.label1);
+							out.printf("upgrade.label2=%s%n", upgrade.label2);
+							for (KnownModule.ValueDefinition vd:sortedVD(upgrade.values.keySet())) {
+								Float value = upgrade.values.get(vd);
+								if (value!=null) {
+									out.printf("value.uniqueID=%016X%n", vd.uniqueID);
+									out.printf(Locale.ENGLISH,"value.value=%1.7e%n", value);
+								}
 							}
+							out.println();
 						}
-						out.println();
 					}
 				}
 			}
@@ -1395,7 +1475,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private class InstallOrderPanel extends JPanel {
 			private static final long serialVersionUID = 2931295900938287288L;
 			
-			private JTextArea numberOfCyclesOutput;
+			private JTextArea sequencesOutput;
 
 			InstallOrderPanel() {
 				super(new GridBagLayout());
@@ -1449,8 +1529,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				c.weightx = 1;
 				c.weighty = 1;
 				c.gridwidth = GridBagConstraints.REMAINDER;
-				numberOfCyclesOutput = new JTextArea();
-				add(new JScrollPane(numberOfCyclesOutput),c);
+				sequencesOutput = new JTextArea();
+				add(new JScrollPane(sequencesOutput),c);
 				
 				for (GeneralizedID id:session.blocks.keySet()) {
 					Session.SessionBlock block = session.blocks.get(id);
@@ -1462,7 +1542,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					}
 				}
 				
-				computeNumberOfCycles();
+				computeSequences();
 			}
 
 			private void setEnabled(JRadioButton[] btns, boolean enabled) {
@@ -1478,7 +1558,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				if (newPos!=null)
 					setEnabled(btns[newPos],false);
 				
-				computeNumberOfCycles();
+				computeSequences();
 				updateButtonAccess();
 			}
 
@@ -1486,32 +1566,32 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				return new JLabel(string, centered ? JLabel.CENTER : JLabel.LEFT);
 			}
 
-			private void computeNumberOfCycles() {
+			private void computeSequences() {
 				
-				session.computeNumberOfCycles();
+				session.computeSequences();
 				
 				if (session.sequences==null) {
-					numberOfCyclesOutput.setText("Finalize install order to determine number of cycles.");
+					sequencesOutput.setText("Finalize install order to determine number of cycles.");
 					return;
 				}
 				
-				numberOfCyclesOutput.setText("");
+				sequencesOutput.setText("");
 				
-				SaveViewer.append_ln(numberOfCyclesOutput, "Number of cycles: %d", session.numberOfCycles);
+				SaveViewer.append_ln(sequencesOutput, "Number of cycles: %d", session.sequences.length);
 				
 				Vector<GeneralizedID> sortedIDs = sortedID(session.blocks.keySet());
-				SaveViewer.append_ln(numberOfCyclesOutput, "Modules:");
+				SaveViewer.append_ln(sequencesOutput, "Modules:");
 				for (int i=0; i<sortedIDs.size(); ++i) {
 					GeneralizedID id = sortedIDs.get(i);
 					Debug.Assert(id!=null);
 					int amount = session.blocks.get(id).amount;
-					SaveViewer.append_ln(numberOfCyclesOutput, "   %2d  :  %s  (%dx)", i+1, id.toString(), amount);
+					SaveViewer.append_ln(sequencesOutput, "   %2d  :  %s  (%dx)", i+1, id.toString(), amount);
 				}
-				SaveViewer.append_ln(numberOfCyclesOutput, "    ##  Dummy Module");
+				SaveViewer.append_ln(sequencesOutput, "    ##  Dummy Module");
 				
-				SaveViewer.append_ln(numberOfCyclesOutput, "Sequences:  [%d]", session.numberOfCycles);
+				SaveViewer.append_ln(sequencesOutput, "Sequences:  [%d]", session.sequences.length);
 				for (int i=0; i<session.sequences.length; ++i) {
-					SaveViewer.append(numberOfCyclesOutput, "[%2d] ", i+1);
+					SaveViewer.append(sequencesOutput, "[%2d] ", i+1);
 					String str = "";
 					for (int j=0; j<session.sequences[i].length; ++j) {
 						GeneralizedID id = session.sequences[i][j];
@@ -1525,7 +1605,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							str += String.format("%2d", index+1); 
 						}
 					}
-					SaveViewer.append_ln(numberOfCyclesOutput, str);
+					SaveViewer.append_ln(sequencesOutput, str);
 				}
 			}
 		}
@@ -1605,7 +1685,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		ModulePanel() {
 			super(new GridBagLayout());
 		}
-		
+
 		public void updateModules(Vector<GeneralizedID> modules) {
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
@@ -1643,12 +1723,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			setPreferredSize(new Dimension(600,500));
 		}
 	
-		public void clearCurrentModule() {
-			tables.forEach((id,tableModel)->tableModel.clearCurrentModule());
+		public void showFinalInstallation(boolean showFinalInstallation) {
+			tables.forEach((id,tableModel)->tableModel.showFinalInstallation(showFinalInstallation));
 		}
 
-		public void setCurrentModule(GeneralizedID currentModule, int currentModuleIndex) {
-			tables.forEach((id,tableModel)->tableModel.setCurrentModule(id==currentModule ? currentModuleIndex : -1));
+		public void clearCurrentInstallTestModule() {
+			tables.forEach((id,tableModel)->tableModel.clearCurrentInstallTestModule());
+		}
+
+		public void setCurrentInstallTestModule(GeneralizedID currentModule, int currentModuleIndex) {
+			tables.forEach((id,tableModel)->tableModel.setCurrentInstallTestModule(id==currentModule ? currentModuleIndex : -1));
+		}
+		
+		private void updateAfterChangeOnFinalSequence() {
+			tables.forEach((id,tableModel)->tableModel.fireTableUpdate());
+			finalSequenceTableModel.fireTableUpdate();
 		}
 
 		private void updateTables() {
@@ -1661,7 +1750,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				Debug.Assert(id!=null);
 				Session.SessionBlock block = currentSession.blocks.get(id);
 				
-				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(block,currentSession.nModules,label1CellEditor,label2CellEditor);
+				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(block,currentSession.finalSequence,currentSession.nModules,label1CellEditor,label2CellEditor,this::updateAfterChangeOnFinalSequence);
 				tables.put(id, tableModel);
 				
 				JTable table = new JTable(tableModel);
@@ -1677,6 +1766,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				});
 				table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 				table.setPreferredScrollableViewportSize(table.getPreferredSize());
+				table.setAutoCreateRowSorter(true);
 				
 				tableModel.setTable(table);
 				
@@ -1929,7 +2019,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			return new TableModelEvent(this,firstRow,lastRow,column,type);
 		}
 	
-		@SuppressWarnings("unused")
 		public void fireTableUpdate() {
 			fireTableEvent(createTableModelEvent());
 		}
@@ -1994,43 +2083,62 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 		private static final String CELLEDITORVALUE_ACTIVATED = "akt.";
 		private static final String CELLEDITORVALUE_NOTACTIVATED = "";
-		private static final int COLUMN_INDEX  = 0;
-		private static final int COLUMN_LABEL1 = COLUMN_INDEX +1;
-		private static final int COLUMN_LABEL2 = COLUMN_LABEL1+1;
+		private static final int COLUMN_INDEX     = 0;
+		private static final int COLUMN_LABEL1    = COLUMN_INDEX +1;
+		private static final int COLUMN_LABEL2    = COLUMN_LABEL1+1;
 		private static final int STANDARD_COLUMNS = COLUMN_LABEL2+1;
 		
 		private Session.SessionBlock block;
+		private GeneralizedID[] finalSequence;
 		private int nModules;
+		
 		private TableCellEditor label1CellEditor;
 		private TableCellEditor label2CellEditor;
 		private TableCellEditor cellEditor_Activated;
-		private TableCellEditor cellEditor_Other;
+		private TableCellEditor cellEditor_TextField;
 		private MyTableCellRenderer defaultTableCellRenderer;
-		private int currentModule;
-		private boolean isInstalling;
+		private int currentInstallTestModule;
+		private boolean installTestAreRunning;
+		private boolean showFinalInstallation;
+		private DefaultCellEditor cellEditor_Checkbox;
+		private Runnable updateAfterChangeOnFinalSequence;
 	
-		public InstalledModulesTableModel(Session.SessionBlock block, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor) {
+		public InstalledModulesTableModel(Session.SessionBlock block, GeneralizedID[] finalSequence, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor, Runnable updateAfterChangeOnFinalSequence) {
 			this.block = block;
+			this.finalSequence = finalSequence;
 			this.nModules = nModules;
 			this.label1CellEditor = label1CellEditor;
 			this.label2CellEditor = label2CellEditor;
+			this.updateAfterChangeOnFinalSequence = updateAfterChangeOnFinalSequence;
 			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
-			cellEditor_Other = new DefaultCellEditor(new JTextField());
+			cellEditor_TextField = new DefaultCellEditor(new JTextField());
+			JCheckBox checkBox = new JCheckBox(); checkBox.setHorizontalAlignment(JCheckBox.CENTER);
+			cellEditor_Checkbox = new DefaultCellEditor(checkBox);
 			defaultTableCellRenderer = new MyTableCellRenderer();
-			isInstalling = false;
-			currentModule = -1;
+			installTestAreRunning = false;
+			currentInstallTestModule = -1;
+			showFinalInstallation = false;
 		}
 	
-		public void clearCurrentModule() {
-			this.isInstalling = false;
-			this.currentModule = -1;
-			table.repaint();
+		public void showFinalInstallation(boolean showFinalInstallation) {
+			this.showFinalInstallation = showFinalInstallation;
+			fireTableStructureUpdate();
 		}
 
-		public void setCurrentModule(int currentModule) {
-			this.isInstalling = true;
-			this.currentModule = currentModule;
-			table.repaint();
+		public void clearCurrentInstallTestModule() {
+			boolean stoppingInstallTests = installTestAreRunning;
+			installTestAreRunning = false;
+			currentInstallTestModule = -1;
+			if (showFinalInstallation && stoppingInstallTests) fireTableStructureUpdate();
+			else table.repaint();
+		}
+
+		public void setCurrentInstallTestModule(int currentModule) {
+			boolean startingInstallTests = !installTestAreRunning;
+			installTestAreRunning = true;
+			currentInstallTestModule = currentModule;
+			if (showFinalInstallation && startingInstallTests) fireTableStructureUpdate();
+			else table.repaint();
 		}
 
 		@Override
@@ -2053,17 +2161,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case  COLUMN_LABEL1: return label1CellEditor;
 			case  COLUMN_LABEL2: return label2CellEditor;
 			default:
-				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-				switch (format) {
-				case Activated: return cellEditor_Activated;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: break;
-				}
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
+					KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+					switch (format) {
+					case Activated: return cellEditor_Activated;
+					case FloatPlus:
+					case Lightyears:
+					case PercentMinus:
+					case PercentPlus: break;
+					}
+				} else if (columnIndex-STANDARD_COLUMNS == block.module.values.size())
+					return cellEditor_Checkbox;
 				break;
 			}
-			return cellEditor_Other;
+			return cellEditor_TextField;
 		}
 	
 		private void setCellRenderers() {
@@ -2075,10 +2186,32 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		private class MyTableCellRenderer extends DefaultTableCellRenderer {
 			private static final long serialVersionUID = 7128510133641722765L;
-	
+			
+			CheckBoxRendererComponent checkBox;
+			MyTableCellRenderer() {
+				checkBox = new CheckBoxRendererComponent();
+			}
+
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
 				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
+				
+				rowIndex = table.convertRowIndexToModel(rowIndex);
+				columnIndex = table.convertColumnIndexToModel(columnIndex);
+				
+				if (columnIndex-STANDARD_COLUMNS==block.module.values.size()) {
+					component = checkBox;
+					checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+					checkBox.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+					checkBox.setSelected(value instanceof Boolean ? (Boolean) value : false);
+					checkBox.setHorizontalAlignment(CENTER);
+					if (rowIndex<finalSequence.length) {
+						GeneralizedID finalID = finalSequence[rowIndex];
+						checkBox.setEnabled(finalID==block.module.moduleID || finalID==null);
+					} else
+						checkBox.setEnabled(true);
+				}
+				
 				if (component instanceof JLabel) {
 					JLabel label = (JLabel) component;
 					int alignment = JLabel.LEFT;
@@ -2088,32 +2221,47 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
 					case  COLUMN_LABEL2: alignment = JLabel.LEFT; break;
 					default:
-						KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-						switch (format) {
-						case Activated: alignment = JLabel.CENTER; break;
-						case FloatPlus: 
-						case Lightyears:
-						case PercentMinus:
-						case PercentPlus:
-							alignment = JLabel.RIGHT;
-							if (value instanceof Float)
-								label.setText(format.getFormatedValue((Float) value));
-							break;
+						if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
+							KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+							switch (format) {
+							case Activated: alignment = JLabel.CENTER; break;
+							case FloatPlus: 
+							case Lightyears:
+							case PercentMinus:
+							case PercentPlus:
+								alignment = JLabel.RIGHT;
+								if (value instanceof Float)
+									label.setText(format.getFormatedValue((Float) value));
+								break;
+							}
 						}
 						break;
 					}
 					
 					label.setHorizontalAlignment(alignment);
-					
-					if (!isSelected) {
-						Color bg = table.getBackground();
-						if (isInstalling) {
-							if (rowIndex == currentModule) bg = COLOR_CURRENTMODULE;
-							else if (currentModule>=0) bg = COLOR_CURRENTSEQUENCE;
-							else bg = COLOR_NOTCURRENTSEQUENCE;
+				}
+				if (!isSelected) {
+					Color bg = table.getBackground();
+					if (installTestAreRunning) {
+						if (rowIndex == currentInstallTestModule)
+							bg = COLOR_CURRENTMODULE;
+						else if (currentInstallTestModule>=0)
+							bg = COLOR_CURRENTSEQUENCE;
+						else
+							bg = COLOR_NOTCURRENTSEQUENCE;
+						
+					} else if (showFinalInstallation) {
+						if (rowIndex<finalSequence.length) {
+							GeneralizedID finalID = finalSequence[rowIndex];
+							if (finalID==block.module.moduleID)
+								bg = COLOR_CURRENTMODULE;
+							else if (finalID==null)
+								bg = COLOR_CURRENTSEQUENCE;
+							else
+								bg = COLOR_NOTCURRENTSEQUENCE;
 						}
-						label.setBackground(bg);
 					}
+					component.setBackground(bg);
 				}
 				return component;
 			}
@@ -2125,12 +2273,17 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case  COLUMN_INDEX : return 30;
 			case  COLUMN_LABEL1: return 150;
 			case  COLUMN_LABEL2: return 150;
-			default: return 70;
+			default:
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size())
+					return 70;
+				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
+					return 40;
+				return 150;
 			}
 		}
 	
 		@Override public int getRowCount   () { return nModules; }
-		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size(); }
+		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size() + (showFinalInstallation&&!installTestAreRunning ? 2 : 0); }
 		
 		private KnownModule.ValueDefinition getVD(int columnIndex) {
 			int index = columnIndex-STANDARD_COLUMNS;
@@ -2144,7 +2297,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_INDEX : return "#";
 			case COLUMN_LABEL1: return "Label 1";
 			case COLUMN_LABEL2: return "Label 2";
-			default: return getVD(columnIndex).label;
+			default:
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size())
+					return getVD(columnIndex).label;
+				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
+					return "Install";
+				return "Installed";
 			}
 		}
 	
@@ -2156,15 +2314,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_LABEL2:
 				return String.class;
 			default:
-				KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-				switch (format) {
-				case Activated: return String.class;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: break;
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
+					KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+					switch (format) {
+					case Activated: return String.class;
+					case FloatPlus:
+					case Lightyears:
+					case PercentMinus:
+					case PercentPlus: break;
+					}
+					return Float.class;
 				}
-				return Float.class;
+				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
+					return Boolean.class;
+				return String.class;
 			}
 		}
 	
@@ -2179,17 +2342,22 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_LABEL1: return upgrade==null ? null : upgrade.label1;
 			case COLUMN_LABEL2: return upgrade==null ? null : upgrade.label2;
 			default:
-				if (upgrade==null) return null;
-				KnownModule.ValueDefinition vd = getVD(columnIndex);
-				Float value = upgrade.values.get(vd);
-				switch (vd.format) {
-				case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: break;
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
+					if (upgrade==null) return null;
+					KnownModule.ValueDefinition vd = getVD(columnIndex);
+					Float value = upgrade.values.get(vd);
+					switch (vd.format) {
+					case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
+					case FloatPlus:
+					case Lightyears:
+					case PercentMinus:
+					case PercentPlus: break;
+					}
+					return value;
 				}
-				return value;
+				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
+					return rowIndex<finalSequence.length && finalSequence[rowIndex]==block.module.moduleID;
+				return rowIndex<finalSequence.length && finalSequence[rowIndex]!=null ? getLabelOrID(finalSequence[rowIndex]) : null;
 			}
 		}
 	
@@ -2199,7 +2367,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_INDEX : return false;
 			case COLUMN_LABEL1:
 			case COLUMN_LABEL2:
-			default: return true;
+			default:
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) return true;
+				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
+					if (rowIndex<finalSequence.length && showFinalInstallation && !installTestAreRunning) {
+						GeneralizedID finalID = finalSequence[rowIndex];
+						return finalID==null || finalID==block.module.moduleID;
+					}
+				return false;
 			}
 		}
 	
@@ -2220,16 +2395,26 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_LABEL1: upgrade.label1 = (String)aValue; break;
 			case COLUMN_LABEL2: upgrade.label2 = (String)aValue; break;
 			default:
-				KnownModule.ValueDefinition vd = getVD(columnIndex);
-				Float value = null;
-				switch (vd.format) {
-				case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
-				case FloatPlus:
-				case Lightyears:
-				case PercentMinus:
-				case PercentPlus: value = parseFloat((String)aValue); break;
+				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
+					KnownModule.ValueDefinition vd = getVD(columnIndex);
+					Float value = null;
+					switch (vd.format) {
+					case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
+					case FloatPlus:
+					case Lightyears:
+					case PercentMinus:
+					case PercentPlus: value = parseFloat((String)aValue); break;
+					}
+					upgrade.values.put(vd, value);
+				} else if (columnIndex-STANDARD_COLUMNS==block.module.values.size()) {
+					if (aValue instanceof Boolean) {
+						boolean b = (Boolean) aValue;
+						if (rowIndex<finalSequence.length) {
+							finalSequence[rowIndex] = b ? block.module.moduleID : null;
+							updateAfterChangeOnFinalSequence.run();
+						}
+					}
 				}
-				upgrade.values.put(vd, value);
 				break;
 			}
 		}
@@ -2263,6 +2448,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
 				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
+				rowIndex = table.convertRowIndexToModel(rowIndex);
+				columnIndex = table.convertColumnIndexToModel(columnIndex);
+				
 				if (component instanceof JLabel) {
 					JLabel label = (JLabel) component;
 					
@@ -2328,8 +2516,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			this.sequences = sequences;
 			fireTableHeaderChanged();
 			
-			Dimension size = table.getPreferredSize();
-			table.setPreferredScrollableViewportSize(size);
+			table.setPreferredScrollableViewportSize(table.getPreferredSize());
 		}
 
 		@Override public int getRowCount   () { return nModules; }
@@ -2363,5 +2550,34 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			return label;
 		}
 	
+	}
+
+	private final class FinalSequenceTableModel extends AbstractTableModel {
+	
+		private GeneralizedID[] finalSequence = null;
+
+		public void update(GeneralizedID[] finalSequence) {
+			this.finalSequence = finalSequence;
+			fireTableStructureUpdate();
+		}
+
+		@Override
+		protected void prepareTable() {
+			setColumnWidths();
+			table.setPreferredScrollableViewportSize(table.getPreferredSize());
+		}
+		
+		@Override
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			return finalSequence==null || finalSequence[rowIndex]==null ? null : getLabelOrID(finalSequence[rowIndex]);
+		}
+	
+		@Override public int getRowCount() { return finalSequence==null ? 0 : finalSequence.length; }
+		@Override public int getColumnCount() { return 1; }
+		@Override public String getColumnName(int columnIndex) { return "Module"; }
+		@Override public Class<?> getColumnClass(int columnIndex) { return String.class; }
+		@Override public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
+		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {}
+		@Override protected int getPrefColumnWidth(int columnIndex) { return 200; }
 	}
 }
