@@ -45,6 +45,10 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 
 public class FileExport {
+	static final String RES_IMAGES_TAB_HEADER_PNG = "/images/TabHeader.png";
+	static final String RES_IMAGES_TOOLBAR_PNG    = "/images/Toolbar.png";
+	static final String RES_KNOWN_STEAM_ID_TemplateHTML = "/html/KnownSteamIDs.template.html";
+	
 	static final String EXTRA_IMAGES_PATH = "extra/resource_icons";
 	
 	static final String FILE_COLORS               = "NMS_Viewer.Colors.txt";
@@ -56,7 +60,11 @@ public class FileExport {
 	static final String FILE_KNOWN_EDITABLE_MODS  = "NMS_Viewer.KnownEditableMods.txt";;
 	static final String FILE_KNOWN_STEAM_ID       = "NMS_Viewer.KnownSteamIDs.txt";
 	static final String FILE_KNOWN_STEAM_ID_HTML  = "NMS_Viewer.KnownSteamIDs.html";
-	static final String FILE_KNOWN_STEAM_ID_TemplateHTML = "/html/KnownSteamIDs.template.html";
+	static final String FILE_CFG_PRODUCTION_OPTIMISER = "NMS_Viewer.ProductionOptimiser.cfg";
+	static final String FILE_CFG_RECIPE_ANALYSER      = "NMS_Viewer.RecipeAnalyser.cfg";
+	static final String FILE_CFG_RESOURCE_HOTSPOTS    = "NMS_Viewer.ResourceHotSpots.cfg";
+	static final String FILE_DATA_RESOURCE_HOTSPOTS   = "NMS_Viewer.ResourceHotSpots.data";
+	static final String FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
 	
 	static {
 		VRMLoutput.vrmlFileChooser = new JFileChooser("./");
@@ -70,7 +78,7 @@ public class FileExport {
 	static void writeKnownSteamIDsToHTML() {
 		
 		try (
-				BufferedReader in = new BufferedReader(new InputStreamReader("".getClass().getResourceAsStream(FILE_KNOWN_STEAM_ID_TemplateHTML), StandardCharsets.UTF_8));
+				BufferedReader in = new BufferedReader(new InputStreamReader("".getClass().getResourceAsStream(RES_KNOWN_STEAM_ID_TemplateHTML), StandardCharsets.UTF_8));
 				PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FILE_KNOWN_STEAM_ID_HTML), StandardCharsets.UTF_8))
 		) {
 			String line;
@@ -260,7 +268,7 @@ public class FileExport {
 			else pd.setIndeterminate(true);
 		});
 		long startTime = System.currentTimeMillis();
-		SaveViewer.log("%s%s ... ",indent,taskTitle);
+		Gui.log("%s%s ... ",indent,taskTitle);
 		return startTime;
 	}
 
@@ -269,7 +277,7 @@ public class FileExport {
 	}
 
 	private static void endTask(long startTime, String additionalInfo) {
-		SaveViewer.log_ln("done (in %1.2fs)%s", (System.currentTimeMillis()-startTime)/1000.0, additionalInfo);
+		Gui.log_ln("done (in %1.2fs)%s", (System.currentTimeMillis()-startTime)/1000.0, additionalInfo);
 	}
 
 	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Window parent, String label, boolean dontAsk) {
@@ -279,7 +287,7 @@ public class FileExport {
 			if (bObjs==null) return;
 			
 			long startTime, startTimeTotal = System.currentTimeMillis();
-			SaveViewer.log_ln("Write positions of "+bObjs.length+" BuildingObjects to VRML file ...");
+			Gui.log_ln("Write positions of "+bObjs.length+" BuildingObjects to VRML file ...");
 			
 			File file;
 			if (dontAsk)
@@ -370,9 +378,9 @@ public class FileExport {
 				
 				if (!freightCombine.isEmpty()) {
 					startTime = startTask(pd, "   ", "Write result of FreighterRoomCombine to file");
-					SaveViewer.log_ln("");
+					Gui.log_ln("");
 					freightCombine.writeModel(vrml,pd);
-					SaveViewer.log("   ");
+					Gui.log("   ");
 					endTask(startTime);
 				}
 				
@@ -397,7 +405,7 @@ public class FileExport {
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			SaveViewer.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
+			Gui.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
 		};
 		if (parent==null)
 			task.accept(null);
@@ -409,7 +417,7 @@ public class FileExport {
 		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
 			
 			long startTime, startTimeTotal = System.currentTimeMillis();
-			SaveViewer.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
+			Gui.log_ln("Write positions of "+objects.length+" BuildingObjects to VRML file ...");
 			Double pRad = planetRadius;
 			if (pRad!=null && pRad<=0) pRad=null;
 			
@@ -511,7 +519,7 @@ public class FileExport {
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			SaveViewer.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
+			Gui.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
 		};
 		if (parent==null)
 			task.accept(null);
@@ -798,9 +806,9 @@ public class FileExport {
 			endTask(startTime);
 			
 			startTime = startTask(pd, "      ", "Write Geometry to File");
-			SaveViewer.log_ln("");
+			Gui.log_ln("");
 			LineGeometry.writeIndexedLineSet_verbose(vrml, geometry, "", Color.BLACK, pd, "         ");
-			SaveViewer.log("      ");
+			Gui.log("      ");
 			endTask(startTime);
 			
 			if (!extraTexts.isEmpty()) {
@@ -1784,7 +1792,7 @@ public class FileExport {
 
 	@SuppressWarnings("unused")
 	private static class CubeCombine_Dummy extends CubeCombine {
-		CubeCombine_Dummy() { SaveViewer.log_ln("\r\n\r\n##############################\r\nCubeCombine_Dummy\r\n##############################\r\n\r\n\r\n"); }
+		CubeCombine_Dummy() { Gui.log_ln("\r\n\r\n##############################\r\nCubeCombine_Dummy\r\n##############################\r\n\r\n\r\n"); }
 		@Override public boolean add(BuildingObject obj) { return false; }
 		@Override public BuildingObject[] getRemainingObjects() { return new BuildingObject[0]; }
 		@Override public void writeModel(PrintWriter vrml) {}

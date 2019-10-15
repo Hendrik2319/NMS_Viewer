@@ -57,12 +57,11 @@ import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolbarIcons;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ToolbarIcons;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 class ProductionOptimiser implements ActionListener {
 
-	private static final String PRODUCTION_OPTIMISER_CFG = "NMS_Viewer.ProductionOptimiser.cfg";
 	
 	private static final Color COLOR_INFINITE_PRODUCT = Color.RED;
 	private static final Color COLOR_INFINITE_INPUT = new Color(0xe0e0e0);
@@ -71,7 +70,7 @@ class ProductionOptimiser implements ActionListener {
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
-		SaveViewer.loadToolbarIcons();
+		Gui.loadToolbarIcons();
 		start(true);
 	}
 	
@@ -167,13 +166,13 @@ class ProductionOptimiser implements ActionListener {
 		contentPane.setResizeWeight(0.8);
 		
 		JMenu menuData = new JMenu("Data");
-		menuData.add(SaveViewer.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData     , ToolbarIcons.Delete));
-		menuData.add(SaveViewer.createMenuItem("Read data from file ..."   , this, disabler, ActionCommand.OpenDataFile  , ToolbarIcons.Open));
-		menuData.add(SaveViewer.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile  , ToolbarIcons.Save));
-		menuData.add(SaveViewer.createMenuItem("Write data to new file ...", this, disabler, ActionCommand.SaveDataFileAs, ToolbarIcons.SaveAs));
+		menuData.add(Gui.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData     , ToolbarIcons.Delete));
+		menuData.add(Gui.createMenuItem("Read data from file ..."   , this, disabler, ActionCommand.OpenDataFile  , ToolbarIcons.Open));
+		menuData.add(Gui.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile  , ToolbarIcons.Save));
+		menuData.add(Gui.createMenuItem("Write data to new file ...", this, disabler, ActionCommand.SaveDataFileAs, ToolbarIcons.SaveAs));
 		
 		JMenu menuAnalyse = new JMenu("Analyse");
-		menuAnalyse.add(SaveViewer.createMenuItem("Find production with most valuable products", this, disabler, ActionCommand.FindMostValuableProduction));
+		menuAnalyse.add(Gui.createMenuItem("Find production with most valuable products", this, disabler, ActionCommand.FindMostValuableProduction));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -295,7 +294,7 @@ class ProductionOptimiser implements ActionListener {
 	}
 
 	private ProductionOptimiser readConfig() {
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(PRODUCTION_OPTIMISER_CFG), StandardCharsets.UTF_8))) {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_CFG_PRODUCTION_OPTIMISER), StandardCharsets.UTF_8))) {
 			String line;
 			while ( (line=in.readLine())!=null ) {
 				if (line.startsWith("OpenProductionTree=")) {
@@ -330,7 +329,7 @@ class ProductionOptimiser implements ActionListener {
 	}
 
 	private ProductionOptimiser writeConfig() {
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(PRODUCTION_OPTIMISER_CFG), StandardCharsets.UTF_8))) {
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_CFG_PRODUCTION_OPTIMISER), StandardCharsets.UTF_8))) {
 			if (dataFile!=null)
 				out.printf("OpenProductionTree=%s%n", dataFile.getAbsolutePath());
 //			if (saveInStockIngredients) {

@@ -172,7 +172,7 @@ public class Images {
 		
 		boolean noNewColorAdded = true;
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read newly defined background colors from file \"%s\"...", file.getPath());
+		Gui.log_ln("Read newly defined background colors from file \"%s\"...", file.getPath());
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -316,8 +316,8 @@ public class Images {
 			addComp(fieldPanel,fieldLayout,c, rgbField               , 1,0,GridBagConstraints.REMAINDER,GridBagConstraints.BOTH);
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,5,5));
-			buttonPanel.add(SaveViewer.createButton("Ok", e->{if (value!=null) result = new NamedColor(value, nameField.getText()); closeDialog(); }));
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->{ closeDialog(); }));
+			buttonPanel.add(Gui.createButton("Ok", e->{if (value!=null) result = new NamedColor(value, nameField.getText()); closeDialog(); }));
+			buttonPanel.add(Gui.createButton("Cancel", e->{ closeDialog(); }));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -929,13 +929,13 @@ public class Images {
 			c.fill = GridBagConstraints.BOTH;
 			JPanel buttonPanel = new JPanel(new GridBagLayout());
 			c.weightx = 0;
-			buttonPanel.add(SaveViewer.createRadioButton("Sort by name", bg, true, true,e->sortByName()),c);
-			buttonPanel.add(rdbtnSortSimilarity = SaveViewer.createRadioButton("Sort by similarity to selected image", bg, false, false,e->sortBySimilarityTo(selectedName)),c);
-			buttonPanel.add(SaveViewer.createCheckbox("Mark Used Images", markUsedImagesByDefault, isSelected->imageGridPanel.markUsedImages(isSelected)),c);
+			buttonPanel.add(Gui.createRadioButton("Sort by name", bg, true, true,e->sortByName()),c);
+			buttonPanel.add(rdbtnSortSimilarity = Gui.createRadioButton("Sort by similarity to selected image", bg, false, false,e->sortBySimilarityTo(selectedName)),c);
+			buttonPanel.add(Gui.createCheckbox("Mark Used Images", markUsedImagesByDefault, isSelected->imageGridPanel.markUsedImages(isSelected)),c);
 			c.weightx = 1;
 			buttonPanel.add(new JLabel(),c);
 			c.weightx = 0;
-			buttonPanel.add(SaveViewer.createButton("Close",e->closeDialog()),c);
+			buttonPanel.add(Gui.createButton("Close",e->closeDialog()),c);
 			
 						
 			JPanel rightPanel = new JPanel(new BorderLayout(3,3));
@@ -1180,9 +1180,9 @@ public class Images {
 			
 			JCheckBox chkbxMarkUsedImages;
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(chkbxMarkUsedImages = SaveViewer.createCheckbox("Mark Used Images", null, markUsedImagesByDefault));
-			buttonPanel.add(SaveViewer.createButton("Choose \"No Image\"",e->setResult("")));
-			buttonPanel.add(SaveViewer.createButton("Cancel",e->closeDialog()));
+			buttonPanel.add(chkbxMarkUsedImages = Gui.createCheckbox("Mark Used Images", null, markUsedImagesByDefault));
+			buttonPanel.add(Gui.createButton("Choose \"No Image\"",e->setResult("")));
+			buttonPanel.add(Gui.createButton("Cancel",e->closeDialog()));
 			chkbxMarkUsedImages.addActionListener(e->imageGridPanel.markUsedImages(chkbxMarkUsedImages.isSelected()));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));

@@ -16,15 +16,9 @@ InstallPos=6,3,0
 valueDef.uniqueID=42BD58028FDBE63E
 valueDef.label=Solarmodul-Energie
 valueDef.format=PercentPlus
-valueDef.uniqueID=6EEE4C11B4B0FD2A
-valueDef.label=Test Value
-valueDef.format=Lightyears
 valueDef.uniqueID=7E0A5D5CF7602542
 valueDef.label=Lebenserhaltungstanks
 valueDef.format=PercentPlus
-valueDef.uniqueID=3DE412664235CE9A
-valueDef.label=test
-valueDef.format=Activated
 
 [InstalledUpgrade]
 index=0
@@ -53,8 +47,6 @@ value.uniqueID=42BD58028FDBE63E
 value.value=4.0000000e+01
 value.uniqueID=7E0A5D5CF7602542
 value.value=6.1000000e+01
-value.uniqueID=3DE412664235CE9A
-value.value=1.0000000e+00
 
 [InstalledUpgrade]
 index=4
@@ -65,8 +57,6 @@ upgrade.label2=
 index=5
 upgrade.label1=
 upgrade.label2=
-value.uniqueID=6EEE4C11B4B0FD2A
-value.value=6.0000000e+02
 
 [InstalledUpgrade]
 index=6
@@ -74,8 +64,6 @@ upgrade.label1=T-Gel-haltige
 upgrade.label2=Abflüsse
 value.uniqueID=42BD58028FDBE63E
 value.value=3.6000000e+01
-value.uniqueID=6EEE4C11B4B0FD2A
-value.value=7.0000000e+02
 value.uniqueID=7E0A5D5CF7602542
 value.value=5.0000000e+01
 
@@ -83,15 +71,11 @@ value.value=5.0000000e+01
 index=7
 upgrade.label1=
 upgrade.label2=
-value.uniqueID=6EEE4C11B4B0FD2A
-value.value=8.0000000e+02
 
 [InstalledUpgrade]
 index=8
 upgrade.label1=
 upgrade.label2=
-value.uniqueID=6EEE4C11B4B0FD2A
-value.value=9.0000000e+02
 
 [UpgradeModule]
 ModuleID=^U_JETBOOST4
@@ -147,6 +131,11 @@ value.uniqueID=272ECCF762EB492E
 value.value=6.0000000e+00
 
 [InstalledUpgrade]
+index=5
+upgrade.label1=
+upgrade.label2=
+
+[InstalledUpgrade]
 index=6
 upgrade.label1=
 upgrade.label2=
@@ -181,6 +170,16 @@ valueDef.label=Schildstärke
 valueDef.format=PercentPlus
 
 [InstalledUpgrade]
+index=0
+upgrade.label1=
+upgrade.label2=
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=
+upgrade.label2=
+
+[InstalledUpgrade]
 index=2
 upgrade.label1=Q-Feld-interne
 upgrade.label2=Polsterung
@@ -188,6 +187,11 @@ value.uniqueID=35BE18F5CF3FC8B8
 value.value=3.3000000e+01
 value.uniqueID=697147FD3AD47C9A
 value.value=8.8000000e+01
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=
+upgrade.label2=
 
 [InstalledUpgrade]
 index=4
@@ -202,6 +206,11 @@ value.uniqueID=35BE18F5CF3FC8B8
 value.value=3.3000000e+01
 value.uniqueID=697147FD3AD47C9A
 value.value=8.7000000e+01
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=
+upgrade.label2=
 
 [InstalledUpgrade]
 index=8

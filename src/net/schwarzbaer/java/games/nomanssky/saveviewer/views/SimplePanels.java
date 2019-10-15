@@ -233,7 +233,7 @@ public class SimplePanels {
 			});
 			
 			JPopupMenu contextMenu = new JPopupMenu();
-			contextMenu.add(SaveViewer.createMenuItem("Edit Modicifations", e->{
+			contextMenu.add(Gui.createMenuItem("Edit Modicifations", e->{
 				if (selected==null) return;
 				
 				Vector<Frigate.EditableModification> editableMods = new Vector<>();
@@ -331,8 +331,8 @@ public class SimplePanels {
 				super(parent, title);
 				
 				JComboBox<Frigate.EditableModification> cmbBxEditableMods = new JComboBox<>(editableMods);
-				JTextField txtfldLabel = SaveViewer.createTextField("", (String str)->{int i=cmbBxEditableMods.getSelectedIndex(); if (i>=0) { editableMods.get(i).label = str; if (updateTask!=null) updateTask.run(); } });
-				JTextField txtfldValue = SaveViewer.createTextField("", (String str)->{int i=cmbBxEditableMods.getSelectedIndex(); if (i>=0) { editableMods.get(i).value = str; if (updateTask!=null) updateTask.run(); } });
+				JTextField txtfldLabel = Gui.createTextField("", (String str)->{int i=cmbBxEditableMods.getSelectedIndex(); if (i>=0) { editableMods.get(i).label = str; if (updateTask!=null) updateTask.run(); } });
+				JTextField txtfldValue = Gui.createTextField("", (String str)->{int i=cmbBxEditableMods.getSelectedIndex(); if (i>=0) { editableMods.get(i).value = str; if (updateTask!=null) updateTask.run(); } });
 				txtfldLabel.setColumns(40);
 				txtfldValue.setColumns(40); //setPreferredSize(new Dimension(200,16));
 				
@@ -361,7 +361,7 @@ public class SimplePanels {
 				addComp(inputPanel,layout,gbc, txtfldValue, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 				
 				JPanel buttonPanel = new JPanel(new BorderLayout(10,10));
-				buttonPanel.add(SaveViewer.createButton("Close", e->closeDialog()),BorderLayout.EAST);
+				buttonPanel.add(Gui.createButton("Close", e->closeDialog()),BorderLayout.EAST);
 				buttonPanel.add(new JLabel(""),BorderLayout.CENTER);
 				
 				JPanel contentPane = new JPanel(new BorderLayout(10,10));
@@ -957,9 +957,9 @@ public class SimplePanels {
 			
 			JPopupMenu contextMenu = table.getContextMenu();
 			contextMenu.addSeparator();
-			contextMenu.add(SaveViewer.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
-			contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->table.getModel_VerySimpleTableModel().initiateColumnUpdate(table.getColumn(2))));
-			contextMenu.add(SaveViewer.createMenuItem("Write Positions to VRML",e->writePosToVRML(),SaveViewer.ToolbarIcons.SaveAs));
+			contextMenu.add(Gui.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
+			contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->table.getModel_VerySimpleTableModel().initiateColumnUpdate(table.getColumn(2))));
+			contextMenu.add(Gui.createMenuItem("Write Positions to VRML",e->writePosToVRML(),Gui.ToolbarIcons.SaveAs));
 			
 			//add(tableScrollPane,BorderLayout.CENTER);
 		}
@@ -1138,7 +1138,7 @@ public class SimplePanels {
 				
 				JPopupMenu contextMenu = table.getContextMenu();
 				contextMenu.addSeparator();
-				contextMenu.add(SaveViewer.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
+				contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
 				addVRMLtasks(contextMenu);
 				
 				JPopupMenu textAreaContextMenu = new JPopupMenu();
@@ -1167,9 +1167,9 @@ public class SimplePanels {
 			}
 			
 			private void addVRMLtasks(JPopupMenu contextMenu) {
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base"), SaveViewer.ToolbarIcons.SaveAs));
-				contextMenu.add(SaveViewer.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false), SaveViewer.ToolbarIcons.SaveAs));
-				contextMenu.add(SaveViewer.createMenuItem("Write Whole Planet to VRML (simple)",e->{
+				contextMenu.add(Gui.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base"), Gui.ToolbarIcons.SaveAs));
+				contextMenu.add(Gui.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false), Gui.ToolbarIcons.SaveAs));
+				contextMenu.add(Gui.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
 					
@@ -1181,7 +1181,7 @@ public class SimplePanels {
 						}
 					
 					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet");
-				}, SaveViewer.ToolbarIcons.SaveAs));
+				}, Gui.ToolbarIcons.SaveAs));
 			}
 
 			private void showOtherObjectsOnThisPlanet() {

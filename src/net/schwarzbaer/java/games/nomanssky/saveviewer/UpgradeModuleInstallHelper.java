@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,18 +90,20 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggesti
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 final class UpgradeModuleInstallHelper implements ActionListener {
+	
+	private static final boolean DEBUG_EVENTS = false;
+	
 	private static final Color COLOR_NOTCURRENTSEQUENCE = Color.LIGHT_GRAY;
 	private static final Color COLOR_CURRENTSEQUENCE = Color.WHITE;
 	private static final Color COLOR_CURRENTMODULE = new Color(0xFFD000);
 	
-	private static final String CFG = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
 	private static final Comparator<GeneralizedID> compareGeneralizedIDs =
 			Comparator.<GeneralizedID,GeneralizedID.Type>comparing(id->id.type).thenComparing(id->id.id);
 
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
-		SaveViewer.loadToolbarIcons();
+		Gui.loadToolbarIcons();
 		GameInfos.loadAllIDsFromFiles();
 		start(true);
 	}
@@ -128,6 +131,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		String label = id.label;
 		if (label==null || label.isEmpty()) label = id.id;
 		return label;
+	}
+	
+	private static void showEvent(String caller, String format, Object... args) {
+		String msg = String.format(Locale.ENGLISH, format,args);
+		Gui.log_ln("[%1$tH:%1$tM:%1$tS,%1$tL] %2$s: %3$s", new Date(), caller, msg);
 	}
 	
 	private final HashMap<String,GeneralizedID> knownUpgradeModuleIDs;
@@ -158,14 +166,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 	
 	private UpgradeModuleInstallHelper readConfig() {
-		SaveViewer.log_ln("read config from file \"%s\"", CFG);
-		config.readFromFile(new File(CFG));
+		Gui.log_ln("read config from file \"%s\"", FileExport.FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER);
+		config.readFromFile(new File(FileExport.FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER));
 		return this;
 	}
 
 	private UpgradeModuleInstallHelper writeConfig() {
-		SaveViewer.log_ln("write config to file \"%s\"", CFG);
-		config.writeToFile(new File(CFG));
+		Gui.log_ln("write config to file \"%s\"", FileExport.FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER);
+		config.writeToFile(new File(FileExport.FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER));
 		return this;
 	}
 
@@ -197,7 +205,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		sequencesTableModel.setTable(sequencesTable);
 		
 		JScrollPane sequencesTableScrollPane = new JScrollPane(sequencesTable);
-		sequencesTableScrollPane.setBorder( SaveViewer.createTitledBorderForScrollPane("Sequences") );
+		sequencesTableScrollPane.setBorder( Gui.createTitledBorderForScrollPane("Sequences") );
 		sequencesTableScrollPane.setMinimumSize(new Dimension(200,150));
 		//sequencesPanel.setPreferredSize(new Dimension(200,400));
 		
@@ -210,9 +218,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		JPanel installationTestButtonsPanel = new JPanel(new GridBagLayout());
 		installationTestButtonsPanel.setBorder( BorderFactory.createTitledBorder("Installation Tests"));
 		c.weightx = 0;
-		installationTestButtonsPanel.add(SaveViewer.createButton("Start", this, disabler, ActionCommand.StartInstallationTests),c);
-		installationTestButtonsPanel.add(SaveViewer.createButton("Next" , this, disabler, ActionCommand.InstallNext),c);
-		installationTestButtonsPanel.add(SaveViewer.createButton("Stop" , this, disabler, ActionCommand.StopInstallationTests),c);
+		installationTestButtonsPanel.add(Gui.createButton("Start", this, disabler, ActionCommand.StartInstallationTests),c);
+		installationTestButtonsPanel.add(Gui.createButton("Next" , this, disabler, ActionCommand.InstallNext),c);
+		installationTestButtonsPanel.add(Gui.createButton("Stop" , this, disabler, ActionCommand.StopInstallationTests),c);
 		c.weightx = 1;
 		installationTestButtonsPanel.add(new JLabel(),c);
 		
@@ -231,7 +239,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		c.gridwidth = 1;
 		c.weightx = 0;
 		c.weighty = 0;
-		finalSequencePanel.add(SaveViewer.createCheckbox("Define in Module Tables", disabler, ActionCommand.DefineFinalInstallation, false, true, tablePanel::defineFinalInstallation),c);
+		finalSequencePanel.add(Gui.createCheckbox("Define in Module Tables", disabler, ActionCommand.DefineFinalInstallation, false, true, tablePanel::defineFinalInstallation),c);
 		c.weightx = 1;
 		finalSequencePanel.add(new JLabel(),c);
 		
@@ -260,12 +268,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		
 		JMenu menuData = new JMenu("Data");
-		menuData.add(SaveViewer.createMenuItem("New Session"            , this, disabler, ActionCommand.NewSession));
-		menuData.add(SaveViewer.createMenuItem("Open Session"           , this, disabler, ActionCommand.OpenSession));
-		menuData.add(SaveViewer.createMenuItem("Save Session"           , this, disabler, ActionCommand.SaveSession));
-		menuData.add(SaveViewer.createMenuItem("Save Session as ..."    , this, disabler, ActionCommand.SaveSessionAs));
+		menuData.add(Gui.createMenuItem("New Session"            , this, disabler, ActionCommand.NewSession));
+		menuData.add(Gui.createMenuItem("Open Session"           , this, disabler, ActionCommand.OpenSession));
+		menuData.add(Gui.createMenuItem("Save Session"           , this, disabler, ActionCommand.SaveSession));
+		menuData.add(Gui.createMenuItem("Save Session as ..."    , this, disabler, ActionCommand.SaveSessionAs));
 		menuData.addSeparator();
-		menuData.add(SaveViewer.createMenuItem("Edit Session Parameters", this, disabler, ActionCommand.EditSession));
+		menuData.add(Gui.createMenuItem("Edit Session Parameters", this, disabler, ActionCommand.EditSession));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -482,7 +490,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							if (windowSize==null) windowSize=new Dimension();
 							windowSize.width = val;
 						} catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse WindowWidth as integer in \"%s\"", str);
+							Gui.log_error_ln("Can't parse WindowWidth as integer in \"%s\"", str);
 						}
 					}
 					if (line.startsWith("WindowHeight=")) {
@@ -492,7 +500,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							if (windowSize==null) windowSize=new Dimension();
 							windowSize.height = val;
 						} catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse WindowHeight as integer in \"%s\"", str);
+							Gui.log_error_ln("Can't parse WindowHeight as integer in \"%s\"", str);
 						}
 					}
 					if (line.startsWith("WindowSplit=")) {
@@ -500,7 +508,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						try {
 							windowSplit = Integer.parseInt(str);
 						} catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse WindowSplit as integer in \"%s\"", str);
+							Gui.log_error_ln("Can't parse WindowSplit as integer in \"%s\"", str);
 						}
 					}
 					
@@ -508,7 +516,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						String str = line.substring("ModuleID=".length());
 						GeneralizedID moduleID = knownUpgradeModuleIDs.get(str);
 						if (moduleID==null) {
-							SaveViewer.log_error_ln("Can't find UpgradeModule for ID \"%s\"", str);
+							Gui.log_error_ln("Can't find UpgradeModule for ID \"%s\"", str);
 							knownModule = null;
 						} else
 							knownModules.put( moduleID, knownModule = new KnownModule(moduleID) );
@@ -522,7 +530,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							knownModule.values.add( knownValue = new KnownModule.ValueDefinition(knownModule,uniqueID) );
 						}
 						catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse <value.uniqueID> as hex long: \"%s\"", str);
+							Gui.log_error_ln("Can't parse <value.uniqueID> as hex long: \"%s\"", str);
 							knownValue = null;
 						}
 					}
@@ -742,6 +750,17 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			@Override public int compareTo( ValueDefinition other) {
 				return (int) (this.uniqueID - other.uniqueID);
 			}
+			@Override
+			public String toString() {
+				StringBuilder sb = new StringBuilder();
+				sb.append(String.format("UniqueID=%016X", uniqueID));
+				if (module != null) sb.append(", ").append("module=").append(getLabelOrID(module.moduleID));
+				if (label  != null) sb.append(", ").append("label=").append(label);
+				if (format != null) sb.append(", ").append("format=").append(format);
+				if (min    != null) sb.append(", ").append("min=").append(min);
+				if (max    != null) sb.append(", ").append("max=").append(max);
+				return "VD[ "+sb.toString()+" ]";
+			}
 			
 		}
 	}
@@ -873,11 +892,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 		@SuppressWarnings("unused")
 		private void showSequences(GeneralizedID[][] sequences, Vector<GeneralizedID> sortedIDs) {
-			SaveViewer.log_ln("Sequences:");
+			Gui.log_ln("Sequences:");
 			for (int i=0; i<sequences.length; ++i) {
-				SaveViewer.log("[%2d] ", i);
+				Gui.log("[%2d] ", i);
 				if (sequences[i] == null)
-					SaveViewer.log_ln(" <null>");
+					Gui.log_ln(" <null>");
 				else {
 					String str = "";
 					for (int j=0; j<sequences[i].length; ++j) {
@@ -890,7 +909,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							str += String.format("%2d", sortedIDs.indexOf(id)+1); 
 						}
 					}
-					SaveViewer.log_ln(" %s", str);
+					Gui.log_ln(" %s", str);
 				}
 			}
 		}
@@ -933,13 +952,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							
 							GeneralizedID id = getID.apply(str);
 							if (id==null)
-								SaveViewer.log_error_ln("Can't find GeneralizedID for \"%s\".", str);
+								Gui.log_error_ln("Can't find GeneralizedID for \"%s\".", str);
 							
 							KnownModule module = null;
 							if (id!=null) {
 								module = getKnownModule.apply(id);
 								if (module==null)
-									SaveViewer.log_error_ln("Can't find KnownModule for GeneralizedID \"%s\".", id);
+									Gui.log_error_ln("Can't find KnownModule for GeneralizedID \"%s\".", id);
 							}
 							
 							block = null;
@@ -955,7 +974,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							String str = line.substring("Amount=".length());
 							try { block.amount = Integer.parseInt(str); }
 							catch (NumberFormatException e) {
-								SaveViewer.log_error_ln("Can't parse <block.amount> as integer: \"%s\"", str);
+								Gui.log_error_ln("Can't parse <block.amount> as integer: \"%s\"", str);
 								block.amount = 0;
 							}
 						}
@@ -973,7 +992,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 								announcedValueDefinitions.add(announcedValueDefinition);
 							}
 							catch (NumberFormatException e) {
-								SaveViewer.log_error_ln("Can't parse <valueDef.uniqueID> as hex long: \"%s\"", str);
+								Gui.log_error_ln("Can't parse <valueDef.uniqueID> as hex long: \"%s\"", str);
 								announcedValueDefinition = null;
 							}
 						}
@@ -985,7 +1004,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							String str = line.substring("valueDef.format=".length());
 							try { announcedValueDefinition.format = KnownModule.ValueDefinition.Format.valueOf(str); }
 							catch (Exception e) {
-								SaveViewer.log_error_ln("Can't parse <valueDef.format> as KnownModule.ValueDefinition.Format: \"%s\"", str);
+								Gui.log_error_ln("Can't parse <valueDef.format> as KnownModule.ValueDefinition.Format: \"%s\"", str);
 								announcedValueDefinition.format = null;
 							}
 						}
@@ -1009,7 +1028,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 								block.installedModules.set(index, installedUpgrade = new InstalledUpgrade(block.module));
 							}
 							catch (NumberFormatException e) {
-								SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.index> as integer: \"%s\"", str);
+								Gui.log_error_ln("Can't parse <InstalledUpgrade.index> as integer: \"%s\"", str);
 								installedUpgrade = null;
 							}
 						}
@@ -1029,10 +1048,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 								long uniqueID = Long.parseLong(str,16);
 								usedValueDefinition = block.module.getValueDefinition(uniqueID);
 								if (usedValueDefinition==null)
-									SaveViewer.log_error_ln("Can't find ValueDefinition with UniqueID[%s].", str);
+									Gui.log_error_ln("Can't find ValueDefinition with UniqueID[%s].", str);
 							}
 							catch (NumberFormatException e) {
-								SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.value.uniqueID> as hex long: \"%s\"", str);
+								Gui.log_error_ln("Can't parse <InstalledUpgrade.value.uniqueID> as hex long: \"%s\"", str);
 								usedValueDefinition = null;
 							}
 						}
@@ -1042,7 +1061,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							Float value;
 							try { value = Float.parseFloat(str); }
 							catch (NumberFormatException e) {
-								SaveViewer.log_error_ln("Can't parse <InstalledUpgrade.value> as Float: \"%s\"", str);
+								Gui.log_error_ln("Can't parse <InstalledUpgrade.value> as Float: \"%s\"", str);
 								value = null;
 							}
 							installedUpgrade.values.put(usedValueDefinition, value);
@@ -1116,7 +1135,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							out.printf("index=%d%n", i);
 							out.printf("upgrade.label1=%s%n", upgrade.label1);
 							out.printf("upgrade.label2=%s%n", upgrade.label2);
-							for (KnownModule.ValueDefinition vd:sortedVD(upgrade.values.keySet())) {
+							for (KnownModule.ValueDefinition vd:sortedVD(block.module.values)) {
 								Float value = upgrade.values.get(vd);
 								if (value!=null) {
 									out.printf("value.uniqueID=%016X%n", vd.uniqueID);
@@ -1142,7 +1161,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				else
 					try { vec.add(Integer.parseInt(part)); }
 					catch (NumberFormatException e) {
-						SaveViewer.log_error_ln("Can't parse <block.installPos> as integer: \"%s\" from \"%s\"", part, str);
+						Gui.log_error_ln("Can't parse <block.installPos> as integer: \"%s\" from \"%s\"", part, str);
 						vec.add(null);
 					}
 			}
@@ -1191,9 +1210,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				HashSet<KnownModule.ValueDefinition> knownValues = new HashSet<>();
 				installedModules.forEach(upgrade->{
 					if (upgrade==null) return;
-					upgrade.values.forEach((valueDefinition,value)->{
-						Debug.Assert(valueDefinition.module == module);
-						knownValues.add(valueDefinition);
+					module.values.forEach(vd->{
+						Float value = upgrade.values.get(vd);
+						if (value!=null) knownValues.add(vd);
 					});
 				}); 
 				return knownValues;
@@ -1234,10 +1253,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			c.weightx = 1;
 			buttonPanel.add(new JLabel(),c);
 			c.weightx = 0;
-			buttonPanel.add(SaveViewer.createButton("Select Modules"   , this, disabler, ActionCommand.SelectModules),c);
-			buttonPanel.add(SaveViewer.createButton("Set Install Order", this, disabler, ActionCommand.SetInstallOrder),c);
-			buttonPanel.add(SaveViewer.createButton("Finish", this, disabler, ActionCommand.Finish),c);
-			buttonPanel.add(SaveViewer.createButton("Cancel", this, disabler, ActionCommand.Cancel),c);
+			buttonPanel.add(Gui.createButton("Select Modules"   , this, disabler, ActionCommand.SelectModules),c);
+			buttonPanel.add(Gui.createButton("Set Install Order", this, disabler, ActionCommand.SetInstallOrder),c);
+			buttonPanel.add(Gui.createButton("Finish", this, disabler, ActionCommand.Finish),c);
+			buttonPanel.add(Gui.createButton("Cancel", this, disabler, ActionCommand.Cancel),c);
 			
 			contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -1516,13 +1535,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						c.gridx = 1;
 						ButtonGroup bg = new ButtonGroup();
 						Integer pos = block.getInstallPos(i,session.nModules);
-						add(SaveViewer.createRadioButton("", bg, pos==null, true, e->setOrder(block,index,null,btns)),c);
+						add(Gui.createRadioButton("", bg, pos==null, true, e->setOrder(block,index,null,btns)),c);
 						
 						for (int col=0; col<session.nModules; col++) {
 							int newPos = col;
 							c.gridx = col+2;
 							boolean isSelected = pos!=null && pos.intValue()==col;
-							add(btns[col][row] = SaveViewer.createRadioButton("", bg, isSelected, true, e->setOrder(block,index,newPos,btns)),c);
+							add(btns[col][row] = Gui.createRadioButton("", bg, isSelected, true, e->setOrder(block,index,newPos,btns)),c);
 						}
 						c.weightx = 1;
 						c.gridx = session.nModules+2;
@@ -1582,21 +1601,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				sequencesOutput.setText("");
 				
-				SaveViewer.append_ln(sequencesOutput, "Number of cycles: %d", session.sequences.length);
+				Gui.append_ln(sequencesOutput, "Number of cycles: %d", session.sequences.length);
 				
 				Vector<GeneralizedID> sortedIDs = sortedID(session.blocks.keySet());
-				SaveViewer.append_ln(sequencesOutput, "Modules:");
+				Gui.append_ln(sequencesOutput, "Modules:");
 				for (int i=0; i<sortedIDs.size(); ++i) {
 					GeneralizedID id = sortedIDs.get(i);
 					Debug.Assert(id!=null);
 					int amount = session.blocks.get(id).amount;
-					SaveViewer.append_ln(sequencesOutput, "   %2d  :  %s  (%dx)", i+1, id.toString(), amount);
+					Gui.append_ln(sequencesOutput, "   %2d  :  %s  (%dx)", i+1, id.toString(), amount);
 				}
-				SaveViewer.append_ln(sequencesOutput, "    ##  Dummy Module");
+				Gui.append_ln(sequencesOutput, "    ##  Dummy Module");
 				
-				SaveViewer.append_ln(sequencesOutput, "Sequences:  [%d]", session.sequences.length);
+				Gui.append_ln(sequencesOutput, "Sequences:  [%d]", session.sequences.length);
 				for (int i=0; i<session.sequences.length; ++i) {
-					SaveViewer.append(sequencesOutput, "[%2d] ", i+1);
+					Gui.append(sequencesOutput, "[%2d] ", i+1);
 					String str = "";
 					for (int j=0; j<session.sequences[i].length; ++j) {
 						GeneralizedID id = session.sequences[i][j];
@@ -1610,7 +1629,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							str += String.format("%2d", index+1); 
 						}
 					}
-					SaveViewer.append_ln(sequencesOutput, str);
+					Gui.append_ln(sequencesOutput, str);
 				}
 			}
 		}
@@ -1635,13 +1654,13 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			txtfldModule.setEditable(false);
 			txtfldModule.setText(this.tempVD.module.moduleID.getName());
 			
-			JTextField txtfldLabel = SaveViewer.createTextField(this.tempVD.label, (String str)->this.tempVD.label = str);
-			JTextField txtfldMin   = SaveViewer.createTextField(this.tempVD.min==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.min), (String str)->this.tempVD.min = parseFloat(str));
-			JTextField txtfldMax   = SaveViewer.createTextField(this.tempVD.max==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.max), (String str)->this.tempVD.max = parseFloat(str));
+			JTextField txtfldLabel = Gui.createTextField(this.tempVD.label, (String str)->this.tempVD.label = str);
+			JTextField txtfldMin   = Gui.createTextField(this.tempVD.min==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.min), (String str)->this.tempVD.min = parseFloat(str));
+			JTextField txtfldMax   = Gui.createTextField(this.tempVD.max==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.max), (String str)->this.tempVD.max = parseFloat(str));
 			
 			JComboBox<KnownModule.ValueDefinition.Format> cmbbxFormat = new JComboBox<>(KnownModule.ValueDefinition.Format.values());
 			cmbbxFormat.setSelectedItem(this.tempVD.format);
-			SaveViewer.setComp(cmbbxFormat, null, null, true, format->this.tempVD.format = format);
+			Gui.setComp(cmbbxFormat, null, null, true, format->this.tempVD.format = format);
 			
 			JPanel contentPane = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
@@ -1665,8 +1684,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			
 			createGUI(
 				contentPane,
-				SaveViewer.createButton("Ok"    , e->{ result=this.tempVD; closeDialog(); }),
-				SaveViewer.createButton("Cancel", e->{ result=null       ; closeDialog(); })
+				Gui.createButton("Ok"    , e->{ result=this.tempVD; closeDialog(); }),
+				Gui.createButton("Cancel", e->{ result=null       ; closeDialog(); })
 			);
 		}
 
@@ -1717,12 +1736,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private JPanel tablePanel;
 		private TableContextMenu tableContextMenu;
 		private HashMap<GeneralizedID, InstalledModulesTableModel> tables;
-		private LabelCellEditor label1CellEditor;
-		private LabelCellEditor label2CellEditor;
 		
 		TablePanel() {
-			label1CellEditor = new LabelCellEditor(upgrade->upgrade==null?null:upgrade.label1);
-			label2CellEditor = new LabelCellEditor(upgrade->upgrade==null?null:upgrade.label2);
 			tables = new HashMap<>();
 			tableContextMenu = new TableContextMenu();
 			tablePanel = new JPanel(new GridLayout(0,1,3,3));
@@ -1757,7 +1772,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				Debug.Assert(id!=null);
 				Session.SessionBlock block = currentSession.blocks.get(id);
 				
-				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(block,currentSession.finalSequence,currentSession.nModules,label1CellEditor,label2CellEditor,this::updateAfterChangeOnFinalSequence);
+				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(
+					block,currentSession.finalSequence,currentSession.nModules,
+					new LabelCellEditor(id,upgrade->upgrade==null?null:upgrade.label1),
+					new LabelCellEditor(id,upgrade->upgrade==null?null:upgrade.label2),
+					this::updateAfterChangeOnFinalSequence
+				);
 				tables.put(id, tableModel);
 				
 				JTable table = new JTable(tableModel);
@@ -1771,6 +1791,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						}
 					}
 				});
+				table.addFocusListener(new FocusListener() {
+					@Override public void focusLost  (FocusEvent e) { if (DEBUG_EVENTS) showEvent("JTable("+id.id+")", "focusLost()"); }
+					@Override public void focusGained(FocusEvent e) { if (DEBUG_EVENTS) showEvent("JTable("+id.id+")", "focusGained()");
+						tables.forEach((id,model)->{ if (tableModel!=model) model.stopEditing(); });
+					}
+				});
 				table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 				table.setPreferredScrollableViewportSize(table.getPreferredSize());
 				table.setAutoCreateRowSorter(true);
@@ -1780,7 +1806,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				tableScrollPane.setWheelScrollingEnabled(false);
 				tableScrollPane.addMouseWheelListener(e->scrollTables(e.getPreciseWheelRotation()));
-				tableScrollPane.setBorder( SaveViewer.createTitledBorderForScrollPane(id.getName()) );
+				tableScrollPane.setBorder( Gui.createTitledBorderForScrollPane(id.getName()) );
 				
 				tablePanel.add(tableScrollPane);
 			}
@@ -1822,12 +1848,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 			TableContextMenu() {
 				super("TableContextMenu");
-				add(                      SaveViewer.createMenuItem("Add All Values to respective Value Ranges", this, TableContextMenuCommands.AddAllToMinMax   ));
-				add(miAddColumnToMinMax = SaveViewer.createMenuItem("Add Values of this Column to Value Range" , this, TableContextMenuCommands.AddColumnToMinMax));
+				add(                      Gui.createMenuItem("Add All Values to respective Value Ranges", this, TableContextMenuCommands.AddAllToMinMax   ));
+				add(miAddColumnToMinMax = Gui.createMenuItem("Add Values of this Column to Value Range" , this, TableContextMenuCommands.AddColumnToMinMax));
 				addSeparator();;
-				add(miAddValue    = SaveViewer.createMenuItem("", this, TableContextMenuCommands.AddValueDefinition   ));
-				add(miEditValue   = SaveViewer.createMenuItem("", this, TableContextMenuCommands.EditValueDefinition  ));
-				add(miRemoveValue = SaveViewer.createMenuItem("", this, TableContextMenuCommands.RemoveValueDefinition));
+				add(miAddValue    = Gui.createMenuItem("", this, TableContextMenuCommands.AddValueDefinition   ));
+				add(miEditValue   = Gui.createMenuItem("", this, TableContextMenuCommands.EditValueDefinition  ));
+				add(miRemoveValue = Gui.createMenuItem("", this, TableContextMenuCommands.RemoveValueDefinition));
 			}
 		
 			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
@@ -1931,20 +1957,30 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			private Object result;
 			private Function<InstalledUpgrade, String> getString;
 
-			LabelCellEditor(Function<InstalledUpgrade,String> getString) {
+			private GeneralizedID id;
+
+			LabelCellEditor(GeneralizedID id, Function<InstalledUpgrade,String> getString) {
+				this.id = id;
 				this.getString = getString;
 				editorComp = new Gui.TextFieldWithSuggestions(1, this::collectSuggestions, this::selectFinally);
 				editorComp.addActionListener(e->selectFinally(editorComp.getText()));
 				editorComp.addFocusListener(new FocusListener() {
-					@Override public void focusLost  (FocusEvent e) { if (!editorComp.isShowing()) editorComp.hideList(); }
-					@Override public void focusGained(FocusEvent e) {}
+					@Override public void focusGained(FocusEvent e) { if (DEBUG_EVENTS) showEvent("focusGained()"); }
+					@Override public void focusLost  (FocusEvent e) { if (DEBUG_EVENTS) showEvent("focusLost()%s", !editorComp.isShowing()?" -> hideList":"" );
+						if (!editorComp.isShowing()) editorComp.hideList();
+					}
 				});
 				cellEditorListeners = new Vector<>();
 				result = null;
 			}
-
+			
+			private void showEvent(String format, Object... args) {
+				UpgradeModuleInstallHelper.showEvent("LabelCellEditor("+id.id+")", format, args);
+			}
+			
 			@Override
 			public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+				if (DEBUG_EVENTS) showEvent("getTableCellEditorComponent()");
 				result = value;
 				editorComp.setText( value==null ? null : value.toString(), true );
 				return editorComp;
@@ -1952,17 +1988,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 			@Override
 			public boolean stopCellEditing() {
+				if (DEBUG_EVENTS) showEvent("stopCellEditing()");
 				selectFinally(editorComp.getText());
 				return true;
 			}
 
 			@Override
 			public void cancelCellEditing() {
+				if (DEBUG_EVENTS) showEvent("cancelCellEditing()");
 				editorComp.hideList();
 				fireEditingCanceledEvent();
 			}
 
 			private void selectFinally(String str) {
+				if (DEBUG_EVENTS) showEvent("selectFinally( \"%s\" )", str);
 				result = str;
 				editorComp.hideList();
 				fireEditingStoppedEvent();
@@ -2213,6 +2252,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			defineFinalInstallation = false;
 		}
 	
+		public void stopEditing() {
+			if (table.isEditing()) {
+				TableCellEditor cellEditor = table.getCellEditor();
+				if (cellEditor!=null)
+					cellEditor.stopCellEditing();
+			}
+		}
+
 		public void defineFinalInstallation(boolean defineFinalInstallation) {
 			this.defineFinalInstallation = defineFinalInstallation;
 			fireTableStructureUpdate();

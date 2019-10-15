@@ -75,7 +75,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 class RecipeAnalyser implements ActionListener {
-	private static final String RECIPE_ANALYSER_CFG = "NMS_Viewer.RecipeAnalyser.cfg";
 
 	private static final Color COLOR_INGREDIENT_MARKER = new Color(0,213,255);
 	private static final Color COLOR_INGREDIENT_PRODUCIBLE = new Color(0,255,102);
@@ -94,7 +93,7 @@ class RecipeAnalyser implements ActionListener {
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
-		SaveViewer.loadToolbarIcons();
+		Gui.loadToolbarIcons();
 		start(true);
 	}
 
@@ -130,7 +129,7 @@ class RecipeAnalyser implements ActionListener {
 	private JCheckBoxMenuItem miSaveInStockIngredients;
 
 	private RecipeAnalyser readConfig() {
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(RECIPE_ANALYSER_CFG), StandardCharsets.UTF_8))) {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_CFG_RECIPE_ANALYSER), StandardCharsets.UTF_8))) {
 			String line;
 			while ( (line=in.readLine())!=null ) {
 				if (line.startsWith("OpenDataFile=")) {
@@ -164,7 +163,7 @@ class RecipeAnalyser implements ActionListener {
 	}
 
 	private RecipeAnalyser writeConfig() {
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(RECIPE_ANALYSER_CFG), StandardCharsets.UTF_8))) {
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_CFG_RECIPE_ANALYSER), StandardCharsets.UTF_8))) {
 			if (dataFile!=null)
 				out.printf("OpenDataFile=%s%n", dataFile.getAbsolutePath());
 			if (saveInStockIngredients) {
@@ -223,11 +222,11 @@ class RecipeAnalyser implements ActionListener {
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new Boolean[] {true, false})));
 		//ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new String[] {"In Stock","---"})));
 		
-		JCheckBoxMenuItem miHighlightProducible = SaveViewer.createCheckBoxMenuItem("Highlight producible", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
-		JMenuItem miFindCombinableIngredients = SaveViewer.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients);
-		JMenuItem miFindRecipeChain  = SaveViewer.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain);
-		JMenuItem miFindRecipeChain2 = SaveViewer.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipeChain2);
-		JMenuItem miFindRecipesWith  = SaveViewer.createMenuItem("Find recipes with #### as input", this, disabler, ActionCommand.FindRecipesWith);
+		JCheckBoxMenuItem miHighlightProducible = Gui.createCheckBoxMenuItem("Highlight producible", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
+		JMenuItem miFindCombinableIngredients = Gui.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients);
+		JMenuItem miFindRecipeChain  = Gui.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain);
+		JMenuItem miFindRecipeChain2 = Gui.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipeChain2);
+		JMenuItem miFindRecipesWith  = Gui.createMenuItem("Find recipes with #### as input", this, disabler, ActionCommand.FindRecipesWith);
 		
 		ingredientsTable.addContextMenuInvokeListener((rowV, columnV)->{
 			if (dataModel==null || dataModel.ingredientsTableModel==null) return;
@@ -257,22 +256,22 @@ class RecipeAnalyser implements ActionListener {
 		JPopupMenu contextMenu;
 		contextMenu = ingredientsTable.getContextMenu();
 		contextMenu.addSeparator();
-		contextMenu.add(SaveViewer.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
+		contextMenu.add(Gui.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		contextMenu.add(miFindRecipeChain);
 		contextMenu.add(miFindRecipeChain2);
 		contextMenu.add(miFindRecipesWith);
 		contextMenu.addSeparator();
 		contextMenu.add(miFindCombinableIngredients);
-		contextMenu.add(SaveViewer.createMenuItem("Clear markers", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
+		contextMenu.add(Gui.createMenuItem("Clear markers", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
 		contextMenu.addSeparator();
-		contextMenu.add(SaveViewer.createMenuItem("Set InStock for selected ingredients", this, disabler, ActionCommand.SetInStock));
-		contextMenu.add(SaveViewer.createMenuItem("Unset InStock for selected ingredients", this, disabler, ActionCommand.UnsetInStock));
+		contextMenu.add(Gui.createMenuItem("Set InStock for selected ingredients", this, disabler, ActionCommand.SetInStock));
+		contextMenu.add(Gui.createMenuItem("Unset InStock for selected ingredients", this, disabler, ActionCommand.UnsetInStock));
 		contextMenu.add(miHighlightProducible);
 		
 		recipesTable = new TableView.SimplifiedTable<>("RecipesTable", true, true, false);
 		recipesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
-		JMenuItem miMarkRecipeAsWrong = SaveViewer.createCheckBoxMenuItem("Recipe is wrong", this, disabler, ActionCommand.MarkRecipeAsWrong);
+		JMenuItem miMarkRecipeAsWrong = Gui.createCheckBoxMenuItem("Recipe is wrong", this, disabler, ActionCommand.MarkRecipeAsWrong);
 		recipesTable.addContextMenuInvokeListener((rowV, columnV)->{
 			if (dataModel==null || dataModel.recipesTableModel==null) return;
 			
@@ -311,30 +310,30 @@ class RecipeAnalyser implements ActionListener {
 		contentPane.add(statusFields = new StatusFields(),BorderLayout.SOUTH);
 		
 		JMenu menuData = new JMenu("Data");
-		menuData.add(SaveViewer.createMenuItem("Get Refiner recipe from clipboard", this, disabler, ActionCommand.CopyRefinerRecipesFromClipBoard));
-		menuData.add(SaveViewer.createMenuItem("Get Refiner ingredients from clipboard", this, disabler, ActionCommand.CopyRefinerIngredientsFromClipBoard));
+		menuData.add(Gui.createMenuItem("Get Refiner recipe from clipboard", this, disabler, ActionCommand.CopyRefinerRecipesFromClipBoard));
+		menuData.add(Gui.createMenuItem("Get Refiner ingredients from clipboard", this, disabler, ActionCommand.CopyRefinerIngredientsFromClipBoard));
 		menuData.addSeparator();
-		menuData.add(SaveViewer.createMenuItem("Get Nutrient Processor recipe from clipboard", this, disabler, ActionCommand.CopyNutrientProcessorRecipesFromClipBoard));
-		menuData.add(SaveViewer.createMenuItem("Get Nutrient Processor ingredients from clipboard", this, disabler, ActionCommand.CopyNutrientProcessorIngredientsFromClipBoard));
+		menuData.add(Gui.createMenuItem("Get Nutrient Processor recipe from clipboard", this, disabler, ActionCommand.CopyNutrientProcessorRecipesFromClipBoard));
+		menuData.add(Gui.createMenuItem("Get Nutrient Processor ingredients from clipboard", this, disabler, ActionCommand.CopyNutrientProcessorIngredientsFromClipBoard));
 		menuData.addSeparator();
-		menuData.add(SaveViewer.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData));
-		menuData.add(SaveViewer.createMenuItem("Read data from file ..."   , this, disabler, ActionCommand.OpenDataFile));
-		menuData.add(SaveViewer.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile));
-		menuData.add(SaveViewer.createMenuItem("Write data to new file ...", this, disabler, ActionCommand.SaveDataFileAs));
+		menuData.add(Gui.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData));
+		menuData.add(Gui.createMenuItem("Read data from file ..."   , this, disabler, ActionCommand.OpenDataFile));
+		menuData.add(Gui.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile));
+		menuData.add(Gui.createMenuItem("Write data to new file ...", this, disabler, ActionCommand.SaveDataFileAs));
 		
-		miHighlightProducibleInIngredientsTable = SaveViewer.createCheckBoxMenuItem("Highlight producible in ingredients table", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
-		miSaveInStockIngredients = SaveViewer.createCheckBoxMenuItem("Save InStock ingredients", this, disabler, ActionCommand.SaveInStockIngredients);
+		miHighlightProducibleInIngredientsTable = Gui.createCheckBoxMenuItem("Highlight producible in ingredients table", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
+		miSaveInStockIngredients = Gui.createCheckBoxMenuItem("Save InStock ingredients", this, disabler, ActionCommand.SaveInStockIngredients);
 		miSaveInStockIngredients.setSelected(saveInStockIngredients);
 		JMenu menuAnalyse = new JMenu("Analyse");
 		menuAnalyse.add(miSaveInStockIngredients);
 		menuAnalyse.addSeparator();
-		menuAnalyse.add(SaveViewer.createMenuItem("Clear markers in ingredients table", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
+		menuAnalyse.add(Gui.createMenuItem("Clear markers in ingredients table", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
 		menuAnalyse.add(miHighlightProducibleInIngredientsTable);
 		menuAnalyse.addSeparator();
-		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with same ingredients but different result", this, disabler, ActionCommand.FindConflictingRecipes));
-		menuAnalyse.add(SaveViewer.createMenuItem("Find all basic recipes { (#) and (#,#) } for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
-		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes cycles where amount of at least one ingredient is growing", this, disabler, ActionCommand.FindGrowingCycles));
-		menuAnalyse.add(SaveViewer.createMenuItem("Find recipes with specific ingredients or output", this, disabler, ActionCommand.FindRecipes));
+		menuAnalyse.add(Gui.createMenuItem("Find recipes with same ingredients but different result", this, disabler, ActionCommand.FindConflictingRecipes));
+		menuAnalyse.add(Gui.createMenuItem("Find all basic recipes { (#) and (#,#) } for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
+		menuAnalyse.add(Gui.createMenuItem("Find recipes cycles where amount of at least one ingredient is growing", this, disabler, ActionCommand.FindGrowingCycles));
+		menuAnalyse.add(Gui.createMenuItem("Find recipes with specific ingredients or output", this, disabler, ActionCommand.FindRecipes));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -2413,8 +2412,8 @@ class RecipeAnalyser implements ActionListener {
 				c.weightx = 1;
 				buttonPanel.add(new JLabel(),c);
 				c.weightx = 0;
-				buttonPanel.add(SaveViewer.createButton("Ok"    , e->{ hasResult=true; closeDialog(); }),c);
-				buttonPanel.add(SaveViewer.createButton("Cancel", e->{ closeDialog(); }),c);
+				buttonPanel.add(Gui.createButton("Ok"    , e->{ hasResult=true; closeDialog(); }),c);
+				buttonPanel.add(Gui.createButton("Cancel", e->{ closeDialog(); }),c);
 				
 				JPanel contentPane = new JPanel(new BorderLayout());
 				contentPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));

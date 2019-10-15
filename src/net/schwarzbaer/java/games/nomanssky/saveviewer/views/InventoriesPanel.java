@@ -143,16 +143,16 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			showValues();
 			
 			contextMenu = new JPopupMenu();
-			contextMenu.add(SaveViewer.createMenuItem("Edit ID", this, ActionCommand.EditID ));
+			contextMenu.add(Gui.createMenuItem("Edit ID", this, ActionCommand.EditID ));
 			contextMenu.addSeparator();;
-			contextMenu.add(SaveViewer.createMenuItem("Select Image File", this, ActionCommand.SelectImageFile ));
-			contextMenu.add(SaveViewer.createMenuItem("Copy Image File"  , this, ActionCommand.CopyImageFile  , SaveViewer.ToolbarIcons.Copy  ));
-			contextMenu.add(SaveViewer.createMenuItem("Paste Image File" , this, ActionCommand.PasteImageFile , SaveViewer.ToolbarIcons.Paste ));
-			contextMenu.add(SaveViewer.createMenuItem("Remove Image File", this, ActionCommand.RemoveImageFile, SaveViewer.ToolbarIcons.Delete));
+			contextMenu.add(Gui.createMenuItem("Select Image File", this, ActionCommand.SelectImageFile ));
+			contextMenu.add(Gui.createMenuItem("Copy Image File"  , this, ActionCommand.CopyImageFile  , Gui.ToolbarIcons.Copy  ));
+			contextMenu.add(Gui.createMenuItem("Paste Image File" , this, ActionCommand.PasteImageFile , Gui.ToolbarIcons.Paste ));
+			contextMenu.add(Gui.createMenuItem("Remove Image File", this, ActionCommand.RemoveImageFile, Gui.ToolbarIcons.Delete));
 			contextMenu.addSeparator();;
-			contextMenu.add(SaveViewer.createMenuItem("Copy Background Color"  , this, ActionCommand.CopyBGColor  , SaveViewer.ToolbarIcons.Copy  ));
-			contextMenu.add(SaveViewer.createMenuItem("Paste Background Color" , this, ActionCommand.PasteBGColor , SaveViewer.ToolbarIcons.Paste ));
-			contextMenu.add(SaveViewer.createMenuItem("Remove Background Color", this, ActionCommand.RemoveBGColor, SaveViewer.ToolbarIcons.Delete));
+			contextMenu.add(Gui.createMenuItem("Copy Background Color"  , this, ActionCommand.CopyBGColor  , Gui.ToolbarIcons.Copy  ));
+			contextMenu.add(Gui.createMenuItem("Paste Background Color" , this, ActionCommand.PasteBGColor , Gui.ToolbarIcons.Paste ));
+			contextMenu.add(Gui.createMenuItem("Remove Background Color", this, ActionCommand.RemoveBGColor, Gui.ToolbarIcons.Delete));
 			
 			if (this.inventory!=null && this.inventory.width!=null && this.inventory.height!=null) {
 				inventoryLabel = new InventoryDisplay(this,(int)(long)this.inventory.width,(int)(long)this.inventory.height,this.inventory.slots);

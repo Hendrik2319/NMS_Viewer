@@ -68,13 +68,9 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolbarIcons;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 public class ResourceHotSpots implements ActionListener {
-	
-	private static final String RESOURCE_HOTSPOTS_DATA = "NMS_Viewer.ResourceHotSpots.data";
-	private static final String RESOURCE_HOTSPOTS_CFG = "NMS_Viewer.ResourceHotSpots.cfg";
 
 	private StandardMainWindow mainwindow = null;
 	private TableView.SimplifiedTable<ReferencePointsTableColumnID> referencePointsTable = null;
@@ -105,7 +101,7 @@ public class ResourceHotSpots implements ActionListener {
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
-		SaveViewer.loadToolbarIcons();
+		Gui.loadToolbarIcons();
 		start(null);
 	}
 	
@@ -245,9 +241,9 @@ public class ResourceHotSpots implements ActionListener {
 		hotSpotTypeSelect      = new JComboBox<Planet.HotSpot.Type >(SaveViewer.addNull(Planet.HotSpot.Type .values()));
 		hotSpotClassSelect     = new JComboBox<Planet.HotSpot.Class>(SaveViewer.addNull(Planet.HotSpot.Class.values()));
 		hotSpotSubstanceSelect = new JComboBox<String>();
-		SaveViewer.setComp(hotSpotTypeSelect     , disabler, ActionCommand.SelectHotSpotType     , true, hotSpotsView::setSelectCriteria);
-		SaveViewer.setComp(hotSpotClassSelect    , disabler, ActionCommand.SelectHotSpotClass    , true, hotSpotsView::setSelectCriteria);
-		SaveViewer.setComp(hotSpotSubstanceSelect, disabler, ActionCommand.SelectHotSpotSubstance, true, hotSpotsView::setSelectCriteria);
+		Gui.setComp(hotSpotTypeSelect     , disabler, ActionCommand.SelectHotSpotType     , true, hotSpotsView::setSelectCriteria);
+		Gui.setComp(hotSpotClassSelect    , disabler, ActionCommand.SelectHotSpotClass    , true, hotSpotsView::setSelectCriteria);
+		Gui.setComp(hotSpotSubstanceSelect, disabler, ActionCommand.SelectHotSpotSubstance, true, hotSpotsView::setSelectCriteria);
 		
 		JPanel hotSpotsSelectPanel = new JPanel(new GridBagLayout());
 		hotSpotsSelectPanel.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
@@ -276,14 +272,14 @@ public class ResourceHotSpots implements ActionListener {
 		
 		planetComboBox = new JComboBox<Planet>(planets);
 		regionComboBox = new JComboBox<>();
-		SaveViewer.setComp(planetComboBox,this,disabler,ActionCommand.SelectPlanet, true);
-		SaveViewer.setComp(regionComboBox,this,disabler,ActionCommand.SelectRegion, true);
+		Gui.setComp(planetComboBox,this,disabler,ActionCommand.SelectPlanet, true);
+		Gui.setComp(regionComboBox,this,disabler,ActionCommand.SelectRegion, true);
 		planetComboBox.setMinimumSize(new Dimension(100,16));
 		regionComboBox.setMinimumSize(new Dimension(100,16));
 		
 		JLabel planetRadiusLabel = new JLabel("    Radius: ");
 		disabler.add(ActionCommand.ChangePlanetRadius, planetRadiusLabel);
-		planetRadiusField = SaveViewer.createTextField("", this, disabler, ActionCommand.ChangePlanetRadius);
+		planetRadiusField = Gui.createTextField("", this, disabler, ActionCommand.ChangePlanetRadius);
 		planetRadiusField.setColumns(10);
 		planetRadiusField.setEnabled(false);
 		planetRadiusField.setMinimumSize(new Dimension(70,16));
@@ -292,15 +288,15 @@ public class ResourceHotSpots implements ActionListener {
 		JPanel planetPanel = new JPanel(new GridBagLayout());
 		planetPanel.setBorder(BorderFactory.createTitledBorder("Planet"));
 		planetPanel.add(planetComboBox,c);
-		planetPanel.add(SaveViewer.createButton("Change Name", this, disabler, ActionCommand.ChangePlanetName),c);
+		planetPanel.add(Gui.createButton("Change Name", this, disabler, ActionCommand.ChangePlanetName),c);
 		planetPanel.add(planetRadiusLabel,c);
 		planetPanel.add(planetRadiusField,c);
 		
 		JPanel regionPanel = new JPanel(new GridBagLayout());
 		regionPanel.setBorder(BorderFactory.createTitledBorder("Region"));
-		regionPanel.add(SaveViewer.createButton("Add Region" , this, disabler, ActionCommand.AddRegion),c);
+		regionPanel.add(Gui.createButton("Add Region" , this, disabler, ActionCommand.AddRegion),c);
 		regionPanel.add(regionComboBox,c);
-		regionPanel.add(SaveViewer.createButton("Change Name", this, disabler, ActionCommand.ChangeRegionName),c);
+		regionPanel.add(Gui.createButton("Change Name", this, disabler, ActionCommand.ChangeRegionName),c);
 		
 		c.weightx=0;
 		JPanel selectPanel = new JPanel(new GridBagLayout());
@@ -316,10 +312,10 @@ public class ResourceHotSpots implements ActionListener {
 		
 		JMenu menuData = new JMenu("Data");
 		//menuData.add(SaveViewer.createMenuItem("Clear data"                , this, disabler, ActionCommand.ClearData     , ToolbarIcons.Delete));
-		menuData.add(SaveViewer.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile  , ToolbarIcons.Save));
+		menuData.add(Gui.createMenuItem("Write data to file"        , this, disabler, ActionCommand.SaveDataFile  , Gui.ToolbarIcons.Save));
 		
 		JMenu menuView = new JMenu("View");
-		menuView.add(SaveViewer.createMenuItem("Save current configuration of this window", this, disabler, ActionCommand.SaveWindowConfig, ToolbarIcons.Save));
+		menuView.add(Gui.createMenuItem("Save current configuration of this window", this, disabler, ActionCommand.SaveWindowConfig, Gui.ToolbarIcons.Save));
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
@@ -503,7 +499,7 @@ public class ResourceHotSpots implements ActionListener {
 	}
 
 	private ResourceHotSpots writeConfig() {
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(RESOURCE_HOTSPOTS_CFG), StandardCharsets.UTF_8))) {
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_CFG_RESOURCE_HOTSPOTS), StandardCharsets.UTF_8))) {
 			
 			out.println("[WindowConfig]");
 			windowConfig.writeToFile(out);
@@ -517,7 +513,7 @@ public class ResourceHotSpots implements ActionListener {
 	private enum ConfigBlock { WindowConfig }
 	private ResourceHotSpots readConfig() {
 		ConfigBlock configBlock = null;
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(RESOURCE_HOTSPOTS_CFG), StandardCharsets.UTF_8))) {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_CFG_RESOURCE_HOTSPOTS), StandardCharsets.UTF_8))) {
 			String line;
 			while ( (line=in.readLine())!=null ) {
 				switch (line) {
@@ -576,7 +572,7 @@ public class ResourceHotSpots implements ActionListener {
 		currentPlanet = null;
 		currentRegion = null;
 		
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(RESOURCE_HOTSPOTS_DATA), StandardCharsets.UTF_8))) {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_DATA_RESOURCE_HOTSPOTS), StandardCharsets.UTF_8))) {
 			String line;
 			while ( (line=in.readLine())!=null ) {
 				switch (line) {
@@ -715,7 +711,7 @@ public class ResourceHotSpots implements ActionListener {
 	}
 	
 	private void writeData() {
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(RESOURCE_HOTSPOTS_DATA), StandardCharsets.UTF_8))) {
+		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_DATA_RESOURCE_HOTSPOTS), StandardCharsets.UTF_8))) {
 			planets.forEach(planet->{
 				out.println("[Planet]");
 				if (planet.universeAddress!=null) out.printf("UniverseAddress=%s%n", planet.universeAddress.getAddressStr());

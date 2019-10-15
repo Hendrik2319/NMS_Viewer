@@ -14,6 +14,7 @@ import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.awt.Point;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -40,6 +41,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -50,13 +52,19 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 
+import net.schwarzbaer.gui.Disabler;
+import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
@@ -64,6 +72,32 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
+
+	public enum ToolbarIcons { SwitchFolder, Open, Save, SaveAs, Close, Reload, Compare, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
+	public static IconSource<ToolbarIcons> toolbarIS;
+	
+	static void loadToolbarIcons() {
+		toolbarIS = new IconSource<ToolbarIcons>(16,16){
+			@Override protected int getIconIndexInImage(ToolbarIcons key) {
+				switch(key) {
+				case Compare     : return 0;
+				case SwitchFolder: return 1;
+				case Open        : return 1;
+				case Save        : return 2;
+				case SaveAs      : return 3;
+				case Reload      : return 4;
+				case Close       : return 5;
+				case ComputePortalGlyphs: return 6;
+				case Cut   : return 7;
+				case Copy  : return 8;
+				case Paste : return 9;
+				case Delete: return 10;
+				}
+			 	throw new IllegalArgumentException("Unknown icon key: "+key);
+			}
+		};
+		toolbarIS.readIconsFromResource(FileExport.RES_IMAGES_TOOLBAR_PNG);
+	}
 
 	public static Color brighter(Color color, float fraction) {
 		// fraction==0.0:  same color
@@ -143,8 +177,8 @@ public class Gui {
 			inputPanel.add(scrollPane,BorderLayout.SOUTH);
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
-			buttonPanel.add(SaveViewer.createButton("Ok", e->{hasResult=true; closeDialog();}));
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
+			buttonPanel.add(Gui.createButton("Ok", e->{hasResult=true; closeDialog();}));
+			buttonPanel.add(Gui.createButton("Cancel", e->closeDialog()));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -189,8 +223,8 @@ public class Gui {
 			inputPanel.add(comboBox,BorderLayout.SOUTH);
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
-			buttonPanel.add(SaveViewer.createButton("Ok", e->{hasResult=true; closeDialog();}));
-			buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
+			buttonPanel.add(Gui.createButton("Ok", e->{hasResult=true; closeDialog();}));
+			buttonPanel.add(Gui.createButton("Cancel", e->closeDialog()));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
@@ -311,8 +345,8 @@ public class Gui {
 			dialogPanel.add(contentPane,BorderLayout.CENTER);
 			if (this.usedAsInputDialog) {
 				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
-				buttonPanel.add(SaveViewer.createButton("Ok", e->{resultUA = shownUA; closeDialog();}));
-				buttonPanel.add(SaveViewer.createButton("Cancel", e->closeDialog()));
+				buttonPanel.add(Gui.createButton("Ok", e->{resultUA = shownUA; closeDialog();}));
+				buttonPanel.add(Gui.createButton("Cancel", e->closeDialog()));
 				dialogPanel.add(buttonPanel,BorderLayout.SOUTH);
 			}
 			
@@ -1097,11 +1131,11 @@ public class Gui {
 			for (int i=0; i<suggestions.size(); i++) {
 				if (i>=maxSuggestionsListLength) {
 					int n = i-maxSuggestionsListLength+1;
-					suggestionsPopup.add(SaveViewer.createMenuItem("... and "+n+" more",null,false));
+					suggestionsPopup.add(Gui.createMenuItem("... and "+n+" more",null,false));
 					break;
 				}
 				String name = suggestions.get(i);
-				suggestionsPopup.add(SaveViewer.createMenuItem(name,e->{
+				suggestionsPopup.add(Gui.createMenuItem(name,e->{
 					inputStr = name;
 					suggestionsPopup.setVisible(false);
 					setText(inputStr,true);
@@ -1125,6 +1159,287 @@ public class Gui {
 		}
 		public void printf(String format, Object... args) {
 			textArea.append(String.format(format, args));
+		}
+	}
+
+	public static void append_ln      ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format+"%n",values)); }
+	public static void append         ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format     ,values)); }
+	public static void log_ln      ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format+"\r\n",values); }
+	public static void log         ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format       ,values); }
+	public static void log_error_ln( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
+	public static void log_error   ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
+	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
+	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
+
+	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, boolean enabled, Consumer<ItemType> valueSelected) {
+		comp.setEnabled(enabled);
+		if (disabler!=null && actionCommand!=null) disabler.add(actionCommand, comp);
+		
+		if (valueSelected!=null) comp.addActionListener(e->{
+			int index = comp.getSelectedIndex();
+			if (index<0) valueSelected.accept(null);
+			else valueSelected.accept(comp.getItemAt(index));
+		});
+	}
+
+	public static <AC extends Enum<AC>> void setComp(JComboBox<?> comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		comp.setEnabled(enabled);
+		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
+		if (listener     !=null) comp.addActionListener(listener);
+		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+	}
+
+	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled, Icon icon) {
+		comp.setEnabled(enabled);
+		if (icon         !=null) comp.setIcon(icon);
+		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
+		if (listener     !=null) comp.addActionListener(listener);
+		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+	}
+
+	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		comp.setEnabled(enabled);
+		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
+		if (listener     !=null) comp.addActionListener(listener);
+		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+	}
+
+	public static <V> JComboBox<V> createComboBox(Vector<V> values, Function<V,String> getLabel, Class<V> classV) {
+		Function<Object,String> getLabel2 = obj->{
+			if (obj==null)
+				return getLabel.apply(null);
+			if (classV.isAssignableFrom(obj.getClass()))
+				return getLabel.apply(classV.cast(obj));
+			return obj.toString();
+		};
+		return createComboBox(values, getLabel2);
+	}
+
+	public static <V> JComboBox<V> createComboBox(Vector<V> values, Function<Object,String> getLabel) {
+		JComboBox<V> comp = new JComboBox<>(values);
+		comp.setRenderer(new Tables.NonStringRenderer<V>(getLabel));
+		return comp;
+	}
+
+	public static JButton createButton(String title, ActionListener l) {
+		return createButton(title, l, null, null, true);
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
+		return createButton(title, l, null, actionCommand, true);
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+		return createButton(title, l, disabler, actionCommand, true);
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		JButton button = new JButton(title);
+		setComp(button, l, disabler, actionCommand, enabled, null);
+		return button;
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, Icon icon) {
+		JButton button = new JButton(title);
+		setComp(button, l, disabler, actionCommand, enabled, icon);
+		return button;
+	}
+
+	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
+		return createButton(title, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
+	}
+
+	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
+		return createRadioButton(title, bg, l, null, null, isSelected, enabled);
+	}
+
+	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
+		JRadioButton button = new JRadioButton(title,isSelected);
+		if (bg!=null) bg.add(button);
+		setComp(button, l, disabler, actionCommand, enabled, null);
+		return button;
+	}
+
+	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
+		return createMenuItem(title, l, null, null, enabled, null);
+	}
+
+	public static JMenuItem createMenuItem(String title, ActionListener l) {
+		return createMenuItem(title, l, null, null, true, null);
+	}
+
+	public static JMenuItem createMenuItem(String title, ActionListener l, ToolbarIcons icon) {
+		return createMenuItem(title, l, null, null, true, icon);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
+		return createMenuItem(title, l, null, actionCommand, true, null);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
+		return createMenuItem(title, l, null, actionCommand, true, icon);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+		return createMenuItem(title, l, disabler, actionCommand, true, null);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, ToolbarIcons icon) {
+		return createMenuItem(title, l, disabler, actionCommand, true, icon);
+	}
+
+	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
+		JMenuItem menuItem = new JMenuItem(title);
+		setComp(menuItem, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
+		return menuItem;
+	}
+
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand) {
+		return createCheckBoxMenuItem(title, l, null, actionCommand, true);
+	}
+
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
+		return createCheckBoxMenuItem(title, l, disabler, actionCommand, true);
+	}
+
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
+		menuItem.setEnabled(enabled);
+		setComp(menuItem, l, disabler, actionCommand, true, null);
+		return menuItem;
+	}
+
+	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
+		return createCheckbox(title, l, isSelected, true);
+	}
+
+	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected, boolean enabled) {
+		return createCheckbox(title, l, null, null, isSelected, enabled);
+	}
+
+	public static JCheckBox createCheckbox(String title, boolean isSelected, Consumer<Boolean> selectionChanged) {
+		return createCheckbox(title, isSelected, true, selectionChanged);
+	}
+
+	public static JCheckBox createCheckbox(String title, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
+		return createCheckbox(title, null, null, isSelected, enabled, selectionChanged);
+	}
+
+	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
+		JCheckBox button = new JCheckBox(title,isSelected);
+		setComp(button, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled, null);
+		return button;
+	}
+
+	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
+		JCheckBox button = new JCheckBox(title,isSelected);
+		setComp(button, l, disabler, actionCommand, enabled, null);
+		return button;
+	}
+
+	public static TristateCheckBox createTristateCheckBox(String title, ActionListener l, TristateCheckBox.State state) {
+		TristateCheckBox button = new TristateCheckBox(title,state);
+		if (l!=null) button.addActionListener(l);
+		return button;
+	}
+
+	public static JTextField createTextField(String txt, Consumer<String> setInput) {
+		return setTextField(new JTextField(txt), null, null, setInput);
+	}
+
+	public static JTextField createTextField(String txt, int columns, Consumer<String> setInput) {
+		return setTextField(new JTextField(txt,columns), null, null, setInput);
+	}
+
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
+		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
+	}
+
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
+		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
+	}
+
+	public static JTextField createTextField(String txt, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt), null, null, setInput);
+	}
+
+	public static JTextField createTextField(String txt, int columns, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt,columns), null, null, setInput);
+	}
+
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
+	}
+
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
+		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
+	}
+
+	public static JTextField createTextField(String txt, ActionListener l) {
+		return setTextField(new JTextField(txt), l, null, null);
+	}
+
+	public static JTextField createTextField(String txt, int columns, ActionListener l) {
+		return setTextField(new JTextField(txt,columns), l, null, null);
+	}
+
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		return setTextField(new JTextField(txt), listener, disabler, actionCommand);
+	}
+
+	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		return setTextField(new JTextField(txt,columns), listener, disabler, actionCommand);
+	}
+
+	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
+		ActionListener listener = setInput==null ? null : new Setter(comp,setInput);
+		return setTextField(comp, listener, disabler, actionCommand);
+	}
+
+	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
+		ActionListener listener = setInput==null ? null : e->setInput.accept(comp.getText());
+		return setTextField(comp, listener, disabler, actionCommand);
+	}
+
+	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
+		setComp(comp,listener,disabler,actionCommand, true);
+		if (listener!=null) {
+			comp.addFocusListener(new FocusListener() {
+				@Override public void focusGained(FocusEvent e) {}
+				@Override public void focusLost(FocusEvent e) {
+					listener.actionPerformed(
+							new ActionEvent(
+									comp, ActionEvent.ACTION_PERFORMED,
+									actionCommand==null?null:actionCommand.toString()
+							)
+					);
+				}
+			});
+		}
+		return comp;
+	}
+
+	public static CompoundBorder createTitledBorderForScrollPane(String title) {
+		return BorderFactory.createCompoundBorder(
+				BorderFactory.createTitledBorder(title),
+				BorderFactory.createLineBorder(Color.GRAY)
+		);
+	}
+
+	private static class Setter implements ActionListener {
+		private JTextField comp;
+		private Function<String, String> setInput;
+		private boolean ignoreEvent;
+		Setter(JTextField comp, Function<String,String> setInput) {
+			this.comp = comp;
+			this.setInput = setInput;
+			ignoreEvent = false;
+		}
+		@Override public void actionPerformed(ActionEvent e) {
+			if (ignoreEvent) return;
+			ignoreEvent = true;
+			comp.setText( setInput.apply( comp.getText() ) );
+			ignoreEvent = false;
 		}
 	}
 }

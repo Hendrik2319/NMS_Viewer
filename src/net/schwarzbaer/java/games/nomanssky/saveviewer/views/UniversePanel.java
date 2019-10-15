@@ -806,7 +806,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			cmbbxRace         .addActionListener(e->{ if (isSettingContent) return; node.value.race      = (Race     )cmbbxRace     .getSelectedItem(); updateTreeNode(node, false); });
 			cmbbxStarClass    .addActionListener(e->{ if (isSettingContent) return; node.value.starClass = (StarClass)cmbbxStarClass.getSelectedItem(); updateTreeNode(node, false); });
 			
-			chkbxUnexplored = SaveViewer.createCheckbox("is Unexplored", e->{
+			chkbxUnexplored = Gui.createCheckbox("is Unexplored", e->{
 				if (isSettingContent) return;
 				node.value.isUnexplored = chkbxUnexplored.isSelected();
 				cmbbxRace               .setEnabled(!node.value.isUnexplored);
@@ -815,13 +815,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				updateTreeNode(node, false);
 			}, false);
 			
-			chkbxAtlasInterface = SaveViewer.createCheckbox("has Atlas Interface", e->{
+			chkbxAtlasInterface = Gui.createCheckbox("has Atlas Interface", e->{
 				if (isSettingContent) return;
 				node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected();
 				updateTreeNode(node, false);
 			}, false);
 			
-			chkbxBlackHole = SaveViewer.createCheckbox("has Black Hole", e->{
+			chkbxBlackHole = Gui.createCheckbox("has Black Hole", e->{
 				if (isSettingContent) return;
 				node.value.hasBlackHole = chkbxBlackHole.isSelected();
 				updateBlackHoleTargetPanel();
@@ -829,7 +829,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				galaxyMapPanel.updateBlackHoleConnections();
 			}, false);
 			
-			chkbxRememTerm = SaveViewer.createCheckbox("has Remembrance Terminal", e->{
+			chkbxRememTerm = Gui.createCheckbox("has Remembrance Terminal", e->{
 				if (isSettingContent) return;
 				node.value.withRemembranceTerminal = chkbxRememTerm.isSelected();
 				updateTreeNode(node, false);
@@ -1044,7 +1044,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						SwingUtilities.invokeLater(()->setLevel(level));
 					}
 				});
-				btnAddLevelLabel = SaveViewer.createButton("Add",e->{
+				btnAddLevelLabel = Gui.createButton("Add",e->{
 					String levelLabel = JOptionPane.showInputDialog(InfoPanel_SolarSystem.this, "Define new label:", "Add Label", JOptionPane.PLAIN_MESSAGE);
 					if (levelLabel!=null) {
 						setLevelLabelInNode(levelLabel);
@@ -1136,15 +1136,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			cmbbxBuriedTreasure.setRenderer(new Tables.NonStringRenderer<BuriedTreasure>(value->value==null?"":((BuriedTreasure)value).name_EN));
 			cmbbxBuriedTreasure.addActionListener(e->{ if (isSettingContent) return; node.value.buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem(); updateTreeNode(node, false);  });
 			
-			chkbxExtreme   = SaveViewer.createCheckbox("is Extreme"               , e->{ if (isSettingContent) return; node.value.hasExtremeBiome         = chkbxExtreme  .isSelected(); updateTreeNode(node, true ); }, false);
-			chkbxAggrSent  = SaveViewer.createCheckbox("Aggressive Sentinels"     , e->{ if (isSettingContent) return; node.value.areSentinelsAggressive  = chkbxAggrSent .isSelected(); updateTreeNode(node, false); }, false);
-			chkbxWater     = SaveViewer.createCheckbox("with Water"               , e->{ if (isSettingContent) return; node.value.withWater               = chkbxWater    .isSelected(); updateTreeNode(node, true ); }, false);
-			chkbxGrav      = SaveViewer.createCheckbox("with Gravitino Balls"     , e->{ if (isSettingContent) return; node.value.withGravitinoBalls      = chkbxGrav     .isSelected(); updateTreeNode(node, false); }, false);
-			chkbxRememTerm = SaveViewer.createCheckbox("with Remembrance Terminal", e->{ if (isSettingContent) return; node.value.withRemembranceTerminal = chkbxRememTerm.isSelected(); updateTreeNode(node, false); }, false);
+			chkbxExtreme   = Gui.createCheckbox("is Extreme"               , e->{ if (isSettingContent) return; node.value.hasExtremeBiome         = chkbxExtreme  .isSelected(); updateTreeNode(node, true ); }, false);
+			chkbxAggrSent  = Gui.createCheckbox("Aggressive Sentinels"     , e->{ if (isSettingContent) return; node.value.areSentinelsAggressive  = chkbxAggrSent .isSelected(); updateTreeNode(node, false); }, false);
+			chkbxWater     = Gui.createCheckbox("with Water"               , e->{ if (isSettingContent) return; node.value.withWater               = chkbxWater    .isSelected(); updateTreeNode(node, true ); }, false);
+			chkbxGrav      = Gui.createCheckbox("with Gravitino Balls"     , e->{ if (isSettingContent) return; node.value.withGravitinoBalls      = chkbxGrav     .isSelected(); updateTreeNode(node, false); }, false);
+			chkbxRememTerm = Gui.createCheckbox("with Remembrance Terminal", e->{ if (isSettingContent) return; node.value.withRemembranceTerminal = chkbxRememTerm.isSelected(); updateTreeNode(node, false); }, false);
 			
 			txtfldResources = new JTextField(20);
 			txtfldResources.setEditable(false);
-			btnSetResources = SaveViewer.createButton("Change", e->{
+			btnSetResources = Gui.createButton("Change", e->{
 				if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
 				EnumSet<Resources> result = resourceSelectDialog.showDialog(node.value.resources);
 				if (result!=null) {
@@ -1708,9 +1708,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void showChangedObjects(HashSet<GenericTreeNode<?>> changedObjects) {
-		SaveViewer.log_ln("Changed Objects:");
+		Gui.log_ln("Changed Objects:");
 		for (GenericTreeNode<?> obj:changedObjects) {
-			SaveViewer.log_ln("   "+obj.toString());
+			Gui.log_ln("   "+obj.toString());
 		}
 	}
 
@@ -1919,8 +1919,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		public ResourceSelectDialog(Window parent, String title) {
 			super(parent, title, ModalityType.APPLICATION_MODAL, true);
 			
-			JButton okButton     = SaveViewer.createButton("Ok"    , e->{ ignoreChanges=false; closeDialog(); });
-			JButton cancelButton = SaveViewer.createButton("Cancel", e->{ closeDialog(); });
+			JButton okButton     = Gui.createButton("Ok"    , e->{ ignoreChanges=false; closeDialog(); });
+			JButton cancelButton = Gui.createButton("Cancel", e->{ closeDialog(); });
 			okButton    .setPreferredSize(new Dimension(75,25));
 			cancelButton.setPreferredSize(new Dimension(75,25));
 			
@@ -2118,13 +2118,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			c.weighty = 0;
 			c.weightx = 0;
 			
-			add( SaveViewer.createButton("Clear Markers"     , e->clearMarkers()), c );
-			add( SaveViewer.createButton("Find Planet"       , e->planetSearch     .showPopup(treeScrollPane, 3,3)), c );
-			add( SaveViewer.createButton("Find Solar System" , e->solarSystemSearch.showPopup(treeScrollPane, 3,3)), c );
-			add( SaveViewer.createButton("Find via Name"     , e->nameSearch       .showPopup(treeScrollPane, 3,3)), c );
-			add( SaveViewer.createButton("Find via ExtraInfo", UniversePanel.this, UniverseTreeActionCommand.FindExtraInfo), c );
-			add( prevMarker = SaveViewer.createButton("<<", e->scrollToMarker(-1)), c );
-			add( nextMarker = SaveViewer.createButton(">>", e->scrollToMarker(+1)), c );
+			add( Gui.createButton("Clear Markers"     , e->clearMarkers()), c );
+			add( Gui.createButton("Find Planet"       , e->planetSearch     .showPopup(treeScrollPane, 3,3)), c );
+			add( Gui.createButton("Find Solar System" , e->solarSystemSearch.showPopup(treeScrollPane, 3,3)), c );
+			add( Gui.createButton("Find via Name"     , e->nameSearch       .showPopup(treeScrollPane, 3,3)), c );
+			add( Gui.createButton("Find via ExtraInfo", UniversePanel.this, UniverseTreeActionCommand.FindExtraInfo), c );
+			add( prevMarker = Gui.createButton("<<", e->scrollToMarker(-1)), c );
+			add( nextMarker = Gui.createButton(">>", e->scrollToMarker(+1)), c );
 			
 			c.weightx = 1;
 			add( new JLabel(), c);
@@ -2216,7 +2216,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				content.add(statusOutput,c);
 				c.weightx = 0;
 				c.gridwidth = GridBagConstraints.REMAINDER;
-				content.add( SaveViewer.createButton("Close", e->{ super.hidePopup(); }),c);
+				content.add( Gui.createButton("Close", e->{ super.hidePopup(); }),c);
 				
 				super.setGUI(content);
 			}
@@ -2259,7 +2259,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				c.weightx = 1;
 				content.add(textField,c);
 				c.weightx = 0;
-				content.add(SaveViewer.createCheckbox("case sensitive", searchCaseSensitive, b->{
+				content.add(Gui.createCheckbox("case sensitive", searchCaseSensitive, b->{
 					searchCaseSensitive = b;
 					textField.updateSuggestions();
 				}),c);
@@ -2470,11 +2470,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxEconomyLevel.addActionListener(e->updateMarkers());
 				
-				chkbxUnexplored          = SaveViewer.createTristateCheckBox("is unexplored"           , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxAtlasInterface      = SaveViewer.createTristateCheckBox("has atlas interface"     , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxBlackHole           = SaveViewer.createTristateCheckBox("has black hole"          , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxReachableByTeleport = SaveViewer.createTristateCheckBox("is reachable by teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxRememTerm           = SaveViewer.createTristateCheckBox("has remembrance terminal", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxUnexplored          = Gui.createTristateCheckBox("is unexplored"           , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxAtlasInterface      = Gui.createTristateCheckBox("has atlas interface"     , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxBlackHole           = Gui.createTristateCheckBox("has black hole"          , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxReachableByTeleport = Gui.createTristateCheckBox("is reachable by teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxRememTerm           = Gui.createTristateCheckBox("has remembrance terminal", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
 				c.fill = GridBagConstraints.BOTH;
 				
@@ -2617,13 +2617,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				findAllRes = true;
 				
 				ButtonGroup bgResources = new ButtonGroup();
-				rdbtnAllRes = SaveViewer.createRadioButton("all resources", bgResources ,  findAllRes, true, e->{ findAllRes = true ; updateMarkers(); });
-				rdbtnOneRes = SaveViewer.createRadioButton("at least one" , bgResources , !findAllRes, true, e->{ findAllRes = false; updateMarkers(); });
+				rdbtnAllRes = Gui.createRadioButton("all resources", bgResources ,  findAllRes, true, e->{ findAllRes = true ; updateMarkers(); });
+				rdbtnOneRes = Gui.createRadioButton("at least one" , bgResources , !findAllRes, true, e->{ findAllRes = false; updateMarkers(); });
 				
 				txtfldResources = new JTextField(20);
 				txtfldResources.setEditable(false);
 				
-				JButton btnSetResources = SaveViewer.createButton("Set", e->{
+				JButton btnSetResources = Gui.createButton("Set", e->{
 					if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
 					EnumSet<Resources> result = resourceSelectDialog.showDialog(resources);
 					if (result!=null) {
@@ -2634,15 +2634,15 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				});
 				
-				chkbxExtreme         = SaveViewer.createTristateCheckBox("is Extreme"                , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxAggrSent        = SaveViewer.createTristateCheckBox("has Aggressive Sentinels"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxWater           = SaveViewer.createTristateCheckBox("has Water"                 , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxGrav            = SaveViewer.createTristateCheckBox("has Gravitino Balls"       , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxRememTerm       = SaveViewer.createTristateCheckBox("has RemembranceTerminal"   , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxVehicleSummoner = SaveViewer.createTristateCheckBox("has Vehicle Summoner"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxPlayerBase      = SaveViewer.createTristateCheckBox("has Base"                  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxOtherPlayerBase = SaveViewer.createTristateCheckBox("has Base of another Player", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
-				chkbxTeleporter      = SaveViewer.createTristateCheckBox("is reachable by Teleport"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxExtreme         = Gui.createTristateCheckBox("is Extreme"                , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxAggrSent        = Gui.createTristateCheckBox("has Aggressive Sentinels"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxWater           = Gui.createTristateCheckBox("has Water"                 , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxGrav            = Gui.createTristateCheckBox("has Gravitino Balls"       , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxRememTerm       = Gui.createTristateCheckBox("has RemembranceTerminal"   , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxVehicleSummoner = Gui.createTristateCheckBox("has Vehicle Summoner"      , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxPlayerBase      = Gui.createTristateCheckBox("has Base"                  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxOtherPlayerBase = Gui.createTristateCheckBox("has Base of another Player", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxTeleporter      = Gui.createTristateCheckBox("is reachable by Teleport"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
 				c.fill = GridBagConstraints.BOTH;
 				
@@ -2788,9 +2788,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 			JCheckBox chkbx;
-			buttonPanel.add(chkbx = SaveViewer.createCheckbox("Allow Editing", null, false));
-			buttonPanel.add(btnOK = SaveViewer.createButton("Show Selected in Tree", e->{ if (tableModel!=null) tableModel.setSelected(); closeDialog(); }));
-			buttonPanel.add(SaveViewer.createButton("Close", e->closeDialog()));
+			buttonPanel.add(chkbx = Gui.createCheckbox("Allow Editing", null, false));
+			buttonPanel.add(btnOK = Gui.createButton("Show Selected in Tree", e->{ if (tableModel!=null) tableModel.setSelected(); closeDialog(); }));
+			buttonPanel.add(Gui.createButton("Close", e->closeDialog()));
 			
 			chkbx.addActionListener(e->{ if (tableModel!=null) { tableModel.allowEditing(chkbx.isSelected()); table.setModel(tableModel); } });
 			

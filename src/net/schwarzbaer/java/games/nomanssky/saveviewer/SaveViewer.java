@@ -14,8 +14,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,7 +31,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -41,16 +38,11 @@ import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import javax.activation.DataHandler;
-import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -60,18 +52,14 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.border.CompoundBorder;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -83,7 +71,6 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs;
@@ -97,14 +84,11 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
 public class SaveViewer implements ActionListener {
 
-	private static final String IMAGES_TOOLBAR_PNG = "/images/Toolbar.png";
-	private static final String IMAGES_TAB_HEADER_PNG = "/images/TabHeader.png";
 	public static final boolean DEBUG = true;
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
 	static IconSource<TabHeaderIcons> tabheaderIS;
-	public static IconSource<ToolbarIcons> toolbarIS;
 	public static Images images;
 	public static Config config;
 	public static DeObfuscator deObfuscator;
@@ -144,7 +128,7 @@ public class SaveViewer implements ActionListener {
 		images.init();
 		
 		loadTabHeaderIcons();
-		loadToolbarIcons();
+		Gui.loadToolbarIcons();
 		
 //		GameInfos.createFilesWithObsoleteIDs();
 
@@ -180,30 +164,7 @@ public class SaveViewer implements ActionListener {
 
 	static void loadTabHeaderIcons() {
 		tabheaderIS = new IconSource<TabHeaderIcons>(10,10);
-		tabheaderIS.readIconsFromResource(IMAGES_TAB_HEADER_PNG);
-	}
-
-	static void loadToolbarIcons() {
-		toolbarIS = new IconSource<ToolbarIcons>(16,16){
-			@Override protected int getIconIndexInImage(ToolbarIcons key) {
-				switch(key) {
-				case Compare     : return 0;
-				case SwitchFolder: return 1;
-				case Open        : return 1;
-				case Save        : return 2;
-				case SaveAs      : return 3;
-				case Reload      : return 4;
-				case Close       : return 5;
-				case ComputePortalGlyphs: return 6;
-				case Cut   : return 7;
-				case Copy  : return 8;
-				case Paste : return 9;
-				case Delete: return 10;
-				}
-			 	throw new IllegalArgumentException("Unknown icon key: "+key);
-			}
-		};
-		toolbarIS.readIconsFromResource(IMAGES_TOOLBAR_PNG);
+		tabheaderIS.readIconsFromResource(FileExport.RES_IMAGES_TAB_HEADER_PNG);
 	}
 
 	@SuppressWarnings("unused")
@@ -317,13 +278,13 @@ public class SaveViewer implements ActionListener {
 
 	@SuppressWarnings("unused")
 	private static void writeUIDefaults(String title, UIDefaults defaults) {
-		SaveViewer.log_ln(title+".keys: [");
+		Gui.log_ln(title+".keys: [");
 		Set<Object> keySet = defaults.keySet();
 		TreeSet<Object> sortedSet = new TreeSet<Object>(Comparator.nullsLast((o1, o2) -> o1.toString().compareTo(o2.toString())));
 		sortedSet.addAll(keySet);
 		for (Object key:sortedSet)
-			SaveViewer.log_ln("\t"+key);
-		SaveViewer.log_ln("]");
+			Gui.log_ln("\t"+key);
+		Gui.log_ln("]");
 	}
 	
 	public SaveViewer() {
@@ -609,9 +570,9 @@ public class SaveViewer implements ActionListener {
 
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
 		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
-		log("Parse file \"%s\" ...",saveGameFile.getPath());
+		Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
 		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
-		log_ln(" done");
+		Gui.log_ln(" done");
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
@@ -664,10 +625,10 @@ public class SaveViewer implements ActionListener {
 	private void reloadSaveGameView(SaveGameView view) {
 		runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
 			if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
-			log_ln("");
-			log("Parse file \"%s\" ...",view.file.getPath());
+			Gui.log_ln("");
+			Gui.log("Parse file \"%s\" ...",view.file.getPath());
 			JSON_Object new_json_data = new JSON_Parser(view.file).parse();
-			log_ln(" done");
+			Gui.log_ln(" done");
 			
 			HashMap<String, Vector<String>> deObfuscatorUsage = null;
 			boolean isPreNEXT;
@@ -842,7 +803,7 @@ public class SaveViewer implements ActionListener {
 			File file = new File(NMS_VIEWER_CFG);
 			if (!file.isFile()) return config;
 			
-			log_ln("Read Config from file \""+file.getPath()+"\" ...");
+			Gui.log_ln("Read Config from file \""+file.getPath()+"\" ...");
 			String str;
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 				while ((str=in.readLine())!=null) {
@@ -913,10 +874,10 @@ public class SaveViewer implements ActionListener {
 			});
 			
 			if (verbose) {
-				SaveViewer.log_ln("DeObfuscation done");
-				SaveViewer.log_ln("   %d of %d replacements done",res.known,res.all);
-				SaveViewer.log_ln("   %d unknown names",res.unkown.size());
-				SaveViewer.log_ln("   %d known names",replacements.size());
+				Gui.log_ln("DeObfuscation done");
+				Gui.log_ln("   %d of %d replacements done",res.known,res.all);
+				Gui.log_ln("   %d unknown names",res.unkown.size());
+				Gui.log_ln("   %d known names",replacements.size());
 			}
 			
 			return data;
@@ -939,7 +900,7 @@ public class SaveViewer implements ActionListener {
 			
 			String resourcePath = "/NMS_Viewer.DeObfuscator.txt";
 			long start = System.currentTimeMillis();
-			log_ln("Read DeObfuscator definitions from resource file \""+resourcePath+"\" ...");
+			Gui.log_ln("Read DeObfuscator definitions from resource file \""+resourcePath+"\" ...");
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(DeObfuscator.class.getResourceAsStream(resourcePath),StandardCharsets.UTF_8))) {
 				HashSet<String> valueSet = new HashSet<>();
 				String str;
@@ -949,14 +910,14 @@ public class SaveViewer implements ActionListener {
 						String value = str.substring(4);
 						String oldValue = deObfuscator.replacements.put(key, value);
 						boolean wasUniqueValue = valueSet.add(value);
-						if (oldValue!=null)  log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
-						if (!wasUniqueValue) log_error_ln("   Replacement \"%s\" is used twice or more", value);
+						if (oldValue!=null)  Gui.log_error_ln("   ReDefinition of key \"%s\" from \"%s\" to \"%s\"", key, oldValue, value);
+						if (!wasUniqueValue) Gui.log_error_ln("   Replacement \"%s\" is used twice or more", value);
 					}
 				}
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
 			catch (IOException e) { e.printStackTrace(); }
-			log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			
 			return deObfuscator;
 		}
@@ -1069,44 +1030,44 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save_hg  ,true));
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save2_hg ,true));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save_hg));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save2_hg));
 			toolBar.addSeparator();
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save3_hg ,true));
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save4_hg ,true));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save3_hg));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save4_hg));
 			toolBar.addSeparator();
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save5_hg ,true));
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save6_hg ,true));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save5_hg));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save6_hg));
 			toolBar.addSeparator();
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save7_hg ,true));
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save8_hg ,true));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save7_hg));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save8_hg));
 			toolBar.addSeparator();
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save9_hg ,true));
-			toolBar.add(createButton(ToolbarIcons.Open, ActionCommand.save10_hg,true));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save9_hg));
+			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save10_hg));
 			toolBar.addSeparator();
-			toolBar.add(createButton("Compute Coordinates" , ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
-//			toolBar.add(createButton("Select Coordinates"  , ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
+			toolBar.add(createButton("Compute Coordinates" , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
+//			toolBar.add(createButton("Select Coordinates"  , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			
 			JPopupMenu toolsMenu = new JPopupMenu("Tools");
-			toolsMenu.add(createMenuItem("Refresh Extra Images", ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
-			toolsMenu.add(createMenuItem("Show Extra Images"   , ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
+			toolsMenu.add(createMenuItem("Refresh Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
+			toolsMenu.add(createMenuItem("Show Extra Images"   , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			toolsMenu.addSeparator();
-			toolsMenu.add(createMenuItem("Recipe Analyser"     , ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
-			toolsMenu.add(createMenuItem("Production Optimiser", ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
-			toolsMenu.add(createMenuItem("UpgradeModule InstallHelper", ToolbarIcons.Open, ActionCommand.OpenUpgradeModuleInstallHelper,true));
+			toolsMenu.add(createMenuItem("Recipe Analyser"     , Gui.ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
+			toolsMenu.add(createMenuItem("Production Optimiser", Gui.ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
+			toolsMenu.add(createMenuItem("UpgradeModule InstallHelper", Gui.ToolbarIcons.Open, ActionCommand.OpenUpgradeModuleInstallHelper,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
-			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", ToolbarIcons.SwitchFolder, ActionCommand.WriteKnownSteamIDsToHTML,true));
+			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", Gui.ToolbarIcons.SwitchFolder, ActionCommand.WriteKnownSteamIDsToHTML,true));
 			extraMenu.addSeparator();
-			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
-			extraMenu.add(createMenuItem("Switch to Backup Folder"      , ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
-			extraMenu.add(createMenuItem("Open Savegame"    , ToolbarIcons.Open   , ActionCommand.Open   ,true));
-//			extraMenu.add(createMenuItem("Reload"           , ToolbarIcons.Reload , ActionCommand.Reload ,false));
-//			extraMenu.add(createMenuItem("Close"            , ToolbarIcons.Close  , ActionCommand.Close  ,false));
-			extraMenu.add(createMenuItem("Compare Savegames", ToolbarIcons.Compare, ActionCommand.Compare,false));
+			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", Gui.ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
+			extraMenu.add(createMenuItem("Switch to Backup Folder"      , Gui.ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
+			extraMenu.add(createMenuItem("Open Savegame"    , Gui.ToolbarIcons.Open   , ActionCommand.Open   ,true));
+//			extraMenu.add(createMenuItem("Reload"           , Gui.ToolbarIcons.Reload , ActionCommand.Reload ,false));
+//			extraMenu.add(createMenuItem("Close"            , Gui.ToolbarIcons.Close  , ActionCommand.Close  ,false));
+			extraMenu.add(createMenuItem("Compare Savegames", Gui.ToolbarIcons.Compare, ActionCommand.Compare,false));
 			extraMenu.addSeparator();
-			extraMenu.add(createMenuItem("Write as HTML", ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
-			extraMenu.add(createMenuItem("Write as JSON", ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
+			extraMenu.add(createMenuItem("Write as HTML", Gui.ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
+			extraMenu.add(createMenuItem("Write as JSON", Gui.ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
 
 			toolBar.addSeparator();
 			toolBar.add(createButton("Tools", toolsMenu, true));
@@ -1121,39 +1082,19 @@ public class SaveViewer implements ActionListener {
 			return button;
 		}
 
-		private JButton createButton(String title, ToolbarIcons iconKey, boolean enabled) {
-			JButton button = new JButton(title);
-			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
-			button.setEnabled(enabled);
-			return button;
+		private JButton createButton(Gui.ToolbarIcons iconKey, ActionCommand actionCommand) {
+			return createButton(actionCommand.label, iconKey, actionCommand, true);
 		}
 
-		private JButton createButton(ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
-			return createButton(actionCommand.label, iconKey, actionCommand, enabled);
+		private JButton createButton(String title, Gui.ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
+			return Gui.createButton(title, SaveViewer.this, disabler, actionCommand, enabled, iconKey);
 		}
 
-		private JButton createButton(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
-			JButton button = createButton(title, iconKey, enabled);
-			button.setActionCommand(actionCommand.toString());
-			button.addActionListener(SaveViewer.this);
-			disabler.add(actionCommand, button);
-			return button;
-		}
-
-		private JMenuItem createMenuItem(String title, ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
-			JMenuItem button = new JMenuItem(title);
-			if (iconKey!=null) button.setIcon(toolbarIS.getIcon(iconKey));
-			button.setEnabled(enabled);
-			button.setActionCommand(actionCommand.toString());
-			button.addActionListener(SaveViewer.this);
-			disabler.add(actionCommand, button);
-			return button;
-			
+		private JMenuItem createMenuItem(String title, Gui.ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
+			return Gui.createMenuItem(title, SaveViewer.this, disabler, actionCommand, enabled, iconKey);
 		}
 		
 	}
-
-	public enum ToolbarIcons { SwitchFolder, Open, Save, SaveAs, Close, Reload, Compare, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
 
 	private class ComparePanel extends JPanel {
 		private static final long serialVersionUID = -876150147630145750L;
@@ -1208,10 +1149,10 @@ public class SaveViewer implements ActionListener {
 			
 			SaveGameView sg1 = loadedSaveGames.get(index1);
 			SaveGameView sg2 = loadedSaveGames.get(index2);
-			log("Set tree to files \"%s\" and \"%s\" ...",sg1.file.getPath(),sg2.file.getPath());
+			Gui.log("Set tree to files \"%s\" and \"%s\" ...",sg1.file.getPath(),sg2.file.getPath());
 			tree.setModel(new DefaultTreeModel(new TreeView.CompareTreeNode(sg1.data.json_data,sg2.data.json_data)));
 			tree.setCellRenderer(new TreeView.CompareTreeNode.CellRenderer());
-			log_ln(" done");
+			Gui.log_ln(" done");
 		}
 	
 	}
@@ -1251,7 +1192,7 @@ public class SaveViewer implements ActionListener {
 			DataFlavor[] transferDataFlavors = transferable.getTransferDataFlavors();
 			if (transferDataFlavors==null || transferDataFlavors.length==0) return null;
 			
-			log_ln("transferDataFlavors: "+toString(transferDataFlavors));
+			Gui.log_ln("transferDataFlavors: "+toString(transferDataFlavors));
 			textFlavor = DataFlavor.selectBestTextFlavor(transferDataFlavors);
 		}
 		
@@ -1292,229 +1233,10 @@ public class SaveViewer implements ActionListener {
 		return vec;
 	}
 	
-	public static void append_ln      ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format+"%n",values)); }
-	public static void append         ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format     ,values)); }
-
-	public static void log_ln      ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format+"\r\n",values); }
-	public static void log         ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format       ,values); }
-	public static void log_error_ln( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
-	public static void log_error   ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
-	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
-	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
-
-	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, boolean enabled, Consumer<ItemType> valueSelected) {
-		comp.setEnabled(enabled);
-		if (disabler!=null && actionCommand!=null) disabler.add(actionCommand, comp);
-		
-		if (valueSelected!=null) comp.addActionListener(e->{
-			int index = comp.getSelectedIndex();
-			if (index<0) valueSelected.accept(null);
-			else valueSelected.accept(comp.getItemAt(index));
-		});
-	}
-	public static <AC extends Enum<AC>> void setComp(JComboBox<?> comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
-		comp.setEnabled(enabled);
-		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
-		if (listener     !=null) comp.addActionListener(listener);
-		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
-	}
-
-	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
-		comp.setEnabled(enabled);
-		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
-		if (listener     !=null) comp.addActionListener(listener);
-		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
-	}
-
-	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
-		comp.setEnabled(enabled);
-		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
-		if (listener     !=null) comp.addActionListener(listener);
-		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
-	}
-
-	public static JButton createButton(String title, ActionListener l) {
-		return createButton(title, l, null, null, true);
-	}
-	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
-		return createButton(title, l, null, actionCommand, true);
-	}
-	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
-		return createButton(title, l, disabler, actionCommand, true);
-	}
-	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
-		JButton button = new JButton(title);
-		setComp(button, l, disabler, actionCommand, enabled);
-		return button;
-	}
-	
-	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
-		return createRadioButton(title, bg, l, null, null, isSelected, enabled);
-	}
-	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
-		JRadioButton button = new JRadioButton(title,isSelected);
-		if (bg!=null) bg.add(button);
-		setComp(button, l, disabler, actionCommand, enabled);
-		return button;
-	}
-
-	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
-		return createMenuItem(title, l, null, null, enabled, null);
-	}
-	public static JMenuItem createMenuItem(String title, ActionListener l) {
-		return createMenuItem(title, l, null, null, true, null);
-	}
-	public static JMenuItem createMenuItem(String title, ActionListener l, ToolbarIcons icon) {
-		return createMenuItem(title, l, null, null, true, icon);
-	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
-		return createMenuItem(title, l, null, actionCommand, true, null);
-	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
-		return createMenuItem(title, l, null, actionCommand, true, icon);
-	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
-		return createMenuItem(title, l, disabler, actionCommand, true, null);
-	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, ToolbarIcons icon) {
-		return createMenuItem(title, l, disabler, actionCommand, true, icon);
-	}
-	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
-		JMenuItem menuItem = new JMenuItem(title);
-		menuItem.setEnabled(enabled);
-		setComp(menuItem, l, disabler, actionCommand, true);
-		if (icon!=null) menuItem.setIcon(toolbarIS.getIcon(icon));
-		return menuItem;
-	}
-	
-	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand) {
-		return createCheckBoxMenuItem(title, l, null, actionCommand, true);
-	}
-	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
-		return createCheckBoxMenuItem(title, l, disabler, actionCommand, true);
-	}
-	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
-		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
-		menuItem.setEnabled(enabled);
-		setComp(menuItem, l, disabler, actionCommand, true);
-		return menuItem;
-	}
-
-	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
-		return createCheckbox(title, l, isSelected, true);
-	}
-	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected, boolean enabled) {
-		return createCheckbox(title, l, null, null, isSelected, enabled);
-	}
-	public static JCheckBox createCheckbox(String title, boolean isSelected, Consumer<Boolean> selectionChanged) {
-		return createCheckbox(title, isSelected, true, selectionChanged);
-	}
-	public static JCheckBox createCheckbox(String title, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
-		return createCheckbox(title, null, null, isSelected, enabled, selectionChanged);
-	}
-	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
-		JCheckBox button = new JCheckBox(title,isSelected);
-		setComp(button, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled);
-		return button;
-	}
-	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
-		JCheckBox button = new JCheckBox(title,isSelected);
-		setComp(button, l, disabler, actionCommand, enabled);
-		return button;
-	}
-	
-	public static TristateCheckBox createTristateCheckBox(String title, ActionListener l, TristateCheckBox.State state) {
-		TristateCheckBox button = new TristateCheckBox(title,state);
-		if (l!=null) button.addActionListener(l);
-		return button;
-	}
-
-	public static JTextField createTextField(String txt, Consumer<String> setInput) {
-		return setTextField(new JTextField(txt), null, null, setInput);
-	}
-	public static JTextField createTextField(String txt, int columns, Consumer<String> setInput) {
-		return setTextField(new JTextField(txt,columns), null, null, setInput);
-	}
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
-		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
-	}
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
-		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
-	}
-
-	public static JTextField createTextField(String txt, Function<String,String> setInput) {
-		return setTextField(new JTextField(txt), null, null, setInput);
-	}
-	public static JTextField createTextField(String txt, int columns, Function<String,String> setInput) {
-		return setTextField(new JTextField(txt,columns), null, null, setInput);
-	}
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
-		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
-	}
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
-		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
-	}
-
-	public static JTextField createTextField(String txt, ActionListener l) {
-		return setTextField(new JTextField(txt), l, null, null);
-	}
-	public static JTextField createTextField(String txt, int columns, ActionListener l) {
-		return setTextField(new JTextField(txt,columns), l, null, null);
-	}
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		return setTextField(new JTextField(txt), listener, disabler, actionCommand);
-	}
-	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		return setTextField(new JTextField(txt,columns), listener, disabler, actionCommand);
-	}
-	
-	private static class Setter implements ActionListener {
-		private JTextField comp;
-		private Function<String, String> setInput;
-		private boolean ignoreEvent;
-		Setter(JTextField comp, Function<String,String> setInput) {
-			this.comp = comp;
-			this.setInput = setInput;
-			ignoreEvent = false;
-		}
-		@Override public void actionPerformed(ActionEvent e) {
-			if (ignoreEvent) return;
-			ignoreEvent = true;
-			comp.setText( setInput.apply( comp.getText() ) );
-			ignoreEvent = false;
-		}
-	}
-
-	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
-		ActionListener listener = setInput==null ? null : new Setter(comp,setInput);
-		return setTextField(comp, listener, disabler, actionCommand);
-	}
-	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
-		ActionListener listener = setInput==null ? null : e->setInput.accept(comp.getText());
-		return setTextField(comp, listener, disabler, actionCommand);
-	}
-	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
-		setComp(comp,listener,disabler,actionCommand, true);
-		if (listener!=null) {
-			comp.addFocusListener(new FocusListener() {
-				@Override public void focusGained(FocusEvent e) {}
-				@Override public void focusLost(FocusEvent e) {
-					listener.actionPerformed(
-							new ActionEvent(
-									comp, ActionEvent.ACTION_PERFORMED,
-									actionCommand==null?null:actionCommand.toString()
-							)
-					);
-				}
-			});
-		}
-		return comp;
-	}
-	
-	public static CompoundBorder createTitledBorderForScrollPane(String title) {
-		return BorderFactory.createCompoundBorder(
-				BorderFactory.createTitledBorder(title),
-				BorderFactory.createLineBorder(Color.GRAY)
-		);
-	}
+	public static void log_ln      ( String format, Object... values ) { Gui.log_ln      (format,values); }
+	public static void log         ( String format, Object... values ) { Gui.log         (format,values); }
+	public static void log_error_ln( String format, Object... values ) { Gui.log_error_ln(format,values); }
+	public static void log_error   ( String format, Object... values ) { Gui.log_error   (format,values); }
+	public static void log_warn_ln ( String format, Object... values ) { Gui.log_warn_ln (format,values); }
+	public static void log_warn    ( String format, Object... values ) { Gui.log_warn    (format,values); }
 }

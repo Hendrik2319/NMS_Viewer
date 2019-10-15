@@ -19,6 +19,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
@@ -71,15 +72,15 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		SaveViewer.log_ln(" done");
 		
 		contextMenu_tree = new JPopupMenu("Contextmenu");
-		contextMenu_tree.add(miHideShowProcessedNodes_tree = createMenuItem("Hide Processed Nodes",RawDataTreeActionCommand.HideShowProcessedNodes,null));
+		contextMenu_tree.add(miHideShowProcessedNodes_tree = Gui.createMenuItem("Hide Processed Nodes", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
 		
 		contextMenu_node = new JPopupMenu("Contextmenu");
-		contextMenu_node.add(createMenuItem("Show Path",RawDataTreeActionCommand.ShowPath,null));
-		contextMenu_node.add(createMenuItem("Copy Path",RawDataTreeActionCommand.CopyPath,SaveViewer.ToolbarIcons.Copy));
-		contextMenu_node.add(createMenuItem("Copy Value Name",RawDataTreeActionCommand.CopyValueName,SaveViewer.ToolbarIcons.Copy));		
-		contextMenu_node.add(createMenuItem("Copy Value",RawDataTreeActionCommand.CopyValue,SaveViewer.ToolbarIcons.Copy));
+		contextMenu_node.add(Gui.createMenuItem("Show Path", this, RawDataTreeActionCommand.ShowPath, null));
+		contextMenu_node.add(Gui.createMenuItem("Copy Path", this, RawDataTreeActionCommand.CopyPath, Gui.ToolbarIcons.Copy));
+		contextMenu_node.add(Gui.createMenuItem("Copy Value Name", this, RawDataTreeActionCommand.CopyValueName, Gui.ToolbarIcons.Copy));		
+		contextMenu_node.add(Gui.createMenuItem("Copy Value", this, RawDataTreeActionCommand.CopyValue, Gui.ToolbarIcons.Copy));
 		contextMenu_node.addSeparator();
-		contextMenu_node.add(miHideShowProcessedNodes_node = createMenuItem("Hide Processed Nodes",RawDataTreeActionCommand.HideShowProcessedNodes,null));
+		contextMenu_node.add(miHideShowProcessedNodes_node = Gui.createMenuItem("Hide Processed Nodes", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
 		
 		updateMenuItems();
 		
@@ -94,14 +95,6 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			miHideShowProcessedNodes_tree.setText("Hide Processed Nodes");
 			miHideShowProcessedNodes_node.setText("Hide Processed Nodes");
 		}
-	}
-
-	private JMenuItem createMenuItem(String label, RawDataTreePanel.RawDataTreeActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
-		JMenuItem menuItem = new JMenuItem(label);
-		menuItem.addActionListener(this);
-		menuItem.setActionCommand(actionCommand.toString());
-		if (icon!=null) menuItem.setIcon(SaveViewer.toolbarIS.getIcon(icon));
-		return menuItem;
 	}
 
 	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName, HideShowProcessedNodes }

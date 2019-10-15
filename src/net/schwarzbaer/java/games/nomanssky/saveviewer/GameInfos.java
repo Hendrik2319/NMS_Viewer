@@ -297,12 +297,12 @@ public class GameInfos {
 
 	public static void loadUniverseObjectDataFromFile() {
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read data of universe objects from file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\"...");
+		Gui.log_ln("Read data of universe objects from file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\"...");
 		universeObjectDataArr = new HashMap<>();
 		
 		File file = new File(FileExport.FILE_UNIVERSE_OBJECT_DATA);
 		if (!file.isFile()) {
-			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			return;
 		}
 		
@@ -491,12 +491,12 @@ public class GameInfos {
 		updateConflictLevelLabels();
 		updateEconomyLevelLabels();
 		
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void readUniverseObjectDataFromDataPool(Universe universe, boolean forceCreation) {
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read data of universe objects from data pool ... ");
+		Gui.log_ln("Read data of universe objects from data pool ... ");
 		
 		boolean withOutput = false; // DEBUG;
 		
@@ -531,106 +531,106 @@ public class GameInfos {
 			case SolarSystem: uod_uniObj = uod_system = (UOD_SolarSystem)uoData; if (ua.isSolarSystem()) uniObj = system = forceCreation ? universe.getOrCreateSolarSystem(ua,obj->{}) : universe.findSolarSystem(ua); break;
 			case Planet     : uod_uniObj = uod_planet = (UOD_Planet     )uoData; if (ua.isPlanet     ()) uniObj = planet = forceCreation ? universe.getOrCreatePlanet     (ua,obj->{}) : universe.findPlanet     (ua); break;
 			}
-			if (region!=null) { objName = "region "+ua.getCoordinates_Region();   if (withOutput) SaveViewer.log_ln("Region %s"      ,ua.getCoordinates_Region  ()); }
-			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) SaveViewer.log_ln("Solar system %s",ua.getSigBoostCode        ()); }
-			if (planet!=null) { objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) SaveViewer.log_ln("Planet %s"      ,ua.getExtendedSigBoostCode()); }
+			if (region!=null) { objName = "region "+ua.getCoordinates_Region();   if (withOutput) Gui.log_ln("Region %s"      ,ua.getCoordinates_Region  ()); }
+			if (system!=null) { objName = "solar system "+ua.getSigBoostCode();   if (withOutput) Gui.log_ln("Solar system %s",ua.getSigBoostCode        ()); }
+			if (planet!=null) { objName = "planet "+ua.getExtendedSigBoostCode(); if (withOutput) Gui.log_ln("Planet %s"      ,ua.getExtendedSigBoostCode()); }
 			
 			if (uoData.name!=null) {
 				if (uniObj!=null) uniObj.setOriginalName(uoData.name);
 				if (region!=null) region.setName(uoData.name);
-				if (withOutput && objName!=null) SaveViewer.log_ln("   Name of %s was defined: \"%s\"",objName,uoData.name);
+				if (withOutput && objName!=null) Gui.log_ln("   Name of %s was defined: \"%s\"",objName,uoData.name);
 			}
 			
 			if (uoData.oldname!=null) {
 				if (uniObj!=null) uniObj.setOldOriginalName(uoData.oldname);
 				if (region!=null) region.setOldName(uoData.oldname);
-				if (withOutput && objName!=null) SaveViewer.log_ln("   Old Name of %s was defined: \"%s\"",objName,uoData.oldname);
+				if (withOutput && objName!=null) Gui.log_ln("   Old Name of %s was defined: \"%s\"",objName,uoData.oldname);
 			}
 			
 			if (system!=null) {
 				if (uod_system.race!=null) {
 					system.race = uod_system.race;
-					if (withOutput) SaveViewer.log_ln("   Race of %s was defined: %s", objName, system.race);
+					if (withOutput) Gui.log_ln("   Race of %s was defined: %s", objName, system.race);
 				}
 				if (uod_system.starClass!=null) {
 					system.starClass = uod_system.starClass;
-					if (withOutput) SaveViewer.log_ln("   Star Class of %s was defined: %s", objName, system.starClass);
+					if (withOutput) Gui.log_ln("   Star Class of %s was defined: %s", objName, system.starClass);
 				}
 				if (uod_system.distanceToCenter!=null) {
 					system.distanceToCenter = uod_system.distanceToCenter;
-					if (withOutput) SaveViewer.log_ln("   Distance to galactic center of %s was defined: %s", objName, system.distanceToCenter);
+					if (withOutput) Gui.log_ln("   Distance to galactic center of %s was defined: %s", objName, system.distanceToCenter);
 				}
 				if (uod_system.conflictLevel>=0) {
 					system.conflictLevel = uod_system.conflictLevel;
-					if (withOutput) SaveViewer.log_ln("   Conflict Level of %s was defined: %d", objName, system.conflictLevel);
+					if (withOutput) Gui.log_ln("   Conflict Level of %s was defined: %d", objName, system.conflictLevel);
 				}
 				if (uod_system.conflictLevelLabel!=null) {
 					system.conflictLevelLabel = uod_system.conflictLevelLabel;
-					if (withOutput) SaveViewer.log_ln("   Conflict Level Label of %s was defined: \"%s\"", objName, system.conflictLevelLabel);
+					if (withOutput) Gui.log_ln("   Conflict Level Label of %s was defined: \"%s\"", objName, system.conflictLevelLabel);
 				}
 				if (uod_system.economyLevel>=0) {
 					system.economyLevel = uod_system.economyLevel;
-					if (withOutput) SaveViewer.log_ln("   Economy Level of %s was defined: %d", objName, system.economyLevel);
+					if (withOutput) Gui.log_ln("   Economy Level of %s was defined: %d", objName, system.economyLevel);
 				}
 				if (uod_system.economyLevelLabel!=null) {
 					system.economyLevelLabel = uod_system.economyLevelLabel;
-					if (withOutput) SaveViewer.log_ln("   Economy Level Label of %s was defined: \"%s\"", objName, system.economyLevelLabel);
+					if (withOutput) Gui.log_ln("   Economy Level Label of %s was defined: \"%s\"", objName, system.economyLevelLabel);
 				}
 				if (uod_system.isUnexplored) {
 					system.isUnexplored = uod_system.isUnexplored;
-					if (withOutput) SaveViewer.log_ln("   %s was defined as unexplored", objName);
+					if (withOutput) Gui.log_ln("   %s was defined as unexplored", objName);
 				}
 				if (uod_system.hasAtlasInterface!=null) {
 					system.hasAtlasInterface = uod_system.hasAtlasInterface;
-					if (withOutput) SaveViewer.log_ln("   %s has an Atlas Interface: %s", objName, system.hasAtlasInterface);
+					if (withOutput) Gui.log_ln("   %s has an Atlas Interface: %s", objName, system.hasAtlasInterface);
 				}
 				if (uod_system.hasBlackHole!=null) {
 					system.hasBlackHole = uod_system.hasBlackHole;
-					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole: %s", objName, system.hasBlackHole);
+					if (withOutput) Gui.log_ln("   %s has a Black Hole: %s", objName, system.hasBlackHole);
 				}
 				if (uod_system.blackHoleTarget!=null) {
 					system.blackHoleTarget = new UniverseAddress(uod_system.blackHoleTarget);
-					if (withOutput) SaveViewer.log_ln("   %s has a Black Hole Target: %s", objName, system.blackHoleTarget);
+					if (withOutput) Gui.log_ln("   %s has a Black Hole Target: %s", objName, system.blackHoleTarget);
 				}
 				if (uod_system.withRemembranceTerminal) {
 					system.withRemembranceTerminal = uod_system.withRemembranceTerminal;
-					if (withOutput) SaveViewer.log_ln("   %s has a Remembrance Terminal", objName);
+					if (withOutput) Gui.log_ln("   %s has a Remembrance Terminal", objName);
 				}
 			}
 			
 			if (planet!=null) {
 				if (uod_planet.biome!=null) {
 					planet.biome = uod_planet.biome;
-					if (withOutput) SaveViewer.log_ln("   Biome of %s was defined: %s",objName,planet.biome);
+					if (withOutput) Gui.log_ln("   Biome of %s was defined: %s",objName,planet.biome);
 				}
 				if (uod_planet.hasExtremeBiome) {
 					planet.hasExtremeBiome = uod_planet.hasExtremeBiome;
-					if (withOutput) SaveViewer.log_ln("   %s has extreme biome",objName);
+					if (withOutput) Gui.log_ln("   %s has extreme biome",objName);
 				}
 				if (uod_planet.areSentinelsAggressive) {
 					planet.areSentinelsAggressive = uod_planet.areSentinelsAggressive;
-					if (withOutput) SaveViewer.log_ln("   Sentinels of %s are aggressive",objName);
+					if (withOutput) Gui.log_ln("   Sentinels of %s are aggressive",objName);
 				}
 				if (uod_planet.withWater) {
 					planet.withWater = uod_planet.withWater;
-					if (withOutput) SaveViewer.log_ln("   %s has water",objName);
+					if (withOutput) Gui.log_ln("   %s has water",objName);
 				}
 				if (uod_planet.withGravitinoBalls) {
 					planet.withGravitinoBalls = uod_planet.withGravitinoBalls;
-					if (withOutput) SaveViewer.log_ln("   %s has Gravitino Balls",objName);
+					if (withOutput) Gui.log_ln("   %s has Gravitino Balls",objName);
 				}
 				if (uod_planet.withRemembranceTerminal) {
 					planet.withRemembranceTerminal = uod_planet.withRemembranceTerminal;
-					if (withOutput) SaveViewer.log_ln("   %s has Remembrance Terminal",objName);
+					if (withOutput) Gui.log_ln("   %s has Remembrance Terminal",objName);
 				}
 				if (uod_planet.buriedTreasure!=null) {
 					planet.buriedTreasure = uod_planet.buriedTreasure;
-					if (withOutput) SaveViewer.log_ln("   Buried Treasure of %s was defined: %s",objName,planet.buriedTreasure);
+					if (withOutput) Gui.log_ln("   Buried Treasure of %s was defined: %s",objName,planet.buriedTreasure);
 				}
 				if (!uod_planet.resources.isEmpty()) {
 					planet.resources.clear();
 					planet.resources.addAll(uod_planet.resources);
-					if (withOutput) SaveViewer.log_ln("   Resources of %s were defined: %s",objName,planet.resources);
+					if (withOutput) Gui.log_ln("   Resources of %s were defined: %s",objName,planet.resources);
 				}
 			}
 			
@@ -638,17 +638,17 @@ public class GameInfos {
 				uniObj.extraInfos.clear();
 				for (ExtraInfo ei:uod_uniObj.extraInfos) {
 					uniObj.extraInfos.add(ei);
-					if (withOutput) SaveViewer.log_ln("   Info of %s was defined: ( \"%s\", \"%s\" )",objName,ei.shortLabel,ei.info);
+					if (withOutput) Gui.log_ln("   Info of %s was defined: ( \"%s\", \"%s\" )",objName,ei.shortLabel,ei.info);
 				}
 			}
 			
 		}
-		if (!withOutput) SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		if (!withOutput) Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveUniverseObjectDataToFile(Universe universe) {
 		long start = System.currentTimeMillis();
-		SaveViewer.log("Write data of universe objects to data pool ...");
+		Gui.log("Write data of universe objects to data pool ...");
 		for (Galaxy g:universe.galaxies)
 			for (Region r:g.regions) {
 				UniverseAddress ua = r.getUniverseAddress();
@@ -662,13 +662,13 @@ public class GameInfos {
 					}
 				}
 			}
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		
 		start = System.currentTimeMillis();
 		Vector<UniverseObjectData> values = new Vector<>(universeObjectDataArr.values());
 		Collections.sort(values);
 		
-		SaveViewer.log("Write data pool to file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\" ...");
+		Gui.log("Write data pool to file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\" ...");
 		File file = new File(FileExport.FILE_UNIVERSE_OBJECT_DATA);
 		boolean isFirst = true;
 		@SuppressWarnings("unused")
@@ -742,7 +742,7 @@ public class GameInfos {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void loadKnownStatIDsFromFile() {
@@ -751,7 +751,7 @@ public class GameInfos {
 		
 		boolean somethingChanged = false;
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read known StatIDs from file \"%s\" ...", file.getPath());
+		Gui.log_ln("Read known StatIDs from file \"%s\" ...", file.getPath());
 		String str;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 			while ((str=in.readLine())!=null) {
@@ -765,7 +765,7 @@ public class GameInfos {
 				
 				String fullName = str.substring(pos+1);
 				if (!fullName.equals(knownID.fullName)) {
-					SaveViewer.log_warn_ln("   changed fullName of %16s  from \"%s\"  into \"%s\"",knownID,knownID.fullName,fullName);
+					Gui.log_warn_ln("   changed fullName of %16s  from \"%s\"  into \"%s\"",knownID,knownID.fullName,fullName);
 					knownID.fullName = fullName;
 					somethingChanged = true;
 				}
@@ -774,14 +774,14 @@ public class GameInfos {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
-		if (!somethingChanged) SaveViewer.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		if (!somethingChanged) Gui.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	public static void saveKnownStatIDsToFile() {
 		File file = new File(FileExport.FILE_KNOWN_STAT_ID);
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Write known StatIDs to file \""+file.getPath()+"\" ...");
+		Gui.log_ln("Write known StatIDs to file \""+file.getPath()+"\" ...");
 		
 		KnownID[] knownIDs = KnownID.values();
 		
@@ -791,7 +791,7 @@ public class GameInfos {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
 	public static final IDMap productIDs   = new IDMap("ProductIDs");
@@ -889,7 +889,7 @@ public class GameInfos {
 		if (!file.isFile()) return;
 		
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Read "+idLabel+" IDs from file \""+filePath+"\"...");
+		Gui.log_ln("Read "+idLabel+" IDs from file \""+filePath+"\"...");
 		String line;
 		IDFileBlock currentBlock = IDFileBlock.IDs;
 		GeneralizedIDTemplate template = null;
@@ -916,7 +916,7 @@ public class GameInfos {
 							int minValues = Integer.parseInt(str);
 							template = new GeneralizedIDTemplate(minValues);
 						} catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse Templates.MinValues as integer in \"%s\"", str);
+							Gui.log_error_ln("Can't parse Templates.MinValues as integer in \"%s\"", str);
 							template = null;
 						}
 					}
@@ -932,7 +932,7 @@ public class GameInfos {
 						String str = line.substring("Type=".length());
 						try { template.type = GeneralizedID.Type.valueOf(str); }
 						catch (Exception e) {
-							SaveViewer.log_error_ln("Can't parse Templates.Type as GeneralizedID.Type in \"%s\"", str);
+							Gui.log_error_ln("Can't parse Templates.Type as GeneralizedID.Type in \"%s\"", str);
 							template.type = null;
 						}
 					}
@@ -940,7 +940,7 @@ public class GameInfos {
 						String str = line.substring("UpgradeClass=".length());
 						try { template.upgradeClass = GeneralizedID.UpgradeClass.valueOf(str); }
 						catch (Exception e) {
-							SaveViewer.log_error_ln("Can't parse Templates.UpgradeClass as GeneralizedID.UpgradeClass in \"%s\"", str);
+							Gui.log_error_ln("Can't parse Templates.UpgradeClass as GeneralizedID.UpgradeClass in \"%s\"", str);
 							template.upgradeClass = null;
 						}
 					}
@@ -952,7 +952,7 @@ public class GameInfos {
 						String str = line.substring("Background=".length());
 						try { template.imageBackground = Integer.parseInt(str, 16); }
 						catch (NumberFormatException e) {
-							SaveViewer.log_error_ln("Can't parse Templates.Background as hex integer in \"%s\"", str);
+							Gui.log_error_ln("Can't parse Templates.Background as hex integer in \"%s\"", str);
 							template.imageBackground = null;
 						}
 					}
@@ -1007,7 +1007,7 @@ public class GameInfos {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
 		
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 //	public static void createFilesWithObsoleteIDs() {
@@ -1036,7 +1036,7 @@ public class GameInfos {
 
 	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
 		long start = System.currentTimeMillis();
-		SaveViewer.log_ln("Write "+idLabel+" IDs to file \""+filePath+"\"...");
+		Gui.log_ln("Write "+idLabel+" IDs to file \""+filePath+"\"...");
 		
 		File file = new File(filePath);
 		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
@@ -1068,7 +1068,7 @@ public class GameInfos {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
 	private static class CreateTemplateDialog extends StandardDialog {
@@ -1096,25 +1096,25 @@ public class GameInfos {
 			c.gridx = 0;
 			c.gridwidth = 2;
 			boolean en;
-			c.gridy = 0; en = useLabel          =(null!=id.label          ); contentPane.add(SaveViewer.createCheckbox("use Label"       , en, en, b->{ useLabel          =b; check(id,list); }),c);
-			c.gridy = 1; en = useSymbol         =(null!=id.symbol         ); contentPane.add(SaveViewer.createCheckbox("use Symbol"      , en, en, b->{ useSymbol         =b; check(id,list); }),c);
-			c.gridy = 2; en = useType           =(null!=id.type           ); contentPane.add(SaveViewer.createCheckbox("use Type"        , en, en, b->{ useType           =b; check(id,list); }),c);
-			c.gridy = 3; en = useUpgradeClass   =(null!=id.upgradeClass   ); contentPane.add(SaveViewer.createCheckbox("use UpgradeClass", en, en, b->{ useUpgradeClass   =b; check(id,list); }),c);
-			c.gridy = 4; en = useImageFileName  =(null!=id.imageFileName  ); contentPane.add(SaveViewer.createCheckbox("use Image"       , en, en, b->{ useImageFileName  =b; check(id,list); }),c);
-			c.gridy = 5; en = useImageBackground=(null!=id.imageBackground); contentPane.add(SaveViewer.createCheckbox("use Background"  , en, en, b->{ useImageBackground=b; check(id,list); }),c);
+			c.gridy = 0; en = useLabel          =(null!=id.label          ); contentPane.add(Gui.createCheckbox("use Label"       , en, en, b->{ useLabel          =b; check(id,list); }),c);
+			c.gridy = 1; en = useSymbol         =(null!=id.symbol         ); contentPane.add(Gui.createCheckbox("use Symbol"      , en, en, b->{ useSymbol         =b; check(id,list); }),c);
+			c.gridy = 2; en = useType           =(null!=id.type           ); contentPane.add(Gui.createCheckbox("use Type"        , en, en, b->{ useType           =b; check(id,list); }),c);
+			c.gridy = 3; en = useUpgradeClass   =(null!=id.upgradeClass   ); contentPane.add(Gui.createCheckbox("use UpgradeClass", en, en, b->{ useUpgradeClass   =b; check(id,list); }),c);
+			c.gridy = 4; en = useImageFileName  =(null!=id.imageFileName  ); contentPane.add(Gui.createCheckbox("use Image"       , en, en, b->{ useImageFileName  =b; check(id,list); }),c);
+			c.gridy = 5; en = useImageBackground=(null!=id.imageBackground); contentPane.add(Gui.createCheckbox("use Background"  , en, en, b->{ useImageBackground=b; check(id,list); }),c);
 			c.gridwidth = 1;
 			c.gridy = 6;
 			contentPane.add(new JLabel("Min. Number of Values: "),c);
 			c.gridx = 1;
-			contentPane.add(SaveViewer.createTextField(Integer.toString(minValues), 5, (String str)->{
+			contentPane.add(Gui.createTextField(Integer.toString(minValues), 5, (String str)->{
 				try { minValues = Integer.parseInt(str); }
 				catch (NumberFormatException e1) {}
 				return Integer.toString(minValues);
 			}),c);
 			
 			createGUI(contentPane,
-				btnOk = SaveViewer.createButton("Ok", e->{ result = createTemplate(id); closeDialog(); }),
-				SaveViewer.createButton("Cancel", e->{ closeDialog(); })
+				btnOk = Gui.createButton("Ok", e->{ result = createTemplate(id); closeDialog(); }),
+				Gui.createButton("Cancel", e->{ closeDialog(); })
 			);
 		}
 
@@ -1576,20 +1576,20 @@ public class GameInfos {
 			DebugTableContextMenu contextMenuGroup       = new DebugTableContextMenu(table);
 			
 			contextMenuGroup.addSeparator();
-			contextMenuGroup.add(createMenuItem("Delete selected",ActionCommand.DeleteID,SaveViewer.ToolbarIcons.Delete));
+			contextMenuGroup.add(Gui.createMenuItem("Delete selected",this,ActionCommand.DeleteID,Gui.ToolbarIcons.Delete));
 			contextMenuGroup.addSeparator();
 			contextMenuGroup.add(typeListMenu_Group);
 			contextMenuGroup.add(colorListMenu_Group);
-			contextMenuGroup.add(createMenuItem("ImageFile of selected ...",ActionCommand.SelectImage4AllSelected));
+			contextMenuGroup.add(Gui.createMenuItem("ImageFile of selected ...",this,ActionCommand.SelectImage4AllSelected));
 			contextMenuGroup.add(upgrclsListMenu_Group);
 			contextMenuGroup.addSeparator();
-			contextMenuGroup.add(createMenuItem("Clear ImageFile of selected",ActionCommand.ClearImage,SaveViewer.ToolbarIcons.Delete));
-			contextMenuGroup.add(createMenuItem("Paste ImageFile of selected",ActionCommand.PasteImage,SaveViewer.ToolbarIcons.Paste));
+			contextMenuGroup.add(Gui.createMenuItem("Clear ImageFile of selected",this,ActionCommand.ClearImage,Gui.ToolbarIcons.Delete));
+			contextMenuGroup.add(Gui.createMenuItem("Paste ImageFile of selected",this,ActionCommand.PasteImage,Gui.ToolbarIcons.Paste));
 			contextMenuGroup.addSeparator();
-			contextMenuGroup.add(createMenuItem("Clear Background of selected",ActionCommand.ClearBackground,SaveViewer.ToolbarIcons.Delete));
-			contextMenuGroup.add(createMenuItem("Paste Background of selected",ActionCommand.PasteBackground,SaveViewer.ToolbarIcons.Paste));
+			contextMenuGroup.add(Gui.createMenuItem("Clear Background of selected",this,ActionCommand.ClearBackground,Gui.ToolbarIcons.Delete));
+			contextMenuGroup.add(Gui.createMenuItem("Paste Background of selected",this,ActionCommand.PasteBackground,Gui.ToolbarIcons.Paste));
 			contextMenuGroup.addSeparator();
-			contextMenuGroup.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
+			contextMenuGroup.add(Gui.createMenuItem("Add Background Color",this,ActionCommand.AddBackgroundColor));
 			
 			contextMenuStd.addSeparator();
 			addStandardItems(contextMenuStd, typeListMenu_Std, colorListMenu_Std, upgrclsListMenu_Std);
@@ -1597,18 +1597,18 @@ public class GameInfos {
 			contextMenuImage.addSeparator();
 			addStandardItems(contextMenuImage, typeListMenu_Image, colorListMenu_Image, upgrclsListMenu_Image);
 			contextMenuImage.addSeparator();
-			contextMenuImage.add(createMenuItem("Clear ImageFile",ActionCommand.ClearImage,SaveViewer.ToolbarIcons.Delete));
-			contextMenuImage.add(createMenuItem("Copy ImageFile" ,ActionCommand.CopyImage ,SaveViewer.ToolbarIcons.Copy  ));
-			contextMenuImage.add(createMenuItem("Paste ImageFile",ActionCommand.PasteImage,SaveViewer.ToolbarIcons.Paste ));
+			contextMenuImage.add(Gui.createMenuItem("Clear ImageFile",this,ActionCommand.ClearImage,Gui.ToolbarIcons.Delete));
+			contextMenuImage.add(Gui.createMenuItem("Copy ImageFile" ,this,ActionCommand.CopyImage ,Gui.ToolbarIcons.Copy));
+			contextMenuImage.add(Gui.createMenuItem("Paste ImageFile",this,ActionCommand.PasteImage,Gui.ToolbarIcons.Paste));
 			
 			contextMenuImageBG.addSeparator();
 			addStandardItems(contextMenuImageBG, typeListMenu_ImageBG, colorListMenu_ImageBG, upgrclsListMenu_ImageBG);
 			contextMenuImageBG.addSeparator();
-			contextMenuImageBG.add(createMenuItem("Clear Background",ActionCommand.ClearBackground,SaveViewer.ToolbarIcons.Delete));
-			contextMenuImageBG.add(createMenuItem("Copy Background" ,ActionCommand.CopyBackground ,SaveViewer.ToolbarIcons.Copy  ));
-			contextMenuImageBG.add(createMenuItem("Paste Background",ActionCommand.PasteBackground,SaveViewer.ToolbarIcons.Paste ));
+			contextMenuImageBG.add(Gui.createMenuItem("Clear Background",this,ActionCommand.ClearBackground,Gui.ToolbarIcons.Delete));
+			contextMenuImageBG.add(Gui.createMenuItem("Copy Background" ,this,ActionCommand.CopyBackground ,Gui.ToolbarIcons.Copy));
+			contextMenuImageBG.add(Gui.createMenuItem("Paste Background",this,ActionCommand.PasteBackground,Gui.ToolbarIcons.Paste));
 			contextMenuImageBG.addSeparator();
-			contextMenuImageBG.add(createMenuItem("Add Background Color",ActionCommand.AddBackgroundColor));
+			contextMenuImageBG.add(Gui.createMenuItem("Add Background Color",this,ActionCommand.AddBackgroundColor));
 			
 			table.addMouseListener(new MouseAdapter() {
 				@Override public void mouseClicked(MouseEvent e) {
@@ -1683,28 +1683,15 @@ public class GameInfos {
 		}
 
 		private void addStandardItems(DebugTableContextMenu contextMenu, Gui.ListMenu<GeneralizedID.Type> typeListMenu, Gui.NamedColorListMenu colorListMenu, Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu) {
-			contextMenu.add(createMenuItem("Edit ID",ActionCommand.EditID));
+			contextMenu.add(Gui.createMenuItem("Edit ID",this,ActionCommand.EditID));
 			contextMenu.add(typeListMenu);
 			contextMenu.add(colorListMenu);
-			contextMenu.add(createMenuItem("ImageFile ...",ActionCommand.SelectImage));
+			contextMenu.add(Gui.createMenuItem("ImageFile ...",this,ActionCommand.SelectImage));
 			contextMenu.add(upgrclsListMenu);
 			contextMenu.addSeparator();;
-			contextMenu.add(createMenuItem("Delete",ActionCommand.DeleteID,SaveViewer.ToolbarIcons.Delete));
+			contextMenu.add(Gui.createMenuItem("Delete",this,ActionCommand.DeleteID,Gui.ToolbarIcons.Delete));
 		}
 		
-		private JMenuItem createMenuItem(String label, ActionCommand actionCommand) {
-			JMenuItem menuItem = new JMenuItem(label);
-			menuItem.addActionListener(this);
-			menuItem.setActionCommand(actionCommand.toString());
-			return menuItem;
-		}
-		
-		private JMenuItem createMenuItem(String label, ActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
-			JMenuItem menuItem = createMenuItem(label,actionCommand);
-			menuItem.setIcon(SaveViewer.toolbarIS.getIcon(icon));
-			return menuItem;
-		}
-	
 		enum ActionCommand { DeleteID, EditID, SelectImage, ClearImage, CopyImage, PasteImage, ClearBackground, CopyBackground, PasteBackground, AddBackgroundColor, SelectImage4AllSelected }
 		
 		@Override
@@ -2217,7 +2204,7 @@ public class GameInfos {
 			JScrollPane textareaScrollPane = new JScrollPane(valueOutput);
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 100));
 			
-			txtfldLabel = SaveViewer.createTextField(
+			txtfldLabel = Gui.createTextField(
 				id.getLabel(),
 				(String str)->{
 					id.setLabel(str);
@@ -2226,7 +2213,7 @@ public class GameInfos {
 				}
 			);
 			
-			txtfldSymbol = SaveViewer.createTextField(
+			txtfldSymbol = Gui.createTextField(
 				id.getSymbol(),
 				(String str)->{
 					id.setSymbol(str);
@@ -2331,7 +2318,7 @@ public class GameInfos {
 			GeneralizedIDTemplate template = dlg.getResult();
 			if (template!=null) {
 				boolean successful = templateList.add(template);
-				if (successful) SaveViewer.log_ln("Added a new Template: %s", template);
+				if (successful) Gui.log_ln("Added a new Template: %s", template);
 				wasIdTemplateAdded |= successful;
 			}
 		}

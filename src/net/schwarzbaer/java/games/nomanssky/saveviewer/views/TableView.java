@@ -57,12 +57,12 @@ public class TableView {
 			this.table = table;
 			
 			add(createMenuItem("Show Widths",TableContextMenuActionCommand.ShowWidths,null));
-			add(createMenuItem("Copy Selected Rows",TableContextMenuActionCommand.CopySelectedRows,SaveViewer.ToolbarIcons.Copy));
-			add(createMenuItem("Copy Table",TableContextMenuActionCommand.CopyTable,SaveViewer.ToolbarIcons.Copy));
+			add(createMenuItem("Copy Selected Rows",TableContextMenuActionCommand.CopySelectedRows,Gui.ToolbarIcons.Copy));
+			add(createMenuItem("Copy Table",TableContextMenuActionCommand.CopyTable,Gui.ToolbarIcons.Copy));
 		}
 	
-		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand, SaveViewer.ToolbarIcons icon) {
-			return SaveViewer.createMenuItem(label, this, actionCommand, icon);
+		private JMenuItem createMenuItem(String label, TableContextMenuActionCommand actionCommand, Gui.ToolbarIcons icon) {
+			return Gui.createMenuItem(label, this, actionCommand, icon);
 		}
 	
 		@Override
