@@ -228,10 +228,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		
 		finalSequenceTableModel = new FinalSequenceTableModel();
 		JTable finalSequenceTable = new JTable(finalSequenceTableModel);
+		finalSequenceTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		finalSequenceTableModel.setTable(finalSequenceTable);
 		JScrollPane finalSequenceTableScrollPane = new JScrollPane(finalSequenceTable);
 		finalSequenceTableScrollPane.setMinimumSize(new Dimension(200,150));
-		
 		
 		JPanel finalSequencePanel = new JPanel(new GridBagLayout());
 		finalSequencePanel.setBorder( BorderFactory.createTitledBorder("Final Installation Sequence"));
@@ -252,7 +252,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		c.gridwidth = 1;
 		c.weightx = 0;
 		c.weighty = 0;
-		optionPanel.add(Gui.createCheckbox   ("Show Value Priorities", disabler, ActionCommand.ShowValuePriorities, false, true, tablePanel::showValuePriorities),c);
+		optionPanel.add(Gui.createCheckbox   ("Show Value Priorities", disabler, ActionCommand.ShowValuePriorities, false, true, this::showValuePriorities),c);
 		ButtonGroup bg = new ButtonGroup();
 		optionPanel.add(new JLabel(" Coloring: "),c);
 		optionPanel.add(Gui.createRadioButton(  "0..Max", bg, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(false)),c);
@@ -328,6 +328,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		});
 		
 		return this;
+	}
+
+	private void showValuePriorities(boolean b) {
+		tablePanel.showValuePriorities(b);
+		finalSequenceTableModel.showValuePriorities(b);
 	}
 
 	private void updateGUIaccess() {
@@ -438,7 +443,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		modulePanel.updateModules(modules);
 		sequencesTableModel.updateSequences(modules,sequences,currentSession.nModules);
 		testInstallsIterator.update();
-		finalSequenceTableModel.update(currentSession.finalSequence);
+		finalSequenceTableModel.update(currentSession);
 	}
 
 	private void openSession(File file) {
@@ -458,6 +463,24 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				});
 			}
 		});
+	}
+	
+	private static Float computeUpgradePriority(InstalledUpgrade upgrade, Vector<KnownModule.ValueDefinition> values) {
+		if (upgrade==null) return null;
+		
+		float priority = 0;
+		float vd_priority = 0;
+		for (KnownModule.ValueDefinition vd:values) {
+			if (vd.max==null || vd.max==0) continue;
+			Float value = upgrade.values.get(vd);
+			if (value==null) continue;
+			vd_priority += vd.priority;
+			priority += vd.priority * (value/vd.max);
+		}
+		
+		if (vd_priority==0)
+			return priority;
+		return priority/vd_priority;
 	}
 	
 	private static <V> Vector<V> cloneVector( Vector<V> vec, Function<V,V> cloneV ) {
@@ -1808,7 +1831,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					block,currentSession.finalSequence,currentSession.nModules,
 					new LabelCellEditor(id,upgrade->upgrade==null?null:upgrade.label1),
 					new LabelCellEditor(id,upgrade->upgrade==null?null:upgrade.label2),
-					this::updateAfterChangeOnFinalSequence
+					new InstalledModulesTableModel.Updater() {
+						@Override public void finalSequenceChanged() { updateAfterChangeOnFinalSequence(); }
+						@Override public void prioChanged(GeneralizedID id) { finalSequenceTableModel.updatePrioColumn(id); }
+					}
 				);
 				tables.put(id, tableModel);
 				
@@ -2268,17 +2294,22 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private boolean installTestAreRunning;
 		private boolean defineFinalInstallation;
 		private DefaultCellEditor cellEditor_Checkbox;
-		private Runnable updateAfterChangeOnFinalSequence;
+		private Updater updater;
 		private boolean isValueColoringMinMax;
 		private boolean showValuePriorities;
-	
-		public InstalledModulesTableModel(Session.SessionBlock block, GeneralizedID[] finalSequence, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor, Runnable updateAfterChangeOnFinalSequence) {
+		
+		public interface Updater {
+			void prioChanged(GeneralizedID id);
+			void finalSequenceChanged();
+		}
+		
+		public InstalledModulesTableModel(Session.SessionBlock block, GeneralizedID[] finalSequence, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor, Updater updater) {
 			this.block = block;
 			this.finalSequence = finalSequence;
 			this.nModules = nModules;
 			this.label1CellEditor = label1CellEditor;
 			this.label2CellEditor = label2CellEditor;
-			this.updateAfterChangeOnFinalSequence = updateAfterChangeOnFinalSequence;
+			this.updater = updater;
 			
 			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
 			cellEditor_TextField = new DefaultCellEditor(new JTextField());
@@ -2514,24 +2545,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				return rowIndex<finalSequence.length && finalSequence[rowIndex]!=null ? getLabelOrID(finalSequence[rowIndex]) : null;
 			}
 		}
-	
-		private Float computeUpgradePriority(InstalledUpgrade upgrade, Vector<KnownModule.ValueDefinition> values) {
-			if (upgrade==null) return null;
-			
-			float priority = 0;
-			float vd_priority = 0;
-			for (KnownModule.ValueDefinition vd:values) {
-				if (vd.max==null || vd.max==0) continue;
-				Float value = upgrade.values.get(vd);
-				if (value==null) continue;
-				vd_priority += vd.priority;
-				priority += vd.priority * (value/vd.max);
-			}
-			
-			if (vd_priority==0)
-				return priority;
-			return priority/vd_priority;
-		}
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -2592,6 +2605,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							SwingUtilities.invokeLater(()->{
 								fireTableColumnChanged(block.module.values.size());
 								table.repaint();
+								updater.prioChanged(block.module.moduleID);
 							});
 						}
 					}
@@ -2600,7 +2614,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						if (aValue instanceof Boolean && rowIndex<finalSequence.length) {
 							boolean b = (Boolean) aValue;
 							finalSequence[rowIndex] = b ? block.module.moduleID : null;
-							updateAfterChangeOnFinalSequence.run();
+							updater.finalSequenceChanged();
 						}
 					}
 				}
@@ -2868,11 +2882,25 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 	private final class FinalSequenceTableModel extends AbstractTableModel {
 	
-		private GeneralizedID[] finalSequence = null;
+		private Session session = null;
+		private Vector<GeneralizedID> sortedIDs = null;
+		private boolean showValuePriorities = false;
 
-		public void update(GeneralizedID[] finalSequence) {
-			this.finalSequence = finalSequence;
+		public void update(Session session) {
+			this.session = session;
+			sortedIDs = sortedID(this.session.blocks.keySet());
 			fireTableStructureUpdate();
+		}
+
+		public void showValuePriorities(boolean b) {
+			showValuePriorities = b; 
+			fireTableStructureUpdate();
+		}
+
+		public void updatePrioColumn(GeneralizedID id) {
+			int columnIndex = getColumnIndex(id);
+			if (columnIndex<0) return;
+			fireTableColumnChanged(columnIndex);
 		}
 
 		@Override
@@ -2881,17 +2909,68 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			table.setPreferredScrollableViewportSize(table.getPreferredSize());
 		}
 		
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			return finalSequence==null || finalSequence[rowIndex]==null ? null : getLabelOrID(finalSequence[rowIndex]);
-		}
-	
-		@Override public int getRowCount() { return finalSequence==null ? 0 : finalSequence.length; }
-		@Override public int getColumnCount() { return 1; }
-		@Override public String getColumnName(int columnIndex) { return "Module"; }
+		@Override public int getRowCount() { return session==null ? 0 : session.nModules; }
+		@Override public int getColumnCount() { return 1 + (!showValuePriorities||sortedIDs==null?0:sortedIDs.size()); }
 		@Override public Class<?> getColumnClass(int columnIndex) { return String.class; }
 		@Override public boolean isCellEditable(int rowIndex, int columnIndex) { return false; }
 		@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {}
-		@Override protected int getPrefColumnWidth(int columnIndex) { return 200; }
+		
+		@Override public String getColumnName(int columnIndex) {
+			if (columnIndex==0) return "Module";
+			GeneralizedID id = getID(columnIndex);
+			if (id==null) return "["+columnIndex+"]";
+			return getLabelOrID(id);
+		}
+
+		@Override protected int getPrefColumnWidth(int columnIndex) {
+			if (columnIndex==0) return 200;
+			return 40;
+		}
+
+		@Override public Object getValueAt(int rowIndex, int columnIndex) {
+			if (columnIndex==0) {
+				if (session==null) return null;
+				if (session.finalSequence==null) return null;
+				if (session.finalSequence.length<=rowIndex) return null;
+				if (session.finalSequence[rowIndex]==null) return null;
+				return getLabelOrID(session.finalSequence[rowIndex]);
+			} else {
+				Session.SessionBlock block = getBlock(columnIndex);
+				InstalledUpgrade upgrade = getModule(block, rowIndex);
+				if (block==null || upgrade==null) return null;
+				Float prio = computeUpgradePriority(upgrade, block.module.values);
+				if (prio==null) return null;
+				return String.format(Locale.ENGLISH, "%1.3f", prio);
+			}
+		}
+
+		private Session.SessionBlock getBlock(int columnIndex) {
+			GeneralizedID id = getID(columnIndex);
+			if (id==null) return null;
+			if (session==null) return null;
+			return session.blocks.get(id);
+		}
+		
+		private InstalledUpgrade getModule(Session.SessionBlock block, int rowIndex) {
+			if (block==null) return null;
+			if (rowIndex<0) return null;
+			if (block.installedModules.size()<=rowIndex) return null;
+			return block.installedModules.get(rowIndex);
+		}
+		
+		private GeneralizedID getID(int columnIndex) {
+			if (columnIndex<=0) return null;
+			if (sortedIDs==null) return null;
+			if (sortedIDs.size()<=columnIndex-1) return null;
+			return sortedIDs.get(columnIndex-1);
+		}
+
+		private int getColumnIndex(GeneralizedID id) {
+			if (sortedIDs!=null) {
+				int index = sortedIDs.indexOf(id);
+				if (index>=0) return index+1;
+			}
+			return -1;
+		}
 	}
 }
