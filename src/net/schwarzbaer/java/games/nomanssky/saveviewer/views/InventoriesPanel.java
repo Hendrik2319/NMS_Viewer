@@ -289,6 +289,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					textarea.append("   Label : "+((slot.id!=null && slot.id.hasLabel ())?slot.id.label :"") +"\r\n");
 					textarea.append("   Symbol: "+((slot.id!=null && slot.id.hasSymbol())?slot.id.symbol:"")+"\r\n");
 					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):("["+slot.id.id+"]"))+"\r\n");
+					if (slot.id!=null) {
+						if (slot.id.hasImageFileName()) textarea.append("           "+slot.id.getImageFileName()+"\r\n");
+						if (slot.id.hasImageBG      ()) textarea.append("           "+slot.id.getImageBGStr()+"\r\n");
+					}
 					textarea.append("   Type  : "+(slot.type==null?slot.typeStr:slot.type)+"\r\n");
 					if (slot.id!=null && slot.id.type!=null)
 						textarea.append("           "+slot.id.type.label+"\r\n");
