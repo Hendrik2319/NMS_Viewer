@@ -31,13 +31,21 @@ value.value=5.0000000e+01
 
 [InstalledUpgrade]
 index=1
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=T-Gel-haltige
+upgrade.label2=Filter
+value.uniqueID=42BD58028FDBE63E
+value.value=3.7000000e+01
+value.uniqueID=7E0A5D5CF7602542
+value.value=8.6000000e+01
 
 [InstalledUpgrade]
 index=2
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Solare
+upgrade.label2=Abflüsse
+value.uniqueID=42BD58028FDBE63E
+value.value=2.9000000e+01
+value.uniqueID=7E0A5D5CF7602542
+value.value=7.2000000e+01
 
 [InstalledUpgrade]
 index=3
@@ -50,13 +58,21 @@ value.value=6.1000000e+01
 
 [InstalledUpgrade]
 index=4
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Solare
+upgrade.label2=Wiederverwerter
+value.uniqueID=42BD58028FDBE63E
+value.value=4.4000000e+01
+value.uniqueID=7E0A5D5CF7602542
+value.value=5.2000000e+01
 
 [InstalledUpgrade]
 index=5
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Solare
+upgrade.label2=Tanks
+value.uniqueID=42BD58028FDBE63E
+value.value=3.2000000e+01
+value.uniqueID=7E0A5D5CF7602542
+value.value=6.0000000e+01
 
 [InstalledUpgrade]
 index=6
@@ -69,13 +85,21 @@ value.value=5.0000000e+01
 
 [InstalledUpgrade]
 index=7
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=T-Gel-haltige
+upgrade.label2=Generatoreinheit
+value.uniqueID=42BD58028FDBE63E
+value.value=2.7000000e+01
+value.uniqueID=7E0A5D5CF7602542
+value.value=5.0000000e+01
 
 [InstalledUpgrade]
 index=8
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Flüssiggashaltige
+upgrade.label2=Wiederverwerter
+value.uniqueID=42BD58028FDBE63E
+value.value=2.6000000e+01
+value.uniqueID=7E0A5D5CF7602542
+value.value=7.1000000e+01
 
 [UpgradeModule]
 ModuleID=^U_JETBOOST4
@@ -95,6 +119,19 @@ valueDef.label=Anfängliche Schubkraft
 valueDef.format=PercentPlus
 
 [InstalledUpgrade]
+index=0
+upgrade.label1=Antimateriehaltige
+upgrade.label2=Strahlen
+value.uniqueID=0E5EE034E6EAD656
+value.value=1.7000000e+01
+value.uniqueID=1F63614B2CA2F985
+value.value=4.8000000e+01
+value.uniqueID=286642873C413024
+value.value=2.1100000e+02
+value.uniqueID=272ECCF762EB492E
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
 index=1
 upgrade.label1=Antimateriehaltige
 upgrade.label2=Tanks
@@ -109,13 +146,29 @@ value.value=6.0000000e+00
 
 [InstalledUpgrade]
 index=2
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Supersonische
+upgrade.label2=Lichtmaschine
+value.uniqueID=0E5EE034E6EAD656
+value.value=1.1000000e+01
+value.uniqueID=1F63614B2CA2F985
+value.value=4.0000000e+01
+value.uniqueID=286642873C413024
+value.value=2.1800000e+02
+value.uniqueID=272ECCF762EB492E
+value.value=6.0000000e+00
 
 [InstalledUpgrade]
 index=3
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Antimateriehaltige
+upgrade.label2=Pumpe
+value.uniqueID=0E5EE034E6EAD656
+value.value=1.8000000e+01
+value.uniqueID=1F63614B2CA2F985
+value.value=4.0000000e+01
+value.uniqueID=286642873C413024
+value.value=2.1000000e+02
+value.uniqueID=272ECCF762EB492E
+value.value=8.0000000e+00
 
 [InstalledUpgrade]
 index=4
@@ -132,13 +185,29 @@ value.value=6.0000000e+00
 
 [InstalledUpgrade]
 index=5
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Supersonische
+upgrade.label2=Diffusoren
+value.uniqueID=0E5EE034E6EAD656
+value.value=1.3000000e+01
+value.uniqueID=1F63614B2CA2F985
+value.value=4.2000000e+01
+value.uniqueID=286642873C413024
+value.value=2.0000000e+02
+value.uniqueID=272ECCF762EB492E
+value.value=6.0000000e+00
 
 [InstalledUpgrade]
 index=6
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Antimateriehaltige
+upgrade.label2=Lichtmaschine
+value.uniqueID=0E5EE034E6EAD656
+value.value=1.2000000e+01
+value.uniqueID=1F63614B2CA2F985
+value.value=4.1000000e+01
+value.uniqueID=286642873C413024
+value.value=2.0000000e+02
+value.uniqueID=272ECCF762EB492E
+value.value=6.0000000e+00
 
 [InstalledUpgrade]
 index=7
@@ -155,8 +224,16 @@ value.value=8.0000000e+00
 
 [InstalledUpgrade]
 index=8
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Perfekte
+upgrade.label2=Auspuffrohre
+value.uniqueID=0E5EE034E6EAD656
+value.value=1.2000000e+01
+value.uniqueID=1F63614B2CA2F985
+value.value=4.6000000e+01
+value.uniqueID=286642873C413024
+value.value=2.0000000e+02
+value.uniqueID=272ECCF762EB492E
+value.value=8.0000000e+00
 
 [UpgradeModule]
 ModuleID=^U_SHIELDBOOST4
@@ -171,13 +248,21 @@ valueDef.format=PercentPlus
 
 [InstalledUpgrade]
 index=0
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Nanithaltige
+upgrade.label2=Transplantate
+value.uniqueID=35BE18F5CF3FC8B8
+value.value=3.3000000e+01
+value.uniqueID=697147FD3AD47C9A
+value.value=8.1000000e+01
 
 [InstalledUpgrade]
 index=1
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Nanithaltige
+upgrade.label2=Gitter
+value.uniqueID=35BE18F5CF3FC8B8
+value.value=3.3000000e+01
+value.uniqueID=697147FD3AD47C9A
+value.value=8.9000000e+01
 
 [InstalledUpgrade]
 index=2
@@ -190,13 +275,21 @@ value.value=8.8000000e+01
 
 [InstalledUpgrade]
 index=3
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Nanithaltige
+upgrade.label2=Schilde
+value.uniqueID=35BE18F5CF3FC8B8
+value.value=3.3000000e+01
+value.uniqueID=697147FD3AD47C9A
+value.value=8.7000000e+01
 
 [InstalledUpgrade]
 index=4
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Q-Feld-interne
+upgrade.label2=Panzerung
+value.uniqueID=35BE18F5CF3FC8B8
+value.value=3.3000000e+01
+value.uniqueID=697147FD3AD47C9A
+value.value=8.3000000e+01
 
 [InstalledUpgrade]
 index=5
@@ -209,8 +302,21 @@ value.value=8.7000000e+01
 
 [InstalledUpgrade]
 index=6
-upgrade.label1=
-upgrade.label2=
+upgrade.label1=Nanithaltige
+upgrade.label2=Polsterung
+value.uniqueID=35BE18F5CF3FC8B8
+value.value=3.3000000e+01
+value.uniqueID=697147FD3AD47C9A
+value.value=8.2000000e+01
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Nanithaltige
+upgrade.label2=Schilde
+value.uniqueID=35BE18F5CF3FC8B8
+value.value=3.3000000e+01
+value.uniqueID=697147FD3AD47C9A
+value.value=8.1000000e+01
 
 [InstalledUpgrade]
 index=8
