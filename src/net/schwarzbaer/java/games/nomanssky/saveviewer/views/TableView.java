@@ -111,7 +111,7 @@ public class TableView {
 		}
 	
 	}
-
+	
 	public static class SimplifiedTable<ColumnID extends Tables.SimplifiedColumnIDInterface> extends JTable implements Gui.ContextMenuInvoker.ContextMenuInvokeListener {
 		private static final long serialVersionUID = 6963749333892762675L;
 		private boolean useRowSorter;
@@ -522,29 +522,6 @@ public class TableView {
 		}
 	}
 
-/*	private static class LabelRendererComponent extends JLabel {
-		private static final long serialVersionUID = -695854080940136137L;
-		
-		@Override public void revalidate() {}
-		@Override public void invalidate() {}
-		@Override public void validate() {}
-		@Override public void repaint(long tm, int x, int y, int width, int height) {}
-		@Override public void repaint(Rectangle r) {}
-		@Override public void repaint() {}
-		@Override public void repaint(long tm) {}
-		@Override public void repaint(int x, int y, int width, int height) {}
-
-		@Override public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
-		@Override public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
-		@Override public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
-		@Override protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {}
-		@Override public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
-		@Override public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
-		@Override public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
-		@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
-		@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
-	}
-*/	
 /*
 	public static class SimpleColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {
 		
@@ -617,56 +594,4 @@ public class TableView {
 		}
 	}
 */	
-/*	
-	public static class ComboboxCellEditor<T> extends AbstractCellEditor implements TableCellEditor {
-		private static final long serialVersionUID = -346693108757882917L;
-		
-		private Object currentValue;
-		private T[] values;
-		private ListCellRenderer<? super T> renderer;
-		
-		public ComboboxCellEditor(T[] values) {
-			this.values = values;
-			this.currentValue = null;
-			this.renderer = null;
-		}
-		
-		public void addValue(T newValue) {
-			stopCellEditing();
-			values = Arrays.copyOf(values, values.length+1);
-			values[values.length-1] = newValue;
-		}
-
-		public void setValues(T[] newValues) {
-			stopCellEditing();
-			values = newValues;
-		}
-
-		public void setRenderer(ListCellRenderer<? super T> renderer) {
-			this.renderer = renderer;
-		}
-		
-		@Override
-		public Object getCellEditorValue() {
-			return currentValue;
-		}
-
-		@Override
-		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-			this.currentValue = value;
-			
-			JComboBox<T> cmbbx = new JComboBox<T>(values);
-			if (renderer!=null) cmbbx.setRenderer(renderer);
-			cmbbx.setSelectedItem(currentValue);
-			cmbbx.setBackground(isSelected?table.getSelectionBackground():table.getBackground());
-			cmbbx.addActionListener(e->{
-				currentValue = cmbbx.getSelectedItem();
-				fireEditingStopped();
-			});
-			
-			return cmbbx;
-		}
-		
-	}
-*/
 }

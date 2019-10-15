@@ -1,13 +1,13 @@
 [FinalSequence]
-ModuleID=
-ModuleID=
-ModuleID=
-ModuleID=
-ModuleID=
-ModuleID=
-ModuleID=
-ModuleID=
-ModuleID=
+ModuleID=^U_JETBOOST4
+ModuleID=^U_ENERGY3
+ModuleID=^U_ENERGY3
+ModuleID=^U_JETBOOST4
+ModuleID=^U_ENERGY3
+ModuleID=^U_SHIELDBOOST4
+ModuleID=^U_SHIELDBOOST4
+ModuleID=^U_JETBOOST4
+ModuleID=^U_SHIELDBOOST4
 
 [UpgradeModule]
 ModuleID=^U_ENERGY3

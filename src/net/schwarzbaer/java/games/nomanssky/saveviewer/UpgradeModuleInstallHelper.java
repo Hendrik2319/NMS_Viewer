@@ -61,6 +61,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.CellEditorListener;
@@ -80,6 +81,7 @@ import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.CellwiseCellEditor;
 import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.gui.Tables.NonStringRenderer;
@@ -230,18 +232,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		JScrollPane finalSequenceTableScrollPane = new JScrollPane(finalSequenceTable);
 		finalSequenceTableScrollPane.setMinimumSize(new Dimension(200,150));
 		
-		JPanel optionPanel = new JPanel(new GridBagLayout());
-		optionPanel.setBorder( BorderFactory.createTitledBorder("Options"));
-		c.gridwidth = 1;
-		c.weightx = 0;
-		c.weighty = 0;
-		optionPanel.add(Gui.createCheckbox   ("Show Value Priorities", disabler, ActionCommand.ShowValuePriorities, false, true, tablePanel::showValuePriorities),c);
-		ButtonGroup bg = new ButtonGroup();
-		optionPanel.add(new JLabel(" Coloring: "),c);
-		optionPanel.add(Gui.createRadioButton(  "0..Max", bg, disabler, ActionCommand.SetValueColoring, false, true, e->tablePanel.setValueColoringMinMax(false)),c);
-		optionPanel.add(Gui.createRadioButton("Min..Max", bg, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(true )),c);
-		c.weightx = 1;
-		optionPanel.add(new JLabel(),c);
 		
 		JPanel finalSequencePanel = new JPanel(new GridBagLayout());
 		finalSequencePanel.setBorder( BorderFactory.createTitledBorder("Final Installation Sequence"));
@@ -256,6 +246,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		c.weightx = 1;
 		finalSequencePanel.add(new JLabel(),c);
 		
+		
+		JPanel optionPanel = new JPanel(new GridBagLayout());
+		optionPanel.setBorder( BorderFactory.createTitledBorder("Options"));
+		c.gridwidth = 1;
+		c.weightx = 0;
+		c.weighty = 0;
+		optionPanel.add(Gui.createCheckbox   ("Show Value Priorities", disabler, ActionCommand.ShowValuePriorities, false, true, tablePanel::showValuePriorities),c);
+		ButtonGroup bg = new ButtonGroup();
+		optionPanel.add(new JLabel(" Coloring: "),c);
+		optionPanel.add(Gui.createRadioButton(  "0..Max", bg, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(false)),c);
+		optionPanel.add(Gui.createRadioButton("Min..Max", bg, disabler, ActionCommand.SetValueColoring, false, true, e->tablePanel.setValueColoringMinMax(true )),c);
+		c.weightx = 1;
+		optionPanel.add(new JLabel(),c);
+		
+		
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		JPanel sessionPanel = new JPanel(new GridBagLayout());
 		c.weighty = 0;
@@ -263,8 +268,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		sessionPanel.add(sequencesTableScrollPane,c);
 		sessionPanel.add(installationTestButtonsPanel,c);
 		sessionPanel.add(finalSequencePanel,c);
+		sessionPanel.add(optionPanel,c);
 		c.weighty = 1;
 		sessionPanel.add(new JLabel(),c);
+		
 		
 		contentPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		contentPane.setLeftComponent(sessionPanel);
@@ -747,6 +754,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			Format format;
 			Float min,max;
 			
+			float priority; // value will not be stored
+			
 			ValueDefinition(KnownModule module) {
 				this(module,uniqueIDs.createNewID());
 			}
@@ -760,10 +769,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				setValues(null);
 			}
 			public void setValues(ValueDefinition vd) {
-				label  = vd==null ? ""   : vd.label ;
-				format = vd==null ? null : vd.format;
-				min    = vd==null ? null : vd.min   ;
-				max    = vd==null ? null : vd.max   ;
+				label    = vd==null ? ""   : vd.label   ;
+				format   = vd==null ? null : vd.format  ;
+				min      = vd==null ? null : vd.min     ;
+				max      = vd==null ? null : vd.max     ;
+				priority = vd==null ? 1    : vd.priority;
 			}
 			@Override public int compareTo( ValueDefinition other) {
 				return (int) (this.uniqueID - other.uniqueID);
@@ -777,6 +787,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				if (format != null) sb.append(", ").append("format=").append(format);
 				if (min    != null) sb.append(", ").append("min=").append(min);
 				if (max    != null) sb.append(", ").append("max=").append(max);
+				sb.append(", ").append("priority=").append(priority);
 				return "VD[ "+sb.toString()+" ]";
 			}
 			
@@ -2043,12 +2054,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				return suggestions;
 			}
 
-			@Override public Object  getCellEditorValue() { return result; }
-			@Override public boolean isCellEditable  (EventObject anEvent) { return true; }
-			@Override public boolean shouldSelectCell(EventObject anEvent) { return true; }
+			@Override public Object  getCellEditorValue()                  { if (DEBUG_EVENTS) showEvent("getCellEditorValue()"); return result; }
+			@Override public boolean isCellEditable  (EventObject anEvent) { if (DEBUG_EVENTS) showEvent("isCellEditable()"); return true; }
+			@Override public boolean shouldSelectCell(EventObject anEvent) { if (DEBUG_EVENTS) showEvent("shouldSelectCell()"); return true; }
 		
-			@Override public void    addCellEditorListener(CellEditorListener l) { cellEditorListeners.   add(l); }
-			@Override public void removeCellEditorListener(CellEditorListener l) { cellEditorListeners.remove(l); }
+			@Override public void    addCellEditorListener(CellEditorListener l) { if (DEBUG_EVENTS) showEvent("addCellEditorListener()"); cellEditorListeners.   add(l); }
+			@Override public void removeCellEditorListener(CellEditorListener l) { if (DEBUG_EVENTS) showEvent("removeCellEditorListener()"); cellEditorListeners.remove(l); }
 			
 			private void notifyCellEditorListeners(BiConsumer<CellEditorListener,ChangeEvent> action) {
 				ChangeEvent e = new ChangeEvent(this);
@@ -2245,11 +2256,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private GeneralizedID[] finalSequence;
 		private int nModules;
 		
+		private CellwiseCellEditor cellwiseCellEditor;
 		private TableCellEditor label1CellEditor;
 		private TableCellEditor label2CellEditor;
 		private TableCellEditor cellEditor_Activated;
 		private TableCellEditor cellEditor_TextField;
+		
 		private MyTableCellRenderer defaultTableCellRenderer;
+		
 		private int currentInstallTestModule;
 		private boolean installTestAreRunning;
 		private boolean defineFinalInstallation;
@@ -2265,20 +2279,29 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			this.label1CellEditor = label1CellEditor;
 			this.label2CellEditor = label2CellEditor;
 			this.updateAfterChangeOnFinalSequence = updateAfterChangeOnFinalSequence;
+			
 			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
 			cellEditor_TextField = new DefaultCellEditor(new JTextField());
 			JCheckBox checkBox = new JCheckBox(); checkBox.setHorizontalAlignment(JCheckBox.CENTER);
 			cellEditor_Checkbox = new DefaultCellEditor(checkBox);
 			defaultTableCellRenderer = new MyTableCellRenderer();
+			
+			cellwiseCellEditor = new Tables.CellwiseCellEditor(this::getCellEditor);
+			
 			installTestAreRunning = false;
 			currentInstallTestModule = -1;
 			defineFinalInstallation = false;
-			isValueColoringMinMax = true;
+			isValueColoringMinMax = false;
 			showValuePriorities = false;
 		}
 	
-		public void showValuePriorities(boolean showValuePriorities) {
-			this.showValuePriorities = showValuePriorities;
+		public void defineFinalInstallation(boolean b) {
+			this.defineFinalInstallation = b;
+			fireTableStructureUpdate();
+		}
+
+		public void showValuePriorities(boolean b) {
+			this.showValuePriorities = b;
 			fireTableStructureUpdate();
 		}
 
@@ -2295,16 +2318,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 		}
 
-		public void defineFinalInstallation(boolean defineFinalInstallation) {
-			this.defineFinalInstallation = defineFinalInstallation;
-			fireTableStructureUpdate();
-		}
-
 		public void clearCurrentInstallTestModule() {
 			boolean stoppingInstallTests = installTestAreRunning;
 			installTestAreRunning = false;
 			currentInstallTestModule = -1;
-			if (defineFinalInstallation && stoppingInstallTests) fireTableStructureUpdate();
+			if ( (defineFinalInstallation || showValuePriorities) && stoppingInstallTests ) fireTableStructureUpdate();
 			else table.repaint();
 		}
 
@@ -2312,7 +2330,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			boolean startingInstallTests = !installTestAreRunning;
 			installTestAreRunning = true;
 			currentInstallTestModule = currentModule;
-			if (defineFinalInstallation && startingInstallTests) fireTableStructureUpdate();
+			if ( (defineFinalInstallation || showValuePriorities) && startingInstallTests ) fireTableStructureUpdate();
 			else table.repaint();
 		}
 
@@ -2326,27 +2344,36 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private void setCellEditors() {
 			forEachColumn((column, columnIndex) -> {
 				if (column==null) return;
-				column.setCellEditor(getCellEditor(columnIndex));
+				column.setCellEditor(cellwiseCellEditor);
 			});
 		}
 	
-		private TableCellEditor getCellEditor(int columnIndex) {
+		private TableCellEditor getCellEditor(int rowIndex, int columnIndex) {
 			switch (columnIndex) {
 			case  COLUMN_INDEX : break;
-			case  COLUMN_LABEL1: return label1CellEditor;
-			case  COLUMN_LABEL2: return label2CellEditor;
+			case  COLUMN_LABEL1: if (rowIndex<nModules) return label1CellEditor;
+			case  COLUMN_LABEL2: if (rowIndex<nModules) return label2CellEditor;
 			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
-					KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-					switch (format) {
-					case Activated: return cellEditor_Activated;
-					case FloatPlus:
-					case Lightyears:
-					case PercentMinus:
-					case PercentPlus: break;
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size()) {
+					if (rowIndex<nModules) {
+						KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+						switch (format) {
+						case Activated: return cellEditor_Activated;
+						case FloatPlus:
+						case Lightyears:
+						case PercentMinus:
+						case PercentPlus: break;
+						}
 					}
-				} else if (columnIndex-STANDARD_COLUMNS == block.module.values.size())
-					return cellEditor_Checkbox;
+				} else {
+					if (showValuePriorities) {
+						if (valueIndex == block.module.values.size()+1)
+							return cellEditor_Checkbox;
+					} else
+						if (valueIndex == block.module.values.size())
+							return cellEditor_Checkbox;
+				}
 				break;
 			}
 			return cellEditor_TextField;
@@ -2359,6 +2386,236 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			});
 		}
 		
+		@Override
+		protected int getPrefColumnWidth(int columnIndex) {
+			switch (columnIndex) {
+			case  COLUMN_INDEX : return 30;
+			case  COLUMN_LABEL1: return 150;
+			case  COLUMN_LABEL2: return 150;
+			default:
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size())
+					return 70;
+				if (valueIndex==block.module.values.size())
+					return 40;
+				if (valueIndex==block.module.values.size()+1 && showValuePriorities)
+					return 40;
+				return 150;
+			}
+		}
+	
+		@Override public int getRowCount   () {
+			int c = nModules;
+			if (showValuePriorities) ++c;
+			return c;
+		}
+		@Override public int getColumnCount() {
+			int c = STANDARD_COLUMNS + block.module.values.size();
+			if (showValuePriorities) c += 1;
+			if (defineFinalInstallation) c += 2;
+			return c;
+		}
+		
+		private KnownModule.ValueDefinition getVD(int columnIndex) {
+			int index = columnIndex-STANDARD_COLUMNS;
+			if (index<0 || index>=block.module.values.size()) return null;
+			return block.module.values.get(index);
+		}
+	
+		@Override
+		public String getColumnName(int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX : return "#";
+			case COLUMN_LABEL1: return "Label 1";
+			case COLUMN_LABEL2: return "Label 2";
+			default:
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size())
+					return getVD(columnIndex).label;
+				if (showValuePriorities) {
+					if (valueIndex==block.module.values.size())
+						return "Prio";
+					if (valueIndex==block.module.values.size()+1)
+						return "Install";
+				} else {
+					if (valueIndex==block.module.values.size())
+						return "Install";
+				}
+				return "Installed";
+			}
+		}
+	
+		@Override
+		public Class<?> getColumnClass(int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX :
+			case COLUMN_LABEL1:
+			case COLUMN_LABEL2:
+				return String.class;
+			default:
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size()) {
+					KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+					switch (format) {
+					case Activated: return String.class;
+					case FloatPlus:
+					case Lightyears:
+					case PercentMinus:
+					case PercentPlus: break;
+					}
+					return Float.class;
+				}
+				if (showValuePriorities) {
+					if (valueIndex==block.module.values.size())
+						return Float.class;
+					if (valueIndex==block.module.values.size()+1)
+						return Boolean.class;
+				} else {
+					if (valueIndex==block.module.values.size())
+						return Boolean.class;
+				}
+				return String.class;
+			}
+		}
+	
+		@Override
+		public Object getValueAt(int rowIndex, int columnIndex) {
+			InstalledUpgrade upgrade = null;
+			if (rowIndex<nModules && rowIndex<block.installedModules.size())
+				upgrade = block.installedModules.get(rowIndex);
+			
+			switch (columnIndex) {
+			case COLUMN_INDEX : if (rowIndex>=nModules) return "";           return String.format("[%02d]", rowIndex+1);
+			case COLUMN_LABEL1: if (rowIndex>=nModules) return "";           return upgrade==null ? null : upgrade.label1;
+			case COLUMN_LABEL2: if (rowIndex>=nModules) return "Priority :"; return upgrade==null ? null : upgrade.label2;
+			default:
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size()) {
+					KnownModule.ValueDefinition vd = getVD(columnIndex);
+					if (rowIndex<nModules) {
+						if (upgrade==null) return null;
+						Float value = upgrade.values.get(vd);
+						switch (vd.format) {
+						case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
+						case FloatPlus:
+						case Lightyears:
+						case PercentMinus:
+						case PercentPlus: break;
+						}
+						return value;
+					} else
+						return (float)vd.priority;
+				}
+				if (valueIndex == block.module.values.size() && showValuePriorities)
+					return rowIndex<nModules ? computeUpgradePriority(upgrade,block.module.values) : null;
+				if (valueIndex == block.module.values.size() + (showValuePriorities?1:0)) {
+					return rowIndex<finalSequence.length ? finalSequence[rowIndex]==block.module.moduleID : null;
+				}
+				return rowIndex<finalSequence.length && finalSequence[rowIndex]!=null ? getLabelOrID(finalSequence[rowIndex]) : null;
+			}
+		}
+	
+		private Float computeUpgradePriority(InstalledUpgrade upgrade, Vector<KnownModule.ValueDefinition> values) {
+			if (upgrade==null) return null;
+			
+			float priority = 0;
+			float vd_priority = 0;
+			for (KnownModule.ValueDefinition vd:values) {
+				if (vd.max==null || vd.max==0) continue;
+				Float value = upgrade.values.get(vd);
+				if (value==null) continue;
+				vd_priority += vd.priority;
+				priority += vd.priority * (value/vd.max);
+			}
+			
+			if (vd_priority==0)
+				return priority;
+			return priority/vd_priority;
+		}
+
+		@Override
+		public boolean isCellEditable(int rowIndex, int columnIndex) {
+			switch (columnIndex) {
+			case COLUMN_INDEX : return false;
+			case COLUMN_LABEL1:
+			case COLUMN_LABEL2: return rowIndex<nModules;
+			default:
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size()) return true;
+				if (valueIndex==block.module.values.size() && showValuePriorities) return false;
+				if (valueIndex==block.module.values.size() + (showValuePriorities?1:0))
+					if (rowIndex<finalSequence.length && defineFinalInstallation && !installTestAreRunning) {
+						GeneralizedID finalID = finalSequence[rowIndex];
+						return finalID==null || finalID==block.module.moduleID;
+					}
+				return false;
+			}
+		}
+	
+		@Override
+		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+			InstalledUpgrade upgrade = null;
+			
+			if (rowIndex<block.installedModules.size())
+				upgrade = block.installedModules.get(rowIndex);
+			
+			if (upgrade==null && rowIndex<nModules) {
+				while(rowIndex>=block.installedModules.size())
+					block.installedModules.add(null);
+				upgrade = new InstalledUpgrade(block.module);
+				block.installedModules.set(rowIndex,upgrade);
+			}
+			
+			switch (columnIndex) {
+			case COLUMN_INDEX : Debug.Assert(false); break;
+			case COLUMN_LABEL1: Debug.Assert(rowIndex<nModules); upgrade.label1 = (String)aValue; break;
+			case COLUMN_LABEL2: Debug.Assert(rowIndex<nModules); upgrade.label2 = (String)aValue; break;
+			default:
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				if (valueIndex<block.module.values.size()) {
+					KnownModule.ValueDefinition vd = getVD(columnIndex);
+					if (rowIndex<nModules) {
+						Debug.Assert(upgrade!=null);
+						Float value = null;
+						switch (vd.format) {
+						case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
+						case FloatPlus:
+						case Lightyears:
+						case PercentMinus:
+						case PercentPlus: value = parseFloat((String)aValue); break;
+						}
+						upgrade.values.put(vd, value);
+					} else {
+						Float f = parseFloat((String)aValue);
+						if (f!=null) {
+							vd.priority = f;
+							SwingUtilities.invokeLater(()->{
+								fireTableColumnChanged(block.module.values.size());
+								table.repaint();
+							});
+						}
+					}
+				} else {
+					if (valueIndex==block.module.values.size() + (showValuePriorities?1:0)) {
+						if (aValue instanceof Boolean && rowIndex<finalSequence.length) {
+							boolean b = (Boolean) aValue;
+							finalSequence[rowIndex] = b ? block.module.moduleID : null;
+							updateAfterChangeOnFinalSequence.run();
+						}
+					}
+				}
+				break;
+			}
+		}
+	
+		private Float parseFloat(String str) {
+			try {
+				return Float.parseFloat(str.replace(',','.'));
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
+
 		private class MyTableCellRenderer extends DefaultTableCellRenderer {
 			private static final long serialVersionUID = 7128510133641722765L;
 			
@@ -2372,7 +2629,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				colorRange.add(0.75f, new Color(0xFFD000));
 				colorRange.add(1.00f, new Color(0xFF7F00));
 			}
-
+		
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
 				Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, rowIndex, columnIndex);
@@ -2380,7 +2637,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				rowIndex = table.convertRowIndexToModel(rowIndex);
 				columnIndex = table.convertColumnIndexToModel(columnIndex);
 				
-				if (columnIndex-STANDARD_COLUMNS==block.module.values.size()) {
+				int valueIndex = columnIndex-STANDARD_COLUMNS;
+				
+				if (valueIndex == block.module.values.size() + (showValuePriorities?1:0) && rowIndex<nModules) {
 					component = checkBox;
 					checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
 					checkBox.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
@@ -2397,29 +2656,36 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					JLabel label = (JLabel) component;
 					int alignment = JLabel.LEFT;
 					
-					switch (columnIndex) {
-					case  COLUMN_INDEX : alignment = JLabel.CENTER; break;
-					case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
-					case  COLUMN_LABEL2: alignment = JLabel.LEFT; break;
-					default:
-						if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
-							KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-							switch (format) {
-							case Activated:
-								alignment = JLabel.CENTER;
-								break;
-							case FloatPlus: 
-							case Lightyears:
-							case PercentMinus:
-							case PercentPlus:
+					if (rowIndex>=nModules)
+						alignment = JLabel.RIGHT;
+					else
+						switch (columnIndex) {
+						case  COLUMN_INDEX : alignment = JLabel.CENTER; break;
+						case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
+						case  COLUMN_LABEL2: alignment = JLabel.LEFT; break;
+						default:
+							if (valueIndex<block.module.values.size()) {
+								KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
+								switch (format) {
+								case Activated:
+									alignment = JLabel.CENTER;
+									break;
+								case FloatPlus: 
+								case Lightyears:
+								case PercentMinus:
+								case PercentPlus:
+									alignment = JLabel.RIGHT;
+									if (value instanceof Float)
+										label.setText(format.getFormatedValue((Float) value));
+									break;
+								}
+							} else if (showValuePriorities && valueIndex==block.module.values.size()) {
 								alignment = JLabel.RIGHT;
 								if (value instanceof Float)
-									label.setText(format.getFormatedValue((Float) value));
-								break;
+									label.setText(String.format(Locale.ENGLISH,"%1.3f",value));
 							}
+							break;
 						}
-						break;
-					}
 					
 					label.setHorizontalAlignment(alignment);
 				}
@@ -2444,17 +2710,27 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							}
 						}
 					}
-					if (bg==null && value instanceof Float) {
-						float fValue = (Float) value;
-						int valueIndex = columnIndex-STANDARD_COLUMNS;
-						if (0<=valueIndex && valueIndex<block.module.values.size()) {
-							KnownModule.ValueDefinition vd = getVD(columnIndex);
-							Float min = isValueColoringMinMax ? vd.min : 0; // else 0..max
-							Float max = vd.max;
-							if (min!=null && max!=null) {
-								float f = max==min ? 1.0f : (fValue-min)/(max-min);
-								f = Math.min(Math.max(0, f), 1);
-								bg = colorRange.computeColor(f);
+					if (bg==null) {
+						if (value instanceof Float) {
+							float fValue = (Float) value;
+							if (rowIndex<nModules) {
+								if (0<=valueIndex && valueIndex<block.module.values.size()) {
+									KnownModule.ValueDefinition vd = getVD(columnIndex);
+									Debug.Assert(vd!=null);
+									Float min = isValueColoringMinMax ? vd.min : (Float)0.0f; // else 0..max
+									Float max = vd.max;
+									if (min!=null && max!=null) {
+										float f;
+										if (max.floatValue()==min.floatValue())
+											f = 1.0f;
+										else
+											f = (fValue-min)/(max-min);
+										f = Math.min(Math.max(0, f), 1);
+										bg = colorRange.computeColor(f);
+									}
+								} else if (valueIndex==block.module.values.size()) {
+									bg = colorRange.computeColor(fValue);
+								}
 							}
 						}
 					}
@@ -2462,166 +2738,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					component.setBackground(bg);
 				}
 				return component;
-			}
-		}
-		
-		@Override
-		protected int getPrefColumnWidth(int columnIndex) {
-			switch (columnIndex) {
-			case  COLUMN_INDEX : return 30;
-			case  COLUMN_LABEL1: return 150;
-			case  COLUMN_LABEL2: return 150;
-			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size())
-					return 70;
-				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
-					return 40;
-				return 150;
-			}
-		}
-	
-		@Override public int getRowCount   () { return nModules; }
-		@Override public int getColumnCount() { return STANDARD_COLUMNS + block.module.values.size() + (defineFinalInstallation&&!installTestAreRunning ? 2 : 0); }
-		
-		private KnownModule.ValueDefinition getVD(int columnIndex) {
-			int index = columnIndex-STANDARD_COLUMNS;
-			if (index<0 || index>=block.module.values.size()) return null;
-			return block.module.values.get(index);
-		}
-	
-		@Override
-		public String getColumnName(int columnIndex) {
-			switch (columnIndex) {
-			case COLUMN_INDEX : return "#";
-			case COLUMN_LABEL1: return "Label 1";
-			case COLUMN_LABEL2: return "Label 2";
-			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size())
-					return getVD(columnIndex).label;
-				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
-					return "Install";
-				return "Installed";
-			}
-		}
-	
-		@Override
-		public Class<?> getColumnClass(int columnIndex) {
-			switch (columnIndex) {
-			case COLUMN_INDEX :
-			case COLUMN_LABEL1:
-			case COLUMN_LABEL2:
-				return String.class;
-			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
-					KnownModule.ValueDefinition.Format format = getVD(columnIndex).format;
-					switch (format) {
-					case Activated: return String.class;
-					case FloatPlus:
-					case Lightyears:
-					case PercentMinus:
-					case PercentPlus: break;
-					}
-					return Float.class;
-				}
-				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
-					return Boolean.class;
-				return String.class;
-			}
-		}
-	
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			InstalledUpgrade upgrade = null;
-			if (rowIndex<block.installedModules.size())
-				upgrade = block.installedModules.get(rowIndex);
-			
-			switch (columnIndex) {
-			case COLUMN_INDEX : return String.format("[%02d]", rowIndex+1);
-			case COLUMN_LABEL1: return upgrade==null ? null : upgrade.label1;
-			case COLUMN_LABEL2: return upgrade==null ? null : upgrade.label2;
-			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
-					if (upgrade==null) return null;
-					KnownModule.ValueDefinition vd = getVD(columnIndex);
-					Float value = upgrade.values.get(vd);
-					switch (vd.format) {
-					case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
-					case FloatPlus:
-					case Lightyears:
-					case PercentMinus:
-					case PercentPlus: break;
-					}
-					return value;
-				}
-				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
-					return rowIndex<finalSequence.length && finalSequence[rowIndex]==block.module.moduleID;
-				return rowIndex<finalSequence.length && finalSequence[rowIndex]!=null ? getLabelOrID(finalSequence[rowIndex]) : null;
-			}
-		}
-	
-		@Override
-		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			switch (columnIndex) {
-			case COLUMN_INDEX : return false;
-			case COLUMN_LABEL1:
-			case COLUMN_LABEL2:
-			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) return true;
-				if (columnIndex-STANDARD_COLUMNS==block.module.values.size())
-					if (rowIndex<finalSequence.length && defineFinalInstallation && !installTestAreRunning) {
-						GeneralizedID finalID = finalSequence[rowIndex];
-						return finalID==null || finalID==block.module.moduleID;
-					}
-				return false;
-			}
-		}
-	
-		@Override
-		public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-			InstalledUpgrade upgrade = null;
-			if (rowIndex<block.installedModules.size())
-				upgrade = block.installedModules.get(rowIndex);
-			if (upgrade==null) {
-				while(rowIndex>=block.installedModules.size())
-					block.installedModules.add(null);
-				upgrade = new InstalledUpgrade(block.module);
-				block.installedModules.set(rowIndex,upgrade);
-			}
-			
-			switch (columnIndex) {
-			case COLUMN_INDEX : Debug.Assert(false); break;
-			case COLUMN_LABEL1: upgrade.label1 = (String)aValue; break;
-			case COLUMN_LABEL2: upgrade.label2 = (String)aValue; break;
-			default:
-				if (columnIndex-STANDARD_COLUMNS<block.module.values.size()) {
-					KnownModule.ValueDefinition vd = getVD(columnIndex);
-					Float value = null;
-					switch (vd.format) {
-					case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
-					case FloatPlus:
-					case Lightyears:
-					case PercentMinus:
-					case PercentPlus: value = parseFloat((String)aValue); break;
-					}
-					upgrade.values.put(vd, value);
-				} else if (columnIndex-STANDARD_COLUMNS==block.module.values.size()) {
-					if (aValue instanceof Boolean) {
-						boolean b = (Boolean) aValue;
-						if (rowIndex<finalSequence.length) {
-							finalSequence[rowIndex] = b ? block.module.moduleID : null;
-							updateAfterChangeOnFinalSequence.run();
-						}
-					}
-				}
-				break;
-			}
-		}
-	
-		private Float parseFloat(String str) {
-			try {
-				return Float.parseFloat(str.replace(',','.'));
-			} catch (NumberFormatException e) {
-				return null;
 			}
 		}
 	}
