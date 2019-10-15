@@ -1,3 +1,4 @@
+[IDs]
 ^ARMOUR1=Gesundheitsmodul Sigma
 ^ARMOUR1.obsolete=
 ^ARMOUR1.type=ExosuitExtensionUpgrade

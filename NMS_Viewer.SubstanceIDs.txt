@@ -1,3 +1,4 @@
+[IDs]
 ^ASTEROID1=Silber
 ^ASTEROID1.type=Resource
 ^ASTEROID1.symbol=Ag

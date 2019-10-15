@@ -4228,6 +4228,12 @@ biome=Irradiated
 with water
 resources=Cu,U,NaCl
 
+[Pln50960002FFA005]
+name=Lothwel T25
+biome=Lush
+with water
+resources=Cu,Pf,Ag
+
 [Sys00BC0002FFA005]
 atlasinterface=false
 blackhole=false
@@ -5953,6 +5959,12 @@ blackhole=false
 class=Blue
 short=2 Planeten
 info=
+
+[Pln11EC00FFF38590]
+name=Neu: Hest
+biome=Exotic_Mega
+is extreme
+resources=In_,CO2,Ag
 
 [Reg00000003CC45B8]
 name=Aygans-Quadrant
