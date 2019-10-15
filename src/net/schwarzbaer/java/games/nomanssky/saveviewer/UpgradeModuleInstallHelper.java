@@ -183,7 +183,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	enum ActionCommand {
-		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, DefineFinalInstallation,
+		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, DefineFinalInstallation, SetValueColoring, ShowValuePriorities,
 		;
 	}
 	
@@ -230,6 +230,19 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		JScrollPane finalSequenceTableScrollPane = new JScrollPane(finalSequenceTable);
 		finalSequenceTableScrollPane.setMinimumSize(new Dimension(200,150));
 		
+		JPanel optionPanel = new JPanel(new GridBagLayout());
+		optionPanel.setBorder( BorderFactory.createTitledBorder("Options"));
+		c.gridwidth = 1;
+		c.weightx = 0;
+		c.weighty = 0;
+		optionPanel.add(Gui.createCheckbox   ("Show Value Priorities", disabler, ActionCommand.ShowValuePriorities, false, true, tablePanel::showValuePriorities),c);
+		ButtonGroup bg = new ButtonGroup();
+		optionPanel.add(new JLabel(" Coloring: "),c);
+		optionPanel.add(Gui.createRadioButton(  "0..Max", bg, disabler, ActionCommand.SetValueColoring, false, true, e->tablePanel.setValueColoringMinMax(false)),c);
+		optionPanel.add(Gui.createRadioButton("Min..Max", bg, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(true )),c);
+		c.weightx = 1;
+		optionPanel.add(new JLabel(),c);
+		
 		JPanel finalSequencePanel = new JPanel(new GridBagLayout());
 		finalSequencePanel.setBorder( BorderFactory.createTitledBorder("Final Installation Sequence"));
 		c.gridwidth = GridBagConstraints.REMAINDER;
@@ -242,7 +255,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		finalSequencePanel.add(Gui.createCheckbox("Define in Module Tables", disabler, ActionCommand.DefineFinalInstallation, false, true, tablePanel::defineFinalInstallation),c);
 		c.weightx = 1;
 		finalSequencePanel.add(new JLabel(),c);
-		
 		
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		JPanel sessionPanel = new JPanel(new GridBagLayout());
@@ -321,6 +333,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case EditSession:
 			case StartInstallationTests:
 			case DefineFinalInstallation:
+			case ShowValuePriorities:
 				return currentSession!=null && !testInstallsIterator.isRunning();
 				
 			case StopInstallationTests:
@@ -334,6 +347,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 			case SaveSession:
 				return currentSession!=null && config.currentSessionFile!=null;
+				
+			case SetValueColoring:
+				return currentSession!=null;
 			}
 			return null;
 		});
@@ -403,6 +419,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		case InstallNext           : testInstallsIterator.next (); updateGUIaccess(); break;
 		
 		case DefineFinalInstallation: break;
+		case SetValueColoring: break;
+		case ShowValuePriorities: break;
 		}
 	}
 
@@ -1745,18 +1763,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			setPreferredSize(new Dimension(600,500));
 		}
 	
-		public void defineFinalInstallation(boolean defineFinalInstallation) {
-			tables.forEach((id,tableModel)->tableModel.defineFinalInstallation(defineFinalInstallation));
+		public void showValuePriorities(boolean b) {
+			tables.forEach((id,tableModel)->tableModel.showValuePriorities(b));
 		}
-
+		public void setValueColoringMinMax(boolean b) {
+			tables.forEach((id,tableModel)->tableModel.setValueColoringMinMax(b));
+		}
+		public void defineFinalInstallation(boolean b) {
+			tables.forEach((id,tableModel)->tableModel.defineFinalInstallation(b));
+		}
 		public void clearCurrentInstallTestModule() {
 			tables.forEach((id,tableModel)->tableModel.clearCurrentInstallTestModule());
 		}
-
 		public void setCurrentInstallTestModule(GeneralizedID currentModule, int currentModuleIndex) {
 			tables.forEach((id,tableModel)->tableModel.setCurrentInstallTestModule(id==currentModule ? currentModuleIndex : -1));
 		}
-		
 		private void updateAfterChangeOnFinalSequence() {
 			tables.forEach((id,tableModel)->tableModel.fireTableUpdate());
 			finalSequenceTableModel.fireTableUpdate();
@@ -2234,6 +2255,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private boolean defineFinalInstallation;
 		private DefaultCellEditor cellEditor_Checkbox;
 		private Runnable updateAfterChangeOnFinalSequence;
+		private boolean isValueColoringMinMax;
+		private boolean showValuePriorities;
 	
 		public InstalledModulesTableModel(Session.SessionBlock block, GeneralizedID[] finalSequence, int nModules, TablePanel.LabelCellEditor label1CellEditor, TablePanel.LabelCellEditor label2CellEditor, Runnable updateAfterChangeOnFinalSequence) {
 			this.block = block;
@@ -2250,8 +2273,20 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			installTestAreRunning = false;
 			currentInstallTestModule = -1;
 			defineFinalInstallation = false;
+			isValueColoringMinMax = true;
+			showValuePriorities = false;
 		}
 	
+		public void showValuePriorities(boolean showValuePriorities) {
+			this.showValuePriorities = showValuePriorities;
+			fireTableStructureUpdate();
+		}
+
+		public void setValueColoringMinMax(boolean b) {
+			this.isValueColoringMinMax = b;
+			table.repaint();
+		}
+
 		public void stopEditing() {
 			if (table.isEditing()) {
 				TableCellEditor cellEditor = table.getCellEditor();
@@ -2414,8 +2449,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						int valueIndex = columnIndex-STANDARD_COLUMNS;
 						if (0<=valueIndex && valueIndex<block.module.values.size()) {
 							KnownModule.ValueDefinition vd = getVD(columnIndex);
-							if (vd.min!=null && vd.max!=null) {
-								float f = vd.max==vd.min ? 1.0f : (fValue-vd.min)/(vd.max-vd.min);
+							Float min = isValueColoringMinMax ? vd.min : 0; // else 0..max
+							Float max = vd.max;
+							if (min!=null && max!=null) {
+								float f = max==min ? 1.0f : (fValue-min)/(max-min);
 								f = Math.min(Math.max(0, f), 1);
 								bg = colorRange.computeColor(f);
 							}

@@ -1203,6 +1203,7 @@ public class Gui {
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
+	
 
 	public static <V> JComboBox<V> createComboBox(Vector<V> values, Function<V,String> getLabel, Class<V> classV) {
 		Function<Object,String> getLabel2 = obj->{
@@ -1214,45 +1215,43 @@ public class Gui {
 		};
 		return createComboBox(values, getLabel2);
 	}
-
 	public static <V> JComboBox<V> createComboBox(Vector<V> values, Function<Object,String> getLabel) {
 		JComboBox<V> comp = new JComboBox<>(values);
 		comp.setRenderer(new Tables.NonStringRenderer<V>(getLabel));
 		return comp;
 	}
+	
 
 	public static JButton createButton(String title, ActionListener l) {
 		return createButton(title, l, null, null, true);
 	}
-
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
 		return createButton(title, l, null, actionCommand, true);
 	}
-
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
 		return createButton(title, l, disabler, actionCommand, true);
 	}
-
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
 		JButton button = new JButton(title);
 		setComp(button, l, disabler, actionCommand, enabled, null);
 		return button;
 	}
-
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, Icon icon) {
 		JButton button = new JButton(title);
 		setComp(button, l, disabler, actionCommand, enabled, icon);
 		return button;
 	}
-
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		return createButton(title, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
 	}
+	
 
 	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
 		return createRadioButton(title, bg, l, null, null, isSelected, enabled);
 	}
-
+	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, ActionListener l) {
+		return createRadioButton(title, bg, l, disabler, actionCommand, isSelected, enabled);
+	}
 	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
 		JRadioButton button = new JRadioButton(title,isSelected);
 		if (bg!=null) bg.add(button);
