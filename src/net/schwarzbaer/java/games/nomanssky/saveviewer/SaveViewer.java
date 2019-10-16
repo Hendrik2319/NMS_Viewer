@@ -103,6 +103,16 @@ public class SaveViewer implements ActionListener {
 	private Color DEFAULT_BUTTON_FOREGROUND_COLOR;
 	
 	public static void main(String[] args) {
+		if (args.length>0)
+			switch (args[0]) {
+			case "UpgradeModuleInstallHelper": UpgradeModuleInstallHelper.main(new String[]{}); return;
+			case "ProductionOptimiser"       : ProductionOptimiser       .main(new String[]{}); return;
+			case "RecipeAnalyser"            : RecipeAnalyser            .main(new String[]{}); return;
+			case "ResourceHotSpots"          : ResourceHotSpots          .main(new String[]{}); return;
+			}
+		start(args);
+	}
+	public static void start(String[] args) {
 		
 		config = Config.readFromFile();
 		deObfuscator = DeObfuscator.readFromFile();

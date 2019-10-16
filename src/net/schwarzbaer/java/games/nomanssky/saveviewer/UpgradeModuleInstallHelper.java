@@ -111,7 +111,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	static void start(boolean standalone) {
-		
 		new UpgradeModuleInstallHelper()
 			.readConfig()
 			.writeConfig()
@@ -185,7 +184,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	enum ActionCommand {
-		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, DefineFinalInstallation, SetValueColoring, ShowValuePriorities,
+		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, DefineFinalInstallation, SetValueColoring, ShowValuePriorities, SetSelectionColoring,
 		;
 	}
 	
@@ -242,7 +241,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		c.gridwidth = 1;
 		c.weightx = 0;
 		c.weighty = 0;
-		finalSequencePanel.add(Gui.createCheckbox("Define in Module Tables", disabler, ActionCommand.DefineFinalInstallation, false, true, tablePanel::defineFinalInstallation),c);
+		finalSequencePanel.add(Gui.createCheckbox("Define in Module Tables", disabler, ActionCommand.DefineFinalInstallation, tablePanel.isDefiningFinalInstallation(), true, b -> {
+			tablePanel.defineFinalInstallation(b);
+			updateGUIaccess();
+		}),c);
+		ButtonGroup bg1 = new ButtonGroup();
+		finalSequencePanel.add(new JLabel(" Coloring: "),c);
+		finalSequencePanel.add(Gui.createRadioButton("Selection", bg1, disabler, ActionCommand.SetSelectionColoring, true , true, e->tablePanel.setSelectionColoring(true )),c);
+		finalSequencePanel.add(Gui.createRadioButton("Values"   , bg1, disabler, ActionCommand.SetSelectionColoring, false, true, e->tablePanel.setSelectionColoring(false)),c);
 		c.weightx = 1;
 		finalSequencePanel.add(new JLabel(),c);
 		
@@ -253,10 +259,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		c.weightx = 0;
 		c.weighty = 0;
 		optionPanel.add(Gui.createCheckbox   ("Show Value Priorities", disabler, ActionCommand.ShowValuePriorities, false, true, this::showValuePriorities),c);
-		ButtonGroup bg = new ButtonGroup();
+		ButtonGroup bg2 = new ButtonGroup();
 		optionPanel.add(new JLabel(" Coloring: "),c);
-		optionPanel.add(Gui.createRadioButton(  "0..Max", bg, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(false)),c);
-		optionPanel.add(Gui.createRadioButton("Min..Max", bg, disabler, ActionCommand.SetValueColoring, false, true, e->tablePanel.setValueColoringMinMax(true )),c);
+		optionPanel.add(Gui.createRadioButton(  "0..Max", bg2, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(false)),c);
+		optionPanel.add(Gui.createRadioButton("Min..Max", bg2, disabler, ActionCommand.SetValueColoring, false, true, e->tablePanel.setValueColoringMinMax(true )),c);
 		c.weightx = 1;
 		optionPanel.add(new JLabel(),c);
 		
@@ -362,6 +368,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 			case SetValueColoring:
 				return currentSession!=null;
+				
+			case SetSelectionColoring:
+				return currentSession!=null && tablePanel.isDefiningFinalInstallation();
 			}
 			return null;
 		});
@@ -431,8 +440,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		case InstallNext           : testInstallsIterator.next (); updateGUIaccess(); break;
 		
 		case DefineFinalInstallation: break;
-		case SetValueColoring: break;
 		case ShowValuePriorities: break;
+		case SetValueColoring: break;
+		case SetSelectionColoring: break;
 		}
 	}
 
@@ -1788,6 +1798,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private JPanel tablePanel;
 		private TableContextMenu tableContextMenu;
 		private HashMap<GeneralizedID, InstalledModulesTableModel> tables;
+		private boolean defineFinalInstallation;
 		
 		TablePanel() {
 			tables = new HashMap<>();
@@ -1795,16 +1806,24 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			tablePanel = new JPanel(new GridLayout(0,1,3,3));
 			setViewportView(tablePanel);
 			setPreferredSize(new Dimension(600,500));
+			defineFinalInstallation = false;
 		}
 	
+		public boolean isDefiningFinalInstallation() {
+			return defineFinalInstallation;
+		}
+		public void defineFinalInstallation(boolean b) {
+			defineFinalInstallation = b;
+			tables.forEach((id,tableModel)->tableModel.defineFinalInstallation(b));
+		}
+		public void setSelectionColoring(boolean b) {
+			tables.forEach((id,tableModel)->tableModel.setSelectionColoring(b));
+		}
 		public void showValuePriorities(boolean b) {
 			tables.forEach((id,tableModel)->tableModel.showValuePriorities(b));
 		}
 		public void setValueColoringMinMax(boolean b) {
 			tables.forEach((id,tableModel)->tableModel.setValueColoringMinMax(b));
-		}
-		public void defineFinalInstallation(boolean b) {
-			tables.forEach((id,tableModel)->tableModel.defineFinalInstallation(b));
 		}
 		public void clearCurrentInstallTestModule() {
 			tables.forEach((id,tableModel)->tableModel.clearCurrentInstallTestModule());
@@ -2297,6 +2316,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private Updater updater;
 		private boolean isValueColoringMinMax;
 		private boolean showValuePriorities;
+		private boolean isSelectionColoring;
 		
 		public interface Updater {
 			void prioChanged(GeneralizedID id);
@@ -2324,20 +2344,23 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			defineFinalInstallation = false;
 			isValueColoringMinMax = false;
 			showValuePriorities = false;
+			isSelectionColoring = true;
 		}
 	
 		public void defineFinalInstallation(boolean b) {
 			this.defineFinalInstallation = b;
 			fireTableStructureUpdate();
 		}
-
 		public void showValuePriorities(boolean b) {
 			this.showValuePriorities = b;
 			fireTableStructureUpdate();
 		}
-
 		public void setValueColoringMinMax(boolean b) {
 			this.isValueColoringMinMax = b;
+			table.repaint();
+		}
+		public void setSelectionColoring(boolean b) {
+			this.isSelectionColoring = b;
 			table.repaint();
 		}
 
@@ -2714,7 +2737,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							bg = COLOR_NOTCURRENTSEQUENCE;
 						
 					} else {
-						if (defineFinalInstallation) {
+						if (defineFinalInstallation && isSelectionColoring) {
 							if (rowIndex<finalSequence.length) {
 								GeneralizedID finalID = finalSequence[rowIndex];
 								if (finalID==block.module.moduleID)
