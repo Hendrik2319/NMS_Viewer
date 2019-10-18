@@ -4243,8 +4243,30 @@ atlasinterface=false
 blackhole=false
 
 [Sys00C20002FFA005]
+name=Taco
+race=Gek
+conflict=1
+conflict_label=sanft
+economy=1
+economy_label=abnehmend
 atlasinterface=false
 blackhole=false
+class=Green
+short=5 Planeten
+info=
+
+[Pln10C20002FFA005]
+name=Pixousti XIII
+biome=Lush
+aggrSentinels
+with water
+resources=Em,Pf,Na
+
+[Pln30C20002FFA005]
+name=Atlin X
+biome=Exotic_Mega
+buriedTreasure=SalvageableScrap
+resources=Em,NH3,NaCl
 
 [Sys00D70002FFA005]
 name=Ozuohe
@@ -4260,6 +4282,45 @@ short=4 Planeten
 info=
 
 [Pln20D70002FFA005]
+
+[Sys00F30002FFA005]
+name=Gudiangz
+race=Korvax
+conflict=2
+conflict_label=instabil
+economy=2
+economy_label=erfolgversprechend
+atlasinterface=false
+blackhole=false
+class=Blue
+short=5 Planeten
+info=
+
+[Pln10F30002FFA005]
+name=Iellus Komat
+biome=Airless
+resources=In,Co,Sr_Rost
+
+[Pln20F30002FFA005]
+name=Eodos
+biome=AnomFragmColumns
+resources=In,Au,NaCl
+
+[Pln30F30002FFA005]
+name=Umieri P3
+biome=Airless
+resources=In,NaCl,Sr_Rost
+
+[Pln40F30002FFA005]
+name=Amseycit IX
+biome=Exotic_Mega
+is extreme
+resources=In_,CO2,Na
+
+[Pln50F30002FFA005]
+name=Aerusall Beta
+biome=AnomHexagons
+resources=In,Ag,Au
 
 [Sys01420002FFA005]
 name=Gashuna-Yoroz
@@ -5996,6 +6057,8 @@ info=
 name=Neu: Hest
 biome=Exotic_Mega
 is extreme
+with water
+remembrance terminal
 resources=In_,CO2,Ag
 
 [Reg00000003CC45B8]
@@ -6412,6 +6475,19 @@ resources=Cu,CO2,NaCl
 short=
 info=<ParsedPlanetaryResources> Cu, CO2, NaCl
 
+[Sys002600FCD7F684]
+name=Yakesu
+race=Korvax
+conflict=2
+conflict_label=instabil
+economy=2
+economy_label=erfolgversprechend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
 [Sys002E00FCD7F684]
 name=Gohanji XV
 race=Vykeen
@@ -6430,6 +6506,14 @@ name=Despinan III
 biome=Toxic
 buriedTreasure=AncientBones
 resources=Cu,NH3,Na
+
+[Sys003D00FCD7F684]
+atlasinterface=false
+blackhole=false
+
+[Sys004000FCD7F684]
+atlasinterface=false
+blackhole=false
 
 [Sys005400FCD7F684]
 name=Rolegze-Netys
@@ -6556,7 +6640,44 @@ short=
 info=<ParsedPlanetaryResources> Cu, Au, Fe##
 
 [Sys007A00FCD7F684]
+name=Yucilego
+race=Korvax
+conflict=1
+conflict_label=stabil
+economy=3
+economy_label=boomend
 atlasinterface=true
+blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln107A00FCD7F684]
+name=Neu: Bebinum
+biome=Irradiated
+is extreme
+resources=Cu_,U,NaCl
+
+[Pln207A00FCD7F684]
+
+[Pln307A00FCD7F684]
+
+[Pln507A00FCD7F684]
+
+[Sys010300FCD7F684]
+atlasinterface=false
+blackhole=false
+
+[Sys011300FCD7F684]
+atlasinterface=false
+blackhole=false
+
+[Sys012E00FCD7F684]
+atlasinterface=false
+blackhole=false
+
+[Sys016D00FCD7F684]
+atlasinterface=false
 blackhole=false
 
 [Sys016F00FCD7F684]
@@ -6575,6 +6696,26 @@ name=Puplefka Idaka
 biome=Frozen
 with water
 resources=Em,CO2,Ag
+
+[Sys01C300FCD7F684]
+race=Vykeen
+conflict=1
+conflict_label=niedrig
+economy=1
+economy_label=unerfahren
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Sys01D900FCD7F684]
+atlasinterface=false
+blackhole=false
+
+[Sys01DB00FCD7F684]
+atlasinterface=false
+blackhole=false
 
 [Sys01DE00FCD7F684]
 name=Songxi
@@ -6664,6 +6805,12 @@ blackhole=false
 class=Yellow
 short=2 Planeten
 info=
+
+[Pln21FD00FCD7F684]
+name=Ibiushu
+biome=Lush
+with water
+resources=Cu,Pf,Co
 
 [Sys01FE00FCD7F684]
 name=Iexius-Coz XVII
