@@ -888,20 +888,38 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 
 		public void computeSequences() {
-			sequences = new GeneralizedID[nModules][];
-			sequences[0] = createBaseSequence();
-			//Vector<GeneralizedID> sortedIDs = sortedID(blocks.keySet());
+			createBaseSequences();
+			reduceBaseSequences();
+		}
+
+		public void createBaseSequences() {
+			sequences = null;
 			
-			if (sequences[0] == null) {
-				sequences = null;
-				return;
+			GeneralizedID[] baseSequence = new GeneralizedID[nModules];
+			for (GeneralizedID id:blocks.keySet()) {
+				Session.SessionBlock block = blocks.get(id);
+				for (int i=0; i<block.amount; i++) {
+					Integer pos = block.getInstallPos(i,nModules);
+					if (pos==null) return;
+					baseSequence[pos] = id;
+				}
 			}
 			
+			sequences = new GeneralizedID[nModules][];
+			sequences[0] = baseSequence;
+			//Vector<GeneralizedID> sortedIDs = sortedID(blocks.keySet());
+			
 			for (int i=1; i<nModules; ++i) {
-				sequences[i] = shiftSequences(sequences[i-1]);
+				GeneralizedID[] prevSequence = sequences[i-1];
+				sequences[i] = Arrays.copyOf( Arrays.copyOfRange(prevSequence, 1, prevSequence.length), prevSequence.length);
+				sequences[i][prevSequence.length-1] = prevSequence[0];
 			}
 			
 			//showSequences(sequences,sortedIDs);
+		}
+
+		public void reduceBaseSequences() {
+			if (sequences==null) return;
 			
 			for (int i0=nModules-1; i0>=0; --i0) {
 				GeneralizedID[] sequ0 = sequences[i0];
@@ -930,26 +948,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			sequences = nonNullSequences.toArray(new GeneralizedID[nonNullSequences.size()][]);
 			//showSequences(sequences,sortedIDs);
-		}
-
-		private GeneralizedID[] createBaseSequence() {
-			GeneralizedID[] baseSequence = new GeneralizedID[nModules];
-			
-			for (GeneralizedID id:blocks.keySet()) {
-				Session.SessionBlock block = blocks.get(id);
-				for (int i=0; i<block.amount; i++) {
-					Integer pos = block.getInstallPos(i,nModules);
-					if (pos==null) return null;
-					baseSequence[pos] = id;
-				}
-			}
-			return baseSequence;
-		}
-
-		private GeneralizedID[] shiftSequences(GeneralizedID[] sequence) {
-			GeneralizedID[] newSequences = Arrays.copyOf( Arrays.copyOfRange(sequence, 1, sequence.length), sequence.length);
-			newSequences[sequence.length-1] = sequence[0];
-			return newSequences;
 		}
 
 		@SuppressWarnings("unused")
@@ -1394,6 +1392,42 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 		}
 		
+		private static class ModuleSelector extends ComboboxCellEditor<GeneralizedID> {
+			private static final long serialVersionUID = 6581183767423502892L;
+			
+			private HashMap<GeneralizedID, Session.SessionBlock> blocks;
+			private Vector<GeneralizedID> sortedIDs;
+
+			public ModuleSelector( HashMap<GeneralizedID, Session.SessionBlock> blocks, Vector<GeneralizedID> sortedIDs) {
+				super(new Vector<>());
+				this.blocks = blocks;
+				this.sortedIDs = sortedIDs;
+			}
+
+			@Override public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+				Vector<GeneralizedID> values = new Vector<>();
+				
+				GeneralizedID current;
+				if (value instanceof GeneralizedID) {
+					current = (GeneralizedID) value;
+					values.add(null);
+				} else
+					current = null;
+				
+				sortedIDs.forEach(id->{
+					if (!blocks.containsKey(id) || id==current)
+						values.add(id);
+				});
+				valueVector = values;
+				
+				return super.getTableCellEditorComponent(table, value, isSelected, row, column);
+			}
+
+			@Override public void addValue (GeneralizedID newValue) { throw new UnsupportedOperationException(); }
+			@Override public void setValues(GeneralizedID[] newValues) { throw new UnsupportedOperationException(); }
+			@Override public void setValues(Vector<GeneralizedID> newValues) { throw new UnsupportedOperationException(); }
+		}
+		
 		private enum ModuleTableColumnID implements SimplifiedColumnIDInterface {
 			ID    ("ID"    ,        String.class, 20,-1,120,120),
 			Type  ("Type"  ,        String.class, 20,-1,200,200),
@@ -1421,8 +1455,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				moduleTable = new TableView.SimplifiedTable<>("", moduleTableModel, true, SaveViewer.DEBUG, true);
 				setViewportView(moduleTable);
 				
-				ComboboxCellEditor<GeneralizedID> cellEditor =
-						new ComboboxCellEditor<GeneralizedID>(SaveViewer.addNull(sortedID(knownModules.keySet())));
+				ModuleSelector cellEditor = new ModuleSelector(session.blocks, sortedID(knownModules.keySet()));
+//				ComboboxCellEditor<GeneralizedID> cellEditor =
+//						new ComboboxCellEditor<GeneralizedID>(SaveViewer.addNull(sortedID(knownModules.keySet())));
 				
 				NonStringRenderer<GeneralizedID> renderer =
 						new NonStringRenderer<GeneralizedID>(obj->{
@@ -1562,6 +1597,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			private static final long serialVersionUID = 2931295900938287288L;
 			
 			private JTextArea sequencesOutput;
+//			private JTable preliminarySequencesTable;
+//			private PreliminarySequencesTableModel preliminarySequencesTableModel;
 
 			InstallOrderPanel() {
 				super(new GridBagLayout());
@@ -1576,45 +1613,58 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				c.weighty = 0;
 				c.gridy = 0;
-				c.gridx = 1;
+				c.gridx = 2;
 				add(createLabel("Unset", true),c);
 				for (int i=0; i<session.nModules; i++) {
-					c.gridx = i+2;
+					c.gridx++;
 					add(createLabel("("+(i+1)+")", true),c);
 				}
 				int row = 0;
-				for (GeneralizedID id:sortedID(session.blocks.keySet())) {
+				Vector<GeneralizedID> sortedIDs = sortedID(session.blocks.keySet());
+				for (int idIndex=0; idIndex<sortedIDs.size(); idIndex++) {
+					GeneralizedID id = sortedIDs.get(idIndex);
 					Session.SessionBlock block = session.blocks.get(id);
 					Debug.Assert(id==block.module.moduleID);
 					for (int i=0; i<block.amount; i++, row++) {
 						int index = i;
-						c.gridy = row+1;
 						c.weightx = 0;
+						c.gridy++;
 						
 						c.gridx = 0;
+						add(createLabel(i==0 ? "  M"+(idIndex+1)+": " : "", false),c);
+						
+						c.gridx++;
 						add(createLabel("("+(i+1)+") "+block.module.moduleID.label, false),c);
 						
-						c.gridx = 1;
+						c.gridx++;
 						ButtonGroup bg = new ButtonGroup();
 						Integer pos = block.getInstallPos(i,session.nModules);
 						add(Gui.createRadioButton("", bg, pos==null, true, e->setOrder(block,index,null,btns)),c);
 						
 						for (int col=0; col<session.nModules; col++) {
 							int newPos = col;
-							c.gridx = col+2;
+							c.gridx++;
 							boolean isSelected = pos!=null && pos.intValue()==col;
 							add(btns[col][row] = Gui.createRadioButton("", bg, isSelected, true, e->setOrder(block,index,newPos,btns)),c);
 						}
 						c.weightx = 1;
-						c.gridx = session.nModules+2;
+						c.gridx++;
 						add(new JLabel(),c);
 					}
 				}
-				c.gridy = session.nModules+1;
-				c.gridx = 0;
+				
 				c.weightx = 1;
-				c.weighty = 1;
+				c.gridx = 0;
 				c.gridwidth = GridBagConstraints.REMAINDER;
+				
+				c.weighty = 1;
+				c.gridy++;
+//				preliminarySequencesTableModel = new PreliminarySequencesTableModel();
+//				preliminarySequencesTable = new JTable(preliminarySequencesTableModel);
+//				add(new JScrollPane(preliminarySequencesTable),c);
+//				
+//				c.weighty = 0;
+//				c.gridy++;
 				sequencesOutput = new JTextArea();
 				add(new JScrollPane(sequencesOutput),c);
 				
@@ -1655,6 +1705,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			private void computeSequences() {
 				
 				session.computeSequences();
+//				session.createBaseSequences();
+//				session.reduceBaseSequences();
 				
 				if (session.sequences==null) {
 					sequencesOutput.setText("Finalize install order to determine number of cycles.");
@@ -1694,6 +1746,40 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					Gui.append_ln(sequencesOutput, str);
 				}
 			}
+		}
+		
+		@SuppressWarnings("unused")
+		private class PreliminarySequencesTableModel extends AbstractTableModel{
+
+			@Override
+			protected void prepareTable() {
+				// TODO Auto-generated method stub
+				
+			}
+			@Override
+			protected int getPrefColumnWidth(int columnIndex) {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			@Override public int getRowCount() { return 0; }
+			@Override public int getColumnCount() { return 0; }
+			@Override public String getColumnName(int columnIndex) { return null; }
+			@Override public Class<?> getColumnClass(int columnIndex) { return null; }
+			
+			@Override public boolean isCellEditable(int rowIndex, int columnIndex) {
+				return false;
+			}
+			
+			@Override public Object getValueAt(int rowIndex, int columnIndex) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+				// TODO Auto-generated method stub
+				
+			}
+			
 		}
 
 		public Session getResult() {
