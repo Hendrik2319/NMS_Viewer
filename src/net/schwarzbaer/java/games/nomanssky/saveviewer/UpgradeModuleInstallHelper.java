@@ -906,7 +906,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			
 			sequences = new GeneralizedID[nModules][];
-			sequences[0] = baseSequence;
+			if (nModules>0)
+				sequences[0] = baseSequence;
 			//Vector<GeneralizedID> sortedIDs = sortedID(blocks.keySet());
 			
 			for (int i=1; i<nModules; ++i) {
@@ -1931,6 +1932,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			for (GeneralizedID id:sortedID(currentSession.blocks.keySet())) {
 				Debug.Assert(id!=null);
 				Session.SessionBlock block = currentSession.blocks.get(id);
+				Debug.Assert(block!=null);
 				
 				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(
 					block,currentSession.finalSequence,currentSession.nModules,
@@ -1969,7 +1971,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				tableScrollPane.setWheelScrollingEnabled(false);
 				tableScrollPane.addMouseWheelListener(e->scrollTables(e.getPreciseWheelRotation()));
-				tableScrollPane.setBorder( Gui.createTitledBorderForScrollPane(id.getName()) );
+				tableScrollPane.setBorder( Gui.createTitledBorderForScrollPane( block.amount+"x  "+id.getName()) );
 				
 				tablePanel.add(tableScrollPane);
 			}
