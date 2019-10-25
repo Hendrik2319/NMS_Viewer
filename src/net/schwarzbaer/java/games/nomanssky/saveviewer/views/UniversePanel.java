@@ -1951,8 +1951,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private class ResourceGrid extends Canvas {
 			private static final long serialVersionUID = 8683936443777991288L;
 			
-			private static final int SLOT_RASTER_X = InventoriesPanel.InventoryPanel.InventoryDisplay.SLOT_RASTER_X;
-			private static final int SLOT_RASTER_Y = InventoriesPanel.InventoryPanel.InventoryDisplay.SLOT_RASTER_Y;
+			private static final int SLOT_RASTER_X = InventoriesPanel.InventoryDisplay.SLOT_RASTER_X;
+			private static final int SLOT_RASTER_Y = InventoriesPanel.InventoryDisplay.SLOT_RASTER_Y;
 			
 			private GeneralizedID[][] resIdArrays;
 			private GeneralizedID[][] resGrid;
@@ -2087,8 +2087,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			@Override protected void paintCanvas(Graphics g, int x, int y, int width, int height) {
 				if (!(g instanceof Graphics2D)) return;
 				Graphics2D g2 = (Graphics2D)g;
-				//InventoriesPanel.InventoryPanel.InventoryDisplay.drawSlotGrid(g2, x, y, nColumn, resourceIDs, i->resources.contains(allResources[i]), hovered);
-				InventoriesPanel.InventoryPanel.InventoryDisplay.drawSlotGrid(g2, x, y, resGrid, id->resources.contains(getResource(id)), hovered);
+				//InventoriesPanel.InventoryDisplay.drawSlotGrid(g2, x, y, nColumn, resourceIDs, i->resources.contains(allResources[i]), hovered);
+				InventoriesPanel.InventoryDisplay.drawSlotGrid(g2, x, y, resGrid, id->resources.contains(getResource(id)), hovered);
 			}
 			
 		}

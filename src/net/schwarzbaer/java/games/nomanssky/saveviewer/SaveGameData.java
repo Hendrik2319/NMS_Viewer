@@ -51,7 +51,6 @@ public class SaveGameData {
 
 	public static Error error;
 	public static String errorMessage;
-	private static boolean isStackTraceEnabled;
 	
 	public final String filename;
 	public final int index;
@@ -88,7 +87,6 @@ public class SaveGameData {
 	public SaveGameData(JSON_Object json_data, String filename, int index, boolean isPreNEXT) {
 		error = Error.NoError;
 		errorMessage = "";
-		isStackTraceEnabled = true;
 		
 		this.filename = filename;
 		this.index = index;
@@ -863,7 +861,7 @@ public class SaveGameData {
 			pb.name            = getStringValue  (objectValue, "Name");
 			pb.baseTypeStr     = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.baseType        = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
-			pb.value__wx7      = getIntegerValue_silent(objectValue, "??? [wx7]");
+			pb.value__wx7      = getIntegerValue_checked(objectValue, "??? [wx7]");
 			
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
 			
@@ -1738,6 +1736,7 @@ public class SaveGameData {
 			MINING_BAD_5  ("Defekte Drohnen"              ,"Industrie: -2"),
 			
 			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
+			COMBAT_SEC_2  ("Ablative Panzerung"            ,"Kampf: +4"),
 			COMBAT_SEC_3  ("Tarngerät"                     ,"Kampf: +6"),
 			COMBAT_SEC_4  ("Ultraschallwaffe"              ,"Kampf: +2"),
 			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
@@ -1769,8 +1768,10 @@ public class SaveGameData {
 			SPEED_TER_5   ("Wurmlochgenerator"            ,"-3% Expeditionsdauer"),
 			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
 			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
+			SPEED_TER_8   ("Dynamischer Ballast"         ,"-2% Expeditionsdauer "),
 			
 			FUEL_PRI      ("Unterstützungsspezialist"    ,"Treibstoffkosten der Expedition: -15"),
+			FUEL_SEC_4    ("Antimateria-Cycler"          ,"Treibstoffkosten der Expedition: -3"),
 			FUEL_SEC_5    ("Fortgeschrittener Stromverteiler","Treibstoffkosten der Expedition: -6"),
 			FUEL_SEC_6    ("Tragbarer Fusionszünder"     ,"Treibstoffkosten der Expedition: -9"),
 			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
@@ -2322,7 +2323,7 @@ public class SaveGameData {
 					stData.OWS = Owner.parse(object, "OWS");
 					
 					// RID  String (evtl.)
-					stData.RID = getStringValue_silent(object,"RID");
+					stData.RID = getStringValue_checked(object,"RID");
 					if (stData.RID!=null) {
 						try {
 							stData.RID_bytes = Base64.getDecoder().decode(stData.RID/*.replace("\\","")*/);
@@ -2333,7 +2334,7 @@ public class SaveGameData {
 					}
 					
 					// PTK  String (evtl.)
-					stData.PTK = getStringValue_silent(object,"PTK");
+					stData.PTK = getStringValue_checked(object,"PTK");
 					
 					storeData.add(stData);
 				}
@@ -4021,9 +4022,9 @@ public class SaveGameData {
 				
 				JSON_Object statValue = getObjectValue(statObject,"Value");
 				if (statValue!=null) {
-					stat.IntValue    = getIntegerValue_silent(statValue,"IntValue");
-					stat.FloatValue  = getFloatValue_silent  (statValue,"FloatValue");
-					stat.Denominator = getFloatValue_silent  (statValue,"Denominator");
+					stat.IntValue    = getIntegerValue_checked(statValue,"IntValue");
+					stat.FloatValue  = getFloatValue_checked  (statValue,"FloatValue");
+					stat.Denominator = getFloatValue_checked  (statValue,"Denominator");
 				}
 				
 				stat.interpretValues();
@@ -4262,10 +4263,6 @@ public class SaveGameData {
 	private static Long        getInteger(Value val) { if (val==null || !(val instanceof IntegerValue) || val.type!=Type.Integer) return null; val.wasProcessed=true; return ((IntegerValue)val).value;}
 	private static Double      getFloat  (Value val) { if (val==null || !(val instanceof FloatValue  ) || val.type!=Type.Float  ) return null; val.wasProcessed=true; return ((  FloatValue)val).value;}
 
-	private static void enableStackTrace(boolean isStackTraceEnabled_) {
-		isStackTraceEnabled = isStackTraceEnabled_;
-	}
-
 	static boolean hasValue(JSON_Object data, Object... path) {
 		return JSON_Data.hasSubNode(data, path);
 	}
@@ -4282,7 +4279,7 @@ public class SaveGameData {
 				errorMessage = String.format("Value is null. (path: %s)", Arrays.toString(path));
 			}
 		} catch (PathIsNotSolvableException e) {
-			if (isStackTraceEnabled) e.printStackTrace();
+			e.printStackTrace();
 			error = Error.PathIsNotSolvable;
 			errorMessage = "PathIsNotSolvable: "+Arrays.toString(path);
 		}
@@ -4381,24 +4378,21 @@ public class SaveGameData {
 	@SuppressWarnings("unused") private static JSON_Array  getArrayValue  (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Array  (), arr, index); }
 	@SuppressWarnings("unused") private static JSON_Object getObjectValue (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Object (), arr, index); }
 
-	private static Long getIntegerValue_silent(JSON_Object data, Object... path) {
-		enableStackTrace(false);
-		Long value = getIntegerValue(data, path);
-		enableStackTrace(true);
-		return value;
+	private static Long getIntegerValue_checked(JSON_Object data, Object... path) {
+		if (hasValue(data, path))
+			return getIntegerValue(data, path);
+		return null;
 	}
 
-	private static Double getFloatValue_silent(JSON_Object data, Object... path) {
-		enableStackTrace(false);
-		Double value = getFloatValue(data, path);
-		enableStackTrace(true);
-		return value;
+	private static Double getFloatValue_checked(JSON_Object data, Object... path) {
+		if (hasValue(data, path))
+			return getFloatValue(data, path);
+		return null;
 	}
 
-	private static String getStringValue_silent(JSON_Object data, Object... path) {
-		enableStackTrace(false);
-		String value = getStringValue(data, path);
-		enableStackTrace(true);
-		return value;
+	private static String getStringValue_checked(JSON_Object data, Object... path) {
+		if (hasValue(data, path))
+			return getStringValue(data, path);
+		return null;
 	}
 }
