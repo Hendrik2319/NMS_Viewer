@@ -1013,7 +1013,11 @@
 ^UT_WATERENERGY.image=RENDER.CELLMOD.png
 ^UT_WATERENERGY.imageBG=085C78
 ^UT_WATERENERGY.upgradeClass=A
-^UT_WATERJET=
+^UT_WATERJET=Effiziente Wasserdüsen
+^UT_WATERJET.type=ExosuitExtensionUpgrade
+^UT_WATERJET.image=RENDER.JETPACKMOD.NEXT.png
+^UT_WATERJET.imageBG=085C78
+^UT_WATERJET.upgradeClass=A
 ^VEHICLE_BOOST=Exo-Fahrzeug-Beschleunigungsmodul
 ^VEHICLE_BOOST.type=ExocraftExtension
 ^VEHICLE_BOOST.image=NmsTech_Exocraft_Acceleration_Module_Icon.png

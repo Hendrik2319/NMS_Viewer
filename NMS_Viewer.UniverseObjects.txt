@@ -6019,6 +6019,32 @@ blackhole=false
 
 [Pln11BD000843F557]
 
+[Reg000000FFF3758F]
+name=Meer von Mundarim
+
+[Sys007A00FFF3758F]
+name=Emswor X
+race=Vykeen
+conflict=1
+conflict_label=sanft
+economy=2
+economy_label=In Entwicklung
+atlasinterface=true
+blackhole=false
+class=Yellow
+short=2 Planeten
+info=
+
+[Pln107A00FFF3758F]
+name=Yuptiadusc Hijon
+biome=Airless
+resources=Cu,Na,Sr_Rost
+
+[Pln207A00FFF3758F]
+name=Lewelle XVIII
+biome=Irradiated
+resources=Cu,U,Co
+
 [Reg000000FFF37590]
 name=Koenpa
 
@@ -6230,6 +6256,22 @@ economy_label=ausgeglichen
 atlasinterface=true
 blackhole=false
 class=Yellow
+
+[Reg000000FFF38591]
+name=Mimoth-Quadrant
+
+[Sys007A00FFF38591]
+name=Rutlakew
+race=Gek
+conflict=1
+conflict_label=ungestört
+economy=1
+economy_label=mittellos
+atlasinterface=true
+blackhole=false
+class=Yellow
+short=4 Planeten
+info=
 
 [Reg00000003CC45B8]
 name=Aygans-Quadrant

@@ -208,7 +208,7 @@
 ^ROCKETSUB.type=Resource
 ^ROCKETSUB.symbol=H3
 ^ROCKETSUB.image=SUBSTANCE.ROCKETSUB.png
-^ROCKETSUB.imageBG=DEDCD0
+^ROCKETSUB.imageBG=DEDCD1
 ^SAND1=Silikatpulver
 ^SAND1.type=Resource
 ^SAND1.symbol=Si
