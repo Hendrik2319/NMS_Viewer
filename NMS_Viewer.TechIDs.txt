@@ -1078,3 +1078,15 @@
 ^VEHICLE_SCAN2.image=NmsTech_Exocraft_Scan_Equipment_Upgrade_Icon.png
 ^VEHICLE_SCAN2.imageBG=0063B6
 ^VEHICLE_SCAN2.upgradeClass=A
+^WEAPSLOT_DMG1=Kurzer Schaltkreis
+^WEAPSLOT_DMG1.type=Special
+^WEAPSLOT_DMG1.image=MAINTTECH.FUEL2.NEXT.png
+^WEAPSLOT_DMG1.imageBG=7B0000
+^WEAPSLOT_DMG2=Durchgebrannter Transistor
+^WEAPSLOT_DMG2.type=Special
+^WEAPSLOT_DMG2.image=NmsTech_Heat_Capacitor_Icon_13.png
+^WEAPSLOT_DMG2.imageBG=7B0000
+^WEAPSLOT_DMG3=Beschädigte Verkabelung
+^WEAPSLOT_DMG3.type=Special
+^WEAPSLOT_DMG3.image=NmsCommodity_Decommissioned_Circuit_Board_icon.png
+^WEAPSLOT_DMG3.imageBG=7B0000

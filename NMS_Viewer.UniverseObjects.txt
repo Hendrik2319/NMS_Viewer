@@ -214,6 +214,74 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Reg00000002F1695C]
+
+[Sys00370002F1695C]
+name=Imuscat "The $$$ system" 
+race=Korvax
+conflict=3
+conflict_label=hoch
+economy=3
+economy_label=wohlhabend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln10370002F1695C]
+name=Otonym B27
+biome=Barren
+aggrSentinels
+with water
+gravitino balls
+resources=Cu,Py,Fe__
+
+[Reg000000B573F95C]
+
+[Sys014400B573F95C]
+name=Oslobol
+race=Vykeen
+economy=1
+economy_label=erfolglos
+atlasinterface=false
+blackhole=false
+class=Blue
+short=aufgegeben
+info=
+short=5  Planeten
+info=
+
+[Pln114400B573F95C]
+name=Ahoko 25/G4
+biome=Lush
+is extreme
+with water
+resources=In_,Pf,Ag
+short=Portal
+info=-15.03, -80.37
+
+[Pln214400B573F95C]
+
+[Pln314400B573F95C]
+name=Glaced house
+biome=Frozen
+resources=In,CO2,NaCl
+
+[Pln414400B573F95C]
+
+[Pln514400B573F95C]
+
+[Reg0000000029897C]
+
+[Sys0033000029897C]
+atlasinterface=false
+blackhole=false
+
+[Pln2033000029897C]
+
+[Pln4033000029897C]
+
 [Reg00000004E7D981]
 name=Ninunkamp-Instabilität
 
@@ -328,6 +396,22 @@ name=Lagon
 biome=Frozen
 resources=Cu,CO2,Fe__
 
+[Reg000000FDF509A9]
+name=Meer von Ximucalem
+
+[Sys007A00FDF509A9]
+name=Rominsky VII
+race=Vykeen
+conflict=1
+conflict_label=mild
+economy=1
+economy_label=erfolglos
+atlasinterface=true
+blackhole=false
+class=Yellow
+short=4 Planeten
+info=
+
 [Reg000000FCCE59C1]
 name=Wibereb
 
@@ -430,6 +514,18 @@ short=2 Planeten
 info=
 short=W: Erfolgversprechend
 info=
+
+[Reg000000FCBF2A5B]
+
+[Sys011600FCBF2A5B]
+atlasinterface=false
+blackhole=false
+
+[Pln111600FCBF2A5B]
+
+[Pln311600FCBF2A5B]
+
+[Pln411600FCBF2A5B]
 
 [Reg00000004369A84]
 name=Iogamus
@@ -2039,6 +2135,28 @@ blackholetarget=00360000BAC370
 class=Yellow
 short=2 Planeten
 info=
+
+[Reg000000F9557C31]
+name=Nugsdor-Adjunkt
+
+[Sys011A00F9557C31]
+name=[HUB5-11A] Taylisa-Yuse XVII
+race=Korvax
+economy=1
+economy_label=erfolglos
+atlasinterface=false
+blackhole=false
+class=Green
+short=aufgegeben
+info=
+
+[Pln111A00F9557C31]
+name=Alsto
+biome=Lush
+resources=Em,Pf,Na
+
+[Pln211A00F9557C31]
+name=Awaitn
 
 [Reg0000000203BC40]
 name=Nooscsa-Wolke
@@ -4228,6 +4346,37 @@ info="Schuppiger Planet"
 short=
 info=<ParsedPlanetaryResources> Em, Au, Co
 
+[Reg000000FE007004]
+name=Rumulton-Leere
+
+[Sys008A00FE007004]
+name=Enoegia-Boym
+race=Korvax
+conflict=2
+conflict_label=streitlustig
+economy=2
+economy_label=nachhaltig
+atlasinterface=false
+blackhole=false
+class=Yellow
+
+[Pln108A00FE007004]
+name=Iffall
+biome=Frozen
+resources=Cu,CO2,NaCl
+
+[Pln208A00FE007004]
+name=Flitwor II
+biome=Airless
+resources=Cu,Na,Sr_Rost
+
+[Pln308A00FE007004]
+name=Shungeli T41
+biome=Barren
+resources=Cu,Py,Na
+short=Portal
+info=+57.11, +29.89
+
 [Reg000000FEFDC005]
 name=Hudsto-Band
 
@@ -4249,6 +4398,10 @@ name=Olgaez-Masse
 atlasinterface=false
 blackhole=false
 
+[Sys003D0002FFA005]
+atlasinterface=false
+blackhole=false
+
 [Sys00920002FFA005]
 atlasinterface=false
 blackhole=false
@@ -4258,7 +4411,7 @@ atlasinterface=false
 blackhole=false
 
 [Sys00960002FFA005]
-name=Trump's anti-pepito wall
+name=Aletai
 race=Vykeen
 conflict=3
 conflict_label=kritisch
@@ -4283,6 +4436,8 @@ biome=Irradiated
 with water
 resources=Cu,U,NaCl
 
+[Pln40960002FFA005]
+
 [Pln50960002FFA005]
 name=Lothwel T25
 biome=Lush
@@ -4294,10 +4449,28 @@ name=Enos Y39
 biome=Irradiated
 is extreme
 resources=Cu_,U,Fe__
+short=Portal
+info=+68.42, +165.85
 
 [Sys00BC0002FFA005]
+name=Abyaix-Runan
+unexplored
 atlasinterface=false
 blackhole=false
+class=Green
+
+[Pln10BC0002FFA005]
+
+[Pln20BC0002FFA005]
+name=Awest XIV
+biome=Barren
+resources=Em,Py,NaCl
+short=Portal
+info=-24.24, +74.77
+
+[Pln40BC0002FFA005]
+
+[Pln50BC0002FFA005]
 
 [Sys00C10002FFA005]
 atlasinterface=false
@@ -4326,6 +4499,7 @@ resources=Em,Pf,Na
 [Pln30C20002FFA005]
 name=Atlin X
 biome=Exotic_Mega
+with water
 buriedTreasure=SalvageableScrap
 resources=Em,NH3,NaCl
 
@@ -4407,6 +4581,10 @@ resources=In_,U,Fe__
 [Pln21420002FFA005]
 
 [Pln31420002FFA005]
+
+[Sys01430002FFA005]
+atlasinterface=false
+blackhole=false
 
 [Reg000000FEFDD006]
 name=Nossolm-Adjunkt
@@ -5842,6 +6020,42 @@ class=Yellow
 short=1 Planet
 info=
 
+[Reg000000182964AA]
+
+[Sys00FF00182964AA]
+name=Iganens
+race=Vykeen
+economy=1
+economy_label=unerfahren
+atlasinterface=false
+blackhole=false
+class=Green
+short=6 Planeten
+info=
+short=aufgegeben
+info=
+
+[Pln10FF00182964AA]
+name=Elstou VI
+biome=AnomScreenCrystals
+resources=Em,Au,Co
+short=Portal
+info=+45.29, -104.12
+
+[Pln20FF00182964AA]
+
+[Pln30FF00182964AA]
+
+[Pln40FF00182964AA]
+name=Neu: Digonno
+biome=Toxic
+is extreme
+resources=Em_,NH3,Na
+
+[Pln50FF00182964AA]
+
+[Pln60FF00182964AA]
+
 [Reg000000024F14BB]
 oldname=Ajjaroe-Rand
 
@@ -6045,6 +6259,61 @@ name=Lewelle XVIII
 biome=Irradiated
 resources=Cu,U,Co
 
+[Reg000000FEF37590]
+name=Opff-Cluster
+
+[Sys007A00FEF37590]
+name=Obanyiga X
+race=Gek
+conflict=1
+conflict_label=mild
+economy=2
+economy_label=angemessen
+atlasinterface=true
+blackhole=false
+class=Yellow
+
+[Pln107A00FEF37590]
+name=Ketaj 24/L9
+biome=Lush
+with water
+buriedTreasure=SalvageableScrap
+resources=Cu,Pf,Ag
+
+[Sys019900FEF37590]
+name=Ayagyu-Gregi
+unexplored
+atlasinterface=false
+blackhole=false
+class=Blue
+short=4 Planeten
+info=
+
+[Pln119900FEF37590]
+name=Odminiab Hoku
+biome=AnomBubbles
+resources=In,Ag,Au
+
+[Pln219900FEF37590]
+name=Noveykov Primus
+biome=Airless
+resources=In,Co,Sr_Rost
+
+[Pln319900FEF37590]
+name=Elkgor O35
+biome=Exotic_Mega
+with water
+resources=In,CO2,Co
+short=Orange beim Fliegen
+info=
+
+[Pln419900FEF37590]
+name=Nirayntha Minoris
+biome=Irradiated
+is extreme
+with water
+resources=In_,U,NaCl
+
 [Reg000000FFF37590]
 name=Koenpa
 
@@ -6162,6 +6431,61 @@ is extreme
 with water
 resources=In_,U,Ag
 
+[Reg00000000F37590]
+name=Ewensi-Sektor
+
+[Sys007A0000F37590]
+name=Ikahoku-Fika
+race=Korvax
+conflict=1
+conflict_label=friedlich
+economy=2
+economy_label=komfortabel
+atlasinterface=true
+blackhole=false
+class=Yellow
+short=4 Planeten
+info=
+
+[Pln107A0000F37590]
+name=Anueli V
+biome=Frozen
+with water
+resources=Cu,CO2,NaCl
+
+[Reg000000FEF38590]
+name=Buwatyren-Terminus
+
+[Sys007A00FEF38590]
+name=Buntiu-Kuch
+race=Korvax
+conflict=3
+conflict_label=aggressiv
+economy=1
+economy_label=erfolglos
+atlasinterface=true
+blackhole=false
+class=Yellow
+short=Big Explorers
+info=
+short=2 Planeten
+info=
+
+[Sys014100FEF38590]
+name=Hamigan
+unexplored
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln514100FEF38590]
+name=Oscop XV
+biome=Exotic_Mega
+buriedTreasure=AncientBones
+resources=In,CO2,Ag
+
 [Reg000000FFF38590]
 name=Niezhi-Untiefe
 
@@ -6182,6 +6506,43 @@ short=24er MultiTool
 info=in Station
 short=
 info=Remembrance Terminal mit Karte
+
+[Sys011700FFF38590]
+name=Rudontsa
+race=Korvax
+economy=1
+economy_label=scheiternd
+atlasinterface=false
+blackhole=false
+class=Blue
+short=3 Planeten
+info=
+short=aufgegeben
+info=
+
+[Sys014C00FFF38590]
+name=Orbuky-Lupjon XIII
+race=Vykeen
+conflict=3
+conflict_label=beängstigend
+economy=2
+economy_label=Mittlere Versorgung
+atlasinterface=false
+blackhole=false
+class=Blue
+short=2 Planeten
+info=
+
+[Pln114C00FFF38590]
+name=Latenheansc Otaru
+biome=Toxic
+buriedTreasure=AncientBones
+resources=In,NH3,Na
+
+[Pln214C00FFF38590]
+name=Reltonolu Kahay
+biome=Barren
+resources=In,Py,Na
 
 [Sys018500FFF38590]
 name=Huweyfa
@@ -6209,6 +6570,26 @@ biome=Scorched
 buriedTreasure=AncientBones
 resources=Cu,P,NaCl
 
+[Sys019C00FFF38590]
+name=Yuhaiu-Trub XIII
+race=Gek
+conflict=2
+conflict_label=ungestüm
+economy=2
+economy_label=zufriedenstellend
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=1 Planet
+info=
+
+[Pln119C00FFF38590]
+name=Usse III
+biome=Lush
+is extreme
+with water
+resources=Cu_,Pf,NaCl
+
 [Sys019D00FFF38590]
 name=Insang V
 race=Vykeen
@@ -6221,6 +6602,24 @@ blackhole=false
 class=Yellow
 short=3 Planeten
 info=
+
+[Sys01B200FFF38590]
+name=Gianch-Loma XVIII
+race=Gek
+conflict=1
+conflict_label=friedlich
+economy=2
+economy_label=komfortabel
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln31B200FFF38590]
+name=Otanessi XIX
+biome=Lush
+resources=Cu,Pf,Na
 
 [Sys01EC00FFF38590]
 name=Jiyuejeell
@@ -6242,6 +6641,13 @@ is extreme
 with water
 remembrance terminal
 resources=In_,CO2,Ag
+short=Portal
+info=-56.11, -97.92
+
+[Pln21EC00FFF38590]
+name=Gostori Ihac
+biome=AnomMushrooms
+resources=In,Ag,Au
 
 [Reg000000FFF39590]
 name=Kugage
@@ -6256,6 +6662,27 @@ economy_label=ausgeglichen
 atlasinterface=true
 blackhole=false
 class=Yellow
+
+[Reg00000000F37591]
+name=Cavicis-Arm
+
+[Sys007A0000F37591]
+name=Gigisas-Usash XVIII
+race=Gek
+conflict=3
+conflict_label=kritisch
+economy=2
+economy_label=Mittlere Versorgung
+atlasinterface=true
+blackhole=false
+class=Yellow
+short=2 Planeten
+info=
+
+[Pln107A0000F37591]
+name=Romusgrover Anzak
+biome=Frozen
+resources=Cu,CO2,Na
 
 [Reg000000FFF38591]
 name=Mimoth-Quadrant
@@ -6532,6 +6959,37 @@ resources=Cd,Py,Na
 short=
 info=<ParsedPlanetaryResources> Cd, Py, Na
 
+[Reg000000063715F3]
+
+[Sys018900063715F3]
+name=Nikkolaru
+race=Vykeen
+conflict=1
+conflict_label=friedlich
+economy=3
+economy_label=wohlhabend
+atlasinterface=false
+blackhole=false
+class=Blue
+short=4 Planeten
+info=
+
+[Pln118900063715F3]
+name=Yangr
+biome=Irradiated
+resources=In,U,Ag
+short=Portal
+info=-85.57, +81.85
+
+[Pln218900063715F3]
+name=Bergha Primus
+biome=Toxic
+resources=In,NH3,Ag
+
+[Pln318900063715F3]
+
+[Pln418900063715F3]
+
 [Reg00000000DBE61C]
 name=Ibiluro-Weite
 
@@ -6566,6 +7024,40 @@ blackholetarget=002B0004369A84
 class=Yellow
 short=2 Planeten
 info=
+
+[Reg00000005CFD63D]
+name=Fehuaht-Cluster
+
+[Sys01BD0005CFD63D]
+name=Efarnsale XVIII
+race=Vykeen
+economy=1
+economy_label=unerfahren
+atlasinterface=false
+blackhole=false
+class=Green
+short=3 Planeten
+info=
+short=(Aufgegeben)
+info=
+
+[Pln11BD0005CFD63D]
+name=Oskollyor Beta
+biome=Lush
+resources=Em,Pf,NaCl
+
+[Pln21BD0005CFD63D]
+name=Nunan 44/F9
+biome=Exotic
+with water
+resources=Em,NH3,Fe__
+short=Dunkel-Rot
+info=
+
+[Pln31BD0005CFD63D]
+name=Lesbon Q26
+biome=AnomFragmColumns
+resources=Em,Ag,Au
 
 [Reg000000052CA65C]
 name=Meer von Arbodi
