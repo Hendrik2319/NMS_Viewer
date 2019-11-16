@@ -92,7 +92,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggesti
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 final class UpgradeModuleInstallHelper implements ActionListener {
-	
+
 	private static final boolean DEBUG_EVENTS = false;
 	
 	private static final Color COLOR_NOTCURRENTSEQUENCE = Color.LIGHT_GRAY;
@@ -184,7 +184,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	}
 
 	enum ActionCommand {
-		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession, StartInstallationTests, StopInstallationTests, InstallNext, DefineFinalInstallation, SetValueColoring, ShowValuePriorities, SetSelectionColoring,
+		NewSession, OpenSession, SaveSession, SaveSessionAs, EditSession,
+		StartInstallationTests, StopInstallationTests, InstallNext,
+		DefineFinalInstallation, SetSelectionColoring,
+		ShowValuePriorities, SetValueColoring,
+		ComputeBestCombinations, ShowBestCombinations,
 		;
 	}
 	
@@ -263,6 +267,14 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		optionPanel.add(new JLabel(" Coloring: "),c);
 		optionPanel.add(Gui.createRadioButton(  "0..Max", bg2, disabler, ActionCommand.SetValueColoring, true , true, e->tablePanel.setValueColoringMinMax(false)),c);
 		optionPanel.add(Gui.createRadioButton("Min..Max", bg2, disabler, ActionCommand.SetValueColoring, false, true, e->tablePanel.setValueColoringMinMax(true )),c);
+		c.gridwidth = GridBagConstraints.REMAINDER;
+		c.weightx = 1;
+		optionPanel.add(new JLabel(),c);
+		
+		c.gridwidth = 1;
+		c.weightx = 0;
+		optionPanel.add(Gui.createButton("Compute Best Combinations", this, disabler, ActionCommand.ComputeBestCombinations),c);
+		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.weightx = 1;
 		optionPanel.add(new JLabel(),c);
 		
@@ -352,6 +364,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case StartInstallationTests:
 			case DefineFinalInstallation:
 			case ShowValuePriorities:
+			case ShowBestCombinations:
+			case ComputeBestCombinations:
 				return currentSession!=null && !testInstallsIterator.isRunning();
 				
 			case StopInstallationTests:
@@ -435,6 +449,15 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			break;
 			
+		case ComputeBestCombinations:
+			for (GeneralizedID id:sortedID(currentSession.blocks.keySet())) {
+				//Gui.log_ln("Compute Best Combinations for %s", getLabelOrID(id));
+				computeBestCombinations(currentSession.blocks.get(id));
+			}
+			//Gui.log_ln("... done");
+			tablePanel.updateBestCombis();
+			break;
+			
 		case StartInstallationTests: testInstallsIterator.start(); updateGUIaccess(); break;
 		case StopInstallationTests : testInstallsIterator.stop (); updateGUIaccess(); break;
 		case InstallNext           : testInstallsIterator.next (); updateGUIaccess(); break;
@@ -443,7 +466,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		case ShowValuePriorities: break;
 		case SetValueColoring: break;
 		case SetSelectionColoring: break;
+		case ShowBestCombinations: break;
 		}
+	}
+
+	private static void computeBestCombinations(Session.SessionBlock block) {
+		block.bestCombinations = new BestCombinationsComputer(block).compute(10);
 	}
 
 	private void updateDataInGui() {
@@ -477,13 +505,18 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 	
 	private static Float computeUpgradePriority(InstalledUpgrade upgrade, Vector<KnownModule.ValueDefinition> values) {
 		if (upgrade==null) return null;
-		
+		return computeUpgradePriority(upgrade.values, values);
+	}
+	private static Float computeUpgradePriority(HashMap<KnownModule.ValueDefinition,Float> values, Vector<KnownModule.ValueDefinition> valueDefs) {
+		return computeUpgradePriority(values::get, valueDefs);
+	}
+	private static Float computeUpgradePriority(Function<KnownModule.ValueDefinition,Float> getValue, Vector<KnownModule.ValueDefinition> valueDefs) {
 		float priority = 0;
 		float vd_priority = 0;
-		for (KnownModule.ValueDefinition vd:values) {
+		for (KnownModule.ValueDefinition vd:valueDefs) {
 			if (vd.max==null || vd.max==0) continue;
-			Float value = upgrade.values.get(vd);
-			if (value==null) continue;
+			Float value = getValue.apply(vd);
+			if (value==null) value=0f;
 			vd_priority += vd.priority;
 			priority += vd.priority * (value/vd.max);
 		}
@@ -1240,18 +1273,21 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			int amount;
 			Vector<Integer> installPos;
 			Vector<InstalledUpgrade> installedModules;
+			Vector<BestCombinationsComputer.Combination> bestCombinations;
 			
 			public SessionBlock(KnownModule module) {
 				this.module = module;
 				amount = 0;
 				installPos = new Vector<>();
 				installedModules = new Vector<>();
+				bestCombinations = null;
 			}
 			public SessionBlock(SessionBlock block) {
 				module = block.module;
 				amount = block.amount;
 				installPos = cloneVector(block.installPos,null);
 				installedModules = cloneVector(block.installedModules,InstalledUpgrade::new);
+				bestCombinations = null;
 			}
 			public Integer getInstallPos(int i, int nModules) {
 				if (i>=installPos.size())
@@ -1877,7 +1913,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 
-	private enum TableContextMenuCommands { AddValueDefinition, EditValueDefinition, RemoveValueDefinition, AddAllToMinMax, AddColumnToMinMax  }
+	private enum TableContextMenuCommands { AddValueDefinition, EditValueDefinition, RemoveValueDefinition, AddAllToMinMax, AddColumnToMinMax, Test  }
 
 	private final class TablePanel extends JScrollPane {
 		private static final long serialVersionUID = -1092343150495411023L;
@@ -1903,21 +1939,16 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			defineFinalInstallation = b;
 			tables.forEach((id,tableModel)->tableModel.defineFinalInstallation(b));
 		}
-		public void setSelectionColoring(boolean b) {
-			tables.forEach((id,tableModel)->tableModel.setSelectionColoring(b));
-		}
-		public void showValuePriorities(boolean b) {
-			tables.forEach((id,tableModel)->tableModel.showValuePriorities(b));
-		}
-		public void setValueColoringMinMax(boolean b) {
-			tables.forEach((id,tableModel)->tableModel.setValueColoringMinMax(b));
-		}
-		public void clearCurrentInstallTestModule() {
-			tables.forEach((id,tableModel)->tableModel.clearCurrentInstallTestModule());
-		}
+		public void setSelectionColoring  (boolean b) { tables.forEach((id,tableModel)->tableModel.setSelectionColoring  (b)); }
+		public void showValuePriorities   (boolean b) { tables.forEach((id,tableModel)->tableModel.showValuePriorities   (b)); }
+		public void setValueColoringMinMax(boolean b) { tables.forEach((id,tableModel)->tableModel.setValueColoringMinMax(b)); }
+		public void clearCurrentInstallTestModule()   { tables.forEach((id,tableModel)->tableModel.clearCurrentInstallTestModule()); }
+		
 		public void setCurrentInstallTestModule(GeneralizedID currentModule, int currentModuleIndex) {
 			tables.forEach((id,tableModel)->tableModel.setCurrentInstallTestModule(id==currentModule ? currentModuleIndex : -1));
 		}
+		public void updateBestCombis() { tables.forEach((id,tableModel)->tableModel.updateBestCombis()); }
+		
 		private void updateAfterChangeOnFinalSequence() {
 			tables.forEach((id,tableModel)->tableModel.fireTableUpdate());
 			finalSequenceTableModel.fireTableUpdate();
@@ -2015,10 +2046,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				super("TableContextMenu");
 				add(                      Gui.createMenuItem("Add All Values to respective Value Ranges", this, TableContextMenuCommands.AddAllToMinMax   ));
 				add(miAddColumnToMinMax = Gui.createMenuItem("Add Values of this Column to Value Range" , this, TableContextMenuCommands.AddColumnToMinMax));
-				addSeparator();;
+				addSeparator();
 				add(miAddValue    = Gui.createMenuItem("", this, TableContextMenuCommands.AddValueDefinition   ));
 				add(miEditValue   = Gui.createMenuItem("", this, TableContextMenuCommands.EditValueDefinition  ));
 				add(miRemoveValue = Gui.createMenuItem("", this, TableContextMenuCommands.RemoveValueDefinition));
+				addSeparator();
+				add(Gui.createMenuItem("Test", this, TableContextMenuCommands.Test));
 			}
 		
 			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
@@ -2097,6 +2130,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						tableModel.fireTableColumnChanged(columnIndex);
 						writeConfig();
 					}
+					break;
+					
+				case Test:
+					tableModel.test();
 					break;
 				}
 			}
@@ -2325,7 +2362,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private void fireTableRowEvent(int rowIndex, int type) {
 			fireTableEvent(createTableModelEvent(rowIndex,rowIndex,TableModelEvent.ALL_COLUMNS,type));
 		}
-		@SuppressWarnings("unused")
 		public void fireTableRowChanged(int rowIndex) {
 			fireTableRowEvent(rowIndex,TableModelEvent.UPDATE);
 		}
@@ -2384,6 +2420,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private static final int COLUMN_LABEL1    = COLUMN_INDEX +1;
 		private static final int COLUMN_LABEL2    = COLUMN_LABEL1+1;
 		private static final int STANDARD_COLUMNS = COLUMN_LABEL2+1;
+		private int ROW_PRIORITY = -1;
+		private int ROW_BEST_COMBI = -1;
+		private int ROW_SUM_OF_INSTALLED = -1;
+		private int COLUMN_PRIORITY = -1;
+		private int COLUMN_INSTALL = -1;
+		private int COLUMN_INSTALLED = -1;
 		
 		private Session.SessionBlock block;
 		private GeneralizedID[] finalSequence;
@@ -2394,17 +2436,19 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private TableCellEditor label2CellEditor;
 		private TableCellEditor cellEditor_Activated;
 		private TableCellEditor cellEditor_TextField;
+		private DefaultCellEditor cellEditor_Checkbox;
+		private ComboboxCellEditor<Integer> cellEditor_BestCombi;
 		
 		private MyTableCellRenderer defaultTableCellRenderer;
 		
 		private int currentInstallTestModule;
 		private boolean installTestAreRunning;
 		private boolean defineFinalInstallation;
-		private DefaultCellEditor cellEditor_Checkbox;
 		private Updater updater;
 		private boolean isValueColoringMinMax;
 		private boolean showValuePriorities;
 		private boolean isSelectionColoring;
+		private Integer selectedBestCombi;
 		
 		public interface Updater {
 			void prioChanged(GeneralizedID id);
@@ -2418,6 +2462,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			this.label1CellEditor = label1CellEditor;
 			this.label2CellEditor = label2CellEditor;
 			this.updater = updater;
+			
+			selectedBestCombi = null;
+			cellEditor_BestCombi = new Tables.ComboboxCellEditor<>(new Integer[] {});
+			cellEditor_BestCombi.setRenderer(this::convertBestCombi);
 			
 			cellEditor_Activated = new DefaultCellEditor(new JComboBox<>( new String[] {CELLEDITORVALUE_ACTIVATED,CELLEDITORVALUE_NOTACTIVATED} ));
 			cellEditor_TextField = new DefaultCellEditor(new JTextField());
@@ -2435,13 +2483,54 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			isSelectionColoring = true;
 		}
 	
+		public void test() {
+			Gui.log("BestCombi     : "); showValues(this::getBestCombiValue_Float, block.module.values);
+			Gui.log("SumOfInstalled: "); showValues(this::computeSumOfInstalled_Float, block.module.values);
+		}
+		private void showValues(Function<KnownModule.ValueDefinition,Float> getValue, Vector<KnownModule.ValueDefinition> valueDefs) {
+			for (KnownModule.ValueDefinition vd:valueDefs) {
+				Float value = getValue.apply(vd);
+				Gui.log("  %1.3f", value); 
+			}
+			Float priority = computeUpgradePriority(getValue, valueDefs);
+			Gui.log_ln("  ->  %1.3f", priority); 
+		}
+
+		public void updateBestCombis() {
+			selectedBestCombi = null;
+			cellEditor_BestCombi.setValues(createIntegerArray(block.bestCombinations==null ? 0 : block.bestCombinations.size()));
+			fireTableRowChanged(ROW_BEST_COMBI);
+		}
+
+		private BestCombinationsComputer.Combination getBestCombi(Integer index) {
+			if (index!=null && block.bestCombinations!=null && !block.bestCombinations.isEmpty()) {
+				if (0<=index && index<block.bestCombinations.size())
+					return block.bestCombinations.get(index);
+			}
+			return null;
+		}
+
+		private String convertBestCombi(Object obj) {
+			if (obj instanceof Integer) {
+				int index = (Integer) obj;
+				BestCombinationsComputer.Combination combi = getBestCombi(index);
+				if (combi!=null)
+					return String.format(Locale.ENGLISH, "[%02d] %1.3f", index+1, combi.prioValue);
+			}
+			return "<none>";
+		}
+
 		public void defineFinalInstallation(boolean b) {
 			this.defineFinalInstallation = b;
+			updateRowColIndexes();
 			fireTableStructureUpdate();
+			table.setPreferredScrollableViewportSize(table.getPreferredSize());
 		}
 		public void showValuePriorities(boolean b) {
 			this.showValuePriorities = b;
+			updateRowColIndexes();
 			fireTableStructureUpdate();
+			table.setPreferredScrollableViewportSize(table.getPreferredSize());
 		}
 		public void setValueColoringMinMax(boolean b) {
 			this.isValueColoringMinMax = b;
@@ -2451,7 +2540,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			this.isSelectionColoring = b;
 			table.repaint();
 		}
-
+		
 		public void stopEditing() {
 			if (table.isEditing()) {
 				TableCellEditor cellEditor = table.getCellEditor();
@@ -2493,8 +2582,16 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		private TableCellEditor getCellEditor(int rowIndex, int columnIndex) {
 			switch (columnIndex) {
 			case  COLUMN_INDEX : break;
-			case  COLUMN_LABEL1: if (rowIndex<nModules) return label1CellEditor;
-			case  COLUMN_LABEL2: if (rowIndex<nModules) return label2CellEditor;
+			
+			case  COLUMN_LABEL1:
+				if (rowIndex<nModules) return label1CellEditor;
+				if (rowIndex==ROW_BEST_COMBI) return cellEditor_BestCombi;
+				break;
+				
+			case  COLUMN_LABEL2:
+				if (rowIndex<nModules) return label2CellEditor;
+				break;
+				
 			default:
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
 				if (valueIndex<block.module.values.size()) {
@@ -2508,14 +2605,8 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						case PercentPlus: break;
 						}
 					}
-				} else {
-					if (showValuePriorities) {
-						if (valueIndex == block.module.values.size()+1)
-							return cellEditor_Checkbox;
-					} else
-						if (valueIndex == block.module.values.size())
-							return cellEditor_Checkbox;
-				}
+				} else if (rowIndex<nModules && columnIndex==COLUMN_INSTALL)
+					return cellEditor_Checkbox;
 				break;
 			}
 			return cellEditor_TextField;
@@ -2536,19 +2627,28 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case  COLUMN_LABEL2: return 150;
 			default:
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
-				if (valueIndex<block.module.values.size())
-					return 70;
-				if (valueIndex==block.module.values.size())
-					return 40;
-				if (valueIndex==block.module.values.size()+1 && showValuePriorities)
-					return 40;
-				return 150;
+				if (valueIndex<block.module.values.size()) return 70;
+				if (columnIndex==COLUMN_PRIORITY ) return 40;
+				if (columnIndex==COLUMN_INSTALL  ) return 40;
+				if (columnIndex==COLUMN_INSTALLED) return 150;
 			}
+			return 40;
 		}
 	
-		@Override public int getRowCount   () {
+		private void updateRowColIndexes() {
+			ROW_PRIORITY         = !showValuePriorities ? -1 : nModules;
+			ROW_BEST_COMBI       = !showValuePriorities ? -1 : nModules+1;
+			ROW_SUM_OF_INSTALLED = !defineFinalInstallation ? -1 : nModules + (showValuePriorities?2:0);
+			COLUMN_PRIORITY  = !showValuePriorities ? -1 : STANDARD_COLUMNS + block.module.values.size();
+			COLUMN_INSTALL   = !defineFinalInstallation ? -1 : STANDARD_COLUMNS + block.module.values.size() + 0 + (showValuePriorities?1:0);
+			COLUMN_INSTALLED = !defineFinalInstallation ? -1 : STANDARD_COLUMNS + block.module.values.size() + 1 + (showValuePriorities?1:0);
+			
+		}
+
+		@Override public int getRowCount() {
 			int c = nModules;
-			if (showValuePriorities) ++c;
+			if (showValuePriorities) c += 2;
+			if (defineFinalInstallation) c += 1;
 			return c;
 		}
 		@Override public int getColumnCount() {
@@ -2572,19 +2672,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			case COLUMN_LABEL2: return "Label 2";
 			default:
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
-				if (valueIndex<block.module.values.size())
-					return getVD(columnIndex).label;
-				if (showValuePriorities) {
-					if (valueIndex==block.module.values.size())
-						return "Prio";
-					if (valueIndex==block.module.values.size()+1)
-						return "Install";
-				} else {
-					if (valueIndex==block.module.values.size())
-						return "Install";
-				}
-				return "Installed";
+				if (valueIndex<block.module.values.size()) return getVD(columnIndex).label;
+				if (columnIndex==COLUMN_PRIORITY ) return "Prio";
+				if (columnIndex==COLUMN_INSTALL  ) return "Install";
+				if (columnIndex==COLUMN_INSTALLED) return "Installed";
 			}
+			return "????";
 		}
 	
 		@Override
@@ -2607,17 +2700,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					}
 					return Float.class;
 				}
-				if (showValuePriorities) {
-					if (valueIndex==block.module.values.size())
-						return Float.class;
-					if (valueIndex==block.module.values.size()+1)
-						return Boolean.class;
-				} else {
-					if (valueIndex==block.module.values.size())
-						return Boolean.class;
-				}
-				return String.class;
+				if (columnIndex==COLUMN_PRIORITY ) return Float.class;
+				if (columnIndex==COLUMN_INSTALL  ) return Boolean.class;
+				if (columnIndex==COLUMN_INSTALLED) return String.class;
 			}
+			return String.class;
 		}
 	
 		@Override
@@ -2627,53 +2714,101 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				upgrade = block.installedModules.get(rowIndex);
 			
 			switch (columnIndex) {
-			case COLUMN_INDEX : if (rowIndex>=nModules) return "";           return String.format("[%02d]", rowIndex+1);
-			case COLUMN_LABEL1: if (rowIndex>=nModules) return "";           return upgrade==null ? null : upgrade.label1;
-			case COLUMN_LABEL2: if (rowIndex>=nModules) return "Priority :"; return upgrade==null ? null : upgrade.label2;
+			case COLUMN_INDEX : if (rowIndex < nModules) return String.format("[%02d]", rowIndex+1); break;
+			case COLUMN_LABEL1: if (rowIndex < nModules && upgrade!=null) return upgrade.label1;
+				if (rowIndex==ROW_BEST_COMBI) return selectedBestCombi;
+				break;
+				
+			case COLUMN_LABEL2: if (rowIndex < nModules && upgrade!=null) return upgrade.label2;
+				if (rowIndex==ROW_PRIORITY        ) return "Priority :";
+				if (rowIndex==ROW_BEST_COMBI      ) return "Best Combination :";
+				if (rowIndex==ROW_SUM_OF_INSTALLED) return "Sum of Installed :";
+				break;
+				
 			default:
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
 				if (valueIndex<block.module.values.size()) {
 					KnownModule.ValueDefinition vd = getVD(columnIndex);
-					if (rowIndex<nModules) {
-						if (upgrade==null) return null;
-						Float value = upgrade.values.get(vd);
-						switch (vd.format) {
-						case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
-						case FloatPlus:
-						case Lightyears:
-						case PercentMinus:
-						case PercentPlus: break;
-						}
-						return value;
-					} else
-						return (float)vd.priority;
+					if (rowIndex < nModules           ) return upgrade==null ? null : getUpgradeValue(upgrade.values.get(vd), vd);
+					if (rowIndex==ROW_PRIORITY        ) return vd.priority;
+					if (rowIndex==ROW_BEST_COMBI      ) return getBestCombiValue(vd);
+					if (rowIndex==ROW_SUM_OF_INSTALLED) return computeSumOfInstalled(vd);
 				}
-				if (valueIndex == block.module.values.size() && showValuePriorities)
-					return rowIndex<nModules ? computeUpgradePriority(upgrade,block.module.values) : null;
-				if (valueIndex == block.module.values.size() + (showValuePriorities?1:0)) {
-					return rowIndex<finalSequence.length ? finalSequence[rowIndex]==block.module.moduleID : null;
-				}
-				return rowIndex<finalSequence.length && finalSequence[rowIndex]!=null ? getLabelOrID(finalSequence[rowIndex]) : null;
+				if (rowIndex==ROW_BEST_COMBI       && columnIndex==COLUMN_PRIORITY ) return computeUpgradePriority(this::getBestCombiValue_Float, block.module.values);
+				if (rowIndex==ROW_SUM_OF_INSTALLED && columnIndex==COLUMN_PRIORITY ) return computeUpgradePriority(this::computeSumOfInstalled_Float, block.module.values);
+				if (columnIndex==COLUMN_PRIORITY ) return rowIndex<nModules ? computeUpgradePriority(upgrade,block.module.values) : null;
+				if (columnIndex==COLUMN_INSTALL  ) return rowIndex<finalSequence.length ? finalSequence[rowIndex]==block.module.moduleID : null;
+				if (columnIndex==COLUMN_INSTALLED) return rowIndex<finalSequence.length && finalSequence[rowIndex]!=null ? getLabelOrID(finalSequence[rowIndex]) : null;
 			}
+			return null;
+		}
+
+		private Object getBestCombiValue(KnownModule.ValueDefinition vd) {
+			return getUpgradeValue(getBestCombiValue_Float(vd), vd);
+		}
+
+		private Float getBestCombiValue_Float(KnownModule.ValueDefinition vd) {
+			BestCombinationsComputer.Combination combi = getBestCombi(selectedBestCombi);
+			if (combi==null) return null;
+			return combi.values.get(vd);
+		}
+
+		private Object getUpgradeValue(Float value, KnownModule.ValueDefinition vd) {
+			switch (vd.format) {
+			case Activated: return value==null || value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
+			case FloatPlus:
+			case Lightyears:
+			case PercentMinus:
+			case PercentPlus: break;
+			}
+			return value;
+		}
+		private Object computeSumOfInstalled(KnownModule.ValueDefinition vd) {
+			float value = computeSumOfInstalled_Float(vd);
+			if (vd.format == KnownModule.ValueDefinition.Format.Activated)
+				return value<1 ? CELLEDITORVALUE_NOTACTIVATED : CELLEDITORVALUE_ACTIVATED;
+			return value;
+		}
+
+		private float computeSumOfInstalled_Float(KnownModule.ValueDefinition vd) {
+			float value = 0;
+			for (int i=0; i<block.installedModules.size(); i++) {
+				InstalledUpgrade upgrade = block.installedModules.get(i);
+				if (upgrade==null) continue;
+				
+				if (i>=finalSequence.length) continue;
+				if (finalSequence[i]!=block.module.moduleID) continue;
+				
+				Float v = upgrade.values.get(vd);
+				if (v!=null) {
+					if (vd.format != KnownModule.ValueDefinition.Format.Activated)
+						value += v;
+					else
+						if (value<1) value += v<1?0:1;
+				}
+			}
+			return value;
 		}
 
 		@Override
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
 			switch (columnIndex) {
 			case COLUMN_INDEX : return false;
-			case COLUMN_LABEL1:
+			case COLUMN_LABEL1: return rowIndex<nModules || rowIndex==ROW_BEST_COMBI;
 			case COLUMN_LABEL2: return rowIndex<nModules;
 			default:
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
-				if (valueIndex<block.module.values.size()) return true;
-				if (valueIndex==block.module.values.size() && showValuePriorities) return false;
-				if (valueIndex==block.module.values.size() + (showValuePriorities?1:0))
+				if (valueIndex <block.module.values.size()) {
+					if (rowIndex<nModules) return true;
+					if (rowIndex==ROW_PRIORITY) return true;
+				}
+				if (columnIndex==COLUMN_INSTALL)
 					if (rowIndex<finalSequence.length && defineFinalInstallation && !installTestAreRunning) {
 						GeneralizedID finalID = finalSequence[rowIndex];
 						return finalID==null || finalID==block.module.moduleID;
 					}
-				return false;
 			}
+			return false;
 		}
 	
 		@Override
@@ -2692,8 +2827,32 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			
 			switch (columnIndex) {
 			case COLUMN_INDEX : Debug.Assert(false); break;
-			case COLUMN_LABEL1: Debug.Assert(rowIndex<nModules); upgrade.label1 = (String)aValue; break;
-			case COLUMN_LABEL2: Debug.Assert(rowIndex<nModules); upgrade.label2 = (String)aValue; break;
+			
+			case COLUMN_LABEL1:
+				if (rowIndex<nModules)
+					upgrade.label1 = (String)aValue;
+				
+				else if (rowIndex==ROW_BEST_COMBI) {
+					if (aValue instanceof Integer) selectedBestCombi = (Integer) aValue;
+					else selectedBestCombi = null;
+					BestCombinationsComputer.Combination combi = getBestCombi(selectedBestCombi);
+					if (combi!=null) {
+						Gui.log_ln("Selected BestCombi: %s", Arrays.toString(combi.combi));
+					}
+					SwingUtilities.invokeLater(()->{
+						fireTableRowChanged(ROW_BEST_COMBI);
+						table.repaint();
+					});
+					
+				} else
+					Debug.Assert(false);
+				break;
+				
+			case COLUMN_LABEL2:
+				Debug.Assert(rowIndex<nModules);
+				upgrade.label2 = (String)aValue;
+				break;
+				
 			default:
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
 				if (valueIndex<block.module.values.size()) {
@@ -2709,30 +2868,41 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 						case PercentPlus: value = parseFloat((String)aValue); break;
 						}
 						upgrade.values.put(vd, value);
-					} else {
+					} else if (rowIndex==ROW_PRIORITY) {
 						Float f = parseFloat((String)aValue);
 						if (f!=null) {
 							vd.priority = f;
+							computeBestCombinations(block);
 							SwingUtilities.invokeLater(()->{
+								updateBestCombis();
 								fireTableColumnChanged(block.module.values.size());
 								table.repaint();
 								updater.prioChanged(block.module.moduleID);
 							});
 						}
-					}
-				} else {
-					if (valueIndex==block.module.values.size() + (showValuePriorities?1:0)) {
-						if (aValue instanceof Boolean && rowIndex<finalSequence.length) {
-							boolean b = (Boolean) aValue;
-							finalSequence[rowIndex] = b ? block.module.moduleID : null;
-							updater.finalSequenceChanged();
-						}
+					} else
+						Debug.Assert(false);
+					
+				} else if (columnIndex==COLUMN_INSTALL && rowIndex<finalSequence.length) {
+					if (aValue instanceof Boolean) {
+						boolean b = (Boolean) aValue;
+						finalSequence[rowIndex] = b ? block.module.moduleID : null;
+						updater.finalSequenceChanged();
+						if (ROW_SUM_OF_INSTALLED>=0)
+							fireTableRowChanged(ROW_SUM_OF_INSTALLED);
 					}
 				}
+
 				break;
 			}
 		}
 	
+		private Integer[] createIntegerArray(int length) {
+			Integer[] arr = new Integer[length];
+			for (int i=0; i<arr.length; i++) arr[i] = i;
+			return arr;
+		}
+
 		private Float parseFloat(String str) {
 			try {
 				return Float.parseFloat(str.replace(',','.'));
@@ -2764,7 +2934,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				int valueIndex = columnIndex-STANDARD_COLUMNS;
 				
-				if (valueIndex == block.module.values.size() + (showValuePriorities?1:0) && rowIndex<nModules) {
+				if (columnIndex==COLUMN_INSTALL && rowIndex<nModules) {
 					component = checkBox;
 					checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
 					checkBox.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
@@ -2779,11 +2949,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				
 				if (component instanceof JLabel) {
 					JLabel label = (JLabel) component;
-					int alignment = JLabel.LEFT;
+					int alignment = JLabel.RIGHT;
 					
-					if (rowIndex>=nModules)
-						alignment = JLabel.RIGHT;
-					else
+					if (rowIndex < nModules || (0<=valueIndex && valueIndex<block.module.values.size() && (rowIndex==ROW_SUM_OF_INSTALLED || rowIndex==ROW_BEST_COMBI) ) )
 						switch (columnIndex) {
 						case  COLUMN_INDEX : alignment = JLabel.CENTER; break;
 						case  COLUMN_LABEL1: alignment = JLabel.RIGHT; break;
@@ -2804,13 +2972,24 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 										label.setText(format.getFormatedValue((Float) value));
 									break;
 								}
-							} else if (showValuePriorities && valueIndex==block.module.values.size()) {
+							} else if (columnIndex==COLUMN_PRIORITY) {
 								alignment = JLabel.RIGHT;
 								if (value instanceof Float)
 									label.setText(String.format(Locale.ENGLISH,"%1.3f",value));
 							}
 							break;
 						}
+					
+					if ((rowIndex==ROW_SUM_OF_INSTALLED || rowIndex==ROW_BEST_COMBI) && columnIndex==COLUMN_PRIORITY ) {
+						alignment = JLabel.RIGHT;
+						if (value instanceof Float)
+							label.setText(String.format(Locale.ENGLISH,"%1.3f",value));
+					}
+						
+					if (rowIndex==ROW_BEST_COMBI && columnIndex==COLUMN_LABEL1) {
+						alignment = JLabel.LEFT;
+						label.setText(convertBestCombi(value));
+					}
 					
 					label.setHorizontalAlignment(alignment);
 				}
@@ -2835,6 +3014,18 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 							}
 						}
 					}
+					
+					if (rowIndex<nModules)
+						switch (columnIndex) {
+						case  COLUMN_INDEX :
+						case  COLUMN_LABEL1:
+						case  COLUMN_LABEL2:
+							BestCombinationsComputer.Combination combi = getBestCombi(selectedBestCombi);
+							if (combi!=null && combi.contains(rowIndex))
+								bg = Color.GREEN;
+							break;
+						}
+					
 					if (bg==null) {
 						if (value instanceof Float) {
 							float fValue = (Float) value;
@@ -3082,6 +3273,121 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				if (index>=0) return index+1;
 			}
 			return -1;
+		}
+	}
+	
+	private static final class BestCombinationsComputer {
+
+		private Session.SessionBlock block;
+		private int maxAmount;
+		private Vector<Combination> combinations;
+
+		public BestCombinationsComputer(Session.SessionBlock block) {
+			this.block = block;
+			combinations = null;
+			maxAmount = 0;
+		}
+
+		public Vector<Combination> compute(int maxAmount) {
+			this.maxAmount = maxAmount;
+			combinations = new Vector<>();
+			
+			int[] combi = new int[block.amount];
+			Arrays.fill(combi, -1);
+			loop(0,0,combi);
+			
+			return combinations;
+		}
+
+		private void loop(int loopDepth, int startIndex, int[] combi) {
+			if (loopDepth>=combi.length) {
+				compute(combi);
+			} else {
+				for (int i=startIndex; i<block.installedModules.size(); i++) {
+					InstalledUpgrade upgrade = block.installedModules.get(i);
+					if (upgrade==null) continue;
+					combi[loopDepth] = i;
+					loop(loopDepth+1, i+1, combi);
+				}
+				combi[loopDepth] = -1;
+			}
+		}
+
+		private void compute(int[] combi) {
+			Combination combination = new Combination(combi);
+			combination.computePrioValue(block);
+			
+			if (combinations.size()<maxAmount) {
+				combinations.add(combination);
+				combinations.sort(null);
+				return;
+			}
+			
+			if (combinations.lastElement().compareTo(combination)>0) {
+				combinations.add(combination);
+				combinations.sort(null);
+				combinations.remove(combinations.lastElement());
+				return;
+			}
+		}
+		
+		private static class Combination implements Comparable<Combination>{
+
+			HashMap<KnownModule.ValueDefinition,Float> values;
+			private int[] combi;
+			private Float prioValue;
+			
+			public Combination(int[] combi) {
+				this.combi = Arrays.copyOf(combi, combi.length);
+				values = new HashMap<>();
+				prioValue = null;
+			}
+
+			public boolean contains(int index) {
+				for (int i:combi) if (index==i) return true;
+				return false;
+			}
+
+			public void computePrioValue(Session.SessionBlock block) {
+				for (int i:combi) {
+					InstalledUpgrade upgrade = block.installedModules.get(i);
+					upgrade.values.forEach((vd,uValue)->{
+						if (uValue==null) return;
+						
+						Float value = values.get(vd);
+						if (value==null) {
+							values.put(vd,uValue);
+							
+						} else {
+							switch (vd.format) {
+							case Activated:
+								if (value<1 && uValue>=1)
+									values.put(vd,1f);
+								break;
+							case FloatPlus:
+							case Lightyears:
+							case PercentMinus:
+							case PercentPlus:
+								values.put(vd,uValue+value);
+								break;
+							}
+						}
+					});
+				}
+				
+				prioValue = computeUpgradePriority(values,block.module.values);
+			}
+
+			@Override
+			public int compareTo(Combination other) {
+				if (other==null) return -1;
+				if (other.prioValue==null) return -1;
+				if (this .prioValue==null) return +1;
+				if (this.prioValue<other.prioValue) return +1;
+				if (this.prioValue>other.prioValue) return -1;
+				return this.hashCode()-other.hashCode();
+			}
+			
 		}
 	}
 }

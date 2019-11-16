@@ -1222,6 +1222,9 @@ public class Gui {
 	}
 	
 
+	public static <AC extends Enum<AC>> JButton createButton(String title, Disabler<AC> disabler, AC actionCommand, ActionListener l) {
+		return createButton(title, l, disabler, actionCommand, true);
+	}
 	public static JButton createButton(String title, ActionListener l) {
 		return createButton(title, l, null, null, true);
 	}
