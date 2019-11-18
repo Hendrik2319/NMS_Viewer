@@ -585,13 +585,14 @@ public class SimplePanels {
 		public TeleportEndpointsPanel(SaveGameData data) {
 			super(data,"TeleportEndpointsTable",true,SaveViewer.DEBUG,true,data.teleportEndpoints,
 				new ColumnID[] {
-					new ColumnID("Name"            , String.class, 150,-1,250,250, te->te.name),
-					new ColumnID("Teleport Host"   , String.class,  50,-1,130,130, te->te.teleportHost   !=null ? te.teleportHost.label : te.teleportHostStr==null ? "" : "["+te.teleportHostStr+"]"),
-					new ColumnID("Universe Address", String.class,  80,-1,160,160, te->te.universeAddress==null ? "" : te.universeAddress.getCoordinates()),
-					new ColumnID("Planet / System" , String.class, 200,-1,420,420, te->te.universeAddress==null ? "" : te.universeAddress.getVerboseNameInOneLine(data.universe,2)),
-					new ColumnID("GPS Coords"      , String.class,  90,-1,180,180, te->te.gpsCoords      ==null ? "" : te.gpsCoords.toString()),
-					new ColumnID("Look At"         , String.class,  90,-1,170,170, te->te.lookAt         ==null ? "" : te.lookAt   .toString(" %1.4f ")),
-					new ColumnID("Position"        , String.class, 100,-1,220,220, te->te.position       ==null ? "" : te.position .toString(" %1.2f ")),
+					new ColumnID("Name"            , String.class, 40,-1,250,250, te->te.name),
+					new ColumnID("Teleport Host"   , String.class, 40,-1,130,130, te->te.teleportHost   !=null ? te.teleportHost.label : te.teleportHostStr==null ? "" : "["+te.teleportHostStr+"]"),
+					new ColumnID("Universe Address", String.class, 40,-1,160,160, te->te.universeAddress==null ? "" : te.universeAddress.getCoordinates()),
+					new ColumnID("Planet / System" , String.class, 40,-1,420,420, te->te.universeAddress==null ? "" : te.universeAddress.getVerboseNameInOneLine(data.universe,2)),
+					new ColumnID("GPS Coords (??)" , String.class, 40,-1,180,180, te->te.gpsCoords      ==null ? "" : te.gpsCoords.toString()),
+					new ColumnID("Look At"         , String.class, 40,-1,170,170, te->te.lookAt         ==null ? "" : te.lookAt   .toString(" %1.4f ")),
+					new ColumnID("Position"        , String.class, 40,-1,220,220, te->te.position       ==null ? "" : te.position .toString(" %1.2f ")),
+					new ColumnID("Unknown"         , String.class, 40,-1,140,140, te->te.getUnknownValues()),
 				}
 			);
 		}

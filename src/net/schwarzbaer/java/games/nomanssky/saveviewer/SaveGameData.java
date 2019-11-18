@@ -780,6 +780,8 @@ public class SaveGameData {
 		public Coordinates lookAt;
 		public UniverseAddress universeAddress;
 		public PolarCoordinates gpsCoords;
+		public Boolean unknown_a__;
+		public Boolean unknown_tww;
 		
 		public TeleportEndpoints() {
 			this.name = null;
@@ -818,6 +820,9 @@ public class SaveGameData {
 				te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
 				te.teleportHost     = TeleportHost.parseValue(te.teleportHostStr);
 				te.name             = getStringValue(objectValue, "Name");
+				te.unknown_a__      = getBoolValue(objectValue, "[??? a>; TeleportEndpoints Bool:false]");
+				te.unknown_tww      = getBoolValue(objectValue, "[??? tww TeleportEndpoints Bool:false]");
+				
 				
 				if (te.universeAddress!=null) {
 					data.universe.getOrCreate(te.universeAddress,obj->obj.foundInTeleportEndpoints.add(teleportEndpoints.size()),obj->obj.containsTeleportEndpoints=true);
@@ -830,6 +835,10 @@ public class SaveGameData {
 				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
 			
 			return teleportEndpoints;
+		}
+
+		public String getUnknownValues() {
+			return String.format("[a>;]=%s [tww]=%s", unknown_a__, unknown_tww);
 		}
 	}
 
@@ -1736,6 +1745,7 @@ public class SaveGameData {
 			MINING_BAD_5  ("Defekte Drohnen"              ,"Industrie: -2"),
 			
 			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
+			COMBAT_SEC_1  ("Gewaltige Kanonen"             ,"Kampf: +2"),
 			COMBAT_SEC_2  ("Ablative Panzerung"            ,"Kampf: +4"),
 			COMBAT_SEC_3  ("Tarngerät"                     ,"Kampf: +6"),
 			COMBAT_SEC_4  ("Ultraschallwaffe"              ,"Kampf: +2"),
@@ -1753,9 +1763,11 @@ public class SaveGameData {
 			
 			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
 			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
+			TRADING_SEC_4 ("Schlafdrohnen"               ,"Handel: +2"),
 			TRADING_SEC_5 ("Propagandagerät"             ,"Handel: +4"),
 			TRADING_SEC_6 ("Teleportationsgerät"         ,"Handel: +6"),
 			TRADING_TER_1 ("Wirtschaftsscanner"          ,"Handel: +1"),
+			TRADING_TER_2 ("Ferngesteuerter Marktanalysator","Handel: +2"),
 			TRADING_TER_3 ("Roboterdiener"               ,"Handel: +3"),
 			TRADING_TER_4 ("Automatischer Übersetzer"    ,"Handel: +1"),
 			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),

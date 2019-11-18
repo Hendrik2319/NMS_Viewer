@@ -26,11 +26,17 @@
 // write here: new SteamID( id, name )
 	];
 	
-	function fillContent() {
+	function fillContent( sortFcn ) {
 		var table = document.getElementById("SteamIDs");
 		if (table) {
-			for (var i=0; i<SteamIDs.length; i++) {
-				var SteamID = SteamIDs[i];
+			table.innerHTML = "";
+			var arr = SteamIDs;
+			if (sortFcn) {
+				arr = SteamIDs.map(function(a){return a;});
+				arr.sort(sortFcn);
+			}
+			for (var i=0; i<arr.length; i++) {
+				var SteamID = arr[i];
 				var tr = table.appendChild(document.createElement('tr'));
 				var td1 = tr.appendChild(document.createElement('td'));
 				var td2 = tr.appendChild(document.createElement('td'));
@@ -46,10 +52,29 @@
 		}
 	}
 	
-	window.addEventListener('load', fillContent);
+	function sortByID( a,b ) {
+		if (a.id < b.id) return -1;
+		if (a.id > b.id) return +1;
+		if (a.name < b.name) return -1;
+		if (a.name > b.name) return +1;
+		return 0;
+	}
+	
+	function sortByName( a,b ) {
+		if (a.name < b.name) return -1;
+		if (a.name > b.name) return +1;
+		if (a.id < b.id) return -1;
+		if (a.id > b.id) return +1;
+		return 0;
+	}
+	
+	window.addEventListener('load', function() { fillContent(); });
 </script>
 </head>
 <body>
+	<input type="button" value="unsorted"       onclick="fillContent();"></input>
+	<input type="button" value="sorted by ID"   onclick="fillContent( sortByID );"></input>
+	<input type="button" value="sorted by name" onclick="fillContent( sortByName );"></input>
 	<table id="SteamIDs"></table>
 </body>
 </html>

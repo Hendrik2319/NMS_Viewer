@@ -1546,14 +1546,14 @@ value.value=1.2000000e+01
 ModuleID=^U_SHIPGUN4
 Amount=3
 InstallPos=20,13,6
-valueDef.uniqueID=717A986FB29A08D7
-valueDef.label=Schaden
-valueDef.format=PercentPlus
 valueDef.uniqueID=5B551BDDCACEBFDB
 valueDef.label=Feuerrate
 valueDef.format=PercentPlus
 valueDef.uniqueID=190AEA7E3A0D4167
 valueDef.label=Hitzeverteilung
+valueDef.format=PercentPlus
+valueDef.uniqueID=717A986FB29A08D7
+valueDef.label=Schaden
 valueDef.format=PercentPlus
 
 [InstalledUpgrade]
