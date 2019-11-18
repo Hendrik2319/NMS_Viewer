@@ -2095,6 +2095,47 @@ class=Yellow
 short=2 Planeten
 info=
 
+[Reg00000066324C16]
+
+[Sys01F30066324C16]
+name=NMS France was here 
+race=Vykeen
+conflict=2
+conflict_label=gewalttätig
+economy=2
+economy_label=angemessen
+atlasinterface=false
+blackhole=false
+class=Blue
+short=5 Planeten
+info=
+
+[Pln11F30066324C16]
+name=Lompen
+biome=Exotic_Mega
+is extreme
+with water
+buriedTreasure=AncientBones
+resources=In_,CO2,Fe__
+short=hell-rot-orange
+info=
+short=Portal
+info=-22.52, +160.18
+
+[Pln21F30066324C16]
+name=Tashkent
+biome=AnomContour
+resources=In,Au,Fe__
+
+[Pln31F30066324C16]
+
+[Pln41F30066324C16]
+name=Glory to the Bizarro Star Empire!
+biome=Frozen
+resources=In,CO2,Co
+
+[Pln51F30066324C16]
+
 [Reg00000000BF1C2A]
 name=Pipere-Anomalie
 
@@ -3815,12 +3856,26 @@ short=3 Planeten
 info=
 
 [Reg000000006F3FC2]
+name=Gacris-Rand
 
 [Sys004C00006F3FC2]
+name=Udderes-Mynuu XIV
+race=Gek
+conflict=3
+conflict_label=aggressiv
+economy=2
+economy_label=angemessen
 atlasinterface=false
 blackhole=false
+class=Yellow
+short=4 Planeten
+info=
 
 [Pln104C00006F3FC2]
+name=Ketag 40/I4
+biome=Lush
+with water
+resources=Cu,Pf,Ag
 
 [Pln204C00006F3FC2]
 
@@ -4376,6 +4431,60 @@ biome=Barren
 resources=Cu,Py,Na
 short=Portal
 info=+57.11, +29.89
+
+[Sys00F800FE007004]
+name=Equule-Eme I
+race=Gek
+conflict=1
+conflict_label=ruhig
+economy=2
+economy_label=erfolgversprechend
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln10F800FE007004]
+name=Neu: Udlesp
+biome=AnomBeams
+resources=In,Au,Co
+
+[Pln20F800FE007004]
+name=Lorusala II
+biome=Lush
+resources=In,Pf,NaCl
+
+[Pln30F800FE007004]
+name=Rogatell XVIII
+biome=Airless
+buriedTreasure=SalvageableScrap
+resources=In,Co,Sr_Rost
+
+[Pln40F800FE007004]
+name=Downeyri Tarug
+biome=Exotic_Mega
+is extreme
+aggrSentinels
+with water
+gravitino balls
+resources=In_,CO2,NaCl
+short=dunkel-rot
+info=
+
+[Pln50F800FE007004]
+name=Shfordanah Kugos
+biome=Irradiated
+is extreme
+with water
+resources=In_,U,Co
+short=Portal
+info=+4.92, +160.08
+
+[Pln60F800FE007004]
+name=Omacr F6
+biome=AnomHexagons
+resources=In,Au,Co
 
 [Reg000000FEFDC005]
 name=Hudsto-Band
