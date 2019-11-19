@@ -870,7 +870,6 @@ public class SaveGameData {
 			pb.name            = getStringValue  (objectValue, "Name");
 			pb.baseTypeStr     = getStringValue  (objectValue, "BaseType", "BaseType_");
 			pb.baseType        = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
-			pb.value__wx7      = getIntegerValue_checked(objectValue, "??? [wx7]");
 			
 			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
 			
@@ -984,7 +983,6 @@ public class SaveGameData {
 		public BuildingObject[] objects;
 		public String baseTypeStr;
 		public BaseType baseType;
-		public Long value__wx7;
 		
 		public PersistentPlayerBase(SaveGameData source, int baseIndex) {
 			this.source = source;
@@ -1001,7 +999,6 @@ public class SaveGameData {
 			this.objects = null;
 			this.baseTypeStr = null;
 			this.baseType = null;
-			this.value__wx7 = null;
 		}
 	}
 
