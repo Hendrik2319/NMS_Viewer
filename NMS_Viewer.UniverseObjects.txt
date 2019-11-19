@@ -7772,6 +7772,25 @@ oldname=Ezawasahirish
 [Pln205000FE1FA68F]
 oldname=Itachita Irli
 
+[Reg000000FE1F86BC]
+
+[Sys01D200FE1F86BC]
+name=Gumaaters III
+race=Vykeen
+conflict=2
+conflict_label=unregelmäßig
+economy=3
+economy_label=wohlhabend
+atlasinterface=false
+blackhole=false
+short=2 Planeten
+info=
+
+[Pln21D200FE1F86BC]
+name=Nogenh XVII
+biome=Frozen
+resources=Cu,CO2,Fe__
+
 [Reg000000020E56D7]
 name=Ihtini-Nebel
 
