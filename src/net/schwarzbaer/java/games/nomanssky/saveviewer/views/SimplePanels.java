@@ -931,6 +931,7 @@ public class SimplePanels {
 				new ColumnID("Position"        ,    String.class,  95,-1,250,250, bbo->bbo.position==null || bbo.position.pos==null ? "" : bbo.position.pos.toString("%1.2f")+String.format(Locale.ENGLISH," [R:%1.1f]",bbo.position.pos.length())),
 				new ColumnID("Up"              ,    String.class,  75,-1,150,150, bbo->bbo.position==null || bbo.position.up ==null ? "" : bbo.position.up .toString("%1.4f")),
 				new ColumnID("At"              ,    String.class,  75,-1,150,150, bbo->bbo.position==null || bbo.position.at ==null ? "" : bbo.position.at .toString("%1.4f")),
+				new ColumnID("Message"         ,    String.class,  75,-1,150,150, bbo->bbo.message),
 			});
 			this.mainWindow = mainWindow;
 			this.addressToHighlight = null;
@@ -1263,7 +1264,9 @@ public class SimplePanels {
 				UserData ("UserData" ,    String.class, 40,-1, 80, 80),
 				Position ("Position" ,    String.class, 75,-1,150,150),
 				Up       ("Up"       ,    String.class, 85,-1,170,170),
-				At       ("At"       ,    String.class, 85,-1,170,170);
+				At       ("At"       ,    String.class, 85,-1,170,170),
+				Message  ("Message"  ,    String.class, 85,-1,170,170),
+				;
 				
 				private SimplifiedColumnConfig columnConfig;
 				
@@ -1299,6 +1302,7 @@ public class SimplePanels {
 					case Position : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
 					case Up       : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
 					case At       : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
+					case Message  : return obj.message;
 					}
 					return null;
 				}

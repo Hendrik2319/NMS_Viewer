@@ -221,10 +221,14 @@ DaC OnOtherSideOfPortal
 LIR PortalMarkerPosition_Local
 qW; PortalMarkerPosition_Offset
 h4X BaseVersion
+BpT [BaseMinorVersion]
+peI BaseType
+DPp BaseType_
+sHl [Message]
 1wj HiredWorker (HasTerminal?)
 gNy HasTerminal (HiredWorker?)
-pNt ??? [pNt]
-TJx ??? Pos? [TJx]
+pNt [??? pNt]
+TJx [??? TJx Pos?]
 mEH PlayerPositionInSystem
 l2U PlayerTransformAt
 tnP ShipPositionInSystem
@@ -292,8 +296,6 @@ nlG TeleportEndpoints
 gk4 LookAt
 iAF TeleportHost
 
-peI BaseType
-DPp BaseType_
 
 cL6 ??? BufferAnchors [cL6]
 r:j ??? GalacticAddresses [r:j]
@@ -418,7 +420,6 @@ qFl [??? qFl PlayerStateData Int:2]
 wb: [??? wb: PlayerStateData Bool:true]
 
 b76 [??? b76 InventorySlot Bool:true]
-BpT [??? BpT SubVersion]
 J=S [??? J=S OwnerID]
 vyN [??? vyN OwnerName]
 a>; [??? a>; TeleportEndpoints Bool:false]

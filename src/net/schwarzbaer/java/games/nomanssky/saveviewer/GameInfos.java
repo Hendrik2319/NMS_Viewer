@@ -108,12 +108,12 @@ public class GameInfos {
 	private static class UOD_SolarSystem extends UOD_UniverseObject {
 		Universe.SolarSystem.Race race;
 		Universe.SolarSystem.StarClass starClass;
+		Universe.SolarSystem.SystemState systemState;
 		Double distanceToCenter;
 		int conflictLevel;
 		int economyLevel;
 		String conflictLevelLabel;
 		String economyLevelLabel;
-		boolean isUnexplored;
 		Boolean hasAtlasInterface; 
 		Boolean hasBlackHole;
 		Long blackHoleTarget;
@@ -122,7 +122,7 @@ public class GameInfos {
 		public UOD_SolarSystem(UniverseAddress ua) {
 			super(ua, Type.SolarSystem);
 			race = null;
-			isUnexplored = false;
+			systemState = Universe.SolarSystem.SystemState.Normal;
 			starClass = null;
 			distanceToCenter = null;
 			conflictLevel = -1;
@@ -137,7 +137,7 @@ public class GameInfos {
 		public UOD_SolarSystem(SolarSystem sys) {
 			super(sys.getUniverseAddress(), Type.SolarSystem, sys);
 			race = sys.race;
-			isUnexplored = sys.isUnexplored;
+			systemState = sys.systemState;
 			starClass = sys.starClass;
 			distanceToCenter = sys.distanceToCenter;
 			conflictLevel = sys.conflictLevel;
@@ -362,7 +362,11 @@ public class GameInfos {
 						continue;
 					}
 					if (str.equals("unexplored")) {
-						system.isUnexplored = true;
+						system.systemState = Universe.SolarSystem.SystemState.Unexplored;
+						continue;
+					}
+					if (str.equals("abandoned")) {
+						system.systemState = Universe.SolarSystem.SystemState.Abandoned;
 						continue;
 					}
 					if (str.startsWith("atlasinterface=")) {
@@ -576,8 +580,8 @@ public class GameInfos {
 					system.economyLevelLabel = uod_system.economyLevelLabel;
 					if (withOutput) Gui.log_ln("   Economy Level Label of %s was defined: \"%s\"", objName, system.economyLevelLabel);
 				}
-				if (uod_system.isUnexplored) {
-					system.isUnexplored = uod_system.isUnexplored;
+				if (uod_system.systemState!=null) {
+					system.systemState = uod_system.systemState;
 					if (withOutput) Gui.log_ln("   %s was defined as unexplored", objName);
 				}
 				if (uod_system.hasAtlasInterface!=null) {
@@ -695,14 +699,18 @@ public class GameInfos {
 				if (uoData.oldname!=null) out.printf("oldname=%s\r\n",uoData.oldname);
 				
 				if (uod_system!=null) {
-					if (uod_system.isUnexplored)
+					if (uod_system.systemState == Universe.SolarSystem.SystemState.Unexplored)
 						out.printf("unexplored\r\n");
 					else {
 						if (uod_system.race              !=null) out.printf("race=%s\r\n",uod_system.race);
-						if (uod_system.conflictLevel     >=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
-						if (uod_system.conflictLevelLabel!=null) out.printf("conflict_label=%s\r\n",uod_system.conflictLevelLabel);
 						if (uod_system.economyLevel      >=0   ) out.printf("economy=%d\r\n",uod_system.economyLevel);
 						if (uod_system.economyLevelLabel !=null) out.printf("economy_label=%s\r\n",uod_system.economyLevelLabel);
+						if (uod_system.systemState == Universe.SolarSystem.SystemState.Abandoned)
+							out.printf("abandoned\r\n");
+						else {
+							if (uod_system.conflictLevel     >=0   ) out.printf("conflict=%d\r\n",uod_system.conflictLevel);
+							if (uod_system.conflictLevelLabel!=null) out.printf("conflict_label=%s\r\n",uod_system.conflictLevelLabel);
+						}
 					}
 					if (uod_system.hasAtlasInterface!=null) {
 						//if (uod_system.hasAtlasInterface || SolarSystem.shouldHaveAtlasInterface(uod_system.universeAddress.solarSystemIndex))

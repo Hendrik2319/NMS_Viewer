@@ -92,6 +92,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Reg
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.Race;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.StarClass;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem.SystemState;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
@@ -732,11 +733,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private JComboBox<Race> cmbbxRace;
 		private JComboBox<StarClass> cmbbxStarClass;
+		private JComboBox<SystemState> cmbbxSystemState;
 
 		private LabeledLevelsBlock llbConflict;
 		private LabeledLevelsBlock llbEconomy;
-
-		private JCheckBox chkbxUnexplored;
 
 		private JCheckBox chkbxAtlasInterface;
 		private JCheckBox chkbxBlackHole;
@@ -803,17 +803,17 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				@Override void     updateLevelLabelsGameInfos()       { GameInfos.updateEconomyLevelLabels(); }
 			};
 			
-			cmbbxRace         .addActionListener(e->{ if (isSettingContent) return; node.value.race      = (Race     )cmbbxRace     .getSelectedItem(); updateTreeNode(node, false); });
-			cmbbxStarClass    .addActionListener(e->{ if (isSettingContent) return; node.value.starClass = (StarClass)cmbbxStarClass.getSelectedItem(); updateTreeNode(node, false); });
+			cmbbxSystemState = new JComboBox<SystemState>( SystemState.values());
+			cmbbxSystemState.setRenderer(new Tables.NonStringRenderer<SystemState>(value->value==null?"":((SystemState)value).getLabel()));
 			
-			chkbxUnexplored = Gui.createCheckbox("is Unexplored", e->{
-				if (isSettingContent) return;
-				node.value.isUnexplored = chkbxUnexplored.isSelected();
-				cmbbxRace               .setEnabled(!node.value.isUnexplored);
-				llbConflict.setEnabled(!node.value.isUnexplored);
-				llbEconomy .setEnabled(!node.value.isUnexplored);
+			cmbbxRace       .addActionListener(e->{ if (isSettingContent) return; node.value.race        = (Race       )cmbbxRace       .getSelectedItem(); updateTreeNode(node, false); });
+			cmbbxStarClass  .addActionListener(e->{ if (isSettingContent) return; node.value.starClass   = (StarClass  )cmbbxStarClass  .getSelectedItem(); updateTreeNode(node, false); });
+			cmbbxSystemState.addActionListener(e->{ if (isSettingContent) return; node.value.systemState = (SystemState)cmbbxSystemState.getSelectedItem();
+				cmbbxRace  .setEnabled(node.value.systemState==SystemState.Normal || node.value.systemState==SystemState.Abandoned);
+				llbEconomy .setEnabled(node.value.systemState==SystemState.Normal || node.value.systemState==SystemState.Abandoned);
+				llbConflict.setEnabled(node.value.systemState==SystemState.Normal);
 				updateTreeNode(node, false);
-			}, false);
+			});
 			
 			chkbxAtlasInterface = Gui.createCheckbox("has Atlas Interface", e->{
 				if (isSettingContent) return;
@@ -875,7 +875,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			addCompToLeft (llbConflict.cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToLeft (chkbxUnexplored     , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (cmbbxSystemState    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			addCompToRight(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
@@ -906,22 +906,22 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			SolarSystem system = this.node.value;
 			
-			cmbbxRace          .setSelectedItem(system.race         );
-			cmbbxStarClass     .setSelectedItem(system.starClass    );
+			cmbbxRace     .setSelectedItem(system.race         );
+			cmbbxStarClass.setSelectedItem(system.starClass    );
 			llbConflict.setLevel(system.conflictLevel);
 			llbConflict.updateLevelLabels();
 			llbEconomy .setLevel(system.economyLevel);
 			llbEconomy .updateLevelLabels();
+			cmbbxSystemState.setSelectedItem(system.systemState);
 			
-			chkbxUnexplored    .setSelected(system.isUnexplored     );
 			chkbxAtlasInterface.setSelected(system.hasAtlasInterface);
 			chkbxBlackHole     .setSelected(system.hasBlackHole     );
 			chkbxRememTerm     .setSelected(system.withRemembranceTerminal);
 			updateBlackHoleTargetPanel();
 			
-			cmbbxRace  .setEnabled(!system.isUnexplored);
-			llbConflict.setEnabled(!system.isUnexplored);
-			llbEconomy .setEnabled(!system.isUnexplored);
+			cmbbxRace  .setEnabled(system.systemState==SystemState.Normal || system.systemState==SystemState.Abandoned);
+			llbEconomy .setEnabled(system.systemState==SystemState.Normal || system.systemState==SystemState.Abandoned);
+			llbConflict.setEnabled(system.systemState==SystemState.Normal);
 			
 			showInfos();
 		}
@@ -1270,7 +1270,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private ListMenu<StarClass> miSetStarClass;
 		private ListMenu<Integer> miSetConflictLevel;
 		private ListMenu<Integer> miSetEconomyLevel;
-		private JCheckBoxMenuItem miUnexplored;
+		private ListMenu<SystemState> miSetSystemState;
 		
 		Contextmenu_SolarSystem() {
 			super("SolarSystem");
@@ -1367,15 +1367,30 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetEconomyLevel.setShowSelectedValue(true);
 			add(miSetEconomyLevel);
 			
-			add(miUnexplored = new JCheckBoxMenuItem("Unexplored", false));
-			miUnexplored.addActionListener(e->{
-				if (clickedNode instanceof SolarSystemNode) {
-					((SolarSystemNode)clickedNode).value.isUnexplored = miUnexplored.isSelected();
-					miSetRace.setEnabled(!miUnexplored.isSelected());
-					miSetConflictLevel.setEnabled(!miUnexplored.isSelected());
-					updateTreeNodeAndInfoPanel(clickedNode, false);
+			miSetSystemState = new Gui.ListMenu<SystemState>("Set Dominant Race",SystemState.values(),null,
+				new Gui.ListMenuItems.ExternFunction<SystemState>() {
+					@Override public void setResult(SystemState value) {
+						if (clickedNode instanceof SolarSystemNode) {
+							((SolarSystemNode)clickedNode).value.systemState = value;
+							miSetRace         .setEnabled(value==SystemState.Normal || value==SystemState.Abandoned);
+							miSetEconomyLevel .setEnabled(value==SystemState.Normal || value==SystemState.Abandoned);
+							miSetConflictLevel.setEnabled(value==SystemState.Normal);
+							updateTreeNodeAndInfoPanel(clickedNode, false);
+						}
+					}
+					@Override public void configureMenuItem(JMenuItem menuItem, SystemState value) {
+						if (value==null) {
+							menuItem.setIcon(null);
+							menuItem.setText("");
+						} else {
+							menuItem.setIcon(null);
+							menuItem.setText(value.getLabel());
+						}
+					}
 				}
-			});
+			);
+			miSetRace.setShowSelectedValue(true);
+			add(miSetRace);
 			
 			addSeparator();
 			addDefaultItems();
@@ -1383,14 +1398,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		public void setSolarSystem(SolarSystem system) {
 			miSetName.setText(system.hasOriginalName()?"Change name":"Set name");
-			miSetRace.setValue(system.race);
-			miSetStarClass.setValue(system.starClass);
+			miSetRace         .setValue(system.race);
+			miSetStarClass    .setValue(system.starClass);
 			miSetConflictLevel.setValue(1<=system.conflictLevel&&system.conflictLevel<=3?system.conflictLevel:null);
 			miSetEconomyLevel .setValue(1<=system. economyLevel&&system. economyLevel<=3?system. economyLevel:null);
-			miUnexplored.setSelected(system.isUnexplored);
-			miSetRace.setEnabled(!system.isUnexplored);
-			miSetConflictLevel.setEnabled(!system.isUnexplored);
-			miSetEconomyLevel .setEnabled(!system.isUnexplored);
+			miSetSystemState  .setValue(system.systemState);
+			miSetRace         .setEnabled(system.systemState==SystemState.Normal || system.systemState==SystemState.Abandoned);
+			miSetEconomyLevel .setEnabled(system.systemState==SystemState.Normal || system.systemState==SystemState.Abandoned);
+			miSetConflictLevel.setEnabled(system.systemState==SystemState.Normal);
 		}
 	}
 	
@@ -2387,8 +2402,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 			private Gui.IconComboBox<Integer> cmbbxConflictLevel;
 			private Gui.IconComboBox<Integer> cmbbxEconomyLevel;
-
-			private TristateCheckBox chkbxUnexplored;
+			
+			private JComboBox<SystemState> cmbbxSystemState;
 
 			private TristateCheckBox chkbxAtlasInterface;
 			private TristateCheckBox chkbxBlackHole;
@@ -2434,6 +2449,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxStarClass.addActionListener(e->updateMarkers());
 				
+				cmbbxSystemState = new JComboBox<SystemState>( SaveViewer.addNull(SystemState.values()) );
+				cmbbxSystemState.setRenderer(new Tables.NonStringRenderer<SystemState>(value->value==null?"<all values>":((SystemState)value).getLabel()));
+				cmbbxSystemState.addActionListener(e->updateMarkers());
+				
 				cmbbxConflictLevel = new Gui.IconComboBox<Integer>( new Integer[] {null,1,2,3} ) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
@@ -2470,7 +2489,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxEconomyLevel.addActionListener(e->updateMarkers());
 				
-				chkbxUnexplored          = Gui.createTristateCheckBox("is unexplored"           , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxAtlasInterface      = Gui.createTristateCheckBox("has atlas interface"     , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxBlackHole           = Gui.createTristateCheckBox("has black hole"          , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxReachableByTeleport = Gui.createTristateCheckBox("is reachable by teleport", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
@@ -2485,7 +2503,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				left.add( cmbbxStarClass    , c );
 				left.add( cmbbxConflictLevel, c );
 				left.add( cmbbxEconomyLevel , c );
-				right.add( chkbxUnexplored         , c );
+				left.add( cmbbxSystemState  , c );
 				right.add( chkbxAtlasInterface     , c );
 				right.add( chkbxBlackHole          , c );
 				right.add( chkbxReachableByTeleport, c );
@@ -2503,7 +2521,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				cmbbxStarClass    .setSelectedItem(null);
 				cmbbxConflictLevel.setSelectedItem(null);
 				cmbbxEconomyLevel .setSelectedItem(null);
-				chkbxUnexplored         .setUndefined();
+				cmbbxSystemState  .setSelectedItem(null);
 				chkbxAtlasInterface     .setUndefined();
 				chkbxBlackHole          .setUndefined();
 				chkbxReachableByTeleport.setUndefined();
@@ -2526,7 +2544,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				Integer economyLevel = cmbbxEconomyLevel.getSelected();
 				if (economyLevel!=null && sys.economyLevel!=economyLevel) return false;
 				
-				if (!chkbxUnexplored         .isUndefined() && sys.isUnexplored           !=chkbxUnexplored    .isSelected()) return false;
+				SystemState systemState = (SystemState)cmbbxSystemState.getSelectedItem();
+				if (systemState!=null && sys.systemState!=systemState) return false;
+				
 				if (!chkbxAtlasInterface     .isUndefined() && sys.hasAtlasInterface      !=chkbxAtlasInterface.isSelected()) return false;
 				if (!chkbxBlackHole          .isUndefined() && sys.hasBlackHole           !=chkbxBlackHole     .isSelected()) return false;
 				if (!chkbxReachableByTeleport.isUndefined() && sys.additionalInfos.teleportEndpoints.isEmpty()==chkbxReachableByTeleport.isSelected()) return false;
@@ -2541,7 +2561,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					cmbbxStarClass    .getSelectedItem()==null &&
 					cmbbxConflictLevel.getSelectedItem()==null &&
 					cmbbxEconomyLevel .getSelectedItem()==null &&
-					chkbxUnexplored         .isUndefined() &&
+					cmbbxSystemState  .getSelectedItem()==null &&
 					chkbxAtlasInterface     .isUndefined() &&
 					chkbxBlackHole          .isUndefined() &&
 					chkbxReachableByTeleport.isUndefined() &&
@@ -3077,10 +3097,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					SolarSystemNode solarSystemNode = (SolarSystemNode)node;
 					SolarSystem system = solarSystemNode.value;
 					if (!system.additionalInfos.isEmpty() || system.hasAtlasInterface || system.hasBlackHole) {
-						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole))
+						if (solarSystemNode.cachedCustomIcon!=null && solarSystemNode.cachedCustomIcon.is(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.systemState==SystemState.Unexplored,system.hasAtlasInterface,system.hasBlackHole))
 							return solarSystemNode.cachedCustomIcon.get();
 						else {
-							Icon icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored);
+							Icon icon = SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.systemState==SystemState.Unexplored);
 							if (system.hasAtlasInterface)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Atlas));
 							if (system.hasBlackHole)
@@ -3091,11 +3111,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Freighter));
 							if (system.additionalInfos.hasAnomaly)
 								icon = IconSource.setSideBySide(icon,AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Anomaly));
-							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored,system.hasAtlasInterface,system.hasBlackHole);
+							solarSystemNode.cachedCustomIcon = new SolarSystemNode.CachedCustomIcon(icon,system.race,system.starClass,system.conflictLevel,system.economyLevel,system.systemState==SystemState.Unexplored,system.hasAtlasInterface,system.hasBlackHole);
 							return icon;
 						}
 					} else
-						return SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.isUnexplored);
+						return SolarSystemIcons.get(system.race,system.starClass,system.conflictLevel,system.economyLevel,system.systemState==SystemState.Unexplored);
 				}
 				break;
 			case Planet:

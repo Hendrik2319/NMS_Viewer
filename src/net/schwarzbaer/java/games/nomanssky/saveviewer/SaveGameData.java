@@ -116,8 +116,9 @@ public class SaveGameData {
 		knownWords2 = parseKnownWords("[KnownWords2]","[Word]","Races");
 		discoveryData = DiscoveryData.parse(this);
 		inventories = Inventories.parseInventories(this);
-		parseBaseBuildingObjects();
-		parsePersistentPlayerBases();
+		
+		baseBuildingObjects   = UnboundBuildingObject.parse(this);
+		persistentPlayerBases = PersistentPlayerBase.parseBases(this);
 		
 		AtlasStationAdressData    = parseUniverseAddressStructureArray("AtlasStationAdressData"   , json_data, "PlayerStateData", "AtlasStationAdressData");
 		NewAtlasStationAdressData = parseUniverseAddressStructureArray("NewAtlasStationAdressData", json_data, "PlayerStateData", "NewAtlasStationAdressData");
@@ -842,108 +843,77 @@ public class SaveGameData {
 		}
 	}
 
-	private void parsePersistentPlayerBases() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","PersistentPlayerBases");
-		if (arrayValue==null) return;
-		JSON_Array notParsableObjects = new JSON_Array();
-		
-//		persistentPlayerBases = new PersistentPlayerBases();
-		persistentPlayerBases = new Vector<>();
-		for (int baseIndex=0; baseIndex<arrayValue.size(); ++baseIndex) {
-			Value value = arrayValue.get(baseIndex);
-			JSON_Object objectValue = getObject(value);
-			if (objectValue==null) {
-				notParsableObjects.add(value);
-				continue;
-			}
-			
-			PersistentPlayerBase pb = new PersistentPlayerBase(this,baseIndex);
-			pb.baseVersion     = getIntegerValue (objectValue, "BaseVersion");
-			pb.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
-			pb.position        = Coordinates     .parse(objectValue, "Position");
-			pb.gpsCoords       = PolarCoordinates.parse(pb.position);
-			pb.forward         = Coordinates     .parse(objectValue, "Forward");
-			pb.userData        = getIntegerValue (objectValue, "UserData");
-			pb.lastUpdateTS    = TimeStamp.create(getIntegerValue (objectValue, "LastUpdateTimestamp"));
-			pb.rid             = getStringValue  (objectValue, "RID");
-			pb.owner           = Owner.parse     (objectValue, "Owner");
-			pb.name            = getStringValue  (objectValue, "Name");
-			pb.baseTypeStr     = getStringValue  (objectValue, "BaseType", "BaseType_");
-			pb.baseType        = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
-			
-			pb.objects = parsePersistentPlayerBasesObjects(objectValue, "Objects", pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
-			
-			if (pb.galacticAddress!=null) {
-				universe.getOrCreate(pb.galacticAddress,obj->obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size()),obj->obj.containsPersistentPlayerBases=true);
-			}
-			
-			persistentPlayerBases.add(pb);
-//			persistentPlayerBases.set(i,pb);
-		}
-		
-		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
-	}
-	
-	private BuildingObject[] parsePersistentPlayerBasesObjects(JSON_Object parentObj, String valueName, String baseType, int baseIndex) {
-		JSON_Array arrayValue = getArrayValue(parentObj,valueName);
-		if (arrayValue==null) return null;
-		JSON_Array notParsableObjects = new JSON_Array();
-		
-		Vector<BuildingObject> vector = new Vector<BuildingObject>();
-		for (int i=0; i<arrayValue.size(); i++) {
-			Value value = arrayValue.get(i);
-			JSON_Object objectValue = getObject(value);
-			if (objectValue==null) {
-				notParsableObjects.add(value);
-				continue;
-			}
-			
-			BuildingObject bbo = new BuildingObject(this);
-			parseBuildingObject(objectValue, bbo, "["+(baseIndex+1)+"]"+baseType, i);
-			
-			vector.add(bbo);
-		}
-		
-		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
-		
-		return vector.toArray(new BuildingObject[0]);
-	}
-
-	private void parseBuildingObject(JSON_Object objectValue, BuildingObject bbo, String label, int index) {
-		bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
-		bbo.objectID  = getStringValue  (objectValue, "ObjectID");
-		bbo.userData  = getIntegerValue (objectValue, "UserData");
-		bbo.position  = Position.parse  (objectValue, "Position", "Up", "At");
-		if (bbo.objectID!=null) {
-			GeneralizedID id = GameInfos.productIDs.get(bbo.objectID, this, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
-			id.getUsage(this).addBBOUsage(label,index);
-		}
-	}
-
-//	public static class PersistentPlayerBases {
-//		public PersistentPlayerBase planetBase;
-//		public PersistentPlayerBase freighterBase;
-//		public PersistentPlayerBase otherPlayersBase;
-//		public Vector<PersistentPlayerBase> additionalBases;
-//		private PersistentPlayerBases() {
-//			this.planetBase       = null;
-//			this.freighterBase    = null;
-//			this.otherPlayersBase = null;
-//			this.additionalBases = new Vector<>();
-//		}
-//		public void set(int i, PersistentPlayerBase pb) {
-//			switch(i) {
-//			case 0: planetBase       = pb; break;
-//			case 1: freighterBase    = pb; pb.isFreighterBase=true; break;
-//			case 2: otherPlayersBase = pb; break;
-//			default: additionalBases.add(pb); break;
-//			}
-//		}
-//	}
-
 	public static class PersistentPlayerBase {
+
+		private static Vector<PersistentPlayerBase> parseBases(SaveGameData data) {
+				JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","PersistentPlayerBases");
+				if (arrayValue==null) return null;
+				JSON_Array notParsableObjects = new JSON_Array();
+				
+		//		persistentPlayerBases = new PersistentPlayerBases();
+				Vector<PersistentPlayerBase> persistentPlayerBases = new Vector<>();
+				for (int baseIndex=0; baseIndex<arrayValue.size(); ++baseIndex) {
+					Value value = arrayValue.get(baseIndex);
+					JSON_Object objectValue = getObject(value);
+					if (objectValue==null) {
+						notParsableObjects.add(value);
+						continue;
+					}
+					
+					PersistentPlayerBase pb = new PersistentPlayerBase(data,baseIndex);
+					pb.baseVersion      = getIntegerValue (objectValue, "BaseVersion");
+					pb.baseMinorVersion = getIntegerValue (objectValue, "[BaseMinorVersion]");
+					pb.galacticAddress  = parseUniverseAddressField(objectValue, "GalacticAddress");
+					pb.position         = Coordinates     .parse(objectValue, "Position");
+					pb.gpsCoords        = PolarCoordinates.parse(pb.position);
+					pb.forward          = Coordinates     .parse(objectValue, "Forward");
+					pb.userData         = getIntegerValue (objectValue, "UserData");
+					pb.lastUpdateTS     = TimeStamp.create(getIntegerValue (objectValue, "LastUpdateTimestamp"));
+					pb.rid              = getStringValue  (objectValue, "RID");
+					pb.owner            = Owner.parse     (objectValue, "Owner");
+					pb.name             = getStringValue  (objectValue, "Name");
+					pb.baseTypeStr      = getStringValue  (objectValue, "BaseType", "BaseType_");
+					pb.baseType         = PersistentPlayerBase.BaseType.parseValue(pb.baseTypeStr);
+					
+					pb.objects = parseBaseObjects(data, getArrayValue(objectValue,"Objects"), pb.baseTypeStr!=null?pb.baseTypeStr:"Base", baseIndex);
+					
+					if (pb.galacticAddress!=null) {
+						data.universe.getOrCreate(pb.galacticAddress,obj->obj.foundInPersistentPlayerBases.add(persistentPlayerBases.size()),obj->obj.containsPersistentPlayerBases=true);
+					}
+					
+					persistentPlayerBases.add(pb);
+				}
+				
+				if (!notParsableObjects.isEmpty())
+					SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+				
+				return persistentPlayerBases;
+			}
+
+		private static BuildingObject[] parseBaseObjects(SaveGameData source, JSON_Array arrayValue, String baseType, int baseIndex) {
+			if (arrayValue==null) return null;
+			JSON_Array notParsableObjects = new JSON_Array();
+			
+			Vector<BuildingObject> vector = new Vector<BuildingObject>();
+			for (int i=0; i<arrayValue.size(); i++) {
+				Value value = arrayValue.get(i);
+				JSON_Object objectValue = getObject(value);
+				if (objectValue==null) {
+					notParsableObjects.add(value);
+					continue;
+				}
+				
+				BuildingObject bbo = new BuildingObject(source);
+				BuildingObject.parseBuildingObject(source, objectValue, bbo, "["+(baseIndex+1)+"]"+baseType, i);
+				
+				vector.add(bbo);
+			}
+			
+			if (!notParsableObjects.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
+			
+			return vector.toArray(new BuildingObject[vector.size()]);
+		}
 
 		public enum BaseType {
 			FreighterBase     ("F","Freighter Base","Players Base on Freighter"),
@@ -970,66 +940,25 @@ public class SaveGameData {
 		public final SaveGameData source;
 		public final int baseIndex;
 		
-		public UniverseAddress galacticAddress;
-		public String name;
-		public Owner owner;
-		public Long baseVersion;
-		public String rid;
-		public TimeStamp lastUpdateTS;
-		public Long userData;
-		public Coordinates forward;
-		public Coordinates position;
-		public PolarCoordinates gpsCoords;
-		public BuildingObject[] objects;
-		public String baseTypeStr;
-		public BaseType baseType;
+		public UniverseAddress galacticAddress = null;
+		public String name = null;
+		public Owner owner = null;
+		public Long baseVersion = null;
+		public Long baseMinorVersion = null;
+		public String rid = null;
+		public TimeStamp lastUpdateTS = null;
+		public Long userData = null;
+		public Coordinates forward = null;
+		public Coordinates position = null;
+		public PolarCoordinates gpsCoords = null;
+		public BuildingObject[] objects = null;
+		public String baseTypeStr = null;
+		public BaseType baseType = null;
 		
 		public PersistentPlayerBase(SaveGameData source, int baseIndex) {
 			this.source = source;
 			this.baseIndex = baseIndex;
-			this.galacticAddress = null;
-			this.name = null;
-			this.owner = null;
-			this.baseVersion = null;
-			this.rid = null;
-			this.userData = null;
-			this.forward = null;
-			this.position = null;
-			this.gpsCoords = null;
-			this.objects = null;
-			this.baseTypeStr = null;
-			this.baseType = null;
 		}
-	}
-
-	private void parseBaseBuildingObjects() {
-		JSON_Array arrayValue = getArrayValue(json_data,"PlayerStateData","BaseBuildingObjects");
-		if (arrayValue==null) return;
-		JSON_Array notParsableObjects = new JSON_Array();
-		
-		Vector<UnboundBuildingObject> vector = new Vector<UnboundBuildingObject>();
-		for (int i=0; i<arrayValue.size(); i++) {
-			Value value = arrayValue.get(i);
-			JSON_Object objectValue = getObject(value);
-			if (objectValue==null) {
-				notParsableObjects.add(value);
-				continue;
-			}
-			UnboundBuildingObject bbo = new UnboundBuildingObject(this);
-			bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
-			bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
-			parseBuildingObject(objectValue, bbo, "BaseBuildingObjects", i);
-			
-			if (bbo.galacticAddress!=null) {
-				universe.getOrCreate(bbo.galacticAddress,obj->obj.foundInBaseBuildingObjects.add(vector.size()),obj->obj.containsBaseBuildingObjects=true);
-			}
-			
-			vector.add(bbo);
-		}
-		baseBuildingObjects = vector.toArray(new UnboundBuildingObject[0]);
-		
-		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
 	}
 
 	public static class UnboundBuildingObject extends BuildingObject {
@@ -1041,9 +970,52 @@ public class SaveGameData {
 			this.galacticAddress = null;
 			this.regionSeed = null;
 		}
+
+		private static UnboundBuildingObject[] parse(SaveGameData data) {
+			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","BaseBuildingObjects");
+			if (arrayValue==null) return null;
+			JSON_Array notParsableObjects = new JSON_Array();
+			
+			Vector<UnboundBuildingObject> vector = new Vector<UnboundBuildingObject>();
+			for (int i=0; i<arrayValue.size(); i++) {
+				Value value = arrayValue.get(i);
+				JSON_Object objectValue = getObject(value);
+				if (objectValue==null) {
+					notParsableObjects.add(value);
+					continue;
+				}
+				UnboundBuildingObject bbo = new UnboundBuildingObject(data);
+				bbo.galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
+				bbo.regionSeed      = parseHexFormatedNumber   (objectValue, "RegionSeed");
+				BuildingObject.parseBuildingObject(data, objectValue, bbo, "BaseBuildingObjects", i);
+				
+				if (bbo.galacticAddress!=null) {
+					data.universe.getOrCreate(bbo.galacticAddress,obj->obj.foundInBaseBuildingObjects.add(vector.size()),obj->obj.containsBaseBuildingObjects=true);
+				}
+				
+				vector.add(bbo);
+			}
+			
+			if (!notParsableObjects.isEmpty())
+				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
+			
+			return vector.toArray(new UnboundBuildingObject[0]);
+		}
 	}
 
 	public static class BuildingObject {
+
+		private static void parseBuildingObject(SaveGameData source, JSON_Object objectValue, BuildingObject bbo, String label, int index) {
+			bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
+			bbo.objectID  = getStringValue  (objectValue, "ObjectID");
+			bbo.userData  = getIntegerValue (objectValue, "UserData");
+			bbo.message   = getStringValue_checked(objectValue, "[Message]");
+			bbo.position  = Position.parse  (objectValue, "Position", "Up", "At");
+			if (bbo.objectID!=null) {
+				GeneralizedID id = GameInfos.productIDs.get(bbo.objectID, source, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
+				id.getUsage(source).addBBOUsage(label,index);
+			}
+		}
 
 		//public GeneralizedID objectID1;
 		public String specialName;
@@ -1051,6 +1023,8 @@ public class SaveGameData {
 		public TimeStamp timestamp;
 		public String objectID;
 		public Long userData;
+		public String message;
+
 		public Position position;
 		public final SaveGameData source;
 		
@@ -3495,6 +3469,19 @@ public class SaveGameData {
 		
 		public static final class SolarSystem extends DiscoverableObject {
 			
+			public enum SystemState {
+				Normal("Normal"),
+				Unexplored("Unerforscht"),
+				Abandoned("Aufgegeben"),
+				;
+				private String label;
+				private SystemState(String label) {
+					this.label = label;
+				}
+				public String getLabel() {
+					return label;
+				}
+			}
 			public enum StarClass {
 				Yellow("G","F"), Red("K","M"), Green("E"), Blue("B","O");
 				
@@ -3536,13 +3523,13 @@ public class SaveGameData {
 			
 			public Race race = null;
 			public StarClass starClass = null;
+			public SystemState systemState = SystemState.Normal;
 			
 			public int conflictLevel = -1;
 			public String conflictLevelLabel = null;
 			public int economyLevel = -1;
 			public String economyLevelLabel = null;
 			
-			public boolean isUnexplored = false; 
 			public Double distanceToCenter = null;
 			
 			public boolean hasAtlasInterface; 
@@ -3579,7 +3566,7 @@ public class SaveGameData {
 				String strDataName = (!hasUploadedName()?"":(" | "+getUploadedName()));
 				
 				String strRace = (race==null)?"":(" ["+race.fullName+"]");
-				if (isUnexplored) strRace = " <Unexplored>";
+				if (systemState == SystemState.Unexplored) strRace = " <Unexplored>";
 				
 				HashSet<String> foundLabels = new HashSet<>();
 				for (Planet p:planets) {

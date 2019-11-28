@@ -3,42 +3,33 @@
 [Sys00010000801801]
 name=Alpha Polaris
 race=Korvax
+economy=1
+economy_label=mittellos
 conflict=1
+conflict_label=belanglos
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=
-info=Konfliktstufe: belanglos
-short=
-info=Wirtschaft: mittellos
 
 [Pln10010000801801]
 name=Alpha Polaris 1
 biome=Airless
 resources=Cu,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, Cu
 
 [Pln20010000801801]
 name=Dinae
 biome=Frozen
 resources=Cu,CO2,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Pln30010000801801]
 name=Alpha Polaris Prime
 biome=Lush
 resources=Cu,Pf,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, Pf, Cu
 
 [Pln40010000801801]
 name=Ebashane
 biome=Barren
 resources=Cu,Py,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, Py, Cu
 
 [Pln50010000801801]
 name=Alpha Polaris 3
@@ -47,15 +38,11 @@ with water
 resources=Cu_,CO2,Co
 short=ExtCold
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> Co, CO2, #Cu
 
 [Pln60010000801801]
 name=Aturin
 biome=Irradiated
 resources=Cu,U,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, U, Cu
 
 [Reg000000231C1823]
 
@@ -91,8 +78,6 @@ resources=Cd,Au,NaCl
 short=Community Quest 8/8
 info=
 short=
-info=<ParsedPlanetaryResources> Cd, Au, NaCl
-short=
 info="Rasselnder Planet"
 
 [Pln21FB00FE0528FF]
@@ -103,8 +88,6 @@ gravitino balls
 resources=Cd,Ag,Na
 short=
 info="Metallurgischer Planet"
-short=
-info=<ParsedPlanetaryResources> Cd, Ag, Na
 
 [Pln31FB00FE0528FF]
 name=Cucrial Primus
@@ -113,24 +96,18 @@ aggrSentinels
 gravitino balls
 resources=Cd,Ag,Na
 short=
-info=<ParsedPlanetaryResources> Cd, Ag, Na
-short=
 info="Rasselnder Planet"
 
 [Pln41FB00FE0528FF]
 name=Inusuchri IX
 biome=Scorched
 resources=Cd,P,Na
-short=
-info=<ParsedPlanetaryResources> Cd, P, Na
 
 [Pln51FB00FE0528FF]
 name=Community
 biome=Exotic_Mega
 buriedTreasure=AncientBones
 resources=Cd,P,NaCl
-short=
-info=<ParsedPlanetaryResources> Cd, P, NaCl
 short=Monochrom-Rot
 info=
 
@@ -140,10 +117,10 @@ name=Xegibbuyf-Quadrant
 [Sys014000FFEC5918]
 name=Kimmot-Rol XIV
 race=Korvax
-conflict=2
-conflict_label=reizbar
 economy=2
 economy_label=In Entwicklung
+conflict=2
+conflict_label=reizbar
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -183,8 +160,6 @@ distance=688533.000000
 name=Yunnesit Tau
 biome=Lush
 resources=Cu,Pf,Fe_,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Fe#, Pf, Cu, Eiweißperle
 
 [Pln204A0002FDC947]
 name=Torio 53/S1
@@ -193,15 +168,11 @@ is extreme
 resources=Cu_,CO2,Na
 short=ExtCold
 info=Stufe 3
-short.P=#Cu
-info=<ParsedPlanetaryResources> Na, CO2, #Cu
 
 [Pln304A0002FDC947]
 name=Ennsylv
 biome=Scorched
 resources=Cu,P,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, P, Cu
 
 [Sys00790002FDC947]
 name=Akirnaf
@@ -219,10 +190,10 @@ info=
 [Sys00370002F1695C]
 name=Imuscat "The $$$ system" 
 race=Korvax
-conflict=3
-conflict_label=hoch
 economy=3
 economy_label=wohlhabend
+conflict=3
+conflict_label=hoch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -244,11 +215,10 @@ name=Oslobol
 race=Vykeen
 economy=1
 economy_label=erfolglos
+abandoned
 atlasinterface=false
 blackhole=false
 class=Blue
-short=aufgegeben
-info=
 short=5  Planeten
 info=
 
@@ -288,35 +258,29 @@ name=Ninunkamp-Instabilität
 [Sys00160004E7D981]
 name=Ranarfi-Ste XIV
 race=Gek
+economy=3
+economy_label=florierend
 conflict=1
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=W: florierend
-info=Wirtschaft 3
 
 [Pln10160004E7D981]
 name=Aguc 14/H3
 biome=Frozen
 resources=Cu,CO2,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Pln20160004E7D981]
 name=Pusc XVIII
 biome=Lush
 with water
 resources=Cu,Pf,Co,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Co, Pf, Cu, Eiweißperle
 
 [Pln30160004E7D981]
 name=Atsuy 17/P1
 biome=Barren
 with water
 resources=Cu,Py,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, Py, Cu
 
 [Sys00790004E7D981]
 name=Vohistnes XII
@@ -333,12 +297,12 @@ info=
 name=Esvega Tau
 biome=Frozen
 resources=Cu,CO2,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Reg000000FE2BA98C]
 
 [Sys015600FE2BA98C]
+atlasinterface=false
+blackhole=false
 
 [Pln115600FE2BA98C]
 
@@ -374,10 +338,10 @@ name=Tozoschu-Sektor
 [Sys003900072799A3]
 name=Tousov
 race=Korvax
-conflict=1
-conflict_label=nicht bedrohlich
 economy=1
 economy_label=erfolglos
+conflict=1
+conflict_label=nicht bedrohlich
 atlasinterface=false
 blackhole=false
 remembrance terminal
@@ -402,10 +366,10 @@ name=Meer von Ximucalem
 [Sys007A00FDF509A9]
 name=Rominsky VII
 race=Vykeen
-conflict=1
-conflict_label=mild
 economy=1
 economy_label=erfolglos
+conflict=1
+conflict_label=mild
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -418,10 +382,10 @@ name=Wibereb
 [Sys005600FCCE59C1]
 name=Stefie System 1
 race=Vykeen
-conflict=3
-conflict_label=gewaltig
 economy=2
 economy_label=nachhaltig
+conflict=3
+conflict_label=gewaltig
 atlasinterface=false
 blackhole=false
 remembrance terminal
@@ -505,14 +469,14 @@ info=
 [Sys007900FEEBAA17]
 name=Awatarm-Apug
 race=Vykeen
+economy=2
+economy_label=erfolgversprechend
 conflict=2
 atlasinterface=false
 blackhole=true
 blackholetarget=00390003A5FDF5
 class=Yellow
 short=2 Planeten
-info=
-short=W: Erfolgversprechend
 info=
 
 [Reg000000FCBF2A5B]
@@ -544,8 +508,6 @@ info=
 name=Aizun 56/P7
 biome=Irradiated
 resources=Cu,U,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, U, Cu
 
 [Sys00790004369A84]
 name=Ittorid-Enbas VIII
@@ -569,6 +531,7 @@ blackhole=false
 [Reg000000F8C07A8D]
 
 [Sys007900F8C07A8D]
+atlasinterface=false
 blackhole=true
 
 [Reg000000FA43CAAE]
@@ -577,10 +540,10 @@ name=Ryoea-Quadrant
 [Sys009F00FA43CAAE]
 name=Rajans-Isrom
 race=Vykeen
-conflict=2
-conflict_label=gewalttätig
 economy=3
 economy_label=opulent
+conflict=2
+conflict_label=gewalttätig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -627,10 +590,10 @@ name=Kryume-Masse
 [Sys0127000340AB14]
 name=Enhets
 race=Gek
-conflict=2
-conflict_label=streitlustig
 economy=2
 economy_label=nachhaltig
+conflict=2
+conflict_label=streitlustig
 atlasinterface=false
 blackhole=false
 class=Green
@@ -777,8 +740,6 @@ biome=Frozen
 with water
 buriedTreasure=SalvageableScrap
 resources=Cu,CO2,Co
-short=
-info=<ParsedPlanetaryResources> Co, CO2, Cu
 
 [Pln207A00F9A8CBC3]
 name=Gilycity XVII
@@ -787,11 +748,7 @@ aggrSentinels
 gravitino balls
 resources=Cu,Au,Fe__
 short=
-info=<ParsedPlanetaryResources> Cu, Au, Fe##
-short=
 info="Sprudelnder Mond"
-short=
-info=Gebäude: "Grenzüberschreitung"
 
 [Reg000000FAA8CBC3]
 name=Cuvits-Untiefe
@@ -808,15 +765,11 @@ class=Yellow
 name=Lukeswo
 biome=Irradiated
 resources=Cu,U,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, U, Cu
 
 [Pln207A00FAA8CBC3]
 name=Flori
 biome=Frozen
 resources=Cu,CO2,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, CO2, Cu
 
 [Reg000000F9A8DBC3]
 name=Rasdemit
@@ -836,16 +789,12 @@ aggrSentinels
 with water
 gravitino balls
 resources=Cu,NH3,Na
-short=
-info=<ParsedPlanetaryResources> Na, NH3, Cu
 
 [Pln207A00F9A8DBC3]
 name=Egemis VI
 biome=Lush
 with water
 resources=Cu,Pf,NaCl,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Pln307A00F9A8DBC3]
 name=Hisom 60/H8
@@ -853,23 +802,17 @@ biome=Barren
 aggrSentinels
 gravitino balls
 resources=Cu,Py,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, Py, Cu
 
 [Pln407A00F9A8DBC3]
 name=Igglenae Delta
 biome=Toxic
 resources=Cu,NH3,Co
-short=
-info=<ParsedPlanetaryResources> Co, NH3, Cu
 
 [Pln507A00F9A8DBC3]
 name=Kuton Sigma
 biome=Lush
 with water
 resources=Cu,Pf,NaCl,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Reg000000FAA8CBC4]
 name=Gaentam-Rand
@@ -887,8 +830,6 @@ class=Yellow
 name=Ucsones Beta
 biome=Irradiated
 resources=Cu,U,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, U, Cu
 
 [Pln200800FAA8CBC4]
 name=Neu: Durha
@@ -896,23 +837,17 @@ biome=Scorched
 resources=Cu_,P,Na
 short=ExtHot
 info=Stufe 2
-short=
-info=<ParsedPlanetaryResources> Na, P, #Cu
 
 [Pln300800FAA8CBC4]
 name=Urbi
 biome=Lush
 with water
 resources=Cu,Pf,Na
-short=
-info=<ParsedPlanetaryResources> Na, Pf, Cu
 
 [Pln400800FAA8CBC4]
 name=Nurtn
 biome=AnomMetalFlowers
 resources=Cu,Au,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, Au, Cu
 short=
 info="Metallüberzogener Planet"
 
@@ -921,8 +856,6 @@ name=Jevo
 biome=Lush
 with water
 resources=Cu,Pf,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, Cu
 
 [Sys000A00FAA8CBC4]
 name=Lograt
@@ -937,15 +870,11 @@ class=Yellow
 name=Aeumo VII
 biome=Toxic
 resources=Cu,NH3,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, NH3, Cu
 
 [Pln200A00FAA8CBC4]
 name=Idor 41/U6
 biome=Lush
 resources=Cu,Pf,NaCl,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Pln300A00FAA8CBC4]
 name=Kieve Minoris
@@ -954,10 +883,10 @@ is extreme
 resources=Cu_,CO2,NaCl
 short=Extrem 3
 info=
-short=
-info=<ParsedPlanetaryResources> NaCl, CO2, #Cu
 
 [Sys001100FAA8CBC4]
+atlasinterface=false
+blackhole=false
 
 [Sys001200FAA8CBC4]
 name=Muzhel-Erk XVI
@@ -972,23 +901,17 @@ name=Vulptone VII
 biome=AnomLimeStars
 resources=Cu,Au,NaCl
 short=
-info=<ParsedPlanetaryResources> NaCl, Au, Cu
-short=
 info="Verkalkter Planet"
 
 [Pln201200FAA8CBC4]
 name=Rerok
 biome=Toxic
 resources=Cu,NH3,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, NH3, Cu
 
 [Pln301200FAA8CBC4]
 name=Pacalloy XIX
 biome=AnomBones
 resources=Cu,Au,Na
-short=
-info=<ParsedPlanetaryResources> Na, Au, Cu
 short=
 info="Rasselnder Planet"
 
@@ -997,8 +920,6 @@ name=Neu: Aron
 biome=Lush
 with water
 resources=Cu,Pf,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, Pf, Cu
 short=U
 info=Uran ("Metall-Finger")
 
@@ -1006,19 +927,21 @@ info=Uran ("Metall-Finger")
 name=Kewesterd Yugaw
 biome=Airless
 resources=Cu,Na,Sr_Rost
-short=
-info=<ParsedPlanetaryResources> Na, Sr_Rost, Cu
 short="Katastrophales Terraforming"
 info=
 
 [Sys001300FAA8CBC4]
 oldname=Ankovsky XV
 race=Korvax
+atlasinterface=false
+blackhole=false
 class=Yellow
 
 [Sys002600FAA8CBC4]
 oldname=Aiushva
 race=Vykeen
+atlasinterface=false
+blackhole=false
 class=Yellow
 
 [Sys002700FAA8CBC4]
@@ -1035,8 +958,6 @@ name=Neu: Ochdal
 biome=Lush
 with water
 resources=Cu,Pf,Na,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Na, Pf, Cu, Eiweißperle
 
 [Pln202700FAA8CBC4]
 name=Lusingf R4
@@ -1046,15 +967,11 @@ with water
 resources=Cu_,CO2,NaCl
 short=ExtCold
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> NaCl, CO2, #Cu
 
 [Pln302700FAA8CBC4]
 name=Boeoti V
 biome=Scorched
 resources=Cu,P,Na
-short=
-info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Sys002F00FAA8CBC4]
 name=Party Town
@@ -1071,8 +988,6 @@ name=Idnaeanr Sigma
 biome=AnomShells
 resources=Cu,Au,Na
 short=
-info=<ParsedPlanetaryResources> Cu, Au, Na
-short=
 info="Schalenübersäter Planet"
 
 [Pln202F00FAA8CBC4]
@@ -1080,19 +995,17 @@ name=Icoll XIV
 biome=Toxic
 with water
 resources=Cu,NH3,Na
-short=
-info=<ParsedPlanetaryResources> Na, NH3, Cu
 
 [Pln302F00FAA8CBC4]
 name=Oann ...
 biome=Frozen
 resources=Cu,CO2,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, CO2, Cu
 
 [Sys003000FAA8CBC4]
 oldname=Zuhcher X
 race=Korvax
+atlasinterface=false
+blackhole=false
 class=Yellow
 
 [Sys003F00FAA8CBC4]
@@ -1107,23 +1020,17 @@ class=Yellow
 name=Ilad
 biome=Scorched
 resources=Cu,P,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, P, Cu
 
 [Pln203F00FAA8CBC4]
 name=Nocerius Somag
 biome=Lush
 with water
 resources=Cu,Pf,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, Cu
 
 [Pln303F00FAA8CBC4]
 name=Tagir Delta
 biome=AnomMetalFlowers
 resources=Cu,Co,Fe_
-short=
-info=<ParsedPlanetaryResources> Co, Fe#, Cu
 short=
 info="Mechanischer Planet"
 
@@ -1160,22 +1067,16 @@ name=Nicaro Sigma
 biome=Irradiated
 buriedTreasure=SalvageableScrap
 resources=Cu,U,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, U, Cu
 
 [Pln204500FAA8CBC4]
 name=Watfo
 biome=Frozen
 resources=Cu,CO2,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, CO2, Cu
 
 [Pln304500FAA8CBC4]
 name=Oburydon
 biome=Toxic
 resources=Cu,NH3,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, NH3, Cu
 
 [Pln404500FAA8CBC4]
 name=Neswick II
@@ -1184,8 +1085,6 @@ is extreme
 resources=Cu_,U,Fe_
 short=ExtRad
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> Fe#, U, #Cu
 short.P=#Cu
 info=
 
@@ -1193,8 +1092,6 @@ info=
 name=Abasill
 biome=Toxic
 resources=Cu,NH3,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, NH3, Cu
 
 [Sys004600FAA8CBC4]
 name=Tusevoz-Kiku
@@ -1209,15 +1106,11 @@ distance=706847.000000
 name=Bucky
 biome=Scorched
 resources=Cu,P,Na
-short=
-info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Pln204600FAA8CBC4]
 name=Interen
 biome=Irradiated
 resources=Cu,U,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, U, Cu
 
 [Pln304600FAA8CBC4]
 name=Oolef VIII
@@ -1226,6 +1119,8 @@ biome=Scorched
 [Sys004700FAA8CBC4]
 oldname=Izberes-Ort
 race=Korvax
+atlasinterface=false
+blackhole=false
 class=Yellow
 
 [Sys005700FAA8CBC4]
@@ -1254,8 +1149,6 @@ biome=Barren
 name=Epenniazus Totsu
 biome=Lush
 resources=Cu,Pf,Co,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Co, Pf, Cu, Eiweißperle
 
 [Pln405700FAA8CBC4]
 name=Neu: Ralottawa
@@ -1272,8 +1165,6 @@ info=Aktiviertes Kupfer
 name=Oroz 92/B2
 biome=Scorched
 resources=Cu,P,Na
-short=
-info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Sys005D00FAA8CBC4]
 name=Tionovk-Exand
@@ -1290,16 +1181,12 @@ oldname=Miyama Opogaets
 biome=Lush
 with water
 resources=Cu,Pf,Na,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Na, Pf, Cu, Eiweißperle
 
 [Pln205D00FAA8CBC4]
 name=Pipis IV
 oldname=Nozelensk Sano
 biome=AnomMushrooms
 resources=Cu,Ag,Na
-short=
-info=<ParsedPlanetaryResources> Cu, Ag, Na
 short=
 info="Mit Schirmen übersäter Planet"
 
@@ -1308,10 +1195,10 @@ name=Eykjaviu Primus
 oldname=Kiwalhontr-Menes Egor
 biome=Frozen
 resources=Cu,CO2,Na
-short=
-info=<ParsedPlanetaryResources> Na, CO2, Cu
 
 [Sys006900FAA8CBC4]
+atlasinterface=false
+blackhole=false
 
 [Sys006D00FAA8CBC4]
 name=Naibolsk
@@ -1328,8 +1215,6 @@ name=Ebbie Primus
 oldname=Syamnonerger
 biome=Frozen
 resources=Cu,CO2,Na
-short=
-info=<ParsedPlanetaryResources> Na, CO2, Cu
 
 [Pln206D00FAA8CBC4]
 name=Drushya II
@@ -1342,8 +1227,6 @@ name=Leuthow IV
 oldname=Loyarnaulic
 biome=AnomFragmColumns
 resources=Cu,Ag,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, Ag, Fe##
 short=
 info="Stützen-Planet" -> Vertikale zersplitterte Säulen
 
@@ -1363,8 +1246,6 @@ biome=Scorched
 with water
 buriedTreasure=AncientBones
 resources=Cu,P,Na
-short=
-info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Pln207900FAA8CBC4]
 name=Tisluitsoch
@@ -1373,8 +1254,6 @@ biome=Barren
 aggrSentinels
 gravitino balls
 resources=Cu,Py,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, Py, Cu
 
 [Pln307900FAA8CBC4]
 name=Dessilaum Ramm
@@ -1386,8 +1265,6 @@ buriedTreasure=AncientBones
 resources=Cu_,U,Na
 short=ExtRad
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> Na, U, #Cu
 short.P=#Cu
 info=Aktiviertes Kupfer
 
@@ -1399,8 +1276,6 @@ is extreme
 resources=Cu_,NH3,Fe_
 short=ExtTox
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> Fe#, NH3, #Cu
 short.P=#Cu
 info=Aktiviertes Kupfer
 
@@ -1408,20 +1283,18 @@ info=Aktiviertes Kupfer
 name=Sibirsky
 oldname=Sibirsky
 race=Vykeen
+economy=2
+economy_label=angemessen
 conflict=1
 atlasinterface=true
 blackhole=false
 class=Yellow
-short=
-info=W: Angemessen
 
 [Pln107A00FAA8CBC4]
 name=Appl
 oldname=Guyohldemigla
 biome=Lush
 resources=Cu,Pf,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, Fe##
 
 [Pln207A00FAA8CBC4]
 name=Arzaw Q30
@@ -1430,8 +1303,6 @@ biome=Scorched
 with water
 buriedTreasure=SalvageableScrap
 resources=Cu,P,Co
-short=
-info=<ParsedPlanetaryResources> Cu, P, Co
 
 [Pln307A00FAA8CBC4]
 name=Agjyo X
@@ -1440,32 +1311,24 @@ biome=AnomContour
 resources=Cu,Au,Co
 short=
 info="Konturierter Planet"
-short=
-info=<ParsedPlanetaryResources> Cu, Au, Co
 
 [Pln407A00FAA8CBC4]
 name=Tiffal V
 oldname=Oansum Inleug
 biome=Barren
 resources=Cu,Py,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, Py, Fe##
 
 [Pln507A00FAA8CBC4]
 name=Yezanthax IV
 oldname=Kipatjil Kagog
 biome=Scorched
 resources=Cu,P,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, P, Fe##
 
 [Pln607A00FAA8CBC4]
 name=Uneapo
 oldname=Gautumis Hobar
 biome=Lush
 resources=Cu,Pf,Na
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, Na
 
 [Sys00CA00FAA8CBC4]
 name=Anskit-Abad
@@ -1479,15 +1342,11 @@ class=Blue
 name=Aika III
 biome=Scorched
 resources=In,P,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, P, In
 
 [Pln20CA00FAA8CBC4]
 name=Lagordiw X21
 biome=Lush
 resources=In_,Pf,Na,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Na, Pf, #In, Eiweißperle
 
 [Sys013200FAA8CBC4]
 oldname=Rakaspo XVII
@@ -1502,6 +1361,8 @@ oldname=Dotukullia BZ895
 [Sys014B00FAA8CBC4]
 oldname=Zeyang XIII
 race=Korvax
+atlasinterface=false
+blackhole=false
 class=Yellow
 
 [Sys014F00FAA8CBC4]
@@ -1521,16 +1382,12 @@ is extreme
 resources=Em_,P,Co
 short=Extrem 3
 info=
-short=
-info=<ParsedPlanetaryResources> Co, P, #Em
 
 [Pln214F00FAA8CBC4]
 name=Uceston XIV
 oldname=Dihruva Oband
 biome=Toxic
 resources=Em,NH3,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, NH3, Em
 
 [Sys015200FAA8CBC4]
 atlasinterface=false
@@ -1554,8 +1411,6 @@ biome=Irradiated
 aggrSentinels
 gravitino balls
 resources=Cu,U,Co
-short=
-info=<ParsedPlanetaryResources> Co, U, Cu
 
 [Pln216500FAA8CBC4]
 name=Esveg Primus
@@ -1564,32 +1419,22 @@ aggrSentinels
 gravitino balls
 resources=Cu,Fe_,Na
 short=
-info=<ParsedPlanetaryResources> Na, Fe#, Cu
-short=
 info="Skelettartiger Planet"
-short=
-info=Gebäude: "Grenzüberschreitung"
 
 [Pln316500FAA8CBC4]
 name=Iago Delta
 biome=Toxic
 resources=Cu,NH3,Fe__
-short=
-info=<ParsedPlanetaryResources> Fe##, NH3, Cu
 
 [Pln416500FAA8CBC4]
 name=Pedro IV
 biome=Scorched
 resources=Cu,P,Fe__
-short=
-info=<ParsedPlanetaryResources> Fe##, P, Cu
 
 [Pln516500FAA8CBC4]
 name=Oebenja R48
 biome=Irradiated
 resources=Cu,U,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, U, Cu
 
 [Sys016A00FAA8CBC4]
 name=Uduton
@@ -1610,8 +1455,6 @@ biome=Exotic_Mega
 is extreme
 with water
 resources=In_,CO2,Co
-short=#In
-info=<ParsedPlanetaryResources> #In, CO2, Co
 short=Extrem
 info=
 
@@ -1666,8 +1509,6 @@ with water
 resources=Em_,NH3,Na
 short=
 info="Verdammter Jade-Planet"
-short.P=#Em
-info=<ParsedPlanetaryResources> #Em, NH3, Na
 short=Extrem
 info=Biom: Säure Echos
 
@@ -1675,8 +1516,6 @@ info=Biom: Säure Echos
 name=Runtwic V
 biome=AnomMushrooms
 resources=Em,Ag,NaCl
-short=
-info=<ParsedPlanetaryResources> Em, Ag, NaCl
 short=
 info="Pilz-Planet"
 
@@ -1765,8 +1604,6 @@ name=Oproby Hachi
 biome=Irradiated
 with water
 resources=Cu,U,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, U, Cu
 
 [Pln207A00F8A8DBC4]
 name=Gaapopp
@@ -1775,8 +1612,6 @@ is extreme
 resources=Cu_,Py,Fe_
 short=ExtBar
 info=
-short=
-info=<ParsedPlanetaryResources> Fe#, Py, #Cu
 short.P=#Cu
 info=
 
@@ -1794,8 +1629,6 @@ biome=Toxic
 aggrSentinels
 gravitino balls
 resources=In,NH3,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, NH3, In
 
 [Sys00CD00F8A8DBC4]
 name=Qigegy-Qingo
@@ -1812,8 +1645,6 @@ name=Eybrie
 biome=Barren
 with water
 resources=Em,Py,Co
-short=
-info=<ParsedPlanetaryResources> Co, Py, Em
 
 [Reg000000F9A8DBC4]
 name=Aokipg-Quadrant
@@ -1831,38 +1662,28 @@ name=Leyunthio Minoris
 biome=Irradiated
 with water
 resources=Cu,U,Na
-short=
-info=<ParsedPlanetaryResources> Na, U, Cu
 
 [Pln207A00F9A8DBC4]
 name=Uhmanue
 biome=Toxic
 buriedTreasure=AncientBones
 resources=Cu,NH3,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, NH3, Cu
 
 [Pln307A00F9A8DBC4]
 name=Nidsey Sigma
 biome=Lush
 with water
 resources=Cu,Pf,Fe_,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Fe#, Pf, Cu, Eiweißperle
 
 [Pln407A00F9A8DBC4]
 name=Kasa 57/T1
 biome=Toxic
 resources=Cu,NH3,Ag
-short=
-info=<ParsedPlanetaryResources> Ag, NH3, Cu
 
 [Pln507A00F9A8DBC4]
 name=Cell Omega
 biome=Scorched
 resources=Cu,P,Na
-short=
-info=<ParsedPlanetaryResources> Na, P, Cu
 
 [Sys012200F9A8DBC4]
 name=Dakjala-Uis IV
@@ -1877,8 +1698,6 @@ biome=Lush
 is extreme
 with water
 resources=Cd_,Pf,NaCl,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, #Cd, Eiweißperle
 short.P=#Cd
 info=
 short=Extrem ??
@@ -1896,8 +1715,6 @@ name=Arhunt VI
 biome=AnomScreenCrystals
 resources=Cd,Ag,Na
 short=
-info=<ParsedPlanetaryResources> Cd, Ag, Na
-short=
 info="Zerschmetterter Planet" -> Bildschirm-Kristalle
 
 [Pln213A00F9A8DBC4]
@@ -1906,8 +1723,6 @@ biome=Barren
 is extreme
 with water
 resources=Cd_,Py,Co
-short.P=#Cd
-info=<ParsedPlanetaryResources> Co, Py, #Cd
 short=ExtBar
 info=
 
@@ -1929,8 +1744,6 @@ is extreme
 resources=Cu_,NH3,Co
 short=ExtTox
 info=
-short=
-info=<ParsedPlanetaryResources> Co, NH3, #Cu
 short=#Cu
 info=
 short.P=Erinnerungs-Terminal (Pl) (besucht)
@@ -1965,8 +1778,6 @@ name=Azzav Minoris
 biome=Lush
 with water
 resources=Cu,Pf,NaCl,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> NaCl, Pf, Cu, Eiweißperle
 
 [Pln207900F8A8DBC6]
 name=Raxa Omega
@@ -1976,8 +1787,6 @@ with water
 resources=Cu_,U,Na
 short=ExtRad
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> Na, U, #Cu
 short=#Cu
 info=
 
@@ -1993,8 +1802,6 @@ class=Yellow
 name=Misbiyteus
 biome=Lush
 resources=Cu,Pf,Fe_,Eiweißperle
-short=
-info=<ParsedPlanetaryResources> Fe#, Pf, Cu, Eiweißperle
 
 [Reg000000FAA8DBC6]
 name=Tagosag-Anomalie
@@ -2012,8 +1819,6 @@ name=Xaborus XI
 biome=Barren
 with water
 resources=Cu,Py,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, Py, Cu
 
 [Reg000000FAA8EBC7]
 
@@ -2100,10 +1905,10 @@ info=
 [Sys01F30066324C16]
 name=NMS France was here 
 race=Vykeen
-conflict=2
-conflict_label=gewalttätig
 economy=2
 economy_label=angemessen
+conflict=2
+conflict_label=gewalttätig
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -2159,8 +1964,6 @@ biome=AnomBones
 resources=Cu,Ag,NaCl
 short=
 info="Stacheliger Planet"
-short=
-info=<ParsedPlanetaryResources> Cu, Ag, NaCl
 
 [Sys00520000BF1C2A]
 atlasinterface=false
@@ -2185,11 +1988,10 @@ name=[HUB5-11A] Taylisa-Yuse XVII
 race=Korvax
 economy=1
 economy_label=erfolglos
+abandoned
 atlasinterface=false
 blackhole=false
 class=Green
-short=aufgegeben
-info=
 
 [Pln111A00F9557C31]
 name=Alsto
@@ -2294,29 +2096,21 @@ biome=AnomMetalFlowers
 resources=Cu,Au,NaCl
 short=
 info="Metallurgischer Planet" -> "Mutter"-Blumen
-short=
-info=<ParsedPlanetaryResources> Cu, Au, NaCl
 
 [Pln200200FCA45CAF]
 name=Jikirk
 biome=Irradiated
 resources=Cu,U,Co
-short=
-info=<ParsedPlanetaryResources> Cu, U, Co
 
 [Pln300200FCA45CAF]
 name=Druss Primus
 biome=Barren
 resources=Cu,Py,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, Py, Fe##
 
 [Pln400200FCA45CAF]
 name=Oruton
 biome=AnomMetalFlowers
 resources=Cu,Au,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, Au, Fe##
 short=
 info="Metallener Planet" -> "Mutter"-Blumen
 
@@ -2328,8 +2122,6 @@ with water
 resources=Cu_,U,NaCl
 short=ExtRad
 info=Stufe 3
-short=#Cu
-info=<ParsedPlanetaryResources> #Cu, U, NaCl
 
 [Sys007900FCA45CAF]
 name=Dadurer-Iue
@@ -2350,30 +2142,22 @@ with water
 resources=Cu_,CO2,Ag
 short=ExtCold
 info=Stufe 3
-short=#Cu
-info=<ParsedPlanetaryResources> #Cu, CO2, Ag
 
 [Pln207900FCA45CAF]
 name=Elpecorpi Mukou
 biome=Scorched
 resources=Cu,P,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, P, Fe##
 
 [Pln307900FCA45CAF]
 name=Mins
 biome=Lush
 with water
 resources=Cu,Pf,Ag
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, Ag
 
 [Pln407900FCA45CAF]
 name=Taci F26
 biome=Frozen
 resources=Cu,CO2,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, CO2, Fe##
 
 [Sys017600FCA45CAF]
 name=Vahistoss IX
@@ -2388,15 +2172,11 @@ biome=AnomLimeStars
 resources=Cd,Au,NaCl
 short=
 info="Verkalkter Planet" -> Verknöcherte Sterne
-short=
-info=<ParsedPlanetaryResources> Cd, Au, NaCl
 
 [Pln217600FCA45CAF]
 name=Mosebyter Tau
 biome=Lush
 resources=Cd,Pf,Na
-short=
-info=<ParsedPlanetaryResources> Cd, Pf, Na
 
 [Sys017700FCA45CAF]
 name=Keinar-Liski
@@ -2410,8 +2190,6 @@ name=Weymonak V
 biome=Lush
 with water
 resources=In_,Pf,Na
-short=#In
-info=<ParsedPlanetaryResources> #In, Pf, Na
 
 [Pln217700FCA45CAF]
 name=Oupolly Guyod
@@ -2420,16 +2198,12 @@ is extreme
 resources=In_,P,Na
 short=ExtHot
 info=Stufe 3
-short=#In
-info=<ParsedPlanetaryResources> #In, P, Na
 
 [Pln317700FCA45CAF]
 name=Nogaw 92/D8
 biome=Irradiated
 with water
 resources=In_,U,Na
-short=#In
-info=<ParsedPlanetaryResources> #In, U, Na
 
 [Reg00000004425CBA]
 name=Iczantsuk-Grenze
@@ -2437,21 +2211,19 @@ name=Iczantsuk-Grenze
 [Sys00540004425CBA]
 name=Ovosok X
 race=Korvax
+economy=2
+economy_label=zufriedenstellend
 conflict=2
 atlasinterface=false
 blackhole=false
 class=Yellow
 short=3 Planeten
 info=
-short=
-info=W: Zufriedenstellend
 
 [Pln10540004425CBA]
 name=Zapolest
 biome=Scorched
 resources=Cu,P,Co
-short=
-info=<ParsedPlanetaryResources> Cu, P, Co
 
 [Pln20540004425CBA]
 name=Ikin Delta
@@ -2459,26 +2231,22 @@ biome=Toxic
 with water
 buriedTreasure=AncientBones
 resources=Cu,NH3,Na
-short=
-info=<ParsedPlanetaryResources> Cu, NH3, Na
 
 [Pln30540004425CBA]
 name=Nukih 52/X4
 biome=Scorched
 resources=Cu,P,Na
-short=
-info=<ParsedPlanetaryResources> Cu, P, Na
 
 [Sys00790004425CBA]
 name=Esveto-Dovin
 race=Korvax
+economy=2
+economy_label=In Entwicklung
 conflict=1
 atlasinterface=false
 blackhole=true
 blackholetarget=0026000253AFFC
 class=Yellow
-short=
-info=W: In Entwicklung
 
 [Pln10790004425CBA]
 name=Esveto-Dovin
@@ -2486,10 +2254,6 @@ biome=AnomHexagons
 resources=Cu,Au,NaCl
 short=
 info="Sechseckiger Planet"
-short=
-info=<ParsedPlanetaryResources> Cu, Au, NaCl
-short=
-info=Gebäude: "Grenzüberschreitung"
 
 [Pln20790004425CBA]
 name=Wakingt Diar
@@ -2497,8 +2261,6 @@ biome=Lush
 is extreme
 with water
 resources=Cu_,Pf,Ag
-short=#Cu
-info=<ParsedPlanetaryResources> #Cu, Pf, Ag
 short=Extrem
 info=
 
@@ -2508,8 +2270,6 @@ biome=Frozen
 aggrSentinels
 gravitino balls
 resources=Cu,CO2,Na
-short=
-info=<ParsedPlanetaryResources> Cu, CO2, Na
 
 [Reg000000FE452CC0]
 name=Itutsc
@@ -2534,13 +2294,13 @@ buriedTreasure=AncientBones
 [Sys007900FE452CC0]
 name=Roskea-Tato XVIII
 race=Vykeen
+economy=3
+economy_label=reich
 conflict=1
 atlasinterface=false
 blackhole=true
 blackholetarget=007000FE45ACE7
 class=Yellow
-short=W: reich
-info=
 short=5 Planeten
 info=
 
@@ -2549,8 +2309,6 @@ name=Tadcara Gamma
 biome=Lush
 with water
 resources=Cu,Pf,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
 [Reg000000FE45ACE7]
 name=Eolullp-Leere
@@ -2568,6 +2326,8 @@ info=
 [Sys007900FE45ACE7]
 name=Abirak
 race=Gek
+economy=2
+economy_label=komfortabel
 conflict=3
 atlasinterface=false
 blackhole=true
@@ -2575,8 +2335,6 @@ blackholetarget=00540004425CBA
 class=Yellow
 short=2 Planeten
 info=
-short=
-info=W: Komfortabel
 
 [Reg0000000110FCEA]
 name=Meer von Riceloc
@@ -2649,8 +2407,6 @@ info=
 name=Hught XVII
 biome=AnomBeams
 resources=Cu,Au,Na
-short=
-info=<ParsedPlanetaryResources> Cu, Au, Na
 
 [Sys007900FCDCFD1A]
 name=Heyste-Stagy XIV
@@ -2765,10 +2521,10 @@ name=Ocereforc-Terminus
 [Sys00BC000168CD75]
 name=Dutgael
 race=Vykeen
-conflict=1
-conflict_label=entspannt
 economy=1
 economy_label=abnehmend
+conflict=1
+conflict_label=entspannt
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -2822,6 +2578,8 @@ info=
 [Sys00790000F31D9E]
 name=Essengil
 race=Korvax
+economy=3
+economy_label=wohlhabend
 conflict=2
 conflict_label=unregelmäßig
 atlasinterface=false
@@ -2830,8 +2588,6 @@ blackholetarget=005B000306C26B
 class=Yellow
 short=1 Planet
 info=
-short=
-info=W: wohlhabend
 
 [Reg00000004994DA5]
 name=Netegoc
@@ -2851,8 +2607,6 @@ is extreme
 resources=Cu,Py,Ag
 short=Extrem
 info=
-short=
-info=<ParsedPlanetaryResources> Ag, Py, Cu
 
 [Pln201E0004994DA5]
 name=Gehdadoi Delta
@@ -2863,15 +2617,11 @@ gravitino balls
 resources=Cu_,Pf,Na
 short=ExtLush
 info="Blasen bildende Überflutung"
-short=#Cu
-info=<ParsedPlanetaryResources> Na, Pf, #Cu
 
 [Pln301E0004994DA5]
 name=Oydona VI
 biome=Frozen
 resources=Cu,CO2,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, CO2, Cu
 
 [Pln401E0004994DA5]
 name=Megasak IV
@@ -2881,8 +2631,6 @@ with water
 resources=Cu_,Pf,Ag
 short=ExtLush
 info=
-short=
-info=<ParsedPlanetaryResources> Ag, Pf, #Cu
 short=#Cu
 info=
 
@@ -2901,8 +2649,6 @@ biome=Lush
 is extreme
 with water
 resources=Cu_,Pf,Co,Eiweißperle
-short.P=#Cu
-info=<ParsedPlanetaryResources> Co, Pf, #Cu, Eiweißperle
 short=Extrem
 info=
 
@@ -2919,8 +2665,6 @@ name=Sanfor
 biome=Frozen
 with water
 resources=Cu,CO2,Na
-short=
-info=<ParsedPlanetaryResources> Na, CO2, Cu
 
 [Sys00BD0004994DA5]
 name=Seloma-Ame
@@ -2934,16 +2678,12 @@ name=Eirushe Iedat
 biome=Toxic
 with water
 resources=Cd,NH3,Fe_
-short=
-info=<ParsedPlanetaryResources> Fe#, NH3, Cd
 
 [Pln20BD0004994DA5]
 name=Ricussee Sigma
 biome=Lush
 with water
 resources=Cd_,Pf,Fe_
-short=#Cd
-info=<ParsedPlanetaryResources> Fe#, Pf, #Cd
 
 [Sys01770004994DA5]
 name=Murskog
@@ -2958,8 +2698,6 @@ biome=Scorched
 resources=Cd_,P,Na
 short=ExtHot
 info=
-short=#Cd
-info=<ParsedPlanetaryResources> Na, P, #Cd
 
 [Reg00000002E0FDC9]
 name=Boissia-Instabilität
@@ -3017,10 +2755,10 @@ name=Hajeljan-Untiefe
 [Sys003100006A5E0D]
 name=Uqingya III
 race=Korvax
-conflict=2
-conflict_label=unbändig
 economy=2
 economy_label=Mittlere Versorgung
+conflict=2
+conflict_label=unbändig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -3032,7 +2770,7 @@ name=Antuw Sigma
 biome=Airless
 resources=Cu,Fe__,Sr_Rost
 short=Portal
-info=
+info=-40.91, +58.57
 
 [Pln203100006A5E0D]
 name=Cucamo Sigma
@@ -3051,10 +2789,10 @@ resources=Cu,Pf,NaCl
 [Sys007300006A5E0D]
 name=Ryangxin
 race=Gek
-conflict=1
-conflict_label=belanglos
 economy=1
 economy_label=Geringe Versorgung
+conflict=1
+conflict_label=belanglos
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -3098,10 +2836,10 @@ resources=Cd,Au,Co
 [Sys020900006A5E0D]
 name=Hogarme
 race=Vykeen
-conflict=1
-conflict_label=sanft
 economy=2
 economy_label=In Entwicklung
+conflict=1
+conflict_label=sanft
 atlasinterface=false
 blackhole=false
 class=Green
@@ -3230,12 +2968,12 @@ name=Requao-Instabilität
 [Sys004F0002A0BEB1]
 name=Riholband
 race=Korvax
+economy=2
+economy_label=komfortabel
 conflict=2
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=W: komfortabel
-info=
 short=5 Planeten
 info=
 
@@ -3279,6 +3017,7 @@ info=
 [Reg000000FD259EC9]
 
 [Sys007900FD259EC9]
+atlasinterface=false
 blackhole=true
 
 [Reg000000FE0BCED4]
@@ -3313,12 +3052,12 @@ name=Rauise-Zufluss
 [Sys006B0003B09ED6]
 name=Evkarsen III
 race=Gek
+economy=2
+economy_label=erfolgversprechend
 conflict=3
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=
-info=W: Erfolgversprechend
 
 [Pln106B0003B09ED6]
 name=Adyavan Tau
@@ -3327,8 +3066,6 @@ is extreme
 resources=Cu_,Py,Na
 short=
 info=Extr: Stufe 3
-short=#Cu
-info=<ParsedPlanetaryResources> #Cu, Py, Na
 
 [Pln206B0003B09ED6]
 name=Dworthi
@@ -3337,16 +3074,12 @@ aggrSentinels
 with water
 gravitino balls
 resources=Cu,Pf,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, Fe##
 
 [Pln306B0003B09ED6]
 name=Uieta Sigma
 biome=Toxic
 with water
 resources=Cu,NH3,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, NH3, NaCl
 
 [Pln406B0003B09ED6]
 name=Okuts 37/W7
@@ -3357,8 +3090,6 @@ name=Visty
 biome=Irradiated
 buriedTreasure=AncientBones
 resources=Cu,U,Co
-short=
-info=<ParsedPlanetaryResources> Cu, U, Co
 
 [Pln606B0003B09ED6]
 name=Royalal G17
@@ -3366,8 +3097,6 @@ biome=AnomHexagons
 resources=Cu,Au,NaCl
 short=
 info="Sechseckiger Planet"
-short=
-info=<ParsedPlanetaryResources> Cu, Au, NaCl
 
 [Sys00790003B09ED6]
 name=Abalago
@@ -3413,10 +3142,10 @@ name=Upkanan-Zufluss
 [Sys014E00066C8F03]
 name=Ogkanub-Fle
 race=Korvax
-conflict=3
-conflict_label=zerstörerisch
 economy=2
 economy_label=nachhaltig
+conflict=3
+conflict_label=zerstörerisch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -3535,10 +3264,10 @@ name=Lakupsi
 [Sys00530001905F33]
 name=Gravitas?  What's Gravitas?
 race=Gek
-conflict=3
-conflict_label=hoch
 economy=2
 economy_label=komfortabel
+conflict=3
+conflict_label=hoch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -3773,6 +3502,7 @@ info=
 [Reg0000000301AF9C]
 
 [Sys0079000301AF9C]
+atlasinterface=false
 blackhole=true
 
 [Reg00000002133F9F]
@@ -3781,6 +3511,8 @@ name=Besonita-Terminus
 [Sys00630002133F9F]
 name=Navolo
 race=Gek
+economy=2
+economy_label=komfortabel
 conflict=2
 conflict_label=unregelmäßig
 atlasinterface=false
@@ -3788,8 +3520,6 @@ blackhole=false
 class=Yellow
 short=5 Planeten
 info=
-short=
-info=W: Komfortabel
 
 [Sys00790002133F9F]
 name=Pikamc
@@ -3861,10 +3591,10 @@ name=Gacris-Rand
 [Sys004C00006F3FC2]
 name=Udderes-Mynuu XIV
 race=Gek
-conflict=3
-conflict_label=aggressiv
 economy=2
 economy_label=angemessen
+conflict=3
+conflict_label=aggressiv
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -3887,10 +3617,10 @@ name=Bettia-Leere
 [Sys00760002FDAFDC]
 name=Damata-Paye
 race=Vykeen
-conflict=1
-conflict_label=friedlich
 economy=1
 economy_label=mühevoll
+conflict=1
+conflict_label=friedlich
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -3905,10 +3635,10 @@ resources=Cu,P,NaCl
 [Sys00790002FDAFDC]
 name=Omega
 race=Gek
-conflict=3
-conflict_label=gesetzlos
 economy=2
 economy_label=erfolgversprechend
+conflict=3
+conflict_label=gesetzlos
 atlasinterface=false
 blackhole=true
 blackholetarget=007700FEFDD006
@@ -3986,8 +3716,6 @@ class=Yellow
 name=Xiazusc M44
 biome=Frozen
 resources=Cu,CO2,Co
-short=
-info=<ParsedPlanetaryResources> Co, CO2, Cu
 
 [Pln20790003000FF8]
 name=Opiumfor Majoris
@@ -3997,29 +3725,21 @@ with water
 resources=Cu_,U,Co
 short=ExtRad
 info=Stufe 3
-short=
-info=<ParsedPlanetaryResources> Co, U, #Cu
 
 [Pln30790003000FF8]
 name=Daka 55/Y4
 biome=Barren
 resources=Cu,Py,Co
-short=
-info=<ParsedPlanetaryResources> Co, Py, Cu
 
 [Pln40790003000FF8]
 name=Naslo D10
 biome=Scorched
 resources=Cu,P,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, P, Cu
 
 [Pln50790003000FF8]
 name=Neu: Wastosho
 biome=Toxic
 resources=Cu,NH3,Na
-short=
-info=<ParsedPlanetaryResources> Na, NH3, Cu
 
 [Reg000000F8008FF8]
 
@@ -4065,10 +3785,10 @@ name=Udyigro-Sektor
 [Sys00D800F9001FFB]
 name=Urorai IV
 race=Korvax
-conflict=1
-conflict_label=mild
 economy=2
 economy_label=angemessen
+conflict=1
+conflict_label=mild
 atlasinterface=false
 blackhole=false
 class=Green
@@ -4102,10 +3822,10 @@ resources=Em,NH3,Co
 [Sys0070000000BFFB]
 name=Akhtagi
 race=Korvax
-conflict=2
-conflict_label=unregelmäßig
 economy=3
 economy_label=wohlhabend
+conflict=2
+conflict_label=unregelmäßig
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -4150,18 +3870,20 @@ name=Uutare-Band
 [Sys0026000253AFFC]
 name=Yignusc-Zeta XIII
 race=Gek
+economy=3
+economy_label=gedeihend
 conflict=1
 atlasinterface=false
 blackhole=false
 class=Yellow
 short=6 Planeten
 info=
-short=
-info=W: Gedeihend
 
 [Sys0079000253AFFC]
 name=Fanney-Nemur
 race=Gek
+economy=2
+economy_label=In Entwicklung
 conflict=3
 atlasinterface=false
 blackhole=true
@@ -4169,8 +3891,6 @@ blackholetarget=006700021A84E4
 class=Yellow
 short=6 Planeten
 info=
-short=
-info=W: In Entwicklung
 
 [Reg00000002008FFE]
 name=Eymifa-Adjunkt
@@ -4193,6 +3913,8 @@ resources=In,Pf,Fe__
 [Reg000000FFFF8000]
 
 [Sys000900FFFF8000]
+atlasinterface=false
+blackhole=false
 
 [Reg00000000000000]
 
@@ -4256,23 +3978,37 @@ info=
 [Reg000000FFFF7001]
 
 [Sys015300FFFF7001]
+atlasinterface=false
+blackhole=false
 
 [Reg000000FFFF8001]
 name=Yokudoxus-Quadrant
 
 [Sys000E00FFFF8001]
+atlasinterface=false
+blackhole=false
 
 [Sys001300FFFF8001]
+atlasinterface=false
+blackhole=false
 
 [Sys008500FFFF8001]
+atlasinterface=false
+blackhole=false
 
 [Sys00A700FFFF8001]
+atlasinterface=false
+blackhole=false
 
 [Sys00E100FFFF8001]
+atlasinterface=false
+blackhole=false
 
 [Sys01E100FFFF8001]
 name=Relate #ElcaGMS
 race=Vykeen
+economy=3
+economy_label=Hohe Versorgung
 conflict=1
 conflict_label=belanglos
 atlasinterface=false
@@ -4280,22 +4016,16 @@ blackhole=false
 class=Yellow
 short=3 Planeten
 info=
-short=
-info=W: Hohe Versorgung
 
 [Pln11E100FFFF8001]
 name=Yumusca R43
 biome=Toxic
 resources=Cu,NH3,Ag
-short=
-info=<ParsedPlanetaryResources> Cu, NH3, Ag
 
 [Pln21E100FFFF8001]
 name=Yusthew G46
 biome=Lush
 resources=Cu,Pf,Na
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, Na
 
 [Pln31E100FFFF8001]
 name=Tenstas Tau
@@ -4303,10 +4033,10 @@ biome=Barren
 aggrSentinels
 with water
 resources=Cu,Py,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, Py, NaCl
 
 [Sys01E600FFFF8001]
+atlasinterface=false
+blackhole=false
 
 [Reg000000FEFEC002]
 name=Icitre-Adjunkt
@@ -4325,6 +4055,8 @@ info=
 [Reg000000FFFF8002]
 
 [Sys009100FFFF8002]
+atlasinterface=false
+blackhole=false
 
 [Reg000000FEFE7003]
 name=Uszaan-Band
@@ -4382,15 +4114,11 @@ info=
 name=Adhak
 biome=Airless
 resources=Em,Ag,Sr_Rost
-short=
-info=<ParsedPlanetaryResources> Em, Sr_Rost, Ag
 
 [Pln206600FEFE2004]
 name=Zabderest Hidak
 biome=Toxic
 resources=Em,NH3,NaCl
-short=
-info=<ParsedPlanetaryResources> Em, NH3, NaCl
 
 [Pln306600FEFE2004]
 name=Eenste Minoris
@@ -4398,19 +4126,35 @@ biome=AnomHexagons
 resources=Em,Au,Co
 short=
 info="Schuppiger Planet"
-short=
-info=<ParsedPlanetaryResources> Em, Au, Co
 
 [Reg000000FE007004]
 name=Rumulton-Leere
 
+[Sys008500FE007004]
+name=Jeansal XV
+race=Korvax
+economy=1
+economy_label=scheiternd
+conflict=1
+conflict_label=stabil
+atlasinterface=false
+blackhole=false
+short=3 Planeten
+info=
+
+[Pln208500FE007004]
+name=Spalalu Majoris
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Ag
+
 [Sys008A00FE007004]
 name=Enoegia-Boym
 race=Korvax
-conflict=2
-conflict_label=streitlustig
 economy=2
 economy_label=nachhaltig
+conflict=2
+conflict_label=streitlustig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -4424,6 +4168,8 @@ resources=Cu,CO2,NaCl
 name=Flitwor II
 biome=Airless
 resources=Cu,Na,Sr_Rost
+short=Portal
+info=-3.99, +177.27
 
 [Pln308A00FE007004]
 name=Shungeli T41
@@ -4432,13 +4178,52 @@ resources=Cu,Py,Na
 short=Portal
 info=+57.11, +29.89
 
+[Sys009F00FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00C700FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00C800FE007004]
+name=Histas-Kob
+race=Korvax
+economy=2
+economy_label=zufriedenstellend
+conflict=2
+conflict_label=gereizt
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=4 Planeten
+info=
+
+[Pln10C800FE007004]
+name=Jeansa Beta
+biome=Lush
+is extreme
+resources=Cu_,Pf,Ag
+
+[Pln20C800FE007004]
+
+[Pln40C800FE007004]
+
+[Sys00E800FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00EE00FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys00F800FE007004]
 name=Equule-Eme I
 race=Gek
-conflict=1
-conflict_label=ruhig
 economy=2
 economy_label=erfolgversprechend
+conflict=1
+conflict_label=ruhig
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -4486,6 +4271,36 @@ name=Omacr F6
 biome=AnomHexagons
 resources=In,Au,Co
 
+[Sys013300FE007004]
+atlasinterface=false
+blackhole=false
+
+[Reg000000FF007004]
+
+[Sys007C00FF007004]
+atlasinterface=false
+blackhole=false
+
+[Sys009800FF007004]
+atlasinterface=false
+blackhole=false
+
+[Sys009C00FF007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00B800FF007004]
+atlasinterface=false
+blackhole=false
+
+[Sys012900FF007004]
+atlasinterface=false
+blackhole=false
+
+[Sys015700FF007004]
+atlasinterface=false
+blackhole=false
+
 [Reg000000FEFDC005]
 name=Hudsto-Band
 
@@ -4522,10 +4337,10 @@ blackhole=false
 [Sys00960002FFA005]
 name=Aletai
 race=Vykeen
-conflict=3
-conflict_label=kritisch
 economy=3
 economy_label=florierend
+conflict=3
+conflict_label=kritisch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -4588,10 +4403,10 @@ blackhole=false
 [Sys00C20002FFA005]
 name=Taco
 race=Gek
-conflict=1
-conflict_label=sanft
 economy=1
 economy_label=abnehmend
+conflict=1
+conflict_label=sanft
 atlasinterface=false
 blackhole=false
 class=Green
@@ -4615,10 +4430,10 @@ resources=Em,NH3,NaCl
 [Sys00D70002FFA005]
 name=Ozuohe
 race=Korvax
-conflict=2
-conflict_label=unbändig
 economy=1
 economy_label=scheiternd
+conflict=2
+conflict_label=unbändig
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -4630,10 +4445,10 @@ info=
 [Sys00F30002FFA005]
 name=Gudiangz
 race=Korvax
-conflict=2
-conflict_label=instabil
 economy=2
 economy_label=erfolgversprechend
+conflict=2
+conflict_label=instabil
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -4669,10 +4484,10 @@ resources=In,Ag,Au
 [Sys01420002FFA005]
 name=Gashuna-Yoroz
 race=Vykeen
-conflict=2
-conflict_label=gereizt
 economy=2
 economy_label=nachhaltig
+conflict=2
+conflict_label=gereizt
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -4836,10 +4651,10 @@ info=Nebel: blatt-grün
 [Sys01C90003008045]
 name=Nisadeln
 race=Korvax
-conflict=1
-conflict_label=mild
 economy=2
 economy_label=angemessen
+conflict=1
+conflict_label=mild
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -4998,6 +4813,8 @@ name=Vahnello-Zufluss
 [Sys00730000FCC0D8]
 name=Urfili XI
 race=Gek
+economy=3
+economy_label=opulent
 conflict=2
 conflict_label=streitlustig
 atlasinterface=false
@@ -5005,8 +4822,6 @@ blackhole=false
 class=Yellow
 short=3 Planeten
 info=
-short=
-info=W: opulent
 
 [Sys00790000FCC0D8]
 name=Orordabo
@@ -5182,10 +4997,10 @@ name=Yaranba-Band
 [Sys007400006C117A]
 name=Doforangi VI
 race=Gek
-conflict=3
-conflict_label=hoch
 economy=2
 economy_label=komfortabel
+conflict=3
+conflict_label=hoch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -5546,6 +5361,8 @@ name=Izganagy
 [Sys005B000306C26B]
 name=Ufimoro-Mogan
 race=Gek
+economy=3
+economy_label=opulent
 conflict=1
 conflict_label=mild
 atlasinterface=false
@@ -5553,8 +5370,6 @@ blackhole=false
 class=Yellow
 short=3 Planeten
 info=
-short=
-info=W: Opulent
 
 [Sys0079000306C26B]
 name=Nokovshi
@@ -5574,6 +5389,8 @@ oldname=Zudden-Weite
 [Sys003200FF9852B9]
 oldname=Teinna II
 race=Vykeen
+atlasinterface=false
+blackhole=false
 
 [Pln103200FF9852B9]
 oldname=Heronito Tau
@@ -5693,6 +5510,40 @@ blackhole=false
 [Pln2051000065630C]
 
 [Pln3051000065630C]
+
+[Reg00000007272323]
+
+[Sys00F60007272323]
+name=Watere-Xezbe
+race=Korvax
+economy=2
+economy_label=komfortabel
+conflict=2
+conflict_label=unregelmäßig
+atlasinterface=false
+blackhole=false
+class=Green
+short=3 Planeten
+info=
+
+[Pln10F60007272323]
+name=Planete Champignon
+biome=AnomMushrooms
+resources=Em,Au,NaCl
+
+[Pln20F60007272323]
+name=HC GerMan's Sky 221119
+biome=Toxic
+resources=Em,NH3,Na
+
+[Pln30F60007272323]
+name=Bizarroland
+biome=Exotic_Mega
+resources=Em,NH3,Na
+short=Portal
+info=-58.04, -144.07
+short=rot-grau
+info=
 
 [Reg00000001D52331]
 name=Dammerc
@@ -5842,8 +5693,6 @@ name=Sasosol
 biome=Lush
 with water
 resources=Cu,Pf,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
 [Sys005B0000BAC370]
 name=Botourdi
@@ -5955,10 +5804,10 @@ name=Stewan-Nebel
 [Sys015A00FE5F33B9]
 name=Nagordo
 race=Korvax
-conflict=2
-conflict_label=unregelmäßig
 economy=2
 economy_label=komfortabel
+conflict=2
+conflict_label=unregelmäßig
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -6058,12 +5907,12 @@ name=Layehyme
 [Sys001800FEC5345C]
 name=Bolinqiny
 race=Gek
+economy=3
+economy_label=wohlhabend
 conflict=2
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=W: wohlhabend
-info=
 short=6 Planeten
 info=
 
@@ -6136,12 +5985,11 @@ name=Iganens
 race=Vykeen
 economy=1
 economy_label=unerfahren
+abandoned
 atlasinterface=false
 blackhole=false
 class=Green
 short=6 Planeten
-info=
-short=aufgegeben
 info=
 
 [Pln10FF00182964AA]
@@ -6217,40 +6065,36 @@ name=Thwarl-Zufluss
 [Sys006700021A84E4]
 name=Japaeumat IV
 race=Vykeen
+economy=3
+economy_label=reich
 conflict=3
 atlasinterface=false
 blackhole=false
 class=Yellow
 short=4 Planeten
 info=
-short=
-info=W: Reich
 
 [Sys007900021A84E4]
 name=Brencest
 race=Vykeen
+economy=1
+economy_label=mühevoll
 conflict=3
 atlasinterface=false
 blackhole=true
 blackholetarget=006B0003B09ED6
 class=Yellow
-short=
-info=W: Mühevoll
 
 [Pln107900021A84E4]
 name=Ipswin Gamma
 biome=Lush
 with water
 resources=Cu,Pf,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, Pf, NaCl
 
 [Pln207900021A84E4]
 name=Paylo Tau
 biome=Scorched
 resources=Cu,P,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, P, NaCl
 
 [Reg00000004C074F0]
 name=Sagroa-Instabilität
@@ -6348,10 +6192,10 @@ name=Meer von Mundarim
 [Sys007A00FFF3758F]
 name=Emswor X
 race=Vykeen
-conflict=1
-conflict_label=sanft
 economy=2
 economy_label=In Entwicklung
+conflict=1
+conflict_label=sanft
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6374,10 +6218,10 @@ name=Opff-Cluster
 [Sys007A00FEF37590]
 name=Obanyiga X
 race=Gek
-conflict=1
-conflict_label=mild
 economy=2
 economy_label=angemessen
+conflict=1
+conflict_label=mild
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6429,10 +6273,10 @@ name=Koenpa
 [Sys001300FFF37590]
 name=Otosuh IX
 race=Korvax
-conflict=1
-conflict_label=belanglos
 economy=2
 economy_label=zufriedenstellend
+conflict=1
+conflict_label=belanglos
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6460,10 +6304,10 @@ resources=Cu,Pf,Fe__
 [Sys006F00FFF37590]
 name=Illgasins
 race=Vykeen
-conflict=3
-conflict_label=beängstigend
 economy=1
 economy_label=scheiternd
+conflict=3
+conflict_label=beängstigend
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6484,10 +6328,10 @@ resources=Cu,CO2,Co
 [Sys007500FFF37590]
 name=Erleisla
 race=Gek
-conflict=2
-conflict_label=streitlustig
 economy=2
 economy_label=nachhaltig
+conflict=2
+conflict_label=streitlustig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6502,10 +6346,10 @@ resources=Cu,CO2,NaCl
 [Sys007A00FFF37590]
 name=Irdals IV
 race=Korvax
-conflict=3
-conflict_label=kritisch
 economy=2
 economy_label=zufriedenstellend
+conflict=3
+conflict_label=kritisch
 atlasinterface=true
 blackhole=false
 remembrance terminal
@@ -6523,10 +6367,10 @@ resources=Cu_,CO2,Co
 [Sys017C00FFF37590]
 name=Hinquis
 race=Vykeen
-conflict=2
-conflict_label=gereizt
 economy=3
 economy_label=Hohe Versorgung
+conflict=2
+conflict_label=gereizt
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -6546,10 +6390,10 @@ name=Ewensi-Sektor
 [Sys007A0000F37590]
 name=Ikahoku-Fika
 race=Korvax
-conflict=1
-conflict_label=friedlich
 economy=2
 economy_label=komfortabel
+conflict=1
+conflict_label=friedlich
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6568,10 +6412,10 @@ name=Buwatyren-Terminus
 [Sys007A00FEF38590]
 name=Buntiu-Kuch
 race=Korvax
-conflict=3
-conflict_label=aggressiv
 economy=1
 economy_label=erfolglos
+conflict=3
+conflict_label=aggressiv
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6601,10 +6445,10 @@ name=Niezhi-Untiefe
 [Sys007A00FFF38590]
 name=Ubaruu X
 race=Gek
-conflict=1
-conflict_label=ungestört
 economy=2
 economy_label=zufriedenstellend
+conflict=1
+conflict_label=ungestört
 atlasinterface=true
 blackhole=false
 remembrance terminal
@@ -6621,21 +6465,20 @@ name=Rudontsa
 race=Korvax
 economy=1
 economy_label=scheiternd
+abandoned
 atlasinterface=false
 blackhole=false
 class=Blue
 short=3 Planeten
 info=
-short=aufgegeben
-info=
 
 [Sys014C00FFF38590]
 name=Orbuky-Lupjon XIII
 race=Vykeen
-conflict=3
-conflict_label=beängstigend
 economy=2
 economy_label=Mittlere Versorgung
+conflict=3
+conflict_label=beängstigend
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -6656,10 +6499,10 @@ resources=In,Py,Na
 [Sys018500FFF38590]
 name=Huweyfa
 race=Gek
-conflict=3
-conflict_label=gefährlich
 economy=2
 economy_label=ausgeglichen
+conflict=3
+conflict_label=gefährlich
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6682,10 +6525,10 @@ resources=Cu,P,NaCl
 [Sys019C00FFF38590]
 name=Yuhaiu-Trub XIII
 race=Gek
-conflict=2
-conflict_label=ungestüm
 economy=2
 economy_label=zufriedenstellend
+conflict=2
+conflict_label=ungestüm
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6702,10 +6545,10 @@ resources=Cu_,Pf,NaCl
 [Sys019D00FFF38590]
 name=Insang V
 race=Vykeen
-conflict=1
-conflict_label=ungestört
 economy=2
 economy_label=Mittlere Versorgung
+conflict=1
+conflict_label=ungestört
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6715,10 +6558,10 @@ info=
 [Sys01B200FFF38590]
 name=Gianch-Loma XVIII
 race=Gek
-conflict=1
-conflict_label=friedlich
 economy=2
 economy_label=komfortabel
+conflict=1
+conflict_label=friedlich
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -6733,10 +6576,10 @@ resources=Cu,Pf,Na
 [Sys01EC00FFF38590]
 name=Jiyuejeell
 race=Korvax
-conflict=1
-conflict_label=stabil
 economy=3
 economy_label=boomend
+conflict=1
+conflict_label=stabil
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -6764,10 +6607,10 @@ name=Kugage
 [Sys007A00FFF39590]
 name=Bonnian XVII
 race=Korvax
-conflict=3
-conflict_label=im Krieg
 economy=2
 economy_label=ausgeglichen
+conflict=3
+conflict_label=im Krieg
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6778,10 +6621,10 @@ name=Cavicis-Arm
 [Sys007A0000F37591]
 name=Gigisas-Usash XVIII
 race=Gek
-conflict=3
-conflict_label=kritisch
 economy=2
 economy_label=Mittlere Versorgung
+conflict=3
+conflict_label=kritisch
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6799,10 +6642,10 @@ name=Mimoth-Quadrant
 [Sys007A00FFF38591]
 name=Rutlakew
 race=Gek
-conflict=1
-conflict_label=ungestört
 economy=1
 economy_label=mittellos
+conflict=1
+conflict_label=ungestört
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -6825,8 +6668,6 @@ name=Rutwor
 biome=AnomBubbles
 resources=Cu,Ag,Au
 short=
-info=<ParsedPlanetaryResources> Cu, Au, Ag
-short=
 info="Schäumender Planet" -> Seifenblasen überall
 
 [Pln200B0003CC45B8]
@@ -6834,15 +6675,11 @@ name=Tamot 81/O9
 biome=Lush
 with water
 resources=Cu_,Pf,NaCl
-short=
-info=<ParsedPlanetaryResources> #Cu, Pf, NaCl
 
 [Pln300B0003CC45B8]
 name=Layonesve
 biome=Scorched
 resources=Cu,P,Co
-short=
-info=<ParsedPlanetaryResources> Cu, P, Co
 
 [Pln400B0003CC45B8]
 name=Yetonyan Sago
@@ -6852,15 +6689,11 @@ with water
 resources=Cu_,CO2,Co
 short=ExtCold
 info=Stufe 3
-short=#Cu
-info=<ParsedPlanetaryResources> #Cu, CO2, Co
 
 [Pln500B0003CC45B8]
 name=Ceannar III
 biome=Irradiated
 resources=Cu,U,Na
-short=
-info=<ParsedPlanetaryResources> Cu, U, Na
 
 [Sys00790003CC45B8]
 name=Lochiteln
@@ -6880,8 +6713,6 @@ name=Ound Alpha
 biome=Toxic
 with water
 resources=Cu,NH3,Fe__
-short=
-info=<ParsedPlanetaryResources> Cu, NH3, Fe##
 
 [Pln20790003CC45B8]
 name=Aust Tau
@@ -6889,8 +6720,6 @@ biome=AnomMushrooms
 resources=Cu,Ag,Fe__
 short=
 info="Sporiger Planet" -> Pilze
-short=
-info=<ParsedPlanetaryResources> Cu, Ag, Fe##
 
 [Pln30790003CC45B8]
 name=Losoniumfi Irash
@@ -6899,24 +6728,18 @@ aggrSentinels
 with water
 gravitino balls
 resources=Cu,CO2,Na
-short=
-info=<ParsedPlanetaryResources> Cu, CO2, Na
 
 [Pln40790003CC45B8]
 name=Neu: Lucomne
 biome=Irradiated
 with water
 resources=Cu,U,Ag
-short=
-info=<ParsedPlanetaryResources> Cu, U, Ag
 
 [Pln50790003CC45B8]
 name=Echi Gamma
 biome=Frozen
 aggrSentinels
 resources=Cu,CO2,NaCl
-short=
-info=<ParsedPlanetaryResources> Cu, CO2, NaCl
 short=Grav??
 info=
 
@@ -6939,8 +6762,6 @@ is extreme
 with water
 buriedTreasure=AncientBones
 resources=Cu_,NH3,Ag
-short=#Cu
-info=<ParsedPlanetaryResources> Ag, NH3, #Cu
 short=ExtTox
 info=Stufe 3
 
@@ -6949,16 +6770,12 @@ name=Ekio Alpha
 biome=Airless
 resources=Cu,NaCl,Sr_Rost
 short=
-info=<ParsedPlanetaryResources> NaCl, Sr_Rost, Cu
-short=
 info="Unbelebter Planet"
 
 [Pln302A0002C825D1]
 name=Esotapi
 biome=Irradiated
 resources=Cu,U,Co
-short=
-info=<ParsedPlanetaryResources> Co, U, Cu
 
 [Sys00790002C825D1]
 name=Iderag-Esaud XIX
@@ -6974,15 +6791,11 @@ distance=694811.000000
 name=Retsey XV
 biome=Toxic
 resources=Cu,NH3,NaCl
-short=
-info=<ParsedPlanetaryResources> NaCl, NH3, Cu
 
 [Pln20790002C825D1]
 name=Bewdlewis Totto
 biome=Airless
 resources=Cu,NaCl,Sr_Rost
-short=
-info=<ParsedPlanetaryResources> NaCl, Sr_Rost, Cu
 short=
 info="Einsamer Planet"
 
@@ -6992,8 +6805,6 @@ biome=Lush
 with water
 buriedTreasure=SalvageableScrap
 resources=Cu,Pf,Co
-short=
-info=<ParsedPlanetaryResources> Co, Pf, Cu
 
 [Pln40790002C825D1]
 name=Eusiss IV
@@ -7001,15 +6812,11 @@ biome=Barren
 aggrSentinels
 gravitino balls
 resources=Cu,Py,Co
-short=
-info=<ParsedPlanetaryResources> Co, Py, Cu
 
 [Pln50790002C825D1]
 name=Neu: Dettoxe
 biome=Irradiated
 resources=Cu,U,Co
-short=
-info=<ParsedPlanetaryResources> Co, U, Cu
 
 [Pln60790002C825D1]
 name=Yavaccacok Tamo
@@ -7017,8 +6824,6 @@ biome=Toxic
 is extreme
 buriedTreasure=AncientBones
 resources=Cu_,NH3,NaCl
-short=#Cu
-info=<ParsedPlanetaryResources> NaCl, NH3, #Cu
 short=ExtTox
 info=Stufe 3
 
@@ -7036,8 +6841,6 @@ is extreme
 resources=In_,P,Ag
 short=ExtHot
 info=Stufe 3
-short=#In
-info=<ParsedPlanetaryResources> Ag, P, #In
 
 [Sys00B80002C825D1]
 name=Yokazumi
@@ -7051,8 +6854,6 @@ name=Neu: Didymai
 biome=Barren
 with water
 resources=Em,Py,Co
-short=
-info=<ParsedPlanetaryResources> Co, Py, Em
 
 [Sys01790002C825D1]
 name=Meokaka-Luk
@@ -7065,18 +6866,16 @@ class=Red
 name=Lovisto
 biome=Barren
 resources=Cd,Py,Na
-short=
-info=<ParsedPlanetaryResources> Cd, Py, Na
 
 [Reg000000063715F3]
 
 [Sys018900063715F3]
 name=Nikkolaru
 race=Vykeen
-conflict=1
-conflict_label=friedlich
 economy=3
 economy_label=wohlhabend
+conflict=1
+conflict_label=friedlich
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -7120,8 +6919,6 @@ with water
 resources=Cu_,U,Na
 short=ExtRad
 info=Stufe 3
-short=#Cu
-info=<ParsedPlanetaryResources> Na, U, #Cu
 
 [Sys00790000DBE61C]
 name=Apulygi IX
@@ -7142,12 +6939,11 @@ name=Efarnsale XVIII
 race=Vykeen
 economy=1
 economy_label=unerfahren
+abandoned
 atlasinterface=false
 blackhole=false
 class=Green
 short=3 Planeten
-info=
-short=(Aufgegeben)
 info=
 
 [Pln11BD0005CFD63D]
@@ -7197,10 +6993,10 @@ name=Nezenka-Arm
 [Sys001400FCD7F684]
 name=Meseogw-Rip
 race=Vykeen
-conflict=3
-conflict_label=aggressiv
 economy=1
 economy_label=erfolglos
+conflict=3
+conflict_label=aggressiv
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7244,10 +7040,10 @@ resources=Cu,CO2,NaCl
 [Sys002000FCD7F684]
 name=Aitunx-Loe
 race=Gek
-conflict=2
-conflict_label=streitlustig
 economy=1
 economy_label=Geringe Versorgung
+conflict=2
+conflict_label=streitlustig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7273,10 +7069,10 @@ resources=Cu,CO2,NaCl
 [Sys002600FCD7F684]
 name=Yakesu
 race=Korvax
-conflict=2
-conflict_label=instabil
 economy=2
 economy_label=erfolgversprechend
+conflict=2
+conflict_label=instabil
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7286,10 +7082,10 @@ info=
 [Sys002E00FCD7F684]
 name=Gohanji XV
 race=Vykeen
-conflict=2
-conflict_label=gereizt
 economy=2
 economy_label=zufriedenstellend
+conflict=2
+conflict_label=gereizt
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7313,10 +7109,10 @@ blackhole=false
 [Sys005400FCD7F684]
 name=Rolegze-Netys
 race=Gek
-conflict=2
-conflict_label=reizbar
 economy=3
 economy_label=reich
+conflict=2
+conflict_label=reizbar
 atlasinterface=false
 blackhole=false
 remembrance terminal
@@ -7329,10 +7125,10 @@ info=
 [Sys006A00FCD7F684]
 name=Onubri IV
 race=Gek
-conflict=3
-conflict_label=zerstörerisch
 economy=3
 economy_label=Hohe Versorgung
+conflict=3
+conflict_label=zerstörerisch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7354,10 +7150,10 @@ info=+40.40, +164.80
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
 race=Korvax
-conflict=1
-conflict_label=stabil
 economy=3
 economy_label=boomend
+conflict=1
+conflict_label=stabil
 atlasinterface=false
 blackhole=false
 remembrance terminal
@@ -7383,10 +7179,10 @@ resources=Cu,U,NaCl
 [Sys006F00FCD7F684]
 name=Yuduhshi
 race=Vykeen
-conflict=3
-conflict_label=zerstörerisch
 economy=3
 economy_label=Hohe Versorgung
+conflict=3
+conflict_label=zerstörerisch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7396,10 +7192,10 @@ info=
 [Sys007000FCD7F684]
 name=Magogal
 race=Gek
-conflict=3
-conflict_label=gesetzlos
 economy=2
 economy_label=erfolgversprechend
+conflict=3
+conflict_label=gesetzlos
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7427,10 +7223,10 @@ resources=Cu,Au,Fe__
 [Sys007A00FCD7F684]
 name=Yucilego
 race=Korvax
-conflict=1
-conflict_label=stabil
 economy=3
 economy_label=boomend
+conflict=1
+conflict_label=stabil
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -7484,10 +7280,10 @@ resources=Em,CO2,Ag
 
 [Sys01C300FCD7F684]
 race=Vykeen
-conflict=1
-conflict_label=niedrig
 economy=1
 economy_label=unerfahren
+conflict=1
+conflict_label=niedrig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7505,10 +7301,10 @@ blackhole=false
 [Sys01DE00FCD7F684]
 name=Songxi
 race=Vykeen
-conflict=3
-conflict_label=hoch
 economy=2
 economy_label=komfortabel
+conflict=3
+conflict_label=hoch
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7545,10 +7341,10 @@ resources=Cu,U,Co
 [Sys01E700FCD7F684]
 name=Eichua
 race=Gek
-conflict=1
-conflict_label=stabil
 economy=2
 economy_label=Mittlere Versorgung
+conflict=1
+conflict_label=stabil
 atlasinterface=false
 blackhole=false
 class=Green
@@ -7571,10 +7367,10 @@ info=
 [Sys01FD00FCD7F684]
 name=Rotangc
 race=Korvax
-conflict=1
-conflict_label=niedrig
 economy=3
 economy_label=gedeihend
+conflict=1
+conflict_label=niedrig
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7610,10 +7406,10 @@ resources=Cd_,U,Fe__
 [Sys020000FCD7F684]
 name=Ugcodo-Wakaw IX
 race=Gek
-conflict=2
-conflict_label=gewalttätig
 economy=2
 economy_label=angemessen
+conflict=2
+conflict_label=gewalttätig
 atlasinterface=false
 blackhole=false
 class=Blue
@@ -7632,10 +7428,10 @@ resources=In,Pf,Ag
 [Sys021100FCD7F684]
 name=Nidika-Urod XVIII
 race=Korvax
-conflict=1
-conflict_label=niedrig
 economy=3
 economy_label=wohlhabend
+conflict=1
+conflict_label=niedrig
 atlasinterface=false
 blackhole=false
 class=Red
@@ -7659,10 +7455,10 @@ name=Ajrapi-Nebel
 [Sys01AB00FDD7F684]
 name=Dodtal III
 race=Vykeen
-conflict=2
-conflict_label=gewalttätig
 economy=2
 economy_label=angemessen
+conflict=2
+conflict_label=gewalttätig
 atlasinterface=false
 blackhole=false
 class=Green
@@ -7682,10 +7478,10 @@ resources=Em,NH3,Ag
 [Sys01DE00FDD7F684]
 name=Idliggj-Pame
 race=Korvax
-conflict=1
-conflict_label=friedlich
 economy=3
 economy_label=wohlhabend
+conflict=1
+conflict_label=friedlich
 atlasinterface=false
 blackhole=false
 short=3 Planeten
@@ -7699,10 +7495,10 @@ resources=Cu,Py,Fe__
 [Sys01E200FDD7F684]
 name=Labokbe IX
 race=Vykeen
-conflict=3
-conflict_label=gefährlich
 economy=3
 economy_label=gedeihend
+conflict=3
+conflict_label=gefährlich
 atlasinterface=false
 blackhole=false
 class=Yellow
@@ -7721,10 +7517,10 @@ name=Rinabee
 [Sys007A00FCD80684]
 name=Aiderage
 race=Gek
-conflict=1
-conflict_label=sanft
 economy=1
 economy_label=abnehmend
+conflict=1
+conflict_label=sanft
 atlasinterface=true
 blackhole=false
 class=Yellow
@@ -7737,10 +7533,10 @@ name=Iryatsiy-Rand
 [Sys014600FED80684]
 name=Kualai
 race=Korvax
-conflict=3
-conflict_label=beängstigend
 economy=1
 economy_label=scheiternd
+conflict=3
+conflict_label=beängstigend
 atlasinterface=false
 blackhole=false
 class=Green
@@ -7773,14 +7569,15 @@ oldname=Ezawasahirish
 oldname=Itachita Irli
 
 [Reg000000FE1F86BC]
+name=Ouxalkl-Terminus
 
 [Sys01D200FE1F86BC]
 name=Gumaaters III
 race=Vykeen
-conflict=2
-conflict_label=unregelmäßig
 economy=3
 economy_label=wohlhabend
+conflict=2
+conflict_label=unregelmäßig
 atlasinterface=false
 blackhole=false
 short=2 Planeten
@@ -7827,10 +7624,10 @@ name=Mawurdoyl-Nebel
 [Sys003106006A5E0D]
 name=Pochun-Ibl
 race=Korvax
-conflict=1
-conflict_label=entspannt
 economy=2
 economy_label=erfolgversprechend
+conflict=1
+conflict_label=entspannt
 atlasinterface=false
 blackhole=false
 class=Yellow
