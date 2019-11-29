@@ -4179,8 +4179,30 @@ short=Portal
 info=+57.11, +29.89
 
 [Sys009F00FE007004]
+name=Defortew
+race=Korvax
+economy=2
+economy_label=erfolgversprechend
+conflict=3
+conflict_label=gesetzlos
 atlasinterface=false
 blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln109F00FE007004]
+name=Great V38
+biome=Scorched
+resources=Cu,P,Fe__
+
+[Pln209F00FE007004]
+
+[Pln309F00FE007004]
+
+[Pln409F00FE007004]
+
+[Pln509F00FE007004]
 
 [Sys00C700FE007004]
 atlasinterface=false
