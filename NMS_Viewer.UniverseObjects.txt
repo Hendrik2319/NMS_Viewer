@@ -4569,6 +4569,38 @@ class=Green
 
 [Pln10010008FF8008]
 
+[Reg00000003FFF008]
+
+[Sys008D0003FFF008]
+race=Vykeen
+economy=1
+economy_label=erfolglos
+conflict=2
+conflict_label=streitlustig
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln108D0003FFF008]
+
+[Pln208D0003FFF008]
+name=Ahasli Gamma
+biome=Lush
+resources=Cu,Pf,Co
+
+[Pln308D0003FFF008]
+
+[Pln408D0003FFF008]
+
+[Pln508D0003FFF008]
+name=Embassy Rock
+biome=Airless
+resources=Cu,Fe__,Sr_Rost
+short=Portal
+info=-7.37, +112.36
+
 [Reg000000F8008008]
 
 [Sys000100F8008008]
@@ -4580,6 +4612,34 @@ class=Red
 
 [Pln100100F8008008]
 oldname=Sagayamatsuy-5
+
+[Reg00000008008008]
+
+[Sys00440008008008]
+name=Amagan
+race=Gek
+economy=2
+economy_label=Mittlere Versorgung
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln10440008008008]
+name=Velomslo
+biome=Airless
+aggrSentinels
+gravitino balls
+resources=In,Ag,Sr_Rost
+
+[Pln20440008008008]
+name=Nacles XIV
+biome=Scorched
+is extreme
+resources=In_,P,Ag
 
 [Reg000000FE130023]
 name=Muttusa
@@ -7639,6 +7699,34 @@ atlasinterface=false
 blackhole=false
 
 [Pln30A400F90F56DB]
+
+[Reg0000000E3057EE]
+
+[Sys0061000E3057EE]
+name=I see you
+race=Gek
+economy=2
+economy_label=zufriedenstellend
+conflict=3
+conflict_label=gewaltig
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln1061000E3057EE]
+name=preums
+biome=Scorched
+resources=Cu,P,NaCl
+
+[Pln2061000E3057EE]
+
+[Pln3061000E3057EE]
+
+[Pln4061000E3057EE]
+
+[Pln5061000E3057EE]
 
 [Reg000006006A5E0D]
 name=Mawurdoyl-Nebel
