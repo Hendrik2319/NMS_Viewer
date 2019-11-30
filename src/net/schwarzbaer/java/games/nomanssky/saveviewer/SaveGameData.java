@@ -821,8 +821,8 @@ public class SaveGameData {
 				te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
 				te.teleportHost     = TeleportHost.parseValue(te.teleportHostStr);
 				te.name             = getStringValue(objectValue, "Name");
-				te.unknown_a__      = getBoolValue(objectValue, "[??? a>; TeleportEndpoints Bool:false]");
-				te.unknown_tww      = getBoolValue(objectValue, "[??? tww TeleportEndpoints Bool:false]");
+				te.unknown_a__      = getBoolValue_checked(objectValue, "[??? a>; TeleportEndpoints Bool:false]");
+				te.unknown_tww      = getBoolValue_checked(objectValue, "[??? tww TeleportEndpoints Bool:false]");
 				
 				
 				if (te.universeAddress!=null) {
@@ -862,7 +862,7 @@ public class SaveGameData {
 					
 					PersistentPlayerBase pb = new PersistentPlayerBase(data,baseIndex);
 					pb.baseVersion      = getIntegerValue (objectValue, "BaseVersion");
-					pb.baseMinorVersion = getIntegerValue (objectValue, "[BaseMinorVersion]");
+					pb.baseMinorVersion = getIntegerValue_checked(objectValue, "[BaseMinorVersion]");
 					pb.galacticAddress  = parseUniverseAddressField(objectValue, "GalacticAddress");
 					pb.position         = Coordinates     .parse(objectValue, "Position");
 					pb.gpsCoords        = PolarCoordinates.parse(pb.position);
@@ -3483,10 +3483,18 @@ public class SaveGameData {
 				}
 			}
 			public enum StarClass {
-				Yellow("G","F"), Red("K","M"), Green("E"), Blue("B","O");
+				Yellow( Planet.Resources.Cu, Planet.Resources.Cu_, "G","F" ),
+				Red   ( Planet.Resources.Cd, Planet.Resources.Cd_, "K","M" ),
+				Green ( Planet.Resources.Em, Planet.Resources.Em_, "E" ),
+				Blue  ( Planet.Resources.In, Planet.Resources.In_, "B","O" );
 				
-				private String[] letters;
-				StarClass(String... letters) {
+				public  final Planet.Resources defaultResource;
+				public  final Planet.Resources defaultExtremeResource;
+				private final String[] letters;
+				
+				StarClass(Planet.Resources defaultResource, Planet.Resources defaultExtremeResource, String... letters) {
+					this.defaultResource = defaultResource;
+					this.defaultExtremeResource = defaultExtremeResource;
 					this.letters = letters;
 				}
 				public String getLabel() {
@@ -3613,12 +3621,12 @@ public class SaveGameData {
 		public static final class Planet extends DiscoverableObject {
 			
 			public enum Biome {
-				Lush       ("Lush"         ,"Erd‰hnlich"),
-				Barren     ("Barren"       ,"Trocken"),
-				Scorched   ("Scorched"     ,"heiﬂ"),
-				Frozen     ("Frozen"       ,"Gefroren"),
-				Toxic      ("Toxic"        ,"Giftig"),
-				Irradiated ("Irradiated"   ,"Verstrahlt"),
+				Lush       ("Lush"         ,"Erd‰hnlich", Resources.Pf ),
+				Barren     ("Barren"       ,"Trocken"   , Resources.Py ),
+				Scorched   ("Scorched"     ,"heiﬂ"      , Resources.P  ),
+				Frozen     ("Frozen"       ,"Gefroren"  , Resources.CO2),
+				Toxic      ("Toxic"        ,"Giftig"    , Resources.NH3),
+				Irradiated ("Irradiated"   ,"Verstrahlt", Resources.U  ),
 				Airless    ("Airless"      ,"Trostlos, ohne Atmosph‰re"),
 				Exotic     ("Exotic"       ,"Exotisch"),
 				Exotic_Mega("Exotic (Mega)","Exotisch, mit Riesenpflanzen"),
@@ -3638,9 +3646,15 @@ public class SaveGameData {
 
 				public final String name_EN;
 				public final String name_DE;
+				public final Resources defaultResource;
+				
 				private Biome(String name_EN, String name_DE) {
+					this(name_EN, name_DE, null);
+				}
+				private Biome(String name_EN, String name_DE, Resources defaultResource) {
 					this.name_EN = name_EN;
 					this.name_DE = name_DE;
+					this.defaultResource = defaultResource;
 				}
 			}
 			
@@ -3667,12 +3681,12 @@ public class SaveGameData {
 				Em     ("Em" , GameInfos.substanceIDs, "^GREEN2"),
 				In     ("In" , GameInfos.substanceIDs, "^BLUE2"),
 				
-				NH3    ("NH3", GameInfos.substanceIDs, "^TOXIC1"),
-				U      ("U"  , GameInfos.substanceIDs, "^RADIO1"),
-				P      ("P"  , GameInfos.substanceIDs, "^HOT1"),
 				Pf     ("Pf" , GameInfos.substanceIDs, "^LUSH1"),
 				Py     ("Py" , GameInfos.substanceIDs, "^DUSTY1"),
+				P      ("P"  , GameInfos.substanceIDs, "^HOT1"),
 				CO2    ("CO2", GameInfos.substanceIDs, "^COLD1"),
+				NH3    ("NH3", GameInfos.substanceIDs, "^TOXIC1"),
+				U      ("U"  , GameInfos.substanceIDs, "^RADIO1"),
 				
 				Ag     ("Ag"     , GameInfos.substanceIDs, "^ASTEROID1"),
 				Au     ("Au"     , GameInfos.substanceIDs, "^ASTEROID2"),
@@ -3761,8 +3775,8 @@ public class SaveGameData {
 				}
 			}
 			
-			final SolarSystem solarSystem;
-			final int planetIndex;
+			public final SolarSystem solarSystem;
+			public final int planetIndex;
 			
 			private Stats.PlanetStats stats = null;
 			public Biome biome = null;
@@ -4374,21 +4388,10 @@ public class SaveGameData {
 	@SuppressWarnings("unused") private static JSON_Array  getArrayValue  (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Array  (), arr, index); }
 	@SuppressWarnings("unused") private static JSON_Object getObjectValue (JSON_Array arr, int index) { return generic_getValue(new GetValueHelper.GVH_Object (), arr, index); }
 
-	private static Long getIntegerValue_checked(JSON_Object data, Object... path) {
-		if (hasValue(data, path))
-			return getIntegerValue(data, path);
-		return null;
-	}
-
-	private static Double getFloatValue_checked(JSON_Object data, Object... path) {
-		if (hasValue(data, path))
-			return getFloatValue(data, path);
-		return null;
-	}
-
-	private static String getStringValue_checked(JSON_Object data, Object... path) {
-		if (hasValue(data, path))
-			return getStringValue(data, path);
-		return null;
-	}
+	private static Boolean     getBoolValue_checked   (JSON_Object data, Object... path) { if (hasValue(data, path)) return getBoolValue   (data, path); return null; }
+	private static Long        getIntegerValue_checked(JSON_Object data, Object... path) { if (hasValue(data, path)) return getIntegerValue(data, path); return null; }
+	private static Double      getFloatValue_checked  (JSON_Object data, Object... path) { if (hasValue(data, path)) return getFloatValue  (data, path); return null; }
+	private static String      getStringValue_checked (JSON_Object data, Object... path) { if (hasValue(data, path)) return getStringValue (data, path); return null; }
+	@SuppressWarnings("unused") private static JSON_Array  getArrayValue_checked  (JSON_Object data, Object... path) { if (hasValue(data, path)) return getArrayValue  (data, path); return null; }
+	@SuppressWarnings("unused") private static JSON_Object getObjectValue_checked (JSON_Object data, Object... path) { if (hasValue(data, path)) return getObjectValue (data, path); return null; }
 }

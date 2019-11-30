@@ -69,6 +69,7 @@ import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.TristateCheckBox;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
@@ -1145,8 +1146,26 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			txtfldResources = new JTextField(20);
 			txtfldResources.setEditable(false);
 			btnSetResources = Gui.createButton("Change", e->{
+				
+				EnumSet<Resources> resources = node.value.resources;
+				if (resources.isEmpty()) {
+					resources = EnumSet.noneOf(Resources.class);
+					if (node.value.biome!=null && node.value.biome.defaultResource!=null)
+						resources.add(node.value.biome.defaultResource);
+					if (node.value.solarSystem!=null) {
+						if (node.value.solarSystem.starClass!=null) {
+							Resources starClassRes = node.value.solarSystem.starClass.defaultResource;
+							if (node.value.hasExtremeBiome)
+								starClassRes = node.value.solarSystem.starClass.defaultExtremeResource;
+							Debug.Assert(starClassRes!=null);
+							resources.add(starClassRes);
+						}
+					}
+				}
+				
 				if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
-				EnumSet<Resources> result = resourceSelectDialog.showDialog(node.value.resources);
+				EnumSet<Resources> result = resourceSelectDialog.showDialog(resources);
+				
 				if (result!=null) {
 					node.value.resources.clear();
 					node.value.resources.addAll(result);

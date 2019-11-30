@@ -144,11 +144,13 @@ public class Images {
 		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
 		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk (alt)" );
 		addColor(colorValuesVec, 0x007951, "Völker-Geschenk" );
+		addColor(colorValuesVec, 0x4D2957, "Völker-Geschenk (synth)" );
 		addColor(colorValuesVec, 0xF0A92B, "Produkt & Upgrade S" );
 		addColor(colorValuesVec, 0xC11746, "Energie" );
 		addColor(colorValuesVec, 0x2C7C9F, "Tragbares Objekt" );
 		addColor(colorValuesVec, 0x085C78, "Tech 1" );
 		addColor(colorValuesVec, 0x0063B6, "Tech 2 & Upgrade B" );
+		addColor(colorValuesVec, 0x2177C8, "Tech (synth)" );
 		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
 		addColor(colorValuesVec, 0x5B9352, "Upgrade C" );
 		addColor(colorValuesVec, 0x682603, "Schlüssel" );
@@ -162,6 +164,7 @@ public class Images {
 		addColor(colorValuesVec, 0xFFFFFF, "Weiß" );
 		addColor(colorValuesVec, 0xCCCCCC, "__" );
 		addColor(colorValuesVec, 0x447519, "__Larvenkern" );
+		addColor(colorValuesVec, 0x1A2733, "Special Token" );
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
