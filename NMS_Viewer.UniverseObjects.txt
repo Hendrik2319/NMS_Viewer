@@ -4265,8 +4265,10 @@ resources=In,Pf,NaCl
 [Pln30F800FE007004]
 name=Rogatell XVIII
 biome=Airless
-buriedTreasure=SalvageableScrap
+buriedTreasure=AncientBones
 resources=In,Co,Sr_Rost
+short=Portal
+info=-10.05, +126.58
 
 [Pln40F800FE007004]
 name=Downeyri Tarug
