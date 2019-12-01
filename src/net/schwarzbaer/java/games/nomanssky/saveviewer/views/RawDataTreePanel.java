@@ -162,6 +162,8 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 
 	private static final Color COLOR_HAS_OBFUSCATED_CHILDREN = new Color(0x7F00FF);
 	private static final Color COLOR_WAS_NOT_DEOBFUSCATED    = new Color(0xFF00FF);
+	private static final Color COLOR_WAS_PROCESSED           = new Color(0x808080);
+	private static final Color COLOR_WAS_FULLY_PROCESSED     = new Color(0x00C000);
 	
 	private final class CellRenderer extends DefaultTreeCellRenderer {
 		private static final long serialVersionUID = 7697237514743853958L;
@@ -170,6 +172,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			Component component = super.getTreeCellRendererComponent(tree, obj, isSelected, isExpanded, isLeaf, row, hasFocus);
 			
 			boolean wasProcessed = false;
+			boolean hasUnprocessedChildren = false;
 			boolean wasDeObfuscated = true;
 			boolean hasObfuscatedChildren = true;
 			RawDataTreeIcons icon = null;
@@ -177,6 +180,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 				JsonTreeNode jsonTreeNode = (JsonTreeNode)obj;
 				Value value = jsonTreeNode.data;
 				wasProcessed = value.wasProcessed;
+				hasUnprocessedChildren = value.hasUnprocessedChildren();
 				wasDeObfuscated = ((JsonTreeNode)obj).wasDeObfuscated;
 				hasObfuscatedChildren = value.hasObfuscatedChildren();
 				
@@ -195,7 +199,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			if (isSelected)                                      setForeground(getTextSelectionColor());
 			else if (showDeObfuscation && hasObfuscatedChildren) setForeground(COLOR_HAS_OBFUSCATED_CHILDREN);
 			else if (showDeObfuscation && !wasDeObfuscated)      setForeground(COLOR_WAS_NOT_DEOBFUSCATED);
-			else if (wasProcessed)                               setForeground(Color.GRAY);
+			else if (wasProcessed)                               setForeground(hasUnprocessedChildren ? COLOR_WAS_PROCESSED : COLOR_WAS_FULLY_PROCESSED);
 			else                                                 setForeground(getTextNonSelectionColor());
 			
 			return component;

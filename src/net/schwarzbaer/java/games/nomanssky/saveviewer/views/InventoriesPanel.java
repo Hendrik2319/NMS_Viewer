@@ -23,6 +23,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -48,6 +49,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory.SlotType;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Vehicle;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
@@ -65,7 +67,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		tabbedPane = new JTabbedPane();
 		addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech,data.inventories.player.cargo));
 		addTab(data.inventories.grave);
-		addTab(data.inventories.multitool);
+		addTab("MultiTools"      , new InventoryListPanel(mainwindow).addInv(data.mainMultiTool).addInv(data.altMultiTools));
 		addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(data.freighter.inventory,data.freighter.inventoryTech));
 		addTab(data.inventories.ship_old);
 		if (data.spaceShips.vehicles!=null) addTab("SpaceShips", new InventoryListPanel(mainwindow).addInv(data.spaceShips.vehicles));
@@ -109,66 +111,59 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 	}
 
 	private static final class InventoryListPanel extends JScrollPane implements Updatable {
-			private static final long serialVersionUID = -662233636434233389L;
-	
-			private Window mainwindow;
-			private JPanel contentPanel;
-	
-			private InventoryListPanel(Window mainwindow, JPanel contentPanel) {
-				super();
-				this.mainwindow = mainwindow;
-				this.contentPanel = contentPanel;
-				setViewportView(this.contentPanel);
-				getVerticalScrollBar  ().setUnitIncrement(10);
-				getHorizontalScrollBar().setUnitIncrement(10);
-			}
-	
-			public InventoryListPanel(Window mainwindow, int rows, int cols) {
-				this(mainwindow,new JPanel(new GridLayout(rows, cols)));
-			}
-			
-			public InventoryListPanel(Window mainwindow) {
-				this(mainwindow,new JPanel());
-				contentPanel.setLayout(new BoxLayout(contentPanel,BoxLayout.Y_AXIS));
-			}
-	
-			@Override
-			public void updateContent() {
-				for (Component comp:contentPanel.getComponents())
-					if (comp instanceof Updatable)
-						((Updatable)comp).updateContent();
-			}
-	
-			public InventoryListPanel addInv(Inventory... inventories) {
-				for (int i=0; i<inventories.length; ++i)
-					if (inventories[i]!=null)
-						contentPanel.add(new InventoryPanel(mainwindow,inventories[i],true,false,this));
-				return this;
-			}
-	
-			public InventoryListPanel addInv(Vehicle... vehicles) {
-				for (int i=0; i<vehicles.length; ++i)
-					if (vehicles[i]!=null) {
+		private static final long serialVersionUID = -662233636434233389L;
+
+		private Window mainwindow;
+		private JPanel contentPanel;
+
+		private InventoryListPanel(Window mainwindow, JPanel contentPanel) {
+			super();
+			this.mainwindow = mainwindow;
+			this.contentPanel = contentPanel;
+			setViewportView(this.contentPanel);
+			getVerticalScrollBar  ().setUnitIncrement(10);
+			getHorizontalScrollBar().setUnitIncrement(10);
+		}
+
+		public InventoryListPanel(Window mainwindow, int rows, int cols) {
+			this(mainwindow,new JPanel(new GridLayout(rows, cols)));
+		}
+		
+		public InventoryListPanel(Window mainwindow) {
+			this(mainwindow,new JPanel());
+			contentPanel.setLayout(new BoxLayout(contentPanel,BoxLayout.Y_AXIS));
+		}
+
+		@Override
+		public void updateContent() {
+			for (Component comp:contentPanel.getComponents())
+				if (comp instanceof Updatable)
+					((Updatable)comp).updateContent();
+		}
+
+		public InventoryListPanel addInv(Inventory... inventories) {
+			for (int i=0; i<inventories.length; ++i)
+				if (inventories[i]!=null)
+					contentPanel.add(new InventoryPanel(mainwindow,inventories[i],true,false,this));
+			return this;
+		}
+
+		public InventoryListPanel addInv(Vector<MultiTool> multiTools) {
+			for (MultiTool multiTool:multiTools)
+				if (multiTool!=null)
+					contentPanel.add(new InventoryPanel(mainwindow,multiTool.inventory,true,false,this));
+			return this;
+		}
+
+		public InventoryListPanel addInv(Vehicle... vehicles) {
+			for (int i=0; i<vehicles.length; ++i)
+				if (vehicles[i]!=null) {
 					contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].inventory    ,true,false,this));
 					contentPanel.add(new InventoryPanel(mainwindow,vehicles[i].inventoryTech,true,false,this));
 				}
-				return this;
-			}
-	/*
-			public InventoryListPanel addInv(Inventory[] inventories1, Inventory[] inventories2) {
-				for (int i=0; i<inventories1.length; ++i) {
-					contentPanel.add(new InventoryPanel(mainwindow,inventories1[i],true,false,this));
-					if (inventories2!=null && i<inventories2.length)
-						contentPanel.add(new InventoryPanel(mainwindow,inventories2[i],true,false,this));
-				}
-				if (inventories2!=null)
-					for (int i=inventories1.length; i<inventories2.length; ++i)
-						contentPanel.add(new InventoryPanel(mainwindow,inventories2[i],true,false,this));
-			
-				return this;
-			}
-	*/	
-		}
+			return this;
+		}	
+	}
 
 	private final static class InventoryPanel extends JPanel implements Updatable, ActionListener {
 		private static final long serialVersionUID = 8549406812793642121L;
@@ -319,6 +314,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private void showValues() {
 			textarea.setText("");
 			if (!isValidSlotHovered()) {
+				textarea.append("Width        : "+inventory.width+"\r\n");
 				textarea.append("Width        : "+inventory.width+"\r\n");
 				textarea.append("Height       : "+inventory.height+"\r\n");
 				if (inventory.usedSlots!=null)

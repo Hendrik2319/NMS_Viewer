@@ -34,6 +34,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -83,6 +84,8 @@ public class SaveGameData {
 	public Vector<UniverseAddress> NewAtlasStationAdressData = null;
 	public Vector<UniverseAddress> VisitedAtlasStationsData = null;
 	public Vector<VisitedSystems.VisitedSystem> visitedSystems = null;
+	public Inventory mainMultiTool;
+	public Vector<MultiTool> altMultiTools;
 	
 	public SaveGameData(JSON_Object json_data, String filename, int index, boolean isPreNEXT) {
 		error = Error.NoError;
@@ -116,6 +119,8 @@ public class SaveGameData {
 		knownWords2 = parseKnownWords("[KnownWords2]","[Word]","Races");
 		discoveryData = DiscoveryData.parse(this);
 		inventories = Inventories.parseInventories(this);
+		mainMultiTool = MultiTools.parseMain(this);
+		altMultiTools = MultiTools.parseAlternatives(this);
 		
 		baseBuildingObjects   = UnboundBuildingObject.parse(this);
 		persistentPlayerBases = PersistentPlayerBase.parseBases(this);
@@ -1316,10 +1321,8 @@ public class SaveGameData {
 				vehicle.inventory.label = inventoryLabel;
 			}
 			
-			Consumer<TextAreaOutput> extraInfosOutput = vehicle.getExtraInfosOutput();
-			if (vehicle.inventory!=null && extraInfosOutput!=null) {
-				vehicle.inventory.addExtraInfos(extraInfosOutput);
-			}
+			if (vehicle.inventory!=null)
+				vehicle.inventory.addExtraInfos(vehicle.getExtraInfosOutput());
 			
 			return vehicle;
 		}
@@ -1373,17 +1376,88 @@ public class SaveGameData {
 			return ships;
 		}
 	}
+	
+	public final static class MultiTools {
+		
+		private static Inventory parseMain(SaveGameData data) {
+			return Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "WeaponInventory"   ), "Main MultiTool", "WeaponInventory");
+		}
+		
+		private static Vector<MultiTool> parseAlternatives(SaveGameData data) {
+			JSON_Array arr = getArrayValue_checked(data.json_data, "PlayerStateData", "[AlternativeWeapons]");
+			if (arr==null) return null; 
+			
+			Vector<MultiTool> multiTools = new Vector<>();
+			for (int i=0; i<arr.size(); i++) {
+				Value value = arr.get(i);
+				JSON_Object obj = getObject(value);
+				if (obj==null) continue;
+				String label = "Alternative "+(i+1);
+				String sourcePath = "AlternativeWeapons["+i+"]";
+				multiTools.add(MultiTool.parse(data,obj,label,sourcePath));
+			}
+			
+			return multiTools;
+		}
+		
+		
+		public final static class MultiTool {
+
+			public Inventory inventory = null;
+			private String name = null;
+			private SeedValue seed = null;
+			private Boolean unknown_OGV_active = null;
+			private Long unknown_qVG_int1 = null;
+			private Long unknown_jl__int2 = null;
+
+			public static MultiTool parse(SaveGameData data, JSON_Object obj, String label, String sourcePath) {
+				if (obj==null) return null;
+				
+				MultiTool multiTool = new MultiTool();
+				multiTool.name = getStringValue (obj, "Name");
+				multiTool.seed = SeedValue.parse(getArrayValue(obj, "Seed"));
+				multiTool.unknown_OGV_active = getBoolValue (obj, "[??? OGV Active??]");
+				multiTool.unknown_qVG_int1 = getIntegerValue(obj, "[??? qVG AlternativeWeapons Int:3]");
+				multiTool.unknown_jl__int2 = getIntegerValue(obj, "[??? jl; AlternativeWeapons Int:5]");
+				
+				if (multiTool.name!=null && !multiTool.name.isEmpty())
+					label = String.format("\"%s\" [%s]", multiTool.name, label);
+				
+				Vector<String> unknown_values = new Vector<>(); // unknown_values 
+				if (multiTool.unknown_OGV_active!=null || multiTool.unknown_qVG_int1!=null || multiTool.unknown_jl__int2!=null) {
+					if (multiTool.unknown_OGV_active!=null) unknown_values.add(multiTool.unknown_OGV_active.toString());
+					if (multiTool.unknown_qVG_int1  !=null) unknown_values.add(multiTool.unknown_qVG_int1  .toString());
+					if (multiTool.unknown_jl__int2  !=null) unknown_values.add(multiTool.unknown_jl__int2  .toString());
+					label += " <"+String.join(",", unknown_values)+">";
+				}
+				
+				multiTool.inventory = Inventories.parse(data,getObjectValue(obj, "Store"), label, sourcePath+".Store");
+				if (multiTool.inventory!=null)
+					multiTool.inventory.addExtraInfos(out->{
+						out.printf("MultiTool Infos:%n");
+						if (multiTool.name!=null)
+							out.printf("   Name: %s%n", multiTool.name.isEmpty() ? "<Original Name>" : "\""+multiTool.name+"\"");
+						if (multiTool.seed!=null)
+							out.printf("   Model Seed: %s%n", multiTool.seed.getSeedStr());
+						if (!unknown_values.isEmpty())
+							out.printf("   Unknown Values: %s%n", String.join(",", unknown_values));
+					});
+				
+				return multiTool;
+			}
+			
+		}
+	}
 
 	public final static class Inventories {
 
 		private static Inventories parseInventories(SaveGameData data) {
 			Inventories inventories = new Inventories();
-			inventories.player.standard    = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory"                  ), "Player"          , "Inventory"         );
-			inventories.player.tech        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_TechOnly"         ), "Player (Tech)"   , "Inventory_TechOnly");
-			inventories.player.cargo       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_Cargo"            ), "Player (Cargo)"  , "Inventory_Cargo"   );
-			inventories.ship_old           = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ShipInventory"              ), "Ship (old)"      , "ShipInventory"     );
-			inventories.multitool          = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "WeaponInventory"            ), "MultiTool"       , "WeaponInventory"   );
-			inventories.grave              = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "GraveInventory"             ), "Grave"           , "GraveInventory"    );
+			inventories.player.standard    = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory"         ), "Player"          , "Inventory"         );
+			inventories.player.tech        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_TechOnly"), "Player (Tech)"   , "Inventory_TechOnly");
+			inventories.player.cargo       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_Cargo"   ), "Player (Cargo)"  , "Inventory_Cargo"   );
+			inventories.ship_old           = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ShipInventory"     ), "Ship (old)"      , "ShipInventory"     );
+			inventories.grave              = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "GraveInventory"    ), "Grave"           , "GraveInventory"    );
 			
 			inventories.chests = new Inventory[10];
 			for (int i=0; i<inventories.chests.length; ++i)
@@ -1405,6 +1479,7 @@ public class SaveGameData {
 			inventory.width   = getIntegerValue(inventoryData, "Width");
 			inventory.height  = getIntegerValue(inventoryData, "Height");
 			inventory.isCool  = getBoolValue   (inventoryData, "IsCool");
+			inventory.name    = getStringValue (inventoryData, "Name");
 			inventory.version = getIntegerValue(inventoryData, "Version");
 			
 			inventory.inventoryClass = getStringValue(inventoryData, "Class","InventoryClass");
@@ -1434,7 +1509,6 @@ public class SaveGameData {
 		}
 		
 		public Player player;
-		public Inventory multitool = null;
 		public Inventory[] chests = null;
 		public Inventory magicChest = null;
 		public Inventory magicChest2 = null;
@@ -1571,6 +1645,7 @@ public class SaveGameData {
 				}
 		
 				public String label;
+				public String name;
 				public Long width;
 				public Long height;
 				public Long version;
@@ -1586,6 +1661,7 @@ public class SaveGameData {
 				
 				public Inventory(String label) {
 					this.label = label;
+					this.name = null;
 					this.width = null;
 					this.height = null;
 					this.version = null;
@@ -1609,7 +1685,8 @@ public class SaveGameData {
 		//		}
 		
 				public void addExtraInfos(Consumer<TextAreaOutput> extraInfosOutput) {
-					extraInfosOutputs.add(extraInfosOutput);
+					if (extraInfosOutput!=null)
+						extraInfosOutputs.add(extraInfosOutput);
 				}
 
 				public enum SlotType { Product, Technology, Substance }
@@ -4392,6 +4469,6 @@ public class SaveGameData {
 	private static Long        getIntegerValue_checked(JSON_Object data, Object... path) { if (hasValue(data, path)) return getIntegerValue(data, path); return null; }
 	private static Double      getFloatValue_checked  (JSON_Object data, Object... path) { if (hasValue(data, path)) return getFloatValue  (data, path); return null; }
 	private static String      getStringValue_checked (JSON_Object data, Object... path) { if (hasValue(data, path)) return getStringValue (data, path); return null; }
-	@SuppressWarnings("unused") private static JSON_Array  getArrayValue_checked  (JSON_Object data, Object... path) { if (hasValue(data, path)) return getArrayValue  (data, path); return null; }
+	private static JSON_Array  getArrayValue_checked  (JSON_Object data, Object... path) { if (hasValue(data, path)) return getArrayValue  (data, path); return null; }
 	@SuppressWarnings("unused") private static JSON_Object getObjectValue_checked (JSON_Object data, Object... path) { if (hasValue(data, path)) return getObjectValue (data, path); return null; }
 }

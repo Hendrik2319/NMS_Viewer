@@ -427,3 +427,9 @@ tww [??? tww TeleportEndpoints Bool:false]
 30s [??? 30s Last or Special TeleportEndpoint?]
 RiP IngredientStorageLayout
 Kha IngredientStorageInventory
+
+SuJ [AlternativeWeapons]
+CA4 [??? CA4]
+OGV [??? OGV Active??]
+qVG [??? qVG AlternativeWeapons Int:3]
+jl; [??? jl; AlternativeWeapons Int:5]

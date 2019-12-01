@@ -150,7 +150,9 @@ public class Images {
 		addColor(colorValuesVec, 0x2C7C9F, "Tragbares Objekt" );
 		addColor(colorValuesVec, 0x085C78, "Tech 1" );
 		addColor(colorValuesVec, 0x0063B6, "Tech 2 & Upgrade B" );
-		addColor(colorValuesVec, 0x2177C8, "Tech (synth)" );
+		addColor(colorValuesVec, 0x095C77, "Tech 1 (Synth)" );
+		addColor(colorValuesVec, 0x2177C8, "Tech 2 (Synth)" );
+		addColor(colorValuesVec, 0x0063B7, "Tech 3 (Synth, old: Tech2)" );
 		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
 		addColor(colorValuesVec, 0x5B9352, "Upgrade C" );
 		addColor(colorValuesVec, 0x682603, "Schlüssel" );
@@ -162,9 +164,10 @@ public class Images {
 		addColor(colorValuesVec, 0xDC9401, "Fundstück (selten)" );
 		addColor(colorValuesVec, 0x7B0000, "Schaden" );
 		addColor(colorValuesVec, 0xFFFFFF, "Weiß" );
-		addColor(colorValuesVec, 0xCCCCCC, "__" );
-		addColor(colorValuesVec, 0x447519, "__Larvenkern" );
+		addColor(colorValuesVec, 0xCCCCCC, "CCCCCC" );
+		addColor(colorValuesVec, 0x447519, "Larvenkern" );
 		addColor(colorValuesVec, 0x1A2733, "Special Token" );
+		
 		loadColorsFromFile(colorValuesVec);
 		
 		colorValues = colorValuesVec.toArray(new NamedColor[0]);
