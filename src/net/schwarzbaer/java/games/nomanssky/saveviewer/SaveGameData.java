@@ -369,27 +369,27 @@ public class SaveGameData {
 	public static class Position {
 		
 		public Coordinates pos;
-		public Coordinates at;
-		public Coordinates up;
+		public Coordinates at_;
+		public Coordinates up_;
 		public PolarCoordinates gps;
 		
 		public Position() {
 			this.pos = null;
-			this.at  = null;
-			this.up  = null;
+			this.at_ = null;
+			this.up_ = null;
 			this.gps = null;
 		}
 		public Position(Position position) {
 			this.pos = position.pos==null?null:new      Coordinates(position.pos);
-			this.at  = position.at ==null?null:new      Coordinates(position.at );
-			this.up  = position.up ==null?null:new      Coordinates(position.up );
+			this.at_  = position.at_ ==null?null:new      Coordinates(position.at_ );
+			this.up_  = position.up_ ==null?null:new      Coordinates(position.up_ );
 			this.gps = position.gps==null?null:new PolarCoordinates(position.gps);
 		}
 		private static Position parse(JSON_Object obj, String valueName_Pos, String valueName_At, String valueName_Up) {
 			Position position = new Position();
 			position.pos = Coordinates.parse(obj, valueName_Pos);
-			position.at  = Coordinates.parse(obj, valueName_At );
-			position.up  = Coordinates.parse(obj, valueName_Up );
+			position.at_  = Coordinates.parse(obj, valueName_At );
+			position.up_  = Coordinates.parse(obj, valueName_Up );
 			position.gps = PolarCoordinates.parse(position.pos);
 			return position;
 		}
@@ -1018,9 +1018,9 @@ public class SaveGameData {
 			bbo.position  = Position.parse  (objectValue, "Position", "At", "Up"); // bug fixed
 			
 			// revert bug fixing
-			Coordinates temp = bbo.position.at;
-			bbo.position.at = bbo.position.up;
-			bbo.position.up = temp;
+//			Coordinates temp = bbo.position.at;
+//			bbo.position.at = bbo.position.up;
+//			bbo.position.up = temp;
 			
 			if (bbo.objectID!=null) {
 				GeneralizedID id = GameInfos.productIDs.get(bbo.objectID, source, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
@@ -1085,8 +1085,8 @@ public class SaveGameData {
 			obj.position = new Position();
 			obj.position.pos = playerbase.position;
 			if (playerbase.position!=null && !playerbase.position.isZero())
-				obj.position.at = new Coordinates(playerbase.position.normalize());
-			obj.position.up = playerbase.forward;
+				obj.position.up_ = new Coordinates(playerbase.position.normalize());
+			obj.position.at_ = playerbase.forward;
 			obj.objectID = null;
 			obj.specialName = playerbase.name;
 			return obj;

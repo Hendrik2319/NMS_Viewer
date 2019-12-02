@@ -4,8 +4,8 @@ Background { skyColor 0.6 0.7 0.8 }
 
 PROTO MyOrientation [
 	field SFVec3f pos 0 0 0
-	field SFVec3f at  1 0 0
-	field SFVec3f up  0 1 0
+	field SFVec3f up  1 0 0
+	field SFVec3f at  0 1 0
 	exposedField MFNode children []
 ] {
 	DEF trans Transform {
@@ -13,8 +13,8 @@ PROTO MyOrientation [
 		children IS children
 	}
 	DEF script Script {
-		field SFVec3f xVec IS at
-		field SFVec3f yVec IS up
+		field SFVec3f xVec IS up
+		field SFVec3f yVec IS at
 		eventOut SFRotation rotation_changed
 		url "javascript:
 			function initialize() {

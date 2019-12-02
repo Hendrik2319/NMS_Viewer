@@ -171,9 +171,9 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 				if (position!=null) {
 					appendLine("    position in system:");
 					if (position.pos!=null) appendLine("        pos: "+position.pos.toString("%1.2f"));
-					if (position.at !=null) appendLine("        at:  "+position.at .toString("%1.4f"));
-					if (position.up !=null) appendLine("        up:  "+position.up .toString("%1.4f"));
-					if (position.pos==null && position.at==null && position.up==null)
+					if (position.at_ !=null) appendLine("        at:  "+position.at_ .toString("%1.4f"));
+					if (position.up_ !=null) appendLine("        up:  "+position.up_ .toString("%1.4f"));
+					if (position.pos==null && position.at_==null && position.up_==null)
 						appendLine("        <no data>");
 				}
 			}
