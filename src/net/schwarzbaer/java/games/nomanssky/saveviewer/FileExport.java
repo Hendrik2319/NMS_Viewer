@@ -354,10 +354,10 @@ public class FileExport {
 				FreighterRoomCombine freightCombine = new FreighterRoomCombine();
 				
 				if (playerbase!=null) {
-					Point3D up_ = Point3D.normalizeOrNull(playerbase.position);
-					Point3D at_ = Point3D.normalizeOrNull(playerbase.forward);
-					if (at_!=null && up_!=null) {
-						cubeCombine.setBaseOrientation_AtUpFixed(at_,up_);
+					Point3D up = Point3D.normalizeOrNull(playerbase.position);
+					Point3D at = Point3D.normalizeOrNull(playerbase.forward);
+					if (at!=null && up!=null) {
+						cubeCombine.setBaseOrientation(at,up);
 						//freightCombine.setBaseOrientation(at,up);
 					}
 				}
@@ -510,8 +510,8 @@ public class FileExport {
 					vrml.printf(               "Axis {");
 					if (size>0) vrml.printf(Locale.ENGLISH," scale %1.2f %1.2f %1.2f", size, size, size);
 					vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", p.pos.x, p.pos.y, p.pos.z);
-					if (p.up_!=null && !p.up_.isZero()) vrml.printf(" up %s", p.up_.normalize().mul(size).toString("%1.3f",false));
-					if (p.at_!=null && !p.at_.isZero()) vrml.printf(" at %s", p.at_.normalize().mul(size).toString("%1.3f",false));
+					if (p.up!=null && !p.up.isZero()) vrml.printf(" up %s", p.up.normalize().mul(size).toString("%1.3f",false));
+					if (p.at!=null && !p.at.isZero()) vrml.printf(" at %s", p.at.normalize().mul(size).toString("%1.3f",false));
 					vrml.printf(               " string \"%s\"", obj.getNameOrObjectID().replace('\"','_'));
 					vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
 				}
@@ -650,31 +650,31 @@ public class FileExport {
 
 			private static Point3D getFixedPos(BuildingObject obj) {
 				if (ObjectID.BRIDGECONNECTOR.is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(4));
+					return obj.position.pos.add(obj.position.at.mul(4));
 				
 				if (ObjectID.NPCFRIGTERM    .is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(-2)).add(obj.position.up_.mul(0.05));
+					return obj.position.pos.add(obj.position.at.mul(-2)).add(obj.position.up.mul(0.05));
 				
 				if (ObjectID.AIRLCKCONNECTOR.is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(4));
+					return obj.position.pos.add(obj.position.at.mul(4));
 				
 				if (ObjectID.CORRIDORL_SPACE.is(obj.objectID))
-					return obj.position.pos.add(obj.position.up_.crossProd(obj.position.at_).mul(-2));
+					return obj.position.pos.add(obj.position.up.crossProd(obj.position.at).mul(-2));
 				
 				if (ObjectID.CORRIDORT_SPACE.is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(4));
+					return obj.position.pos.add(obj.position.at.mul(4));
 				
 				return new Point3D(obj.position.pos);
 			}
 
 			public boolean isObjPosAsExpected() {
-				if (this.obj==null || this.obj.position==null || this.obj.position.pos==null || this.obj.position.at_==null || this.obj.position.up_==null)
+				if (this.obj==null || this.obj.position==null || this.obj.position.pos==null || this.obj.position.at==null || this.obj.position.up==null)
 					return false;
 				
-				if (!isSameDirection(this.obj.position.up_,new Point3D(0,1,0)))
+				if (!isSameDirection(this.obj.position.up,new Point3D(0,1,0)))
 					return false;
 				
-				locDir = getLocalDirection(this.obj.position.at_);
+				locDir = getLocalDirection(this.obj.position.at);
 				if (locDir==null)
 					return false;
 				
@@ -816,7 +816,7 @@ public class FileExport {
 			if (!extraTexts.isEmpty()) {
 				startTime = startTask(pd, "      ", "Write Texts to File");
 				for (SingleText txt:extraTexts)
-					VRMLoutput.writeSingleTextNode_AtUpFixed(vrml, txt.text, txt.pos, txt.at_, txt.up_);
+					VRMLoutput.writeSingleTextNode(vrml, txt.text, txt.pos, txt.at, txt.up);
 				endTask(startTime);
 			}
 		}
@@ -825,14 +825,14 @@ public class FileExport {
 
 			public String text;
 			public Point3D pos;
-			public Point3D at_;
-			public Point3D up_;
+			public Point3D at;
+			public Point3D up;
 			
 			public SingleText(BuildingObject obj) {
 				text = VRMLoutput.getLabel(obj.objectID);
 				pos = obj.position.pos;
-				at_  = obj.position.at_;
-				up_  = obj.position.up_;
+				at  = obj.position.at;
+				up  = obj.position.up;
 			}
 		}
 
@@ -1804,14 +1804,14 @@ public class FileExport {
 			
 			Stack<BuildingObject> freeObj;
 			Stack<BuildingObject> remainingObj;
-			private Point3D baseAt_;
-			private Point3D baseUp_;
+			private Point3D baseAt;
+			private Point3D baseUp;
 			
 			public CubeCombine() {
 				freeObj = new Stack<>();
 				remainingObj = new Stack<>();
-				this.baseAt_ = null;
-				this.baseUp_ = null;
+				this.baseAt = null;
+				this.baseUp = null;
 				
 	//			Vector<Line> lines = new Vector<>();
 	//			lines.add(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
@@ -1835,9 +1835,9 @@ public class FileExport {
 	//			prev = blocks.get(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));    System.out.println("blocks.get(new Line(new Index3D(4,5,6),new Index3D(1,2,3)))    -> "+prev);
 			}
 			
-			public void setBaseOrientation_AtUpFixed(Point3D at_, Point3D up_) {
-				this.baseAt_ = at_;
-				this.baseUp_ = up_;
+			public void setBaseOrientation(Point3D at, Point3D up) {
+				this.baseAt = at;
+				this.baseUp = up;
 			}
 	
 			public boolean add(BuildingObject obj) {
@@ -1857,24 +1857,24 @@ public class FileExport {
 			}
 
 			private BuildingObject fixUpsideDown(BuildingObject obj) {
-				if (baseAt_==null || baseUp_==null) return obj;
+				if (baseAt==null || baseUp==null) return obj;
 				if (obj==null) return obj;
 				if (obj.position==null) return obj;
 				if (obj.position.pos==null) return obj;
 				
-				Point3D at_ = Point3D.normalizeOrNull(obj.position.at_);
-				Point3D up_ = Point3D.normalizeOrNull(obj.position.up_);
-				if (at_==null || up_==null) return obj;
+				Point3D at = Point3D.normalizeOrNull(obj.position.at);
+				Point3D up = Point3D.normalizeOrNull(obj.position.up);
+				if (at==null || up==null) return obj;
 				
-				double val = baseUp_.scalarProd(up_);
+				double val = baseUp.scalarProd(up);
 				if (Math.abs(val+1)>Neighborhood.ANGLE_TOLERANCE) return obj;
 				
 				BuildingObject newObj = new BuildingObject(obj);
-				newObj.position.pos.set(newObj.position.pos.add(up_.mul(Neighborhood.CUBESIZE)));
-				newObj.position.up_ .set(up_.mul(-1));
+				newObj.position.pos.set(newObj.position.pos.add(up.mul(Neighborhood.CUBESIZE)));
+				newObj.position.up .set(up.mul(-1));
 				
 				if (newObj.objectID.equals("^CUBEROOMCURVED"))
-					newObj.position.at_.set(up_.mul(-1).crossProd(at_));
+					newObj.position.at.set(up.mul(-1).crossProd(at));
 				
 				return newObj;
 			}
@@ -1970,22 +1970,22 @@ public class FileExport {
 				
 				private HashMap<Index3D, Neighbor> blocks;
 				private Point3D anchorPos;
-				private Point3D anchorXup_;
-				private Point3D anchorYat_;
+				private Point3D anchorXup;
+				private Point3D anchorYat;
 				private Point3D anchorZ;
 				private int neighborhoodIndex;
 				
 				public Neighborhood(BuildingObject firstObj, int neighborhoodIndex) {
 					this.neighborhoodIndex = neighborhoodIndex;
 					anchorPos = null;
-					anchorXup_ = null;
-					anchorYat_ = null;
+					anchorXup = null;
+					anchorYat = null;
 					anchorZ   = null;
 					if (firstObj.position!=null) {
 						anchorPos = firstObj.position.pos;
-						anchorXup_ = Point3D.normalizeOrNull(firstObj.position.up_);
-						anchorYat_ = Point3D.normalizeOrNull(firstObj.position.at_);
-						if (anchorXup_!=null && anchorYat_!=null) anchorZ = anchorXup_.crossProd(anchorYat_).normalize();
+						anchorXup = Point3D.normalizeOrNull(firstObj.position.up);
+						anchorYat = Point3D.normalizeOrNull(firstObj.position.at);
+						if (anchorXup!=null && anchorYat!=null) anchorZ = anchorXup.crossProd(anchorYat).normalize();
 					}
 					Index3D origin = new Index3D(0,0,0);
 					blocks = new HashMap<Index3D,Neighbor>();
@@ -1995,18 +1995,18 @@ public class FileExport {
 				private Neighbor getNeighborRelation(Position position, BuildingObject obj) {
 					if (position==null) return null;
 					if (position.pos==null) return null;
-					if (position.at_==null || position.at_.isZero()) return null;
-					if (position.up_==null || position.up_.isZero()) return null;
+					if (position.at==null || position.at.isZero()) return null;
+					if (position.up==null || position.up.isZero()) return null;
 					
-					double valUp_ = anchorXup_.scalarProd(position.up_.normalize());
-					if (Math.abs(valUp_-1.0)>ANGLE_TOLERANCE) return null;
+					double valUp = anchorXup.scalarProd(position.up.normalize());
+					if (Math.abs(valUp-1.0)>ANGLE_TOLERANCE) return null;
 					
 					Orientation orientation = getOrientation(position);
 					if (orientation==null) return null;
 					
 					Point3D indexVec = position.pos.add(anchorPos.mul(-1));
-					double iX_d=anchorXup_.scalarProd(indexVec)/CUBESIZE; int iX=(int)Math.round(iX_d); double deltaX=Math.abs(iX_d-iX);
-					double iY_d=anchorYat_.scalarProd(indexVec)/CUBESIZE; int iY=(int)Math.round(iY_d); double deltaY=Math.abs(iY_d-iY);
+					double iX_d=anchorXup.scalarProd(indexVec)/CUBESIZE; int iX=(int)Math.round(iX_d); double deltaX=Math.abs(iX_d-iX);
+					double iY_d=anchorYat.scalarProd(indexVec)/CUBESIZE; int iY=(int)Math.round(iY_d); double deltaY=Math.abs(iY_d-iY);
 					double iZ_d=anchorZ  .scalarProd(indexVec)/CUBESIZE; int iZ=(int)Math.round(iZ_d); double deltaZ=Math.abs(iZ_d-iZ);
 					
 					//System.out.printf(Locale.ENGLISH,"Neighborhood %d:   At:%1.8f   Up:%11.8f   iX:%1.8f   iY:%1.8f   iZ:%1.8f\r\n", neighborhoodIndex, valAt, valUp, deltaX, deltaY, deltaZ);
@@ -2019,21 +2019,21 @@ public class FileExport {
 				}
 	
 				private Orientation getOrientation(Position position) {
-					Point3D at_ = position.at_.normalize();
-					double valAt_ = anchorYat_.scalarProd(at_);
-					if (Math.abs(valAt_-1)<ANGLE_TOLERANCE) return Orientation.PosY;
-					if (Math.abs(valAt_+1)<ANGLE_TOLERANCE) return Orientation.NegY;
+					Point3D at = position.at.normalize();
+					double valAt = anchorYat.scalarProd(at);
+					if (Math.abs(valAt-1)<ANGLE_TOLERANCE) return Orientation.PosY;
+					if (Math.abs(valAt+1)<ANGLE_TOLERANCE) return Orientation.NegY;
 					
-					if (Math.abs(valAt_)>ANGLE_TOLERANCE) return null;
+					if (Math.abs(valAt)>ANGLE_TOLERANCE) return null;
 					
-					if (anchorXup_.scalarProd(anchorYat_.crossProd(at_))>0) return Orientation.PosZ;
+					if (anchorXup.scalarProd(anchorYat.crossProd(at))>0) return Orientation.PosZ;
 					return Orientation.NegZ;
 				}
 	
 				public void addNeighbors(Stack<BuildingObject> freeObj) {
 					if (anchorPos==null) return;
-					if (anchorXup_==null) return;
-					if (anchorYat_==null) return;
+					if (anchorXup==null) return;
+					if (anchorYat==null) return;
 					if (anchorZ  ==null) return;
 					
 					for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
@@ -2073,7 +2073,7 @@ public class FileExport {
 					Point3D color = new Point3D(1,0,0);
 					int i=0;
 					for (Neighbor n:blocks.values())
-						VRMLoutput.writeModel_AtUpFixed(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), n.obj.position.pos, n.obj.position.at_, n.obj.position.up_, 0.5, color);
+						VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), n.obj.position.pos, n.obj.position.at, n.obj.position.up, 0.5, color);
 				}
 	
 				public void writeModel(PrintWriter vrml) {
@@ -2085,8 +2085,8 @@ public class FileExport {
 	
 				private Point3D computePoint(double iX, double iY, double iZ) {
 					return anchorPos
-							.add(anchorXup_.mul((iX    )*CUBESIZE))
-							.add(anchorYat_.mul((iY-0.5)*CUBESIZE))
+							.add(anchorXup.mul((iX    )*CUBESIZE))
+							.add(anchorYat.mul((iY-0.5)*CUBESIZE))
 							.add(anchorZ  .mul((iZ-0.5)*CUBESIZE));
 				}
 				
@@ -3329,13 +3329,13 @@ public class FileExport {
 		private static void writeModel(PrintWriter vrml, BuildingObject obj, double sizeOfAxisCrosses) {
 			if (obj.position==null) return;
 			if (obj.position.pos==null) return;
-			if (obj.position.up_==null) return;
-			if (obj.position.at_==null) return;
+			if (obj.position.up==null) return;
+			if (obj.position.at==null) return;
 			
 			String objectID = obj.objectID;
 			String label = getLabel(objectID);
 			
-			writeModel_AtUpFixed(vrml, objectID, label, obj.position.pos, obj.position.at_, obj.position.up_, sizeOfAxisCrosses, null);
+			writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
 		}
 		
 		private static String getLabel(String objectID) {
@@ -3345,14 +3345,14 @@ public class FileExport {
 			return label;
 		}
 
-		private static void writeSingleTextNode_AtUpFixed(PrintWriter vrml, String text, Point3D pos, Point3D at_, Point3D up_) {
-			writeMyOrientation_AtUpFixed(vrml, pos, at_, up_, ()->{
+		private static void writeSingleTextNode(PrintWriter vrml, String text, Point3D pos, Point3D at, Point3D up) {
+			writeMyOrientation(vrml, pos, at, up, ()->{
 				vrml.printf(" SingleText { string %s }", createLabelStrs(text));
 			});
 		}
 
-		private static void writeModel_AtUpFixed(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at_, Point3D up_, double sizeOfAxisCrosses, Point3D color) {
-			writeMyOrientation_AtUpFixed(vrml, pos, at_, up_, ()->{
+		private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double sizeOfAxisCrosses, Point3D color) {
+			writeMyOrientation(vrml, pos, at, up, ()->{
 				String modelName = mapObjectID2Model.get(objectID);
 				
 				if (modelName!=null) {
@@ -3441,11 +3441,11 @@ public class FileExport {
 			vrml.println("}");
 		}
 		
-		private static void writeMyOrientation_AtUpFixed(PrintWriter vrml, Point3D pos, Point3D at_, Point3D up_, Runnable writeChildren) {
+		private static void writeMyOrientation(PrintWriter vrml, Point3D pos, Point3D at, Point3D up, Runnable writeChildren) {
 			vrml.print("MyOrientation {");
 			vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
-			if (at_!=null) vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at_.x, at_.y, at_.z);
-			if (up_!=null) vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up_.x, up_.y, up_.z);
+			if (at!=null) vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
+			if (up!=null) vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
 			
 			vrml.print (" children");
 			writeChildren.run();
