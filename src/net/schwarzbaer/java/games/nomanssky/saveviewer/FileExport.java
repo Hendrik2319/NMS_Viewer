@@ -650,31 +650,31 @@ public class FileExport {
 
 			private static Point3D getFixedPos(BuildingObject obj) {
 				if (ObjectID.BRIDGECONNECTOR.is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(4));
+					return obj.position.pos.add(obj.position.up.mul(4));
 				
 				if (ObjectID.NPCFRIGTERM    .is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(-2)).add(obj.position.up_.mul(0.05));
+					return obj.position.pos.add(obj.position.up.mul(-2)).add(obj.position.at.mul(0.05));
 				
 				if (ObjectID.AIRLCKCONNECTOR.is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(4));
+					return obj.position.pos.add(obj.position.up.mul(4));
 				
 				if (ObjectID.CORRIDORL_SPACE.is(obj.objectID))
-					return obj.position.pos.add(obj.position.up_.crossProd(obj.position.at_).mul(-2));
+					return obj.position.pos.add(obj.position.at.crossProd(obj.position.up).mul(-2));
 				
 				if (ObjectID.CORRIDORT_SPACE.is(obj.objectID))
-					return obj.position.pos.add(obj.position.at_.mul(4));
+					return obj.position.pos.add(obj.position.up.mul(4));
 				
 				return new Point3D(obj.position.pos);
 			}
 
 			public boolean isObjPosAsExpected() {
-				if (this.obj==null || this.obj.position==null || this.obj.position.pos==null || this.obj.position.at_==null || this.obj.position.up_==null)
+				if (this.obj==null || this.obj.position==null || this.obj.position.pos==null || this.obj.position.at==null || this.obj.position.up==null)
 					return false;
 				
-				if (!isSameDirection(this.obj.position.up_,new Point3D(0,1,0)))
+				if (!isSameDirection(this.obj.position.at,new Point3D(0,1,0)))
 					return false;
 				
-				locDir = getLocalDirection(this.obj.position.at_);
+				locDir = getLocalDirection(this.obj.position.up);
 				if (locDir==null)
 					return false;
 				
@@ -825,14 +825,14 @@ public class FileExport {
 
 			public String text;
 			public Point3D pos;
-			public Point3D at_;
-			public Point3D up_;
+			public Point3D at;
+			public Point3D up;
 			
 			public SingleText(BuildingObject obj) {
 				text = VRMLoutput.getLabel(obj.objectID);
 				pos = obj.position.pos;
-				at_  = obj.position.at_;
-				up_  = obj.position.up_;
+				at  = obj.position.at;
+				up  = obj.position.up;
 			}
 		}
 
@@ -1862,9 +1862,9 @@ public class FileExport {
 				if (obj.position==null) return obj;
 				if (obj.position.pos==null) return obj;
 				
-				Point3D at_ = Point3D.normalizeOrNull(obj.position.at_);
-				Point3D up_ = Point3D.normalizeOrNull(obj.position.up_);
-				if (at_==null || up_==null) return obj;
+				Point3D at = Point3D.normalizeOrNull(obj.position.at);
+				Point3D up = Point3D.normalizeOrNull(obj.position.up);
+				if (at==null || up==null) return obj;
 				
 				double val = baseAt.scalarProd(at);
 				if (Math.abs(val+1)>Neighborhood.ANGLE_TOLERANCE) return obj;
@@ -3329,8 +3329,8 @@ public class FileExport {
 		private static void writeModel(PrintWriter vrml, BuildingObject obj, double sizeOfAxisCrosses) {
 			if (obj.position==null) return;
 			if (obj.position.pos==null) return;
-			if (obj.position.up_==null) return;
-			if (obj.position.at_==null) return;
+			if (obj.position.up ==null) return;
+			if (obj.position.at ==null) return;
 			
 			String objectID = obj.objectID;
 			String label = getLabel(objectID);

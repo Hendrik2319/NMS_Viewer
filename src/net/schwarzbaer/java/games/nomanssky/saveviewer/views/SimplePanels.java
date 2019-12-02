@@ -929,8 +929,8 @@ public class SimplePanels {
 				new ColumnID("UserData"        ,    String.class,  40,-1, 80, 80, bbo->bbo.userData       ==null ? "" : String.format("0x%08X" , bbo.userData  )),
 				new ColumnID("GPS Coords"      ,    String.class,  80,-1,170,170, bbo->bbo.position==null || bbo.position.gps==null ? "" : bbo.position.gps.toString()),
 				new ColumnID("Position"        ,    String.class,  95,-1,250,250, bbo->bbo.position==null || bbo.position.pos==null ? "" : bbo.position.pos.toString("%1.2f")+String.format(Locale.ENGLISH," [R:%1.1f]",bbo.position.pos.length())),
-				new ColumnID("Up"              ,    String.class,  75,-1,150,150, bbo->bbo.position==null || bbo.position.up_ ==null ? "" : bbo.position.up_ .toString("%1.4f")),
-				new ColumnID("At"              ,    String.class,  75,-1,150,150, bbo->bbo.position==null || bbo.position.at_ ==null ? "" : bbo.position.at_ .toString("%1.4f")),
+				new ColumnID("Up"              ,    String.class,  75,-1,150,150, bbo->bbo.position==null || bbo.position.up ==null ? "" : bbo.position.up .toString("%1.4f")),
+				new ColumnID("At"              ,    String.class,  75,-1,150,150, bbo->bbo.position==null || bbo.position.at ==null ? "" : bbo.position.at .toString("%1.4f")),
 				new ColumnID("Message"         ,    String.class,  75,-1,150,150, bbo->bbo.message),
 			});
 			this.mainWindow = mainWindow;
@@ -1300,8 +1300,8 @@ public class SimplePanels {
 					case ObjectID : if (obj.objectID==null) return ""; return obj.objectID;
 					case UserData : if (obj.userData==null) return ""; return String.format("0x%08X" , obj.userData  );
 					case Position : if (obj.position==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
-					case Up       : if (obj.position==null || obj.position.up_ ==null) return ""; else return obj.position.up_ .toString(" %1.4f ");
-					case At       : if (obj.position==null || obj.position.at_ ==null) return ""; else return obj.position.at_ .toString(" %1.4f ");
+					case Up       : if (obj.position==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
+					case At       : if (obj.position==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
 					case Message  : return obj.message;
 					}
 					return null;
