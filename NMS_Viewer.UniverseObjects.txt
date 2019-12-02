@@ -242,6 +242,35 @@ resources=In,CO2,NaCl
 
 [Pln514400B573F95C]
 
+[Reg0000000524396E]
+name=Amattoymi-Grenze
+
+[Sys00D3000524396E]
+name=Tuluoma-Kuha
+race=Vykeen
+economy=1
+economy_label=mittellos
+conflict=1
+conflict_label=belanglos
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln10D3000524396E]
+
+[Pln20D3000524396E]
+
+[Pln30D3000524396E]
+
+[Pln60D3000524396E]
+name=Poyanthim Primus
+biome=Lush
+is extreme
+with water
+resources=In_,Pf,NaCl
+
 [Reg0000000029897C]
 
 [Sys0033000029897C]

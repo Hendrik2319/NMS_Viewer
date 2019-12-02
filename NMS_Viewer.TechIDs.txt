@@ -569,7 +569,7 @@
 ^SHIP_TELEPORT=Teleportempfänger
 ^SHIP_TELEPORT.type=ShipExtension
 ^SHIP_TELEPORT.image=NmsTech_Exocraft_Scan_Equipment_Upgrade_Icon.png
-^SHIP_TELEPORT.imageBG=0063B6
+^SHIP_TELEPORT.imageBG=095C77
 ^SHOTGUN=Streublaster
 ^SHOTGUN.type=MultitoolWeapon
 ^SHOTGUN.image=NmsWeapon_Scatter_Blaster_Icon.png
