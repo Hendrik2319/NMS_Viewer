@@ -149,9 +149,10 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		}
 
 		public InventoryListPanel addInv(Vector<MultiTool> multiTools) {
-			for (MultiTool multiTool:multiTools)
-				if (multiTool!=null)
-					contentPanel.add(new InventoryPanel(mainwindow,multiTool.inventory,true,false,this));
+			if (multiTools!=null)
+				for (MultiTool multiTool:multiTools)
+					if (multiTool!=null)
+						contentPanel.add(new InventoryPanel(mainwindow,multiTool.inventory,true,false,this));
 			return this;
 		}
 
@@ -314,7 +315,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		private void showValues() {
 			textarea.setText("");
 			if (!isValidSlotHovered()) {
-				textarea.append("Width        : "+inventory.width+"\r\n");
+				textarea.append("Name         : "+inventory.name+"\r\n");
 				textarea.append("Width        : "+inventory.width+"\r\n");
 				textarea.append("Height       : "+inventory.height+"\r\n");
 				if (inventory.usedSlots!=null)

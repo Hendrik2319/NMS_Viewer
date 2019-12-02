@@ -1358,6 +1358,26 @@ class=Yellow
 [Pln113200FAA8CBC4]
 oldname=Dotukullia BZ895
 
+[Sys013600FAA8CBC4]
+name=Neudin-Yen VII
+race=Gek
+economy=2
+economy_label=komfortabel
+conflict=3
+conflict_label=hoch
+atlasinterface=false
+blackhole=false
+class=Green
+short=1 Planet
+info=
+
+[Pln113600FAA8CBC4]
+name=Cutrin Delta
+biome=Exotic
+resources=Em,NH3,Fe__
+short=Atmosphere Orange
+info=
+
 [Sys014B00FAA8CBC4]
 oldname=Zeyang XIII
 race=Korvax
