@@ -2773,7 +2773,7 @@ public class FileExport {
 			addModels("CARBONPLANTER",	"^CARBONPLANTER");
 			
 			addModels("SMALLLIGHT",	    "^SMALLLIGHT");
-			addModels("WALLLIGHT",	    "^WALLLIGHTBLUE");
+			addModels("WALLLIGHT",	    makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
 			
 			addModels("BUILDLANDINGPAD","^BUILDLANDINGPAD");
 			
@@ -2786,12 +2786,51 @@ public class FileExport {
 			addModels("CUBEROOM_SPACE",	"^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 			
 			
-			addModels("SOLITARY_DOOR",			makeVariations("^%s_DOOR", "W","C","M") ); 
-			addModels("SOLITARY_WALL",			makeVariations("^%s_WALL", "W","C","M") );
-			addModels("SOLITARY_FLOOR",			makeVariations("^%s_FLOOR", "W","C","M") );
-			addModels("SOLITARY_DOORWINDOW",	makeVariations("^%s_DOORWINDOW", "W","C","M") );
-			addModels("SOLITARY_WALL_WINDOW",	makeVariations("^%s_WALL_WINDOW", "W","C","M") );
-			addModels("SOLITARY_GLASSFLOOR",	makeVariations("^%s_GFLOOR", "W","C","M") );
+//			^M_DOOR
+//			^M_DOOR_H
+//			^M_WALL
+//			^M_WALL_H
+//			^M_WALL_Q
+//			^M_WALL_Q_H
+//			^M_WALLDIAGONAL
+//			^M_ROOF_M
+//			^M_ROOF_C
+//			^M_ROOF_IC
+//			^M_ROOF
+//			^M_FLOOR
+//			^M_FLOOR_Q
+//			^M_DOORWINDOW
+//			^M_WALL_WINDOW
+//			^M_GFLOOR
+//			^M_RAMP
+//			^M_RAMP_H
+			addModels("__SOLITARY_DOOR",			makeVariations("^%s_DOOR", "W","C","M") ); 
+			addModels("__SOLITARY_DOOR_HALF",		makeVariations("^%s_DOOR_H", "W","C","M") ); 
+			addModels("__SOLITARY_WALL",			makeVariations("^%s_WALL", "W","C","M") );
+			addModels("__SOLITARY_WALL_H",			makeVariations("^%s_WALL_H", "W","C","M") );
+			addModels("__SOLITARY_WALL_Q",			makeVariations("^%s_WALL_Q", "W","C","M") );
+			addModels("__SOLITARY_WALL_Q_H",		makeVariations("^%s_WALL_Q_H", "W","C","M") );
+			addModels("__SOLITARY_WALLDIAGONAL",	makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
+			addModels("__SOLITARY_ROOF_M",			makeVariations("^%s_ROOF_M", "W","C","M") );
+			addModels("__SOLITARY_ROOF_C",			makeVariations("^%s_ROOF_C", "W","C","M") );
+			addModels("__SOLITARY_ROOF_IC",			makeVariations("^%s_ROOF_IC", "W","C","M") );
+			addModels("__SOLITARY_ROOF",			makeVariations("^%s_ROOF", "W","C","M") );
+			addModels("__SOLITARY_FLOOR",			makeVariations("^%s_FLOOR", "W","C","M") );
+			addModels("__SOLITARY_FLOOR_Q",			makeVariations("^%s_FLOOR_Q", "W","C","M") );
+			addModels("__SOLITARY_DOORWINDOW",		makeVariations("^%s_DOORWINDOW", "W","C","M") );
+			addModels("__SOLITARY_WALL_WINDOW",		makeVariations("^%s_WALL_WINDOW", "W","C","M") );
+			addModels("__SOLITARY_GLASSFLOOR",		makeVariations("^%s_GFLOOR", "W","C","M") );
+			addModels("__SOLITARY_RAMP",			makeVariations("^%s_RAMP", "W","C","M") );
+			addModels("__SOLITARY_RAMP_H",			makeVariations("^%s_RAMP_H", "W","C","M") );
+//			^M_ARCH
+//			^M_ARCH_H
+//			^M_GDOOR
+//			^M_GDOOR_D
+//			^M_SDOOR
+//			^M_TRIFLOOR
+//			^M_TRIFLOOR_Q
+			
+			addModels("__SIMPLE_LINE",	"^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE");
 		}
 		
 		private static String[] makeVariations(String format, String... strs) {
@@ -2839,13 +2878,14 @@ public class FileExport {
 			vrml.println("# Other New PROTOs");
 			vrml.println("");
 			
+			writeSimpleLineProtoToFile(vrml);
+			
 			writeProtoToFile(vrml, "CUBEFLOOR", ()->{
 				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(0.1,3.9,3.9), "	", null);
 			});
 			vrml.println("");
 			
 			{ // Solitary Walls & Floors
-				// TODO
 				double wall_thickness = 0.3;
 				double wall_length    = 16.0/3.0;
 				double wall_height    = 10.0/3.0;
@@ -2855,12 +2895,39 @@ public class FileExport {
 				double border_v       = 0.65;
 				double spacing        = 0.30;
 				
-				writeProtoToFile(vrml, "SOLITARY_FLOOR", ()->{
+				writeProtoToFile(vrml, "__SOLITARY_ROOF", ()->{
+					LineGeometry.PolyLine polyLine;
+					LineGeometry.GroupingNode group;
+					
+					group = new LineGeometry.GroupingNode();
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D(wall_thickness/2, wall_length/2   ,  wall_length/2   ));
+					polyLine.add(new Point3D(wall_height*0.6 , wall_length*0.15,  wall_length*0.15));
+					polyLine.add(new Point3D(wall_height*0.6 , wall_length*0.15, -wall_length*0.15));
+					group.add(
+						new LineGeometry.Box(wall_thickness,wall_length,wall_length),
+						polyLine,
+						new LineGeometry.Transform(polyLine).addRotation(LineGeometry.Axis.X,90),
+						new LineGeometry.Transform(polyLine).addRotation(LineGeometry.Axis.X,180),
+						new LineGeometry.Transform(polyLine).addRotation(LineGeometry.Axis.X,270)
+					);
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_FLOOR", ()->{
 					LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length,wall_length), "	", null);
 				});
 				vrml.println("");
 				
-				writeProtoToFile(vrml, "SOLITARY_WALL", ()->{
+				writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q", ()->{
+					LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2), "	", null);
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_WALL", ()->{
 					LineGeometry.writeIndexedLineSet(vrml,
 						new LineGeometry.Transform(
 							new LineGeometry.Box(wall_height,wall_thickness,wall_length)
@@ -2871,7 +2938,176 @@ public class FileExport {
 				});
 				vrml.println("");
 				
-				writeProtoToFile(vrml, "SOLITARY_DOOR", ()->{
+				writeProtoToFile(vrml, "__SOLITARY_WALL_H", ()->{
+					LineGeometry.writeIndexedLineSet(vrml,
+						new LineGeometry.Transform(
+							new LineGeometry.Box(wall_height,wall_thickness,wall_length/2)
+						).addTranslation(new Point3D(wall_height/2,0,0)),
+						"	",
+						null
+					);
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_WALL_Q", ()->{
+					LineGeometry.writeIndexedLineSet(vrml,
+						new LineGeometry.Transform(
+							new LineGeometry.Box(wall_height/4,wall_thickness,wall_length)
+						).addTranslation(new Point3D(wall_height/8,0,0)),
+						"	",
+						null
+					);
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H", ()->{
+					LineGeometry.writeIndexedLineSet(vrml,
+						new LineGeometry.Transform(
+							new LineGeometry.Box(wall_height/4,wall_thickness,wall_length/2)
+						).addTranslation(new Point3D(wall_height/8,0,0)),
+						"	",
+						null
+					);
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_WALLDIAGONAL", ()->{
+					LineGeometry.PolyLine polyLine;
+					LineGeometry.GroupingNode group;
+					
+					group = new LineGeometry.GroupingNode();
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( 0          , wall_thickness/2, -wall_length/2));
+					polyLine.add(new Point3D( 0          , wall_thickness/2,  wall_length/2));
+					polyLine.add(new Point3D( wall_height, wall_thickness/2,  wall_length/2));
+					polyLine.close();
+					group.add(
+						polyLine,
+						new LineGeometry.Transform(polyLine).addTranslation(new Point3D(0, -wall_thickness, 0)),
+						new LineGeometry.PolyLine( new Point3D( 0          , wall_thickness/2, -wall_length/2), new Point3D( 0          , -wall_thickness/2, -wall_length/2) ),
+						new LineGeometry.PolyLine( new Point3D( 0          , wall_thickness/2,  wall_length/2), new Point3D( 0          , -wall_thickness/2,  wall_length/2) ),
+						new LineGeometry.PolyLine( new Point3D( wall_height, wall_thickness/2,  wall_length/2), new Point3D( wall_height, -wall_thickness/2,  wall_length/2) )
+					);
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_ROOF_M", ()->{
+					LineGeometry.PolyLine polyLine;
+					LineGeometry.GroupingNode group;
+					
+					group = new LineGeometry.GroupingNode();
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( -wall_thickness/2              , -wall_length/2, wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2              , -wall_length/2, wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height,  wall_length/2, wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height,  wall_length/2, wall_length/2));
+					polyLine.close();
+					group.add(
+						polyLine,
+						new LineGeometry.Transform(polyLine).addTranslation(new Point3D(0, 0, -wall_length)),
+						new LineGeometry.PolyLine( new Point3D( -wall_thickness/2              , -wall_length/2, wall_length/2), new Point3D( -wall_thickness/2              , -wall_length/2, -wall_length/2) ),
+						new LineGeometry.PolyLine( new Point3D(  wall_thickness/2              , -wall_length/2, wall_length/2), new Point3D(  wall_thickness/2              , -wall_length/2, -wall_length/2) ),
+						new LineGeometry.PolyLine( new Point3D(  wall_thickness/2 + wall_height,  wall_length/2, wall_length/2), new Point3D(  wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2) ),
+						new LineGeometry.PolyLine( new Point3D( -wall_thickness/2 + wall_height,  wall_length/2, wall_length/2), new Point3D( -wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2) )
+					);
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_ROOF_C", ()->{
+					LineGeometry.PolyLine polyLine;
+					LineGeometry.GroupingNode group;
+					
+					group = new LineGeometry.GroupingNode();
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2              , -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2              , -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2));
+					polyLine.close();
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2              , -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2              , -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2));
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2              ,  wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2              ,  wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height,  wall_length/2, -wall_length/2));
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( -wall_thickness/2, -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2, -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2,  wall_length/2,  wall_length/2));
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D(  wall_thickness/2, -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2, -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2,  wall_length/2,  wall_length/2));
+					group.add(polyLine);
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_ROOF_IC", ()->{
+					LineGeometry.PolyLine polyLine;
+					LineGeometry.GroupingNode group;
+					
+					group = new LineGeometry.GroupingNode();
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D(  wall_thickness/2              ,  wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height, -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height, -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2              ,  wall_length/2, -wall_length/2));
+					polyLine.close();
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D(  wall_thickness/2              ,  wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height, -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height, -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2              ,  wall_length/2, -wall_length/2));
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D(  wall_thickness/2              ,  wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height,  wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height,  wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2              ,  wall_length/2, -wall_length/2));
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height, -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height, -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D( -wall_thickness/2 + wall_height,  wall_length/2,  wall_length/2));
+					group.add(polyLine);
+					
+					polyLine = new LineGeometry.PolyLine();
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height, -wall_length/2, -wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height, -wall_length/2,  wall_length/2));
+					polyLine.add(new Point3D(  wall_thickness/2 + wall_height,  wall_length/2,  wall_length/2));
+					group.add(polyLine);
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_DOOR", ()->{
 					LineGeometry.GroupingNode group;
 					group = new LineGeometry.GroupingNode();
 					group.add(
@@ -2889,7 +3125,25 @@ public class FileExport {
 				});
 				vrml.println("");
 				
-				writeProtoToFile(vrml, "SOLITARY_DOORWINDOW", ()->{
+				writeProtoToFile(vrml, "__SOLITARY_DOOR_HALF", ()->{
+					LineGeometry.GroupingNode group;
+					group = new LineGeometry.GroupingNode();
+					group.add(
+							
+						new LineGeometry.Transform(
+							new LineGeometry.Box( wall_height, wall_thickness, wall_length/2 )
+						).addTranslation(new Point3D( wall_height/2,0,0 )),
+						
+						new LineGeometry.Transform(
+							new LineGeometry.Box( door_height, wall_thickness, door_width )
+						).addTranslation(new Point3D( door_height/2 + wall_thickness/2,0,0))
+					);
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_DOORWINDOW", ()->{
 					double window_width   = wall_length - border_h - spacing - door_width - border_h;
 					double window_height  = wall_height - 2*border_v;
 					double window_zOffset = wall_length/2 - border_h - window_width/2;
@@ -2920,7 +3174,7 @@ public class FileExport {
 				});
 				vrml.println("");
 				
-				writeProtoToFile(vrml, "SOLITARY_WALL_WINDOW", ()->{
+				writeProtoToFile(vrml, "__SOLITARY_WALL_WINDOW", ()->{
 					double window_width   = wall_length - 2*border_h;
 					double window_height  = wall_height - 2*border_v;
 					
@@ -2944,13 +3198,76 @@ public class FileExport {
 				});
 				vrml.println("");
 				
-				writeProtoToFile(vrml, "SOLITARY_GLASSFLOOR", ()->{
+				writeProtoToFile(vrml, "__SOLITARY_GLASSFLOOR", ()->{
 					double window_width = wall_length - 2*border_h;
 					LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length,wall_length), "	", null);
 					LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,window_width,window_width), "	", COLOR_WINDOW);
 				});
 				vrml.println("");
 				
+				writeProtoToFile(vrml, "__SOLITARY_RAMP", ()->{
+					LineGeometry.GroupingNode group;
+					group = new LineGeometry.GroupingNode();
+					
+					int n_steps = 11;
+					double step_thickness = wall_thickness*0.4;
+					double step_width = wall_length/n_steps;
+					
+					LineGeometry.Box step = new LineGeometry.Box( step_thickness, step_width, wall_length );
+					
+					double offsetX0 = wall_thickness/2 - step_thickness/2;
+					double offsetY0 = -wall_length/2 - step_width/2;
+					double offsetZ0 = 0;
+					double offsetX1 = offsetX0 + wall_height;
+					double offsetY1 = offsetY0 + wall_length;
+					double offsetZ1 = 0;
+					
+					Point3D offset = new Point3D(0,0,0);
+					for (int i=1; i<=n_steps; i++) {
+						offset.x = (offsetX1-offsetX0)/n_steps*i + offsetX0;
+						offset.y = (offsetY1-offsetY0)/n_steps*i + offsetY0;
+						offset.z = (offsetZ1-offsetZ0)/n_steps*i + offsetZ0;
+						group.add(
+							new LineGeometry.Transform(step).addTranslation(offset)
+						);
+					}
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				writeProtoToFile(vrml, "__SOLITARY_RAMP_H", ()->{
+					LineGeometry.GroupingNode group;
+					group = new LineGeometry.GroupingNode();
+					
+					int n_steps = 11;
+					double step_thickness = wall_thickness*0.4;
+					double step_width = wall_length/n_steps;
+					
+					LineGeometry.Box step = new LineGeometry.Box( step_thickness, step_width, wall_length/2 );
+					
+					double offsetX0 = wall_thickness/2 - step_thickness/2;
+					double offsetY0 = -wall_length/2 - step_width/2;
+					double offsetZ0 = 0;
+					double offsetX1 = offsetX0 + wall_height;
+					double offsetY1 = offsetY0 + wall_length;
+					double offsetZ1 = 0;
+					
+					Point3D offset = new Point3D(0,0,0);
+					for (int i=1; i<=n_steps; i++) {
+						offset.x = (offsetX1-offsetX0)/n_steps*i + offsetX0;
+						offset.y = (offsetY1-offsetY0)/n_steps*i + offsetY0;
+						offset.z = (offsetZ1-offsetZ0)/n_steps*i + offsetZ0;
+						group.add(
+							new LineGeometry.Transform(step).addTranslation(offset)
+						);
+					}
+					
+					LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+				});
+				vrml.println("");
+				
+				// TODO
 			}
 			
 			writeProtoToFile(vrml, "SMALLLIGHT", 0.2, 0, ()->{
@@ -3352,20 +3669,23 @@ public class FileExport {
 		}
 
 		private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double sizeOfAxisCrosses, Point3D color) {
-			writeMyOrientation(vrml, pos, at, up, ()->{
-				String modelName = mapObjectID2Model.get(objectID);
-				
-				if (modelName!=null) {
-					String colorStr = color==null?"":(" lineColor "+color.toString("%1.2f",false));
-					String labelStr = createLabelStrs(label);
-					vrml.printf(" %s { string %s%s }", modelName, labelStr, colorStr);
-				} else
-					switch (objectID) {
-					default:
-						vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, objectID);
-						break;
-					}
-			});
+			String modelName = mapObjectID2Model.get(objectID);
+			
+			if ("__SIMPLE_LINE".equals(modelName)) {
+				writeSimpleLine(vrml, pos, at, up, objectID);
+			} else
+				writeMyOrientation(vrml, pos, at, up, ()->{
+					if (modelName!=null) {
+						String colorStr = color==null?"":(" lineColor "+color.toString("%1.2f",false));
+						String labelStr = createLabelStrs(label);
+						vrml.printf(" %s { string %s%s }", modelName, labelStr, colorStr);
+					} else
+						switch (objectID) {
+						default:
+							vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, objectID);
+							break;
+						}
+				});
 			
 		}
 		private static String createLabelStrs(String label) {
@@ -3440,7 +3760,36 @@ public class FileExport {
 			writeShape.run();
 			vrml.println("}");
 		}
+
+		private static void writeSimpleLineProtoToFile(PrintWriter vrml) {
+			vrml.println("PROTO SIMPLE_LINE [");
+			vrml.println("	field MFVec3f point []");
+			vrml.println("	field SFColor lineColor 0 0 0");
+			vrml.println("] {");
+			vrml.println("	Shape {");
+			vrml.println("		appearance Appearance { material Material { emissiveColor IS lineColor } }");
+			vrml.println("		geometry IndexedLineSet {");
+			vrml.println("			coord Coordinate { point IS point }");
+			vrml.println("			coordIndex [ 0 1 ]");
+			vrml.println("		}");
+			vrml.println("	}");
+			vrml.println("}");
+		}
 		
+		private static void writeSimpleLine(PrintWriter vrml, Point3D pos, Point3D at, Point3D up, String objectID) {
+			Color color = Color.BLACK;
+			switch (objectID) {
+			case "^U_PIPELINE"  : color = Color.RED; break;
+			case "^U_PORTALLINE": color = Color.CYAN; break;
+			case "^U_POWERLINE" : color = Color.BLUE; break;
+			default: Debug.Assert(false); break;
+			}
+			vrml.print  ("SIMPLE_LINE {");
+			vrml.printf (Locale.ENGLISH," point [ %1.4f %1.4f %1.4f, %1.4f %1.4f %1.4f ]", pos.x,pos.y,pos.z, pos.x+at.x,pos.y+at.y,pos.z+at.z);
+			vrml.printf (Locale.ENGLISH," lineColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
+			vrml.println(" }");
+		}
+
 		private static void writeMyOrientation(PrintWriter vrml, Point3D pos, Point3D at, Point3D up, Runnable writeChildren) {
 			vrml.print("MyOrientation {");
 			vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
