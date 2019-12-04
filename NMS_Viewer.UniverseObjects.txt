@@ -4455,6 +4455,8 @@ unexplored
 atlasinterface=false
 blackhole=false
 class=Green
+short=6 Planeten
+info=
 
 [Pln10BC0002FFA005]
 
@@ -4464,6 +4466,14 @@ biome=Barren
 resources=Em,Py,NaCl
 short=Portal
 info=-24.24, +74.77
+
+[Pln30BC0002FFA005]
+name=Tabouthwort Iomi
+biome=Airless
+aggrSentinels
+gravitino balls
+buriedTreasure=AncientBones
+resources=Em,NaCl,Sr_Rost
 
 [Pln40BC0002FFA005]
 
@@ -4578,6 +4588,8 @@ resources=In_,U,Fe__
 [Pln21420002FFA005]
 
 [Pln31420002FFA005]
+
+[Pln41420002FFA005]
 
 [Sys01430002FFA005]
 atlasinterface=false
