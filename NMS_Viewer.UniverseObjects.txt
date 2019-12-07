@@ -62,6 +62,36 @@ info=Monochrome und Rot
 short=Grav??
 info=
 
+[Reg0000003538C8F7]
+
+[Sys01B1003538C8F7]
+race=Gek
+economy=1
+economy_label=unerfahren
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln11B1003538C8F7]
+
+[Pln21B1003538C8F7]
+name=Bizarro says hi
+biome=Lush
+is extreme
+resources=Cu_,Pf,NaCl
+
+[Pln31B1003538C8F7]
+
+[Pln41B1003538C8F7]
+
+[Pln51B1003538C8F7]
+
+[Pln61B1003538C8F7]
+
 [Reg000000FE0528FF]
 
 [Sys01FB00FE0528FF]
@@ -4509,6 +4539,14 @@ biome=Exotic_Mega
 with water
 buriedTreasure=SalvageableScrap
 resources=Em,NH3,NaCl
+
+[Pln50C20002FFA005]
+name=Tazup N13
+biome=Toxic
+is extreme
+resources=Em_,NH3,Fe__
+short=Portal
+info=-11.16, -71.22
 
 [Sys00D70002FFA005]
 name=Ozuohe
