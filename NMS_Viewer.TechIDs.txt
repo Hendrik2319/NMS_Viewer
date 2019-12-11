@@ -163,6 +163,7 @@
 ^F_HYPERDRIVE=Frachter-Hyperantrieb
 ^F_HYPERDRIVE.type=FreighterExtension
 ^F_HYPERDRIVE.image=Freighter_Warp_Reactor_Icon.png
+^F_TELEPORT=
 ^GRENADE=Plasmawerfer
 ^GRENADE.type=MultitoolWeapon
 ^GRENADE.image=Render.grenade.PlasmaGranate.png
