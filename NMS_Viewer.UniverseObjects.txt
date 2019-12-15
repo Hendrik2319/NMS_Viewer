@@ -5538,6 +5538,32 @@ class=Yellow
 short=?? Planeten
 info=
 
+[Reg000000FB97A258]
+name=Zuchoa-Anomalie
+
+[Sys01B700FB97A258]
+name=Ayvorku IX
+race=Korvax
+economy=2
+economy_label=ausgeglichen
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+
+[Pln11B700FB97A258]
+name=Skell VII
+biome=AnomBubbles
+resources=Cu,Au,Na
+
+[Pln21B700FB97A258]
+name=Wistophin Abira
+biome=Toxic
+resources=Cu,NH3,Co
+short=2 Planeten
+info=
+
 [Reg0000000306C26B]
 name=Izganagy
 
@@ -6134,6 +6160,40 @@ blackhole=true
 blackholetarget=003D0004F46BA9
 short=1 Planet
 info=
+
+[Reg0000002420546E]
+
+[Sys00D9002420546E]
+name=Blarg
+race=Vykeen
+economy=1
+economy_label=unerfahren
+conflict=2
+conflict_label=sporadisch
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln10D9002420546E]
+name=NMS France
+biome=Exotic_Mega
+is extreme
+resources=In_,CO2,Na
+
+[Pln20D9002420546E]
+name=Ra
+biome=Barren
+resources=In,Py,Fe__
+
+[Pln30D9002420546E]
+
+[Pln40D9002420546E]
+
+[Pln50D9002420546E]
+
+[Pln60D9002420546E]
 
 [Reg00000000041483]
 name=Itrett

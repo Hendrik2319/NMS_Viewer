@@ -151,6 +151,7 @@
 ^FLORASCAN3.type=MultitoolExtensionUpgrade
 ^FLORASCAN3.image=Render.binoculars.png
 ^FLORASCAN3.imageBG=085C78
+^F_HACCESS1=
 ^F_HDRIVEBOOST1=Frachter Warp-Reaktor Sigma
 ^F_HDRIVEBOOST1.type=FreighterExtension
 ^F_HDRIVEBOOST1.image=TECHNOLOGY.FREIGHTERSIGMA.png

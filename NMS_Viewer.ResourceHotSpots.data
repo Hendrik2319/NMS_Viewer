@@ -154,3 +154,21 @@ substance=O2
 class=C
 rate=100
 
+[Planet]
+UniverseAddress=0x106D00FAA8CBC4
+name=P1 Ebbie Primus
+radius=64582.91
+
+[Region]
+name=Old Base Area
+
+[ReferencePoint]
+latitude=-23.41
+longitude=+68.56
+name=Old Base
+isBase
+
+[Circle]
+latitude=-23.41
+longitude=+68.56
+radius=368.74
