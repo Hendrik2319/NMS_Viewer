@@ -20,6 +20,7 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -1072,6 +1073,8 @@ public class SimplePanels {
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
 			Vector<PersistentPlayerBase> bases = this.data.persistentPlayerBases;
+			Vector<PersistentPlayerBase> emptyBases = new Vector<>();
+			Vector<String> emptyBaseTitles = new Vector<>();
 			for (int i=0; i<bases.size(); i++) {
 				PersistentPlayerBase pb = bases.get(i);
 				String title;
@@ -1081,10 +1084,56 @@ public class SimplePanels {
 				//	title = String.format("B%d:%s", j+1, pb.baseType==null?"????":pb.baseType.getMidLabel());
 				//else
 				//	title = String.format("B%d:%s", j+1, pb.baseType==null?"??":pb.baseType.getShortLabel());
+
+				if (pb.objects==null || pb.objects.length==0) {
+					emptyBases.add(pb);
+					emptyBaseTitles.add(title);
+					continue;
+				}
 				addBaseTab(tabbedPane, pb, title);
 			}
 			
+			if (!emptyBases.isEmpty()) {
+				tabbedPane.addTab("Empty Bases", new EmptyBasesPanel(this.data,emptyBases,emptyBaseTitles));
+			}
+			
 			add(tabbedPane,BorderLayout.CENTER);
+		}
+
+		private static void showBaseValues(JTextArea textArea, PersistentPlayerBase playerbase, Universe universe) {
+			textArea.setText("");
+			
+			textArea.append("Name         : "+(playerbase.name        ==null?"":playerbase.name        )+"\r\n");
+			textArea.append("Base Version : "+(playerbase.baseVersion ==null?"":playerbase.baseVersion )+"\r\n");
+			textArea.append("User Data    : "+(playerbase.userData    ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
+			textArea.append("RID          : "+(playerbase.rid         ==null?"":playerbase.rid         )+"\r\n");
+			textArea.append("Type         : "+(playerbase.baseType    !=null?playerbase.baseType.getLongLabel():(playerbase.baseTypeStr==""?"":("["+playerbase.baseTypeStr+"]")))+"\r\n");
+			textArea.append("Last Update  : "+(playerbase.lastUpdateTS==null?"":playerbase.lastUpdateTS.toString())+"\r\n");
+			
+			if (playerbase.owner!=null) {
+				textArea.append("\r\nOwner :\r\n");
+				textArea.append("   LID : "            +(playerbase.owner.LID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.LID))+"\r\n");
+				textArea.append("   UID (User ID  ) : "+(playerbase.owner.userID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.userID))+"\r\n");
+				textArea.append("   USN (User Name) : "+(playerbase.owner.userName==null?"":playerbase.owner.userName)+"\r\n");
+				textArea.append("   TS  (Timestamp) : "+(playerbase.owner.timeStamp ==null?"":playerbase.owner.timeStamp.toString())+"\r\n");
+			}
+			
+			if (playerbase.galacticAddress!=null) {
+				textArea.append("\r\nGalactic Address :\r\n");
+				for (String str:playerbase.galacticAddress.getVerboseName(universe)) textArea.append("   "+str+"\r\n");
+				textArea.append("   "+playerbase.galacticAddress.getCoordinates()+"\r\n");
+				textArea.append("   "+playerbase.galacticAddress.getExtendedSigBoostCode()+"\r\n");
+				textArea.append("   "+playerbase.galacticAddress.getPortalGlyphCodeStr()+"\r\n");
+				textArea.append("   "+playerbase.galacticAddress.getAddressStr()+"\r\n");
+				textArea.append("   "+String.format(Locale.ENGLISH, "%1.1f", playerbase.galacticAddress.getDistToCenter_inRegionUnits())+" regions to center of galaxy\r\n");
+			}
+			
+			if (playerbase.position!=null || playerbase.forward!=null || playerbase.gpsCoords!=null) {
+				textArea.append("\r\nPosition :\r\n");
+				if (playerbase.position !=null) textArea.append("   position  : "+playerbase.position .toString("%1.2f")+"\r\n");
+				if (playerbase.forward  !=null) textArea.append("   forward   : "+playerbase.forward  .toString("%1.4f")+"\r\n");
+				if (playerbase.gpsCoords!=null) textArea.append("   gps coords: "+playerbase.gpsCoords.toString()+"\r\n");
+			}
 		}
 
 		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title) {
@@ -1108,9 +1157,41 @@ public class SimplePanels {
 					case FreighterBase     : label.setForeground(FG_Freighter); break;
 					case HomePlanetBase    : label.setForeground(FG_Planet); break;
 					case ExternalPlanetBase: label.setForeground(FG_Other); break;
+					case SpaceBase: break;
 					}
 				add(label);
 			}
+		}
+		
+		public static class EmptyBasesPanel extends JPanel {
+			private static final long serialVersionUID = -1066602187570695115L;
+
+			private JTextArea textArea;
+
+			public EmptyBasesPanel(SaveGameData data, Vector<PersistentPlayerBase> emptyBases, Vector<String> emptyBaseTitles) {
+				super(new BorderLayout(3, 3));
+				
+				JList<String> lstBases = new JList<>(emptyBaseTitles);
+				lstBases.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+				JScrollPane listScrollPane = new JScrollPane(lstBases);
+				listScrollPane.setPreferredSize(new Dimension(300, 50));
+				
+				textArea = new JTextArea();
+				JScrollPane textAreaScrollPane = new JScrollPane(textArea);
+				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
+				
+				add(listScrollPane,BorderLayout.WEST);
+				add(textAreaScrollPane,BorderLayout.CENTER);
+				
+				lstBases.addListSelectionListener(e -> {
+					int index = lstBases.getSelectedIndex();
+					if (index>=0 && index<emptyBases.size())
+						showBaseValues(textArea, emptyBases.get(index), data.universe);
+					else
+						textArea.setText("");
+				});
+			}
+			
 		}
 
 		public static class PlayerBasePanel extends JPanel {
@@ -1150,7 +1231,7 @@ public class SimplePanels {
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
 				
-				showValues();
+				showBaseValues(textArea, this.playerbase, this.data.universe);
 				showOtherObjectsOnThisPlanet();
 			}
 			
@@ -1218,42 +1299,6 @@ public class SimplePanels {
 							nearObj.add(ubo);
 				
 				return nearObj;
-			}
-
-			private void showValues() {
-				textArea.setText("");
-				
-				textArea.append("Name         : "+(playerbase.name        ==null?"":playerbase.name        )+"\r\n");
-				textArea.append("Base Version : "+(playerbase.baseVersion ==null?"":playerbase.baseVersion )+"\r\n");
-				textArea.append("User Data    : "+(playerbase.userData    ==null?"":String.format("%08X", playerbase.userData))+"\r\n");
-				textArea.append("RID          : "+(playerbase.rid         ==null?"":playerbase.rid         )+"\r\n");
-				textArea.append("Type         : "+(playerbase.baseType    !=null?playerbase.baseType.getLongLabel():(playerbase.baseTypeStr==""?"":("["+playerbase.baseTypeStr+"]")))+"\r\n");
-				textArea.append("Last Update  : "+(playerbase.lastUpdateTS==null?"":playerbase.lastUpdateTS.toString())+"\r\n");
-				
-				if (playerbase.owner!=null) {
-					textArea.append("\r\nOwner :\r\n");
-					textArea.append("   LID : "            +(playerbase.owner.LID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.LID))+"\r\n");
-					textArea.append("   UID (User ID  ) : "+(playerbase.owner.userID==null?"":SaveViewer.steamIDs.getNameReplacement(playerbase.owner.userID))+"\r\n");
-					textArea.append("   USN (User Name) : "+(playerbase.owner.userName==null?"":playerbase.owner.userName)+"\r\n");
-					textArea.append("   TS  (Timestamp) : "+(playerbase.owner.timeStamp ==null?"":playerbase.owner.timeStamp.toString())+"\r\n");
-				}
-				
-				if (playerbase.galacticAddress!=null) {
-					textArea.append("\r\nGalactic Address :\r\n");
-					for (String str:playerbase.galacticAddress.getVerboseName(data.universe)) textArea.append("   "+str+"\r\n");
-					textArea.append("   "+playerbase.galacticAddress.getCoordinates()+"\r\n");
-					textArea.append("   "+playerbase.galacticAddress.getExtendedSigBoostCode()+"\r\n");
-					textArea.append("   "+playerbase.galacticAddress.getPortalGlyphCodeStr()+"\r\n");
-					textArea.append("   "+playerbase.galacticAddress.getAddressStr()+"\r\n");
-					textArea.append("   "+String.format(Locale.ENGLISH, "%1.1f", playerbase.galacticAddress.getDistToCenter_inRegionUnits())+" regions to center of galaxy\r\n");
-				}
-				
-				if (playerbase.position!=null || playerbase.forward!=null || playerbase.gpsCoords!=null) {
-					textArea.append("\r\nPosition :\r\n");
-					if (playerbase.position !=null) textArea.append("   position  : "+playerbase.position .toString("%1.2f")+"\r\n");
-					if (playerbase.forward  !=null) textArea.append("   forward   : "+playerbase.forward  .toString("%1.4f")+"\r\n");
-					if (playerbase.gpsCoords!=null) textArea.append("   gps coords: "+playerbase.gpsCoords.toString()+"\r\n");
-				}
 			}
 
 			private enum BaseObjectsColumnID implements SimplifiedColumnIDInterface {

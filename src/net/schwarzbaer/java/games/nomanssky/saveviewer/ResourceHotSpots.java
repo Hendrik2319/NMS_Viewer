@@ -1929,8 +1929,10 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		
 			public boolean reset() {
-				if (region==null || planet==null || planet.radius==null)
+				if (region==null || planet==null || planet.radius==null) {
+					clearValues();
 					return false;
+				}
 				
 				LatLong min = new LatLong();
 				LatLong max = new LatLong();

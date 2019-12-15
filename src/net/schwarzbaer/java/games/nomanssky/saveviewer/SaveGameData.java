@@ -165,6 +165,7 @@ public class SaveGameData {
 				if (base.galacticAddress==null) continue;
 				if (base.baseType==null) continue;
 				switch(base.baseType) {
+				case SpaceBase: break; // TODO
 				case FreighterBase: {
 					Universe.SolarSystem system = universe.findSolarSystem(base.galacticAddress);
 					if (system!=null) system.additionalInfos.hasFreighter = true;
@@ -924,6 +925,7 @@ public class SaveGameData {
 			FreighterBase     ("F","Freighter Base","Players Base on Freighter"),
 			HomePlanetBase    ("P","Planet Base"   ,"Players Base on Planet"),
 			ExternalPlanetBase("P","Other Base"    ,"Other Players Base on Planet"),
+			SpaceBase         ("S","SpaceBase (??)","SpaceBase (??)"),
 			;
 			
 			static BaseType parseValue(String str) {

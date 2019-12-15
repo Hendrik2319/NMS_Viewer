@@ -118,10 +118,12 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 						for (SolarSystem sys:r.solarSystems) {
 							if (sys.hasBlackHole && sys.blackHoleTarget!=null) {
 								Region bhtRegion = data.universe.findRegion(sys.blackHoleTarget);
-								blackHoleDist2C = r.distToCenter_RU-bhtRegion.distToCenter_RU;
-								if (numberOfBlackHoles==0) avgBlackHoleDist2C = blackHoleDist2C;
-								else avgBlackHoleDist2C = avgBlackHoleDist2C*numberOfBlackHoles + blackHoleDist2C;
-								avgBlackHoleDist2C /= (++numberOfBlackHoles);
+								if (bhtRegion!=null) {
+									blackHoleDist2C = r.distToCenter_RU-bhtRegion.distToCenter_RU;
+									if (numberOfBlackHoles==0) avgBlackHoleDist2C = blackHoleDist2C;
+									else avgBlackHoleDist2C = avgBlackHoleDist2C*numberOfBlackHoles + blackHoleDist2C;
+									avgBlackHoleDist2C /= (++numberOfBlackHoles);
+								}
 							}
 						}
 						if (!r.isReachableByTeleport()) continue;
