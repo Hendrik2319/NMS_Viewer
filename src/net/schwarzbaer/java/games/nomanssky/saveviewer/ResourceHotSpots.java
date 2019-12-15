@@ -97,6 +97,7 @@ public class ResourceHotSpots implements ActionListener {
 	private JComboBox<String> hotSpotSubstanceSelect = null;
 	private JComboBox<Planet.HotSpot.Type > hotSpotTypeSelect = null;
 	private JComboBox<Planet.HotSpot.Class> hotSpotClassSelect = null;
+	private JTextField currentLocationField = null;
 
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
@@ -235,7 +236,10 @@ public class ResourceHotSpots implements ActionListener {
 		windowConfig.tablePanel.setTopComponent(windowConfig.upperTablePanel);
 		windowConfig.tablePanel.setBottomComponent(hotSpotsTableScrollPane);
 		
-		hotSpotsView = new HotSpotsView();
+		currentLocationField = new JTextField(15);
+		currentLocationField.setEditable(false);
+		
+		hotSpotsView = new HotSpotsView(currentLocationField);
 		hotSpotsView.setPreferredSize(new Dimension(400,600));
 		
 		hotSpotTypeSelect      = new JComboBox<Planet.HotSpot.Type >(SaveViewer.addNull(Planet.HotSpot.Type .values()));
@@ -254,6 +258,8 @@ public class ResourceHotSpots implements ActionListener {
 		hotSpotsSelectPanel.add(hotSpotSubstanceSelect,c);
 		hotSpotsSelectPanel.add(new JLabel("   Class: "),c);
 		hotSpotsSelectPanel.add(hotSpotClassSelect,c);
+		hotSpotsSelectPanel.add(new JLabel("   Current Location: "),c);
+		hotSpotsSelectPanel.add(currentLocationField,c);
 		c.weightx=1;
 		hotSpotsSelectPanel.add(new JLabel(),c);
 		
@@ -1284,6 +1290,7 @@ public class ResourceHotSpots implements ActionListener {
 		private static final Color COLOR_HOTSPOT_FAILS_CRITERIA = new Color(0xD0D0D0);
 		private static final Color COLOR_AXIS                   = new Color(0x70000000,true);
 		private static final Color COLOR_BASE_RANGE             = Color.BLACK;
+		private static final Color COLOR_HOTSPOT_TWIN_RANGE     = Color.BLUE;
 		private static final Color COLOR_CIRCLE_HIGHLIGHTED     = Color.GRAY;
 		private static final Color COLOR_CIRCLE_FILL            = new Color(0xEFEFEF);
 		private static final Color COLOR_CIRCLE_FILL2           = new Color(0xF7F7F7);
@@ -1313,17 +1320,20 @@ public class ResourceHotSpots implements ActionListener {
 		private String filterSubstance = null;
 		private Planet.HotSpot.Class filterHotSpotClass = null;
 		private Planet.HotSpot.Type filterHotSpotType = null;
+
+		private JTextField currentLocationField;
 		
-		HotSpotsView() {
+		HotSpotsView(JTextField currentLocationField) {
+			this.currentLocationField = currentLocationField;
 			MouseInputAdapter mouse = new MouseInputAdapter() {
 				@Override public void mousePressed   (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) startPan  (e.getPoint()); }
 				@Override public void mouseDragged   (MouseEvent e) { proceedPan(e.getPoint());  }
 				@Override public void mouseReleased  (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) stopPan   (e.getPoint());  }
 				@Override public void mouseWheelMoved(MouseWheelEvent e) { zoom(e.getPoint(),e.getPreciseWheelRotation()); }
 				
-				@Override public void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); }
-				@Override public void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); }
-				@Override public void mouseExited (MouseEvent e) { displayedLocation=null; repaint(); }
+				@Override public void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
+				@Override public void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
+				@Override public void mouseExited (MouseEvent e) { displayedLocation=null; showCurrentPos(null); repaint(); }
 				
 				@Override
 				public void mouseClicked(MouseEvent e) {
@@ -1383,6 +1393,14 @@ public class ResourceHotSpots implements ActionListener {
 			if (filterSubstance   !=null && !filterSubstance   .equals(item.substance   )) return false;
 			if (filterHotSpotClass!=null && !filterHotSpotClass.equals(item.hotSpotClass)) return false;
 			return true;
+		}
+
+		private void showCurrentPos(Point point) {
+			LatLong location = !viewState.isOk() || point==null ? null : viewState.convertScreenToAngle(point);
+			if (location!=null)
+				currentLocationField.setText(location.toString());
+			else
+				currentLocationField.setText("");
 		}
 
 		private void findNearDisplayableLocation(Point point) {
@@ -1503,7 +1521,7 @@ public class ResourceHotSpots implements ActionListener {
 					region.circles        .forEach(item->draw(g2, item, true));
 					region.circles        .forEach(item->draw(g2, item, false));
 					region.referencePoints.forEach(item->{ if (item!=displayedLocation) draw(g2,item,false); });
-					region.hotSpots       .forEach(item->{ if (item!=displayedLocation) draw(g2,item); });
+					region.hotSpots       .forEach(item->{ if (item!=displayedLocation) draw(g2,item,false); });
 					
 					verticalAxes.drawAxis( g2, x+5      , y+20, height-40, true  );
 					verticalAxes.drawAxis( g2, x+width-5, y+20, height-40, false );
@@ -1518,7 +1536,7 @@ public class ResourceHotSpots implements ActionListener {
 							drawHighlighted(g2,circle);
 							
 						} else {
-							if (displayedLocation instanceof Planet.HotSpot       ) draw(g2, (Planet.HotSpot       ) displayedLocation);
+							if (displayedLocation instanceof Planet.HotSpot       ) draw(g2, (Planet.HotSpot       ) displayedLocation, true);
 							if (displayedLocation instanceof Planet.ReferencePoint) draw(g2, (Planet.ReferencePoint) displayedLocation, true);
 							
 							new LocationBox(viewState,width,height,displayedLocation)
@@ -1678,9 +1696,19 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		private void draw(Graphics2D g2, Planet.HotSpot item) {
+		private void draw(Graphics2D g2, Planet.HotSpot item, boolean asHighlighted) {
 			Point p = viewState.convertPos_AngleToScreen(item.location);
-			if (p!=null) drawIcon(g2, item, p.x, p.y);
+			if (p!=null) {
+				drawIcon(g2, item, p.x, p.y);
+				if (asHighlighted) {
+					int radius = viewState.convertLength_LengthToScreen(600f);
+					g2.setColor(COLOR_HOTSPOT_TWIN_RANGE);
+					Stroke currentStroke = g2.getStroke();
+					g2.setStroke(STROKE_DASHED_LINE);
+					g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
+					g2.setStroke(currentStroke);
+				}
+			}
 		}
 
 		private void drawIcon(Graphics2D g2, Planet.ReferencePoint item, int x, int y) {
