@@ -4335,6 +4335,16 @@ public class SaveGameData {
 	
 	}
 	
+	public static Long sum(Long... values) {
+		Long sum = null;
+		for (Long v:values)
+			if (v!=null) {
+				 if (sum==null) sum = v;
+				 else sum += v;
+			 }
+		return sum;
+	}
+	
 	public static boolean isPlanetAddressOK(String addressStr) {
 		if (!addressStr.startsWith("0x")) return false;
 		if (addressStr.length()>2+1+3+2+2+3+3) return false;

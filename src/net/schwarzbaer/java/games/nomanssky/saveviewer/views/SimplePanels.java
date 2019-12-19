@@ -218,6 +218,7 @@ public class SimplePanels {
 				new ColumnID("Exploration"     ,      Long.class, 35, -1,  50,  50, fr->fr.explorationValue),
 				new ColumnID("Mining"          ,      Long.class, 35, -1,  50,  50, fr->fr.miningValue),
 				new ColumnID("Diplomacy"       ,      Long.class, 35, -1,  50,  50, fr->fr.diplomacyValue),
+				new ColumnID("[Sum]"           ,      Long.class, 35, -1,  50,  50, fr->SaveGameData.sum(fr.combatValue,fr.explorationValue,fr.miningValue,fr.diplomacyValue)),
 				new ColumnID("Modifications"   ,    String.class, 35, -1,  50,  50, fr->showValue(fr.modifications)),
 				new ColumnID("Cur.Dam."        ,    String.class, 35, -1,  50,  50, fr->fr.damageValue==null || fr.damageValue==0?"":"damaged ("+fr.damageValue+")"),
 				new ColumnID("ModelSeed"       ,    String.class, 35, -1, 130, 130, fr->fr.modelSeed==null ? null : fr.modelSeed.getSeedStr()),
