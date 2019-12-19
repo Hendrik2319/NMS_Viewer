@@ -218,6 +218,26 @@ latitude=-23.00
 longitude=+69.08
 radius=376.00
 
+[Circle]
+latitude=-22.94
+longitude=+68.53
+radius=167.00
+
+[Circle]
+latitude=-22.90
+longitude=+68.48
+radius=235.00
+
+[Circle]
+latitude=-22.94
+longitude=+68.33
+radius=305.00
+
+[Circle]
+latitude=-22.52
+longitude=+68.96
+radius=432.00
+
 [HotSpot]
 latitude=-23.08
 longitude=+68.58
