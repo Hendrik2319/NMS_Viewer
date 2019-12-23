@@ -1944,6 +1944,7 @@ Background=460C34
 ^STATUE_DIP_G=
 ^STATUE_DIP_G.type=BaseDekoration
 ^STATUE_DIP_S=
+^STATUE_GEK_B=
 ^STATUE_GEK_G=
 ^STATUE_GEK_G.type=BaseDekoration
 ^STATUE_SHIP_G=

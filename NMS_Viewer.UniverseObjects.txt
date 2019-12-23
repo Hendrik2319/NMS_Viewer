@@ -4456,6 +4456,8 @@ biome=Lush
 with water
 remembrance terminal
 resources=Cu,Pf,Ag
+short=Portal
+info=-65.23, -2.43
 
 [Pln20960002FFA005]
 name=Ramena Majoris
@@ -6428,6 +6430,33 @@ atlasinterface=false
 blackhole=false
 
 [Pln11BD000843F557]
+
+[Reg0000008D40158A]
+
+[Sys0133008D40158A]
+name=Luganxois IX
+race=Korvax
+economy=1
+economy_label=unerfahren
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Green
+
+[Pln1133008D40158A]
+name=Baphila T43
+biome=Exotic_Mega
+with water
+buriedTreasure=SalvageableScrap
+resources=Em,NH3,Ag
+short=Portal
+info=-40.12, -25.11
+
+[Pln2133008D40158A]
+name=Naldeb
+biome=Irradiated
+resources=Em,U,Ag
 
 [Reg000000FFF3758F]
 name=Meer von Mundarim
