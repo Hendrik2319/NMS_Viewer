@@ -37,7 +37,6 @@ import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Random;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -90,6 +89,7 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.system.UniqueIdPool;
 
 final class UpgradeModuleInstallHelper implements ActionListener {
 
@@ -747,39 +747,6 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 	}
 	
-	private static class PoolOfUniqueIDs {
-		static PoolOfUniqueIDs instance = null;
-		@SuppressWarnings("unused")
-		static PoolOfUniqueIDs getInstance() {
-			if (instance==null)
-				instance = new PoolOfUniqueIDs();
-			return instance;
-		}
-
-		private HashSet<Long> pool;
-		private Random rnd;
-		
-		PoolOfUniqueIDs() {
-			pool = new HashSet<>();
-			rnd = new Random();
-		}
-		
-		public void add(long id) { pool.add(id); }
-		public boolean exists(long id) { return pool.contains(id); }
-		public boolean notExists(long id) { return !exists(id); }
-		public void clearPool() { pool.clear(); }
-
-		public long createNewID() {
-			long id;
-			while ( exists(id=rnd.nextLong()) || id<0 );
-			add(id);
-			return id;
-		}
-		
-		
-		
-	}
-	
 	private static class KnownModule {
 		
 		GeneralizedID moduleID;
@@ -812,7 +779,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					return null;
 				}
 			}
-			final static PoolOfUniqueIDs uniqueIDs = new PoolOfUniqueIDs();
+			final static UniqueIdPool uniqueIDs = new UniqueIdPool();
 			
 			final KnownModule module;
 			final long uniqueID;
