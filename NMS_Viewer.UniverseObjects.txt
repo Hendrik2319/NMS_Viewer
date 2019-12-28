@@ -2106,6 +2106,28 @@ class=Yellow
 short=1 Planet
 info=
 
+[Reg000000085A4C49]
+name=Iwathao-Zufluss
+
+[Sys014F00085A4C49]
+name=Ikheeo
+unexplored
+atlasinterface=false
+blackhole=false
+class=Red
+short=6 Planeten
+info=
+
+[Pln114F00085A4C49]
+
+[Pln414F00085A4C49]
+name=Rowendi Omega
+biome=Exotic_Mega
+with water
+resources=Cd,P,NaCl
+
+[Pln514F00085A4C49]
+
 [Reg00000000CD6C9E]
 name=Iczand-Weite
 
@@ -4218,6 +4240,7 @@ conflict=1
 conflict_label=stabil
 atlasinterface=false
 blackhole=false
+class=Green
 short=3 Planeten
 info=
 
@@ -4226,6 +4249,14 @@ name=Spalalu Majoris
 biome=Exotic_Mega
 with water
 resources=Em,NH3,Ag
+
+[Pln308500FE007004]
+name=Esend 48/W6
+biome=Barren
+is extreme
+resources=Em_,Py,NaCl
+short=Portal
+info=+37.05, -90.01
 
 [Sys008A00FE007004]
 name=Enoegia-Boym
@@ -7889,6 +7920,43 @@ atlasinterface=false
 blackhole=false
 
 [Pln30A400F90F56DB]
+
+[Reg000000E8370772]
+
+[Sys01CD00E8370772]
+name=Epugao
+unexplored
+atlasinterface=false
+blackhole=false
+class=Blue
+short=4 Planeten
+info=
+
+[Pln11CD00E8370772]
+name=Delta
+biome=Exotic
+resources=In,CO2,Fe__
+
+[Pln21CD00E8370772]
+name=Gamma
+biome=Toxic
+is extreme
+buriedTreasure=SalvageableScrap
+resources=In_,In,NH3,Co
+
+[Pln31CD00E8370772]
+name=France go Home
+biome=Exotic
+is extreme
+resources=In_,CO2,Co
+short=Portal
+info=+34.66, -177.69
+
+[Pln41CD00E8370772]
+name=Beta
+biome=Scorched
+is extreme
+resources=In_,P,Na
 
 [Reg0000000E3057EE]
 
