@@ -4288,6 +4288,32 @@ resources=Cu,Py,Na
 short=Portal
 info=+57.11, +29.89
 
+[Sys009B00FE007004]
+name=Yutrigg
+race=Gek
+economy=2
+economy_label=nachhaltig
+conflict=3
+conflict_label=zerstörerisch
+atlasinterface=false
+blackhole=false
+class=Blue
+short=3 Planeten
+info=
+
+[Pln109B00FE007004]
+name=Neu: Leologus
+biome=Toxic
+is extreme
+aggrSentinels
+with water
+gravitino balls
+resources=In_,NH3,NaCl
+
+[Pln209B00FE007004]
+
+[Pln309B00FE007004]
+
 [Sys009F00FE007004]
 name=Defortew
 race=Korvax
