@@ -4655,11 +4655,33 @@ name=Amseycit IX
 biome=Exotic_Mega
 is extreme
 resources=In_,CO2,Na
+short=Portal
+info=-50.73, +21.69
 
 [Pln50F30002FFA005]
 name=Aerusall Beta
 biome=AnomHexagons
 resources=In,Ag,Au
+
+[Sys01150002FFA005]
+name=Nujiaoyun
+unexplored
+atlasinterface=false
+blackhole=false
+class=Red
+short=6 Planeten
+info=
+
+[Pln21150002FFA005]
+
+[Pln51150002FFA005]
+name=Wutryothau Usuk
+biome=Toxic
+is extreme
+buriedTreasure=AncientBones
+resources=Cd_,NH3,NaCl
+short=Portal
+info=-54.39, +48.76
 
 [Sys01420002FFA005]
 name=Gashuna-Yoroz
@@ -4800,6 +4822,46 @@ name=Nacles XIV
 biome=Scorched
 is extreme
 resources=In_,P,Ag
+
+[Reg000000501EC013]
+
+[Sys01D400501EC013]
+name=Chocolatine FR BX XXXIII
+race=Korvax
+economy=2
+economy_label=In Entwicklung
+conflict=2
+conflict_label=reizbar
+atlasinterface=false
+blackhole=false
+class=Blue
+
+[Pln11D400501EC013]
+name=Gravitino Tropical Paradise XXXVI
+biome=Lush
+resources=In,Pf,NaCl
+
+[Pln21D400501EC013]
+name=Trump 2020
+biome=Exotic_Mega
+is extreme
+with water
+resources=In_,CO2,NaCl
+
+[Pln31D400501EC013]
+name=Pain au chocolat
+biome=Toxic
+resources=In,NH3,NaCl
+
+[Pln41D400501EC013]
+name=Gravitino Hot Paradise VI
+biome=Scorched
+resources=In,P,Fe__
+
+[Pln51D400501EC013]
+name=Touc 77/Y9
+biome=Frozen
+resources=In,CO2,Na
 
 [Reg000000FE130023]
 name=Muttusa
@@ -6118,6 +6180,18 @@ blackholetarget=003600FED6A36B
 class=Yellow
 short=4 Planeten
 info=
+
+[Reg000000F3FB741D]
+
+[Sys000600F3FB741D]
+atlasinterface=false
+blackhole=false
+
+[Pln100600F3FB741D]
+
+[Pln200600F3FB741D]
+
+[Pln300600F3FB741D]
 
 [Reg00000003A5B420]
 name=Amcalc-Weite
