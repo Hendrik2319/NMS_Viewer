@@ -10,14 +10,12 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,6 +58,7 @@ import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardDialog;
+import net.schwarzbaer.image.ImageSimilarity;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 
@@ -845,46 +844,65 @@ public class Images {
 		}
 	}
 	
-	private static class ComparableImage {
-		final WritableRaster raster;
-		final int index;
-		double similarity;
-
-		ComparableImage(String imageName, int index) {
-			BufferedImage image = SaveViewer.images.getImage(imageName,0xFFFFFF,256,256);
-			this.raster = image.getRaster();
-			this.index = index;
-			this.similarity = Double.NaN;
-		}
-
-		public void computeSimilarityTo(ComparableImage other) {
-			Rectangle bounds      = this .raster.getBounds();
-			Rectangle otherBounds = other.raster.getBounds();
-			if (!bounds.equals(otherBounds))
-				throw new IllegalArgumentException();
-			
-			double[] p1 = new double[4];
-			double[] p2 = new double[4];
-			similarity = 0;
-			for (int x=bounds.x; x<bounds.width+bounds.x; x++)
-				for (int y=bounds.y; y<bounds.height+bounds.y; y++) {
-					this .raster.getPixel(x, y, p1);
-					other.raster.getPixel(x, y, p2);
-					similarity += (float) Math.sqrt( (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]) );
-				}
-		}
-
-		@SuppressWarnings("unused")
-		public void testRaster() {
-			float[] pixel = new float[4];
-			Rectangle bounds = raster.getBounds();
-			for (int x=bounds.x; x<bounds.width+bounds.x; x++)
-				for (int y=bounds.y; y<bounds.height+bounds.y; y++) {
-					raster.getPixel(x, y, pixel);
-					SaveViewer.log_ln("raster(%d,%d) := [ %1.5f, %1.5f, %1.5f, %1.5f ]", x,y, pixel[0], pixel[1], pixel[2], pixel[3]);
-				}
-		}
-	}
+//	private static class ImageSimilarity<ImageID> {
+//		
+//		private RasterSource<ImageID> rasterSource;
+//		
+//		ImageSimilarity(RasterSource<ImageID> rasterSource) {
+//			this.rasterSource = rasterSource;
+//		}
+//		
+//		public int[] computeOrder(ImageID baseImage_, ImageID[] images_) {
+//			ComparableImage baseImage = new ComparableImage(-1,rasterSource.createRaster(baseImage_,0xFFFFFF,256,256));
+//			
+//			ComparableImage[] images = new ComparableImage[images_.length];
+//			for (int i=0; i<images_.length; i++) {
+//				images[i] = new ComparableImage(i,rasterSource.createRaster(images_[i],0xFFFFFF,256,256));
+//				images[i].similarity = images[i].computeSimilarityTo(baseImage);
+//			}
+//			
+//			int[] sortedIndexes = Arrays.stream(images)
+//					.sorted(Comparator.comparing(img->img.similarity))
+//					.mapToInt(img->img.index)
+//					.toArray();
+//			return sortedIndexes;
+//		}
+//		
+//		private static class ComparableImage {
+//			final WritableRaster raster;
+//			final int index;
+//			double similarity;
+//
+//			private ComparableImage(int index, WritableRaster raster) {
+//				this.raster = raster;
+//				this.index = index;
+//				this.similarity = Double.NaN;
+//			}
+//
+//			private double computeSimilarityTo(ComparableImage other) {
+//				Rectangle bounds      = this .raster.getBounds();
+//				Rectangle otherBounds = other.raster.getBounds();
+//				if (!bounds.equals(otherBounds))
+//					throw new IllegalArgumentException();
+//				
+//				double[] p1 = new double[4];
+//				double[] p2 = new double[4];
+//				double similarity = 0;
+//				for (int x=bounds.x; x<bounds.width+bounds.x; x++)
+//					for (int y=bounds.y; y<bounds.height+bounds.y; y++) {
+//						this .raster.getPixel(x, y, p1);
+//						other.raster.getPixel(x, y, p2);
+//						similarity += (float) Math.sqrt( (p1[0]-p2[0])*(p1[0]-p2[0]) + (p1[1]-p2[1])*(p1[1]-p2[1]) + (p1[2]-p2[2])*(p1[2]-p2[2]) );
+//					}
+//				return similarity;
+//			}
+//		}
+//		
+//		public interface RasterSource<ImageID> {
+//			WritableRaster createRaster(ImageID image, int backgroundColor, int width, int height);
+//		}
+//	}
+	
 
 	public static class ShowImagesDialog extends StandardDialog {
 		private static final long serialVersionUID = 2440132074027157283L;
@@ -980,29 +998,14 @@ public class Images {
 						rdbtnSortSimilarity.setSelected(true);
 					
 					pd.setTaskTitle("Compare images");
-					pd.setValue(0, SaveViewer.images.imagesNames.length);
-				});
-				
-				ComparableImage baseImage = new ComparableImage(imageName,-1);
-				//selectedImage.testRaster();
-				
-				ComparableImage[] images = new ComparableImage[SaveViewer.images.imagesNames.length];
-				for (int i=0; i<SaveViewer.images.imagesNames.length; i++) {
-					ComparableImage image1 = new ComparableImage(SaveViewer.images.imagesNames[i],i);
-					image1.computeSimilarityTo(baseImage);
-					images[i] = image1;
-					int value = i+1;
-					SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
-				}
-				
-				SaveViewer.runInEventThreadAndWait(()->{
-					pd.setTaskTitle("Sort images");
 					pd.setIndeterminate(true);
+					//pd.setValue(0, SaveViewer.images.imagesNames.length);
 				});
-				int[] sortedIndexes = Arrays.stream(images)
-						.sorted(Comparator.comparing(image2->image2.similarity))
-						.mapToInt(image3->image3.index)
-						.toArray();
+				
+				int[] sortedIndexes = ImageSimilarity.computeOrder(
+						imageName, SaveViewer.images.imagesNames,
+						(image, backgroundColor, width, height) -> SaveViewer.images.getImage(image,backgroundColor,width,height).getRaster()
+					);
 				
 				imageGridPanel.setOrder(sortedIndexes);
 				imageGridPanel.resetImages(pd);
