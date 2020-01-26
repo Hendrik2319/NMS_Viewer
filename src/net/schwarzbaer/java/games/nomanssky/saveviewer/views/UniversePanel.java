@@ -1220,20 +1220,30 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (!planet.additionalInfos.teleportEndpoints.isEmpty()) {
 					appendln("    Teleport Endpoints:");
 					for (TeleportEndpoints tel:planet.additionalInfos.teleportEndpoints)
-						appendln("        %s", tel.getNameAndGPS());
+						appendln("        \"%s\"", tel.name /*getNameAndGPS()*/);
 				}
 				if (!planet.additionalInfos.teleportEndpointsInOtherPlayerBases.isEmpty()) {
 					appendln("    Teleport Endpoints in Base of another Player:");
 					for (TeleportEndpoints tel:planet.additionalInfos.teleportEndpointsInOtherPlayerBases)
-						appendln("        %s", tel.getNameAndGPS());
+						appendln("        \"%s\"", tel.name /*getNameAndGPS()*/);
 				}
 				if (planet.additionalInfos.hasExocraftSummoningStation)
 					appendln("    Exocraft Summoning Station on Planet");
-				for (PersistentPlayerBase base:planet.additionalInfos.playerBases)
-					appendln("    Base on Planet: \"%s\"", base.name);
-				for (PersistentPlayerBase base:planet.additionalInfos.otherPlayerBases) {
-					String ownerName = base.owner!=null ? base.owner.getOwnerName() : null;
-					appendln("    Base on Planet: \"%s\" of %s", base.name, ownerName==null ? "another player" : "\""+ownerName+"\"");
+				if (!planet.additionalInfos.playerBases.isEmpty()) {
+					appendln("    My Bases on Planet:");
+					for (PersistentPlayerBase base:planet.additionalInfos.playerBases) {
+						String gps = base.gpsCoords==null ? "" : "  @"+base.gpsCoords.toString();
+						appendln("        \"%s\"%s", base.name, gps);
+					}
+				}
+				if (!planet.additionalInfos.otherPlayerBases.isEmpty()) {
+					appendln("    Other Bases on Planet:");
+					for (PersistentPlayerBase base:planet.additionalInfos.otherPlayerBases) {
+						String gps = base.gpsCoords==null ? "" : "  @"+base.gpsCoords.toString();
+						String ownerName = base.owner!=null ? base.owner.getOwnerName() : null;
+						ownerName = ownerName==null ? "another player" : "\""+ownerName+"\"";
+						appendln("        \"%s\" of %s%s", base.name, ownerName, gps);
+					}
 				}
 			}
 		}

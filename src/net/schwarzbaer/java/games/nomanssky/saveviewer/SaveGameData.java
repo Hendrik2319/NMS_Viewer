@@ -800,10 +800,10 @@ public class SaveGameData {
 			this.gpsCoords = null;
 		}
 		
-		public String getNameAndGPS() {
-			if (gpsCoords==null) return String.format("\"%s\"", name);
-			return String.format("\"%s\" @ %s", name, gpsCoords.toString());
-		}
+//		public String getNameAndGPS() {
+//			if (gpsCoords==null) return String.format("\"%s\"", name);
+//			return String.format("\"%s\" @ %s", name, gpsCoords.toString());
+//		}
 
 		private static Vector<TeleportEndpoints> parse(SaveGameData data) {
 			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","TeleportEndpoints");
