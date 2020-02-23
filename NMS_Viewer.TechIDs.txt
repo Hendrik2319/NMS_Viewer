@@ -581,6 +581,9 @@
 ^SMG.type=MultitoolWeapon
 ^SMG.image=Pulse_spitter.png
 ^SMG.imageBG=236D4C
+^SOUL_LASER=Gemütsstrahl
+^SOUL_LASER.type=Special
+^SOUL_LASER.image=_self.SOUL_LASER.png
 ^STARSUIT=Sternsamen
 ^STARSUIT.type=ExosuitExtension
 ^STARSUIT.image=PRODUCT.HEXCORE.png
@@ -618,7 +621,11 @@
 ^SUB_RECHARGE.upgradeClass=C
 ^SUIT_REFINER=Persönliche Raffinerie
 ^SUIT_REFINER.type=ExosuitExtension
+^SUIT_REFINER.image=20191201173616_1.jpg
 ^SUIT_REFINER.imageBG=2177C8
+^SUN_LASER=Solarstrahl
+^SUN_LASER.type=MultitoolExtension
+^SUN_LASER.image=_self.SUN_LASER.png
 ^TERRAINEDITOR=Terrainmanipulator
 ^TERRAINEDITOR.type=MultitoolExtension
 ^TERRAINEDITOR.image=RENDER.TERRAINEDITOR.png
