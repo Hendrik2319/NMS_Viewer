@@ -592,6 +592,32 @@ blackhole=false
 
 [Pln411600FCBF2A5B]
 
+[Reg00000005417A6B]
+
+[Sys02190005417A6B]
+name=Ischel-Althu
+race=Gek
+economy=1
+economy_label=scheiternd
+abandoned
+atlasinterface=false
+blackhole=false
+class=Blue
+short=4 Planeten
+info=
+
+[Pln12190005417A6B]
+name=Axentha Sigma
+is extreme
+with water
+resources=In_,CO2,Fe__
+
+[Pln22190005417A6B]
+
+[Pln32190005417A6B]
+
+[Pln42190005417A6B]
+
 [Reg00000004369A84]
 name=Iogamus
 
@@ -4528,6 +4554,10 @@ resources=Em_,Py,NaCl
 short=Portal
 info=+37.05, -90.01
 
+[Sys008800FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys008A00FE007004]
 name=Enoegia-Boym
 race=Korvax
@@ -4650,6 +4680,10 @@ is extreme
 aggrSentinels
 gravitino balls
 resources=Cu_,Py,Fe__
+
+[Sys00AB00FE007004]
+atlasinterface=false
+blackhole=false
 
 [Sys00C700FE007004]
 atlasinterface=false

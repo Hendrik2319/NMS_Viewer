@@ -295,6 +295,7 @@
 ^LAUNCHER.type=ShipExtension
 ^LAUNCHER.image=Render.landinggear.NEXT.png
 ^LAUNCHER.imageBG=095C77
+^LAUNCHER_ALIEN=
 ^OBSOLETE=Überholte Technologie
 ^OBSOLETE.type=Product
 ^OBSOLETE.image=PRODUCT.TECHMODULE.png
@@ -378,6 +379,7 @@
 ^SHIELDBOOST2.type=ExosuitExtensionUpgrade
 ^SHIELDBOOST2.image=Render.shieldmod.png
 ^SHIELDBOOST2.imageBG=085C78
+^SHIELD_ALIEN=
 ^SHIPBLOBCOOL1=Zyklotron-Balliste-Kühlmittel Sigma
 ^SHIPBLOBCOOL1.obsolete=
 ^SHIPBLOBCOOL1.type=ShipWeaponUpgrade
@@ -447,6 +449,7 @@
 ^SHIPGUNRATE2.type=ShipWeaponUpgrade
 ^SHIPGUNRATE2.image=Render.shipprojectile1mod.Photonenkanone.grau.png
 ^SHIPGUNRATE2.imageBG=0D81A8
+^SHIPGUN_ALIEN=
 ^SHIPJUMP1=Impulsantrieb
 ^SHIPJUMP1.type=ShipExtension
 ^SHIPJUMP1.image=Render.pulsedrive.png
@@ -461,6 +464,7 @@
 ^SHIPJUMP3.type=ShipExtensionUpgrade
 ^SHIPJUMP3.image=Render.pulsedrive.Impulsantrieb.png
 ^SHIPJUMP3.imageBG=085C78
+^SHIPJUMP_ALIEN=
 ^SHIPLAS1=Phasenstrahler
 ^SHIPLAS1.type=ShipWeapon
 ^SHIPLAS1.image=Phase_beam.png
@@ -475,6 +479,7 @@
 ^SHIPLASCOOL2.type=ShipWeaponUpgrade
 ^SHIPLASCOOL2.image=Phase_beam_upgrade.png
 ^SHIPLASCOOL2.imageBG=5B9352
+^SHIPLAS_ALIEN=
 ^SHIPLDMG1=Strahlaufprall Sigma
 ^SHIPLDMG1.obsolete=
 ^SHIPLDMG1.type=ShipWeaponUpgrade
@@ -1132,6 +1137,7 @@
 ^VEHICLE_SCAN2.image=NmsTech_Exocraft_Scan_Equipment_Upgrade_Icon.png
 ^VEHICLE_SCAN2.imageBG=0063B6
 ^VEHICLE_SCAN2.upgradeClass=A
+^WARP_ALIEN=
 ^WEAPSLOT_DMG1=Kurzer Schaltkreis
 ^WEAPSLOT_DMG1.type=Special
 ^WEAPSLOT_DMG1.image=MAINTTECH.FUEL2.NEXT.png
