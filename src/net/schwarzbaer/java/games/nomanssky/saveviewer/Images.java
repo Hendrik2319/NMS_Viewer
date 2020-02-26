@@ -166,6 +166,7 @@ public class Images {
 		addColor(colorValuesVec, 0xCCCCCC, "CCCCCC" );
 		addColor(colorValuesVec, 0x447519, "Larvenkern" );
 		addColor(colorValuesVec, 0x1A2733, "Special Token" );
+		addColor(colorValuesVec, 0x007953, "Köder (Pflanze)" );
 		
 		loadColorsFromFile(colorValuesVec);
 		
