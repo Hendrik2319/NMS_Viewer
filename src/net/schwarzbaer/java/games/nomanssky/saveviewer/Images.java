@@ -64,27 +64,23 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 
 public class Images {
 	
+	public ImageList images;
+	
 	public NamedColor[] colorValues;
 	private final HashMap<Integer,NamedColor> colorMap; 
 	private final Vector<ColorListListender> colorListListenders;
-	
-	public String[] imagesNames;
-	private final HashMap<String,BufferedImage> images;
-	private final Vector<ImageListListener> imageListListeners;
-
 	
 	public Images() {
 		colorValues = null;
 		colorMap = new HashMap<>();
 		colorListListenders = new Vector<>();
-		imagesNames = null;
-		images = new HashMap<String,BufferedImage>();
-		imageListListeners = new Vector<>();
+		
+		images = new ImageList();
 	}
 	
 	public void init() {
 		prepareColors();
-		readImages(null);
+		images.readImages(null,true);
 		UpgradeCategoryImages.init();
 	}
 	
@@ -382,238 +378,293 @@ public class Images {
 		
 	}
 	
-	private int findImage(String imagesName) {
-		for (int i=0; i<imagesNames.length; i++)
-			if (imagesNames[i].equalsIgnoreCase(imagesName))
-				return i;
-		return -1;
-	}
-
-	public boolean existImage(String name) {
-		return findImage(name) != -1;
-	}
+	public static class ImageList {
+		
+		public String[] names;
+		private final HashMap<String,BufferedImage> images;
+		private final Vector<ImageListListener> listeners;
+		
+		ImageList() {
+			names = null;
+			images = new HashMap<String,BufferedImage>();
+			listeners = new Vector<>();
+		}
+		
+		public static interface ImageListListener {
+			public void imageListChanged();
+		}
 	
-	public boolean renameImage(String oldName, String newName, ProgressDialog pd, Runnable taskBeforeUpdatingImageListListeners) {
-		int index = findImage(oldName);
-		if (index == -1) { SaveViewer.log_error_ln("Can't rename image: Image \"%s\" was not found in image list.", oldName); return false; }
-		
-		int other = findImage(newName);
-		if (other!=-1 && other!=index) { SaveViewer.log_error_ln("Can't rename image: Another image with the new name \"%s\" was found in image list.", newName); return false; }
-		
-		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
-		if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't rename image: Image folder \"%s\" does not exist.", folder); return false; }
-		
-		File source = new File(folder,oldName);
-		File target = new File(folder,newName);
-		if (!source.isFile()) { SaveViewer.log_error_ln("Can't rename image: Source image file \"%s\" was not found." , source.getPath()); return false; }
-		if ( target.exists()) { SaveViewer.log_error_ln("Can't rename image: Target image file \"%s\" already exists.", target.getPath()); return false; }
-		
-		if (oldName.equalsIgnoreCase(newName)) {
-			File temp = new File(folder,oldName+".temp");
-			int i = 0;
-			while(temp.exists()) { i++; temp = new File(folder,oldName+".temp"+i); }
-			
-			try {
-				Files.move(source.toPath(), temp.toPath(), StandardCopyOption.ATOMIC_MOVE);
-				source = temp;
-			} catch (IOException ex) {
-				SaveViewer.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
-				return false;
-			}
-		}
-		
-		try {
-			Files.move(source.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE);
-		} catch (IOException ex) {
-			SaveViewer.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
-			return false;
-		}
-		
-		imagesNames[index] = newName;
-		
-		BufferedImage image = images.remove(oldName);
-		if (image!=null) images.put(newName,image);
-		
-		if (taskBeforeUpdatingImageListListeners!=null)
-			taskBeforeUpdatingImageListListeners.run();
-		
-		updateImageListListeners(pd);
-		return true;
-	}
-
-	public boolean deleteImage(String imageFileName, Consumer<Integer> taskBeforeUpdatingImageListListeners) {
-		int index = findImage(imageFileName);
-		if (index == -1) { SaveViewer.log_error_ln("Can't delete image: Image \"%s\" was not found in image list.", imageFileName); return false; }
-		
-		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
-		if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't delete image: Image folder \"%s\" does not exist.", folder); return false; }
-		
-		File source = new File(folder,imageFileName);
-		if (!source.isFile()) { SaveViewer.log_error_ln("Can't delete image: Image file \"%s\" was not found.", source.getPath()); return false; }
-		
-		try {
-			Files.delete(source.toPath());
-		} catch (IOException ex) {
-			SaveViewer.log_error_ln("Can't delete image: IOException: %s", ex.getMessage());
-			return false;
-		}
-		
-		Vector<String> vector = new Vector<String>(Arrays.asList(imagesNames));
-		vector.remove(index);
-		imagesNames = vector.toArray(new String[0]);
-		
-		images.remove(imageFileName);
-		
-		if (taskBeforeUpdatingImageListListeners!=null)
-			taskBeforeUpdatingImageListListeners.accept(index);
-		
-		updateImageListListeners(null);
-		return true;
-	}
-
-	public static interface ImageListListener {
-		public void imageListChanged();
-	}
+		public void    addImageListListener(ImageListListener ill) { listeners.   add(ill); }
+		public void removeImageListListener(ImageListListener ill) { listeners.remove(ill); }
 	
-	public void addImageListListener(ImageListListener ill) {
-		imageListListeners.add(ill);
-	}
-	
-	public void removeImageListListener(ImageListListener ill) {
-		imageListListeners.remove(ill);
-	}
-
-	public void reloadImageList(ProgressDialog pd) {
-		readImages(pd);
-		updateImageListListeners(pd);
-	}
-
-	private void updateImageListListeners(ProgressDialog pd) {
-		if (pd!=null) {
-			SaveViewer.runInEventThreadAndWait(()->{
-				pd.setTaskTitle("Update GUI");
-				pd.setValue(0, imageListListeners.size());
-			});
-		}
-		for (int i=0; i<imageListListeners.size(); i++) {
-			imageListListeners.get(i).imageListChanged();
+		private void updateImageListListeners(ProgressDialog pd) {
 			if (pd!=null) {
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Update GUI");
+					pd.setValue(0, listeners.size());
+				});
+			}
+			for (int i=0; i<listeners.size(); i++) {
+				listeners.get(i).imageListChanged();
+				if (pd!=null) {
+					int value = i+1;
+					SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+				}
+			}
+		}
+		
+		public void reload(ProgressDialog pd) {
+			readImages(pd,true);
+			updateImageListListeners(pd);
+		}
+		
+		public void findNewImages(ProgressDialog pd) {
+			readImages(pd,false);
+			updateImageListListeners(pd);
+		}
+	
+		private void readImages(ProgressDialog pd, boolean readAll) {
+			if (pd!=null) {
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Get Image List");
+					pd.setIndeterminate(true);
+				});
+			}
+			long start = System.currentTimeMillis();
+			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
+			SaveViewer.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
+			if (!folder.isDirectory()) {
+				SaveViewer.log_error_ln("   ... abort reading. Can't open folder.");
+				return;
+			}
+			
+			String[] foundImages = folder.list(new FilenameFilter() {
+				@Override public boolean accept(File dir, String name) {
+					if (!new File(dir,name).isFile()) return false;
+					name = name.toLowerCase();
+					if (name.endsWith(".png" )) return true;
+					if (name.endsWith(".jpg" )) return true;
+					if (name.endsWith(".jpeg")) return true;
+					return false;
+				}
+			});
+			
+			if (readAll)
+				readAllImages(pd, folder, foundImages);
+			else
+				readNewImages(pd, folder, foundImages);
+			
+			if (pd!=null)
+				SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle("Sort Image List"));
+			Arrays.sort(names,Comparator.comparing(String::toLowerCase));
+			
+			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		}
+		
+		private void readNewImages(ProgressDialog pd, File folder, String[] foundImages) {
+			if (pd!=null)
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Find & Read New Images");
+					pd.setValue(0, foundImages.length);
+				});
+			
+			Vector<String> newNamesList = new Vector<>(Arrays.asList(names));
+			for (int i=0; i<foundImages.length; ++i) {
+				String fileName = foundImages[i];
+				if (!images.containsKey(fileName)) {
+					BufferedImage image = readImage(folder,fileName);
+					
+					if (image!=null) {
+						images.put(fileName, image);
+						newNamesList.add(fileName);
+					}
+					
+					int value = i+1;
+					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+				}
+			}
+			SaveViewer.log_ln("   %d image(s) added", newNamesList.size()-names.length);
+			
+			names = newNamesList.toArray(new String[newNamesList.size()]);
+		}
+		
+		private void readAllImages(ProgressDialog pd, File folder, String[] foundImages) {
+			names = foundImages;
+			
+			if (pd!=null)
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Read Images");
+					pd.setValue(0, names.length);
+				});
+			
+			int listChunkIndex = 0;
+			images.clear();
+			for (int i=0; i<names.length; ++i) {
+				String fileName = names[i];
+				BufferedImage image = readImage(folder,fileName);
+				
+				if (image!=null)
+					images.put(fileName, image);
+				
 				int value = i+1;
-				SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+				else {
+					int n= i*6/names.length;
+					if (listChunkIndex != n) {
+						listChunkIndex = n;
+						SaveViewer.log(" .. %d",images.size());
+					}
+				}
 			}
+			if (pd==null)
+				SaveViewer.log_ln(" .. %d",images.size());
 		}
-	}
-
-	private void readImages(ProgressDialog pd) {
-		if (pd!=null) {
-			SaveViewer.runInEventThreadAndWait(()->{
-				pd.setTaskTitle("Get Image List");
-				pd.setIndeterminate(true);
-			});
-		}
-		long start = System.currentTimeMillis();
-		File folder = new File(FileExport.EXTRA_IMAGES_PATH);
-		SaveViewer.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
-		if (!folder.isDirectory()) {
-			SaveViewer.log_error_ln("   ... abort reading. Can't open folder.");
-			return;
-		}
-		
-		imagesNames = folder.list(new FilenameFilter() {
-			@Override public boolean accept(File dir, String name) {
-				if (!new File(dir,name).isFile()) return false;
-				name = name.toLowerCase();
-				if (name.endsWith(".png" )) return true;
-				if (name.endsWith(".jpg" )) return true;
-				if (name.endsWith(".jpeg")) return true;
-				return false;
-			}
-		});
-		if (pd!=null)
-			SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle("Sort Image List"));
-		Arrays.sort(imagesNames,Comparator.comparing(String::toLowerCase));
-		
-		if (pd!=null)
-			SaveViewer.runInEventThreadAndWait(()->{
-				pd.setTaskTitle("Read Images");
-				pd.setValue(0, imagesNames.length);
-			});
-		
-		int listChunkIndex = 0;
-		images.clear();
-		for (int i=0; i<imagesNames.length; ++i) {
-			File file = new File(folder,imagesNames[i]);
+	
+		private BufferedImage readImage(File folder, String fileName) {
+			File file = new File(folder,fileName);
 			//InputStream stream = images.getClass().getResourceAsStream("/icons/"+imagesNames[i]);
 			
 			BufferedImage image = null;
 			try { image = ImageIO.read(file); }
 			catch (IOException e) {}
+			return image;
+		}
+		public BufferedImage[] getImages(boolean sorted) {
+			if (!sorted)
+				return images.values().toArray(new BufferedImage[0]);
 			
-			if (image!=null)
-				images.put(imagesNames[i], image);
+			BufferedImage[] array = new BufferedImage[names.length];
+			for (int i=0; i<names.length; ++i)
+				array[i] = images.get(names[i]);
 			
-			int value = i+1;
-			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
-			else {
-				int n= i*6/imagesNames.length;
-				if (listChunkIndex != n) {
-					listChunkIndex = n;
-					SaveViewer.log(" .. %d",images.size());
+			return array;
+		}
+	
+		public BufferedImage getImage(String imageFileName, Integer imageBackground, int width, int height) {
+			BufferedImage baseImage = null;
+			if (imageFileName!=null)
+				baseImage = images.get(imageFileName);
+			
+			if (imageBackground==null) {
+				if (baseImage==null) return baseImage;
+				if (width==baseImage.getWidth() && height==baseImage.getHeight()) return baseImage;
+			}
+			
+			if (width <0) width  = (baseImage==null)?256:baseImage.getWidth();
+			if (height<0) height = (baseImage==null)?256:baseImage.getHeight();
+			BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			Graphics g = combinedImage.getGraphics();
+			if (imageBackground!=null) {
+				g.setColor(new Color(imageBackground));
+				g.fillRect(0,0,width,height);
+			}
+			if (baseImage!=null) {
+				if (width==baseImage.getWidth() && height==baseImage.getHeight())
+					g.drawImage(baseImage,0,0,null);
+				else {
+					if (g instanceof Graphics2D) {
+						Graphics2D g2 = (Graphics2D)g;
+						g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+						g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+						g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+						g2.drawImage(baseImage,0,0,width,height,null);
+					} else
+						g.drawImage(baseImage,0,0,width,height,null);
 				}
 			}
+			return combinedImage;
 		}
-		if (pd==null)
-			SaveViewer.log_ln(" .. %d",images.size());
-		
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-
-	public BufferedImage[] getImages(boolean sorted) {
-		if (!sorted)
-			return images.values().toArray(new BufferedImage[0]);
-		
-		BufferedImage[] array = new BufferedImage[imagesNames.length];
-		for (int i=0; i<imagesNames.length; ++i)
-			array[i] = images.get(imagesNames[i]);
-		
-		return array;
-	}
-
-	public BufferedImage getImage(String imageFileName, Integer imageBackground, int width, int height) {
-		BufferedImage baseImage = null;
-		if (imageFileName!=null)
-			baseImage = images.get(imageFileName);
-		
-		if (imageBackground==null) {
-			if (baseImage==null) return baseImage;
-			if (width==baseImage.getWidth() && height==baseImage.getHeight()) return baseImage;
-		}
-		
-		if (width <0) width  = (baseImage==null)?256:baseImage.getWidth();
-		if (height<0) height = (baseImage==null)?256:baseImage.getHeight();
-		BufferedImage combinedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		Graphics g = combinedImage.getGraphics();
-		if (imageBackground!=null) {
-			g.setColor(new Color(imageBackground));
-			g.fillRect(0,0,width,height);
-		}
-		if (baseImage!=null) {
-			if (width==baseImage.getWidth() && height==baseImage.getHeight())
-				g.drawImage(baseImage,0,0,null);
-			else {
-				if (g instanceof Graphics2D) {
-					Graphics2D g2 = (Graphics2D)g;
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-					g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-					g2.drawImage(baseImage,0,0,width,height,null);
-				} else
-					g.drawImage(baseImage,0,0,width,height,null);
-			}
-		}
-		return combinedImage;
-	}
 	
+		public boolean deleteImage(String imageFileName, Consumer<Integer> taskBeforeUpdatingImageListListeners) {
+			int index = findImage(imageFileName);
+			if (index == -1) { SaveViewer.log_error_ln("Can't delete image: Image \"%s\" was not found in image list.", imageFileName); return false; }
+			
+			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
+			if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't delete image: Image folder \"%s\" does not exist.", folder); return false; }
+			
+			File source = new File(folder,imageFileName);
+			if (!source.isFile()) { SaveViewer.log_error_ln("Can't delete image: Image file \"%s\" was not found.", source.getPath()); return false; }
+			
+			try {
+				Files.delete(source.toPath());
+			} catch (IOException ex) {
+				SaveViewer.log_error_ln("Can't delete image: IOException: %s", ex.getMessage());
+				return false;
+			}
+			
+			Vector<String> vector = new Vector<String>(Arrays.asList(names));
+			vector.remove(index);
+			names = vector.toArray(new String[0]);
+			
+			images.remove(imageFileName);
+			
+			if (taskBeforeUpdatingImageListListeners!=null)
+				taskBeforeUpdatingImageListListeners.accept(index);
+			
+			updateImageListListeners(null);
+			return true;
+		}
+	
+		public boolean renameImage(String oldName, String newName, ProgressDialog pd, Runnable taskBeforeUpdatingImageListListeners) {
+			int index = findImage(oldName);
+			if (index == -1) { SaveViewer.log_error_ln("Can't rename image: Image \"%s\" was not found in image list.", oldName); return false; }
+			
+			int other = findImage(newName);
+			if (other!=-1 && other!=index) { SaveViewer.log_error_ln("Can't rename image: Another image with the new name \"%s\" was found in image list.", newName); return false; }
+			
+			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
+			if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't rename image: Image folder \"%s\" does not exist.", folder); return false; }
+			
+			File source = new File(folder,oldName);
+			File target = new File(folder,newName);
+			if (!source.isFile()) { SaveViewer.log_error_ln("Can't rename image: Source image file \"%s\" was not found." , source.getPath()); return false; }
+			if ( target.exists()) { SaveViewer.log_error_ln("Can't rename image: Target image file \"%s\" already exists.", target.getPath()); return false; }
+			
+			if (oldName.equalsIgnoreCase(newName)) {
+				File temp = new File(folder,oldName+".temp");
+				int i = 0;
+				while(temp.exists()) { i++; temp = new File(folder,oldName+".temp"+i); }
+				
+				try {
+					Files.move(source.toPath(), temp.toPath(), StandardCopyOption.ATOMIC_MOVE);
+					source = temp;
+				} catch (IOException ex) {
+					SaveViewer.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
+					return false;
+				}
+			}
+			
+			try {
+				Files.move(source.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE);
+			} catch (IOException ex) {
+				SaveViewer.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
+				return false;
+			}
+			
+			names[index] = newName;
+			
+			BufferedImage image = images.remove(oldName);
+			if (image!=null) images.put(newName,image);
+			
+			if (taskBeforeUpdatingImageListListeners!=null)
+				taskBeforeUpdatingImageListListeners.run();
+			
+			updateImageListListeners(pd);
+			return true;
+		}
+	
+		public boolean existImage(String name) {
+			return findImage(name) != -1;
+		}
+	
+		private int findImage(String imagesName) {
+			for (int i=0; i<names.length; i++)
+				if (names[i].equalsIgnoreCase(imagesName))
+					return i;
+			return -1;
+		}
+	}
+
 	public enum UpgradeCategory {
 		Generic, Mine, Damage, Speed, Time, Clip, Accuracy, Armour, Protection, Scan, Energy, Jetpack;
 
@@ -782,7 +833,7 @@ public class Images {
 		}
 		private int getLength() {
 			if (sortedIndexes!=null) return sortedIndexes.length; 
-			return SaveViewer.images.imagesNames.length;
+			return SaveViewer.images.images.names.length;
 		}
 		
 		@Override
@@ -793,8 +844,8 @@ public class Images {
 					return index < getLength();
 				}
 				@Override public ImageData next() {
-					String imageName = SaveViewer.images.imagesNames[getIndex(index++)];
-					BufferedImage image = SaveViewer.images.getImage(imageName,null,64,64);
+					String imageName = SaveViewer.images.images.names[getIndex(index++)];
+					BufferedImage image = SaveViewer.images.images.getImage(imageName,null,64,64);
 					return new ImageData(imageName, imageName, image);
 				}
 			};
@@ -813,7 +864,7 @@ public class Images {
 			if (pd!=null) {
 				SaveViewer.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Create new image grid");
-					pd.setValue(0, SaveViewer.images.imagesNames.length);
+					pd.setValue(0, SaveViewer.images.images.names.length);
 				});
 			}
 			createImageItems(selectedImageID, this, pd==null ? null : i->SaveViewer.runInEventThreadAndWait(()->pd.setValue(i)));
@@ -1004,8 +1055,8 @@ public class Images {
 				});
 				
 				int[] sortedIndexes = ImageSimilarity.computeOrder(
-						imageName, SaveViewer.images.imagesNames,
-						(image, backgroundColor, width, height) -> SaveViewer.images.getImage(image,backgroundColor,width,height).getRaster()
+						imageName, SaveViewer.images.images.names,
+						(image, backgroundColor, width, height) -> SaveViewer.images.images.getImage(image,backgroundColor,width,height).getRaster()
 					);
 				
 				imageGridPanel.setOrder(sortedIndexes);
@@ -1080,7 +1131,7 @@ public class Images {
 						return;
 			}
 			
-			boolean wasSuccessful = SaveViewer.images.deleteImage(clickedName, index->{
+			boolean wasSuccessful = SaveViewer.images.images.deleteImage(clickedName, index->{
 				IdUsage removedIdUsage = usage.remove(clickedName);
 				if (removedIdUsage!=null)
 					removedIdUsage.setImageFileName(null);
@@ -1105,12 +1156,12 @@ public class Images {
 		private void renameSelectedImage() {
 			String oldName = clickedName;
 			String newName = JOptionPane.showInputDialog(this, "Enter new name:", oldName);
-			while (newName!=null && SaveViewer.images.existImage(newName))
+			while (newName!=null && SaveViewer.images.images.existImage(newName))
 				newName = JOptionPane.showInputDialog(this, "Sorry, image name already exists. Please enter another name:", newName);
 			if (newName==null) return;
 			
 			String finalNewName = newName;
-			boolean wasSuccessful = SaveViewer.images.renameImage(oldName, newName, null, ()->{
+			boolean wasSuccessful = SaveViewer.images.images.renameImage(oldName, newName, null, ()->{
 				IdUsage idUsage = usage.remove(oldName);
 				if (idUsage!=null) {
 					usage.put(finalNewName, idUsage);
@@ -1140,7 +1191,7 @@ public class Images {
 			output.setText("");
 			if (selectedName==null) return;
 			
-			BufferedImage image = SaveViewer.images.getImage(selectedName,null,-1,-1);
+			BufferedImage image = SaveViewer.images.images.getImage(selectedName,null,-1,-1);
 			imageField.setIcon(image!=null?new ImageIcon(image):null);
 			
 			output.append("Image:\r\n");

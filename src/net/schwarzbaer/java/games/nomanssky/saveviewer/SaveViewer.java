@@ -341,7 +341,7 @@ public class SaveViewer implements ActionListener {
 		WriteHTML, WriteJSON,
 		SwitchToGameFolder, SwitchToBackupFolder,
 		TabSelected, ComputeCoordinates, SelectCoordinates,
-		RefreshExtraImages, ShowExtraImages,
+		RefreshExtraImages, FindNewExtraImages, ShowExtraImages,
 		OpenRecipeAnalyser, OpenProductionOptimiser, OpenUpgradeModuleInstallHelper,
 		WriteKnownSteamIDsToHTML,
 		  save_hg( 0,  "save.hg","save.hg"),
@@ -467,7 +467,13 @@ public class SaveViewer implements ActionListener {
 			
 		case RefreshExtraImages:
 			runWithProgressDialog(mainWindow,"Refresh Extra Images", pd->{
-				images.reloadImageList(pd);
+				images.images.reload(pd);
+			});
+			break;
+			
+		case FindNewExtraImages:
+			runWithProgressDialog(mainWindow,"Find New Extra Images", pd->{
+				images.images.findNewImages(pd);
 			});
 			break;
 			
@@ -1059,8 +1065,9 @@ public class SaveViewer implements ActionListener {
 //			toolBar.add(createButton("Select Coordinates"  , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			
 			JPopupMenu toolsMenu = new JPopupMenu("Tools");
-			toolsMenu.add(createMenuItem("Refresh Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
-			toolsMenu.add(createMenuItem("Show Extra Images"   , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
+			toolsMenu.add(createMenuItem("Refresh Extra Images" , Gui.ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
+			toolsMenu.add(createMenuItem("Find New Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.FindNewExtraImages,true));
+			toolsMenu.add(createMenuItem("Show Extra Images"    , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			toolsMenu.addSeparator();
 			toolsMenu.add(createMenuItem("Recipe Analyser"     , Gui.ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
 			toolsMenu.add(createMenuItem("Production Optimiser", Gui.ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));

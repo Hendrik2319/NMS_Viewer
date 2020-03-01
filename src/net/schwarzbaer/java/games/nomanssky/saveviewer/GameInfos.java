@@ -57,6 +57,7 @@ import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageList.ImageListListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -1439,7 +1440,7 @@ public class GameInfos {
 		}
 		
 		public BufferedImage getImage(int width, int height) {
-			return SaveViewer.images.getImage(imageFileName,imageBackground,width,height);
+			return SaveViewer.images.images.getImage(imageFileName,imageBackground,width,height);
 		}
 		
 		public Usage getUsage(SaveGameData source) {
@@ -1870,10 +1871,10 @@ public class GameInfos {
 			table.setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
 			
 			ComboboxCellEditor<String> imageCellEditor =
-					new ComboboxCellEditor<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
-			SaveViewer.images.addImageListListener(new Images.ImageListListener() {
+					new ComboboxCellEditor<String>(SaveViewer.addNull(SaveViewer.images.images.names));
+			SaveViewer.images.images.addImageListListener(new ImageListListener() {
 				@Override public void imageListChanged() {
-					imageCellEditor.setValues(SaveViewer.addNull(SaveViewer.images.imagesNames));
+					imageCellEditor.setValues(SaveViewer.addNull(SaveViewer.images.images.names));
 					tableModel.updateTableColumn(GeneralizedIDColumnID.Image);
 				}
 			});
@@ -2189,7 +2190,7 @@ public class GameInfos {
 		private boolean wasIdTemplateAdded;
 	
 		private Images.ColorListListender colorListListender;
-		private Images.ImageListListener imageListListender;
+		private ImageListListener imageListListender;
 
 		private JTextField txtfldLabel;
 		private JTextField txtfldSymbol;
@@ -2240,13 +2241,13 @@ public class GameInfos {
 			cmbbxType.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
 				return ((GeneralizedID.Type)t).label; return null; }));
 			
-			cmbbxBgImage = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.imagesNames));
+			cmbbxBgImage = new JComboBox<String>(SaveViewer.addNull(SaveViewer.images.images.names));
 			cmbbxBgImage.setSelectedItem(id.getImageFileName());
 			cmbbxBgImage.addActionListener(e->{ id.setImageFileName((String)cmbbxBgImage.getSelectedItem()); idDataChanged(); });
 			
-			imageListListender = new Images.ImageListListener() {
+			imageListListender = new ImageListListener() {
 				@Override public void imageListChanged() {
-					cmbbxBgImage.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(SaveViewer.images.imagesNames)));
+					cmbbxBgImage.setModel(new DefaultComboBoxModel<>(SaveViewer.addNull(SaveViewer.images.images.names)));
 					cmbbxBgImage.setSelectedItem(id.getImageFileName());
 				}
 			};
@@ -2347,11 +2348,11 @@ public class GameInfos {
 		
 		@Override public void windowOpened(WindowEvent e) {
 			SaveViewer.images.addColorListListender(colorListListender);
-			SaveViewer.images.addImageListListener(imageListListender);
+			SaveViewer.images.images.addImageListListener(imageListListender);
 		}
 		@Override public void windowClosed(WindowEvent e) {
 			SaveViewer.images.removeColorListListender(colorListListender);
-			SaveViewer.images.removeImageListListener(imageListListender);
+			SaveViewer.images.images.removeImageListListener(imageListListender);
 		}
 	
 		private void showImageList(JComboBox<String> cmbbxImages) {
