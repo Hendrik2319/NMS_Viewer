@@ -4555,8 +4555,34 @@ short=Portal
 info=+37.05, -90.01
 
 [Sys008800FE007004]
+name=Crewest-Miyrda XIV
+race=Gek
+economy=3
+economy_label=fortgeschritten
+conflict=1
+conflict_label=entspannt
 atlasinterface=false
 blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln108800FE007004]
+
+[Pln208800FE007004]
+
+[Pln308800FE007004]
+
+[Pln408800FE007004]
+
+[Pln508800FE007004]
+name=Whiteout
+biome=Frozen
+is extreme
+with water
+resources=In_,CO2,NaCl
+
+[Pln608800FE007004]
 
 [Sys008A00FE007004]
 name=Enoegia-Boym
@@ -4593,18 +4619,35 @@ short=Portal
 info=+57.11, +29.89
 
 [Sys009400FE007004]
+name=Ewtonrou
+race=Gek
+economy=2
+economy_label=nachhaltig
+conflict=1
+conflict_label=belanglos
 atlasinterface=false
 blackhole=false
+class=Yellow
+short=6 Planeten
+info=
 
 [Pln209400FE007004]
 
 [Pln409400FE007004]
+name=Yurentar Minoris
+biome=Scorched
+buriedTreasure=AncientBones
+resources=Cu,P,Ag
 
 [Sys009800FE007004]
 atlasinterface=false
 blackhole=false
 
 [Pln409800FE007004]
+
+[Sys009A00FE007004]
+atlasinterface=false
+blackhole=false
 
 [Sys009B00FE007004]
 name=Yutrigg
@@ -4685,6 +4728,10 @@ resources=Cu_,Py,Fe__
 atlasinterface=false
 blackhole=false
 
+[Sys00B100FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys00C700FE007004]
 atlasinterface=false
 blackhole=false
@@ -4713,6 +4760,10 @@ resources=Cu_,Pf,Ag
 [Pln40C800FE007004]
 
 [Sys00E800FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00E900FE007004]
 atlasinterface=false
 blackhole=false
 
@@ -4896,6 +4947,13 @@ blackhole=false
 class=Green
 short=2 Planeten
 info=
+
+[Pln10950002FFA005]
+name=Zagridg XIV
+biome=Irradiated
+aggrSentinels
+gravitino balls
+resources=Em,U,Ag
 
 [Pln20950002FFA005]
 name=Dockf
@@ -6818,6 +6876,32 @@ class=Yellow
 short=1 Planet
 info=
 
+[Reg000000EF2CC4A0]
+
+[Sys020200EF2CC4A0]
+name=Procedual Traveller
+race=Gek
+economy=2
+economy_label=zufriedenstellend
+conflict=3
+conflict_label=gewaltig
+atlasinterface=false
+blackhole=false
+class=Blue
+short=3 Planeten
+info=
+
+[Pln120200EF2CC4A0]
+
+[Pln220200EF2CC4A0]
+
+[Pln320200EF2CC4A0]
+name=Mandalore, Outer Rim
+biome=Exotic_Mega
+is extreme
+with water
+resources=In_,CO2,NaCl
+
 [Reg000000182964AA]
 
 [Sys00FF00182964AA]
@@ -7295,6 +7379,22 @@ resources=Cu,CO2,NaCl
 [Reg000000FEF38590]
 name=Buwatyren-Terminus
 
+[Sys005200FEF38590]
+name=Iagory-Voremy X
+race=Vykeen
+economy=2
+economy_label=In Entwicklung
+conflict=2
+conflict_label=instabil
+atlasinterface=false
+blackhole=false
+class=Yellow
+
+[Pln105200FEF38590]
+name=Nobur XIV
+biome=Frozen
+resources=Cu,CO2,NaCl
+
 [Sys007A00FEF38590]
 name=Buntiu-Kuch
 race=Korvax
@@ -7310,6 +7410,11 @@ info=
 short=2 Planeten
 info=
 
+[Pln107A00FEF38590]
+name=Xavillusiop Atom
+biome=Lush
+resources=Cu,Pf,NaCl
+
 [Sys014100FEF38590]
 name=Hamigan
 unexplored
@@ -7324,6 +7429,25 @@ name=Oscop XV
 biome=Exotic_Mega
 buriedTreasure=AncientBones
 resources=In,CO2,Ag
+
+[Sys014600FEF38590]
+name=Polivi-Yabo VII
+race=Vykeen
+economy=2
+economy_label=zufriedenstellend
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Blue
+short=4 Planeten
+info=
+
+[Pln114600FEF38590]
+name=Urche XIV
+biome=Scorched
+is extreme
+resources=In_,P,Ag
 
 [Reg000000FFF38590]
 name=Niezhi-Untiefe
@@ -7358,6 +7482,12 @@ class=Blue
 short=3 Planeten
 info=
 
+[Sys014800FFF38590]
+atlasinterface=false
+blackhole=false
+
+[Pln114800FFF38590]
+
 [Sys014C00FFF38590]
 name=Orbuky-Lupjon XIII
 race=Vykeen
@@ -7369,6 +7499,8 @@ atlasinterface=false
 blackhole=false
 class=Blue
 short=2 Planeten
+info=
+short=Pugneum
 info=
 
 [Pln114C00FFF38590]
@@ -7453,6 +7585,13 @@ blackhole=false
 class=Yellow
 short=6 Planeten
 info=
+short=Pugneum
+info=
+
+[Pln11B200FFF38590]
+name=Lolanamt
+biome=Toxic
+resources=Cu,NH3,NaCl
 
 [Pln31B200FFF38590]
 name=Otanessi XIX
