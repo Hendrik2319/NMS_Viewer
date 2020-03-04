@@ -504,6 +504,24 @@ resources=Cu,Py,Fe__
 
 [Pln505600FCCE59C1]
 
+[Sys01AF00FCCE59C1]
+name=Rayskya X
+race=Korvax
+economy=1
+economy_label=erfolglos
+conflict=2
+conflict_label=gewalttätig
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=1 Planet
+info=
+
+[Pln11AF00FCCE59C1]
+name=Tulsusiu VI
+biome=Irradiated
+resources=Cu,U,Co
+
 [Reg000000FEEC69F7]
 name=Fostva-Quadrant
 
