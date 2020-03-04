@@ -86,7 +86,7 @@ public class FileExport {
 			String line;
 			while ( (line=in.readLine())!=null ) {
 				if (line.equals("// write here: new SteamID( id, name )"))
-					SaveViewer.steamIDs.forEachSorted((id,name)->out.printf("\t\tnew SteamID( \"%s\", \"%s\" ),%n", id, name));
+					SaveViewer.steamIDs.forEachSorted((id,name)->out.printf("\t\tnew SteamID( \"%s\", \"%s\" ),%n", id, name.replace("\"", "\\\"")));
 				else
 					out.println(line);
 			}

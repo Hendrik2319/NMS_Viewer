@@ -1829,6 +1829,7 @@ public class SaveGameData {
 			TRADING_TER_4 ("Automatischer Übersetzer"    ,"Handel: +1"),
 			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),
 			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
+			TRADING_BAD_2 ("Kleiner Frachtraum"          ,"Handel: -4"),
 			
 			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
 			SPEED_TER_2   ("Masseantrieb"                 ,"-1% Expeditionsdauer"),
