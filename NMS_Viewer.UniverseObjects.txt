@@ -5165,6 +5165,13 @@ class=Red
 short=6 Planeten
 info=
 
+[Pln11150002FFA005]
+name=Dilewo Alpha
+biome=Exotic_Mega
+is extreme
+with water
+resources=Cd_,P,Fe__
+
 [Pln21150002FFA005]
 
 [Pln51150002FFA005]
@@ -6491,6 +6498,29 @@ class=Yellow
 short=6 Planeten
 info=
 
+[Reg00000002A0335B]
+name=Umcalp-Wolke
+
+[Sys01E40002A0335B]
+name=Iroshin-Afte VII
+race=Gek
+economy=2
+economy_label=angemessen
+conflict=2
+conflict_label=gewalttätig
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=3 Planeten
+info=
+
+[Pln11E40002A0335B]
+name=Usanmatt Obeo
+biome=Toxic
+resources=Cu,NH3,NaCl
+
+[Pln21E40002A0335B]
+
 [Reg000000FD25F35B]
 name=Meer von Aylevs
 
@@ -6616,6 +6646,37 @@ blackholetarget=005D000333E156
 class=Yellow
 short=6 Planeten
 info=
+
+[Reg000000739B139C]
+
+[Sys011200739B139C]
+name=NMSA-Cpt-Steve
+race=Korvax
+economy=2
+economy_label=zufriedenstellend
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln111200739B139C]
+
+[Pln211200739B139C]
+name=Captain Steve
+biome=Lush
+buriedTreasure=AncientBones
+resources=Cu,Pf,Fe__
+
+[Pln311200739B139C]
+
+[Pln411200739B139C]
+
+[Pln511200739B139C]
+
+[Pln611200739B139C]
 
 [Reg0000000236B3A1]
 name=Yaleoni-Adjunkt
