@@ -8774,6 +8774,39 @@ blackhole=false
 
 [Pln30A400F90F56DB]
 
+[Reg00000047EB0728]
+
+[Sys00D40047EB0728]
+name=WM #20 - Opetuk-Cukrod XV
+race=Korvax
+economy=2
+economy_label=zufriedenstellend
+conflict=3
+conflict_label=kritisch
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln10D40047EB0728]
+
+[Pln20D40047EB0728]
+
+[Pln30D40047EB0728]
+
+[Pln40D40047EB0728]
+
+[Pln50D40047EB0728]
+
+[Pln60D40047EB0728]
+name=Viky planet.
+biome=Lush
+aggrSentinels
+resources=Cu,Pf,Co
+short=Portal
+info=+35.72, +165.21
+
 [Reg000000E8370772]
 
 [Sys01CD00E8370772]
