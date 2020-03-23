@@ -4081,6 +4081,55 @@ oldname=[GRA] Kumerat-Gader Tutimil
 [Pln30010008FF8FF8]
 oldname=[GRA] Sekart Ryugaile
 
+[Reg000000FBFFDFF8]
+
+[Sys004E00FBFFDFF8]
+atlasinterface=false
+blackhole=false
+
+[Reg000000FCFFDFF8]
+name=Myvitr
+
+[Sys01A900FCFFDFF8]
+name=Kaokaz III
+race=Gek
+economy=1
+economy_label=mühevoll
+conflict=3
+conflict_label=hoch
+atlasinterface=false
+blackhole=false
+class=Green
+short=5 Planeten
+info=
+
+[Pln11A900FCFFDFF8]
+name=Neu: Ranenwo
+biome=Frozen
+is extreme
+with water
+resources=Em_,CO2,Fe__
+short=Portal
+info=-73.83, +93.57
+
+[Pln21A900FCFFDFF8]
+
+[Pln31A900FCFFDFF8]
+
+[Pln41A900FCFFDFF8]
+name=Ahha VII
+biome=Exotic_Mega
+buriedTreasure=AncientBones
+resources=Em,NH3,NaCl
+
+[Pln51A900FCFFDFF8]
+
+[Reg000000FBFFEFF8]
+
+[Sys021200FBFFEFF8]
+atlasinterface=false
+blackhole=false
+
 [Reg00000003000FF8]
 
 [Sys00790003000FF8]
@@ -8119,6 +8168,39 @@ info=
 name=Lesbon Q26
 biome=AnomFragmColumns
 resources=Em,Ag,Au
+
+[Reg000000FCD05649]
+
+[Sys020300FCD05649]
+name=Viky System. xD
+race=Gek
+economy=2
+economy_label=In Entwicklung
+conflict=3
+conflict_label=riskant
+atlasinterface=false
+blackhole=false
+class=Green
+short=6 Planeten
+info=
+
+[Pln120300FCD05649]
+
+[Pln220300FCD05649]
+
+[Pln320300FCD05649]
+
+[Pln420300FCD05649]
+
+[Pln520300FCD05649]
+
+[Pln620300FCD05649]
+name=Viky. xD
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Co
+short=Portal
+info=-62.85, -22.71
 
 [Reg000000052CA65C]
 name=Meer von Arbodi
