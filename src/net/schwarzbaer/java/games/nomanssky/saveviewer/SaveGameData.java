@@ -1,5 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
+import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,8 +31,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import javax.swing.SwingUtilities;
+
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.SteamIDsNameChangeDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
@@ -105,12 +109,14 @@ public class SaveGameData {
 		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
-	public SaveGameData parse(boolean forPreview) {
+	public SaveGameData parse(boolean forPreview, Window window) {
 		version = getIntegerValue(json_data, "Version");
 		if (isPreNEXT) return this;
 		
 		general.parse();
 		if (forPreview) return this;
+		
+		SaveViewer.steamIDs.logNameChanges(true);
 		
 		visitedSystems = VisitedSystems.parse(this);
 		parseStats();
@@ -146,6 +152,10 @@ public class SaveGameData {
 		GameInfos.readUniverseObjectDataFromDataPool(universe,false);
 		GameInfos.saveAllIDsToFiles();
 		SaveViewer.steamIDs.writeToFile();
+		
+		SaveViewer.steamIDs.saveLoggedNameChanges(window);
+		SaveViewer.steamIDs.logNameChanges(false);
+		
 		return this;
 	}
 
@@ -681,11 +691,17 @@ public class SaveGameData {
 			owner.timeStamp  = TimeStamp.create(getIntegerValue(objectValue, "TS"));
 			
 			if (owner.userName!=null && !owner.userName.isEmpty() && owner.userID!=null && !owner.userID.isEmpty())
-				try {
+				//try {
+					//switch (owner.userID) {
+					//case "76561197968127504":
+					//case "76561198030447439":
+					//	SaveViewer.log_ln("[%s] \"%s\"", owner.userID, owner.userName);
+					//	break;
+					//}
 					SaveViewer.steamIDs.set(owner.userID, owner.userName);
-				} catch (KnownSteamIDs.AssignmentExistsException e) {
-					e.printConflict();
-				}
+				//} catch (KnownSteamIDs.AssignmentExistsException e) {
+				//	e.printConflict();
+				//}
 			
 			return owner;
 		}
@@ -2225,18 +2241,50 @@ public class SaveGameData {
 	
 	public final static class KnownSteamIDs {
 		private HashMap<String,String> data;
+		private HashSet<NameChange> loggedNameChanges;
+		@SuppressWarnings("unused")
+		private boolean logNameChanges;
 		
 		KnownSteamIDs() {
 			data = new HashMap<>();
+			loggedNameChanges = new HashSet<>();
+			logNameChanges = false;
 		}
 		
+		public void saveLoggedNameChanges(Window window) {
+			if (!loggedNameChanges.isEmpty()) {
+				Vector<NameChange> backup = new Vector<>(loggedNameChanges);
+				SwingUtilities.invokeLater(()->{
+					SteamIDsNameChangeDialog dlg = new Gui.SteamIDsNameChangeDialog(window, "Which Names should be changed", backup);
+					dlg.showDialog();
+					Collection<NameChange> allowedChanges = dlg.getAllowedChanges();
+					if (!allowedChanges.isEmpty()) {
+						for (NameChange ch:allowedChanges)
+							data.put(ch.steamID, ch.newName);
+						writeToFile();
+					}
+				});
+			}
+			
+		}
+
+		public void logNameChanges(boolean logNameChanges) {
+			this.logNameChanges = logNameChanges;
+			loggedNameChanges.clear();
+		}
+
 		public String get(String steamID) {
 			return data.get(steamID);
 		}
-		public void set(String steamID, String steamName) throws AssignmentExistsException {
-			String prevValue = data.putIfAbsent(steamID, steamName);
-			if (prevValue!=null && !prevValue.equals(steamName))
-				throw new AssignmentExistsException(steamID, steamName, prevValue);
+		public void set(String steamID, String steamName) /*throws AssignmentExistsException*/ {
+			data.put(steamID, steamName); // later changes -> updates
+			
+			//String prevValue = data.putIfAbsent(steamID, steamName);
+			//if (prevValue!=null && !prevValue.equals(steamName)) {
+			//	AssignmentExistsException e = new AssignmentExistsException(steamID, steamName, prevValue);
+			//	if (logNameChanges) loggedNameChanges.add(e.nameChange);
+			//	throw e;
+			//}
 		}
 		public void forEachSorted(BiConsumer<String,String> action) {
 			Set<Entry<String, String>> entrySet = data.entrySet();
@@ -2245,16 +2293,57 @@ public class SaveGameData {
 			vector.forEach(entry->action.accept(entry.getKey(),entry.getValue()));
 		}
 		
-		public static class AssignmentExistsException extends Exception {
-			private static final long serialVersionUID = -9040442552016222917L;
+		static class NameChange {
 			final String steamID,newName,oldName;
-			public AssignmentExistsException(String steamID, String newName, String oldName) {
+			
+			NameChange(String steamID, String newName, String oldName) {
 				this.steamID = steamID;
 				this.newName = newName;
 				this.oldName = oldName;
 			}
+			
+			@Override
+			public int hashCode() {
+				int h = 0;
+				if (steamID!=null) h ^= steamID.hashCode();
+				if (newName!=null) h ^= newName.hashCode();
+				if (oldName!=null) h ^= oldName.hashCode();
+				return h;
+			}
+			
+			@Override
+			public boolean equals(Object obj) {
+				if (obj instanceof NameChange) {
+					NameChange other = (NameChange) obj;
+					return
+						strEquals(this.steamID, other.steamID) &&
+						strEquals(this.newName, other.newName) &&
+						strEquals(this.oldName, other.oldName);
+				}
+				return false;
+			}
+			
+			private boolean strEquals(String str1, String str2) {
+				if (str1==null && str2==null) return true;
+				if (str1==null || str2==null) return false;
+				return str1.equals(str2);
+			}
+
+			@Override
+			public String toString() {
+				return String.format("NameChange[ ID:%s | Old:\"%s\" -> New:\"%s\" ]", steamID,oldName,newName);
+			}
+			
+		}
+		
+		public static class AssignmentExistsException extends Exception {
+			private static final long serialVersionUID = -9040442552016222917L;
+			final NameChange nameChange;
+			public AssignmentExistsException(String steamID, String newName, String oldName) {
+				nameChange = new NameChange(steamID, newName, oldName);
+			}
 			public void printConflict() {
-				SaveViewer.log_error_ln("KnownSteamIDs:  [ID]%s  [Old]\"%s\" -> [New]\"%s\"", steamID,oldName,newName);
+				SaveViewer.log_error_ln("KnownSteamIDs:  [ID]%s  [Old]\"%s\" -> [New]\"%s\"", nameChange.steamID,nameChange.oldName,nameChange.newName);
 			}
 		}
 		

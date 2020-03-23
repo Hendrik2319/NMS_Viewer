@@ -27,6 +27,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -64,11 +65,16 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.NameChange;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
@@ -109,6 +115,95 @@ public class Gui {
 		g = Math.min(255, Math.round(255-(255-g)*(1-fraction)));
 		b = Math.min(255, Math.round(255-(255-b)*(1-fraction)));
 		return new Color(r,g,b);
+	}
+
+	public static class SteamIDsNameChangeDialog extends StandardDialog {
+		private static final long serialVersionUID = -5214097243366979673L;
+		private Vector<NameChange> nameChanges;
+		private HashSet<NameChange> allowedChanges;
+		private boolean canceled;
+
+		public SteamIDsNameChangeDialog(Window parent, String title, Collection<NameChange> nameChanges) {
+			super(parent, title);
+			this.nameChanges = new Vector<>(nameChanges);
+			allowedChanges = new HashSet<>();
+			canceled = true;
+			
+			SteamIDsNameChangesTableModel tableModel = new SteamIDsNameChangesTableModel();
+			SimplifiedTable<ColumnID> table = new SimplifiedTable<>("SteamIDsNameChangesTable",tableModel,true,SaveViewer.DEBUG,true);
+			JScrollPane contentPane = new JScrollPane(table);
+			contentPane.setPreferredSize(table.getPreferredScrollableViewportSize());
+			createGUI(
+				contentPane,
+				createButton("Ok"    , e->{ canceled = false; closeDialog(); }),
+				createButton("Cancel", e->{ closeDialog(); })
+			);
+		}
+
+		public Collection<NameChange> getAllowedChanges() {
+			if (canceled) return new HashSet<>();
+			return new HashSet<>(allowedChanges);
+		}
+		
+		private enum ColumnID implements SimplifiedColumnIDInterface {
+			// [123, 140, 140, 86]
+			SteamID("Steam ID"    ,  String.class, 70,-1,120,120),
+			OldName("Old Name"    ,  String.class, 70,-1,140,140),
+			NewName("New Name"    ,  String.class, 70,-1,140,140),
+			Allowed("Change Name?", Boolean.class, 70,-1, 90, 90),
+			;
+			
+			private SimplifiedColumnConfig columnConfig;
+			
+			ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
+				columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
+			}
+			@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
+		}
+		
+		private class SteamIDsNameChangesTableModel extends SimplifiedTableModel<ColumnID> {
+
+			protected SteamIDsNameChangesTableModel() {
+				super(ColumnID.values());
+			}
+	
+			@Override public int getRowCount() { return nameChanges.size(); }
+	
+			@Override
+			public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
+				if (rowIndex<0 || rowIndex>=nameChanges.size()) return null;
+				NameChange obj = nameChanges.get(rowIndex);
+				if (obj==null) return null;
+				
+				switch(columnID) {
+				case SteamID: return obj.steamID;
+				case OldName: return obj.oldName;
+				case NewName: return obj.newName;
+				case Allowed: return allowedChanges.contains(obj);
+				}
+				return null;
+			}
+
+			@Override
+			protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID columnID) {
+				return columnID == ColumnID.Allowed;
+			}
+
+			@Override
+			protected void setValueAt(Object aValue, int rowIndex, int columnIndex, ColumnID columnID) {
+				if (rowIndex<0 || rowIndex>=nameChanges.size()) return;
+				NameChange obj = nameChanges.get(rowIndex);
+				if (obj==null) return;
+				
+				switch(columnID) {
+				case SteamID:
+				case OldName:
+				case NewName: break;
+				case Allowed: if ((Boolean)aValue) allowedChanges.add(obj); else allowedChanges.remove(obj);
+				}
+			}
+			
+		}
 	}
 
 	public static class TextAreaDialog extends StandardDialog {

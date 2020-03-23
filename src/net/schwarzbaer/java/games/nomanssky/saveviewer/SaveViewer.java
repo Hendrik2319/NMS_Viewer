@@ -586,7 +586,7 @@ public class SaveViewer implements ActionListener {
 		} else {
 			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),-1,isPreNEXT);
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
-			saveGameData.parse(true);
+			saveGameData.parse(true,null);
 		}
 		
 		return saveGameData;
@@ -620,7 +620,7 @@ public class SaveViewer implements ActionListener {
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			
 			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
-			saveGameData.parse(false);
+			saveGameData.parse(false,mainWindow);
 			
 			SaveViewer.runInEventThreadAndWait(()->{
 				if (mainWindow!=null) {
@@ -673,7 +673,7 @@ public class SaveViewer implements ActionListener {
 				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 				
 				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
-				saveGameData.parse(false);
+				saveGameData.parse(false,mainWindow);
 				
 				runInEventThreadAndWait(()->{
 					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(4);
