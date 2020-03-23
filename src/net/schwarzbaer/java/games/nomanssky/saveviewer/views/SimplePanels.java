@@ -18,6 +18,7 @@ import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -43,6 +44,7 @@ import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ContextMenuInvoker;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
@@ -1060,7 +1062,7 @@ public class SimplePanels {
 			//System.out.println("objects.size(): "+objects.size());
 			
 			String suggestedFileName = String.format("BBO_%s.wrl", data.index>=0?(""+(data.index+1)):"#");
-			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, mainWindow,"BuildingObjects");
+			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, mainWindow,"BuildingObjects",null);
 		}
 	}
 
@@ -1223,11 +1225,13 @@ public class SimplePanels {
 				JPopupMenu contextMenu = table.getContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
-				addVRMLtasks(contextMenu);
+				Runnable listener1 = addVRMLtasks(contextMenu,mainWindow);
+				table.addContextMenuInvokeListener((row, column) -> listener1.run());
 				
 				JPopupMenu textAreaContextMenu = new JPopupMenu();
-				addVRMLtasks(textAreaContextMenu);
-				new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
+				Runnable listener2 = addVRMLtasks(textAreaContextMenu,mainWindow);
+				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
+				cmi.addContextMenuInvokeListener((x, y) -> listener2.run());
 				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
@@ -1250,9 +1254,15 @@ public class SimplePanels {
 				return "";
 			}
 			
-			private void addVRMLtasks(JPopupMenu contextMenu) {
-				contextMenu.add(Gui.createMenuItem("Write Base to VRML (simple)",e->FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base"), Gui.ToolbarIcons.SaveAs));
-				contextMenu.add(Gui.createMenuItem("Write Base to VRML (Models)",e->FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false), Gui.ToolbarIcons.SaveAs));
+			private Runnable addVRMLtasks(JPopupMenu contextMenu, Window window) {
+				contextMenu.add(Gui.createMenuItem("Write Base to VRML (simple)",e->{
+					FileExport.writePosToVRML_simple(suggestFileName(Type.Simple),playerbase.objects,null,mainWindow,"Base",FileExport::openFileInVrmlViewer);
+				}, Gui.ToolbarIcons.SaveAs));
+				
+				contextMenu.add(Gui.createMenuItem("Write Base to VRML (Models)",e->{
+					FileExport.writePosToVRML_models(suggestFileName(Type.Models),null,playerbase,mainWindow,"Base", false,FileExport::openFileInVrmlViewer);
+				}, Gui.ToolbarIcons.SaveAs));
+				
 				contextMenu.add(Gui.createMenuItem("Write Whole Planet to VRML (simple)",e->{
 					Vector<BuildingObject> nearObj = getNearObjects();
 					nearObj.add(BuildingObject.createFromBase(playerbase));
@@ -1264,8 +1274,27 @@ public class SimplePanels {
 							else radius = Math.min(radius, obj.position.pos.length());
 						}
 					
-					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet");
+					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet",FileExport::openFileInVrmlViewer);
 				}, Gui.ToolbarIcons.SaveAs));
+				
+				JCheckBoxMenuItem openNewFileChckBx = Gui.createCheckBoxMenuItem("Open newly written file in viewer", SaveViewer.config.openNewlyWrittenVrmlFileInViewer, null);
+				openNewFileChckBx.addActionListener(e->{
+					SaveViewer.config.openNewlyWrittenVrmlFileInViewer = openNewFileChckBx.isSelected();
+					if (SaveViewer.config.openNewlyWrittenVrmlFileInViewer) {
+						if (!SaveViewer.config.isVrmlViewerConfigured()) {
+							String path = JOptionPane.showInputDialog(window, "Set path to VRML viewer:");
+							if (path!=null) SaveViewer.config.vrmlViewer = path;
+							if (!SaveViewer.config.isVrmlViewerConfigured())
+								SaveViewer.config.openNewlyWrittenVrmlFileInViewer = false;
+						}
+					}
+					SaveViewer.config.writeToFile();
+				});
+				contextMenu.add(openNewFileChckBx);
+				
+				return ()->{
+					openNewFileChckBx.setSelected(SaveViewer.config.openNewlyWrittenVrmlFileInViewer);
+				};
 			}
 
 			private void showOtherObjectsOnThisPlanet() {

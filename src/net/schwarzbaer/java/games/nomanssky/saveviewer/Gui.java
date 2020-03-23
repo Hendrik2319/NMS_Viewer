@@ -1296,16 +1296,24 @@ public class Gui {
 		return menuItem;
 	}
 
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l) {
+		return createCheckBoxMenuItem(title, l, null, null, true, true);
+	}
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, boolean selected, ActionListener l) {
+		return createCheckBoxMenuItem(title, l, null, null, true, selected);
+	}
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, AC actionCommand) {
-		return createCheckBoxMenuItem(title, l, null, actionCommand, true);
+		return createCheckBoxMenuItem(title, l, null, actionCommand, true, true);
 	}
-
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
-		return createCheckBoxMenuItem(title, l, disabler, actionCommand, true);
+		return createCheckBoxMenuItem(title, l, disabler, actionCommand, true, true);
 	}
-
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+		return createCheckBoxMenuItem(title, l, disabler, actionCommand, enabled, true);
+	}
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, boolean selected) {
 		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
+		menuItem.setSelected(selected);
 		menuItem.setEnabled(enabled);
 		setComp(menuItem, l, disabler, actionCommand, true, null);
 		return menuItem;

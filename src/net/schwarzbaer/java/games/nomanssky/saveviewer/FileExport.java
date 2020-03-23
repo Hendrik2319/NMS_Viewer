@@ -51,6 +51,7 @@ public class FileExport {
 	
 	static final String EXTRA_IMAGES_PATH = "extra/resource_icons";
 	
+	static final String FILE_CFG                  = "NMS_Viewer.cfg";
 	static final String FILE_COLORS               = "NMS_Viewer.Colors.txt";
 	static final String FILE_KNOWN_STAT_ID        = "NMS_Viewer.KnownStatID.txt";
 	static final String FILE_PRODUCT_ID           = "NMS_Viewer.ProdIDs.txt";
@@ -282,7 +283,12 @@ public class FileExport {
 		Gui.log_ln("done (in %1.2fs)%s", (System.currentTimeMillis()-startTime)/1000.0, additionalInfo);
 	}
 
-	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Window parent, String label, boolean dontAsk) {
+	public static void openFileInVrmlViewer(File file) {
+		if (!SaveViewer.config.isVrmlViewerConfigured() || file==null) return;
+		SaveViewer.executeShellCommand(new String[] {SaveViewer.config.vrmlViewer,file.getAbsolutePath()});
+	}
+
+	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Window parent, String label, boolean dontAsk, Consumer<File> openFileInViewer) {
 		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
 			BuildingObject[] bObjs = objects;
 			if (bObjs==null && playerbase!=null) bObjs = playerbase.objects;
@@ -408,14 +414,18 @@ public class FileExport {
 				e.printStackTrace();
 			}
 			Gui.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
+			
+			if (openFileInViewer!=null)
+				openFileInViewer.accept(file);
 		};
+		
 		if (parent==null)
 			task.accept(null);
 		else
 			SaveViewer.runWithProgressDialog(parent, "Write "+label+" to VRML", task);
 	}
 
-	public static void writePosToVRML_simple(String suggestedFileName, BuildingObject[] objects, Double planetRadius, Window parent, String label) {
+	public static void writePosToVRML_simple(String suggestedFileName, BuildingObject[] objects, Double planetRadius, Window parent, String label, Consumer<File> openFileInViewer) {
 		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
 			
 			long startTime, startTimeTotal = System.currentTimeMillis();
@@ -522,6 +532,9 @@ public class FileExport {
 				e.printStackTrace();
 			}
 			Gui.log_ln("done (in %1.2fs)",(System.currentTimeMillis()-startTimeTotal)/1000.0);
+			
+			if (openFileInViewer!=null)
+				openFileInViewer.accept(file);
 		};
 		if (parent==null)
 			task.accept(null);
@@ -3267,7 +3280,7 @@ public class FileExport {
 				});
 				vrml.println("");
 				
-				// TODO
+				// TODO Solitary Walls & Floors 
 			}
 			
 			writeProtoToFile(vrml, "SMALLLIGHT", 0.2, 0, ()->{

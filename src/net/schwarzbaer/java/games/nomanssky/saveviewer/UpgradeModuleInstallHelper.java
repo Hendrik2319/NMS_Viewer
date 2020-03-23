@@ -1147,17 +1147,17 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			for (KnownModule.ValueDefinition announcedVD:announcedValueDefinitions) {
 				KnownModule.ValueDefinition knownVD = module.getValueDefinition(announcedVD.uniqueID);
 				if (knownVD==null) {
-					// TODO
+					// TODO InstalledUpgrade -> checkValueDefinitions -> error message
 					Debug.Assert(false);
 				} else {
 					Debug.Assert(knownVD.module==module);
 					Debug.Assert(announcedVD.module==module);
 					if (!knownVD.label.equals(announcedVD.label) && !announcedVD.label.isEmpty()) {
-						// TODO
+						// TODO InstalledUpgrade -> checkValueDefinitions -> error message
 						Debug.Assert(false);
 					}
 					if (knownVD.format!=announcedVD.format && announcedVD.format!=null) {
-						// TODO
+						// TODO InstalledUpgrade -> checkValueDefinitions -> error message
 						Debug.Assert(false);
 					}
 				}

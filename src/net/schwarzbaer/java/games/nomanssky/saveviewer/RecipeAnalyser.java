@@ -1878,7 +1878,7 @@ class RecipeAnalyser implements ActionListener {
 			
 			public Vector<SpecificRecipe> getSpecificRecipes(InputValueCombination inputs) {
 				Vector<SpecificRecipe> foundRecipes = new Vector<>();
-				// TODO Auto-generated method stub
+				// TODO Auto-generated method stub: getSpecificRecipes
 				return foundRecipes;
 			}
 

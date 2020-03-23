@@ -34,6 +34,7 @@ public class SaveGameView extends JPanel {
 
 	private boolean isNEXT;
 
+
 	public SaveGameView(Window mainWindow, File file, SaveGameData data, boolean newFormat) {
 		super(new BorderLayout(3, 3));
 		setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));

@@ -283,7 +283,7 @@ public class SaveViewer implements ActionListener {
 				SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.Type.Models;
 		
 		String suggestFileName = SimplePanels.PersistentPlayerBasesPanel.PlayerBasePanel.suggestFileName(type,data,playerbase);
-		FileExport.writePosToVRML_models(suggestFileName,null,playerbase,null,"Base "+baseIndex,true);
+		FileExport.writePosToVRML_models(suggestFileName,null,playerbase,null,"Base "+baseIndex,true,null);
 	}
 
 	@SuppressWarnings("unused")
@@ -343,7 +343,7 @@ public class SaveViewer implements ActionListener {
 		TabSelected, ComputeCoordinates, SelectCoordinates,
 		RefreshExtraImages, FindNewExtraImages, ShowExtraImages,
 		OpenRecipeAnalyser, OpenProductionOptimiser, OpenUpgradeModuleInstallHelper,
-		WriteKnownSteamIDsToHTML,
+		WriteKnownSteamIDsToHTML, SetPathToVRMLviewer,
 		  save_hg( 0,  "save.hg","save.hg"),
 		 save2_hg( 1, "save2.hg","..2"    ),
 		 save3_hg( 2, "save3.hg","..3"    ),
@@ -493,6 +493,14 @@ public class SaveViewer implements ActionListener {
 			
 		case WriteKnownSteamIDsToHTML:
 			FileExport.writeKnownSteamIDsToHTML();
+			break;
+			
+		case SetPathToVRMLviewer:
+			String path = JOptionPane.showInputDialog(mainWindow, "Set path to VRML viewer:");
+			if (path!=null) {
+				SaveViewer.config.vrmlViewer = path;
+				SaveViewer.config.writeToFile();
+			}
 			break;
 		}
 	}
@@ -770,20 +778,24 @@ public class SaveViewer implements ActionListener {
 	
 	}
 
-	static class Config {
-		private static final String NMS_VIEWER_CFG = "NMS_Viewer.cfg";
-		
+	public static class Config {
 		private String savegameSubFolder;
 		private String savegameBackupFolder;
+		
+		public boolean openNewlyWrittenVrmlFileInViewer;
+		public String vrmlViewer;
 		
 		Config() {
 			savegameSubFolder   =null;
 			savegameBackupFolder=null;
+			vrmlViewer=null;
+			openNewlyWrittenVrmlFileInViewer = false;
 		}
 		
 		boolean isSavegameSubFolderKnown() { return savegameSubFolder   !=null; }
 		boolean isBackupFolderKnown     () { return savegameBackupFolder!=null; }
-		
+		public boolean isVrmlViewerConfigured() { return vrmlViewer!=null; }
+
 		String getSavegameSubFolder(JFrame parent) {
 			if (savegameSubFolder==null) {
 				JFileChooser fileChooser = new JFileChooser(getGameFolder());
@@ -816,7 +828,7 @@ public class SaveViewer implements ActionListener {
 		static Config readFromFile() {
 			Config config = new Config();
 			
-			File file = new File(NMS_VIEWER_CFG);
+			File file = new File(FileExport.FILE_CFG);
 			if (!file.isFile()) return config;
 			
 			Gui.log_ln("Read Config from file \""+file.getPath()+"\" ...");
@@ -825,6 +837,8 @@ public class SaveViewer implements ActionListener {
 				while ((str=in.readLine())!=null) {
 					if (str.startsWith("SavegameSubFolder="   )) config.savegameSubFolder    = str.substring("SavegameSubFolder="   .length());
 					if (str.startsWith("SavegameBackupFolder=")) config.savegameBackupFolder = str.substring("SavegameBackupFolder=".length());
+					if (str.startsWith("VrmlViewer="          )) config.vrmlViewer           = str.substring("VrmlViewer=".length());
+					if (str.equals("OpenNewlyWrittenVrmlFileInViewer")) config.openNewlyWrittenVrmlFileInViewer = true;
 				}
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -833,16 +847,21 @@ public class SaveViewer implements ActionListener {
 			return config;
 		}
 		
-		void writeToFile() {
-			File file = new File(NMS_VIEWER_CFG);
+		public void writeToFile() {
+			Gui.log_ln("Write Config to file \""+FileExport.FILE_CFG+"\" ...");
+			long start = System.currentTimeMillis();
+			File file = new File(FileExport.FILE_CFG);
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 				
-				if (savegameSubFolder   !=null) out.printf("SavegameSubFolder=%s\r\n"   ,savegameSubFolder   );
-				if (savegameBackupFolder!=null) out.printf("SavegameBackupFolder=%s\r\n",savegameBackupFolder);
+				if (savegameSubFolder   !=null) out.printf("SavegameSubFolder"   +"=%s\r\n",savegameSubFolder   );
+				if (savegameBackupFolder!=null) out.printf("SavegameBackupFolder"+"=%s\r\n",savegameBackupFolder);
+				if (vrmlViewer          !=null) out.printf("VrmlViewer"          +"=%s\r\n",vrmlViewer);
+				if (openNewlyWrittenVrmlFileInViewer) out.printf("OpenNewlyWrittenVrmlFileInViewer\r\n");
 				
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
 	}
 	
@@ -1074,6 +1093,8 @@ public class SaveViewer implements ActionListener {
 			toolsMenu.add(createMenuItem("UpgradeModule InstallHelper", Gui.ToolbarIcons.Open, ActionCommand.OpenUpgradeModuleInstallHelper,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
+			extraMenu.add(createMenuItem("Set path to VRML viewer", Gui.ToolbarIcons.SwitchFolder, ActionCommand.SetPathToVRMLviewer,true));
+			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", Gui.ToolbarIcons.SwitchFolder, ActionCommand.WriteKnownSteamIDsToHTML,true));
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", Gui.ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
@@ -1187,6 +1208,11 @@ public class SaveViewer implements ActionListener {
 		
 		File copyfile = new File("./"+sourcefile.getName()+".copy.txt"); 
 		FileExport.writeToJSON(json_Object,copyfile);
+	}
+
+	public static void executeShellCommand(String[] cmdStrs) {
+		try { Runtime.getRuntime().exec(cmdStrs); }
+		catch (IOException e) { e.printStackTrace(); }
 	}
 
 	public static void copyToClipBoard(String str) {
