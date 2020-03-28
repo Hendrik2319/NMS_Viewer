@@ -1204,9 +1204,7 @@ public class GameInfos {
 		protected String imageFileName;
 		protected Integer imageBackground;
 		
-		protected GeneralizedIDProto(String label, String symbol,
-				net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.Type type,
-				UpgradeClass upgradeClass, String imageFileName, Integer imageBackground) {
+		protected GeneralizedIDProto(String label, String symbol, GeneralizedID.Type type, UpgradeClass upgradeClass, String imageFileName, Integer imageBackground) {
 			this.label = label;
 			this.symbol = symbol;
 			this.type = type;

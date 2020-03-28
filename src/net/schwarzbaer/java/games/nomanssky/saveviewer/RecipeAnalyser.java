@@ -71,6 +71,7 @@ import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
@@ -709,16 +710,18 @@ class RecipeAnalyser implements ActionListener {
 			String name  ="";
 			String ID    ="";
 			String price ="";
+			String genID ="";
 			
 			if (rowData.length>0) type  = rowData[0];
 			if (rowData.length>2) ID    = rowData[2];
+			if (rowData.length>3) genID = rowData[3];
 			if (rowData.length>4) name  = rowData[4];
 			if (rowData.length>5) price = rowData[5];
 			
-			if (ID.isEmpty() && type.isEmpty() && name.isEmpty() && price.isEmpty())
+			if (ID.isEmpty() && type.isEmpty() && name.isEmpty() && price.isEmpty() && genID.isEmpty())
 				return null;
 			
-			return new Ingredient(ID,type,name,price);
+			return new Ingredient(ID,type,name,price,genID);
 		}
 		
 		@Override protected Ingredient castIngredient(Object obj) {
@@ -732,13 +735,17 @@ class RecipeAnalyser implements ActionListener {
 			private String type;
 			private String name;
 			private Float price;
+			private GeneralizedID genID;
 
-			public Ingredient(String id, String type, String name, String priceStr) {
+			public Ingredient(String id, String type, String name, String priceStr, String genID) {
 				this.id = id;
 				this.type = type;
 				this.name = name==null || name.isEmpty() ? null : name;
 				try { this.price = Float.parseFloat(priceStr.replace(",","")); }
 				catch (NumberFormatException e) { this.price = null; }
+				this.genID = GameInfos.getGeneralizedID(genID);
+				if (this.genID==null)
+					this.genID = new GeneralizedID(genID);
 			}
 
 			@Override String getID   () { return id; }
@@ -747,6 +754,7 @@ class RecipeAnalyser implements ActionListener {
 			@Override String getName (Lang language) { return name; }
 			@Override String getDesc () { return null; }
 			@Override Float  getPrice() { return price; }
+			@Override GeneralizedID getGeneralizedID() { return genID; }
 		}
 
 		@Override protected InputValueCombination createCombi(String in0, String in1, String in2) {
@@ -853,6 +861,11 @@ class RecipeAnalyser implements ActionListener {
 				case De: if (!nameDE.isEmpty()) return nameDE; break;
 				case En: if (!nameEN.isEmpty()) return nameEN; break;
 				}
+				return null;
+			}
+			
+			@Override GeneralizedID getGeneralizedID() {
+				// TODO: getGeneralizedID()
 				return null;
 			}
 		}
@@ -1768,6 +1781,7 @@ class RecipeAnalyser implements ActionListener {
 			abstract String getName(Lang language);
 			abstract String getDesc();
 			abstract Float  getPrice();
+			abstract GeneralizedID getGeneralizedID();
 		}
 
 		protected class RecipeIngredient {
@@ -2088,10 +2102,11 @@ class RecipeAnalyser implements ActionListener {
 		}
 
 		private enum IngredientsTableColumnID implements SimplifiedColumnIDInterface {
-			Index      ("#"          ,  String.class, 20,-1, 30, 30),
+			Index      ("#"          ,  String.class, 20,-1, 40, 40),
 			Type       ("Type"       ,  String.class, 20,-1,100,100),
 			InStock    ("In Stock"   , Boolean.class, 20,-1, 60, 60),
 			Producible ("Producible" ,  String.class, 20,-1, 60, 60),
+			GenID      ("ID"         ,  String.class, 20,-1,120,120),
 			NameDE     ("Name (DE)"  ,  String.class, 20,-1,150,150),
 			NameEN     ("Name (EN)"  ,  String.class, 20,-1,150,150),
 			Price      ("Price"      ,  String.class, 20,-1,150,150),
@@ -2198,6 +2213,12 @@ class RecipeAnalyser implements ActionListener {
 				case NameEN     : return ingredient==null ? null : ingredient.getName(Lang.En);
 				case Description: return ingredient==null ? null : ingredient.getDesc();
 				case Price      : return ingredient==null || ingredient.getPrice()==null ? null : String.format(Locale.ENGLISH, "%,1.1f", ingredient.getPrice());
+				case GenID      : {
+					if (ingredient==null) return null; 
+					GeneralizedID id = ingredient.getGeneralizedID();
+					if (id==null) return null;
+					return id.id;
+				}
 				}
 				return null;
 			}
@@ -2340,6 +2361,7 @@ class RecipeAnalyser implements ActionListener {
 					case InStock:
 					case Producible:
 						setHorizontalAlignment(CENTER); break;
+					case GenID:
 					case NameDE:
 					case NameEN:
 					case Description:
