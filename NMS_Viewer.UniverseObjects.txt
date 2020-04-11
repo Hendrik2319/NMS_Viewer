@@ -306,6 +306,39 @@ resources=In,CO2,NaCl
 
 [Pln514400B573F95C]
 
+[Reg000000FAE1B962]
+
+[Sys007200FAE1B962]
+name=Viky. xD
+race=Gek
+economy=3
+economy_label=florierend
+conflict=3
+conflict_label=gewaltig
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln107200FAE1B962]
+
+[Pln207200FAE1B962]
+
+[Pln307200FAE1B962]
+
+[Pln407200FAE1B962]
+name=Kaylericus Zuoka
+biome=Lush
+is extreme
+resources=Cu_,Pf,Fe__
+short=Portal
+info=-6.37, +107.48 
+
+[Pln507200FAE1B962]
+
+[Pln607200FAE1B962]
+
 [Reg0000000524396E]
 name=Amattoymi-Grenze
 
@@ -3337,6 +3370,32 @@ info=+11.73, +154.03
 
 [Pln612B000DA31EBB]
 
+[Reg0000000693BEC4]
+
+[Sys0185000693BEC4]
+name=Ayoroza-Mase
+race=Gek
+economy=2
+economy_label=nachhaltig
+conflict=2
+conflict_label=streitlustig
+atlasinterface=false
+blackhole=false
+class=Blue
+short=4 Planeten
+info=
+
+[Pln1185000693BEC4]
+
+[Pln2185000693BEC4]
+
+[Pln3185000693BEC4]
+name=Eyci-5Aces
+biome=Exotic_Mega
+resources=In,CO2,Na
+
+[Pln4185000693BEC4]
+
 [Reg000000FD258EC9]
 name=Ryukam-Sektor
 
@@ -6234,6 +6293,14 @@ resources=Cu,NH3,Co
 short=2 Planeten
 info=
 
+[Reg00000000963263]
+
+[Sys00EB0000963263]
+atlasinterface=false
+blackhole=false
+
+[Pln20EB0000963263]
+
 [Reg0000000306C26B]
 name=Izganagy
 
@@ -8805,6 +8872,37 @@ oldname=Ezawasahirish
 
 [Pln205000FE1FA68F]
 oldname=Itachita Irli
+
+[Reg00000008F0E6AE]
+
+[Sys00550008F0E6AE]
+name=Viky system. xD
+race=Vykeen
+economy=3
+economy_label=wohlhabend
+conflict=1
+conflict_label=friedlich
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln10550008F0E6AE]
+name=Viky planet.
+biome=Lush
+buriedTreasure=SalvageableScrap
+resources=Cu,Pf,NaCl
+short=Portal
+info=-67.88, -135.39
+
+[Pln20550008F0E6AE]
+
+[Pln30550008F0E6AE]
+
+[Pln40550008F0E6AE]
+
+[Pln50550008F0E6AE]
 
 [Reg000000FE1F86BC]
 name=Ouxalkl-Terminus

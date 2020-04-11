@@ -136,6 +136,11 @@
 ^ENERGYBOOST2.type=ExosuitExtensionUpgrade
 ^ENERGYBOOST2.image=Render.cell.Lebenserhaltung.png
 ^ENERGYBOOST2.imageBG=085C78
+^EXO_PROT_COLD=
+^EXO_PROT_HOT=
+^EXO_PROT_RAD=
+^EXO_PROT_TOX=
+^EXO_RECHARGE=
 ^FLORASCAN1=Flora-Analysegerät Sigma
 ^FLORASCAN1.obsolete=
 ^FLORASCAN1.type=MultitoolExtensionUpgrade
@@ -301,6 +306,15 @@
 ^LAUNCHER_ALIEN=Neuralanordnung
 ^LAUNCHER_ALIEN.type=ShipExtension
 ^LAUNCHER_ALIEN.image=_self.LAUNCHER_ALIEN.png
+^MECH_BOOST=
+^MECH_ENGINE=
+^MECH_FUEL=
+^MECH_GUN=
+^MECH_LASER=
+^MECH_LASER1=
+^MECH_MINER=
+^MECH_PROT=
+^MECH_SCAN=
 ^OBSOLETE=Überholte Technologie
 ^OBSOLETE.type=Product
 ^OBSOLETE.image=PRODUCT.TECHMODULE.png
@@ -649,6 +663,7 @@
 ^TERRAINEDITOR.image=RENDER.TERRAINEDITOR.png
 ^TERRAINEDITOR.imageBG=085C78
 ^TERRAIN_GREN=
+^T_BOBBLE_POLO=
 ^UP_BOLT1#29076=Hochwertige Kompressoren
 ^UP_BOLT1#29076.type=MultitoolWeaponUpgrade
 ^UP_BOLT1#29076.image=Render.projectile1mod.Blitzwerfer.grau.png
