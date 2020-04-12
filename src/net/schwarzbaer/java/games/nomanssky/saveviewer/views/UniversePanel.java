@@ -1240,8 +1240,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					appendln("    Other Bases on Planet:");
 					for (PersistentPlayerBase base:planet.additionalInfos.otherPlayerBases) {
 						String gps = base.gpsCoords==null ? "" : "  @"+base.gpsCoords.toString();
-						String ownerName = base.owner!=null ? base.owner.getOwnerName() : null;
-						ownerName = ownerName==null ? "another player" : "\""+ownerName+"\"";
+						String ownerName = null;
+						if (base.owner!=null) ownerName = base.owner.getOwnerName();
+						if (ownerName ==null) ownerName = "another player";
 						appendln("        \"%s\" of %s%s", base.name, ownerName, gps);
 					}
 				}

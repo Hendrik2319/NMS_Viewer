@@ -30,12 +30,10 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import javax.swing.SwingUtilities;
+import java.util.stream.Stream;
 
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.SteamIDsNameChangeDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
@@ -116,8 +114,6 @@ public class SaveGameData {
 		general.parse();
 		if (forPreview) return this;
 		
-		SaveViewer.steamIDs.logNameChanges(true);
-		
 		visitedSystems = VisitedSystems.parse(this);
 		parseStats();
 		knownBlueprints = KnownBlueprints.parse(this);
@@ -152,9 +148,6 @@ public class SaveGameData {
 		GameInfos.readUniverseObjectDataFromDataPool(universe,false);
 		GameInfos.saveAllIDsToFiles();
 		SaveViewer.steamIDs.writeToFile();
-		
-		SaveViewer.steamIDs.saveLoggedNameChanges(window);
-		SaveViewer.steamIDs.logNameChanges(false);
 		
 		return this;
 	}
@@ -707,11 +700,11 @@ public class SaveGameData {
 		}
 		
 		public String getOwnerName() {
-			if (userName!=null && !userName.isEmpty()) return userName;
+			if (userName!=null && !userName.isEmpty()) return "\""+userName+"\"";
 			if (userID!=null) {
-				String name = SaveViewer.steamIDs.get(userID);
-				if (name!=null && !name.isEmpty()) return name;
-				return String.format("SteamID %s", userID);
+				HashSet<String> names = SaveViewer.steamIDs.get(userID);
+				if (names==null) return String.format("SteamID %s", userID);
+				return KnownSteamIDs.toString(names);
 			}
 			return null;
 		}
@@ -2240,57 +2233,31 @@ public class SaveGameData {
 	}
 	
 	public final static class KnownSteamIDs {
-		private HashMap<String,String> data;
-		private HashSet<NameChange> loggedNameChanges;
-		@SuppressWarnings("unused")
-		private boolean logNameChanges;
+		private HashMap<String,HashSet<String>> data;
 		
 		KnownSteamIDs() {
 			data = new HashMap<>();
-			loggedNameChanges = new HashSet<>();
-			logNameChanges = false;
-		}
-		
-		public void saveLoggedNameChanges(Window window) {
-			if (!loggedNameChanges.isEmpty()) {
-				Vector<NameChange> backup = new Vector<>(loggedNameChanges);
-				SwingUtilities.invokeLater(()->{
-					SteamIDsNameChangeDialog dlg = new Gui.SteamIDsNameChangeDialog(window, "Which Names should be changed", backup);
-					dlg.showDialog();
-					Collection<NameChange> allowedChanges = dlg.getAllowedChanges();
-					if (!allowedChanges.isEmpty()) {
-						for (NameChange ch:allowedChanges)
-							data.put(ch.steamID, ch.newName);
-						writeToFile();
-					}
-				});
-			}
-			
 		}
 
-		public void logNameChanges(boolean logNameChanges) {
-			this.logNameChanges = logNameChanges;
-			loggedNameChanges.clear();
-		}
-
-		public String get(String steamID) {
+		public HashSet<String> get(String steamID) {
 			return data.get(steamID);
 		}
-		public void set(String steamID, String steamName) /*throws AssignmentExistsException*/ {
-			data.put(steamID, steamName); // later changes -> updates
-			
-			//String prevValue = data.putIfAbsent(steamID, steamName);
-			//if (prevValue!=null && !prevValue.equals(steamName)) {
-			//	AssignmentExistsException e = new AssignmentExistsException(steamID, steamName, prevValue);
-			//	if (logNameChanges) loggedNameChanges.add(e.nameChange);
-			//	throw e;
-			//}
+		public void set(String steamID, String steamName) {
+			HashSet<String> names = data.get(steamID);
+			if (names==null)
+				data.put(steamID, names = new HashSet<String>());
+			names.add(steamName);
 		}
 		public void forEachSorted(BiConsumer<String,String> action) {
-			Set<Entry<String, String>> entrySet = data.entrySet();
-			Vector<Entry<String, String>> vector = new Vector<>(entrySet);
-			vector.sort(Comparator.<Entry<String, String>, String>comparing(Entry<String, String>::getKey).thenComparing(Entry<String, String>::getValue));
-			vector.forEach(entry->action.accept(entry.getKey(),entry.getValue()));
+			Set<Entry<String, HashSet<String>>> entrySet = data.entrySet();
+			Vector<Entry<String, HashSet<String>>> entries = new Vector<>(entrySet);
+			entries.sort(Comparator.<Entry<String, HashSet<String>>, String>comparing(Entry<String, HashSet<String>>::getKey));
+			entries.forEach(entry->{
+				String id = entry.getKey();
+				Vector<String> names = new Vector<>(entry.getValue());
+				names.sort(null);
+				names.forEach(name->action.accept(id,name));
+			});
 		}
 		
 		static class NameChange {
@@ -2354,8 +2321,10 @@ public class SaveGameData {
 				Vector<String> ids = new Vector<String>(data.keySet());
 				ids.sort(null);
 				for (String steamID:ids) {
-					String steamName = data.get(steamID);
-					out.printf("%s=%s%n", steamID,steamName);
+					Vector<String> names = new Vector<>(data.get(steamID));
+					names.sort(null);
+					for (String steamName:names)
+						out.printf("%s=%s%n", steamID,steamName);
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -2363,6 +2332,7 @@ public class SaveGameData {
 			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
 		void readFromFile() {
+			data.clear();
 			long start = System.currentTimeMillis();
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_KNOWN_STEAM_ID),StandardCharsets.UTF_8))) {
 				SaveViewer.log_ln("Read KnownSteamIDs from file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
@@ -2372,7 +2342,7 @@ public class SaveGameData {
 					if (pos<0) continue;
 					String steamID   = line.substring(0,pos);
 					String steamName = line.substring(pos+1);
-					data.put(steamID, steamName);
+					set(steamID, steamName);
 				}
 				SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			} catch (FileNotFoundException e) {
@@ -2381,10 +2351,16 @@ public class SaveGameData {
 			}
 		}
 
-		public String getNameReplacement(String str) {
-			String steamName = get(str);
-			if (steamName==null) return str;
-			return "[SteamID of \""+steamName+"\"]";
+		public String getNameReplacement(String steamID) {
+			HashSet<String> names = get(steamID);
+			if (names==null) return steamID;
+			return "[SteamID of "+toString(names)+"]";
+		}
+		
+		public static String toString(HashSet<String> names) {
+			if (names==null) return null;
+			Stream<String> nameStream = names.stream().map(str->"\""+str+"\"");
+			return String.join(", ",(Iterable<String>) nameStream::iterator);
 		}
 	}
 
