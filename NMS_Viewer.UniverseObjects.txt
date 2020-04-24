@@ -3260,6 +3260,12 @@ class=Yellow
 short=2 Planeten
 info=
 
+[Reg000000006DDE7A]
+
+[Sys018F00006DDE7A]
+atlasinterface=false
+blackhole=false
+
 [Reg000000FE082E83]
 name=Ouisay-Nebel
 
@@ -6189,6 +6195,28 @@ class=Yellow
 short=1 Planet
 info=
 
+[Reg000000FA672243]
+name=Meer von Rawong
+
+[Sys020600FA672243]
+name=Urotoma-Janer
+race=Vykeen
+economy=2
+economy_label=zufriedenstellend
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Green
+
+[Pln220600FA672243]
+name=John G33
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Ag
+short=Atmosphere
+info=Orange
+
 [Reg000000FECDC245]
 name=Wonowere
 
@@ -8953,6 +8981,32 @@ atlasinterface=false
 blackhole=false
 
 [Pln30A400F90F56DB]
+
+[Reg000000FC09D6EE]
+
+[Sys00DE00FC09D6EE]
+name=Zeta Reticuli
+race=Korvax
+economy=2
+economy_label=Mittlere Versorgung
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Green
+short=3 Planeten
+info=
+
+[Pln10DE00FC09D6EE]
+
+[Pln20DE00FC09D6EE]
+
+[Pln30DE00FC09D6EE]
+name=Sprinandy Kabir
+biome=Exotic_Mega
+resources=Em,NH3,Fe__
+short=Portal
+info=+60.16, -126.47
 
 [Reg00000047EB0728]
 
