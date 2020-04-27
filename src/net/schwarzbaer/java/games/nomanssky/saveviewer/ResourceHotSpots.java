@@ -19,7 +19,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -55,18 +54,17 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
-import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
+import net.schwarzbaer.gui.ZoomableCanvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
@@ -1277,8 +1275,7 @@ public class ResourceHotSpots implements ActionListener {
 		}
 	}
 	
-	private static class HotSpotsView extends Canvas {
-
+	private static class HotSpotsView extends ZoomableCanvas<HotSpotsView.ViewState> {
 		private static final long serialVersionUID = 3631270386892323918L;
 
 		private static final BasicStroke STROKE_DASHED_LINE = new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[]{2f,3f}, 0f);
@@ -1303,14 +1300,10 @@ public class ResourceHotSpots implements ActionListener {
 		private static final int minorTickLength_px = 4;
 		private static final int minScaleLength_px = 50;
 		private static final int MaxNearDistance = 20;
-
 		
 		private Planet planet = null;
 		private Planet.Region region = null;
 
-		private Point panStart = null;
-
-		private ViewState viewState = new ViewState();
 		private Axes verticalAxes   = new Axes(true);
 		private Axes horizontalAxes = new Axes(false);
 		private Scale mapScale      = new Scale();
@@ -1325,26 +1318,14 @@ public class ResourceHotSpots implements ActionListener {
 		
 		HotSpotsView(JTextField currentLocationField) {
 			this.currentLocationField = currentLocationField;
-			MouseInputAdapter mouse = new MouseInputAdapter() {
-				@Override public void mousePressed   (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) startPan  (e.getPoint()); }
-				@Override public void mouseDragged   (MouseEvent e) { proceedPan(e.getPoint());  }
-				@Override public void mouseReleased  (MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) stopPan   (e.getPoint());  }
-				@Override public void mouseWheelMoved(MouseWheelEvent e) { zoom(e.getPoint(),e.getPreciseWheelRotation()); }
-				
-				@Override public void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
-				@Override public void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
-				@Override public void mouseExited (MouseEvent e) { displayedLocation=null; showCurrentPos(null); repaint(); }
-				
-				@Override
-				public void mouseClicked(MouseEvent e) {
-					findNearDisplayableLocation(e.getPoint()); 
-				}
-			};
-			addMouseListener(mouse);
-			addMouseMotionListener(mouse);
-			addMouseWheelListener(mouse);
 		}
 		
+		@Override protected ViewState createViewState() { return new ViewState(); }
+		@Override protected void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
+		@Override protected void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
+		@Override protected void mouseExited (MouseEvent e) { displayedLocation=null; showCurrentPos(null); repaint(); }
+		@Override protected void mouseClicked(MouseEvent e) { findNearDisplayableLocation(e.getPoint()); }
+
 		@Override
 		public void setBorder(Border border) {
 			throw new UnsupportedOperationException();
@@ -1444,40 +1425,13 @@ public class ResourceHotSpots implements ActionListener {
 			repaint();
 		}
 
-		protected void startPan(Point point) {
-			panStart = point;
-			viewState.tempPanOffset = new Point();
-			repaint();
+		@Override protected void updateAfterFinalPan() {
+			updateAxes();
 		}
 
-		protected void proceedPan(Point point) {
-			if (panStart != null)
-				viewState.tempPanOffset = sub(point,panStart);
-			repaint();
-		}
-
-		protected void stopPan(Point point) {
-			if (panStart!=null)
-				if (viewState.moveCenter(sub(point,panStart))) {
-					updateAxes();
-				}
-			
-			panStart = null;
-			viewState.tempPanOffset = null;
-			repaint();
-		}
-
-		protected void zoom(Point point, double preciseWheelRotation) {
-			float f = (float) Math.pow(1.1f, preciseWheelRotation);
-			if (viewState.zoom(point,f)) {
-				updateAxes();
-				mapScale.update();
-				repaint();
-			}
-		}
-
-		private Point sub(Point p1, Point p2) {
-			return new Point(p1.x-p2.x,p1.y-p2.y);
+		@Override protected void updateAfterZoom() {
+			updateAxes();
+			mapScale.update();
 		}
 
 		private void updateAxes() {
@@ -1939,19 +1893,18 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
-		private class ViewState {
+		private class ViewState extends ZoomableCanvas.ViewState {
 		
 			private LatLong center = null;
 			private float scaleLengthPerAngleLat  = Float.NaN;
 			private float scaleLengthPerAngleLong = Float.NaN;
 			private float scalePixelPerLength     = Float.NaN;
 			
-			private Point tempPanOffset = null;
-			
-			public boolean isOk() {
+			@Override
+			protected boolean isOk() {
 				return center!=null && !Float.isNaN(scalePixelPerLength) && !Float.isNaN(scaleLengthPerAngleLat) && !Float.isNaN(scaleLengthPerAngleLong);
 			}
-		
+
 			public boolean haveScalePixelPerLength() {
 				return !Float.isNaN(scalePixelPerLength);
 			}
@@ -1998,9 +1951,7 @@ public class ResourceHotSpots implements ActionListener {
 				scalePixelPerLength     = Float.NaN;
 			}
 			
-			public boolean zoom(Point point, float f) {
-				if (!isOk()) return false;
-				
+			@Override protected boolean zoom(Point point, float f) {
 				LatLong centerOld = new LatLong(center);
 				LatLong location = convertScreenToAngle(point);
 				
@@ -2015,9 +1966,7 @@ public class ResourceHotSpots implements ActionListener {
 				return true;
 			}
 		
-			public boolean moveCenter(Point offsetOnScreen) {
-				if (!isOk()) return false;
-				
+			@Override protected boolean pan(Point offsetOnScreen) {
 				float offsetLat  = convertLength_ScreenToAngle_Lat (-offsetOnScreen.y);
 				float offsetLong = convertLength_ScreenToAngle_Long( offsetOnScreen.x);
 				center = new LatLong( center.latitude-offsetLat, center.longitude-offsetLong );
