@@ -4985,10 +4985,22 @@ biome=AnomHexagons
 resources=In,Au,Co
 
 [Sys010500FE007004]
+name=Ockson
+unexplored
 atlasinterface=false
 blackhole=false
+class=Red
+short=4 Planeten
+info=
 
 [Pln210500FE007004]
+name=Lasad
+biome=Exotic_Mega
+is extreme
+with water
+resources=Cd_,P,Ag
+short=Atmosphere
+info=Blau-Rot
 
 [Sys013300FE007004]
 atlasinterface=false
@@ -6403,6 +6415,35 @@ info=
 name=Sabnoc XI
 biome=Toxic
 resources=Cu,NH3,NaCl
+
+[Reg000000069A72AD]
+
+[Sys00E400069A72AD]
+name=Aokakoj
+race=Vykeen
+economy=2
+economy_label=ausgeglichen
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Blue
+
+[Pln10E400069A72AD]
+
+[Pln20E400069A72AD]
+
+[Pln30E400069A72AD]
+name=Yautia Prime
+biome=Exotic_Mega
+is extreme
+resources=In_,CO2,Ag
+short=Portal
+info=+54.50, -11.34
+
+[Pln40E400069A72AD]
+
+[Pln50E400069A72AD]
 
 [Reg000000FF9852B9]
 oldname=Zudden-Weite
