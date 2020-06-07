@@ -2833,6 +2833,47 @@ name=Plut Beta
 biome=Irradiated
 resources=Cu,U,NaCl
 
+[Reg000000FF9A7D65]
+
+[Sys00D600FF9A7D65]
+atlasinterface=false
+blackhole=false
+
+[Pln20D600FF9A7D65]
+
+[Reg000000FC678D73]
+
+[Sys016900FC678D73]
+name=Rodonez
+race=Gek
+economy=2
+economy_label=Mittlere Versorgung
+conflict=1
+conflict_label=ungestört
+atlasinterface=false
+blackhole=false
+class=Blue
+
+[Pln116900FC678D73]
+
+[Pln216900FC678D73]
+
+[Pln316900FC678D73]
+
+[Pln416900FC678D73]
+name=Ditchae M5
+biome=Exotic_Mega
+with water
+resources=In,CO2,Fe__
+short=Portal
+info=-49.90, +19.92
+short=Grau-Orange
+info=
+
+[Pln516900FC678D73]
+
+[Pln616900FC678D73]
+
 [Reg0000000168CD75]
 name=Ocereforc-Terminus
 
@@ -2884,6 +2925,14 @@ name=Cordon
 biome=Exotic_Mega
 buriedTreasure=SalvageableScrap
 resources=In,CO2,NaCl
+
+[Reg000000FE68DD80]
+
+[Sys001D00FE68DD80]
+atlasinterface=false
+blackhole=false
+
+[Pln101D00FE68DD80]
 
 [Reg000000FD331D83]
 name=Riykroni-Adjunkt
@@ -3817,7 +3866,7 @@ blackhole=false
 class=Yellow
 short=4 Planeten
 info=
-short=Pugneum
+short=Pugneum (nicht bei alt)
 info=
 
 [Sys007900FFFAAF6C]
@@ -5869,6 +5918,36 @@ class=Yellow
 short=5 Planeten
 info=
 
+[Reg000000FB6D1154]
+
+[Sys015300FB6D1154]
+race=Vykeen
+economy=3
+economy_label=wohlhabend
+conflict=1
+conflict_label=friedlich
+atlasinterface=false
+blackhole=false
+class=Green
+short=6 Planeten
+info=
+
+[Pln115300FB6D1154]
+
+[Pln215300FB6D1154]
+name=Nandor The Relentless
+biome=Exotic_Mega
+with water
+resources=Em,NH3,NaCl
+
+[Pln315300FB6D1154]
+
+[Pln415300FB6D1154]
+
+[Pln515300FB6D1154]
+
+[Pln615300FB6D1154]
+
 [Reg0000000333E156]
 name=Wungor-Adjunkt
 
@@ -6819,6 +6898,8 @@ blackhole=false
 class=Yellow
 short=4 Planeten
 info=
+short=Pugneum
+info=
 
 [Sys00790002082389]
 name=Anzaif
@@ -6940,6 +7021,36 @@ resources=In,Pf,Na
 name=Satchar VII
 biome=Airless
 resources=In,Na,Sr_Rost
+
+[Reg000000F75843D7]
+
+[Sys001100F75843D7]
+name=Gonmout
+race=Gek
+economy=1
+economy_label=unerfahren
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=5 Planeten
+info=
+
+[Pln101100F75843D7]
+name=Colin Robinson
+biome=Lush
+resources=Cu,Pf,Fe__
+short=Portal
+info=-13.79, -63.36
+
+[Pln201100F75843D7]
+
+[Pln301100F75843D7]
+
+[Pln401100F75843D7]
+
+[Pln501100F75843D7]
 
 [Reg000000001B0400]
 name=Dunyalgo-Wolke
@@ -8992,6 +9103,36 @@ info=
 name=Nogenh XVII
 biome=Frozen
 resources=Cu,CO2,Fe__
+
+[Reg00000007FBC6BF]
+
+[Sys00550007FBC6BF]
+name=Ivtjen-Hichi XVI
+race=Korvax
+economy=2
+economy_label=komfortabel
+conflict=3
+conflict_label=gefährlich
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=6 Planeten
+info=
+
+[Pln10550007FBC6BF]
+
+[Pln20550007FBC6BF]
+
+[Pln30550007FBC6BF]
+
+[Pln40550007FBC6BF]
+name=Jeans
+biome=AnomHexagons
+resources=Cu,Au,Fe__
+
+[Pln50550007FBC6BF]
+
+[Pln60550007FBC6BF]
 
 [Reg000000020E56D7]
 name=Ihtini-Nebel
