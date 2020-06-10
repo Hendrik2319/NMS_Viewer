@@ -489,7 +489,7 @@ public class ResourceHotSpots implements ActionListener {
 				try { currentPlanet.radius = Float.parseFloat( str ); }
 				catch (NumberFormatException e1) {}
 				updatePlanetRadiusField();
-				hotSpotsView.update();
+				hotSpotsView.updatePlanetRadius();
 			}
 		} break;
 		}
@@ -1295,6 +1295,12 @@ public class ResourceHotSpots implements ActionListener {
 			filterSubstance = null;
 			filterHotSpotClass = null;
 			filterHotSpotType = null;
+			updatePlanetRadius();
+		}
+
+		public void updatePlanetRadius() {
+			if (planet == null) viewState.setPlainMapSurface();
+			else viewState.setSphericalMapSurface(planet.radius);;
 			reset();
 		}
 
@@ -1613,14 +1619,6 @@ public class ResourceHotSpots implements ActionListener {
 				region.referencePoints.forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
 				region.circles        .forEach(item->{ min.setMin(item.center  ); max.setMax(item.center  ); });
 				region.hotSpots       .forEach(item->{ min.setMin(item.location); max.setMax(item.location); });
-			}
-
-			@Override protected float computeScaleLengthPerAngle_Longitude() {
-				return (float) (2*Math.PI*planet.radius / 360 * Math.cos(center.latitude/180*Math.PI));
-			}
-
-			@Override protected float computeScaleLengthPerAngle_Latitude() {
-				return (float) (2*Math.PI*planet.radius / 360);
 			}
 
 			@Override
