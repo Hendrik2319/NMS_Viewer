@@ -1273,8 +1273,9 @@ public class ResourceHotSpots implements ActionListener {
 		private JTextField currentLocationField;
 		
 		HotSpotsView(JTextField currentLocationField) {
-			super(COLOR_AXIS,true,true,true,true,true);
 			this.currentLocationField = currentLocationField;
+			activateMapScale(COLOR_AXIS, "u");
+			activateAxes(COLOR_AXIS, true,true,true,true);
 		}
 		
 		@Override protected ViewState createViewState() { return new ViewState(this); }
