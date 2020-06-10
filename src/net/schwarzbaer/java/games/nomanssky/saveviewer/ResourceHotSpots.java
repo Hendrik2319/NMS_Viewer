@@ -730,23 +730,23 @@ public class ResourceHotSpots implements ActionListener {
 					
 					region.referencePoints.forEach(referencePoint->{
 						out.println("[ReferencePoint]");
-						if (referencePoint.location.latitude !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , referencePoint.location.getLatitudeStr ());
-						if (referencePoint.location.longitude!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", referencePoint.location.getLongitudeStr());
+						if (referencePoint.location.latitude_y !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , referencePoint.location.getLatitudeStr ());
+						if (referencePoint.location.longitude_x!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", referencePoint.location.getLongitudeStr());
 						if (referencePoint.name              !=null) out.printf(Locale.ENGLISH, "name=%s%n"     , referencePoint.name);
 						if (referencePoint.isBase                  ) out.printf(Locale.ENGLISH, "isBase%n");
 						out.println();
 					});
 					region.circles.forEach(circle->{
 						out.println("[Circle]");
-						if (circle.center.latitude !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , circle.center.getLatitudeStr ());
-						if (circle.center.longitude!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", circle.center.getLongitudeStr());
+						if (circle.center.latitude_y !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , circle.center.getLatitudeStr ());
+						if (circle.center.longitude_x!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", circle.center.getLongitudeStr());
 						if (circle.radius          !=null) out.printf(Locale.ENGLISH, "radius=%1.2f%n", circle.radius);
 						out.println();
 					});
 					region.hotSpots.forEach(hotSpot->{
 						out.println("[HotSpot]");
-						if (hotSpot.location.latitude !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , hotSpot.location.getLatitudeStr ());
-						if (hotSpot.location.longitude!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", hotSpot.location.getLongitudeStr());
+						if (hotSpot.location.latitude_y !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , hotSpot.location.getLatitudeStr ());
+						if (hotSpot.location.longitude_x!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", hotSpot.location.getLongitudeStr());
 						if (hotSpot.type              !=null) out.printf(Locale.ENGLISH, "type=%s%n"     , hotSpot.type);
 						if (hotSpot.substance         !=null) out.printf(Locale.ENGLISH, "substance=%s%n", hotSpot.substance);
 						if (hotSpot.hotSpotClass      !=null) out.printf(Locale.ENGLISH, "class=%s%n"    , hotSpot.hotSpotClass);
@@ -785,15 +785,15 @@ public class ResourceHotSpots implements ActionListener {
 		@SuppressWarnings("unused")
 		LatLong(float latitude, float longitude) { super(latitude, longitude); }
 		
-		public void setLatitudeStr (String aValue) { latitude  = parse(aValue); }
-		public void setLongitudeStr(String aValue) { longitude = parse(aValue); }
+		public void setLatitudeStr (String aValue) { latitude_y  = parse(aValue); }
+		public void setLongitudeStr(String aValue) { longitude_x = parse(aValue); }
 
-		public String getLatitudeStr () { return toString(latitude ); }
-		public String getLongitudeStr() { return toString(longitude); }
+		public String getLatitudeStr () { return toString(latitude_y ); }
+		public String getLongitudeStr() { return toString(longitude_x); }
 		
 		@Override
 		public String toString() {
-			return "(" + toString(latitude) + "," + toString(longitude) + ")";
+			return "(" + toString(latitude_y) + "," + toString(longitude_x) + ")";
 		}
 
 		private String toString(Float value) {
