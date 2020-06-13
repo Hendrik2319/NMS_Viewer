@@ -3827,6 +3827,16 @@ class=Yellow
 short=3 Planeten
 info=
 
+[Reg00000002907F4D]
+
+[Sys002D0002907F4D]
+atlasinterface=false
+blackhole=false
+
+[Pln302D0002907F4D]
+
+[Pln402D0002907F4D]
+
 [Reg000000FF060F5E]
 name=Libuser-Zufluss
 
@@ -9133,6 +9143,29 @@ resources=Cu,Au,Fe__
 [Pln50550007FBC6BF]
 
 [Pln60550007FBC6BF]
+
+[Reg000000F9F3A6C9]
+
+[Sys010E00F9F3A6C9]
+name=Attiru Igotit
+race=Gek
+economy=3
+economy_label=gedeihend
+conflict=3
+conflict_label=gefährlich
+atlasinterface=false
+blackhole=false
+class=Blue
+
+[Pln110E00F9F3A6C9]
+name=Rehype Omega G'day mate
+biome=Exotic_Mega
+is extreme
+resources=In_,CO2,NaCl
+short=Portal
+info=+5.07, -158.97
+short=Schwarz-Rot
+info=
 
 [Reg000000020E56D7]
 name=Ihtini-Nebel
