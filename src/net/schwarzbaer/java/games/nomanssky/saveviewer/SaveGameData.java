@@ -768,7 +768,7 @@ public class SaveGameData {
 		}
 	}
 
-	public static class TeleportEndpoints {
+	public static class TeleportEndpoints implements AddressdableObject {
 		
 		public enum TeleportHost {
 			Base("Base on Planet"),
@@ -814,6 +814,8 @@ public class SaveGameData {
 //			return String.format("\"%s\" @ %s", name, gpsCoords.toString());
 //		}
 
+		@Override public UniverseAddress getUniverseAddress() { return universeAddress; }
+
 		private static Vector<TeleportEndpoints> parse(SaveGameData data) {
 			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","TeleportEndpoints");
 			if (arrayValue==null) return null;
@@ -858,7 +860,7 @@ public class SaveGameData {
 		}
 	}
 
-	public static class PersistentPlayerBase {
+	public static class PersistentPlayerBase implements AddressdableObject {
 
 		private static Vector<PersistentPlayerBase> parseBases(SaveGameData data) {
 				JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","PersistentPlayerBases");
@@ -975,9 +977,11 @@ public class SaveGameData {
 			this.source = source;
 			this.baseIndex = baseIndex;
 		}
+
+		@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
 	}
 
-	public static class UnboundBuildingObject extends BuildingObject {
+	public static class UnboundBuildingObject extends BuildingObject implements AddressdableObject {
 		public UniverseAddress galacticAddress;
 		public Long regionSeed;
 		
@@ -986,6 +990,7 @@ public class SaveGameData {
 			this.galacticAddress = null;
 			this.regionSeed = null;
 		}
+		@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
 
 		private static UnboundBuildingObject[] parse(SaveGameData data) {
 			JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","BaseBuildingObjects");
@@ -1147,7 +1152,7 @@ public class SaveGameData {
 		}
 	}
 
-	public static class Freighter {
+	public static class Freighter implements AddressdableObject {
 		
 		public enum FreighterClass { CapitalFreighter, Freighter }
 		
@@ -1162,6 +1167,8 @@ public class SaveGameData {
 		private ResourceBlock crewResourceBlock = null;
 		private ResourceBlock freighterResourceBlock = null;
 		private SeedValue homeseed;
+		
+		@Override public UniverseAddress getUniverseAddress() { return ua; }
 
 		private static Freighter parse(SaveGameData data) {
 			Freighter freighter = new Freighter();
@@ -2189,7 +2196,7 @@ public class SaveGameData {
 			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable RunningFrigateMissions.");
 	}
 
-	public static class FrigateMission {
+	public static class FrigateMission implements AddressdableObject {
 
 		public SeedValue seed = null;
 		public UniverseAddress universeAddress = null;
@@ -2230,6 +2237,7 @@ public class SaveGameData {
 			public Boolean bool3_8GD = null;
 		}
 		
+		@Override public UniverseAddress getUniverseAddress() { return universeAddress; }
 	}
 	
 	public final static class KnownSteamIDs {
@@ -2585,7 +2593,7 @@ public class SaveGameData {
 			return false;
 		}
 
-		public static class StoreData {
+		public static class StoreData implements AddressdableObject {
 			// DD.UA  UniverseAddress
 			// DD.DT  String
 			// DD.VP[0]  String
@@ -2616,9 +2624,11 @@ public class SaveGameData {
 				RID_bytes = null;
 				PTK = null;
 			}
+			
+			@Override public UniverseAddress getUniverseAddress() { return DD.UA; }
 		}
 		
-		public static class AvailableData {
+		public static class AvailableData implements AddressdableObject {
 			// TSrec  long
 			// DD.UA  UniverseAddress
 			// DD.DT  String
@@ -2632,6 +2642,8 @@ public class SaveGameData {
 				TSrec = null;
 				DD = new DDblock();
 			}
+
+			@Override public UniverseAddress getUniverseAddress() { return DD.UA; }
 		}
 		
 		public static class DDblock {
@@ -2746,7 +2758,7 @@ public class SaveGameData {
 			}
 		}
 
-		public static class StoredInteraction {
+		public static class StoredInteraction implements AddressdableObject {
 			
 			public int groupIndex;
 			public int interactionIndex;
@@ -2763,7 +2775,9 @@ public class SaveGameData {
 				this.position = null;
 				this.gpsCoords = null;
 			}
-		
+			
+			@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
+
 			private static Vector<StoredInteraction> parse(SaveGameData data) {
 				JSON_Array arrayValue = getArrayValue(data.json_data,"PlayerStateData","StoredInteractions");
 				if (arrayValue==null) return null;
@@ -2816,11 +2830,12 @@ public class SaveGameData {
 				public Long Data = null;
 				public Vector<Participant> Participants = null;
 			}
-			public final static class Participant {
+			public final static class Participant implements AddressdableObject {
 				public UniverseAddress UA = null;
 				public SeedValue BuildingSeed = null;
 				public Coordinates BuildingLocation = null;
 				public String ParticipantType = null;
+				@Override public UniverseAddress getUniverseAddress() { return UA; }
 			}
 			
 			public static Vector<Mission> parse(SaveGameData data) {
@@ -2843,7 +2858,7 @@ public class SaveGameData {
 
 		public final static class MarkerStack {
 			
-			public final static class Marker {
+			public final static class Marker implements AddressdableObject {
 		
 				public Long Table;
 				public String Event;
@@ -2855,6 +2870,8 @@ public class SaveGameData {
 				public String MissionID;
 				public Long MissionSeed;
 				public String ParticipantType;
+				
+				@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
 			}
 		
 			public static Vector<Marker> parse(SaveGameData data) {
@@ -2963,11 +2980,12 @@ public class SaveGameData {
 	}
 	
 	public static final class VisitedSystems {
-		public static final class VisitedSystem {
+		public static final class VisitedSystem implements AddressdableObject {
 			public long addr;
 			public UniverseAddress ua;
 			public int extra;
 			
+			@Override public UniverseAddress getUniverseAddress() { return ua; }
 		}
 		
 		public static Vector<VisitedSystem> parse(SaveGameData data) {
@@ -2990,6 +3008,10 @@ public class SaveGameData {
 				return sys;
 			}, "VisitedSystems", data.json_data, "PlayerStateData", "VisitedSystems");
 		}
+	}
+	
+	public interface AddressdableObject {
+		UniverseAddress getUniverseAddress();
 	}
 
 	public static final class UniverseAddress implements Comparable<UniverseAddress> {
@@ -3493,7 +3515,7 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class Region extends ObjectWithSource {
+		public static final class Region extends ObjectWithSource implements AddressdableObject {
 			
 			final Galaxy galaxy;
 			public final int voxelX;
@@ -3539,6 +3561,7 @@ public class SaveGameData {
 				return null;
 			}
 
+			@Override
 			public UniverseAddress getUniverseAddress() {
 				if (galaxy==null) return null;
 				return new UniverseAddress( galaxy.galaxyIndex, voxelX,voxelY,voxelZ, 0,0 );
@@ -3627,7 +3650,7 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class SolarSystem extends DiscoverableObject {
+		public static final class SolarSystem extends DiscoverableObject implements AddressdableObject {
 			
 			public enum SystemState {
 				Normal("Normal"),
@@ -3770,6 +3793,7 @@ public class SaveGameData {
 				return null;
 			}
 
+			@Override
 			public UniverseAddress getUniverseAddress() {
 				if (region==null) return null;
 				UniverseAddress ua = region.getUniverseAddress();
@@ -3778,7 +3802,7 @@ public class SaveGameData {
 			}
 		}
 		
-		public static final class Planet extends DiscoverableObject {
+		public static final class Planet extends DiscoverableObject implements AddressdableObject {
 			
 			public enum Biome {
 				Lush       ("Lush"         ,"Erdähnlich", Resources.Pf ),
@@ -3990,6 +4014,7 @@ public class SaveGameData {
 				return strName+strExtraInfo+strDataName;
 			}
 
+			@Override
 			public UniverseAddress getUniverseAddress() {
 				if (solarSystem==null) return null;
 				UniverseAddress ua = solarSystem.getUniverseAddress();

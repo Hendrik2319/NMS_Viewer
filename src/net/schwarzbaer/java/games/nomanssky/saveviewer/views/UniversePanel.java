@@ -78,6 +78,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.PopupDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -1712,6 +1713,10 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		updateMarkerList();
+	}
+
+	public void markAddress(AddressdableObject obj) {
+		if (obj!=null) markAddress(obj.getUniverseAddress());
 	}
 
 	public void markAddress(UniverseAddress ua) {

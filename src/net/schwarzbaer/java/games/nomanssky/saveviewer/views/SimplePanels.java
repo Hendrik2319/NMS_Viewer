@@ -47,7 +47,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ContextMenuInvoker;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.MissionProgress.Participant;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.Modification;
@@ -55,7 +57,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMissi
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission.FrigateMissionTask;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.SeedValue;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -76,6 +77,126 @@ public class SimplePanels {
 			else str+="0x"+Long.toHexString(n).toUpperCase();
 		}
 		return "["+str+"]";
+	}
+	protected static void markSelectedObjectsInUniverse(JTable table, AddressdableObject[] objs, UniversePanel universePanel) {
+		int[] rowsV = table.getSelectedRows();
+		for (int rowV:rowsV) {
+			int rowM = table.convertRowIndexToModel(rowV);
+			if (0<=rowM && rowM<objs.length)
+				universePanel.markAddress(objs[rowM]);
+		}
+	}
+	protected static void markSelectedObjectsInUniverse(JTable table, Vector<? extends AddressdableObject> objs, UniversePanel universePanel) {
+		int[] rowsV = table.getSelectedRows();
+		for (int rowV:rowsV) {
+			int rowM = table.convertRowIndexToModel(rowV);
+			if (0<=rowM && rowM<objs.size())
+				universePanel.markAddress(objs.get(rowM));
+		}
+	}
+	protected static void markSelectedAddressesInUniverse(JTable table, Vector<UniverseAddress> objs, UniversePanel universePanel) {
+		int[] rowsV = table.getSelectedRows();
+		for (int rowV:rowsV) {
+			int rowM = table.convertRowIndexToModel(rowV);
+			if (0<=rowM && rowM<objs.size())
+				universePanel.markAddress(objs.get(rowM));
+		}
+	}
+
+	private static class MarkAddressesAddOn {
+		
+		private AddressdableObject[] objArr;
+		private Vector<? extends AddressdableObject> objVec;
+		private Vector<UniverseAddress> uaVec;
+		private UniverseAddress clickedUA = null;
+
+		MarkAddressesAddOn() {
+			this.objArr = null;
+			this.objVec = null;
+		}
+		private MarkAddressesAddOn setData(AddressdableObject[] objArr) {
+			this.uaVec  = null;
+			this.objArr = objArr;
+			this.objVec = null;
+			return this;
+		}
+		private MarkAddressesAddOn setData(Vector<? extends AddressdableObject> objVec) {
+			this.uaVec  = null;
+			this.objArr = null;
+			this.objVec = objVec;
+			return this;
+		}
+		private MarkAddressesAddOn setUaVec(Vector<UniverseAddress> uaVec) {
+			this.uaVec  = uaVec;
+			this.objArr = null;
+			this.objVec = null;
+			return this;
+		}
+		
+		MarkAddressesAddOn addTo(SimplifiedTable<?> table, UniversePanel universePanel, Universe universe) {
+			JMenuItem miMarkInUniverse, miMarkSelectedInUniverse;
+			JPopupMenu contextMenu = table.getContextMenu();
+			contextMenu.addSeparator();
+			contextMenu.add(miMarkInUniverse         = Gui.createMenuItem("Mark Address of Clicked Row in \"Known Universe\"",e->universePanel.markAddress(clickedUA)));
+			contextMenu.add(miMarkSelectedInUniverse = Gui.createMenuItem("Mark Addresses of Selected Rows in \"Known Universe\"",e->markSelectedAddressesInUniverse(table,universePanel)));
+			table.addContextMenuInvokeListener((rowV, columnV) -> {
+				
+				int[] selectedRows = table.getSelectedRows();
+				miMarkSelectedInUniverse.setEnabled(selectedRows.length>0 && haveData());
+				miMarkSelectedInUniverse.setText(String.format("Mark Addresses of %sSelected Row%s in \"Known Universe\"", selectedRows.length==0?"":selectedRows.length+" ", selectedRows.length==1?"":"s" ));
+				
+				int rowM = table.convertRowIndexToModel(rowV);
+				if (haveData() && 0<=rowM && rowM<getDataLength()) {
+					if (isUaVec()) {
+						clickedUA = getUA(rowM);
+					} else {
+						AddressdableObject clickedRow = getObject(rowM);
+						clickedUA = clickedRow!=null ? clickedRow.getUniverseAddress() : null;
+					}
+					if (clickedUA!=null) {
+						String name = clickedUA.getVerboseNameInOneLine(universe, 1);
+						miMarkInUniverse.setEnabled(true);
+						miMarkInUniverse.setText(String.format("Mark \"%s\" in \"Known Universe\"", name.trim()));
+						return;
+					}
+				}
+				clickedUA = null;
+				miMarkInUniverse.setEnabled(false);
+				miMarkInUniverse.setText("Mark Address of Clicked Row in \"Known Universe\"");
+			});
+			
+			return this;
+		}
+		
+		private boolean haveData() {
+			return (objArr!=null || objVec!=null || uaVec!=null);
+		}
+		private boolean isUaVec() {
+			return uaVec!=null;
+		}
+	
+		private UniverseAddress getUA(int rowM) {
+			if (uaVec!=null) return uaVec.get(rowM);
+			return null;
+		}
+		private AddressdableObject getObject(int rowM) {
+			if (objArr!=null) return objArr[rowM];
+			if (objVec!=null) return objVec.get(rowM);
+			return null;
+		}
+
+		private int getDataLength() {
+			if (objArr!=null) return objArr.length;
+			if (objVec!=null) return objVec.size();
+			if (uaVec !=null) return uaVec.size();
+			return 0;
+		}
+
+		private void markSelectedAddressesInUniverse(JTable table, UniversePanel universePanel) {
+			if (objArr!=null) SimplePanels.markSelectedObjectsInUniverse  (table,objArr,universePanel);;
+			if (objVec!=null) SimplePanels.markSelectedObjectsInUniverse  (table,objVec,universePanel);;
+			if (uaVec !=null) SimplePanels.markSelectedAddressesInUniverse(table,uaVec ,universePanel);;
+		}
 	}
 
 	public static class VerySimpleTableTabPanel<DataType> extends SaveGameViewTabPanel {
@@ -537,7 +658,7 @@ public class SimplePanels {
 	public static class DiscoveredDataAvailablePanel extends VerySimpleTableTabPanel<SaveGameData.DiscoveryData.AvailableData> {
 		private static final long serialVersionUID = 2870833302184314416L;
 
-		public DiscoveredDataAvailablePanel(SaveGameData data) {
+		public DiscoveredDataAvailablePanel(SaveGameData data, UniversePanel universePanel) {
 			super(data,"DDATable",true,SaveViewer.DEBUG,true,data.discoveryData.availableData,
 				new ColumnID[] {
 					new ColumnID("Timestamp"       , TimeStamp.class, 50,-1,140,140, availData->availData.TSrec),
@@ -547,6 +668,7 @@ public class SimplePanels {
 					new ColumnID("DD_VP"           ,    String.class, 50,-1,300,300, availData->availData.DD.VP==null ? "" : toHexArray(availData.DD.VP)),
 				}
 			);
+			new MarkAddressesAddOn().setData(this.data.discoveryData.availableData).addTo(table, universePanel, this.data.universe);
 		}
 		
 		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.DiscoveryData.AvailableData> {
@@ -559,7 +681,7 @@ public class SimplePanels {
 	public static class DiscoveredDataStoredPanel extends VerySimpleTableTabPanel<SaveGameData.DiscoveryData.StoreData> {
 		private static final long serialVersionUID = 6619075068331735784L;
 
-		public DiscoveredDataStoredPanel(SaveGameData data) {
+		public DiscoveredDataStoredPanel(SaveGameData data, UniversePanel universePanel) {
 			super(data,"DDSTable",true,SaveViewer.DEBUG,true,data.discoveryData.storeData,
 				new ColumnID[] {
 					new ColumnID("DD_UA"  ,    String.class, 50,-1,160,160, storeData->storeData.DD.UA  ==null ? "" : storeData.DD.UA.getAddressStr()),
@@ -576,6 +698,7 @@ public class SimplePanels {
 					new ColumnID("PTK"    ,    String.class, 20,-1, 40, 40, storeData->storeData.PTK    ==null ? "" : storeData.PTK),
 				}
 			);
+			new MarkAddressesAddOn().setData(this.data.discoveryData.storeData).addTo(table, universePanel, this.data.universe);
 		}
 		
 		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.DiscoveryData.StoreData> {
@@ -587,8 +710,6 @@ public class SimplePanels {
 
 	public static class TeleportEndpointsPanel extends VerySimpleTableTabPanel<SaveGameData.TeleportEndpoints> {
 		private static final long serialVersionUID = 3670607708610340039L;
-		private UniversePanel universePanel;
-		private TeleportEndpoints clickedRow = null;
 
 		public TeleportEndpointsPanel(SaveGameData data, UniversePanel universePanel) {
 			super(data,"TeleportEndpointsTable",true,SaveViewer.DEBUG,true,data.teleportEndpoints,
@@ -603,32 +724,7 @@ public class SimplePanels {
 					new ColumnID("Unknown"         , String.class, 40,-1,140,140, te->te.getUnknownValues()),
 				}
 			);
-			this.universePanel = universePanel;
-			
-			JMenuItem miMarkInUniverse;
-			JPopupMenu contextMenu = table.getContextMenu();
-			contextMenu.addSeparator();
-			contextMenu.add(miMarkInUniverse = Gui.createMenuItem("Mark Address of Clicked Row in \"Known Universe\"",e->markAddressInUniverse()));
-			table.addContextMenuInvokeListener((rowV, columnV) -> {
-				int rowM = table.convertRowIndexToModel(rowV);
-				if (0<=rowM && rowM<TeleportEndpointsPanel.this.data.teleportEndpoints.size()) {
-					clickedRow = TeleportEndpointsPanel.this.data.teleportEndpoints.get(rowM);
-					if (clickedRow!=null && clickedRow.universeAddress!=null) {
-						String name = clickedRow.universeAddress.getVerboseNameInOneLine(TeleportEndpointsPanel.this.data.universe, 1);
-						miMarkInUniverse.setEnabled(true);
-						miMarkInUniverse.setText(String.format("Mark \"%s\" in \"Known Universe\"", name.trim()));
-						return;
-					}
-				}
-				clickedRow = null;
-				miMarkInUniverse.setEnabled(false);
-				miMarkInUniverse.setText("Mark Address of Clicked Row in \"Known Universe\"");
-			});
-		}
-
-		private void markAddressInUniverse() {
-			if (clickedRow!=null && clickedRow.universeAddress!=null)
-				universePanel.markAddress(clickedRow.universeAddress);
+			new MarkAddressesAddOn().setData(this.data.teleportEndpoints).addTo(table, universePanel, this.data.universe);
 		}
 		
 		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.TeleportEndpoints> {
@@ -640,10 +736,10 @@ public class SimplePanels {
 	
 	public static class ExperimentalData {
 
-		public static void addPanels(SaveGameViewTabGroupingPanel rawDataPanel, SaveGameData data) {
-			if (data.experimentalData.storedInteractions!=null) rawDataPanel.addPanel("Stored Interactions",new StoredInteractionsPanel(data));
-			if (data.experimentalData.markerStack       !=null) rawDataPanel.addPanel("Marker Stack"       ,new MarkerStackPanel(data));
-			if (data.experimentalData.missionProgress   !=null) rawDataPanel.addPanel("Mission Progress"   ,new MissionProgressPanel(data));
+		public static void addPanels(SaveGameViewTabGroupingPanel rawDataPanel, SaveGameData data, UniversePanel universePanel) {
+			if (data.experimentalData.storedInteractions!=null) rawDataPanel.addPanel("Stored Interactions",new StoredInteractionsPanel(data, universePanel));
+			if (data.experimentalData.markerStack       !=null) rawDataPanel.addPanel("Marker Stack"       ,new MarkerStackPanel(data, universePanel));
+			if (data.experimentalData.missionProgress   !=null) rawDataPanel.addPanel("Mission Progress"   ,new MissionProgressPanel(data, universePanel));
 			if (data.experimentalData.data_Wu_.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_Wu_.getTabTitel(),new DATA_Wu__Panel(data));
 			if (data.experimentalData.data_EQt.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_EQt.getTabTitel(),new DATA_EQt_Panel(data));
 			if (data.experimentalData.data_m4I.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_m4I.getTabTitel(),new DATA_m4I_Panel(data));
@@ -710,7 +806,7 @@ public class SimplePanels {
 		private static class StoredInteractionsPanel extends VerySimpleTableTabPanel<SaveGameData.ExperimentalData.StoredInteraction> {
 			private static final long serialVersionUID = 1017824861605442560L;
 		
-			public StoredInteractionsPanel(SaveGameData data) {
+			public StoredInteractionsPanel(SaveGameData data, UniversePanel universePanel) {
 				super(data,"StoredInteractionsTable",true,SaveViewer.DEBUG,true,data.experimentalData.storedInteractions,
 					new ColumnID[] {
 						new ColumnID("G"               , String.class,  35,-1, 35, 35, si->si.groupIndex),
@@ -721,6 +817,7 @@ public class SimplePanels {
 						new ColumnID("Position"        , String.class, 150,-1,250,250, si->si.position       ==null ? "" : si.position.toString(" %1.2f ")),
 					}
 				);
+				new MarkAddressesAddOn().setData(this.data.experimentalData.storedInteractions).addTo(table, universePanel, this.data.universe);
 			}
 			
 			private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.StoredInteraction> {
@@ -738,7 +835,7 @@ public class SimplePanels {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
 			}
-			public MarkerStackPanel(SaveGameData data) {
+			public MarkerStackPanel(SaveGameData data, UniversePanel universePanel) {
 				super(data,"MarkerStackTable",true,SaveViewer.DEBUG,true,data.experimentalData.markerStack, new ColumnID[] {
 						// [50, 157, 124, 393, 134, 204, 84, 50, 116, 78, 94]
 						new ColumnID("Table"           ,   Long.class,  20,-1, 40, 40, marker->marker.Table),
@@ -753,6 +850,7 @@ public class SimplePanels {
 						new ColumnID("BuildingLocation", String.class,  20,-1,220,220, marker->marker.BuildingLocation==null ? null : marker.BuildingLocation.toString(" %1.2f ")),
 						new ColumnID("BuildingClass"   , String.class,  20,-1,100,100, marker->marker.BuildingClass),
 					});
+				new MarkAddressesAddOn().setData(this.data.experimentalData.markerStack).addTo(table, universePanel, this.data.universe);
 			}
 		}
 
@@ -776,7 +874,7 @@ public class SimplePanels {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
 			}
-			public MissionProgressPanel(SaveGameData data) {
+			public MissionProgressPanel(SaveGameData data, UniversePanel universePanel) {
 				super(data);
 				
 				MissionColumnID[] missionColumns = new MissionColumnID[] {
@@ -806,12 +904,15 @@ public class SimplePanels {
 				JScrollPane participantsTableScrollPane = new JScrollPane(participantsTable);
 				TitledBorder participantsTableTitledBorder = BorderFactory.createTitledBorder("Mission[#].Participants");
 				participantsTableScrollPane.setBorder(participantsTableTitledBorder);
+				MarkAddressesAddOn participantsTableAddOn = new MarkAddressesAddOn().addTo(participantsTable, universePanel, this.data.universe);
 				
 				missionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 				missionsTable.addSelectionListener((mission,rowIndex)->{
 					participantsTableTitledBorder.setTitle(String.format("Mission[%s].Participants", rowIndex==null || rowIndex<0 ? "#" : rowIndex+1));
 					participantsTableScrollPane.repaint();
-					participantsTable.setData(mission==null ? null : mission.Participants, participantColumns);
+					Vector<Participant> participantsTableData = mission==null ? null : mission.Participants;
+					participantsTable.setData(participantsTableData, participantColumns);
+					participantsTableAddOn.setData(participantsTableData);
 				});
 				
 				
@@ -835,7 +936,7 @@ public class SimplePanels {
 			}
 		}
 
-		public VisitedSystemsPanel(SaveGameData data) {
+		public VisitedSystemsPanel(SaveGameData data, UniversePanel universePanel) {
 			super(data, "VisitedSystemsTable", true,SaveViewer.DEBUG,true, data.visitedSystems, new ColumnID[] {
 				new ColumnID("Address"        , String.class,  20,-1,140,140, sys->String.format("0x%016X", sys.addr)),
 				new ColumnID("Extra"          , String.class,  20,-1, 70, 70, sys->String.format("0x%06X", sys.extra)),
@@ -843,6 +944,7 @@ public class SimplePanels {
 				new ColumnID("Coordinates"    , String.class,  20,-1,200,200, sys->sys.ua==null ? null : sys.ua.getCoordinates()),
 				new ColumnID("Name"           , String.class,  20,-1,700,700, sys->sys.ua==null ? null : sys.ua.getVerboseNameInOneLine(data.universe, 2)),
 			});
+			new MarkAddressesAddOn().setData(this.data.visitedSystems).addTo(table, universePanel, this.data.universe);
 		}
 	}
 
@@ -917,7 +1019,7 @@ public class SimplePanels {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
-		public AtlasStationAdressDataPanel(SaveGameData data) {
+		public AtlasStationAdressDataPanel(SaveGameData data, UniversePanel universePanel) {
 			super(data);
 			
 			ColumnID[] columns = new ColumnID[] {
@@ -926,27 +1028,26 @@ public class SimplePanels {
 				new ColumnID("Name"       , String.class,  50,-1,700,700, ua->ua==null ? null : ua.getVerboseNameInOneLine(data.universe, 2)),
 			};
 			JPanel tablePanel = new JPanel(new GridLayout(0,1));
-			addTable(tablePanel, data.       AtlasStationAdressData,        "AtlasStationAdressData", columns);
-			addTable(tablePanel, data.    NewAtlasStationAdressData,     "NewAtlasStationAdressData", columns);
-			addTable(tablePanel, data.VisitedAtlasStationsData     , "VisitedAtlasStationsData"     , columns);
+			addTable(tablePanel, data.       AtlasStationAdressData,        "AtlasStationAdressData", columns, universePanel);
+			addTable(tablePanel, data.    NewAtlasStationAdressData,     "NewAtlasStationAdressData", columns, universePanel);
+			addTable(tablePanel, data.VisitedAtlasStationsData     , "VisitedAtlasStationsData"     , columns, universePanel);
 			add(tablePanel,BorderLayout.CENTER);
 		}
 		
-		private void addTable(JPanel tablePanel, Vector<SaveGameData.UniverseAddress> data, String label, ColumnID[] columns) {
+		private void addTable(JPanel tablePanel, Vector<SaveGameData.UniverseAddress> data, String label, ColumnID[] columns, UniversePanel universePanel) {
 			VerySimpleTable<SaveGameData.UniverseAddress> table = new VerySimpleTable<>(label+"Table",true,SaveViewer.DEBUG,true,data,columns);
 			JScrollPane scrollPane = new JScrollPane(table);
 			scrollPane.setBorder(BorderFactory.createTitledBorder(label));
 			tablePanel.add(scrollPane);
+			new MarkAddressesAddOn().setUaVec(data).addTo(table, universePanel, this.data.universe);
 		}
 	}
-
+	
 	public static class BaseBuildingObjectsPanel extends VerySimpleTableTabPanel<UnboundBuildingObject> {
 		private static final long serialVersionUID = 6246130206148705495L;
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
 		private Window mainWindow;
 		private Long addressToHighlight;
-		private UniversePanel universePanel;
-		private UnboundBuildingObject clickedRow = null;
 		
 		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<UnboundBuildingObject> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<UnboundBuildingObject, Object> getValue) {
@@ -970,7 +1071,6 @@ public class SimplePanels {
 				new ColumnID("Message"         ,    String.class,  75,-1,150,150, bbo->bbo.message),
 			});
 			this.mainWindow = mainWindow;
-			this.universePanel = universePanel;
 			this.addressToHighlight = null;
 			
 			//BBOTableModel tableModel = new BBOTableModel();
@@ -982,7 +1082,7 @@ public class SimplePanels {
 					if (!isSelected) {
 						Color background = table.getBackground();
 						if (addressToHighlight!=null) {
-							UnboundBuildingObject ubo = data.baseBuildingObjects[table.convertRowIndexToModel(row)];
+							UnboundBuildingObject ubo = BaseBuildingObjectsPanel.this.data.baseBuildingObjects[table.convertRowIndexToModel(row)];
 							if (ubo.galacticAddress!=null && ubo.galacticAddress.getAddress()==addressToHighlight)
 								background = COLOR_HIGHLIGHT;
 						}
@@ -994,35 +1094,14 @@ public class SimplePanels {
 			},true);
 			//JScrollPane tableScrollPane = new JScrollPane(table);
 			
-			JMenuItem miMarkInUniverse;
+			new MarkAddressesAddOn().setData(this.data.baseBuildingObjects).addTo(table, universePanel, this.data.universe);
+			
 			JPopupMenu contextMenu = table.getContextMenu();
-			contextMenu.addSeparator();
-			contextMenu.add(miMarkInUniverse = Gui.createMenuItem("Mark Address of Clicked Row in \"Known Universe\"",e->markAddressInUniverse()));
 			contextMenu.add(Gui.createMenuItem("Highlight Rows with Address ...",e->highlightRowsWithAddress()));
 			contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->table.getModel_VerySimpleTableModel().initiateColumnUpdate(table.getColumn(2))));
 			contextMenu.add(Gui.createMenuItem("Write Positions to VRML",e->writePosToVRML(),Gui.ToolbarIcons.SaveAs));
-			table.addContextMenuInvokeListener((rowV, columnV) -> {
-				int rowM = table.convertRowIndexToModel(rowV);
-				if (0<=rowM && rowM<BaseBuildingObjectsPanel.this.data.baseBuildingObjects.length) {
-					clickedRow = BaseBuildingObjectsPanel.this.data.baseBuildingObjects[rowM];
-					if (clickedRow!=null && clickedRow.galacticAddress!=null) {
-						String name = clickedRow.galacticAddress.getVerboseNameInOneLine(BaseBuildingObjectsPanel.this.data.universe, 1);
-						miMarkInUniverse.setEnabled(true);
-						miMarkInUniverse.setText(String.format("Mark \"%s\" in \"Known Universe\"", name.trim()));
-						return;
-					}
-				}
-				clickedRow = null;
-				miMarkInUniverse.setEnabled(false);
-				miMarkInUniverse.setText("Mark Address of Clicked Row in \"Known Universe\"");
-			});
 			
 			//add(tableScrollPane,BorderLayout.CENTER);
-		}
-
-		private void markAddressInUniverse() {
-			if (clickedRow!=null && clickedRow.galacticAddress!=null)
-				universePanel.markAddress(clickedRow.galacticAddress);
 		}
 
 		private void highlightRowsWithAddress() {

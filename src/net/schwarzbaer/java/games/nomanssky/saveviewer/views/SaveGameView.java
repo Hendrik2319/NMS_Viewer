@@ -89,8 +89,8 @@ public class SaveGameView extends JPanel {
 			if (data.knownWords !=null) tabbedPane.addTab("KnownWords"   ,new KnownWordsPanel(data,data.knownWords ));
 			if (data.knownWords2!=null) tabbedPane.addTab("KnownWords II",new KnownWordsPanel(data,data.knownWords2));
 			
-			rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data));
-			rawDataPanel.addPanel("DiscoveryData (Stored)", new SimplePanels.DiscoveredDataStoredPanel(data));
+			rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data,universePanel));
+			rawDataPanel.addPanel("DiscoveryData (Stored)"   , new SimplePanels.DiscoveredDataStoredPanel   (data,universePanel));
 			
 //			SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
 //			blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
@@ -99,9 +99,9 @@ public class SaveGameView extends JPanel {
 			
 			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data));
 			
-			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data);
-			if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data));
-			rawDataPanel.addPanel("Atlas Stations",new SimplePanels.AtlasStationAdressDataPanel(data));
+			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data,universePanel);
+			if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data,universePanel));
+			rawDataPanel.addPanel("Atlas Stations",new SimplePanels.AtlasStationAdressDataPanel(data,universePanel));
 			
 			tabbedPane.addTab("Raw Data",rawDataPanel);
 		}
