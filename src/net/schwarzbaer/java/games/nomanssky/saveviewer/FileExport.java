@@ -79,6 +79,8 @@ public class FileExport {
 	}
 	
 	static void writeKnownSteamIDsToHTML() {
+		Gui.log_ln("Write KnownSteamIDs to HTML file \"%s\" ...", FILE_KNOWN_STEAM_ID_HTML);
+		long start = System.currentTimeMillis();
 		
 		try (
 				BufferedReader in = new BufferedReader(new InputStreamReader("".getClass().getResourceAsStream(RES_KNOWN_STEAM_ID_TemplateHTML), StandardCharsets.UTF_8));
@@ -94,6 +96,8 @@ public class FileExport {
 		}
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		catch (IOException e) { e.printStackTrace(); }
+		
+		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
 	static void writeToJSON(JSON_Object json_Object, File copyfile) {
