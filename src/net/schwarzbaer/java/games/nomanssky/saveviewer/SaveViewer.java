@@ -104,12 +104,29 @@ public class SaveViewer implements ActionListener {
 	
 	public static void main(String[] args) {
 		if (args.length>0)
-			switch (args[0]) {
-			case "UpgradeModuleInstallHelper": UpgradeModuleInstallHelper.main(new String[]{}); return;
-			case "ProductionOptimiser"       : ProductionOptimiser       .main(new String[]{}); return;
-			case "RecipeAnalyser"            : RecipeAnalyser            .main(new String[]{}); return;
-			case "ResourceHotSpots"          : ResourceHotSpots          .main(new String[]{}); return;
+			switch (args[0].toLowerCase()) {
+			case "upgrademoduleinstallhelper": UpgradeModuleInstallHelper.main(new String[]{}); return;
+			case "productionoptimiser"       : ProductionOptimiser       .main(new String[]{}); return;
+			case "recipeanalyser"            : RecipeAnalyser            .main(new String[]{}); return;
+			case "resourcehotspots"          : ResourceHotSpots          .main(new String[]{}); return;
 			}
+		else {
+			log_ln("No Mans Sky - SaveViewer");
+			log_ln("   by Hendrik Scholtz");
+			log_ln("");
+			log_ln("usage:");
+			log_ln("   java -jar <jar-file> [Tool/Function]");
+			log_ln("");
+			log_ln("[Tool]");
+			log_ln("      UpgradeModuleInstallHelper   starts UpgradeModule Install Helper");
+			log_ln("      ProductionOptimiser          starts Production Optimiser");
+			log_ln("      RecipeAnalyser               starts Recipe Analyser");
+			log_ln("      ResourceHotSpots             starts Resource HotSpots tool");
+			log_ln("");
+			writeSaveViewerFunctionsInUsage();
+			log_ln("");
+			log_ln("");
+		}
 		start(args);
 	}
 	public static void start(String[] args) {
@@ -226,11 +243,22 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 
+	private static void writeSaveViewerFunctionsInUsage() {
+		log_ln("[Function]");
+		log_ln("      -writeKnownSteamIDsToHTML     writes known SteamIDs to HTML file \"%s\"", FileExport.FILE_KNOWN_STEAM_ID_HTML);
+		log_ln("      -loadGame <G> -base2vrml <B>  load save game G and writes base B to VRML file");
+		// TODO Auto-generated method stub
+		
+	}
 	private static void processCommands(String[] args) {
 		int loadSavegame = -1;
 		int writeBase2VRML = -1;
+		boolean writeKnownSteamIDsToHTML = false;
 		for (int i=0; i<args.length; i++) {
 			switch (args[i]) {
+			case "-writeKnownSteamIDsToHTML":
+				writeKnownSteamIDsToHTML = true;
+				break;
 			case "-loadGame":
 				if (i+1<args.length) {
 					try { loadSavegame = Integer.parseInt(args[i+1]); }
@@ -246,6 +274,9 @@ public class SaveViewer implements ActionListener {
 				break;
 			}
 		}
+		
+		if (writeKnownSteamIDsToHTML)
+			FileExport.writeKnownSteamIDsToHTML();
 		
 		if (loadSavegame<0)
 			return;
