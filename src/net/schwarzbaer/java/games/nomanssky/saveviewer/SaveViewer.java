@@ -255,20 +255,22 @@ public class SaveViewer implements ActionListener {
 		int writeBase2VRML = -1;
 		boolean writeKnownSteamIDsToHTML = false;
 		for (int i=0; i<args.length; i++) {
-			switch (args[i]) {
-			case "-writeKnownSteamIDsToHTML":
+			switch (args[i].toLowerCase()) {
+			
+			case "-writeknownsteamidstohtml":
 				writeKnownSteamIDsToHTML = true;
 				break;
-			case "-loadGame":
+				
+			case "-loadgame":
 				if (i+1<args.length) {
-					try { loadSavegame = Integer.parseInt(args[i+1]); }
+					try { loadSavegame = Integer.parseInt(args[i+1]); i++; }
 					catch (NumberFormatException e) { loadSavegame = -1; }
 				}
 				break;
 				
 			case "-base2vrml":
 				if (i+1<args.length) {
-					try { writeBase2VRML = Integer.parseInt(args[i+1]); }
+					try { writeBase2VRML = Integer.parseInt(args[i+1]); i++; }
 					catch (NumberFormatException e) { writeBase2VRML = -1; }
 				}
 				break;
