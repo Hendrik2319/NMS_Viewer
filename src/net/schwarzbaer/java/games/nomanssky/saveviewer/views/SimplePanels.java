@@ -22,6 +22,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -54,6 +55,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMissi
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission.FrigateMissionTask;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.SeedValue;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -585,8 +587,10 @@ public class SimplePanels {
 
 	public static class TeleportEndpointsPanel extends VerySimpleTableTabPanel<SaveGameData.TeleportEndpoints> {
 		private static final long serialVersionUID = 3670607708610340039L;
+		private UniversePanel universePanel;
+		private TeleportEndpoints clickedRow = null;
 
-		public TeleportEndpointsPanel(SaveGameData data) {
+		public TeleportEndpointsPanel(SaveGameData data, UniversePanel universePanel) {
 			super(data,"TeleportEndpointsTable",true,SaveViewer.DEBUG,true,data.teleportEndpoints,
 				new ColumnID[] {
 					new ColumnID("Name"            , String.class, 40,-1,250,250, te->te.name),
@@ -599,6 +603,32 @@ public class SimplePanels {
 					new ColumnID("Unknown"         , String.class, 40,-1,140,140, te->te.getUnknownValues()),
 				}
 			);
+			this.universePanel = universePanel;
+			
+			JMenuItem miMarkInUniverse;
+			JPopupMenu contextMenu = table.getContextMenu();
+			contextMenu.addSeparator();
+			contextMenu.add(miMarkInUniverse = Gui.createMenuItem("Mark Address of Clicked Row in \"Known Universe\"",e->markAddressInUniverse()));
+			table.addContextMenuInvokeListener((rowV, columnV) -> {
+				int rowM = table.convertRowIndexToModel(rowV);
+				if (0<=rowM && rowM<TeleportEndpointsPanel.this.data.teleportEndpoints.size()) {
+					clickedRow = TeleportEndpointsPanel.this.data.teleportEndpoints.get(rowM);
+					if (clickedRow!=null && clickedRow.universeAddress!=null) {
+						String name = clickedRow.universeAddress.getVerboseNameInOneLine(TeleportEndpointsPanel.this.data.universe, 1);
+						miMarkInUniverse.setEnabled(true);
+						miMarkInUniverse.setText(String.format("Mark \"%s\" in \"Known Universe\"", name.trim()));
+						return;
+					}
+				}
+				clickedRow = null;
+				miMarkInUniverse.setEnabled(false);
+				miMarkInUniverse.setText("Mark Address of Clicked Row in \"Known Universe\"");
+			});
+		}
+
+		private void markAddressInUniverse() {
+			if (clickedRow!=null && clickedRow.universeAddress!=null)
+				universePanel.markAddress(clickedRow.universeAddress);
 		}
 		
 		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.TeleportEndpoints> {
@@ -915,6 +945,8 @@ public class SimplePanels {
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
 		private Window mainWindow;
 		private Long addressToHighlight;
+		private UniversePanel universePanel;
+		private UnboundBuildingObject clickedRow = null;
 		
 		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<UnboundBuildingObject> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<UnboundBuildingObject, Object> getValue) {
@@ -922,7 +954,7 @@ public class SimplePanels {
 			}
 		}
 
-		public BaseBuildingObjectsPanel(SaveGameData data, Window mainWindow) {
+		public BaseBuildingObjectsPanel(SaveGameData data, Window mainWindow, UniversePanel universePanel) {
 			super(data,"BBOTable",true,SaveViewer.DEBUG,true,data.baseBuildingObjects, new ColumnID[] {
 				new ColumnID("Timestamp"       , TimeStamp.class,  50,-1,140,140, bbo->bbo.timestamp),
 				new ColumnID("Name"            ,    String.class,  50,-1,140,140, bbo->bbo.getNameOnly()),
@@ -938,6 +970,7 @@ public class SimplePanels {
 				new ColumnID("Message"         ,    String.class,  75,-1,150,150, bbo->bbo.message),
 			});
 			this.mainWindow = mainWindow;
+			this.universePanel = universePanel;
 			this.addressToHighlight = null;
 			
 			//BBOTableModel tableModel = new BBOTableModel();
@@ -961,16 +994,38 @@ public class SimplePanels {
 			},true);
 			//JScrollPane tableScrollPane = new JScrollPane(table);
 			
+			JMenuItem miMarkInUniverse;
 			JPopupMenu contextMenu = table.getContextMenu();
 			contextMenu.addSeparator();
-			contextMenu.add(Gui.createMenuItem("Highlight Specific Address",e->highlightSpecificAddress()));
+			contextMenu.add(miMarkInUniverse = Gui.createMenuItem("Mark Address of Clicked Row in \"Known Universe\"",e->markAddressInUniverse()));
+			contextMenu.add(Gui.createMenuItem("Highlight Rows with Address ...",e->highlightRowsWithAddress()));
 			contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->table.getModel_VerySimpleTableModel().initiateColumnUpdate(table.getColumn(2))));
 			contextMenu.add(Gui.createMenuItem("Write Positions to VRML",e->writePosToVRML(),Gui.ToolbarIcons.SaveAs));
+			table.addContextMenuInvokeListener((rowV, columnV) -> {
+				int rowM = table.convertRowIndexToModel(rowV);
+				if (0<=rowM && rowM<BaseBuildingObjectsPanel.this.data.baseBuildingObjects.length) {
+					clickedRow = BaseBuildingObjectsPanel.this.data.baseBuildingObjects[rowM];
+					if (clickedRow!=null && clickedRow.galacticAddress!=null) {
+						String name = clickedRow.galacticAddress.getVerboseNameInOneLine(BaseBuildingObjectsPanel.this.data.universe, 1);
+						miMarkInUniverse.setEnabled(true);
+						miMarkInUniverse.setText(String.format("Mark \"%s\" in \"Known Universe\"", name.trim()));
+						return;
+					}
+				}
+				clickedRow = null;
+				miMarkInUniverse.setEnabled(false);
+				miMarkInUniverse.setText("Mark Address of Clicked Row in \"Known Universe\"");
+			});
 			
 			//add(tableScrollPane,BorderLayout.CENTER);
 		}
 
-		private void highlightSpecificAddress() {
+		private void markAddressInUniverse() {
+			if (clickedRow!=null && clickedRow.galacticAddress!=null)
+				universePanel.markAddress(clickedRow.galacticAddress);
+		}
+
+		private void highlightRowsWithAddress() {
 			Gui.CoordinatesDialog dlg = new Gui.CoordinatesDialog(mainWindow,data.universe,true,"Select Coordinates");
 			dlg.showDialog();
 			if (dlg.hasResult()) {
@@ -1068,11 +1123,13 @@ public class SimplePanels {
 
 	public static class PersistentPlayerBasesPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -632703090899520348L;
-		private Window mainWindow;
+		private final Window mainWindow;
+		private final UniversePanel universePanel;
 
-		public PersistentPlayerBasesPanel(SaveGameData data, Window mainWindow) {
+		public PersistentPlayerBasesPanel(SaveGameData data, Window mainWindow, UniversePanel universePanel) {
 			super(data);
 			this.mainWindow = mainWindow;
+			this.universePanel = universePanel;
 			
 			JTabbedPane tabbedPane = new JTabbedPane();
 			Vector<PersistentPlayerBase> bases = this.data.persistentPlayerBases;
@@ -1097,10 +1154,16 @@ public class SimplePanels {
 			}
 			
 			if (!emptyBases.isEmpty()) {
-				tabbedPane.addTab("Empty Bases", new EmptyBasesPanel(this.data,emptyBases,emptyBaseTitles));
+				tabbedPane.addTab("Empty Bases", new EmptyBasesPanel(emptyBases,emptyBaseTitles,this));
 			}
 			
 			add(tabbedPane,BorderLayout.CENTER);
+		}
+
+		public void markGalacticAddressInUniverse(PersistentPlayerBase playerbase) {
+			if (playerbase==null) return;
+			if (playerbase.galacticAddress==null) return;
+			universePanel.markAddress(playerbase.galacticAddress);
 		}
 
 		private static void showBaseValues(JTextArea textArea, PersistentPlayerBase playerbase, Universe universe) {
@@ -1141,7 +1204,7 @@ public class SimplePanels {
 
 		private void addBaseTab(JTabbedPane tabbedPane, PersistentPlayerBase pb, String title) {
 			int index = tabbedPane.getTabCount();
-			tabbedPane.insertTab(title,null, new PlayerBasePanel(this.data,pb,mainWindow), null, index);
+			tabbedPane.insertTab(title,null, new PlayerBasePanel(pb,this), null, index);
 			tabbedPane.setTabComponentAt(index, new BaseTabHeader(title,pb));
 		}
 		
@@ -1169,9 +1232,9 @@ public class SimplePanels {
 		public static class EmptyBasesPanel extends JPanel {
 			private static final long serialVersionUID = -1066602187570695115L;
 
-			private JTextArea textArea;
+			private PersistentPlayerBase selectedBase = null;
 
-			public EmptyBasesPanel(SaveGameData data, Vector<PersistentPlayerBase> emptyBases, Vector<String> emptyBaseTitles) {
+			public EmptyBasesPanel(Vector<PersistentPlayerBase> emptyBases, Vector<String> emptyBaseTitles, PersistentPlayerBasesPanel mainPanel) {
 				super(new BorderLayout(3, 3));
 				
 				JList<String> lstBases = new JList<>(emptyBaseTitles);
@@ -1179,19 +1242,27 @@ public class SimplePanels {
 				JScrollPane listScrollPane = new JScrollPane(lstBases);
 				listScrollPane.setPreferredSize(new Dimension(300, 50));
 				
-				textArea = new JTextArea();
+				JTextArea textArea = new JTextArea();
 				JScrollPane textAreaScrollPane = new JScrollPane(textArea);
 				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
+				
+				JMenuItem miMarkInUniverse;
+				JPopupMenu textAreaContextMenu = new JPopupMenu();
+				textAreaContextMenu.add(miMarkInUniverse = Gui.createMenuItem("Mark Galactic Address in \"Known Universe\"",e->mainPanel.markGalacticAddressInUniverse(selectedBase)));
+				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
+				cmi.addContextMenuInvokeListener((x, y) -> miMarkInUniverse.setEnabled(selectedBase!=null));
 				
 				add(listScrollPane,BorderLayout.WEST);
 				add(textAreaScrollPane,BorderLayout.CENTER);
 				
 				lstBases.addListSelectionListener(e -> {
 					int index = lstBases.getSelectedIndex();
-					if (index>=0 && index<emptyBases.size())
-						showBaseValues(textArea, emptyBases.get(index), data.universe);
-					else
+					if (0<=index && index<emptyBases.size())
+						showBaseValues(textArea, selectedBase = emptyBases.get(index), mainPanel.data.universe);
+					else {
+						selectedBase = null;
 						textArea.setText("");
+					}
 				});
 			}
 			
@@ -1205,14 +1276,15 @@ public class SimplePanels {
 			private JTextArea textArea;
 
 			private Window mainWindow;
+			private PersistentPlayerBasesPanel mainPanel;
 
-			public PlayerBasePanel(SaveGameData data, PersistentPlayerBase playerbase, Window mainWindow) {
+			public PlayerBasePanel(PersistentPlayerBase playerbase, PersistentPlayerBasesPanel mainPanel) {
 				super(new BorderLayout(3, 3));
-				this.mainWindow = mainWindow;
-				setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-				
-				this.data = data;
 				this.playerbase = playerbase;
+				this.mainPanel = mainPanel;
+				this.data = mainPanel.data;
+				this.mainWindow = mainPanel.mainWindow;
+				setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
 				textArea = new JTextArea();
 				JScrollPane textAreaScrollPane = new JScrollPane(textArea);
@@ -1229,6 +1301,7 @@ public class SimplePanels {
 				table.addContextMenuInvokeListener((row, column) -> listener1.run());
 				
 				JPopupMenu textAreaContextMenu = new JPopupMenu();
+				textAreaContextMenu.add(Gui.createMenuItem("Mark Galactic Address in \"Known Universe\"",e->this.mainPanel.markGalacticAddressInUniverse(this.playerbase)));
 				Runnable listener2 = addVRMLtasks(textAreaContextMenu,mainWindow);
 				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
 				cmi.addContextMenuInvokeListener((x, y) -> listener2.run());
@@ -1239,7 +1312,7 @@ public class SimplePanels {
 				showBaseValues(textArea, this.playerbase, this.data.universe);
 				showOtherObjectsOnThisPlanet();
 			}
-			
+
 			public enum Type { Simple, Models, Planet }
 			private String suggestFileName(Type type) {
 				return suggestFileName(type, data, playerbase);

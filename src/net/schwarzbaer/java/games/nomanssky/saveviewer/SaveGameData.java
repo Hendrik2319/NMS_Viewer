@@ -3280,6 +3280,14 @@ public class SaveGameData {
 			return null;
 			
 		}
+
+		public ObjectWithSource findUniverseObject(UniverseAddress ua) {
+			if (ua==null) return null;
+			if (ua.isPlanet     ()) return findPlanet     (ua);
+			if (ua.isSolarSystem()) return findSolarSystem(ua);
+			if (ua.isRegion     ()) return findRegion     (ua);
+			return null;
+		}
 		
 		public ObjectWithSource getOrCreate(UniverseAddress ua, Consumer<ObjectWithSource> setSource) {
 			return getOrCreate(ua, setSource, setSource);

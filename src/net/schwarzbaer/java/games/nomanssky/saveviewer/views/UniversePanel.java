@@ -1714,6 +1714,18 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		updateMarkerList();
 	}
 
+	public void markAddress(UniverseAddress ua) {
+		if (ua==null) return;
+		
+		ObjectWithSource target = data.universe.findUniverseObject(ua);
+		if (target == null) return;
+		
+		if (target.guiComp instanceof GenericTreeNode<?>)
+			setMarker((GenericTreeNode<?>) target.guiComp,true);
+		
+		updateMarkerList();
+	}
+
 	private void updateInfoPanel() {
 		AbstractInfoPanel prevInfoPanel = currentInfoPanel;
 		
