@@ -6,12 +6,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -23,8 +18,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -39,7 +32,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import javax.activation.DataHandler;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -81,6 +73,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
+import net.schwarzbaer.system.ClipboardTools;
 
 public class SaveViewer implements ActionListener {
 
@@ -247,8 +240,6 @@ public class SaveViewer implements ActionListener {
 		log_ln("[Function]");
 		log_ln("      -writeKnownSteamIDsToHTML     writes known SteamIDs to HTML file \"%s\"", FileExport.FILE_KNOWN_STEAM_ID_HTML);
 		log_ln("      -loadGame <G> -base2vrml <B>  load save game G and writes base B to VRML file");
-		// TODO Auto-generated method stub
-		
 	}
 	private static void processCommands(String[] args) {
 		int loadSavegame = -1;
@@ -1249,52 +1240,11 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static void copyToClipBoard(String str) {
-		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		Clipboard clipboard = toolkit.getSystemClipboard();
-		DataHandler content = new DataHandler(str,"text/plain");
-		try { clipboard.setContents(content,null); }
-		catch (IllegalStateException e1) { e1.printStackTrace(); }
+		ClipboardTools.copyToClipBoard(str);
 	}
 
 	public static String pasteFromClipBoard() {
-		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		Clipboard clipboard = toolkit.getSystemClipboard();
-		Transferable transferable = clipboard.getContents(null);
-		if (transferable==null) return null;
-		
-		DataFlavor textFlavor = new DataFlavor(String.class, "text/plain; class=<java.lang.String>");
-		
-		if (!transferable.isDataFlavorSupported(textFlavor)) {
-			DataFlavor[] transferDataFlavors = transferable.getTransferDataFlavors();
-			if (transferDataFlavors==null || transferDataFlavors.length==0) return null;
-			
-			Gui.log_ln("transferDataFlavors: "+toString(transferDataFlavors));
-			textFlavor = DataFlavor.selectBestTextFlavor(transferDataFlavors);
-		}
-		
-		if (textFlavor==null) return null;
-		
-		Reader reader;
-		try { reader = textFlavor.getReaderForText(transferable); }
-		catch (UnsupportedFlavorException | IOException e) { return null; }
-		StringWriter sw = new StringWriter();
-		
-		int n; char[] cbuf = new char[100000];
-		try { while ((n=reader.read(cbuf))>=0) if (n>0) sw.write(cbuf, 0, n); }
-		catch (IOException e) {}
-		
-		try { reader.close(); } catch (IOException e) {}
-		return sw.toString();
-	}
-
-	private static String toString(DataFlavor[] dataFlavors) {
-		if (dataFlavors==null) return "<null>";
-		String str = "";
-		for (DataFlavor df:dataFlavors) {
-			if (!str.isEmpty()) str+=",\r\n";
-			str+=""+df;
-		}
-		return "[\r\n"+str+"\r\n]";
+		return ClipboardTools.getStringFromClipBoard(true);
 	}
 
 	public static <T> T[] addNull(T[] arr) {
