@@ -882,6 +882,36 @@ class=Yellow
 short=4 Planeten
 info=
 
+[Reg00000005AA0B9B]
+
+[Sys01480005AA0B9B]
+name=Yes I can hear you...
+race=Korvax
+economy=1
+economy_label=Geringe Versorgung
+abandoned
+atlasinterface=false
+blackhole=false
+class=Green
+short=5 Planeten
+info=
+
+[Pln11480005AA0B9B]
+name=Adoragab VII
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Na
+short=Portal
+info=
+
+[Pln21480005AA0B9B]
+
+[Pln31480005AA0B9B]
+
+[Pln41480005AA0B9B]
+
+[Pln51480005AA0B9B]
+
 [Reg00000004254BA8]
 name=Der Arm von Yenlavo
 
