@@ -1279,10 +1279,10 @@ public class ResourceHotSpots implements ActionListener {
 		}
 		
 		@Override protected ViewState createViewState() { return new ViewState(this); }
-		@Override protected void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
-		@Override protected void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
-		@Override protected void mouseExited (MouseEvent e) { displayedLocation=null; showCurrentPos(null); repaint(); }
-		@Override protected void mouseClicked(MouseEvent e) { findNearDisplayableLocation(e.getPoint()); }
+		@Override public void mouseEntered(MouseEvent e) { requestFocusInWindow(); findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
+		@Override public void mouseMoved  (MouseEvent e) { findNearDisplayableLocation(e.getPoint()); showCurrentPos(e.getPoint()); }
+		@Override public void mouseExited (MouseEvent e) { displayedLocation=null; showCurrentPos(null); repaint(); }
+		@Override public void mouseClicked(MouseEvent e) { findNearDisplayableLocation(e.getPoint()); }
 
 		@Override
 		public void setBorder(Border border) {
