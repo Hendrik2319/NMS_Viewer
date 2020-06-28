@@ -38,10 +38,12 @@
 			for (var i=0; i<arr.length; i++) {
 				var SteamID = arr[i];
 				var tr = table.appendChild(document.createElement('tr'));
+				var td0 = tr.appendChild(document.createElement('td'));
 				var td1 = tr.appendChild(document.createElement('td'));
 				var td2 = tr.appendChild(document.createElement('td'));
 				var a1 = td1.appendChild(document.createElement('a'));
 				var a2 = td2.appendChild(document.createElement('a'));
+				td0.appendChild(document.createTextNode( startsWith(SteamID.id,"7656119") ? "Steam" : "" ));
 				a1.appendChild(document.createTextNode(SteamID.id));
 				a2.appendChild(document.createTextNode(SteamID.name));
 				a1.href = "https://steamcommunity.com/profiles/"+SteamID.id;
@@ -50,6 +52,10 @@
 				a2.target = "_blank";
 			}
 		}
+	}
+	
+	function startsWith( str, prefix ) {
+		return str.substring(0,prefix.length)==prefix;
 	}
 	
 	function sortByID( a,b ) {
