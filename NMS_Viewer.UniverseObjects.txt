@@ -2658,6 +2658,33 @@ biome=Lush
 with water
 resources=Cu,Pf,NaCl
 
+[Reg000000FF9BECCC]
+
+[Sys01CE00FF9BECCC]
+name=Kuyamam-Rapul I
+atlasinterface=false
+blackhole=false
+class=Red
+
+[Pln11CE00FF9BECCC]
+name=Hunompa XIII
+biome=Exotic_Mega
+is extreme
+with water
+resources=Cd_,P,Fe__
+short=Portal
+info=-55.90, +34.42
+
+[Pln21CE00FF9BECCC]
+
+[Pln31CE00FF9BECCC]
+
+[Pln41CE00FF9BECCC]
+
+[Pln51CE00FF9BECCC]
+
+[Pln61CE00FF9BECCC]
+
 [Reg000000FE45ACE7]
 name=Eolullp-Leere
 
