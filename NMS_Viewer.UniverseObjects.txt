@@ -368,6 +368,22 @@ is extreme
 with water
 resources=In_,Pf,NaCl
 
+[Reg000000F91DA978]
+
+[Sys01F400F91DA978]
+name=Baxx
+atlasinterface=false
+blackhole=false
+class=Green
+
+[Pln11F400F91DA978]
+name=Nebari Prime
+biome=Lush
+with water
+resources=Em,Pf,Na
+short=Portal
+info=+47.29, +121.87
+
 [Reg0000000029897C]
 
 [Sys0033000029897C]
