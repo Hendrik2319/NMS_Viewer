@@ -189,6 +189,11 @@
 ^PLANT_WATER.symbol=Ke
 ^PLANT_WATER.image=Substance.neutral.rare9.Kelpbeutel.png
 ^PLANT_WATER.imageBG=085C78
+^QUICKSILVER=QUECKSILBER
+^QUICKSILVER.type=Special
+^QUICKSILVER.symbol=-
+^QUICKSILVER.image=_self.QUICKSILVER.png
+^QUICKSILVER.imageBG=8E8377
 ^RADIO1=Uran
 ^RADIO1.type=Resource
 ^RADIO1.symbol=U
