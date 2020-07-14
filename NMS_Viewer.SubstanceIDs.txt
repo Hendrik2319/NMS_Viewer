@@ -221,7 +221,8 @@
 ^SAND1.imageBG=8B7E75
 ^SOULFRAG=Fragmentierte Qualia
 ^SOULFRAG.type=Special
-^SOULFRAG.image=_self.SOULFRAG.png
+^SOULFRAG.image=FragmentedQualiaIcon.jpg
+^SOULFRAG.imageBG=707070
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.type=Resource
 ^SPACEGUNK1.symbol=Sr
@@ -260,7 +261,8 @@
 ^SUNGOLD=Flüssigsonne
 ^SUNGOLD.type=Special
 ^SUNGOLD.symbol=?
-^SUNGOLD.image=_self.SUNGOLD.png
+^SUNGOLD.image=SUB.SUNGOLD.png
+^SUNGOLD.imageBG=A1772B
 ^TECHFRAG=Nanit-Haufen
 ^TECHFRAG.obsolete=
 ^TECHFRAG.image=NmsMisc_Nanite_Cluster.png

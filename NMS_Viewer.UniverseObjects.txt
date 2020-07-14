@@ -2635,6 +2635,32 @@ aggrSentinels
 gravitino balls
 resources=Cu,CO2,Na
 
+[Reg00000008A1ACC0]
+
+[Sys00E50008A1ACC0]
+name=Liverpool FC
+race=Korvax
+economy=1
+economy_label=scheiternd
+conflict=3
+conflict_label=beängstigend
+atlasinterface=false
+blackhole=false
+class=Blue
+short=1 Planet
+info=
+
+[Pln10E50008A1ACC0]
+name=Jurgen Klopp
+biome=Exotic_Mega
+is extreme
+aggrSentinels
+with water
+gravitino balls
+resources=In_,CO2,Fe__
+short=Portal
+info=+3.68, -47.61
+
 [Reg000000FE452CC0]
 name=Itutsc
 
