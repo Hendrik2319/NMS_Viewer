@@ -4252,6 +4252,31 @@ info=Nebel: grün, orange
 
 [Pln10790002FDAFDC]
 
+[Reg000000FB6EBFE2]
+
+[Sys013A00FB6EBFE2]
+atlasinterface=false
+blackhole=false
+class=Green
+
+[Pln113A00FB6EBFE2]
+
+[Pln213A00FB6EBFE2]
+
+[Pln313A00FB6EBFE2]
+name=Corvus was not here
+biome=Exotic_Mega
+with water
+resources=Em,NH3,Fe__
+short=Portal
+info=+39.11, +21.21
+short=Atmosphere
+info=grau-rot
+
+[Pln413A00FB6EBFE2]
+
+[Pln513A00FB6EBFE2]
+
 [Reg000000076C4FF4]
 
 [Sys019A00076C4FF4]
@@ -4929,6 +4954,8 @@ biome=Scorched
 buriedTreasure=AncientBones
 resources=Cu,P,Ag
 
+[Pln509400FE007004]
+
 [Sys009800FE007004]
 atlasinterface=false
 blackhole=false
@@ -5026,6 +5053,8 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Pln20C700FE007004]
+
 [Sys00C800FE007004]
 name=Histas-Kob
 race=Korvax
@@ -5049,9 +5078,17 @@ resources=Cu_,Pf,Ag
 
 [Pln40C800FE007004]
 
+[Sys00D400FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys00E800FE007004]
 atlasinterface=false
 blackhole=false
+
+[Pln10E800FE007004]
+
+[Pln40E800FE007004]
 
 [Sys00E900FE007004]
 atlasinterface=false
@@ -5142,6 +5179,10 @@ name=Omacr F6
 biome=AnomHexagons
 resources=In,Au,Co
 
+[Sys010400FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys010500FE007004]
 name=Ockson
 unexplored
@@ -5160,7 +5201,19 @@ resources=Cd_,P,Ag
 short=Atmosphere
 info=Blau-Rot
 
+[Sys011F00FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys013200FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys013300FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys013400FE007004]
 atlasinterface=false
 blackhole=false
 
@@ -7131,6 +7184,31 @@ name=Satchar VII
 biome=Airless
 resources=In,Na,Sr_Rost
 
+[Reg000000FBA353D2]
+
+[Sys020000FBA353D2]
+name=Wadano
+race=Vykeen
+economy=1
+economy_label=scheiternd
+conflict=1
+conflict_label=stabil
+atlasinterface=false
+blackhole=false
+class=Blue
+short=6 Planeten
+info=
+
+[Pln120000FBA353D2]
+name=Aeza 24/Y7
+biome=Exotic_Mega
+buriedTreasure=AncientBones
+resources=In,CO2,NaCl
+short=Portal
+info=+33.83, +20.00
+short=sepia-grau
+info=
+
 [Reg000000F75843D7]
 
 [Sys001100F75843D7]
@@ -8252,6 +8330,34 @@ resources=Cu,CO2,NaCl
 short=Grav??
 info=
 
+[Reg0000000936B5C7]
+
+[Sys01DE000936B5C7]
+name=Eciusi-Lavi
+race=Korvax
+economy=2
+economy_label=In Entwicklung
+conflict=1
+conflict_label=sanft
+atlasinterface=false
+blackhole=false
+class=Blue
+short=2 Planeten
+info=
+
+[Pln11DE000936B5C7]
+
+[Pln21DE000936B5C7]
+name=Raveykin Gamma
+biome=Exotic_Mega
+is extreme
+aggrSentinels
+with water
+gravitino balls
+resources=In_,CO2,Co
+short=Portal
+info=-25.69, +20.30
+
 [Reg00000002C825D1]
 name=Leonist-Quadrant
 
@@ -9295,6 +9401,30 @@ atlasinterface=false
 blackhole=false
 
 [Pln30A400F90F56DB]
+
+[Reg000000FBF686E8]
+
+[Sys011700FBF686E8]
+name=Annaka
+race=Vykeen
+economy=2
+economy_label=komfortabel
+conflict=1
+conflict_label=friedlich
+atlasinterface=false
+blackhole=false
+class=Red
+short=2 Planeten
+info=
+
+[Pln111700FBF686E8]
+
+[Pln211700FBF686E8]
+name=Truth over Facts
+biome=Exotic_Mega
+resources=Cd,P,NaCl
+short=Portal
+info=+49.89, +127.83
 
 [Reg000000FC09D6EE]
 
