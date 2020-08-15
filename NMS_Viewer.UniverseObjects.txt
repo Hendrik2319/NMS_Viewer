@@ -7209,6 +7209,8 @@ info=+33.83, +20.00
 short=sepia-grau
 info=
 
+[Pln620000FBA353D2]
+
 [Reg000000F75843D7]
 
 [Sys001100F75843D7]
@@ -8238,6 +8240,32 @@ blackhole=false
 class=Yellow
 short=4 Planeten
 info=
+
+[Reg000000F7C5C5A3]
+
+[Sys00FD00F7C5C5A3]
+name=Rutyume-Efo
+race=Korvax
+economy=2
+economy_label=nachhaltig
+conflict=2
+conflict_label=gereizt
+atlasinterface=false
+blackhole=false
+class=Blue
+short=3 Planeten
+info=
+
+[Pln10FD00F7C5C5A3]
+
+[Pln20FD00F7C5C5A3]
+name=Dublingt XI
+biome=Exotic_Mega
+resources=In,CO2,Fe__
+short=Portal
+info=-3.12, +41.89
+
+[Pln30FD00F7C5C5A3]
 
 [Reg00000003CC45B8]
 name=Aygans-Quadrant
