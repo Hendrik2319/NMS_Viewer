@@ -5660,6 +5660,32 @@ biome=Scorched
 is extreme
 resources=In_,P,Ag
 
+[Reg0000000170700E]
+
+[Sys009B000170700E]
+name=Hatsudo
+race=Gek
+economy=2
+economy_label=zufriedenstellend
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Red
+short=2 Planeten
+info=
+
+[Pln109B000170700E]
+
+[Pln209B000170700E]
+name=Viusa Primus
+biome=Exotic_Mega
+resources=Cd,P,NaCl
+short=Portal
+info=-21.30, -90.01
+short=Schwarz-Rot
+info=
+
 [Reg000000501EC013]
 
 [Sys01D400501EC013]
