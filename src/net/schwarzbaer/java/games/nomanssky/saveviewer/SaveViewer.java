@@ -803,17 +803,15 @@ public class SaveViewer implements ActionListener {
 	}
 
 	public static class Config {
-		private String savegameSubFolder;
-		private String savegameBackupFolder;
+		private String savegameSubFolder    = null;
+		private String savegameBackupFolder = null;
 		
-		public boolean openNewlyWrittenVrmlFileInViewer;
-		public String vrmlViewer;
+		public boolean openNewlyWrittenVrmlFileInViewer = false;
+		public String vrmlViewer = null;
+		
+		public HashSet<String> highlightedBuildingObjects = new HashSet<>(); // TODO
 		
 		Config() {
-			savegameSubFolder   =null;
-			savegameBackupFolder=null;
-			vrmlViewer=null;
-			openNewlyWrittenVrmlFileInViewer = false;
 		}
 		
 		boolean isSavegameSubFolderKnown() { return savegameSubFolder   !=null; }
@@ -859,9 +857,10 @@ public class SaveViewer implements ActionListener {
 			String str;
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
 				while ((str=in.readLine())!=null) {
-					if (str.startsWith("SavegameSubFolder="   )) config.savegameSubFolder    = str.substring("SavegameSubFolder="   .length());
-					if (str.startsWith("SavegameBackupFolder=")) config.savegameBackupFolder = str.substring("SavegameBackupFolder=".length());
-					if (str.startsWith("VrmlViewer="          )) config.vrmlViewer           = str.substring("VrmlViewer=".length());
+					if (str.startsWith("SavegameSubFolder="         )) config.savegameSubFolder    = str.substring("SavegameSubFolder="   .length());
+					if (str.startsWith("SavegameBackupFolder="      )) config.savegameBackupFolder = str.substring("SavegameBackupFolder=".length());
+					if (str.startsWith("VrmlViewer="                )) config.vrmlViewer           = str.substring("VrmlViewer=".length());
+					if (str.startsWith("HighlightedBuildingObjects=")) splitStringSet(str.substring("HighlightedBuildingObjects=".length()), ",", config.highlightedBuildingObjects);
 					if (str.equals("OpenNewlyWrittenVrmlFileInViewer")) config.openNewlyWrittenVrmlFileInViewer = true;
 				}
 			}
@@ -877,15 +876,28 @@ public class SaveViewer implements ActionListener {
 			File file = new File(FileExport.FILE_CFG);
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 				
-				if (savegameSubFolder   !=null) out.printf("SavegameSubFolder"   +"=%s\r\n",savegameSubFolder   );
-				if (savegameBackupFolder!=null) out.printf("SavegameBackupFolder"+"=%s\r\n",savegameBackupFolder);
-				if (vrmlViewer          !=null) out.printf("VrmlViewer"          +"=%s\r\n",vrmlViewer);
-				if (openNewlyWrittenVrmlFileInViewer) out.printf("OpenNewlyWrittenVrmlFileInViewer\r\n");
+				if ( savegameSubFolder   !=null) out.printf("SavegameSubFolder"   +"=%s%n",savegameSubFolder   );
+				if ( savegameBackupFolder!=null) out.printf("SavegameBackupFolder"+"=%s%n",savegameBackupFolder);
+				if ( vrmlViewer          !=null) out.printf("VrmlViewer"          +"=%s%n",vrmlViewer);
+				if ( openNewlyWrittenVrmlFileInViewer    ) out.printf("OpenNewlyWrittenVrmlFileInViewer%n");
+				if (!highlightedBuildingObjects.isEmpty()) out.printf("HighlightedBuildingObjects=%s%n", joinStringSet(",",highlightedBuildingObjects));
 				
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
 			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+		}
+
+		private static void splitStringSet(String str, String delimiter, Set<String> set) {
+			String[] parts = str.split(delimiter);
+			for (String objectID : parts)
+				set.add(objectID);
+		}
+
+		private static String joinStringSet(String delimiter, Set<String> set) {
+			Vector<String> vec = new Vector<>(set);
+			vec.sort(null);
+			return String.join(delimiter, vec);
 		}
 	}
 	

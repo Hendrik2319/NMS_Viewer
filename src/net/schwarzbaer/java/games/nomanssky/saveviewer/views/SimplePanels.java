@@ -11,6 +11,7 @@ import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiFunction;
@@ -1352,6 +1353,7 @@ public class SimplePanels {
 			
 			private SaveGameData data;
 			private PersistentPlayerBase playerbase;
+			private BuildingObject clickedBuildingObject;
 			private JTextArea textArea;
 
 			private Window mainWindow;
@@ -1363,6 +1365,7 @@ public class SimplePanels {
 				this.mainPanel = mainPanel;
 				this.data = mainPanel.data;
 				this.mainWindow = mainPanel.mainWindow;
+				clickedBuildingObject = null;
 				setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
 				textArea = new JTextArea();
@@ -1371,19 +1374,38 @@ public class SimplePanels {
 				
 				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(this.playerbase.objects);
 				SimplifiedTable<BaseObjectsColumnID> table = new SimplifiedTable<>("BaseObjectsTable",tableModel,true,SaveViewer.DEBUG,true);
+				table.setCellRendererForAllColumns(new HighlightCR(this.playerbase.objects), true);
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
+				JCheckBoxMenuItem miHighlightObj;
 				JPopupMenu contextMenu = table.getContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
-				Runnable listener1 = addVRMLtasks(contextMenu,mainWindow);
-				table.addContextMenuInvokeListener((row, column) -> listener1.run());
+				contextMenu.add(miHighlightObj = Gui.createCheckBoxMenuItem("[Highlight BuildingObject]",e->{
+					if (clickedBuildingObject==null) return;
+					String objectID = clickedBuildingObject.objectID;
+					HashSet<String> set = SaveViewer.config.highlightedBuildingObjects;
+					if (set.contains(objectID)) set.remove(objectID);
+					else                        set.add   (objectID);
+					table.repaint();
+					SaveViewer.config.writeToFile();
+				}));
+				Runnable updateVRMLtasks1 = addVRMLtasks(contextMenu,mainWindow);
+				table.addContextMenuInvokeListener((rowV, columnV) -> {
+					int rowM = table.convertRowIndexToModel(rowV);
+					clickedBuildingObject = tableModel.getBuildingObject(rowM);
+					miHighlightObj.setText(String.format("Highlight all \"%s\" in bases", clickedBuildingObject==null ? "???" : clickedBuildingObject.objectID ));
+					miHighlightObj.setEnabled(clickedBuildingObject!=null);
+					miHighlightObj.setSelected(clickedBuildingObject!=null && SaveViewer.config.highlightedBuildingObjects.contains(clickedBuildingObject.objectID));
+					
+					updateVRMLtasks1.run();
+				});
 				
 				JPopupMenu textAreaContextMenu = new JPopupMenu();
 				textAreaContextMenu.add(Gui.createMenuItem("Mark Galactic Address in \"Known Universe\"",e->this.mainPanel.markGalacticAddressInUniverse(this.playerbase)));
-				Runnable listener2 = addVRMLtasks(textAreaContextMenu,mainWindow);
+				Runnable updateVRMLtasks2 = addVRMLtasks(textAreaContextMenu,mainWindow);
 				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
-				cmi.addContextMenuInvokeListener((x, y) -> listener2.run());
+				cmi.addContextMenuInvokeListener((x, y) -> updateVRMLtasks2.run());
 				
 				add(tableScrollPane,BorderLayout.CENTER);
 				add(textAreaScrollPane,BorderLayout.WEST);
@@ -1482,6 +1504,36 @@ public class SimplePanels {
 				
 				return nearObj;
 			}
+			
+			private static class HighlightCR extends DefaultTableCellRenderer {
+				private static final long serialVersionUID = 5514633635145216604L;
+				private static final Color HIGHLIGHT_COLOR = new Color(0xffb400);
+				private BuildingObject[] objects;
+
+				public HighlightCR(BuildingObject[] objects) {
+					this.objects = objects;
+				}
+
+				@Override
+				public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+					Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+					int rowM = table.convertRowIndexToModel(row);
+					if (!isSelected && 0<=rowM && rowM<objects.length) {
+						BuildingObject bo = objects[rowM];
+						if (SaveViewer.config.highlightedBuildingObjects.contains(bo.objectID)) {
+							//setForeground(table.getForeground());
+							setBackground(HIGHLIGHT_COLOR);
+						} else {
+							//setForeground(table.getForeground());
+							setBackground(table.getBackground());
+						}
+					}
+					return component;
+				}
+				
+				
+				
+			}
 
 			private enum BaseObjectsColumnID implements SimplifiedColumnIDInterface {
 				// [140, 176, 128, 80, 150, 170, 170]
@@ -1517,9 +1569,13 @@ public class SimplePanels {
 					return objects.length;
 				}
 		
+				public BuildingObject getBuildingObject(int rowIndex) {
+					if (rowIndex<0 || rowIndex>=objects.length) return null;
+					return objects[rowIndex];
+				}
 				@Override
 				public Object getValueAt(int rowIndex, int columnIndex, BaseObjectsColumnID columnID) {
-					BuildingObject obj = objects[rowIndex];
+					BuildingObject obj = getBuildingObject(rowIndex);
 					if (obj==null) return null;
 					switch(columnID) {
 					case Timestamp: return obj.timestamp;
