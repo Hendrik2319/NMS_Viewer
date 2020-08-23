@@ -156,10 +156,10 @@ public class SaveGameData {
 		if (baseBuildingObjects!=null) {
 			for (UnboundBuildingObject bbo:baseBuildingObjects) {
 				if (bbo.galacticAddress==null) continue;
-				if (bbo.objectID==null) continue;
-				if (bbo.objectID.equals("^SUMMON_GARAGE")) {
-					Universe.Planet planet = universe.findPlanet(bbo.galacticAddress);
-					if (planet!=null) planet.additionalInfos.hasExocraftSummoningStation = true;
+				Universe.Planet planet = universe.findPlanet(bbo.galacticAddress);
+				if (planet!=null) {
+					planet.additionalInfos.baseBuildingObjects.add(bbo);
+					planet.additionalInfos.hasExocraftSummoningStation |= "^SUMMON_GARAGE".equals(bbo.objectID);
 				}
 			}
 		}
@@ -434,9 +434,9 @@ public class SaveGameData {
 			String latCh =  latitude<0?"S":"N";
 			String lonCh = longitude<0?"W":"E";
 			if (withRadius)
-				return String.format(Locale.ENGLISH, " %s%05.2f  %s%06.2f  (R:%1.2f)", latCh, Math.abs(latitude), lonCh, Math.abs(longitude), radius);
+				return String.format(Locale.ENGLISH, "%s%05.2f  %s%06.2f  (R:%1.2f)", latCh, Math.abs(latitude), lonCh, Math.abs(longitude), radius);
 			else
-				return String.format(Locale.ENGLISH, " %s%05.2f  %s%06.2f"           , latCh, Math.abs(latitude), lonCh, Math.abs(longitude));
+				return String.format(Locale.ENGLISH, "%s%05.2f  %s%06.2f"           , latCh, Math.abs(latitude), lonCh, Math.abs(longitude));
 		}
 	}
 
@@ -3923,6 +3923,7 @@ public class SaveGameData {
 			}
 			
 			public static class AdditionalInfos {
+				public Vector<UnboundBuildingObject> baseBuildingObjects;
 				public Vector<PersistentPlayerBase> playerBases;
 				public Vector<PersistentPlayerBase> otherPlayerBases;
 				public boolean hasExocraftSummoningStation;
@@ -3930,6 +3931,7 @@ public class SaveGameData {
 				public Vector<TeleportEndpoints> teleportEndpointsInOtherPlayerBases; 
 				
 				public AdditionalInfos() {
+					this.baseBuildingObjects = new Vector<>();
 					this.playerBases = new Vector<>();
 					this.otherPlayerBases = new Vector<>();
 					this.hasExocraftSummoningStation = false;
@@ -3938,6 +3940,7 @@ public class SaveGameData {
 				}
 				public boolean isEmpty() {
 					return
+							baseBuildingObjects.isEmpty() &&
 							playerBases.isEmpty() &&
 							otherPlayerBases.isEmpty() &&
 							!hasExocraftSummoningStation &&

@@ -81,6 +81,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject.ExtraInfo;
@@ -1215,6 +1216,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			showDiscoverableObject(node,planet);
 			
+			
 			if (!planet.additionalInfos.isEmpty()) {
 				appendln();
 				appendln("Additional Infos:");
@@ -1233,18 +1235,30 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (!planet.additionalInfos.playerBases.isEmpty()) {
 					appendln("    My Bases on Planet:");
 					for (PersistentPlayerBase base:planet.additionalInfos.playerBases) {
-						String gps = base.gpsCoords==null ? "" : "  @"+base.gpsCoords.toString();
+						String gps = base.gpsCoords==null ? "" : "  @ "+base.gpsCoords.toString();
 						appendln("        \"%s\"%s", base.name, gps);
 					}
 				}
 				if (!planet.additionalInfos.otherPlayerBases.isEmpty()) {
 					appendln("    Other Bases on Planet:");
 					for (PersistentPlayerBase base:planet.additionalInfos.otherPlayerBases) {
-						String gps = base.gpsCoords==null ? "" : "  @"+base.gpsCoords.toString();
+						String gps = base.gpsCoords==null ? "" : "  @ "+base.gpsCoords.toString();
 						String ownerName = null;
 						if (base.owner!=null) ownerName = base.owner.getOwnerName();
 						if (ownerName ==null) ownerName = "another player";
 						appendln("        \"%s\" of %s%s", base.name, ownerName, gps);
+					}
+				}
+				if (!planet.additionalInfos.baseBuildingObjects.isEmpty()) {
+					Vector<UnboundBuildingObject> vec = new Vector<>(planet.additionalInfos.baseBuildingObjects);
+					vec.sort(Comparator.<UnboundBuildingObject,String>comparing(bbo->bbo.objectID));
+					
+					appendln("    Objects on Planet:");
+					for (UnboundBuildingObject bbo:vec) {
+						String posStr = "";
+						if (bbo.position!=null && bbo.position.gps!=null)
+							posStr = "  @ "+bbo.position.gps.toString(false);
+						appendln("        \"%s\"%s", bbo.getNameOrObjectID(), posStr);
 					}
 				}
 			}
