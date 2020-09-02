@@ -283,7 +283,7 @@ abandoned
 atlasinterface=false
 blackhole=false
 class=Blue
-short=5  Planeten
+short=5 Planeten
 info=
 
 [Pln114400B573F95C]
@@ -3004,8 +3004,6 @@ conflict_label=friedlich
 atlasinterface=false
 blackhole=false
 class=Blue
-short=Portal
-info=-78.58, -170.19
 
 [Pln109F0084F57D78]
 name=Viky-Brasil.
@@ -3024,6 +3022,8 @@ name=Cordon
 biome=Exotic_Mega
 buriedTreasure=SalvageableScrap
 resources=In,CO2,NaCl
+short=Portal
+info=-78.58, -170.19
 
 [Reg000000FE68DD80]
 
@@ -4505,8 +4505,6 @@ conflict_label=unregelmäßig
 atlasinterface=false
 blackhole=false
 class=Blue
-short=Portal
-info=-26.03, +18.28
 
 [Pln1070000000BFFB]
 name=Molinderr Omega
@@ -5114,14 +5112,14 @@ blackhole=false
 class=Yellow
 short=1 Planet
 info=
-short=Portal
-info=-53.37, -78.02
 
 [Pln10F700FE007004]
 name=Ainsbo
 biome=Frozen
 with water
 resources=Cu,CO2,Co
+short=Portal
+info=-53.37, -78.02
 
 [Sys00F800FE007004]
 name=Equule-Eme I
@@ -5781,6 +5779,30 @@ blackholetarget=00730001013F89
 class=Yellow
 short=2 Planeten
 info=
+
+[Reg000000FB6E3036]
+
+[Sys01DF00FB6E3036]
+name=Luvonma
+race=Gek
+abandoned
+atlasinterface=false
+blackhole=false
+class=Blue
+short=3 Planeten
+info=
+
+[Pln11DF00FB6E3036]
+name=Rephoyrian Minoris
+biome=Lush
+with water
+resources=In,Pf,Fe__
+short=Portal
+info=+52.78, -68.50
+
+[Pln21DF00FB6E3036]
+
+[Pln31DF00FB6E3036]
 
 [Reg00000003008045]
 name=Zoziemeza-Quadrant
@@ -6587,6 +6609,8 @@ conflict_label=im Krieg
 atlasinterface=false
 blackhole=false
 class=Yellow
+short=2 Planeten
+info=
 
 [Pln11B700FB97A258]
 name=Skell VII
@@ -6597,8 +6621,6 @@ resources=Cu,Au,Na
 name=Wistophin Abira
 biome=Toxic
 resources=Cu,NH3,Co
-short=2 Planeten
-info=
 
 [Reg00000000963263]
 
