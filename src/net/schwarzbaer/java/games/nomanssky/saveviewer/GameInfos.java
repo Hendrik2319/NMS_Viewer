@@ -271,11 +271,13 @@ public class GameInfos {
 		return -1;
 	}
 
-	public static void findPlanetResources() {
+	public static void parseExtraInfos() {
 		EnumSet<Resources> resources = EnumSet.noneOf(Universe.Planet.Resources.class);
 		universeObjectDataArr.forEach((address, uoData)->{
+			
 			if (uoData instanceof UOD_Planet) {
 				UOD_Planet planet = (UOD_Planet) uoData;
+				
 				for (ExtraInfo exi:planet.extraInfos) {
 					if (exi.info.startsWith("<ParsedPlanetaryResources>")) continue;
 					resources.clear();
@@ -288,6 +290,25 @@ public class GameInfos {
 						exi.info = "<ParsedPlanetaryResources> "+exi.info;
 						planet.resources.addAll(resources);
 					}				}
+			}
+			
+			if (uoData instanceof UOD_SolarSystem) {
+				UOD_SolarSystem system = (UOD_SolarSystem) uoData;
+				
+				for (ExtraInfo exi:system.extraInfos) {
+					String shortLabel = exi.shortLabel.toLowerCase();
+					if (shortLabel.startsWith("<parsed>")) continue;
+					if (shortLabel.equals("1 planet")) {
+						system.numberOfPlanets = 1;
+						exi.shortLabel = "<Parsed> "+exi.shortLabel;
+					} else if (shortLabel.endsWith(" planeten")) {
+						String valueStr = shortLabel.substring(0, shortLabel.length()-" planeten".length()).trim();
+						try {
+							system.numberOfPlanets = Integer.parseInt(valueStr);
+							exi.shortLabel = "<Parsed> "+exi.shortLabel;
+						} catch (NumberFormatException e) {}
+					}
+				}
 			}
 		});
 	}
@@ -516,6 +537,7 @@ public class GameInfos {
 		
 		updateConflictLevelLabels();
 		updateEconomyLevelLabels();
+		parseExtraInfos();
 		
 		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}

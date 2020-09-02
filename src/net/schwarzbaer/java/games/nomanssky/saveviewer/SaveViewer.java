@@ -132,7 +132,6 @@ public class SaveViewer implements ActionListener {
 		GameInfos.loadKnownStatIDsFromFile();
 		GameInfos.loadAllIDsFromFiles();
 		GameInfos.loadUniverseObjectDataFromFile();
-		GameInfos.findPlanetResources();
 		SaveGameData.Frigate.EditableModification.loadKnownEditableModsFromFile();
 		
 		if (args.length>0) {
@@ -354,6 +353,9 @@ public class SaveViewer implements ActionListener {
 		contentPane = new ContentPane();
 		
 		mainWindow.startGUI(contentPane);
+		mainWindow.setIconImagesFromResource("/logo/", "applogo_16.png", "applogo_24.png", "applogo_32.png", "applogo_48.png", "applogo_64.png", "applogo_96.png", "applogo_128.png", "applogo_256.png");
+		
+		
 		updateWindowTitle();
 		
 		executor.scheduleAtFixedRate(this::checkSavegameExistence, 0, 5, TimeUnit.SECONDS);

@@ -734,19 +734,21 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		private SolarSystemNode node;
 
-		private JComboBox<Race> cmbbxRace;
-		private JComboBox<StarClass> cmbbxStarClass;
-		private JComboBox<SystemState> cmbbxSystemState;
+		private final JComboBox<Race> cmbbxRace;
+		private final JComboBox<StarClass> cmbbxStarClass;
+		private final JComboBox<SystemState> cmbbxSystemState;
 
-		private LabeledLevelsBlock llbConflict;
-		private LabeledLevelsBlock llbEconomy;
+		private final LabeledLevelsBlock llbConflict;
+		private final LabeledLevelsBlock llbEconomy;
 
-		private JCheckBox chkbxAtlasInterface;
-		private JCheckBox chkbxBlackHole;
-		private JPanel blackHoleTargetPanel;
-		private JCheckBox chkbxRememTerm;
-		private JComboBox<Region> cmbbxBlackHoleTargetRegion;
-		private JComboBox<SolarSystem> cmbbxBlackHoleTargetSolarSystem;
+		private final JCheckBox chkbxAtlasInterface;
+		private final JCheckBox chkbxBlackHole;
+		private final JPanel blackHoleTargetPanel;
+		private final JCheckBox chkbxRememTerm;
+		private final JComboBox<Region> cmbbxBlackHoleTargetRegion;
+		private final JComboBox<SolarSystem> cmbbxBlackHoleTargetSolarSystem;
+
+		private final JTextField fldPlanets;
 
 		InfoPanel_SolarSystem() {
 			super(UniversePanel.this,true);
@@ -818,25 +820,25 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				updateTreeNode(node, false);
 			});
 			
-			chkbxAtlasInterface = Gui.createCheckbox("has Atlas Interface", e->{
+			chkbxAtlasInterface = Gui.createCheckbox("has Atlas Interface", false, isSelected->{
 				if (isSettingContent) return;
-				node.value.hasAtlasInterface = chkbxAtlasInterface.isSelected();
+				node.value.hasAtlasInterface = isSelected;
 				updateTreeNode(node, false);
-			}, false);
+			});
 			
-			chkbxBlackHole = Gui.createCheckbox("has Black Hole", e->{
+			chkbxBlackHole = Gui.createCheckbox("has Black Hole", false, isSelected->{
 				if (isSettingContent) return;
-				node.value.hasBlackHole = chkbxBlackHole.isSelected();
+				node.value.hasBlackHole = isSelected;
 				updateBlackHoleTargetPanel();
 				updateTreeNode(node, false);
 				galaxyMapPanel.updateBlackHoleConnections();
-			}, false);
+			});
 			
-			chkbxRememTerm = Gui.createCheckbox("has Remembrance Terminal", e->{
+			chkbxRememTerm = Gui.createCheckbox("has Remembrance Terminal", false, isSelected->{
 				if (isSettingContent) return;
-				node.value.withRemembranceTerminal = chkbxRememTerm.isSelected();
+				node.value.withRemembranceTerminal = isSelected;
 				updateTreeNode(node, false);
-			}, false);
+			});
 			
 			cmbbxBlackHoleTargetRegion      = new JComboBox<Region>();
 			cmbbxBlackHoleTargetSolarSystem = new JComboBox<SolarSystem>();
@@ -870,6 +872,17 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
 			
+			fldPlanets = Gui.createTextField("", str->{
+				if (isSettingContent) return str;
+				try {
+					node.value.numberOfPlanets = Integer.parseInt(str);
+					updateTreeNode(node, false);
+					return str;
+				} catch (NumberFormatException e1) {
+					return node.value.numberOfPlanets==null ? "" : node.value.numberOfPlanets.toString();
+				}
+			});
+			
 			addCompToLeft (cmbbxRace           , 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (cmbbxStarClass      , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbEconomy .cmbbxLevel      , 1,0, 1                           ,1, GridBagConstraints.BOTH);
@@ -879,11 +892,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToLeft (cmbbxSystemState    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (new JLabel("Planets: "), 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (fldPlanets             , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
+			addCompToRight(chkbxRememTerm      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(chkbxBlackHole      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(blackHoleTargetPanel, 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToRight(chkbxRememTerm      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			addCompToLeft (new JLabel(), 1,1, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(new JLabel(), 1,1, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
@@ -926,6 +941,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			llbEconomy .setEnabled(system.systemState==SystemState.Normal || system.systemState==SystemState.Abandoned);
 			llbConflict.setEnabled(system.systemState==SystemState.Normal);
 			
+			fldPlanets.setText(system.numberOfPlanets==null ? "" : system.numberOfPlanets.toString());
+				
 			showInfos();
 		}
 
