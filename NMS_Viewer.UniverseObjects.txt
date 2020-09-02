@@ -242,8 +242,9 @@ biome=Lush
 aggrSentinels
 gravitino balls
 resources=Cu,Pf,NaCl
+portal=-45.5600,115.8000
 short=Portal
-info=-45.56, +115.80
+info=<Parsed> -45.56, +115.80
 
 [Reg00000002F1695C]
 
@@ -286,8 +287,9 @@ biome=Lush
 is extreme
 with water
 resources=In_,Pf,Ag
+portal=-15.0300,-80.3700
 short=Portal
-info=-15.03, -80.37
+info=<Parsed> -15.03, -80.37
 
 [Pln214400B573F95C]
 
@@ -325,8 +327,9 @@ name=Kaylericus Zuoka
 biome=Lush
 is extreme
 resources=Cu_,Pf,Fe__
+portal=-6.3700,107.4800
 short=Portal
-info=-6.37, +107.48 
+info=<Parsed> -6.37, +107.48 
 
 [Pln507200FAE1B962]
 
@@ -373,8 +376,9 @@ name=Nebari Prime
 biome=Lush
 with water
 resources=Em,Pf,Na
+portal=47.2900,121.8700
 short=Portal
-info=+47.29, +121.87
+info=<Parsed> +47.29, +121.87
 
 [Reg0000000029897C]
 
@@ -2156,10 +2160,11 @@ is extreme
 with water
 buriedTreasure=AncientBones
 resources=In_,CO2,Fe__
+portal=-22.5200,160.1800
 short=hell-rot-orange
 info=
 short=Portal
-info=-22.52, +160.18
+info=<Parsed> -22.52, +160.18
 
 [Pln21F30066324C16]
 name=Tashkent
@@ -2603,8 +2608,9 @@ aggrSentinels
 with water
 gravitino balls
 resources=In_,CO2,Fe__
+portal=3.6800,-47.6100
 short=Portal
-info=+3.68, -47.61
+info=<Parsed> +3.68, -47.61
 
 [Reg000000FE452CC0]
 name=Itutsc
@@ -2657,8 +2663,9 @@ biome=Exotic_Mega
 is extreme
 with water
 resources=Cd_,P,Fe__
+portal=-55.9000,34.4200
 short=Portal
-info=-55.90, +34.42
+info=<Parsed> -55.90, +34.42
 
 [Pln21CE00FF9BECCC]
 
@@ -2893,8 +2900,9 @@ name=Ditchae M5
 biome=Exotic_Mega
 with water
 resources=In,CO2,Fe__
+portal=-49.9000,19.9200
 short=Portal
-info=-49.90, +19.92
+info=<Parsed> -49.90, +19.92
 short=Grau-Orange
 info=
 
@@ -2951,8 +2959,9 @@ name=Cordon
 biome=Exotic_Mega
 buriedTreasure=SalvageableScrap
 resources=In,CO2,NaCl
+portal=-78.5800,-170.1900
 short=Portal
-info=-78.58, -170.19
+info=<Parsed> -78.58, -170.19
 
 [Reg000000FE68DD80]
 
@@ -3187,8 +3196,9 @@ planets=6
 name=Antuw Sigma
 biome=Airless
 resources=Cu,Fe__,Sr_Rost
+portal=-40.9100,58.5700
 short=Portal
-info=-40.91, +58.57
+info=<Parsed> -40.91, +58.57
 
 [Pln203100006A5E0D]
 name=Cucamo Sigma
@@ -3423,8 +3433,9 @@ planets=6
 name=Guildford, UK
 biome=Lush
 resources=Cu,Pf,NaCl
+portal=11.7300,154.0300
 short=Portal
-info=+11.73, +154.03
+info=<Parsed> +11.73, +154.03
 
 [Pln412B000DA31EBB]
 
@@ -4133,8 +4144,9 @@ name=Corvus was not here
 biome=Exotic_Mega
 with water
 resources=Em,NH3,Fe__
+portal=39.1100,21.2100
 short=Portal
-info=+39.11, +21.21
+info=<Parsed> +39.11, +21.21
 short=Atmosphere
 info=grau-rot
 
@@ -4220,8 +4232,9 @@ biome=Frozen
 is extreme
 with water
 resources=Em_,CO2,Fe__
+portal=-73.8300,93.5700
 short=Portal
-info=-73.83, +93.57
+info=<Parsed> -73.83, +93.57
 
 [Pln21A900FCFFDFF8]
 
@@ -4385,8 +4398,9 @@ biome=Toxic
 is extreme
 with water
 resources=In_,NH3,NaCl
+portal=-26.0400,18.2700
 short=Portal
-info=-26.04, +18.27
+info=<Parsed> -26.04, +18.27
 
 [Reg000000F9000FFC]
 
@@ -4557,8 +4571,9 @@ resources=Cu,NH3,Ag
 name=Yusthew G46
 biome=Lush
 resources=Cu,Pf,Na
+portal=-21.6600,113.7900
 short=Portal
-info=-21.66, +113.79
+info=<Parsed> -21.66, +113.79
 
 [Pln31E100FFFF8001]
 name=Tenstas Tau
@@ -4714,8 +4729,9 @@ name=Esend 48/W6
 biome=Barren
 is extreme
 resources=Em_,Py,NaCl
+portal=37.0500,-90.0100
 short=Portal
-info=+37.05, -90.01
+info=<Parsed> +37.05, -90.01
 
 [Sys008800FE007004]
 name=Crewest-Miyrda XIV
@@ -4762,22 +4778,25 @@ planets=3
 name=Iffall
 biome=Frozen
 resources=Cu,CO2,NaCl
+portal=-35.7800,36.6300
 short=Portal
-info=-35.78, +36.63
+info=<Parsed> -35.78, +36.63
 
 [Pln208A00FE007004]
 name=Flitwor II
 biome=Airless
 resources=Cu,Na,Sr_Rost
+portal=-3.9900,177.2700
 short=Portal
-info=-3.99, +177.27
+info=<Parsed> -3.99, +177.27
 
 [Pln308A00FE007004]
 name=Shungeli T41
 biome=Barren
 resources=Cu,Py,Na
+portal=57.1100,29.8900
 short=Portal
-info=+57.11, +29.89
+info=<Parsed> +57.11, +29.89
 
 [Sys009400FE007004]
 name=Ewtonrou
@@ -4960,8 +4979,9 @@ name=Ainsbo
 biome=Frozen
 with water
 resources=Cu,CO2,Co
+portal=-53.3700,-78.0200
 short=Portal
-info=-53.37, -78.02
+info=<Parsed> -53.37, -78.02
 
 [Sys00F800FE007004]
 name=Equule-Eme I
@@ -4990,8 +5010,9 @@ name=Rogatell XVIII
 biome=Airless
 buriedTreasure=AncientBones
 resources=In,Co,Sr_Rost
+portal=-10.0500,126.5800
 short=Portal
-info=-10.05, +126.58
+info=<Parsed> -10.05, +126.58
 
 [Pln40F800FE007004]
 name=Downeyri Tarug
@@ -5010,8 +5031,9 @@ biome=Irradiated
 is extreme
 with water
 resources=In_,U,Co
+portal=4.9200,160.0800
 short=Portal
-info=+4.92, +160.08
+info=<Parsed> +4.92, +160.08
 
 [Pln60F800FE007004]
 name=Omacr F6
@@ -5168,8 +5190,9 @@ biome=Lush
 with water
 remembrance terminal
 resources=Cu,Pf,Ag
+portal=-65.2300,-2.4300
 short=Portal
-info=-65.23, -2.43
+info=<Parsed> -65.23, -2.43
 
 [Pln20960002FFA005]
 name=Ramena Majoris
@@ -5192,8 +5215,9 @@ name=Enos Y39
 biome=Irradiated
 is extreme
 resources=Cu_,U,Fe__
+portal=68.4200,165.8500
 short=Portal
-info=+68.42, +165.85
+info=<Parsed> +68.42, +165.85
 
 [Sys00BC0002FFA005]
 name=Abyaix-Runan
@@ -5209,8 +5233,9 @@ planets=6
 name=Awest XIV
 biome=Barren
 resources=Em,Py,NaCl
+portal=-24.2400,74.7700
 short=Portal
-info=-24.24, +74.77
+info=<Parsed> -24.24, +74.77
 
 [Pln30BC0002FFA005]
 name=Tabouthwort Iomi
@@ -5266,8 +5291,9 @@ name=Tazup N13
 biome=Toxic
 is extreme
 resources=Em_,NH3,Fe__
+portal=-11.1600,-71.2200
 short=Portal
-info=-11.16, -71.22
+info=<Parsed> -11.16, -71.22
 
 [Sys00D70002FFA005]
 name=Ozuohe
@@ -5315,8 +5341,9 @@ name=Amseycit IX
 biome=Exotic_Mega
 is extreme
 resources=In_,CO2,Na
+portal=-50.7300,21.6900
 short=Portal
-info=-50.73, +21.69
+info=<Parsed> -50.73, +21.69
 
 [Pln50F30002FFA005]
 name=Aerusall Beta
@@ -5346,8 +5373,9 @@ biome=Toxic
 is extreme
 buriedTreasure=AncientBones
 resources=Cd_,NH3,NaCl
+portal=-54.3900,48.7600
 short=Portal
-info=-54.39, +48.76
+info=<Parsed> -54.39, +48.76
 
 [Sys01420002FFA005]
 name=Gashuna-Yoroz
@@ -5442,8 +5470,9 @@ resources=Cu,Pf,Co
 name=Embassy Rock
 biome=Airless
 resources=Cu,Fe__,Sr_Rost
+portal=-7.3700,112.3600
 short=Portal
-info=-7.37, +112.36
+info=<Parsed> -7.37, +112.36
 
 [Reg000000F8008008]
 
@@ -5504,8 +5533,9 @@ planets=2
 name=Viusa Primus
 biome=Exotic_Mega
 resources=Cd,P,NaCl
+portal=-21.3000,-90.0100
 short=Portal
-info=-21.30, -90.01
+info=<Parsed> -21.30, -90.01
 short=Schwarz-Rot
 info=
 
@@ -5617,8 +5647,9 @@ name=Rephoyrian Minoris
 biome=Lush
 with water
 resources=In,Pf,Fe__
+portal=52.7800,-68.5000
 short=Portal
-info=+52.78, -68.50
+info=<Parsed> +52.78, -68.50
 
 [Pln21DF00FB6E3036]
 
@@ -6488,8 +6519,9 @@ name=Yautia Prime
 biome=Exotic_Mega
 is extreme
 resources=In_,CO2,Ag
+portal=54.5000,-11.3400
 short=Portal
-info=+54.50, -11.34
+info=<Parsed> +54.50, -11.34
 
 [Pln40E400069A72AD]
 
@@ -6643,8 +6675,9 @@ resources=Em,NH3,Na
 name=Bizarroland
 biome=Exotic_Mega
 resources=Em,NH3,Na
+portal=-58.0400,-144.0700
 short=Portal
-info=-58.04, -144.07
+info=<Parsed> -58.04, -144.07
 short=rot-grau
 info=
 
@@ -6982,8 +7015,9 @@ name=Aeza 24/Y7
 biome=Exotic_Mega
 buriedTreasure=AncientBones
 resources=In,CO2,NaCl
+portal=33.8300,20.0000
 short=Portal
-info=+33.83, +20.00
+info=<Parsed> +33.83, +20.00
 short=sepia-grau
 info=
 
@@ -7007,8 +7041,9 @@ planets=5
 name=Colin Robinson
 biome=Lush
 resources=Cu,Pf,Fe__
+portal=-13.7900,-63.3600
 short=Portal
-info=-13.79, -63.36
+info=<Parsed> -13.79, -63.36
 
 [Pln201100F75843D7]
 
@@ -7249,8 +7284,9 @@ planets=6
 name=Elstou VI
 biome=AnomScreenCrystals
 resources=Em,Au,Co
+portal=45.2900,-104.1200
 short=Portal
-info=+45.29, -104.12
+info=<Parsed> +45.29, -104.12
 
 [Pln20FF00182964AA]
 
@@ -7440,8 +7476,9 @@ class=Green
 name=Hapori Major
 biome=Exotic_Mega
 resources=Em,NH3,Fe__
+portal=62.5600,132.3100
 short=Portal
-info=+62.56, +132.31
+info=<Parsed> +62.56, +132.31
 
 [Pln216D003D540547]
 
@@ -7474,8 +7511,9 @@ biome=Exotic_Mega
 with water
 buriedTreasure=SalvageableScrap
 resources=Em,NH3,Ag
+portal=-40.1200,-25.1100
 short=Portal
-info=-40.12, -25.11
+info=<Parsed> -40.12, -25.11
 
 [Pln2133008D40158A]
 name=Naldeb
@@ -7925,8 +7963,9 @@ is extreme
 with water
 remembrance terminal
 resources=In_,CO2,Ag
+portal=-56.1100,-97.9200
 short=Portal
-info=-56.11, -97.92
+info=<Parsed> -56.11, -97.92
 
 [Pln21EC00FFF38590]
 name=Gostori Ihac
@@ -8002,8 +8041,9 @@ planets=3
 name=Dublingt XI
 biome=Exotic_Mega
 resources=In,CO2,Fe__
+portal=-3.1200,41.8900
 short=Portal
-info=-3.12, +41.89
+info=<Parsed> -3.12, +41.89
 
 [Pln30FD00F7C5C5A3]
 
@@ -8121,8 +8161,9 @@ aggrSentinels
 with water
 gravitino balls
 resources=In_,CO2,Co
+portal=-25.6900,20.3000
 short=Portal
-info=-25.69, +20.30
+info=<Parsed> -25.69, +20.30
 
 [Reg00000002C825D1]
 name=Leonist-Quadrant
@@ -8266,8 +8307,9 @@ planets=4
 name=Yangr
 biome=Irradiated
 resources=In,U,Ag
+portal=-85.5700,81.8500
 short=Portal
-info=-85.57, +81.85
+info=<Parsed> -85.57, +81.85
 
 [Pln218900063715F3]
 name=Bergha Primus
@@ -8420,8 +8462,9 @@ name=Viky. xD
 biome=Exotic_Mega
 with water
 resources=Em,NH3,Co
+portal=-62.8500,-22.7100
 short=Portal
-info=-62.85, -22.71
+info=<Parsed> -62.85, -22.71
 
 [Reg000000052CA65C]
 name=Meer von Arbodi
@@ -8599,8 +8642,9 @@ resources=Cu,NH3,NaCl
 name=Yipso G10
 biome=Airless
 resources=Cu,Fe__,Sr_Rost
+portal=40.4000,164.8000
 short=Portal
-info=+40.40, +164.80
+info=<Parsed> +40.40, +164.80
 
 [Sys006E00FCD7F684]
 name=Ladoin-Gulu
@@ -8658,16 +8702,18 @@ class=Yellow
 name=Napecule Beta
 biome=Frozen
 resources=Cd,CO2,Fe__
+portal=19.2400,91.6800
 short=Portal
-info=+19.24, +91.68
+info=<Parsed> +19.24, +91.68
 
 [Pln207000FCD7F684]
 name=Suso 90/F7
 biome=Lush
 with water
 resources=Cu,Pf,Na
+portal=-60.3100,-83.4000
 short=Portal
-info=-60.31,-83.40
+info=<Parsed> -60.31,-83.40
 
 [Pln307000FCD7F684]
 name=Nehoul Iash
@@ -8992,8 +9038,9 @@ name=Zaviusa Y3
 biome=Exotic_Mega
 with water
 resources=Em,NH3,NaCl
+portal=67.0700,-25.0700
 short=Portal
-info=+67.07, -25.07
+info=<Parsed> +67.07, -25.07
 short="Planet der Eheringe"
 info=
 
@@ -9031,8 +9078,9 @@ name=Viky planet.
 biome=Lush
 buriedTreasure=SalvageableScrap
 resources=Cu,Pf,NaCl
+portal=-67.8800,-135.3900
 short=Portal
-info=-67.88, -135.39
+info=<Parsed> -67.88, -135.39
 
 [Pln20550008F0E6AE]
 
@@ -9108,8 +9156,9 @@ name=Rehype Omega G'day mate
 biome=Exotic_Mega
 is extreme
 resources=In_,CO2,NaCl
+portal=5.0700,-158.9700
 short=Portal
-info=+5.07, -158.97
+info=<Parsed> +5.07, -158.97
 short=Schwarz-Rot
 info=
 
@@ -9131,8 +9180,9 @@ is extreme
 with water
 buriedTreasure=AncientBones
 resources=In_,Pf,Fe__
+portal=6.0100,-37.7000
 short=Portal
-info=+6.01, -37.70
+info=<Parsed> +6.01, -37.70
 
 [Reg000000F90F56DB]
 
@@ -9162,8 +9212,9 @@ planets=2
 name=Truth over Facts
 biome=Exotic_Mega
 resources=Cd,P,NaCl
+portal=49.8900,127.8300
 short=Portal
-info=+49.89, +127.83
+info=<Parsed> +49.89, +127.83
 
 [Reg000000FC09D6EE]
 
@@ -9187,8 +9238,9 @@ planets=3
 name=Sprinandy Kabir
 biome=Exotic_Mega
 resources=Em,NH3,Fe__
+portal=60.1600,-126.4700
 short=Portal
-info=+60.16, -126.47
+info=<Parsed> +60.16, -126.47
 
 [Reg00000047EB0728]
 
@@ -9219,8 +9271,9 @@ name=Viky planet.
 biome=Lush
 aggrSentinels
 resources=Cu,Pf,Co
+portal=35.7200,165.2100
 short=Portal
-info=+35.72, +165.21
+info=<Parsed> +35.72, +165.21
 
 [Reg000000E8370772]
 
@@ -9249,8 +9302,9 @@ name=France go Home
 biome=Exotic
 is extreme
 resources=In_,CO2,Co
+portal=34.6600,-177.6900
 short=Portal
-info=+34.66, -177.69
+info=<Parsed> +34.66, -177.69
 
 [Pln41CD00E8370772]
 name=Beta
