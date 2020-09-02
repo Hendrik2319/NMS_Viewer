@@ -119,6 +119,7 @@ public class GameInfos {
 		Boolean hasBlackHole;
 		Long blackHoleTarget;
 		boolean withRemembranceTerminal;
+		Integer numberOfPlanets;
 		
 		public UOD_SolarSystem(UniverseAddress ua) {
 			super(ua, Type.SolarSystem);
@@ -134,6 +135,7 @@ public class GameInfos {
 			hasBlackHole = null;
 			blackHoleTarget = null;
 			withRemembranceTerminal = false;
+			numberOfPlanets = null;
 		}
 		public UOD_SolarSystem(SolarSystem sys) {
 			super(sys.getUniverseAddress(), Type.SolarSystem, sys);
@@ -149,6 +151,7 @@ public class GameInfos {
 			hasBlackHole = sys.hasBlackHole;
 			blackHoleTarget = (sys.blackHoleTarget==null || !sys.hasBlackHole)?null:sys.blackHoleTarget.getAddress();
 			withRemembranceTerminal = sys.withRemembranceTerminal;
+			numberOfPlanets = sys.numberOfPlanets;
 		}
 	}
 	
@@ -296,6 +299,42 @@ public class GameInfos {
 		return uod.name;
 	}
 
+	private static String readValue(String str, String prefix) {
+		return str.startsWith(prefix) ? str.substring(prefix.length()) : null;
+	}
+	
+	private static Integer parseInt(String valueStr, Integer defaultValue) {
+		return parseNumber(Integer::parseInt, valueStr, defaultValue);
+	}
+	
+	@SuppressWarnings("unused")
+	private static Integer parseInt(String valueStr, int radix, Integer defaultValue) {
+		return parseNumber(t->Integer.parseInt(t,radix), valueStr, defaultValue);
+	}
+	
+	@SuppressWarnings("unused")
+	private static Long parseLong(String valueStr, Long defaultValue) {
+		return parseNumber(Long::parseLong, valueStr, defaultValue);
+	}
+	
+	private static Long parseLong(String valueStr, int radix, Long defaultValue) {
+		return parseNumber(t->Long.parseLong(t,radix), valueStr, defaultValue);
+	}
+	
+	private static Double parseDouble(String valueStr, Double defaultValue) {
+		return parseNumber(Double::parseDouble, valueStr, defaultValue);
+	}
+	
+	private static <A> A parseNumber(Function<String,A> convert, String valueStr, A defaultValue) {
+		try { return convert.apply(valueStr); }
+		catch (NumberFormatException e) { return defaultValue; }
+	}
+	
+	private static <A extends Enum<A>> A valueOf(Function<String,A> convert, String valueStr, A defaultValue) {
+		try { return convert.apply(valueStr); }
+		catch (Exception e) { return defaultValue; }
+	}
+
 	public static void loadUniverseObjectDataFromFile() {
 		long start = System.currentTimeMillis();
 		Gui.log_ln("Read data of universe objects from file \""+FileExport.FILE_UNIVERSE_OBJECT_DATA+"\"...");
@@ -319,10 +358,10 @@ public class GameInfos {
 			String nextShortLabel = null;
 			Boolean showInParent = null;
 			
-			String str, valueStr;
-			while ((str=in.readLine())!=null) {
-				if (str.isEmpty()) continue;
-				if ((str.startsWith("[Reg") || str.startsWith("[Sys") || str.startsWith("[Pln")) && str.endsWith("]")) {
+			String line, valueStr;
+			while ((line=in.readLine())!=null) {
+				if (line.isEmpty()) continue;
+				if ((line.startsWith("[Reg") || line.startsWith("[Sys") || line.startsWith("[Pln")) && line.endsWith("]")) {
 					uoData = null;
 					region = null;
 					system = null;
@@ -331,135 +370,118 @@ public class GameInfos {
 					nextShortLabel = null;
 					showInParent = null;
 					
-					String addressStr = str.substring("[Sys".length(), str.length()-"]".length());
+					String addressStr = line.substring("[Sys".length(), line.length()-"]".length());
 					long address;
 					try { address = Long.parseLong(addressStr, 16); }
 					catch (NumberFormatException e) {
-						System.err.printf("Can't parse universe address in: \"%s\"\r\n",str);
+						System.err.printf("Can't parse universe address in: \"%s\"\r\n",line);
 						continue;
 					}
 					UniverseAddress ua = new UniverseAddress(address);
-					if (str.startsWith("[Reg") && ua.isRegion     ()) uoData =          region = new UOD_Region     (ua);
-					if (str.startsWith("[Sys") && ua.isSolarSystem()) uoData = uniObj = system = new UOD_SolarSystem(ua);
-					if (str.startsWith("[Pln") && ua.isPlanet     ()) uoData = uniObj = planet = new UOD_Planet     (ua);
+					if (line.startsWith("[Reg") && ua.isRegion     ()) uoData =          region = new UOD_Region     (ua);
+					if (line.startsWith("[Sys") && ua.isSolarSystem()) uoData = uniObj = system = new UOD_SolarSystem(ua);
+					if (line.startsWith("[Pln") && ua.isPlanet     ()) uoData = uniObj = planet = new UOD_Planet     (ua);
 					if (uoData != null) universeObjectDataArr.put(address, uoData);
 					continue;
 				}
 				if (uoData!=null) {
-					if (str.startsWith("name=")) {
-						uoData.name = str.substring("name=".length());
+					if ((valueStr = readValue(line,"name="))!=null) {
+						uoData.name = valueStr;
 						continue;
 					}
-					if (str.startsWith("oldname=")) {
-						uoData.oldname = str.substring("oldname=".length());
+					if ((valueStr = readValue(line,"oldname="))!=null) {
+						uoData.oldname = valueStr;
 						continue;
 					}
 				}
 				if (system!=null) {
-					if (str.startsWith("race=")) {
-						valueStr = str.substring("race=".length());
-						try { system.race = Universe.SolarSystem.Race.valueOf(valueStr); }
-						catch (Exception e) { system.race = null; }
+					if ((valueStr = readValue(line,"race="))!=null) {
+						system.race = valueOf(Universe.SolarSystem.Race::valueOf,valueStr,null);
 						continue;
 					}
-					if (str.equals("unexplored")) {
+					if (line.equals("unexplored")) {
 						system.systemState = Universe.SolarSystem.SystemState.Unexplored;
 						continue;
 					}
-					if (str.equals("abandoned")) {
+					if (line.equals("abandoned")) {
 						system.systemState = Universe.SolarSystem.SystemState.Abandoned;
 						continue;
 					}
-					if (str.startsWith("atlasinterface=")) {
-						valueStr = str.substring("atlasinterface=".length());
+					if ((valueStr = readValue(line,"atlasinterface="))!=null) {
 						system.hasAtlasInterface = valueStr.equalsIgnoreCase("true");
 						continue;
 					}
-					if (str.startsWith("blackhole=")) {
-						valueStr = str.substring("blackhole=".length());
+					if ((valueStr = readValue(line,"blackhole="))!=null) {
 						system.hasBlackHole = valueStr.equalsIgnoreCase("true");
 						continue;
 					}
-					if (str.startsWith("blackholetarget=")) {
-						valueStr = str.substring("blackholetarget=".length());
-						try { system.blackHoleTarget = Long.parseLong(valueStr, 16); }
-						catch (NumberFormatException e) { system.blackHoleTarget = null; }
+					if ((valueStr = readValue(line,"blackholetarget="))!=null) {
+						system.blackHoleTarget = parseLong(valueStr, 16, null);
 						continue;
 					}
-					if (str.equals("remembrance terminal")) {
+					if (line.equals("remembrance terminal")) {
 						system.withRemembranceTerminal = true;
 						continue;
 					}
-					if (str.startsWith("class=")) {
-						valueStr = str.substring("class=".length());
-						try { system.starClass = Universe.SolarSystem.StarClass.valueOf(valueStr); }
-						catch (Exception e) { system.starClass = null; }
+					if ((valueStr = readValue(line,"class="))!=null) {
+						system.starClass = valueOf(Universe.SolarSystem.StarClass::valueOf,valueStr,null);
 						continue;
 					}
-					if (str.startsWith("distance=")) {
-						valueStr = str.substring("distance=".length());
-						try { system.distanceToCenter = Double.parseDouble(valueStr); }
-						catch (NumberFormatException e) { system.distanceToCenter = null; }
+					if ((valueStr = readValue(line,"distance="))!=null) {
+						system.distanceToCenter = parseDouble(valueStr,null);
 						continue;
 					}
-					if (str.startsWith("conflict=")) {
-						valueStr = str.substring("conflict=".length());
-						try { system.conflictLevel = Integer.parseInt(valueStr); }
-						catch (NumberFormatException e) { system.conflictLevel = -1; }
+					if ((valueStr = readValue(line,"planets="))!=null) {
+						system.numberOfPlanets = parseInt(valueStr,null);
 						continue;
 					}
-					if (str.startsWith("conflict_label=")) {
-						valueStr = str.substring("conflict_label=".length());
+					if ((valueStr = readValue(line,"conflict="))!=null) {
+						system.conflictLevel = parseInt(valueStr,-1);
+						continue;
+					}
+					if ((valueStr = readValue(line,"conflict_label="))!=null) {
 						system.conflictLevelLabel = valueStr;
 						continue;
 					}
-					if (str.startsWith("economy=")) {
-						valueStr = str.substring("economy=".length());
-						try { system.economyLevel = Integer.parseInt(valueStr); }
-						catch (NumberFormatException e) { system.economyLevel = -1; }
+					if ((valueStr = readValue(line,"economy="))!=null) {
+						system.economyLevel = parseInt(valueStr,-1);
 						continue;
 					}
-					if (str.startsWith("economy_label=")) {
-						valueStr = str.substring("economy_label=".length());
+					if ((valueStr = readValue(line,"economy_label="))!=null) {
 						system.economyLevelLabel = valueStr;
 						continue;
 					}
 				}
 				if (planet!=null) {
-					if (str.startsWith("biome=")) {
-						valueStr = str.substring("biome=".length());
-						try { planet.biome = Universe.Planet.Biome.valueOf(valueStr); }
-						catch (Exception e) { planet.biome = null; }
+					if ((valueStr = readValue(line,"biome="))!=null) {
+						planet.biome = valueOf(Universe.Planet.Biome::valueOf,valueStr,null);
 						continue;
 					}
-					if (str.equals("is extreme")) {
+					if (line.equals("is extreme")) {
 						planet.hasExtremeBiome = true;
 						continue;
 					}
-					if (str.equals("aggrSentinels") || str.startsWith("aggrSentinels=") || str.equals("sentinel=Aggressive")) {
+					if (line.equals("aggrSentinels") || line.startsWith("aggrSentinels=") || line.equals("sentinel=Aggressive")) {
 						planet.areSentinelsAggressive = true;
 						continue;
 					}
-					if (str.equals("with water")) {
+					if (line.equals("with water")) {
 						planet.withWater = true;
 						continue;
 					}
-					if (str.equals("gravitino balls")) {
+					if (line.equals("gravitino balls")) {
 						planet.withGravitinoBalls = true;
 						continue;
 					}
-					if (str.equals("remembrance terminal")) {
+					if (line.equals("remembrance terminal")) {
 						planet.withRemembranceTerminal = true;
 						continue;
 					}
-					if (str.startsWith("buriedTreasure=")) {
-						valueStr = str.substring("buriedTreasure=".length());
-						try { planet.buriedTreasure = Universe.Planet.BuriedTreasure.valueOf(valueStr); }
-						catch (Exception e) { planet.buriedTreasure = null; }
+					if ((valueStr = readValue(line,"buriedTreasure="))!=null) {
+						planet.buriedTreasure = valueOf(Universe.Planet.BuriedTreasure::valueOf,valueStr,null);
 						continue;
 					}
-					if (str.startsWith("resources=")) {
-						valueStr = str.substring("resources=".length());
+					if ((valueStr = readValue(line,"resources="))!=null) {
 						planet.resources.clear();
 						for (String resStr:valueStr.split(",")) {
 							try { planet.resources.add(Universe.Planet.Resources.valueOf(resStr)); }
@@ -469,18 +491,17 @@ public class GameInfos {
 					}
 				}
 				if (uniObj!=null) {
-					if (str.startsWith("short=")) {
-						nextShortLabel = str.substring("short=".length());
+					if ((valueStr = readValue(line,"short="))!=null) {
+						nextShortLabel = valueStr;
 						showInParent = false;
 						continue;
 					}
-					if (str.startsWith("short.P=")) {
-						nextShortLabel = str.substring("short.P=".length());
+					if ((valueStr = readValue(line,"short.P="))!=null) {
+						nextShortLabel = valueStr;
 						showInParent = true;
 						continue;
 					}
-					if (str.startsWith("info=")) {
-						valueStr = str.substring("info=".length());
+					if ((valueStr = readValue(line,"info="))!=null) {
 						if (nextShortLabel!=null && showInParent!=null)
 							uniObj.extraInfos.add(new ExtraInfo(showInParent,nextShortLabel,valueStr));
 						nextShortLabel=null;
@@ -600,6 +621,10 @@ public class GameInfos {
 				if (uod_system.withRemembranceTerminal) {
 					system.withRemembranceTerminal = uod_system.withRemembranceTerminal;
 					if (withOutput) Gui.log_ln("   %s has a Remembrance Terminal", objName);
+				}
+				if (uod_system.numberOfPlanets!=null) {
+					system.numberOfPlanets = uod_system.numberOfPlanets;
+					if (withOutput) Gui.log_ln("   %s has %d planets", objName, system.numberOfPlanets);
 				}
 			}
 			
@@ -721,10 +746,11 @@ public class GameInfos {
 						//if (uod_system.hasBlackHole || SolarSystem.shouldHaveBlackHole(uod_system.universeAddress.solarSystemIndex))
 							out.printf("blackhole=%s\r\n",uod_system.hasBlackHole);
 					}
-					if (uod_system.blackHoleTarget  !=null) out.printf("blackholetarget=%014X\r\n",uod_system.blackHoleTarget);
-					if (uod_system.withRemembranceTerminal) out.printf("remembrance terminal\r\n");
-					if (uod_system.starClass        !=null) out.printf("class=%s\r\n",uod_system.starClass);
-					if (uod_system.distanceToCenter !=null) out.printf(Locale.ENGLISH,"distance=%f\r\n",uod_system.distanceToCenter.doubleValue());
+					if (uod_system.blackHoleTarget  !=null) out.printf("blackholetarget=%014X%n",uod_system.blackHoleTarget);
+					if (uod_system.withRemembranceTerminal) out.printf("remembrance terminal%n");
+					if (uod_system.starClass        !=null) out.printf("class=%s%n",uod_system.starClass);
+					if (uod_system.distanceToCenter !=null) out.printf(Locale.ENGLISH,"distance=%f%n",uod_system.distanceToCenter.doubleValue());
+					if (uod_system.numberOfPlanets  !=null) out.printf("planets=%d%n",uod_system.numberOfPlanets.intValue());
 				}
 				
 				if (uod_planet!=null) {

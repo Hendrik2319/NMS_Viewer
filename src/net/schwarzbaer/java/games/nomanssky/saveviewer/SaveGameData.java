@@ -3722,6 +3722,7 @@ public class SaveGameData {
 			public String economyLevelLabel = null;
 			
 			public Double distanceToCenter = null;
+			public Integer numberOfPlanets = null;
 			
 			public boolean hasAtlasInterface; 
 			public boolean hasBlackHole; 
