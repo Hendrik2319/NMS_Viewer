@@ -403,7 +403,7 @@ public class SaveGameData {
 		
 		public final double latitude, longitude, radius;
 		
-		private PolarCoordinates(double latitude, double longitude, double radius) {
+		public PolarCoordinates(double latitude, double longitude, double radius) {
 			this.latitude  = latitude;
 			this.longitude = longitude;
 			this.radius    = radius;
@@ -433,10 +433,35 @@ public class SaveGameData {
 		public String toString(boolean withRadius) {
 			String latCh =  latitude<0?"S":"N";
 			String lonCh = longitude<0?"W":"E";
-			if (withRadius)
+			if (withRadius && !Double.isNaN(radius))
 				return String.format(Locale.ENGLISH, "%s%05.2f  %s%06.2f  (R:%1.2f)", latCh, Math.abs(latitude), lonCh, Math.abs(longitude), radius);
 			else
 				return String.format(Locale.ENGLISH, "%s%05.2f  %s%06.2f"           , latCh, Math.abs(latitude), lonCh, Math.abs(longitude));
+		}
+
+		public boolean isValueOk() {
+			return !Double.isNaN(latitude) && !Double.isNaN(longitude);
+		}
+
+		public String toValueStr() {
+			if (Double.isNaN(radius))
+				return String.format(Locale.ENGLISH, "%1.4f,%1.4f"      , latitude, longitude);
+			else
+				return String.format(Locale.ENGLISH, "%1.4f,%1.4f,%1.2f", latitude, longitude, radius);
+		}
+
+		public static PolarCoordinates parseValueStr(String valueStr) {
+			String[] valueParts = valueStr.split(",");
+			if (valueParts.length==2 || valueParts.length==3)
+				try {
+					double latitude  = Double.parseDouble(valueParts[0]);
+					double longitude = Double.parseDouble(valueParts[1]);
+					double radius    = valueParts.length>2 ? Double.parseDouble(valueParts[2]) : Double.NaN;
+					return new PolarCoordinates(latitude, longitude, radius);
+				} catch (NumberFormatException e) {}
+			
+			SaveViewer.log_error_ln("Can't parse PolarCoordinates from \"%s\".", valueStr);
+			return null;
 		}
 	}
 
@@ -3976,6 +4001,7 @@ public class SaveGameData {
 			public BuriedTreasure buriedTreasure = null;
 			public AdditionalInfos additionalInfos = new AdditionalInfos();
 			public EnumSet<Resources> resources = EnumSet.noneOf(Resources.class);
+			public PolarCoordinates portalPos = null;
 			
 			public Planet(SolarSystem solarSystem, int planetIndex) {
 				super(Type.Planet);

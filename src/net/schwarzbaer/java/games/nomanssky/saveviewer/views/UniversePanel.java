@@ -73,6 +73,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.GenericValueTextField;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ListMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.PopupDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
@@ -80,6 +81,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PolarCoordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UnboundBuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
@@ -748,7 +750,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private final JComboBox<Region> cmbbxBlackHoleTargetRegion;
 		private final JComboBox<SolarSystem> cmbbxBlackHoleTargetSolarSystem;
 
-		private final JTextField fldPlanets;
+		private final GenericValueTextField<?,Integer> txtfldPlanets;
 
 		InfoPanel_SolarSystem() {
 			super(UniversePanel.this,true);
@@ -872,15 +874,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetRegion     );
 			blackHoleTargetPanel.add(cmbbxBlackHoleTargetSolarSystem);
 			
-			fldPlanets = Gui.createTextField("", str->{
-				if (isSettingContent) return str;
-				try {
-					node.value.numberOfPlanets = Integer.parseInt(str);
-					updateTreeNode(node, false);
-					return str;
-				} catch (NumberFormatException e1) {
-					return node.value.numberOfPlanets==null ? "" : node.value.numberOfPlanets.toString();
-				}
+			JLabel labelPlanets = new JLabel("Number of Planets: ");
+			txtfldPlanets = Gui.createTextField_Integer("", null, null, v->v>=0, v->{
+				if (isSettingContent) return;
+				node.value.numberOfPlanets = v;
+				updateTreeNode(node, false);
 			});
 			
 			addCompToLeft (cmbbxRace           , 1,0, 1                           ,1, GridBagConstraints.BOTH);
@@ -892,8 +890,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToLeft (cmbbxSystemState    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToLeft (new JLabel("Number of Planets: "), 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToLeft (fldPlanets                       , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (labelPlanets        , 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (txtfldPlanets       , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			addCompToRight(chkbxRememTerm      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
@@ -941,7 +939,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			llbEconomy .setEnabled(system.systemState==SystemState.Normal || system.systemState==SystemState.Abandoned);
 			llbConflict.setEnabled(system.systemState==SystemState.Normal);
 			
-			fldPlanets.setText(system.numberOfPlanets==null ? "" : system.numberOfPlanets.toString());
+			txtfldPlanets.setValueStr(system.numberOfPlanets==null ? "" : system.numberOfPlanets.toString());
 				
 			showInfos();
 		}
@@ -1108,26 +1106,32 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private class InfoPanel_Planet extends InfoPanel_DiscoverableObject {
 		private static final long serialVersionUID = -5303591976120968332L;
 		
-		private JLabel portalGlyphs;
 		private PlanetNode node;
-
-		private JCheckBox chkbxAggrSent;
-		private JCheckBox chkbxWater;
-		private JCheckBox chkbxGrav;
-		private JCheckBox chkbxRememTerm;
-
-		private Gui.IconComboBox<Biome> cmbbxBiome;
-		private JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
-		private JCheckBox chkbxExtreme;
 		
-		private JTextField txtfldResources;
-		private JButton btnSetResources;
+		private final JLabel portalGlyphs;
+
+		private final JCheckBox chkbxAggrSent;
+		private final JCheckBox chkbxWater;
+		private final JCheckBox chkbxGrav;
+		private final JCheckBox chkbxRememTerm;
+
+		private final Gui.IconComboBox<Biome> cmbbxBiome;
+		private final JComboBox<BuriedTreasure> cmbbxBuriedTreasure;
+		private final JCheckBox chkbxExtreme;
 		
-		private ResourceSelectDialog resourceSelectDialog;
+		private final JTextField txtfldResources;
+		private final JButton btnSetResources;
+		
+		private final ResourceSelectDialog resourceSelectDialog;
+
+		private final GenericValueTextField<?,Double> txtfldPortalLat;
+		private final GenericValueTextField<?,Double> txtfldPortalLon;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);
 			this.node = null;
+			
+			resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
 			
 			portalGlyphs = new JLabel();
 			portalGlyphs.setPreferredSize(new Dimension(50*12+10, 45*1+10));
@@ -1156,11 +1160,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			cmbbxBuriedTreasure.setRenderer(new Tables.NonStringRenderer<BuriedTreasure>(value->value==null?"":((BuriedTreasure)value).name_EN));
 			cmbbxBuriedTreasure.addActionListener(e->{ if (isSettingContent) return; node.value.buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem(); updateTreeNode(node, false);  });
 			
-			chkbxExtreme   = Gui.createCheckbox("is Extreme"               , e->{ if (isSettingContent) return; node.value.hasExtremeBiome         = chkbxExtreme  .isSelected(); updateTreeNode(node, true ); }, false);
-			chkbxAggrSent  = Gui.createCheckbox("Aggressive Sentinels"     , e->{ if (isSettingContent) return; node.value.areSentinelsAggressive  = chkbxAggrSent .isSelected(); updateTreeNode(node, false); }, false);
-			chkbxWater     = Gui.createCheckbox("with Water"               , e->{ if (isSettingContent) return; node.value.withWater               = chkbxWater    .isSelected(); updateTreeNode(node, true ); }, false);
-			chkbxGrav      = Gui.createCheckbox("with Gravitino Balls"     , e->{ if (isSettingContent) return; node.value.withGravitinoBalls      = chkbxGrav     .isSelected(); updateTreeNode(node, false); }, false);
-			chkbxRememTerm = Gui.createCheckbox("with Remembrance Terminal", e->{ if (isSettingContent) return; node.value.withRemembranceTerminal = chkbxRememTerm.isSelected(); updateTreeNode(node, false); }, false);
+			chkbxExtreme   = Gui.createCheckbox("is Extreme"               , false, isSelected->{ if (isSettingContent) return; node.value.hasExtremeBiome         = isSelected; updateTreeNode(node, true ); });
+			chkbxAggrSent  = Gui.createCheckbox("Aggressive Sentinels"     , false, isSelected->{ if (isSettingContent) return; node.value.areSentinelsAggressive  = isSelected; updateTreeNode(node, false); });
+			chkbxWater     = Gui.createCheckbox("with Water"               , false, isSelected->{ if (isSettingContent) return; node.value.withWater               = isSelected; updateTreeNode(node, true ); });
+			chkbxGrav      = Gui.createCheckbox("with Gravitino Balls"     , false, isSelected->{ if (isSettingContent) return; node.value.withGravitinoBalls      = isSelected; updateTreeNode(node, false); });
+			chkbxRememTerm = Gui.createCheckbox("with Remembrance Terminal", false, isSelected->{ if (isSettingContent) return; node.value.withRemembranceTerminal = isSelected; updateTreeNode(node, false); });
 			
 			txtfldResources = new JTextField(20);
 			txtfldResources.setEditable(false);
@@ -1182,7 +1186,6 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				}
 				
-				if (resourceSelectDialog==null) resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
 				EnumSet<Resources> result = resourceSelectDialog.showDialog(resources);
 				
 				if (result!=null) {
@@ -1193,12 +1196,23 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				}
 			});
 			
+			txtfldPortalLat = Gui.createTextField_Double("", null, null, v->!Double.isNaN(v), v->setPortalPos(v==null ? Double.NaN : v,null));
+			txtfldPortalLon = Gui.createTextField_Double("", null, null, v->!Double.isNaN(v), v->setPortalPos(null,v==null ? Double.NaN : v));
+			
+			JLabel labelPortal = new JLabel("Portal: ");
+			JPanel panelPortal = new JPanel(new GridLayout(1,0));
+			panelPortal.add(txtfldPortalLat);
+			panelPortal.add(txtfldPortalLon);
+			
 			addCompToLeft (cmbbxBiome         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToLeft (chkbxExtreme       , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToLeft (chkbxAggrSent      , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToLeft (chkbxWater         , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToLeft (new JLabel()       , 1, 1, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
-			addCompToRight(txtfldResources    , 1, 0, 1, 1, GridBagConstraints.BOTH);
+			
+			addCompToRight(labelPortal        , 0, 0, 1, 1, GridBagConstraints.BOTH);
+			addCompToRight(panelPortal        , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
+			addCompToRight(txtfldResources    , 1, 0, 2, 1, GridBagConstraints.BOTH);
 			addCompToRight(btnSetResources    , 0, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToRight(cmbbxBuriedTreasure, 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 			addCompToRight(chkbxGrav          , 1, 0, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
@@ -1206,6 +1220,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			addCompToRight(new JLabel()       , 1, 1, GridBagConstraints.REMAINDER, 1, GridBagConstraints.BOTH);
 		}
 		
+		private void setPortalPos(Double latitude, Double longitude) {
+			if (isSettingContent) return;
+			if (latitude ==null) latitude  = node.value.portalPos==null ? Double.NaN : node.value.portalPos.latitude ;
+			if (longitude==null) longitude = node.value.portalPos==null ? Double.NaN : node.value.portalPos.longitude;
+			node.value.portalPos = new PolarCoordinates(latitude, longitude, Double.NaN);
+			updateTreeNode(node, false);
+		}
+
 		@Override
 		protected void setContent_intern(GenericTreeNode<?> node) {
 			this.node = (PlanetNode)node;
@@ -1222,6 +1244,16 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			chkbxRememTerm.setSelected(planet.withRemembranceTerminal);
 			cmbbxBuriedTreasure.setSelectedItem(planet.buriedTreasure);
 			portalGlyphs.setIcon(createPortalGlyphs(portalGlyphCode));
+			
+			
+			String latStr = "";
+			String lonStr = "";
+			if (planet.portalPos!=null) {
+				if (!Double.isNaN(planet.portalPos.latitude )) latStr = String.format(Locale.ENGLISH, "%1.4f", planet.portalPos.latitude );
+				if (!Double.isNaN(planet.portalPos.longitude)) lonStr = String.format(Locale.ENGLISH, "%1.4f", planet.portalPos.longitude);
+			}
+			txtfldPortalLat.setValueStr(latStr);
+			txtfldPortalLon.setValueStr(lonStr);
 			
 			updateTxtfldResources();
 			

@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -1495,6 +1496,13 @@ public class Gui {
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
 		return setTextField(new JTextField(txt,columns), listener, disabler, actionCommand);
 	}
+	
+	public static <AC extends Enum<AC>> GenericValueTextField<AC,Double> createTextField_Double(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Double> isOK, Consumer<Double> setValue) {
+		return new GenericValueTextField<AC,Double>(txt, disabler, actionCommand, Double::parseDouble, isOK, setValue);
+	}
+	public static <AC extends Enum<AC>> GenericValueTextField<AC,Integer> createTextField_Integer(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Integer> isOK, Consumer<Integer> setValue) {
+		return new GenericValueTextField<AC,Integer>(txt, disabler, actionCommand, Integer::parseInt, isOK, setValue);
+	}
 
 	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
 		ActionListener listener = setInput==null ? null : new Setter(comp,setInput);
@@ -1503,6 +1511,21 @@ public class Gui {
 
 	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
 		ActionListener listener = setInput==null ? null : e->setInput.accept(comp.getText());
+		return setTextField(comp, listener, disabler, actionCommand);
+	}
+
+	@SuppressWarnings("unused")
+	private static <AC extends Enum<AC>,Value> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,Value> convert, Predicate<Value> isOK, Consumer<Value> setValue) {
+		Color defaultBG = comp.getBackground();
+		ActionListener listener = e->{
+			Value value = null;
+			try { value = convert.apply(comp.getText()); } catch (Exception e1) {}
+			if (value!=null && (isOK==null || isOK.test(value))) {
+				setValue.accept(value);
+				comp.setBackground(defaultBG);
+			} else
+				comp.setBackground(Color.RED);
+		};
 		return setTextField(comp, listener, disabler, actionCommand);
 	}
 
@@ -1522,6 +1545,36 @@ public class Gui {
 			});
 		}
 		return comp;
+	}
+	
+	public static class GenericValueTextField<AC extends Enum<AC>,Value> extends JTextField {
+		private static final long serialVersionUID = 2358150081408182155L;
+		private Color defaultBG;
+		private Function<String, Value> convert;
+		private Predicate<Value> isOK;
+		
+		GenericValueTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,Value> convert, Predicate<Value> isOK, Consumer<Value> setValue) {
+			super(txt);
+			this.convert = convert;
+			this.isOK = isOK;
+			defaultBG = getBackground();
+			setTextField(this, e->setValueStr(getText(), setValue), disabler, actionCommand);
+		}
+		
+		public void setValueStr(String valueStr) {
+			setText(valueStr);
+			setValueStr(valueStr, null);
+		}
+		
+		private void setValueStr(String valueStr, Consumer<Value> setValue) {
+			Value value = null;
+			if (!valueStr.isEmpty()) try { value = convert.apply(valueStr); } catch (Exception e1) {}
+			if (valueStr.isEmpty() || (value!=null && (isOK==null || isOK.test(value)))) {
+				if (setValue!=null) setValue.accept(valueStr.isEmpty() ? null : value);
+				setBackground(defaultBG);
+			} else
+				setBackground(Color.RED);
+		}
 	}
 
 	public static CompoundBorder createTitledBorderForScrollPane(String title) {

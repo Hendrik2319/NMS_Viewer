@@ -59,6 +59,7 @@ import net.schwarzbaer.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ImageList.ImageListListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PolarCoordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.DiscoverableObject;
@@ -164,6 +165,7 @@ public class GameInfos {
 		boolean withRemembranceTerminal;
 		Universe.Planet.BuriedTreasure buriedTreasure;
 		EnumSet<Universe.Planet.Resources> resources;
+		PolarCoordinates portalPos;
 		
 		public UOD_Planet(UniverseAddress ua) {
 			super(ua, Type.Planet);
@@ -175,6 +177,7 @@ public class GameInfos {
 			withRemembranceTerminal = false;
 			buriedTreasure = null;
 			resources = EnumSet.noneOf(Universe.Planet.Resources.class);
+			portalPos = null;
 		}
 		public UOD_Planet(Planet planet) {
 			super(planet.getUniverseAddress(),Type.Planet,planet);
@@ -186,6 +189,7 @@ public class GameInfos {
 			withRemembranceTerminal = planet.withRemembranceTerminal;
 			buriedTreasure = planet.buriedTreasure;
 			resources = EnumSet.copyOf(planet.resources);
+			portalPos = planet.portalPos==null ? null : new PolarCoordinates(planet.portalPos);
 		}
 	}
 	
@@ -280,6 +284,23 @@ public class GameInfos {
 				
 				for (ExtraInfo exi:planet.extraInfos) {
 					if (exi.info.startsWith("<ParsedPlanetaryResources>")) continue;
+					if (exi.info.startsWith("<Parsed>")) continue;
+					
+					String shortLabel = exi.shortLabel.toLowerCase();
+					if (shortLabel.equals("portal")) {
+						String[] parts = exi.info.split(",");
+						if (parts.length==2) {
+							String latStr  = parts[0].trim(); if (latStr .startsWith("+")) latStr  = latStr .substring(1);
+							String longStr = parts[1].trim(); if (longStr.startsWith("+")) longStr = longStr.substring(1);
+							try {
+								planet.portalPos = new PolarCoordinates(Double.parseDouble(latStr), Double.parseDouble(longStr), Double.NaN);
+								exi.info = "<Parsed> "+exi.info;
+								continue;
+							}
+							catch (NumberFormatException e) {}
+						}
+					}
+					
 					resources.clear();
 					for (String str:exi.info.split(",")) {
 						Resources res = Universe.Planet.Resources.getViaLabel(str.trim());
@@ -510,6 +531,10 @@ public class GameInfos {
 						}
 						continue;
 					}
+					if ((valueStr = readValue(line,"portal="))!=null) {
+						planet.portalPos = PolarCoordinates.parseValueStr(valueStr);
+						continue;
+					}
 				}
 				if (uniObj!=null) {
 					if ((valueStr = readValue(line,"short="))!=null) {
@@ -679,6 +704,10 @@ public class GameInfos {
 					planet.buriedTreasure = uod_planet.buriedTreasure;
 					if (withOutput) Gui.log_ln("   Buried Treasure of %s was defined: %s",objName,planet.buriedTreasure);
 				}
+				if (uod_planet.portalPos!=null) {
+					planet.portalPos = new PolarCoordinates(uod_planet.portalPos);
+					if (withOutput) Gui.log_ln("   Portal Position of %s was defined: %s",objName,planet.portalPos.toString());
+				}
 				if (!uod_planet.resources.isEmpty()) {
 					planet.resources.clear();
 					planet.resources.addAll(uod_planet.resources);
@@ -784,6 +813,7 @@ public class GameInfos {
 					if ( uod_planet.withRemembranceTerminal) out.printf("remembrance terminal%n");
 					if ( uod_planet.buriedTreasure   !=null) out.printf("buriedTreasure=%s%n",uod_planet.buriedTreasure);
 					if (!uod_planet.resources.isEmpty()    ) out.printf("resources=%s%n",String.join(",", Universe.Planet.Resources.getStringIterable(uod_planet.resources)));
+					if ( uod_planet.portalPos        !=null && uod_planet.portalPos.isValueOk()) out.printf("portal=%s%n",uod_planet.portalPos.toValueStr());
 				}
 				
 				if (uod_uniObj!=null) {
