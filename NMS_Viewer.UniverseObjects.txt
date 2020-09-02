@@ -74,8 +74,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln11B1003538C8F7]
 
@@ -231,8 +229,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln118200588F1956]
 
@@ -266,8 +262,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln10370002F1695C]
 name=Otonym B27
@@ -289,8 +283,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln114400B573F95C]
 name=Ahoko 25/G4
@@ -325,8 +317,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln107200FAE1B962]
 
@@ -360,8 +350,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10D3000524396E]
 
@@ -499,8 +487,6 @@ blackhole=false
 remembrance terminal
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln103900072799A3]
 name=Nokong
@@ -527,8 +513,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Reg000000FE2B09BE]
 
@@ -576,8 +560,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=1
-short=<Parsed> 1 Planet
-info=
 
 [Pln11AF00FCCE59C1]
 name=Tulsusiu VI
@@ -623,8 +605,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln1033000636EA02]
 name=Nertunio
@@ -689,8 +669,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln12190005417A6B]
 name=Axentha Sigma
@@ -816,8 +794,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln1127000340AB14]
 name=Emboul
@@ -850,8 +826,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln103C00F5241B1D]
 
@@ -940,8 +914,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln11480005AA0B9B]
 name=Adoragab VII
@@ -2228,8 +2200,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln11F30066324C16]
 name=Lompen
@@ -2271,8 +2241,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=1
-short=<Parsed> 1 Planet
-info=
 
 [Pln112A0001B07C27]
 name=Laphnisbec Ikin
@@ -2702,8 +2670,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=1
-short=<Parsed> 1 Planet
-info=
 
 [Pln10E50008A1ACC0]
 name=Jurgen Klopp
@@ -3340,8 +3306,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln103100006A5E0D]
 name=Antuw Sigma
@@ -3389,8 +3353,6 @@ atlasinterface=false
 blackhole=false
 class=Red
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln120300006A5E0D]
 name=Aager
@@ -3596,8 +3558,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln112B000DA31EBB]
 
@@ -3629,8 +3589,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln1185000693BEC4]
 
@@ -3783,8 +3741,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln11C800F44A5ED7]
 
@@ -3841,8 +3797,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln314E00066C8F03]
 name=Locharam VI
@@ -4423,8 +4377,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln519A00076C4FF4]
 name=Pembles Sigma
@@ -4485,8 +4437,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln11A900FCFFDFF8]
 name=Neu: Ranenwo
@@ -4965,8 +4915,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln403100FE007004]
 name=Nage Alpha
@@ -4995,8 +4943,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln108500FE007004]
 name=Ebestj V
@@ -5028,8 +4974,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln108800FE007004]
 
@@ -5059,8 +5003,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln108A00FE007004]
 name=Iffall
@@ -5094,8 +5036,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln209400FE007004]
 
@@ -5128,8 +5068,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln109B00FE007004]
 name=Neu: Leologus
@@ -5155,8 +5093,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln109F00FE007004]
 name=Great V38
@@ -5182,8 +5118,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln20A900FE007004]
 
@@ -5220,8 +5154,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln10C800FE007004]
 name=Jeansa Beta
@@ -5268,8 +5200,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=1
-short=<Parsed> 1 Planet
-info=
 
 [Pln10F700FE007004]
 name=Ainsbo
@@ -5290,8 +5220,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10F800FE007004]
 name=Neu: Udlesp
@@ -5347,8 +5275,6 @@ atlasinterface=false
 blackhole=false
 class=Red
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln210500FE007004]
 name=Lasad
@@ -5385,8 +5311,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln213B00FE007004]
 name=Balaire
@@ -5770,8 +5694,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln108D0003FFF008]
 
@@ -5816,8 +5738,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10440008008008]
 name=Velomslo
@@ -5845,8 +5765,6 @@ atlasinterface=false
 blackhole=false
 class=Red
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln109B000170700E]
 
@@ -5969,8 +5887,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln11DF00FB6E3036]
 name=Rephoyrian Minoris
@@ -6343,8 +6259,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln115300FB6D1154]
 
@@ -6432,8 +6346,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln107400006C117A]
 name=Gian Z16
@@ -6844,8 +6756,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln11B700FB97A258]
 name=Skell VII
@@ -6908,8 +6818,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln115C000297E288]
 
@@ -7122,8 +7030,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln10F60007272323]
 name=Planete Champignon
@@ -7400,8 +7306,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln111200739B139C]
 
@@ -7514,8 +7418,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln120000FBA353D2]
 name=Aeza 24/Y7
@@ -7542,8 +7444,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln101100F75843D7]
 name=Colin Robinson
@@ -7612,8 +7512,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln105C0003A5B420]
 
@@ -7719,8 +7617,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10D9002420546E]
 name=NMS France
@@ -7782,8 +7678,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln120200EF2CC4A0]
 
@@ -7808,8 +7702,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10FF00182964AA]
 name=Elstou VI
@@ -8068,8 +7960,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln107A00FFF3758F]
 name=Yuptiadusc Hijon
@@ -8109,8 +7999,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln119900FEF37590]
 name=Odminiab Hoku
@@ -8151,8 +8039,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln101300FFF37590]
 name=Koba 89/C7
@@ -8183,8 +8069,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln106F00FFF37590]
 name=Kesbrowns
@@ -8208,8 +8092,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln107500FFF37590]
 name=Stbur XVII
@@ -8228,8 +8110,6 @@ blackhole=false
 remembrance terminal
 class=Yellow
 planets=1
-short=<Parsed> 1 Planet
-info=
 
 [Pln107A00FFF37590]
 name=Uliopo Sigma
@@ -8249,8 +8129,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln217C00FFF37590]
 name=Vinesto Gamma
@@ -8273,8 +8151,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln107A0000F37590]
 name=Anueli V
@@ -8314,8 +8190,6 @@ class=Yellow
 planets=2
 short=Big Explorers
 info=
-short=<Parsed> 2 Planeten
-info=
 
 [Pln107A00FEF38590]
 name=Xavillusiop Atom
@@ -8329,8 +8203,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln514100FEF38590]
 name=Oscop XV
@@ -8349,8 +8221,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln114600FEF38590]
 name=Urche XIV
@@ -8373,8 +8243,6 @@ blackhole=false
 remembrance terminal
 class=Yellow
 planets=2
-short=<Parsed> 2 Planeten
-info=
 short=24er MultiTool
 info=in Station
 short=
@@ -8390,8 +8258,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Sys014800FFF38590]
 atlasinterface=false
@@ -8410,8 +8276,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=2
-short=<Parsed> 2 Planeten
-info=
 short=Pugneum
 info=
 
@@ -8437,8 +8301,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln118500FFF38590]
 name=Ximun
@@ -8464,8 +8326,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=1
-short=<Parsed> 1 Planet
-info=
 
 [Pln119C00FFF38590]
 name=Usse III
@@ -8485,8 +8345,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Sys01B200FFF38590]
 name=Gianch-Loma XVIII
@@ -8499,8 +8357,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 short=Pugneum
 info=
 
@@ -8525,8 +8381,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln11EC00FFF38590]
 name=Neu: Hest
@@ -8571,8 +8425,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln107A0000F37591]
 name=Romusgrover Anzak
@@ -8593,8 +8445,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Reg000000F7C5C5A3]
 
@@ -8609,8 +8459,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln10FD00F7C5C5A3]
 
@@ -8728,8 +8576,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln11DE000936B5C7]
 
@@ -8881,8 +8727,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln118900063715F3]
 name=Yangr
@@ -8971,8 +8815,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln10C600233C062E]
 
@@ -9002,8 +8844,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln11BD0005CFD63D]
 name=Oskollyor Beta
@@ -9036,8 +8876,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln120300FCD05649]
 
@@ -9170,8 +9008,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Sys002E00FCD7F684]
 name=Gohanji XV
@@ -9184,8 +9020,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln402E00FCD7F684]
 name=Despinan III
@@ -9213,8 +9047,6 @@ blackhole=false
 remembrance terminal
 class=Yellow
 planets=4
-short=<Parsed> 4 Planeten
-info=
 short=Erinnerungsterminal mit Karte
 info=
 
@@ -9229,8 +9061,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln406A00FCD7F684]
 name=Kiporth XIII
@@ -9284,8 +9114,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Sys007000FCD7F684]
 name=Magogal
@@ -9329,8 +9157,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln107A00FCD7F684]
 name=Neu: Bebinum
@@ -9387,8 +9213,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Sys01D900FCD7F684]
 atlasinterface=false
@@ -9449,8 +9273,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln11E700FCD7F684]
 
@@ -9476,8 +9298,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln21FD00FCD7F684]
 name=Ibiushu
@@ -9516,8 +9336,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln120000FCD7F684]
 name=Yush 95/S8
@@ -9539,8 +9357,6 @@ atlasinterface=false
 blackhole=false
 class=Red
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln121100FCD7F684]
 name=Palex E16
@@ -9589,8 +9405,6 @@ conflict_label=friedlich
 atlasinterface=false
 blackhole=false
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln11DE00FDD7F684]
 name=Mahabile
@@ -9608,8 +9422,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln21E200FDD7F684]
 name=Neu: Leced
@@ -9631,8 +9443,6 @@ atlasinterface=true
 blackhole=false
 class=Yellow
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Reg000000FED80684]
 name=Iryatsiy-Rand
@@ -9648,8 +9458,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln114600FED80684]
 name=Zaviusa Y3
@@ -9689,8 +9497,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln10550008F0E6AE]
 name=Viky planet.
@@ -9742,8 +9548,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10550007FBC6BF]
 
@@ -9793,8 +9597,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln415800020E56D7]
 name=Yuburn
@@ -9827,8 +9629,6 @@ atlasinterface=false
 blackhole=false
 class=Red
 planets=2
-short=<Parsed> 2 Planeten
-info=
 
 [Pln111700FBF686E8]
 
@@ -9852,8 +9652,6 @@ atlasinterface=false
 blackhole=false
 class=Green
 planets=3
-short=<Parsed> 3 Planeten
-info=
 
 [Pln10DE00FC09D6EE]
 
@@ -9879,8 +9677,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
-short=<Parsed> 6 Planeten
-info=
 
 [Pln10D40047EB0728]
 
@@ -9909,8 +9705,6 @@ atlasinterface=false
 blackhole=false
 class=Blue
 planets=4
-short=<Parsed> 4 Planeten
-info=
 
 [Pln11CD00E8370772]
 name=Delta
@@ -9951,8 +9745,6 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=<Parsed> 5 Planeten
-info=
 
 [Pln1061000E3057EE]
 name=preums

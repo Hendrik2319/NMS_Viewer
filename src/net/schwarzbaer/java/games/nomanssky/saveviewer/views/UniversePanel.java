@@ -892,8 +892,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			addCompToLeft (llbConflict.cmbbxLevelLabels, 1,0, 1                           ,1, GridBagConstraints.BOTH);
 			addCompToLeft (llbConflict.btnAddLevelLabel, 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToLeft (cmbbxSystemState    , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
-			addCompToLeft (new JLabel("Planets: "), 1,0, 1                           ,1, GridBagConstraints.BOTH);
-			addCompToLeft (fldPlanets             , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
+			addCompToLeft (new JLabel("Number of Planets: "), 1,0, 1                           ,1, GridBagConstraints.BOTH);
+			addCompToLeft (fldPlanets                       , 0,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			
 			addCompToRight(chkbxRememTerm      , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			addCompToRight(chkbxAtlasInterface , 1,0, GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
