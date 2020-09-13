@@ -586,6 +586,38 @@ blackholetarget=004F0002A0BEB1
 class=Yellow
 planets=4
 
+[Reg00000005C9AA01]
+
+[Sys01950005C9AA01]
+name=Kupavlov
+race=Korvax
+economy=2
+economy_label=nachhaltig
+conflict=3
+conflict_label=gewaltig
+atlasinterface=false
+blackhole=false
+class=Red
+
+[Pln11950005C9AA01]
+
+[Pln21950005C9AA01]
+
+[Pln31950005C9AA01]
+
+[Pln41950005C9AA01]
+
+[Pln51950005C9AA01]
+name=Juanant
+biome=Exotic_Mega
+aggrSentinels
+with water
+gravitino balls
+resources=Cd,P,NaCl
+portal=-20.4200,60.7900
+
+[Pln61950005C9AA01]
+
 [Reg0000000636EA02]
 
 [Sys0033000636EA02]
@@ -2992,6 +3024,20 @@ blackhole=true
 blackholetarget=002E00003B317F
 class=Yellow
 planets=1
+
+[Reg00000001698D96]
+
+[Sys00230001698D96]
+atlasinterface=false
+blackhole=false
+
+[Pln10230001698D96]
+
+[Sys00D40001698D96]
+atlasinterface=false
+blackhole=false
+
+[Pln30D40001698D96]
 
 [Reg00000000F31D9E]
 name=Der Arm von Yilwalj
@@ -7160,6 +7206,34 @@ atlasinterface=false
 blackhole=true
 blackholetarget=003D0004F46BA9
 planets=1
+
+[Reg000000F8AE0462]
+
+[Sys003700F8AE0462]
+name=WM #43 - Myokor
+race=Korvax
+economy=2
+economy_label=erfolgversprechend
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=5
+
+[Pln103700F8AE0462]
+
+[Pln203700F8AE0462]
+
+[Pln303700F8AE0462]
+
+[Pln403700F8AE0462]
+name=Liyonkerndo Imur
+biome=AnomContour
+resources=Cu,Ag,Au
+portal=32.4200,-28.6500
+
+[Pln503700F8AE0462]
 
 [Reg0000002420546E]
 
