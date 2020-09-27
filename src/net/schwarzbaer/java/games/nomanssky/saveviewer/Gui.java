@@ -788,10 +788,10 @@ public class Gui {
 				if (v1==null || v2==null) return false;
 				return v1.value==v2.value;
 			}
-			@Override public void configureMenuItem(JMenuItem menuItem, NamedColor value) {
-				if (value!=null) {
-					menuItem.setText(value.name);
-					menuItem.setIcon(new ImageIcon(NamedColor.createImage(value,20,13)));
+			@Override public void configureMenuItem(JMenuItem menuItem, NamedColor color) {
+				if (color!=null) {
+					menuItem.setText(color.name);
+					menuItem.setIcon(new ImageIcon(color.createImage(20,13)));
 				} else {
 					menuItem.setText("<none>");
 					menuItem.setIcon(null);

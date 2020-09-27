@@ -189,7 +189,7 @@ public class Images {
 				try { newColor = new NamedColor(Integer.parseInt(valueStr,16),nameStr); }
 				catch (NumberFormatException e) { continue; }
 				
-				NamedColor existingColor = colorMap.putIfAbsent(newColor.value, newColor);
+				NamedColor existingColor = colorMap.get(newColor.value);
 				if (existingColor!=null) {
 					if (!existingColor.name.equals(newColor.name)) {
 						SaveViewer.log_warn_ln("   changed name of %s into \"%s\"", existingColor, newColor.name);
@@ -198,7 +198,7 @@ public class Images {
 				} else {
 					SaveViewer.log_warn_ln("   added %s", newColor);
 					noNewColorAdded = false;
-					colorValuesVec.add(newColor);
+					addColor(colorValuesVec,newColor);
 				}
 			}
 		}
@@ -233,8 +233,11 @@ public class Images {
 	
 	private void addColor(Vector<NamedColor> colorValuesVec, int value, String name) {
 		if (name==null) name=String.format("[%d]%06X", colorValuesVec.size()+1, value);
-		NamedColor namedColor = new NamedColor(value,name);
-		colorMap.put(value, namedColor);
+		addColor(colorValuesVec, new NamedColor(value,name));
+	}
+
+	private void addColor(Vector<NamedColor> colorValuesVec, NamedColor namedColor) {
+		colorMap.put(namedColor.value, namedColor);
 		colorValuesVec.add(namedColor);
 	}
 	
@@ -765,10 +768,10 @@ public class Images {
 			return String.format("Color( %06X, \"%s\" )",value,name);
 		}
 
-		public static BufferedImage createImage(NamedColor value, int width, int height) {
+		public BufferedImage createImage(int width, int height) {
 			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			Graphics g = image.getGraphics();
-			g.setColor(value.color);
+			g.setColor(color);
 			g.fillRect(0,0,width,height);
 			return image;
 		}

@@ -449,8 +449,8 @@ public class TableView {
 			return null;
 		}
 
-		@Override protected Icon createIcon(NamedColor value) {
-			return new ImageIcon(NamedColor.createImage(value,20,13));
+		@Override protected Icon createIcon(NamedColor color) {
+			return new ImageIcon(color.createImage(20,13));
 		}
 
 		@Override protected Integer getIconKey(NamedColor value) { return value.value; }
