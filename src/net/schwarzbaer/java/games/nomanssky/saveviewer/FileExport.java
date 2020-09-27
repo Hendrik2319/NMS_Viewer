@@ -303,7 +303,7 @@ public class FileExport {
 			
 			File file;
 			if (dontAsk)
-				file = new File(suggestedFileName);
+				file = VRMLoutput.createBaseVrmlFile(suggestedFileName);
 			else {
 				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
 					pd.setIndeterminate(true);
@@ -3623,8 +3623,31 @@ public class FileExport {
 */			
 		}
 
+		private static File createBaseVrmlFile(String suggestedFileName) {
+			File folder = new File("Bases.VRML");
+			if (folder.isDirectory()) return new File(folder,suggestedFileName);
+			return new File(suggestedFileName);
+		}
+
 		private static File selectVrmlFile2Write(Component parent, String suggestedFileName) {
+			//SaveViewer.log_ln("selectVrmlFile2Write: suggested: \"%s\"", suggestedFileName);
+			File folder = new File("Bases.VRML");
+			if (folder.isDirectory()) {
+				//SaveViewer.log_ln("selectVrmlFile2Write: \"%s\" exists", folder);
+				File projectBase = new File("./").getAbsoluteFile();
+				try { projectBase = projectBase.getCanonicalFile(); }
+				catch (IOException e) {}
+				//SaveViewer.log_ln("selectVrmlFile2Write: ProjectBaseFolder: \"%s\"", projectBase);
+				//SaveViewer.log_ln("selectVrmlFile2Write: VrmlFileChooser.CurrentDirectory: \"%s\"", vrmlFileChooser.getCurrentDirectory());
+				if (vrmlFileChooser.getCurrentDirectory().equals(projectBase)) {
+					//SaveViewer.log_ln("   equals to ProjectBaseFolder \"%s\"", projectBase);
+					vrmlFileChooser.setCurrentDirectory(folder);
+					//SaveViewer.log_ln("selectVrmlFile2Write: VrmlFileChooser.CurrentDirectory: \"%s\"", vrmlFileChooser.getCurrentDirectory());
+				}
+			}
+			
 			vrmlFileChooser.setSelectedFile(new File(vrmlFileChooser.getCurrentDirectory(),suggestedFileName));
+			//SaveViewer.log_ln("selectVrmlFile2Write: VrmlFileChooser.SelectedFile: \"%s\"", vrmlFileChooser.getSelectedFile());
 			
 			while (true) {
 				if (vrmlFileChooser.showSaveDialog(parent)!=JFileChooser.APPROVE_OPTION)
