@@ -3,7 +3,7 @@
 ^ASTEROID1.type=Resource
 ^ASTEROID1.symbol=Ag
 ^ASTEROID1.image=Substance.Silver.png
-^ASTEROID1.imageBG=8B7E75
+^ASTEROID1.imageBG=8A7F72
 ^ASTEROID2=Gold
 ^ASTEROID2.type=Resource
 ^ASTEROID2.symbol=Au
@@ -13,7 +13,7 @@
 ^ASTEROID3.type=Resource
 ^ASTEROID3.symbol=Pt
 ^ASTEROID3.image=Substance.tech.uncommon1.NEXT.png
-^ASTEROID3.imageBG=4F7576
+^ASTEROID3.imageBG=507575
 ^BLUE2=Indium
 ^BLUE2.type=Resource
 ^BLUE2.symbol=In
@@ -38,7 +38,7 @@
 ^CAVE2.type=Resource
 ^CAVE2.symbol=Co+
 ^CAVE2.image=Substance.IonisedCobalt.NEXT.png
-^CAVE2.imageBG=085C78
+^CAVE2.imageBG=005C83
 ^COLD1=Dioxit
 ^COLD1.type=Resource
 ^COLD1.symbol=CO2
@@ -134,6 +134,10 @@
 ^LAUNCHSUB2.symbol=D
 ^LAUNCHSUB2.image=Substance.Deuterium.png
 ^LAUNCHSUB2.imageBG=365A7E
+^LAVA1=Basalt
+^LAVA1.type=Resource
+^LAVA1.symbol=B
+^LAVA1.imageBG=1A2733
 ^LUSH1=Paraffinium
 ^LUSH1.type=Resource
 ^LUSH1.symbol=Pf
@@ -222,7 +226,7 @@
 ^SOULFRAG=Fragmentierte Qualia
 ^SOULFRAG.type=Special
 ^SOULFRAG.image=FragmentedQualiaIcon.jpg
-^SOULFRAG.imageBG=707070
+^SOULFRAG.imageBG=8A7F72
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.type=Resource
 ^SPACEGUNK1.symbol=Sr
@@ -262,7 +266,7 @@
 ^SUNGOLD.type=Special
 ^SUNGOLD.symbol=?
 ^SUNGOLD.image=SUB.SUNGOLD.png
-^SUNGOLD.imageBG=A1772B
+^SUNGOLD.imageBG=E59001
 ^TECHFRAG=Nanit-Haufen
 ^TECHFRAG.obsolete=
 ^TECHFRAG.image=NmsMisc_Nanite_Cluster.png

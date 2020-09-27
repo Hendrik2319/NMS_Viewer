@@ -4743,7 +4743,9 @@ conflict_label=stabil
 atlasinterface=false
 blackhole=false
 class=Green
-planets=3
+planets=4
+short=2 Sterne
+info=
 
 [Pln108500FE007004]
 name=Ebestj V
@@ -4762,6 +4764,14 @@ biome=Barren
 is extreme
 resources=Em_,Py,NaCl
 portal=37.0500,-90.0100
+
+[Pln408500FE007004]
+name=Raustuls XV
+biome=Barren
+is extreme
+resources=Em_,Py,Ag
+short=riesig
+info=
 
 [Sys008800FE007004]
 name=Crewest-Miyrda XIV
@@ -4821,6 +4831,16 @@ name=Shungeli T41
 biome=Barren
 resources=Cu,Py,Na
 portal=57.1100,29.8900
+short=
+info=sieht aber aus wie "Exotic Mega"
+
+[Pln408A00FE007004]
+name=Nipor H26
+resources=Cu,Py,Ag
+short=Feuriger Planet
+info=Geschmolzener Planet (Obsidian-Verderben)
+short=riesig
+info=
 
 [Sys009400FE007004]
 name=Ewtonrou
@@ -4864,7 +4884,9 @@ conflict_label=zerstörerisch
 atlasinterface=false
 blackhole=false
 class=Blue
-planets=3
+planets=5
+short=2 Sterne
+info=
 
 [Pln109B00FE007004]
 name=Neu: Leologus
@@ -4876,8 +4898,32 @@ gravitino balls
 resources=In_,NH3,NaCl
 
 [Pln209B00FE007004]
+name=Lantaan Majoris
+biome=Barren
+is extreme
+with water
+resources=In_,Py,Na
 
 [Pln309B00FE007004]
+name=Jiyotica XIV
+biome=Airless
+resources=In,Co,Sr_Rost
+
+[Pln409B00FE007004]
+name=Taga 82/J6
+biome=Toxic
+resources=In,NH3,Co
+short=
+info=neuartige Flora (Origins Update): bunt, Leuchteffekte
+short=riesige Geographie
+info=
+
+[Pln509B00FE007004]
+name=Mominnect
+biome=AnomBubbles
+resources=In,Au,NaCl
+short=riesige Geographie
+info=
 
 [Sys009F00FE007004]
 name=Defortew
@@ -8469,6 +8515,33 @@ name=Lesbon Q26
 biome=AnomFragmColumns
 resources=Em,Ag,Au
 
+[Reg000000052E463F]
+name=Puritt
+
+[Sys013B00052E463F]
+name=Theta Serpentis
+race=Vykeen
+economy=2
+economy_label=ausgeglichen
+conflict=1
+conflict_label=niedrig
+atlasinterface=false
+blackhole=false
+class=Red
+
+[Pln113B00052E463F]
+
+[Pln213B00052E463F]
+
+[Pln313B00052E463F]
+name=Alya
+biome=Exotic_Mega
+buriedTreasure=SalvageableScrap
+resources=Cd,P,Fe__
+portal=18.3900,-84.7500
+short=Atmosphere
+info=Sepia-Grau
+
 [Reg000000FCD05649]
 
 [Sys020300FCD05649]
@@ -8729,6 +8802,7 @@ conflict_label=gesetzlos
 atlasinterface=false
 blackhole=false
 class=Yellow
+planets=4
 
 [Pln107000FCD7F684]
 name=Napecule Beta
@@ -8747,6 +8821,13 @@ portal=-60.3100,-83.4000
 name=Nehoul Iash
 biome=AnomMetalFlowers
 resources=Cu,Au,Fe__
+
+[Pln407000FCD7F684]
+name=Ibourb Minoris
+biome=Toxic
+resources=Cu,NH3,NaCl
+short=riesig
+info=
 
 [Sys007A00FCD7F684]
 name=Yucilego
