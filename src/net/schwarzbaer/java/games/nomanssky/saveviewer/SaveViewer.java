@@ -379,7 +379,7 @@ public class SaveViewer implements ActionListener {
 		 save7_hg( 6, "save7.hg","..7"    ),
 		 save8_hg( 7, "save8.hg","..8"    ),
 		 save9_hg( 8, "save9.hg","..9"    ),
-		save10_hg( 9,"save10.hg","..10"   ),
+		save10_hg( 9,"save10.hg","..10"   ), EditItemBackgroundColors,
 		;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
@@ -505,6 +505,10 @@ public class SaveViewer implements ActionListener {
 			
 		case ShowExtraImages:
 			new ShowImagesDialog(mainWindow,"Extra Images").showDialog();
+			break;
+			
+		case EditItemBackgroundColors:
+			new Images.ColorListDialog(mainWindow,"Edit Item Background Colors",images).showDialog();
 			break;
 			
 		case OpenRecipeAnalyser:
@@ -811,7 +815,7 @@ public class SaveViewer implements ActionListener {
 		public boolean openNewlyWrittenVrmlFileInViewer = false;
 		public String vrmlViewer = null;
 		
-		public HashSet<String> highlightedBuildingObjects = new HashSet<>(); // TODO
+		public HashSet<String> highlightedBuildingObjects = new HashSet<>();
 		
 		Config() {
 		}
@@ -1125,6 +1129,8 @@ public class SaveViewer implements ActionListener {
 			toolsMenu.add(createMenuItem("Refresh Extra Images" , Gui.ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
 			toolsMenu.add(createMenuItem("Find New Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.FindNewExtraImages,true));
 			toolsMenu.add(createMenuItem("Show Extra Images"    , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
+			toolsMenu.addSeparator();
+			toolsMenu.add(createMenuItem("Edit Item Background Colors", Gui.ToolbarIcons.Compare, ActionCommand.EditItemBackgroundColors,true));
 			toolsMenu.addSeparator();
 			toolsMenu.add(createMenuItem("Recipe Analyser"     , Gui.ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
 			toolsMenu.add(createMenuItem("Production Optimiser", Gui.ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));

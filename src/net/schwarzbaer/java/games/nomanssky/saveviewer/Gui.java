@@ -58,6 +58,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
@@ -1285,19 +1286,22 @@ public class Gui {
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
 	}
 
-	public static <AC extends Enum<AC>> void setComp(AbstractButton comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled, Icon icon) {
+	public static <AC extends Enum<AC>, B extends AbstractButton> B setComp(B comp, ButtonGroup bg, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled, Icon icon) {
 		comp.setEnabled(enabled);
 		if (icon         !=null) comp.setIcon(icon);
 		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+		if (bg           !=null) bg.add(comp);
+		return comp;
 	}
 
-	public static <AC extends Enum<AC>> void setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
+	public static <AC extends Enum<AC>> JTextField setComp(JTextField comp, ActionListener listener, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
 		comp.setEnabled(enabled);
 		if (disabler     !=null && actionCommand!=null) disabler.add(actionCommand, comp);
 		if (listener     !=null) comp.addActionListener(listener);
 		if (actionCommand!=null) comp.setActionCommand(actionCommand.toString());
+		return comp;
 	}
 	
 
@@ -1331,31 +1335,33 @@ public class Gui {
 		return createButton(title, l, disabler, actionCommand, true);
 	}
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled) {
-		JButton button = new JButton(title);
-		setComp(button, l, disabler, actionCommand, enabled, null);
-		return button;
+		return setComp(new JButton(title), null, l, disabler, actionCommand, enabled, null);
 	}
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, Icon icon) {
-		JButton button = new JButton(title);
-		setComp(button, l, disabler, actionCommand, enabled, icon);
-		return button;
+		return setComp(new JButton(title), null, l, disabler, actionCommand, enabled, icon);
 	}
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		return createButton(title, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
 	}
 	
-
 	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
-		return createRadioButton(title, bg, l, null, null, isSelected, enabled);
+		return setComp(new JRadioButton(title,isSelected), bg, l, null, null, enabled, null);
 	}
 	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, ActionListener l) {
-		return createRadioButton(title, bg, l, disabler, actionCommand, isSelected, enabled);
+		return setComp(new JRadioButton(title,isSelected), bg, l, disabler, actionCommand, enabled, null);
 	}
 	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
-		JRadioButton button = new JRadioButton(title,isSelected);
-		if (bg!=null) bg.add(button);
-		setComp(button, l, disabler, actionCommand, enabled, null);
-		return button;
+		return setComp(new JRadioButton(title,isSelected), bg, l, disabler, actionCommand, enabled, null);
+	}
+
+	public static <AC extends Enum<AC>> JToggleButton createToggleButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
+		return setComp(new JToggleButton(title,isSelected), bg, l, null, null, enabled, null);
+	}
+	public static <AC extends Enum<AC>> JToggleButton createToggleButton(String title, ButtonGroup bg, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, ActionListener l) {
+		return setComp(new JToggleButton(title,isSelected), bg, l, disabler, actionCommand, enabled, null);
+	}
+	public static <AC extends Enum<AC>> JToggleButton createToggleButton(String title, ButtonGroup bg, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
+		return setComp(new JToggleButton(title,isSelected), bg, l, disabler, actionCommand, enabled, null);
 	}
 
 	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
@@ -1388,7 +1394,7 @@ public class Gui {
 
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
-		setComp(menuItem, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
+		setComp(menuItem, null, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
 		return menuItem;
 	}
 
@@ -1411,7 +1417,7 @@ public class Gui {
 		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
 		menuItem.setSelected(selected);
 		menuItem.setEnabled(enabled);
-		setComp(menuItem, l, disabler, actionCommand, true, null);
+		setComp(menuItem, null, l, disabler, actionCommand, true, null);
 		return menuItem;
 	}
 
@@ -1433,13 +1439,13 @@ public class Gui {
 
 	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
 		JCheckBox button = new JCheckBox(title,isSelected);
-		setComp(button, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled, null);
+		setComp(button, null, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled, null);
 		return button;
 	}
 
 	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
 		JCheckBox button = new JCheckBox(title,isSelected);
-		setComp(button, l, disabler, actionCommand, enabled, null);
+		setComp(button, null, l, disabler, actionCommand, enabled, null);
 		return button;
 	}
 

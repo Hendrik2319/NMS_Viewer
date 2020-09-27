@@ -46,6 +46,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -53,14 +54,21 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.image.ImageSimilarity;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 public class Images {
 	
@@ -241,14 +249,16 @@ public class Images {
 		colorValuesVec.add(namedColor);
 	}
 	
-	private NamedColor addColor(int value, String name) {
-		if (colorMap.containsKey(value)) return null;
+	private boolean addColor(int value, String name) {
+		if (colorMap.containsKey(value)) return false;
 		if (name.isEmpty()) name = String.format("%06X", value);
 		NamedColor namedColor = new NamedColor(value,name);
 		colorMap.put(value, namedColor);
 		colorValues = Arrays.copyOf(colorValues, colorValues.length+1);
 		colorValues[colorValues.length-1] = namedColor;
-		return namedColor;
+		for (ColorListListender ccl:colorListListenders)
+			ccl.colorAdded(namedColor);
+		return true;
 	}
 	
 	public static interface ColorListListender {
@@ -268,12 +278,8 @@ public class Images {
 		dlg.showDialog();
 		if (dlg.hasResult()) {
 			NamedColor color = dlg.getResult();
-			color = addColor(color.value, color.name);
-			if (color!=null) {
-				for (ColorListListender ccl:colorListListenders)
-					ccl.colorAdded(color);
+			if (addColor(color.value, color.name))
 				saveColorsToFile();
-			}
 		}
 	}
 	
@@ -767,6 +773,8 @@ public class Images {
 		public String toString() {
 			return String.format("Color( %06X, \"%s\" )",value,name);
 		}
+		
+		public String getLabel() { return String.format("[%06X] %s", value, name); }
 
 		public BufferedImage createImage(int width, int height) {
 			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -1274,6 +1282,122 @@ public class Images {
 	
 		public boolean hasChoosen() {
 			return selected != null;
+		}
+	}
+
+	public static class ColorListDialog extends StandardDialog {
+		private static final long serialVersionUID = 1195618468891906980L;
+		
+		enum Action { SortBySimilarity, SetDefaultOrder }
+
+		private final Disabler<Action> disabler;
+		private final ColorListModel colorListModel;
+		private final Images context;
+		private NamedColor selected;
+		
+		public ColorListDialog(Window parent, String title, Images context) {
+			super(parent, title);
+			this.context = context;
+			
+			disabler = new Disabler<>();
+			disabler.setCareFor(Action.values());
+			
+			selected = null;
+			colorListModel = new ColorListModel();
+			JList<NamedColor> colorList = new JList<>(colorListModel);
+			colorList.setCellRenderer(new TableView.NamedColorRenderer());
+			colorList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			
+			JScrollPane colorListScrollPane = new JScrollPane(colorList);
+			colorListScrollPane.setPreferredSize(new Dimension(200, 500));
+			
+			JTextArea usageView = new JTextArea();
+			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
+			usageViewScrollPane.setPreferredSize(new Dimension(300, 500));
+			
+			JToggleButton sortBySimilarityBtn;
+			ButtonGroup bg = new ButtonGroup();
+			JPanel sortButtonPanel = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.weightx = 0;
+			sortButtonPanel.add(new JLabel("Sort by: "),c);
+			c.weightx = 1;
+			sortButtonPanel.add(sortBySimilarityBtn = Gui.createToggleButton("Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->sortBySimilarity()),c);
+			sortButtonPanel.add(Gui.createToggleButton("Standard", bg , disabler, Action.SetDefaultOrder, true, true, e->setDefaultOrder()),c);
+			
+			JPanel westPanel = new JPanel(new BorderLayout(3,3));
+			westPanel.add(sortButtonPanel,BorderLayout.NORTH);
+			westPanel.add(colorListScrollPane,BorderLayout.CENTER);
+			
+			JPanel contentPane = new JPanel(new BorderLayout(3,3));
+			contentPane.add(westPanel, BorderLayout.WEST);
+			contentPane.add(usageViewScrollPane, BorderLayout.CENTER);
+			
+			
+			colorList.addListSelectionListener(e->{
+				selected = colorList.getSelectedValue();
+				String text = "Similarity to Color";
+				if (selected!=null)
+					text = String.format("Similarity to %s", selected.getLabel());
+				sortBySimilarityBtn.setText(text);
+				sortBySimilarityBtn.setEnabled(selected!=null);
+			});
+			
+			
+			
+			this.createGUI(contentPane, Gui.createButton("Close", e->closeDialog()));
+			
+			colorListModel.setData(context.colorValues);
+			
+		}
+
+		private void sortBySimilarity() {
+			Vector<NamedColor> colors = new Vector<>(Arrays.asList(context.colorValues));
+			colors.sort(Comparator.<NamedColor,Integer>comparing(nc->getDistance(nc,selected)).thenComparing(nc->nc.value));
+			colorListModel.setData(colors.toArray(new NamedColor[colors.size()]));
+		}
+
+		private Integer getDistance(NamedColor color1, NamedColor color2) {
+			int r1 = (color1.value>>16)&0xFF;
+			int g1 = (color1.value>> 8)&0xFF;
+			int b1 = (color1.value>> 0)&0xFF;
+			int r2 = (color2.value>>16)&0xFF;
+			int g2 = (color2.value>> 8)&0xFF;
+			int b2 = (color2.value>> 0)&0xFF;
+			return (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2);
+		}
+
+		private void setDefaultOrder() {
+			colorListModel.setData(context.colorValues);
+		}
+
+		private class ColorListModel implements ListModel<NamedColor> {
+			
+			Vector<ListDataListener> listDataListeners = new Vector<>();
+			private NamedColor[] data = null;
+			
+			@Override public void addListDataListener(ListDataListener l) { listDataListeners.add(l); }
+			@Override public void removeListDataListener(ListDataListener l) { listDataListeners.remove(l); }
+			
+			private void fireContentsChangedEvent(int index0, int index1) {
+				ListDataEvent e = new ListDataEvent(this, ListDataEvent.CONTENTS_CHANGED, index0, index1);
+				listDataListeners.forEach(l->l.contentsChanged(e));
+			}
+			
+			private void setData(NamedColor[] data) {
+				this.data = data;
+				fireContentsChangedEvent(0, Integer.MAX_VALUE);
+			}
+			
+			@Override public int getSize() { return data==null ? 0 : data.length; }
+		
+			@Override public NamedColor getElementAt(int index) {
+				if (data==null) return null;
+				if (index<0 || index>=data.length) return null;
+				return data[index];
+			}
+		
 		}
 	}
 }
