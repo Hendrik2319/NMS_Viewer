@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1294,10 +1295,14 @@ public class Images {
 		private final ColorListModel colorListModel;
 		private final Images context;
 		private NamedColor selected;
+		private NamedColor similarityBase;
+		private HashMap<Integer, ColorUsage> colorUsage;
 		
 		public ColorListDialog(Window parent, String title, Images context) {
 			super(parent, title);
 			this.context = context;
+			
+			colorUsage = ColorUsage.scanUsage();
 			
 			disabler = new Disabler<>();
 			disabler.setCareFor(Action.values());
@@ -1309,22 +1314,32 @@ public class Images {
 			colorList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			
 			JScrollPane colorListScrollPane = new JScrollPane(colorList);
-			colorListScrollPane.setPreferredSize(new Dimension(200, 500));
+			colorListScrollPane.setPreferredSize(new Dimension(300, 500));
 			
 			JTextArea usageView = new JTextArea();
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
-			usageViewScrollPane.setPreferredSize(new Dimension(300, 500));
+			usageViewScrollPane.setPreferredSize(new Dimension(500, 500));
 			
 			JToggleButton sortBySimilarityBtn;
+			JLabel sortOrderOutput;
+			
 			ButtonGroup bg = new ButtonGroup();
 			JPanel sortButtonPanel = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
+			
 			c.weightx = 0;
-			sortButtonPanel.add(new JLabel("Sort by: "),c);
+			sortButtonPanel.add(new JLabel("Sorted by: "),c);
+			c.weightx = 1; c.gridwidth = GridBagConstraints.REMAINDER;
+			sortButtonPanel.add(sortOrderOutput = new JLabel(""),c);
+			
 			c.weightx = 1;
-			sortButtonPanel.add(sortBySimilarityBtn = Gui.createToggleButton("Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->sortBySimilarity()),c);
-			sortButtonPanel.add(Gui.createToggleButton("Standard", bg , disabler, Action.SetDefaultOrder, true, true, e->setDefaultOrder()),c);
+			sortButtonPanel.add(sortBySimilarityBtn = Gui.createToggleButton("Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->{
+				String str = sortBySimilarity(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
+			}),c);
+			sortButtonPanel.add(Gui.createToggleButton("Standard", bg , disabler, Action.SetDefaultOrder, true, true, e->{
+				String str = setDefaultOrder(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
+			}),c);
 			
 			JPanel westPanel = new JPanel(new BorderLayout(3,3));
 			westPanel.add(sortButtonPanel,BorderLayout.NORTH);
@@ -1342,20 +1357,77 @@ public class Images {
 					text = String.format("Similarity to %s", selected.getLabel());
 				sortBySimilarityBtn.setText(text);
 				sortBySimilarityBtn.setEnabled(selected!=null);
+				showUsage(usageView);
 			});
-			
-			
 			
 			this.createGUI(contentPane, Gui.createButton("Close", e->closeDialog()));
 			
-			colorListModel.setData(context.colorValues);
-			
+			String sortOrderOutputStr = setDefaultOrder();
+			updateGuiAfterReordering(sortOrderOutput, colorList, sortOrderOutputStr);
+			sortBySimilarityBtn.setEnabled(selected!=null);
+			showUsage(usageView);
 		}
 
-		private void sortBySimilarity() {
+		private void showUsage(JTextArea usageView) {
+			if (selected==null) {
+				usageView.setText("");
+				return;
+			}
+			
+			String str = "";
+			
+			if (similarityBase!=null) {
+				str += String.format("Similarity to %s:%n", selected.getLabel());
+				str += String.format("    Diff.: %s%n", getDiffStr(selected, similarityBase));
+				str += "\r\n";
+			}
+			
+			str += "Usage:\r\n";
+			ColorUsage usage = colorUsage.get(selected.value);
+			if (usage==null)
+				str += "    no ID\r\n";
+			else {
+				for (ColorUsage.IDType type:ColorUsage.IDType.values()) {
+					Vector<GeneralizedID> idList = usage.ids.get(type);
+					if (idList==null) continue;
+					idList.sort(Comparator.<GeneralizedID,String>comparing(id->id.id));
+					str += String.format("    %ss:%n", type);
+					for (GeneralizedID id:idList)
+						str += String.format("      %s %s%n", id.isObsolete?"#":" ", id.toString());
+				}
+			}
+			
+			usageView.setText(str);
+		}
+
+		private String setDefaultOrder() {
+			similarityBase = null;
+			colorListModel.setData(context.colorValues);
+			return "Default Order";
+		}
+
+		private String sortBySimilarity() {
+			if (selected==null) return "";
+			similarityBase = selected;
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(context.colorValues));
 			colors.sort(Comparator.<NamedColor,Integer>comparing(nc->getDistance(nc,selected)).thenComparing(nc->nc.value));
 			colorListModel.setData(colors.toArray(new NamedColor[colors.size()]));
+			return String.format("Similarity to %s", selected.getLabel());
+		}
+
+		private void updateGuiAfterReordering(JLabel sortOrderOutput, JList<NamedColor> colorList, String sortOrderOutputStr) {
+			sortOrderOutput.setText(sortOrderOutputStr);
+			colorList.setSelectedValue(selected, true);
+		}
+
+		private String getDiffStr(NamedColor color1, NamedColor color2) {
+			int r1 = (color1.value>>16)&0xFF;
+			int g1 = (color1.value>> 8)&0xFF;
+			int b1 = (color1.value>> 0)&0xFF;
+			int r2 = (color2.value>>16)&0xFF;
+			int g2 = (color2.value>> 8)&0xFF;
+			int b2 = (color2.value>> 0)&0xFF;
+			return String.format("r:%d, g:%d, b:%d", (r1-r2), (g1-g2), (b1-b2));
 		}
 
 		private Integer getDistance(NamedColor color1, NamedColor color2) {
@@ -1366,10 +1438,6 @@ public class Images {
 			int g2 = (color2.value>> 8)&0xFF;
 			int b2 = (color2.value>> 0)&0xFF;
 			return (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2);
-		}
-
-		private void setDefaultOrder() {
-			colorListModel.setData(context.colorValues);
 		}
 
 		private class ColorListModel implements ListModel<NamedColor> {
@@ -1398,6 +1466,48 @@ public class Images {
 				return data[index];
 			}
 		
+		}
+		
+		private static class ColorUsage {
+			enum IDType { Product, Substance, Tech }
+
+			private final EnumMap<IDType,Vector<GeneralizedID>> ids;
+			private Boolean usedObsoleteOnly;
+			
+			ColorUsage() {
+				ids = new EnumMap<>(IDType.class);
+				usedObsoleteOnly = null;
+			}
+			
+			
+			private static HashMap<Integer,ColorUsage> scanUsage() {
+				HashMap<Integer,ColorUsage> usage = new HashMap<>();
+				scanIdMap(usage,GameInfos.productIDs,IDType.Product);
+				scanIdMap(usage,GameInfos.substanceIDs,IDType.Substance);
+				scanIdMap(usage,GameInfos.techIDs,IDType.Tech);
+				return usage;
+			}
+
+			private static void scanIdMap(HashMap<Integer, ColorUsage> usage, IDMap idMap, IDType idType) {
+				idMap.forEach((GeneralizedID id)->{
+					Integer color = id.imageBackground;
+					if (color==null) return;
+					ColorUsage colorUsage = usage.get(color);
+					if (colorUsage==null)
+						usage.put(color, colorUsage = new ColorUsage());
+					colorUsage.add(id,idType);
+				});
+			}
+
+			private void add(GeneralizedID id, IDType idType) {
+				Vector<GeneralizedID> idList = ids.get(idType);
+				if (idList==null) ids.put(idType, idList = new Vector<>());
+				idList.add(id);
+				if (!id.isObsolete)
+					usedObsoleteOnly = false;
+				else if (usedObsoleteOnly==null)
+					usedObsoleteOnly = true;
+			}
 		}
 	}
 }
