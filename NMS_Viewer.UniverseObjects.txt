@@ -4950,6 +4950,8 @@ resources=Cu,P,Fe__
 
 [Pln509F00FE007004]
 
+[Pln609F00FE007004]
+
 [Sys00A900FE007004]
 name=Kellens XIV
 race=Korvax
@@ -5201,6 +5203,7 @@ planets=2
 name=Olgaez-Masse
 
 [Sys003A0002FFA005]
+name=Omulaanx
 atlasinterface=false
 blackhole=false
 
@@ -5321,7 +5324,7 @@ atlasinterface=false
 blackhole=false
 
 [Sys00C20002FFA005]
-name=Taco
+name=Benggy-Ukuh I
 race=Gek
 economy=1
 economy_label=abnehmend
@@ -5983,6 +5986,14 @@ blackhole=true
 blackholetarget=006600FD065F03
 class=Yellow
 planets=3
+
+[Reg000000026E9140]
+
+[Sys00BC00026E9140]
+atlasinterface=false
+blackhole=false
+
+[Pln10BC00026E9140]
 
 [Reg00000000FA7146]
 name=Xerabij-Arm
@@ -7978,6 +7989,25 @@ name=Etiago Majoris
 biome=Scorched
 buriedTreasure=AncientBones
 resources=Cu,P,NaCl
+
+[Sys019600FFF38590]
+name=Pesheeoo X
+race=Gek
+economy=2
+economy_label=ausgeglichen
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Pln119600FFF38590]
+name=Alnwi
+biome=Toxic
+with water
+buriedTreasure=SalvageableScrap
+resources=Cu,NH3,Co
 
 [Sys019C00FFF38590]
 name=Yuhaiu-Trub XIII
