@@ -572,9 +572,11 @@ public class SaveViewer implements ActionListener {
 				File savefile = new File(getSavegameFolder()+ac.filename);
 				Vector<JComponent> comps = contentPane.disabler.get(ac);
 				if (comps!=null) {
-					SaveGameData data = openSaveGameForPreview(savefile);
+					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile);
 					for (JComponent comp:comps) {
-						if (data.isPreNEXT) {
+						if (data==null) {
+							comp.setToolTipText(savefile.isFile() ? "Can't parse SaveGame" : "SaveGame not exists");
+						} else if (data.isPreNEXT) {
 							comp.setToolTipText("PreNext SaveGame (will not be parsed)");
 							comp.setForeground(Color.RED);
 						} else if (data.version!=null && data.version>5000) {
