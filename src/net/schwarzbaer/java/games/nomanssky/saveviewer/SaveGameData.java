@@ -1050,6 +1050,39 @@ public class SaveGameData {
 	}
 
 	public static class BuildingObject {
+		
+		public enum BaseObjAppearance {
+			New("Neu"), Used("Gebraucht"), HardUsed("Abgenutzt"), Old("Antik");
+			public final String label;
+			BaseObjAppearance(String label) {
+				this.label = label;
+			}
+		}
+		
+		public enum BaseObjColor {
+			White_Orange("Weiß, Orange"),
+			Black_Yellow("Schwarz, Gelb"),
+			Yellow_LightBlue("Gelb, Hell-Blau"),
+			PastelAqua_Aqua("Pastell-Türkis, Türkis"),
+			Blue_White("Blau, Weiß"),
+			Blue_Orange("Blau, Orange"),
+			Violet_PastelAqua("Violett, Pastell-Türkis"),
+			LightViolet_Violet("Hell-Violett, Violett"),
+			
+			Red_White("Rot, Weiß"),
+			Orange_Blue("Orange, Blau"),
+			Yellow_White("Gelb, Weiß"),
+			Green_DarkGreen("Grün, Dunkel-Grün"),
+			Aqua_Red("Türkis, Rot"),
+			Violet_Yellow("Violett, Gelb"),
+			Gray_Black("Grau, Schwarz"),
+			Gray_Red("Grau, Rot"),
+			;
+			public final String label;
+			BaseObjColor(String label) {
+				this.label = label;
+			}
+		}
 
 		private static void parseBuildingObject(SaveGameData source, JSON_Object objectValue, BuildingObject bbo, String label, int index) {
 			bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
@@ -1057,6 +1090,12 @@ public class SaveGameData {
 			bbo.userData  = getIntegerValue (objectValue, "UserData");
 			bbo.message   = getStringValue_checked(objectValue, "[Message]");
 			bbo.position  = Position.parse  (objectValue, "Position", "At", "Up"); // bug fixed
+			if (bbo.userData!=null) {
+				long userData = bbo.userData.longValue();
+				// 0x0300000C
+				bbo.color = BaseObjColor.values()[(int) (userData & 0x0F)];
+				bbo.appearance = BaseObjAppearance.values()[(int) ((userData & 0x03000000) >> 24)];
+			}
 			
 			// revert bug fixing
 //			Coordinates temp = bbo.position.at;
@@ -1075,6 +1114,8 @@ public class SaveGameData {
 		public TimeStamp timestamp;
 		public String objectID;
 		public Long userData;
+		public BaseObjColor color;
+		public BaseObjAppearance appearance;
 		public String message;
 
 		public Position position;
@@ -1082,21 +1123,24 @@ public class SaveGameData {
 		
 		BuildingObject(SaveGameData source) {
 			this.source = source;
-			this.timestamp = null;
-			this.objectID = null;
-			this.userData = null;
-			this.position = null;
-			
+			this.timestamp  = null;
+			this.objectID   = null;
+			this.userData   = null;
+			this.color      = null;
+			this.appearance = null;
+			this.position   = null;
 			this.specialName = null;
 			//this.objectID1 = null;
 		}
 
 		public BuildingObject(BuildingObject obj) {
 			this.source = obj.source;
-			this.timestamp = obj.timestamp;
-			this.objectID  = obj.objectID;
-			this.userData  = obj.userData;
-			this.position  = obj.position==null?null:new Position(obj.position);
+			this.timestamp  = obj.timestamp;
+			this.objectID   = obj.objectID;
+			this.userData   = obj.userData;
+			this.color      = obj.color;
+			this.appearance = obj.appearance;
+			this.position   = obj.position==null?null:new Position(obj.position);
 			this.specialName = obj.specialName;
 			//this.objectID1   = obj.objectID1;
 		}
