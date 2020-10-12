@@ -3996,6 +3996,7 @@ public class SaveGameData {
 			public boolean hasExtremeBiome = false;
 			public boolean areSentinelsAggressive = false;
 			public boolean withWater = false;
+			public boolean withBigGeography = false;
 			public boolean withGravitinoBalls = false;
 			public boolean withRemembranceTerminal = false;
 			public BuriedTreasure buriedTreasure = null;
@@ -4034,6 +4035,7 @@ public class SaveGameData {
 					strExtraInfo = getCombinedExtraInfoLabels(
 						(hasExtremeBiome?"<Extr>":null),
 						(withWater?"<Water>":null),
+						(withBigGeography?"<BigGeo>":null),
 						(withGravitinoBalls?"<Grav>":null),
 						(withRemembranceTerminal?"<RememTerm>":null),
 						(buriedTreasure==null?null:"<"+buriedTreasure.name_EN+">")

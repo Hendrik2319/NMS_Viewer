@@ -161,6 +161,7 @@ public class GameInfos {
 		boolean hasExtremeBiome;
 		boolean areSentinelsAggressive;
 		boolean withWater;
+		boolean withBigGeography;
 		boolean withGravitinoBalls;
 		boolean withRemembranceTerminal;
 		Universe.Planet.BuriedTreasure buriedTreasure;
@@ -173,6 +174,7 @@ public class GameInfos {
 			hasExtremeBiome = false;
 			areSentinelsAggressive = false;
 			withWater = false;
+			withBigGeography = false;
 			withGravitinoBalls = false;
 			withRemembranceTerminal = false;
 			buriedTreasure = null;
@@ -185,6 +187,7 @@ public class GameInfos {
 			hasExtremeBiome = planet.hasExtremeBiome;
 			areSentinelsAggressive = planet.areSentinelsAggressive;
 			withWater = planet.withWater;
+			withBigGeography = planet.withBigGeography;
 			withGravitinoBalls = planet.withGravitinoBalls;
 			withRemembranceTerminal = planet.withRemembranceTerminal;
 			buriedTreasure = planet.buriedTreasure;
@@ -511,6 +514,10 @@ public class GameInfos {
 						planet.withWater = true;
 						continue;
 					}
+					if (line.equals("big geography")) {
+						planet.withBigGeography = true;
+						continue;
+					}
 					if (line.equals("gravitino balls")) {
 						planet.withGravitinoBalls = true;
 						continue;
@@ -692,6 +699,10 @@ public class GameInfos {
 					planet.withWater = uod_planet.withWater;
 					if (withOutput) Gui.log_ln("   %s has water",objName);
 				}
+				if (uod_planet.withBigGeography) {
+					planet.withBigGeography = uod_planet.withBigGeography;
+					if (withOutput) Gui.log_ln("   %s has big geography",objName);
+				}
 				if (uod_planet.withGravitinoBalls) {
 					planet.withGravitinoBalls = uod_planet.withGravitinoBalls;
 					if (withOutput) Gui.log_ln("   %s has Gravitino Balls",objName);
@@ -809,6 +820,7 @@ public class GameInfos {
 					if ( uod_planet.hasExtremeBiome        ) out.printf("is extreme%n");
 					if ( uod_planet.areSentinelsAggressive ) out.printf("aggrSentinels%n");
 					if ( uod_planet.withWater              ) out.printf("with water%n");
+					if ( uod_planet.withBigGeography       ) out.printf("big geography%n");
 					if ( uod_planet.withGravitinoBalls     ) out.printf("gravitino balls%n");
 					if ( uod_planet.withRemembranceTerminal) out.printf("remembrance terminal%n");
 					if ( uod_planet.buriedTreasure   !=null) out.printf("buriedTreasure=%s%n",uod_planet.buriedTreasure);
