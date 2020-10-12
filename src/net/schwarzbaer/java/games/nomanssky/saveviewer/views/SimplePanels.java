@@ -9,6 +9,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +20,8 @@ import java.util.function.Function;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -46,12 +49,16 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ContextMenuInvoker;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjAppearance;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.MissionProgress.Participant;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
@@ -72,17 +79,15 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.VerySimpl
 
 public class SimplePanels {
 
-	@SuppressWarnings("unused")
 	private static final CachedIcons<BuildingObject.BaseObjColor> BaseObjColorIconsIS;
-	@SuppressWarnings("unused")
 	private static final CachedIcons<BuildingObject.BaseObjAppearance> BaseObjAppearanceIconsIS;
 	
 	static {
-		IconSource<BuildingObject.BaseObjColor> uncachedBaseObjColorIconsIS = new IconSource<BuildingObject.BaseObjColor>(52,52);
-		uncachedBaseObjColorIconsIS.readIconsFromResource("/images/FarbCodes.Farben.png");
-		BaseObjColorIconsIS = uncachedBaseObjColorIconsIS.cacheIcons(BuildingObject.BaseObjColor.values());
+		IconSource<BuildingObject.BaseObjColor> uncachedBaseObjColorIconsIS_ = new IconSource<>(52,52,8);
+		uncachedBaseObjColorIconsIS_.readIconsFromResource("/images/FarbCodes.Farben.png");
+		BaseObjColorIconsIS = uncachedBaseObjColorIconsIS_.cacheIcons(BuildingObject.BaseObjColor.values());
 		
-		IconSource<BuildingObject.BaseObjAppearance> uncachedBaseObjAppearanceIconsIS = new IconSource<BuildingObject.BaseObjAppearance>(97,97);
+		IconSource<BuildingObject.BaseObjAppearance> uncachedBaseObjAppearanceIconsIS = new IconSource<>(97,97,-1);
 		uncachedBaseObjAppearanceIconsIS.readIconsFromResource("/images/FarbCodes.Gestaltung.png");
 		BaseObjAppearanceIconsIS = uncachedBaseObjAppearanceIconsIS.cacheIcons(BuildingObject.BaseObjAppearance.values());
 	}
@@ -1061,6 +1066,51 @@ public class SimplePanels {
 		}
 	}
 	
+	private static class ImagePanel extends JPanel {
+		private static final long serialVersionUID = -8139869439172225802L;
+		
+		private JLabel text;
+		private JLabel image;
+
+		ImagePanel(String title) {
+			super(new BorderLayout(3,3));
+			setBorder(BorderFactory.createTitledBorder(title));
+			add(text  = new JLabel(""),BorderLayout.NORTH);
+			add(image = new JLabel(),BorderLayout.CENTER);
+			image.setVerticalAlignment(JLabel.TOP);
+		}
+
+		public void clear() {
+			setIcon(null);
+			setText(null);
+		}
+
+		public void setIcon(Icon icon) {
+			this.image.setIcon(icon);
+		}
+
+		public void setText(String text) {
+			this.text.setText(text);
+		}
+
+		public void set(String objectID, IDMap idMap, int iconWidth, int iconHeight) {
+			GeneralizedID id = objectID==null ? null : idMap.get(objectID);
+			BufferedImage image = id==null ? null : id.getImage(iconWidth,iconHeight);
+			setIcon(image==null ? null : new ImageIcon(image));
+			setText(id!=null ? id.getName() : objectID!=null ? objectID : "" );
+		}
+
+		public void set(BaseObjColor color) {
+			setIcon(color==null ? null : BaseObjColorIconsIS.getCachedIcon(color));
+			setText(color==null ? "" : color.label);
+		}
+
+		public void set(BaseObjAppearance appearance) {
+			setIcon(appearance==null ? null : BaseObjAppearanceIconsIS.getCachedIcon(appearance));
+			setText(appearance==null ? "" : appearance.label);
+		}
+	}
+	
 	public static class BaseBuildingObjectsPanel extends VerySimpleTableTabPanel<UnboundBuildingObject> {
 		private static final long serialVersionUID = 6246130206148705495L;
 		private static final Color COLOR_HIGHLIGHT = new Color(0xFFFF7F);
@@ -1121,6 +1171,30 @@ public class SimplePanels {
 			contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->table.getModel_VerySimpleTableModel().initiateColumnUpdate(table.getColumn(2))));
 			contextMenu.add(Gui.createMenuItem("Write Positions to VRML",e->writePosToVRML(),Gui.ToolbarIcons.SaveAs));
 			
+			
+			ImagePanel objectIdImage,objColorImage,objAppearImage;
+			JPanel imagePanel = new JPanel(new GridLayout(0,1));
+			imagePanel.setPreferredSize(new Dimension(150,200));
+			imagePanel.add(objectIdImage  = new ImagePanel("ObjectID Image"));
+			imagePanel.add(objColorImage  = new ImagePanel("Object Color"  ));
+			imagePanel.add(objAppearImage = new ImagePanel("Appearance"    ));
+			add(imagePanel,BorderLayout.WEST);
+			table.getSelectionModel().addListSelectionListener(e -> {
+				int[] rowVs = table.getSelectedRows();
+				if (rowVs.length==1 && rowVs[0]>=0) {
+					int rowM = table.convertRowIndexToModel(rowVs[0]);
+					BuildingObject obj = this.data.baseBuildingObjects[rowM];
+					
+					objectIdImage .set(obj.objectID,GameInfos.productIDs,135,135);
+					objColorImage .set(obj.color);
+					objAppearImage.set(obj.appearance);
+					return;
+				}
+				objectIdImage .clear();
+				objColorImage .clear();
+				objAppearImage.clear();
+			});
+
 			//add(tableScrollPane,BorderLayout.CENTER);
 		}
 
@@ -1394,6 +1468,7 @@ public class SimplePanels {
 				BaseObjectsTableModel tableModel = new BaseObjectsTableModel(this.playerbase.objects);
 				SimplifiedTable<BaseObjectsColumnID> table = new SimplifiedTable<>("BaseObjectsTable",tableModel,true,SaveViewer.DEBUG,true);
 				table.setCellRendererForAllColumns(new HighlightCR(this.playerbase.objects), true);
+				table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
 				JCheckBoxMenuItem miHighlightObj;
@@ -1426,8 +1501,34 @@ public class SimplePanels {
 				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
 				cmi.addContextMenuInvokeListener((x, y) -> updateVRMLtasks2.run());
 				
+				ImagePanel objectIdImage,objColorImage,objAppearImage;
+				JPanel imagePanel = new JPanel(new GridLayout(1,0));
+				imagePanel.setPreferredSize(new Dimension(500, 150));
+				imagePanel.add(objectIdImage  = new ImagePanel("ObjectID Image"));
+				imagePanel.add(objColorImage  = new ImagePanel("Object Color"  ));
+				imagePanel.add(objAppearImage = new ImagePanel("Appearance"    ));
+				table.getSelectionModel().addListSelectionListener(e -> {
+					int rowV = table.getSelectedRow();
+					if (rowV>=0) {
+						int rowM = table.convertRowIndexToModel(rowV);
+						BuildingObject obj = this.playerbase.objects[rowM];
+						
+						objectIdImage .set(obj.objectID,GameInfos.productIDs,110,110);
+						objColorImage .set(obj.color);
+						objAppearImage.set(obj.appearance);
+						return;
+					}
+					objectIdImage .clear();
+					objColorImage .clear();
+					objAppearImage.clear();
+				});
+				
+				JPanel westPanel = new JPanel(new BorderLayout(3,3));
+				westPanel.add(textAreaScrollPane,BorderLayout.CENTER);
+				westPanel.add(imagePanel,BorderLayout.SOUTH);
+				
 				add(tableScrollPane,BorderLayout.CENTER);
-				add(textAreaScrollPane,BorderLayout.WEST);
+				add(westPanel,BorderLayout.WEST);
 				
 				showBaseValues(textArea, this.playerbase, this.data.universe);
 				showOtherObjectsOnThisPlanet();
