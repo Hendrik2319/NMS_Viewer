@@ -72,7 +72,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.VerySimpl
 
 public class SimplePanels {
 
+	@SuppressWarnings("unused")
 	private static final CachedIcons<BuildingObject.BaseObjColor> BaseObjColorIconsIS;
+	@SuppressWarnings("unused")
 	private static final CachedIcons<BuildingObject.BaseObjAppearance> BaseObjAppearanceIconsIS;
 	
 	static {
