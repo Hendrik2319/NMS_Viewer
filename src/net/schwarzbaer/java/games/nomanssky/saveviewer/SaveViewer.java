@@ -353,7 +353,7 @@ public class SaveViewer implements ActionListener {
 		contentPane = new ContentPane();
 		
 		mainWindow.startGUI(contentPane);
-		mainWindow.setIconImagesFromResource("/logo/", "applogo_16.png", "applogo_24.png", "applogo_32.png", "applogo_48.png", "applogo_64.png", "applogo_96.png", "applogo_128.png", "applogo_256.png");
+		mainWindow.setIconImagesFromResource("/logo/", "applogo_16.png", "applogo_24.png", "applogo_32.png", "applogo_48.png", "applogo_64.png", "applogo_96.png", "applogo_128.png", "applogo_256.png", "applogo_320.png");
 		
 		
 		updateWindowTitle();

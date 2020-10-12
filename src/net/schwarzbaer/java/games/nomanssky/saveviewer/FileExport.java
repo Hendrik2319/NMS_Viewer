@@ -2090,7 +2090,7 @@ public class FileExport {
 					Point3D color = new Point3D(1,0,0);
 					int i=0;
 					for (Neighbor n:blocks.values())
-						VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), n.obj.position.pos, n.obj.position.at, n.obj.position.up, 0.5, color);
+						VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), null, n.obj.position.pos, n.obj.position.at, n.obj.position.up, 0.5, color);
 				}
 	
 				public void writeModel(PrintWriter vrml) {
@@ -3691,8 +3691,9 @@ public class FileExport {
 			
 			String objectID = obj.objectID;
 			String label = getLabel(objectID);
+			String extraLine = obj.userData==null ? null : String.format("0x%08X", obj.userData);
 			
-			writeModel(vrml, objectID, label, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
+			writeModel(vrml, objectID, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
 		}
 		
 		private static String getLabel(String objectID) {
@@ -3708,7 +3709,7 @@ public class FileExport {
 			});
 		}
 
-		private static void writeModel(PrintWriter vrml, String objectID, String label, Point3D pos, Point3D at, Point3D up, double sizeOfAxisCrosses, Point3D color) {
+		private static void writeModel(PrintWriter vrml, String objectID, String label, String extraLine, Point3D pos, Point3D at, Point3D up, double sizeOfAxisCrosses, Point3D lineColor) {
 			String modelName = mapObjectID2Model.get(objectID);
 			
 			if ("__SIMPLE_LINE".equals(modelName)) {
@@ -3716,13 +3717,16 @@ public class FileExport {
 			} else
 				writeMyOrientation(vrml, pos, at, up, ()->{
 					if (modelName!=null) {
-						String colorStr = color==null?"":(" lineColor "+color.toString("%1.2f",false));
-						String labelStr = createLabelStrs(label);
-						vrml.printf(" %s { string %s%s }", modelName, labelStr, colorStr);
+						String lineColorStr = lineColor==null?"":(" lineColor "+lineColor.toString("%1.2f",false));
+						String labelStr = createLabelStrs(extraLine==null ? label : label+" "+extraLine);
+						vrml.printf(" %s { string %s%s }", modelName, labelStr, lineColorStr);
 					} else
 						switch (objectID) {
 						default:
-							vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string \"%s\" }", sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, objectID);
+							String str;
+							if (extraLine==null) str = String.format("\"%s\"", objectID);
+							else                 str = String.format("[ \"%s\", \"%s\" ]", objectID, extraLine);
+							vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string %s }", sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, str);
 							break;
 						}
 				});
