@@ -1004,6 +1004,7 @@ Background=460C34
 ^FLOORMAT1=Bodenmatte
 ^FLOORMAT1.type=BaseDekoration
 ^FOOD_ICE_STAR=
+^FOOD_J_HOT=
 ^FOOD_MEAT_STEW=Geheimnisvoller Fleischeintopf
 ^FOOD_MEAT_STEW.image=PRODUCT.REFINED.STEW.png
 ^FOOD_MEAT_STEW.imageBG=D92600

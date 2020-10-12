@@ -419,9 +419,8 @@ conflict=2
 atlasinterface=false
 blackhole=true
 blackholetarget=000200FCA45CAF
+remembrance terminal
 class=Yellow
-short=Erinnerungs-Terminal
-info=
 
 [Pln10790004E7D981]
 name=Esvega Tau
@@ -571,10 +570,9 @@ race=Vykeen
 conflict=1
 atlasinterface=false
 blackhole=false
+remembrance terminal
 class=Yellow
 planets=3
-short=Erinnerungs-Terminal
-info=
 
 [Sys007900FEEC69F7]
 name=Gotakeo-Aksan XIII
@@ -1232,9 +1230,8 @@ race=Gek
 conflict=1
 atlasinterface=false
 blackhole=false
+remembrance terminal
 class=Yellow
-short=Erinnerungs-Terminal
-info=
 
 [Pln102F00FAA8CBC4]
 name=Idnaeanr Sigma
@@ -1713,13 +1710,14 @@ name=Uduton
 race=Gek
 atlasinterface=false
 blackhole=false
+remembrance terminal
 class=Blue
 short=Verlassene Station
 info=
-short=1x Erinnerungs-Terminal (besucht)
-info=
-short=1x Erinnerungs-Terminal (stoppt)
-info=
+short=
+info=1x Erinnerungs-Terminal (besucht)
+short=
+info=1x Erinnerungs-Terminal (stoppt)
 
 [Pln116A00FAA8CBC4]
 name=Daymaireth Ganei
@@ -1908,9 +1906,10 @@ race=Gek
 conflict=2
 atlasinterface=false
 blackhole=false
+remembrance terminal
 class=Green
-short=Erinnerungs-Terminal (besucht)
-info=
+short=
+info=Erinnerungs-Terminal (besucht)
 
 [Pln10CD00F8A8DBC4]
 name=Eybrie
@@ -2013,13 +2012,14 @@ class=Yellow
 name=Noom 17/Q2
 biome=Toxic
 is extreme
+remembrance terminal
 resources=Cu_,NH3,Co
 short=ExtTox
 info=
 short=#Cu
 info=
-short.P=Erinnerungs-Terminal (Pl) (besucht)
-info=
+short=
+info=Erinnerungs-Terminal (Pl) (besucht)
 
 [Reg000000FAA8DBC5]
 name=Mibwenhu-Instabilität
@@ -4106,6 +4106,24 @@ blackholetarget=00740003008045
 class=Yellow
 planets=3
 
+[Reg00000001A5EFB9]
+
+[Sys00610001A5EFB9]
+atlasinterface=false
+blackhole=false
+
+[Pln10610001A5EFB9]
+
+[Pln20610001A5EFB9]
+
+[Pln30610001A5EFB9]
+
+[Pln40610001A5EFB9]
+
+[Pln50610001A5EFB9]
+
+[Pln60610001A5EFB9]
+
 [Reg000000006F3FC2]
 name=Gacris-Rand
 
@@ -4769,9 +4787,16 @@ portal=37.0500,-90.0100
 name=Raustuls XV
 biome=Barren
 is extreme
+big geography
 resources=Em_,Py,Ag
-short=riesig
-info=
+
+[Sys008600FE007004]
+atlasinterface=false
+blackhole=false
+
+[Pln108600FE007004]
+
+[Pln308600FE007004]
 
 [Sys008800FE007004]
 name=Crewest-Miyrda XIV
@@ -4836,11 +4861,10 @@ info=sieht aber aus wie "Exotic Mega"
 
 [Pln408A00FE007004]
 name=Nipor H26
+big geography
 resources=Cu,Py,Ag
 short=Feuriger Planet
 info=Geschmolzener Planet (Obsidian-Verderben)
-short=riesig
-info=
 
 [Sys009400FE007004]
 name=Ewtonrou
@@ -4912,18 +4936,16 @@ resources=In,Co,Sr_Rost
 [Pln409B00FE007004]
 name=Taga 82/J6
 biome=Toxic
+big geography
 resources=In,NH3,Co
 short=
 info=neuartige Flora (Origins Update): bunt, Leuchteffekte
-short=riesige Geographie
-info=
 
 [Pln509B00FE007004]
 name=Mominnect
 biome=AnomBubbles
+big geography
 resources=In,Au,NaCl
-short=riesige Geographie
-info=
 
 [Sys009F00FE007004]
 name=Defortew
@@ -4951,6 +4973,13 @@ resources=Cu,P,Fe__
 [Pln509F00FE007004]
 
 [Pln609F00FE007004]
+name=Rakat 61/L1
+biome=Lush
+is extreme
+with water
+big geography
+buriedTreasure=SalvageableScrap
+resources=Cu_,Pf,Ag
 
 [Sys00A900FE007004]
 name=Kellens XIV
@@ -6182,10 +6211,9 @@ race=Gek
 conflict=2
 atlasinterface=false
 blackhole=false
+remembrance terminal
 class=Yellow
 planets=6
-short=Erinnerungs-Terminal
-info=
 
 [Sys007900FD608181]
 name=Pompain
@@ -6913,10 +6941,9 @@ race=Vykeen
 conflict=2
 atlasinterface=false
 blackhole=false
+remembrance terminal
 class=Yellow
 planets=6
-short=Erinnerungs-Terminal
-info=
 
 [Pln20360000BAC370]
 name=Sasosol
@@ -8213,10 +8240,9 @@ conflict=1
 atlasinterface=false
 blackhole=true
 blackholetarget=001F0000DBE61C
+remembrance terminal
 class=Yellow
 planets=5
-short=Erinnerungs-Terminal
-info=
 
 [Pln10790003CC45B8]
 name=Ound Alpha
@@ -8855,9 +8881,8 @@ resources=Cu,Au,Fe__
 [Pln407000FCD7F684]
 name=Ibourb Minoris
 biome=Toxic
+big geography
 resources=Cu,NH3,NaCl
-short=riesig
-info=
 
 [Sys007A00FCD7F684]
 name=Yucilego
