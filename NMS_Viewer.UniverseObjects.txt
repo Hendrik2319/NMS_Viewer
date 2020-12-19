@@ -4798,6 +4798,10 @@ blackhole=false
 
 [Pln308600FE007004]
 
+[Sys008700FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys008800FE007004]
 name=Crewest-Miyrda XIV
 race=Gek
@@ -4877,6 +4881,8 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
+short=2 Sterne
+info=
 
 [Pln209400FE007004]
 
@@ -4947,6 +4953,10 @@ biome=AnomBubbles
 big geography
 resources=In,Au,NaCl
 
+[Sys009E00FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys009F00FE007004]
 name=Defortew
 race=Korvax
@@ -5012,8 +5022,16 @@ atlasinterface=false
 blackhole=false
 
 [Sys00C700FE007004]
+name=Rafaeli-Ris
+race=Korvax
+economy=3
+economy_label=fortgeschritten
+conflict=3
+conflict_label=gesetzlos
 atlasinterface=false
 blackhole=false
+class=Yellow
+planets=4
 
 [Pln20C700FE007004]
 
@@ -5039,6 +5057,18 @@ resources=Cu_,Pf,Ag
 
 [Pln40C800FE007004]
 
+[Sys00C900FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00D100FE007004]
+atlasinterface=false
+blackhole=false
+
+[Pln10D100FE007004]
+
+[Pln30D100FE007004]
+
 [Sys00D400FE007004]
 atlasinterface=false
 blackhole=false
@@ -5052,6 +5082,10 @@ blackhole=false
 [Pln40E800FE007004]
 
 [Sys00E900FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00EB00FE007004]
 atlasinterface=false
 blackhole=false
 
@@ -6124,6 +6158,12 @@ blackhole=true
 blackholetarget=003D000006934D
 class=Yellow
 planets=1
+
+[Reg0000000293A173]
+
+[Sys01E7000293A173]
+atlasinterface=false
+blackhole=false
 
 [Reg000000006C117A]
 name=Yaranba-Band
