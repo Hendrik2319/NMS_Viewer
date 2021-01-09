@@ -30,7 +30,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -50409207801775293L;
 	
-	enum RawDataTreeIcons { Object, Array, String, Number, Bool }
+	enum RawDataTreeIcons { Object, Array, String, Number, Bool, Null }
 	static IconSource.CachedIcons<RawDataTreeIcons> rawDataTreeIS;
 	
 	static {
@@ -191,6 +191,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 				case Integer: icon = RawDataTreeIcons.Number; break;
 				case Object : icon = RawDataTreeIcons.Object; break;
 				case String : icon = RawDataTreeIcons.String; setText( jsonTreeNode.toString(SaveViewer.steamIDs.getNameReplacement(((StringValue)value).value)) ); break;
+				case Null   : icon = RawDataTreeIcons.Null  ; break;
 				}
 			}
 			

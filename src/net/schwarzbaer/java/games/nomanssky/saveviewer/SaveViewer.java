@@ -600,7 +600,8 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private SaveGameData openSaveGameForPreview(File saveGameFile) {
-		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
+		JSON_Parser.Result result = new JSON_Parser(saveGameFile).parse();
+		JSON_Object new_json_data = result.object; // TODO: result.object == null --> ???
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
@@ -627,7 +628,8 @@ public class SaveViewer implements ActionListener {
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
 		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
-		JSON_Object new_json_data = new JSON_Parser(saveGameFile).parse();
+		JSON_Parser.Result result = new JSON_Parser(saveGameFile).parse();
+		JSON_Object new_json_data = result.object; // TODO: result.object == null --> ???
 		Gui.log_ln(" done");
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
@@ -683,7 +685,8 @@ public class SaveViewer implements ActionListener {
 			if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
 			Gui.log_ln("");
 			Gui.log("Parse file \"%s\" ...",view.file.getPath());
-			JSON_Object new_json_data = new JSON_Parser(view.file).parse();
+			JSON_Parser.Result result = new JSON_Parser(view.file).parse();
+			JSON_Object new_json_data = result.object; // TODO: result.object == null --> ???
 			Gui.log_ln(" done");
 			
 			HashMap<String, Vector<String>> deObfuscatorUsage = null;
@@ -1246,8 +1249,9 @@ public class SaveViewer implements ActionListener {
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
 		
-		JSON_Object json_Object = new JSON_Parser(sourcefile).parse();
-		if (json_Object==null) return;
+		JSON_Parser.Result result = new JSON_Parser(sourcefile).parse();
+		if (result.object==null) return;
+		JSON_Object json_Object = result.object;
 		
 		File htmlfile = new File("./"+sourcefile.getName()+".html"); 
 		FileExport.writeToHTML(sourcefile.getName(),json_Object,htmlfile);

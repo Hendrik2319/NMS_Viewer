@@ -165,6 +165,7 @@ public class TreeView {
 			case Integer: return ((IntegerValue)value1).value.longValue()    == ((IntegerValue)value2).value.longValue();
 			case Array  : return true;
 			case Object : return true;
+			case Null   : return true;
 			}
 			return false;
 		}
@@ -319,6 +320,7 @@ public class TreeView {
 			case Integer: return String.format("%d"    , ((IntegerValue)data).value);
 			case Array  : return String.format("[%d]"  , ((ArrayValue  )data).value.size());
 			case Object : return String.format("{%d}"  , ((ObjectValue )data).value.size());
+			case Null   : return "<null>";
 			}
 			return data.toString();
 		}
