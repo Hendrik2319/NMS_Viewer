@@ -11,14 +11,13 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
@@ -29,22 +28,22 @@ public class TreeView {
 		enum Source { First, Second, Both }
 		enum Equal{ Equal, UnEqual, Unknown }
 		
-		private final Value data2;
+		private final Value<NVExtra,VExtra> data2;
 		private final Source source;
 		private Equal allChildrenAreEqual;
 
-		public CompareTreeNode(JSON_Object json_Object1, JSON_Object json_Object2) {
-			this(null,null,new ObjectValue(json_Object1),new ObjectValue(json_Object2));
+		public CompareTreeNode(JSON_Object<NVExtra,VExtra> json_Object1, JSON_Object<NVExtra,VExtra> json_Object2) {
+			this(null,null,new ObjectValue<>(json_Object1,SaveViewer.factoryForExtras.createValueExtra(Type.Object)),new ObjectValue<>(json_Object2,SaveViewer.factoryForExtras.createValueExtra(Type.Object)));
 		}
 
-		private CompareTreeNode(CompareTreeNode parent, String name, Value value, Source source) {
+		private CompareTreeNode(CompareTreeNode parent, String name, Value<NVExtra,VExtra> value, Source source) {
 			super(parent,name,value);
 			this.data2 = null;
 			this.source = source;
 			this.allChildrenAreEqual = (source==Source.Both)?Equal.Equal:Equal.UnEqual;
 		}
 
-		private CompareTreeNode(CompareTreeNode parent, String name, Value value1, Value value2) {
+		private CompareTreeNode(CompareTreeNode parent, String name, Value<NVExtra,VExtra> value1, Value<NVExtra,VExtra> value2) {
 			super(parent,name,value1);
 			this.data2 = value2;
 			this.source = Source.Both;
@@ -71,26 +70,26 @@ public class TreeView {
 		void createChildren() {
 			switch (data.type) {
 			case Object: {
-				ObjectValue object1 = (ObjectValue)data;
-				ObjectValue object2 = (ObjectValue)data2;
+				ObjectValue<NVExtra,VExtra> object1 = data ==null ? null : data .castToObjectValue();
+				ObjectValue<NVExtra,VExtra> object2 = data2==null ? null : data2.castToObjectValue();
 				Vector<CompareTreeNode> childrenVec = new Vector<CompareTreeNode>();
 				
 				if (object2==null) {
-					for (NamedValue namedvalue : object1.value)
+					for (NamedValue<NVExtra,VExtra> namedvalue : object1.value)
 						childrenVec.add(new CompareTreeNode(this,namedvalue.name,namedvalue.value,source));
 				} else {
-					HashMap<String, Value> object2Values = new HashMap<>();
-					for (NamedValue namedvalue : object2.value)
+					HashMap<String, Value<NVExtra,VExtra>> object2Values = new HashMap<>();
+					for (NamedValue<NVExtra,VExtra> namedvalue : object2.value)
 						object2Values.put(namedvalue.name, namedvalue.value);
 					
-					for (NamedValue namedvalue : object1.value) {
+					for (NamedValue<NVExtra,VExtra> namedvalue : object1.value) {
 						String valueName = namedvalue.name;
 						
 						if (!object2Values.containsKey(valueName)) {
 							childrenVec.add(new CompareTreeNode(this,valueName,namedvalue.value,Source.First));
 						} else {
-							Value value1 = namedvalue.value;
-							Value value2 = object2Values.get(valueName);
+							Value<NVExtra,VExtra> value1 = namedvalue.value;
+							Value<NVExtra,VExtra> value2 = object2Values.get(valueName);
 							object2Values.remove(valueName);
 							if (areEqual(value1,value2)) {
 								if (value1.type == Type.Object || value1.type == Type.Array)
@@ -104,7 +103,7 @@ public class TreeView {
 						}
 					}
 					for (String valueName : object2Values.keySet()) {
-						Value value2 = object2Values.get(valueName);
+						Value<NVExtra,VExtra> value2 = object2Values.get(valueName);
 						childrenVec.add(new CompareTreeNode(this,valueName,value2,Source.Second));
 					}
 				}
@@ -112,12 +111,12 @@ public class TreeView {
 				children = childrenVec.toArray(new CompareTreeNode[0]);
 			} break;
 			case Array: {
-				ArrayValue array1 = (ArrayValue)data;
-				ArrayValue array2 = (ArrayValue)data2;
+				ArrayValue<NVExtra,VExtra> array1 = data ==null ? null : data .castToArrayValue();
+				ArrayValue<NVExtra,VExtra> array2 = data2==null ? null : data2.castToArrayValue();
 				Vector<CompareTreeNode> childrenVec = new Vector<CompareTreeNode>();
 				
 				if (array2==null) {
-					for (Value value1 : array1.value)
+					for (Value<NVExtra,VExtra> value1 : array1.value)
 						childrenVec.add(new CompareTreeNode(this,null,value1,source));
 				} else {
 					int size1 = array1.value.size();
@@ -127,8 +126,8 @@ public class TreeView {
 						if      (i>=size1) childrenVec.add(new CompareTreeNode(this,null,array2.value.get(i),Source.Second));
 						else if (i>=size2) childrenVec.add(new CompareTreeNode(this,null,array1.value.get(i),Source.First ));
 						else {
-							Value value1 = array1.value.get(i);
-							Value value2 = array2.value.get(i);
+							Value<NVExtra,VExtra> value1 = array1.value.get(i);
+							Value<NVExtra,VExtra> value2 = array2.value.get(i);
 							if (areEqual(value1,value2)) { 
 								if (value1.type == Type.Object || value1.type == Type.Array)
 									childrenVec.add(new CompareTreeNode(this,null,value1,value2));
@@ -150,19 +149,19 @@ public class TreeView {
 			}
 		}
 
-		private static boolean areEqual(Value value1, Value value2) {
+		private static boolean areEqual(Value<NVExtra,VExtra> value1, Value<NVExtra,VExtra> value2) {
 			if (value1.type != value2.type) return false;
 			switch(value1.type) {
-			case String : return ((StringValue)value1).value.compareTo(((StringValue)value2).value)==0;
+			case String : return value1.castToStringValue().value.compareTo(value2.castToStringValue().value)==0;
 //			{
 //				String str1 = ((StringValue)value1).value;
 //				String str2 = ((StringValue)value2).value;
 //				if (str1==null) return str2==null;
 //				return str1.compareTo(str2)==0;
 //			}
-			case Bool   : return ((BoolValue   )value1).value.booleanValue() == ((BoolValue   )value2).value.booleanValue();
-			case Float  : return ((FloatValue  )value1).value.doubleValue()  == ((FloatValue  )value2).value.doubleValue();
-			case Integer: return ((IntegerValue)value1).value.longValue()    == ((IntegerValue)value2).value.longValue();
+			case Bool   : return value1.castToBoolValue   ().value.booleanValue() == value2.castToBoolValue   ().value.booleanValue();
+			case Float  : return value1.castToFloatValue  ().value.doubleValue()  == value2.castToFloatValue  ().value.doubleValue();
+			case Integer: return value1.castToIntegerValue().value.longValue()    == value2.castToIntegerValue().value.longValue();
 			case Array  : return true;
 			case Object : return true;
 			case Null   : return true;
@@ -190,14 +189,14 @@ public class TreeView {
 			
 			switch(data.type) {
 			case Array  : {
-				int size  = ((ArrayValue)data ).value.size();
-				int size2 = ((ArrayValue)data2).value.size();
+				int size  = data .castToArrayValue().value.size();
+				int size2 = data2.castToArrayValue().value.size();
 				if (size == size2) return String.format("[%d]", size);
 				return String.format("[%d] | [%d]", size, size2);
 			}
 			case Object : {
-				int size  = ((ObjectValue)data ).value.size();
-				int size2 = ((ObjectValue)data2).value.size();
+				int size  = data .castToObjectValue().value.size();
+				int size2 = data2.castToObjectValue().value.size();
 				if (size == size2) return String.format("{%d}", size);
 				return String.format("{%d} | {%d}", size, size2);
 			}
@@ -246,14 +245,14 @@ public class TreeView {
 		private boolean hideProcessedNodes;
 		boolean wasDeObfuscated;
 
-		private JsonTreeNode(JsonTreeNode parent, String name, Value value, boolean wasDeObfuscated, boolean hideProcessedNodes) {
+		private JsonTreeNode(JsonTreeNode parent, String name, Value<NVExtra,VExtra> value, boolean wasDeObfuscated, boolean hideProcessedNodes) {
 			super(parent,name,value);
 			this.wasDeObfuscated = wasDeObfuscated;
 			this.hideProcessedNodes = hideProcessedNodes;
 		}
 
-		public JsonTreeNode(JSON_Object data, boolean hideProcessedNodes) {
-			this(null,null,new ObjectValue(data), true, hideProcessedNodes);
+		public JsonTreeNode(JSON_Object<NVExtra,VExtra> data, boolean hideProcessedNodes) {
+			this(null,null,new ObjectValue<>(data,SaveViewer.factoryForExtras.createValueExtra(Type.Object)), true, hideProcessedNodes);
 		}
 
 		@Override
@@ -261,10 +260,10 @@ public class TreeView {
 			switch (data.type) {
 			case Object:
 				if (data instanceof ObjectValue) {
-					ObjectValue objectValue = (ObjectValue)data;
+					ObjectValue<NVExtra,VExtra> objectValue = data.castToObjectValue();
 					children = new JsonTreeNode[objectValue.value.size()];
 					int i=0;
-					for (NamedValue namedvalue : objectValue.value)
+					for (NamedValue<NVExtra,VExtra> namedvalue : objectValue.value)
 						if (!hideProcessedNodes || !namedvalue.value.wasProcessed || namedvalue.value.hasUnprocessedChildren())
 							children[i++] = new JsonTreeNode( this, namedvalue.name, namedvalue.value, namedvalue.wasDeObfuscated, hideProcessedNodes );
 					children = Arrays.copyOf(children, i);
@@ -273,10 +272,10 @@ public class TreeView {
 				break;
 			case Array:
 				if (data instanceof ArrayValue) {
-					ArrayValue arrayValue = (ArrayValue)data;
+					ArrayValue<NVExtra,VExtra> arrayValue = data.castToArrayValue();
 					children = new JsonTreeNode[arrayValue.value.size()];
 					int i=0;
-					for (Value value : arrayValue.value)
+					for (Value<NVExtra,VExtra> value : arrayValue.value)
 						if (!hideProcessedNodes || !value.wasProcessed || value.hasUnprocessedChildren())
 							children[i++] = new JsonTreeNode(this,null,value, true, hideProcessedNodes);
 					children = Arrays.copyOf(children, i);
@@ -294,9 +293,9 @@ public class TreeView {
 	abstract static class AbstractDataTreeNode<TreeNodeType extends AbstractDataTreeNode<TreeNodeType>> extends AbstractTreeNode<TreeNodeType> {
 		
 		protected final String name;
-		protected final Value data;
+		protected final Value<NVExtra,VExtra> data;
 		
-		public AbstractDataTreeNode(TreeNodeType parent, String name, Value data) {
+		public AbstractDataTreeNode(TreeNodeType parent, String name, Value<NVExtra,VExtra> data) {
 			super(parent);
 			this.name = name;
 			this.data = data;
@@ -314,12 +313,12 @@ public class TreeView {
 
 		protected String dataToString() {
 			switch(data.type) {
-			case String : return String.format("\"%s\"", ((StringValue )data).value);
-			case Bool   : return String.format("%s"    , ((BoolValue   )data).value);
-			case Float  : return                      ""+((FloatValue  )data).value ;
-			case Integer: return String.format("%d"    , ((IntegerValue)data).value);
-			case Array  : return String.format("[%d]"  , ((ArrayValue  )data).value.size());
-			case Object : return String.format("{%d}"  , ((ObjectValue )data).value.size());
+			case String : return String.format("\"%s\"", data.castToStringValue ().value);
+			case Bool   : return String.format("%s"    , data.castToBoolValue   ().value);
+			case Float  : return                      ""+data.castToFloatValue  ().value ;
+			case Integer: return String.format("%d"    , data.castToIntegerValue().value);
+			case Array  : return String.format("[%d]"  , data.castToArrayValue  ().value.size());
+			case Object : return String.format("{%d}"  , data.castToObjectValue ().value.size());
 			case Null   : return "<null>";
 			}
 			return data.toString();

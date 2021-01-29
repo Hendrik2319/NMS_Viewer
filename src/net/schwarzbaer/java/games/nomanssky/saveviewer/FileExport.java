@@ -33,6 +33,8 @@ import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
@@ -100,7 +102,7 @@ public class FileExport {
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
-	static void writeToJSON(JSON_Object json_Object, File copyfile) {
+	static void writeToJSON(JSON_Object<NVExtra,VExtra> json_Object, File copyfile) {
 		PrintWriter out;
 		try {
 			out = new PrintWriter(copyfile,StandardCharsets.UTF_8.name());
@@ -118,7 +120,7 @@ public class FileExport {
 		
 	}
 
-	static void writeToHTML(String title, JSON_Object json_Object, File htmlfile) {
+	static void writeToHTML(String title, JSON_Object<NVExtra,VExtra> json_Object, File htmlfile) {
 		PrintWriter out;
 		try {
 			out = new PrintWriter(htmlfile,StandardCharsets.UTF_8.name());
@@ -172,7 +174,7 @@ public class FileExport {
 	
 	private static class HtmlJsonOutput {
 
-		static void writeToJSON_obj(PrintWriter out, JSON_Object json_Object) {
+		static void writeToJSON_obj(PrintWriter out, JSON_Object<NVExtra,VExtra> json_Object) {
 			if (json_Object==null) {
 				out.print("null");
 				return;
@@ -180,7 +182,7 @@ public class FileExport {
 			
 			out.print("{");
 			for (int i=0; i<json_Object.size(); ++i) {
-				NamedValue namedvalue = json_Object.get(i);
+				NamedValue<NVExtra,VExtra> namedvalue = json_Object.get(i);
 				out.printf("\"%s\":",namedvalue.name);
 				writeToJSON_value(out, namedvalue.value);
 				if (i+1<json_Object.size()) out.print(",");
@@ -188,7 +190,7 @@ public class FileExport {
 			out.print("}");
 		}
 
-		static void writeToHTML_obj(PrintWriter out, JSON_Object json_Object, String ID) {
+		static void writeToHTML_obj(PrintWriter out, JSON_Object<NVExtra,VExtra> json_Object, String ID) {
 			if (json_Object==null) {
 				out.print("null");
 				return;
@@ -198,7 +200,7 @@ public class FileExport {
 			out.println("<div id="+ID+" class=\"valuelist hidden\">");
 			
 			for (int i=0; i<json_Object.size(); ++i) {
-				NamedValue namedvalue = json_Object.get(i);
+				NamedValue<NVExtra,VExtra> namedvalue = json_Object.get(i);
 				out.printf("<span class=\"name\">\"%s\"</span> : ",namedvalue.name);
 				writeToHTML_value(out, namedvalue.value, ID, i);
 				out.println(",<br/>");
@@ -208,7 +210,7 @@ public class FileExport {
 			out.println("}");
 		}
 
-		static void writeToJSON_arr(PrintWriter out, JSON_Array json_Array) {
+		static void writeToJSON_arr(PrintWriter out, JSON_Array<NVExtra,VExtra> json_Array) {
 			if (json_Array==null) {
 				out.print("null");
 				return;
@@ -226,7 +228,7 @@ public class FileExport {
 			out.print("]");
 		}
 
-		static void writeToHTML_arr(PrintWriter out, JSON_Array json_Array, String ID) {
+		static void writeToHTML_arr(PrintWriter out, JSON_Array<NVExtra,VExtra> json_Array, String ID) {
 			if (json_Array==null) {
 				out.print("null");
 				return;
@@ -244,22 +246,22 @@ public class FileExport {
 			out.println("]");
 		}
 
-		static void writeToJSON_value(PrintWriter out, Value value) {
-			if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"\"%s\"", ((StringValue )value).value);
-			if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"%s"    , ((FloatValue  )value).value);
-			if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"%d"    , ((IntegerValue)value).value);
-			if ( value instanceof BoolValue    ) out.printf(Locale.ENGLISH,"%s"    , ((BoolValue   )value).value);
-			if ( value instanceof ObjectValue  ) writeToJSON_obj(out, ((ObjectValue)value).value);
-			if ( value instanceof ArrayValue   ) writeToJSON_arr(out, ((ArrayValue )value).value);
+		static void writeToJSON_value(PrintWriter out, Value<NVExtra,VExtra> value) {
+			if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"\"%s\"", value.castToStringValue ().value);
+			if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"%s"    , value.castToFloatValue  ().value);
+			if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"%d"    , value.castToIntegerValue().value);
+			if ( value instanceof BoolValue    ) out.printf(Locale.ENGLISH,"%s"    , value.castToBoolValue   ().value);
+			if ( value instanceof ObjectValue  ) writeToJSON_obj(out, value.castToObjectValue().value);
+			if ( value instanceof ArrayValue   ) writeToJSON_arr(out, value.castToArrayValue ().value);
 		}
 
-		static void writeToHTML_value(PrintWriter out, Value value, String ID, int i) {
-			if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"<span class=\"string\">"+"\"%s\""+"</span>", ((StringValue )value).value);
-			if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", ((FloatValue  )value).value);
-			if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%d"    +"</span>", ((IntegerValue)value).value);
-			if ( value instanceof BoolValue    ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", ((BoolValue   )value).value);
-			if ( value instanceof ObjectValue  ) writeToHTML_obj(out, ((ObjectValue)value).value, ID+"_"+i);
-			if ( value instanceof ArrayValue   ) writeToHTML_arr(out, ((ArrayValue )value).value, ID+"_"+i);
+		static void writeToHTML_value(PrintWriter out, Value<NVExtra,VExtra> value, String ID, int i) {
+			if ( value instanceof StringValue  ) out.printf(Locale.ENGLISH,"<span class=\"string\">"+"\"%s\""+"</span>", value.castToStringValue ().value);
+			if ( value instanceof FloatValue   ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", value.castToFloatValue  ().value);
+			if ( value instanceof IntegerValue ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%d"    +"</span>", value.castToIntegerValue().value);
+			if ( value instanceof BoolValue    ) out.printf(Locale.ENGLISH,"<span class=\"number\">"+"%s"    +"</span>", value.castToBoolValue   ().value);
+			if ( value instanceof ObjectValue  ) writeToHTML_obj(out, value.castToObjectValue().value, ID+"_"+i);
+			if ( value instanceof ArrayValue   ) writeToHTML_arr(out, value.castToArrayValue ().value, ID+"_"+i);
 		}
 		
 	}

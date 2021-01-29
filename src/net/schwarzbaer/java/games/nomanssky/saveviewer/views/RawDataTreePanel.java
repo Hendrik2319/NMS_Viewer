@@ -22,8 +22,9 @@ import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
@@ -178,7 +179,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			RawDataTreeIcons icon = null;
 			if (obj instanceof JsonTreeNode) {
 				JsonTreeNode jsonTreeNode = (JsonTreeNode)obj;
-				Value value = jsonTreeNode.data;
+				Value<NVExtra,VExtra> value = jsonTreeNode.data;
 				wasProcessed = value.wasProcessed;
 				hasUnprocessedChildren = value.hasUnprocessedChildren();
 				wasDeObfuscated = ((JsonTreeNode)obj).wasDeObfuscated;
@@ -190,7 +191,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 				case Float  : icon = RawDataTreeIcons.Number; break;
 				case Integer: icon = RawDataTreeIcons.Number; break;
 				case Object : icon = RawDataTreeIcons.Object; break;
-				case String : icon = RawDataTreeIcons.String; setText( jsonTreeNode.toString(SaveViewer.steamIDs.getNameReplacement(((StringValue)value).value)) ); break;
+				case String : icon = RawDataTreeIcons.String; setText( jsonTreeNode.toString(SaveViewer.steamIDs.getNameReplacement(value.castToStringValue().value)) ); break;
 				case Null   : icon = RawDataTreeIcons.Null  ; break;
 				}
 			}

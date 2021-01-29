@@ -72,6 +72,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 import net.schwarzbaer.system.ClipboardTools;
 
@@ -600,8 +601,9 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private SaveGameData openSaveGameForPreview(File saveGameFile) {
-		JSON_Parser.Result result = new JSON_Parser(saveGameFile).parse();
-		JSON_Object new_json_data = result.object; // TODO: result.object == null --> ???
+		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,factoryForExtras).parse();
+		JSON_Object<NVExtra,VExtra> new_json_data = result.object;
+		if (new_json_data==null) throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
@@ -628,8 +630,9 @@ public class SaveViewer implements ActionListener {
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
 		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
-		JSON_Parser.Result result = new JSON_Parser(saveGameFile).parse();
-		JSON_Object new_json_data = result.object; // TODO: result.object == null --> ???
+		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,factoryForExtras).parse();
+		JSON_Object<NVExtra,VExtra> new_json_data = result.object;
+		if (new_json_data==null) throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
 		Gui.log_ln(" done");
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
@@ -679,14 +682,28 @@ public class SaveViewer implements ActionListener {
 		
 		return saveGameData;
 	}
+	
+	public static class NVExtra implements JSON_Data.NamedValueExtra {
+		
+	}
+	public static class VExtra implements JSON_Data.ValueExtra {
+		
+	}
+	
+	public static final FactoryForExtras factoryForExtras = new FactoryForExtras(); 
+	public static class FactoryForExtras implements JSON_Data.FactoryForExtras<NVExtra,VExtra> {
+		@Override public NVExtra createNamedValueExtra(Type type) { return new NVExtra(); }
+		@Override public VExtra createValueExtra(Type type) { return new VExtra(); }
+	}
 
 	private void reloadSaveGameView(SaveGameView view) {
 		runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
 			if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
 			Gui.log_ln("");
 			Gui.log("Parse file \"%s\" ...",view.file.getPath());
-			JSON_Parser.Result result = new JSON_Parser(view.file).parse();
-			JSON_Object new_json_data = result.object; // TODO: result.object == null --> ???
+			JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(view.file,factoryForExtras).parse();
+			JSON_Object<NVExtra,VExtra> new_json_data = result.object;
+			if (new_json_data==null) throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
 			Gui.log_ln(" done");
 			
 			HashMap<String, Vector<String>> deObfuscatorUsage = null;
@@ -930,10 +947,10 @@ public class SaveViewer implements ActionListener {
 			return replacements.get(originalStr);
 		}
 
-		public JSON_Object deObfuscate(JSON_Object data) {
+		public JSON_Object<NVExtra,VExtra> deObfuscate(JSON_Object<NVExtra,VExtra> data) {
 			return deObfuscate(data, true);
 		}
-		public JSON_Object deObfuscate(JSON_Object data, boolean verbose) {
+		public JSON_Object<NVExtra,VExtra> deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose) {
 			
 			usage = new HashMap<>();
 			Result res = new Result();
@@ -1249,9 +1266,9 @@ public class SaveViewer implements ActionListener {
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
 		
-		JSON_Parser.Result result = new JSON_Parser(sourcefile).parse();
+		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(sourcefile,factoryForExtras).parse();
 		if (result.object==null) return;
-		JSON_Object json_Object = result.object;
+		JSON_Object<NVExtra,VExtra> json_Object = result.object;
 		
 		File htmlfile = new File("./"+sourcefile.getName()+".html"); 
 		FileExport.writeToHTML(sourcefile.getName(),json_Object,htmlfile);
