@@ -38,9 +38,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
@@ -751,7 +748,7 @@ public class SaveGameData {
 			if (json_Array==null) return null;
 			return new SeedValue(
 				getBoolValue(json_Array, 0),
-				parseHexFormatedNumber(getValue(json_Array, 1))
+				parseHexFormatedNumber(getSubNode(json_Array, 1))
 			);
 		}
 
@@ -4538,127 +4535,165 @@ public class SaveGameData {
 	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull, ArrayIndexOutOfBounds }
 
 	@SuppressWarnings("unused")
-	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { if (val==null || val.castToArrayValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToArrayValue  ().value;}
-	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { if (val==null || val.castToObjectValue ()==null) return null; val.extra.wasProcessed=true; return val.castToObjectValue ().value;}
-	private static String                      getString (Value<NVExtra,VExtra> val) { if (val==null || val.castToStringValue ()==null) return null; val.extra.wasProcessed=true; return val.castToStringValue ().value;}
-	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { if (val==null || val.castToBoolValue   ()==null) return null; val.extra.wasProcessed=true; return val.castToBoolValue   ().value;}
-	private static Long                        getInteger(Value<NVExtra,VExtra> val) { if (val==null || val.castToIntegerValue()==null) return null; val.extra.wasProcessed=true; return val.castToIntegerValue().value;}
-	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { if (val==null || val.castToFloatValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToFloatValue  ().value;}
+	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { return JSON_Data.getArrayValue  (val); }
+	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { return JSON_Data.getObjectValue (val); }
+	private static String                      getString (Value<NVExtra,VExtra> val) { return JSON_Data.getStringValue (val); }
+	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { return JSON_Data.getBoolValue   (val); }
+	private static Long                        getInteger(Value<NVExtra,VExtra> val) { return JSON_Data.getIntegerValue(val); }
+	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { return JSON_Data.getFloatValue  (val); }
+//	@SuppressWarnings("unused")
+//	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { if (val==null || val.castToArrayValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToArrayValue  ().value;}
+//	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { if (val==null || val.castToObjectValue ()==null) return null; val.extra.wasProcessed=true; return val.castToObjectValue ().value;}
+//	private static String                      getString (Value<NVExtra,VExtra> val) { if (val==null || val.castToStringValue ()==null) return null; val.extra.wasProcessed=true; return val.castToStringValue ().value;}
+//	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { if (val==null || val.castToBoolValue   ()==null) return null; val.extra.wasProcessed=true; return val.castToBoolValue   ().value;}
+//	private static Long                        getInteger(Value<NVExtra,VExtra> val) { if (val==null || val.castToIntegerValue()==null) return null; val.extra.wasProcessed=true; return val.castToIntegerValue().value;}
+//	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { if (val==null || val.castToFloatValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToFloatValue  ().value;}
 
 	static boolean hasValue(JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return JSON_Data.hasSubNode(data, path);
 	}
 
-	private static Value<NVExtra,VExtra> getValue(JSON_Object<NVExtra,VExtra> data, Object... path) {
-		Value<NVExtra,VExtra> value = null;
-		if (path.length==0) throw new IllegalStateException("Calling getValue(JSON_Object data, Object... path) is not allowed with zero length path");
+//	private static Value<NVExtra,VExtra> getValue(JSON_Object<NVExtra,VExtra> data, Object... path) {
+//		Value<NVExtra,VExtra> value = null;
+//		if (path.length==0) throw new IllegalStateException("Calling getValue(JSON_Object data, Object... path) is not allowed with zero length path");
+//		try {
+//			value = JSON_Data.getSubNode(data, path);
+//			error = Error.NoError;
+//			errorMessage = "";
+//			if (value==null) {
+//				error = Error.ValueIsNull;
+//				errorMessage = String.format("Value is null. (path: %s)", Arrays.toString(path));
+//			}
+//		} catch (PathIsNotSolvableException e) {
+//			e.printStackTrace();
+//			error = Error.PathIsNotSolvable;
+//			errorMessage = "PathIsNotSolvable: "+Arrays.toString(path);
+//		}
+//		return value;
+//	}
+
+//	private static Value<NVExtra,VExtra> getValue(JSON_Array<NVExtra,VExtra> arr, int index) {
+//		Value<NVExtra,VExtra> value = null;
+//		if (0<=index && index<arr.size()) {
+//			value = arr.get(index);
+//			error = Error.NoError;
+//			errorMessage = "";
+//			if (value==null) {
+//				error = Error.ValueIsNull;
+//				errorMessage = String.format("Value is null. (Array Index: %d)", index);
+//			}
+//		} else {
+//			error = Error.ArrayIndexOutOfBounds;
+//			errorMessage = String.format("Array Index (%d) is out of bounds [0..%d].", index, arr.size());
+//		}
+//		return value;
+//	}
+
+//	private static <V> V generic_convert(GetValueHelper<V> helper, Value<NVExtra,VExtra> value, Supplier<String> source) {
+//		if (value==null) return null;
+//		if (helper.isInstance(value)) {
+//			error = Error.NoError;
+//			errorMessage = "";
+//			value.extra.wasProcessed = true;
+//			return helper.getValue(value);
+//		} else {
+//			error = Error.UnexpectedType;
+//			errorMessage = String.format("Value has not the expected type (%s). %s type found. %s", helper.getType(), value.type, source.get());
+//			return null;
+//		}
+//	}
+
+//	private static abstract class GetValueHelper<V> {
+//		private Value.Type type;
+//		public GetValueHelper(Value.Type type) { this.type = type;}
+//		public Value.Type getType() { return type; }
+//		public abstract boolean isInstance(Value<NVExtra,VExtra> value);
+//		public abstract V getValue(Value<NVExtra,VExtra> value);
+		
+//		private static final class GVH_Object extends GetValueHelper<JSON_Object<NVExtra,VExtra>> {
+//			private GVH_Object() { super(Type.Object); }
+//			@Override public boolean                     isInstance(Value<NVExtra,VExtra> value) { return value instanceof ObjectValue; }
+//			@Override public JSON_Object<NVExtra,VExtra> getValue  (Value<NVExtra,VExtra> value) { return value.castToObjectValue().value; }
+//		}
+//		private static final class GVH_Array extends GetValueHelper<JSON_Array<NVExtra,VExtra>> {
+//			private GVH_Array() { super(Type.Array); }
+//			@Override public boolean                    isInstance(Value<NVExtra,VExtra> value) { return value instanceof ArrayValue; }
+//			@Override public JSON_Array<NVExtra,VExtra> getValue  (Value<NVExtra,VExtra> value) { return value.castToArrayValue().value; }
+//		}
+//		private static final class GVH_String extends GetValueHelper<String> {
+//			private GVH_String() { super(Type.String); }
+//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof StringValue; }
+//			@Override public String  getValue  (Value<NVExtra,VExtra> value) { return value.castToStringValue().value; }
+//		}
+//		private static final class GVH_Double extends GetValueHelper<Double> {
+//			private GVH_Double() { super(Type.Float); }
+//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof FloatValue; }
+//			@Override public Double  getValue  (Value<NVExtra,VExtra> value) { return value.castToFloatValue().value; }
+//		}
+//		private static final class GVH_Integer extends GetValueHelper<Long> {
+//			private GVH_Integer() { super(Type.Integer); }
+//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof IntegerValue; }
+//			@Override public Long    getValue  (Value<NVExtra,VExtra> value) { return value.castToIntegerValue().value; }
+//		}
+//		private static final class GVH_Bool extends GetValueHelper<Boolean> {
+//			private GVH_Bool() { super(Type.Bool); }
+//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof BoolValue; }
+//			@Override public Boolean getValue  (Value<NVExtra,VExtra> value) { return value.castToBoolValue().value; }
+//		}
+	
+//	}
+
+//	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Array<NVExtra,VExtra> arr, int index) {
+//		return generic_convert(helper, getValue(arr, index), ()->"(Array Index: "+index+")");
+//	}
+//
+//	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Object<NVExtra,VExtra> data, Object... path) {
+//		return generic_convert(helper, getValue(data, path), ()->"(path: "+Arrays.toString(path)+")");
+//	}
+
+	private static Value<NVExtra, VExtra> getSubNode(JSON_Object<NVExtra, VExtra> data, Object... path) {
 		try {
-			value = JSON_Data.getSubNode(data,path);
-			error = Error.NoError;
-			errorMessage = "";
-			if (value==null) {
-				error = Error.ValueIsNull;
-				errorMessage = String.format("Value is null. (path: %s)", Arrays.toString(path));
-			}
+			return JSON_Data.getSubNode(data, path);
 		} catch (PathIsNotSolvableException e) {
-			e.printStackTrace();
-			error = Error.PathIsNotSolvable;
-			errorMessage = "PathIsNotSolvable: "+Arrays.toString(path);
-		}
-		return value;
-	}
-
-	private static Value<NVExtra,VExtra> getValue(JSON_Array<NVExtra,VExtra> arr, int index) {
-		Value<NVExtra,VExtra> value = null;
-		if (0<=index && index<arr.size()) {
-			value = arr.get(index);
-			error = Error.NoError;
-			errorMessage = "";
-			if (value==null) {
-				error = Error.ValueIsNull;
-				errorMessage = String.format("Value is null. (Array Index: %d)", index);
-			}
-		} else {
-			error = Error.ArrayIndexOutOfBounds;
-			errorMessage = String.format("Array Index (%d) is out of bounds [0..%d].", index, arr.size());
-		}
-		return value;
-	}
-
-	private static <V> V generic_convert(GetValueHelper<V> helper, Value<NVExtra,VExtra> value, Supplier<String> source) {
-		if (value==null) return null;
-		if (helper.isInstance(value)) {
-			error = Error.NoError;
-			errorMessage = "";
-			value.extra.wasProcessed = true;
-			return helper.getValue(value);
-		} else {
-			error = Error.UnexpectedType;
-			errorMessage = String.format("Value has not the expected type (%s). %s type found. %s", helper.getType(), value.type, source.get());
+			Gui.log_error_ln("PathIsNotSolvableException: %s", e.getMessage());
 			return null;
 		}
 	}
 
-	private static abstract class GetValueHelper<V> {
-		private Value.Type type;
-		public GetValueHelper(Value.Type type) { this.type = type;}
-		public Value.Type getType() { return type; }
-		public abstract boolean isInstance(Value<NVExtra,VExtra> value);
-		public abstract V getValue(Value<NVExtra,VExtra> value);
-		
-		private static final class GVH_Object extends GetValueHelper<JSON_Object<NVExtra,VExtra>> {
-			private GVH_Object() { super(Type.Object); }
-			@Override public boolean                     isInstance(Value<NVExtra,VExtra> value) { return value instanceof ObjectValue; }
-			@Override public JSON_Object<NVExtra,VExtra> getValue  (Value<NVExtra,VExtra> value) { return value.castToObjectValue().value; }
-		}
-		private static final class GVH_Array extends GetValueHelper<JSON_Array<NVExtra,VExtra>> {
-			private GVH_Array() { super(Type.Array); }
-			@Override public boolean                    isInstance(Value<NVExtra,VExtra> value) { return value instanceof ArrayValue; }
-			@Override public JSON_Array<NVExtra,VExtra> getValue  (Value<NVExtra,VExtra> value) { return value.castToArrayValue().value; }
-		}
-		private static final class GVH_String extends GetValueHelper<String> {
-			private GVH_String() { super(Type.String); }
-			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof StringValue; }
-			@Override public String  getValue  (Value<NVExtra,VExtra> value) { return value.castToStringValue().value; }
-		}
-		private static final class GVH_Double extends GetValueHelper<Double> {
-			private GVH_Double() { super(Type.Float); }
-			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof FloatValue; }
-			@Override public Double  getValue  (Value<NVExtra,VExtra> value) { return value.castToFloatValue().value; }
-		}
-		private static final class GVH_Integer extends GetValueHelper<Long> {
-			private GVH_Integer() { super(Type.Integer); }
-			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof IntegerValue; }
-			@Override public Long    getValue  (Value<NVExtra,VExtra> value) { return value.castToIntegerValue().value; }
-		}
-		private static final class GVH_Bool extends GetValueHelper<Boolean> {
-			private GVH_Bool() { super(Type.Bool); }
-			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof BoolValue; }
-			@Override public Boolean getValue  (Value<NVExtra,VExtra> value) { return value.castToBoolValue().value; }
+	private static Value<NVExtra, VExtra> getSubNode(JSON_Array<NVExtra, VExtra> data, Object... path) {
+		try {
+			return JSON_Data.getSubNode(data, path);
+		} catch (PathIsNotSolvableException e) {
+			Gui.log_error_ln("PathIsNotSolvableException: %s", e.getMessage());
+			return null;
 		}
 	}
 
-	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Array<NVExtra,VExtra> arr, int index) {
-		return generic_convert(helper, getValue(arr, index), ()->"(Array Index: "+index+")");
-	}
+	private static Boolean                     getBoolValue   (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getBoolValue   (getSubNode(obj, path)); }
+	private static Long                        getIntegerValue(JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getIntegerValue(getSubNode(obj, path)); }
+	private static Double                      getFloatValue  (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getFloatValue  (getSubNode(obj, path)); }
+	private static String                      getStringValue (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getStringValue (getSubNode(obj, path)); }
+	private static JSON_Array <NVExtra,VExtra> getArrayValue  (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getArrayValue  (getSubNode(obj, path)); }
+	private static JSON_Object<NVExtra,VExtra> getObjectValue (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getObjectValue (getSubNode(obj, path)); }
 
-	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Object<NVExtra,VExtra> data, Object... path) {
-		return generic_convert(helper, getValue(data, path), ()->"(path: "+Arrays.toString(path)+")");
-	}
+	private static Boolean                     getBoolValue   (JSON_Array <NVExtra,VExtra> arr, Object... path) { return JSON_Data.getBoolValue   (getSubNode(arr, path)); }
+	@SuppressWarnings("unused")
+	private static Long                        getIntegerValue(JSON_Array <NVExtra,VExtra> arr, Object... path) { return JSON_Data.getIntegerValue(getSubNode(arr, path)); }
+	@SuppressWarnings("unused")
+	private static Double                      getFloatValue  (JSON_Array <NVExtra,VExtra> arr, Object... path) { return JSON_Data.getFloatValue  (getSubNode(arr, path)); }
+	@SuppressWarnings("unused")
+	private static String                      getStringValue (JSON_Array <NVExtra,VExtra> arr, Object... path) { return JSON_Data.getStringValue (getSubNode(arr, path)); }
+	@SuppressWarnings("unused")
+	private static JSON_Array <NVExtra,VExtra> getArrayValue  (JSON_Array <NVExtra,VExtra> arr, Object... path) { return JSON_Data.getArrayValue  (getSubNode(arr, path)); }
+	@SuppressWarnings("unused")
+	private static JSON_Object<NVExtra,VExtra> getObjectValue (JSON_Array <NVExtra,VExtra> arr, Object... path) { return JSON_Data.getObjectValue (getSubNode(arr, path)); }
 
-	private static Boolean                     getBoolValue   (JSON_Object<NVExtra,VExtra> data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Bool   (), data, path); }
-	private static Long                        getIntegerValue(JSON_Object<NVExtra,VExtra> data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Integer(), data, path); }
-	private static Double                      getFloatValue  (JSON_Object<NVExtra,VExtra> data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Double (), data, path); }
-	private static String                      getStringValue (JSON_Object<NVExtra,VExtra> data, Object... path) { return generic_getValue(new GetValueHelper.GVH_String (), data, path); }
-	private static JSON_Array <NVExtra,VExtra> getArrayValue  (JSON_Object<NVExtra,VExtra> data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Array  (), data, path); }
-	private static JSON_Object<NVExtra,VExtra> getObjectValue (JSON_Object<NVExtra,VExtra> data, Object... path) { return generic_getValue(new GetValueHelper.GVH_Object (), data, path); }
-
-	private static Boolean     getBoolValue   (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Bool   (), arr, index); }
-	@SuppressWarnings("unused") private static Long                        getIntegerValue(JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Integer(), arr, index); }
-	@SuppressWarnings("unused") private static Double                      getFloatValue  (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Double (), arr, index); }
-	@SuppressWarnings("unused") private static String                      getStringValue (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_String (), arr, index); }
-	@SuppressWarnings("unused") private static JSON_Array <NVExtra,VExtra> getArrayValue  (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Array  (), arr, index); }
-	@SuppressWarnings("unused") private static JSON_Object<NVExtra,VExtra> getObjectValue (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Object (), arr, index); }
+//	private static Boolean     getBoolValue   (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Bool   (), arr, index); }
+//	@SuppressWarnings("unused") private static Long                        getIntegerValue(JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Integer(), arr, index); }
+//	@SuppressWarnings("unused") private static Double                      getFloatValue  (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Double (), arr, index); }
+//	@SuppressWarnings("unused") private static String                      getStringValue (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_String (), arr, index); }
+//	@SuppressWarnings("unused") private static JSON_Array <NVExtra,VExtra> getArrayValue  (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Array  (), arr, index); }
+//	@SuppressWarnings("unused") private static JSON_Object<NVExtra,VExtra> getObjectValue (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Object (), arr, index); }
 
 	private static Boolean                     getBoolValue_checked   (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getBoolValue   (data, path); return null; }
 	private static Long                        getIntegerValue_checked(JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getIntegerValue(data, path); return null; }
