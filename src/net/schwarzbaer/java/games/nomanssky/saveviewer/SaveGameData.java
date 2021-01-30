@@ -37,8 +37,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
@@ -46,6 +44,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.PathIsNotSolvableException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
@@ -234,7 +233,7 @@ public class SaveGameData {
 				if (addressStr.startsWith("0x")) addressStr = addressStr.substring(2);
 				try {
 					long l = Long.parseUnsignedLong(addressStr, 16);
-					value.wasProcessed=true;
+					value.extra.wasProcessed=true;
 					return l;
 				} catch (NumberFormatException e) {}
 			}
@@ -242,7 +241,7 @@ public class SaveGameData {
 			
 		case Integer:
 			if (value instanceof IntegerValue) {
-				value.wasProcessed=true;
+				value.extra.wasProcessed=true;
 				return value.castToIntegerValue().value;
 			}
 			break;
@@ -262,7 +261,7 @@ public class SaveGameData {
 			if (addressValue instanceof StringValue) {
 				String addressStr = addressValue.castToStringValue().value;
 				if (isPlanetAddressOK(addressStr)) {
-					addressValue.wasProcessed=true;
+					addressValue.extra.wasProcessed=true;
 					return new UniverseAddress( Long.parseLong(addressStr.substring(2), 16) );
 				}
 			}
@@ -270,7 +269,7 @@ public class SaveGameData {
 			
 		case Integer:
 			if (addressValue instanceof IntegerValue) {
-				addressValue.wasProcessed=true;
+				addressValue.extra.wasProcessed=true;
 				return new UniverseAddress( addressValue.castToIntegerValue().value );
 			}
 			break;
@@ -478,7 +477,7 @@ public class SaveGameData {
 				Value<NVExtra,VExtra> value = arrayValue.get(i);
 				Double d = getFloat(value);
 				if (d!=null) {
-					value.wasProcessed=true;
+					value.extra.wasProcessed=true;
 					coords.set(i,d);
 				}
 			}
@@ -4237,12 +4236,12 @@ public class SaveGameData {
 						if (!(addressValue instanceof StringValue)) { notParsedStats.add(groupValue); continue; }
 						String addressStr = addressValue.castToStringValue().value;
 						if (!isPlanetAddressOK(addressStr)) { notParsedStats.add(groupValue); continue; }
-						addressValue.wasProcessed=true;
+						addressValue.extra.wasProcessed=true;
 						addressLong = Long.parseLong(addressStr.substring(2), 16);
 						break;
 					case Integer:
 						if (!(addressValue instanceof IntegerValue)) { notParsedStats.add(groupValue); continue; }
-						addressValue.wasProcessed=true;
+						addressValue.extra.wasProcessed=true;
 						addressLong = addressValue.castToIntegerValue().value;
 						break;
 					default:
@@ -4539,12 +4538,12 @@ public class SaveGameData {
 	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull, ArrayIndexOutOfBounds }
 
 	@SuppressWarnings("unused")
-	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { if (val==null || val.castToArrayValue  ()==null) return null; val.wasProcessed=true; return val.castToArrayValue  ().value;}
-	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { if (val==null || val.castToObjectValue ()==null) return null; val.wasProcessed=true; return val.castToObjectValue ().value;}
-	private static String                      getString (Value<NVExtra,VExtra> val) { if (val==null || val.castToStringValue ()==null) return null; val.wasProcessed=true; return val.castToStringValue ().value;}
-	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { if (val==null || val.castToBoolValue   ()==null) return null; val.wasProcessed=true; return val.castToBoolValue   ().value;}
-	private static Long                        getInteger(Value<NVExtra,VExtra> val) { if (val==null || val.castToIntegerValue()==null) return null; val.wasProcessed=true; return val.castToIntegerValue().value;}
-	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { if (val==null || val.castToFloatValue  ()==null) return null; val.wasProcessed=true; return val.castToFloatValue  ().value;}
+	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { if (val==null || val.castToArrayValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToArrayValue  ().value;}
+	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { if (val==null || val.castToObjectValue ()==null) return null; val.extra.wasProcessed=true; return val.castToObjectValue ().value;}
+	private static String                      getString (Value<NVExtra,VExtra> val) { if (val==null || val.castToStringValue ()==null) return null; val.extra.wasProcessed=true; return val.castToStringValue ().value;}
+	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { if (val==null || val.castToBoolValue   ()==null) return null; val.extra.wasProcessed=true; return val.castToBoolValue   ().value;}
+	private static Long                        getInteger(Value<NVExtra,VExtra> val) { if (val==null || val.castToIntegerValue()==null) return null; val.extra.wasProcessed=true; return val.castToIntegerValue().value;}
+	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { if (val==null || val.castToFloatValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToFloatValue  ().value;}
 
 	static boolean hasValue(JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return JSON_Data.hasSubNode(data, path);
@@ -4591,7 +4590,7 @@ public class SaveGameData {
 		if (helper.isInstance(value)) {
 			error = Error.NoError;
 			errorMessage = "";
-			value.wasProcessed = true;
+			value.extra.wasProcessed = true;
 			return helper.getValue(value);
 		} else {
 			error = Error.UnexpectedType;
@@ -4668,4 +4667,112 @@ public class SaveGameData {
 	private static JSON_Array <NVExtra,VExtra> getArrayValue_checked  (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getArrayValue  (data, path); return null; }
 	@SuppressWarnings("unused")
 	private static JSON_Object<NVExtra,VExtra> getObjectValue_checked (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getObjectValue (data, path); return null; }
+	
+	
+	public static ObjectValue<NVExtra, VExtra> createObjectValue(JSON_Object<NVExtra, VExtra> data) {
+		VExtra extra = new VExtra(Type.Object);
+		ObjectValue<NVExtra, VExtra> host = new ObjectValue<>(data,extra);
+		extra.setHost(host);
+		return host;
+	}
+	
+	public static class FactoryForExtras implements JSON_Data.FactoryForExtras<NVExtra,VExtra> {
+		@Override public NVExtra createNamedValueExtra(Type type) { return new NVExtra(type); }
+		@Override public VExtra createValueExtra(Type type) { return new VExtra(type); }
+	}
+
+	public static class NVExtra implements JSON_Data.NamedValueExtra {
+		public final Type type;
+		public NamedValue<NVExtra, VExtra> host;
+		public boolean wasDeObfuscated;
+	
+		public NVExtra(Type type) {
+			this.type = type;
+			this.host = null; 
+			wasDeObfuscated = false;
+		}
+		void setHost(NamedValue<NVExtra, VExtra> host) {
+			this.host = host;
+			if (this.host==null) new IllegalArgumentException("Host must not be <null>");
+			if (this.host.value.type!=type) new IllegalArgumentException("Host has wrong type: "+this.host.value.type+"!="+type);
+		}
+	}
+
+	public static class VExtra implements JSON_Data.ValueExtra {
+		
+		public final Type type;
+		public Value<NVExtra, VExtra> host;
+		public boolean wasProcessed;
+		public Boolean hasUnprocessedChildren;
+		public Boolean hasObfuscatedChildren;
+		
+		public VExtra(Type type) {
+			this.type = type;
+			this.host = null; 
+			wasProcessed = false;
+			hasUnprocessedChildren = type!=null && type.isSimple ? false : null;
+			hasObfuscatedChildren  = type!=null && type.isSimple ? false : null;
+		}
+		void setHost(Value<NVExtra, VExtra> host) {
+			this.host = host;
+			if (this.host==null) new IllegalArgumentException("Host must not be <null>");
+			if (this.host.type!=type) new IllegalArgumentException("Host has wrong type: "+this.host.type+"!="+type);
+		}
+		
+		@Override public void markAsProcessed() {
+			wasProcessed = true;
+		}
+		
+		public boolean hasUnprocessedChildren() {
+			// ArrayValue   @Override public boolean hasUnprocessedChildren() { return JSON_Data.hasUnprocessedChildren(this,this.value, v-> v      ); }
+			// ObjectValue  @Override public boolean hasUnprocessedChildren() { return JSON_Data.hasUnprocessedChildren(this,this.value,nv->nv.value); }
+			if (type==Type.Array ) {
+				if (host==null)
+					throw new IllegalStateException();
+				if (host.castToArrayValue()==null)
+					throw new IllegalStateException();
+				return hasUnprocessedChildren(host,host.castToArrayValue ().value, v-> v      );
+			}
+			if (type==Type.Object) {
+				if (host==null)
+					throw new IllegalStateException();
+				if (host.castToObjectValue()==null)
+					throw new IllegalStateException();
+				return hasUnprocessedChildren(host,host.castToObjectValue().value,nv->nv.value);
+			}
+			return false;
+		}
+		public boolean hasObfuscatedChildren() {
+			// ArrayValue   @Override public boolean hasObfuscatedChildren () { return JSON_Data.hasObfuscatedChildren (this,this.value, v-> v      , v->true              ); }
+			// ObjectValue  @Override public boolean hasObfuscatedChildren () { return JSON_Data.hasObfuscatedChildren (this,this.value,nv->nv.value,nv->nv.wasDeObfuscated); }
+			if (type==Type.Array ) return hasObfuscatedChildren(host,host.castToArrayValue ().value, v-> v      , v->true                    );
+			if (type==Type.Object) return hasObfuscatedChildren(host,host.castToObjectValue().value,nv->nv.value,nv->nv.extra.wasDeObfuscated);
+			return false;
+		}
+		
+		private static <ChildType> boolean hasUnprocessedChildren(JSON_Data.Value<NVExtra,VExtra> baseValue, Vector<ChildType> children, Function<ChildType,JSON_Data.Value<NVExtra,VExtra>> getValue) {
+			if (baseValue.extra.hasUnprocessedChildren!=null) return baseValue.extra.hasUnprocessedChildren;
+			baseValue.extra.hasUnprocessedChildren=false;
+			for (ChildType child:children) {
+				JSON_Data.Value<NVExtra,VExtra> childValue = getValue.apply(child);
+				if (!childValue.extra.wasProcessed || childValue.extra.hasUnprocessedChildren()) {
+					baseValue.extra.hasUnprocessedChildren=true;
+					break;
+				}
+			}
+			return baseValue.extra.hasUnprocessedChildren;
+		}
+		private static <ChildType> boolean hasObfuscatedChildren(JSON_Data.Value<NVExtra,VExtra> baseValue, Vector<ChildType> children, Function<ChildType,JSON_Data.Value<NVExtra,VExtra>> getValue, Function<ChildType,Boolean> wasDeObfuscated) {
+			if (baseValue.extra.hasObfuscatedChildren!=null) return baseValue.extra.hasObfuscatedChildren;
+			baseValue.extra.hasObfuscatedChildren=false;
+			for (ChildType child:children) {
+				JSON_Data.Value<NVExtra,VExtra> childValue = getValue.apply(child);
+				if (!wasDeObfuscated.apply(child) || childValue.extra.hasObfuscatedChildren()) {
+					baseValue.extra.hasObfuscatedChildren=true;
+					break;
+				}
+			}
+			return baseValue.extra.hasObfuscatedChildren;
+		}
+	}
 }

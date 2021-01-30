@@ -65,14 +65,16 @@ import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FactoryForExtras;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 import net.schwarzbaer.system.ClipboardTools;
 
@@ -601,9 +603,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private SaveGameData openSaveGameForPreview(File saveGameFile) {
-		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,factoryForExtras).parse();
-		JSON_Object<NVExtra,VExtra> new_json_data = result.object;
-		if (new_json_data==null) throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
+		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, false);
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
@@ -629,11 +629,7 @@ public class SaveViewer implements ActionListener {
 
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
 		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
-		Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
-		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,factoryForExtras).parse();
-		JSON_Object<NVExtra,VExtra> new_json_data = result.object;
-		if (new_json_data==null) throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
-		Gui.log_ln(" done");
+		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, true);
 		
 		HashMap<String, Vector<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
@@ -682,29 +678,11 @@ public class SaveViewer implements ActionListener {
 		
 		return saveGameData;
 	}
-	
-	public static class NVExtra implements JSON_Data.NamedValueExtra {
-		
-	}
-	public static class VExtra implements JSON_Data.ValueExtra {
-		
-	}
-	
-	public static final FactoryForExtras factoryForExtras = new FactoryForExtras(); 
-	public static class FactoryForExtras implements JSON_Data.FactoryForExtras<NVExtra,VExtra> {
-		@Override public NVExtra createNamedValueExtra(Type type) { return new NVExtra(); }
-		@Override public VExtra createValueExtra(Type type) { return new VExtra(); }
-	}
-
 	private void reloadSaveGameView(SaveGameView view) {
 		runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
 			if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
 			Gui.log_ln("");
-			Gui.log("Parse file \"%s\" ...",view.file.getPath());
-			JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(view.file,factoryForExtras).parse();
-			JSON_Object<NVExtra,VExtra> new_json_data = result.object;
-			if (new_json_data==null) throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
-			Gui.log_ln(" done");
+			JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(view.file, true);
 			
 			HashMap<String, Vector<String>> deObfuscatorUsage = null;
 			boolean isPreNEXT;
@@ -734,6 +712,21 @@ public class SaveViewer implements ActionListener {
 				});
 			}
 		});
+	}
+	private JSON_Object<NVExtra, VExtra> loadAndParseSaveGameFile(File saveGameFile, boolean withConsoleLog) {
+		if (withConsoleLog) Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
+		
+		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,new FactoryForExtras()).parse();
+		JSON_Object<NVExtra,VExtra> new_json_data = result.object;
+		
+		if (new_json_data==null)
+			throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
+		
+		JSON_Data.traverseAllValues(new_json_data, (path,nv)->nv.extra.setHost(nv), (path,v)->v.extra.setHost(v));
+		
+		if (withConsoleLog) Gui.log_ln(" done");
+		
+		return new_json_data;
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
@@ -966,7 +959,7 @@ public class SaveViewer implements ActionListener {
 				res.all++;
 				if (newStr!=null) {
 					nv.name = newStr;
-					nv.wasDeObfuscated = true;
+					nv.extra.wasDeObfuscated = true;
 					res.known++;
 				} else
 					res.unkown.add(nv.name);
@@ -1266,7 +1259,7 @@ public class SaveViewer implements ActionListener {
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
 		
-		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(sourcefile,factoryForExtras).parse();
+		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(sourcefile,new FactoryForExtras()).parse();
 		if (result.object==null) return;
 		JSON_Object<NVExtra,VExtra> json_Object = result.object;
 		

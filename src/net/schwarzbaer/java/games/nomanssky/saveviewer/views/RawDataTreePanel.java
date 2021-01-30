@@ -21,9 +21,9 @@ import javax.swing.tree.TreePath;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
@@ -180,10 +180,10 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			if (obj instanceof JsonTreeNode) {
 				JsonTreeNode jsonTreeNode = (JsonTreeNode)obj;
 				Value<NVExtra,VExtra> value = jsonTreeNode.data;
-				wasProcessed = value.wasProcessed;
-				hasUnprocessedChildren = value.hasUnprocessedChildren();
+				wasProcessed = value.extra.wasProcessed;
+				hasUnprocessedChildren = value.extra.hasUnprocessedChildren();
 				wasDeObfuscated = ((JsonTreeNode)obj).wasDeObfuscated;
-				hasObfuscatedChildren = value.hasObfuscatedChildren();
+				hasObfuscatedChildren = value.extra.hasObfuscatedChildren();
 				
 				switch (value.type) {
 				case Array  : icon = RawDataTreeIcons.Array ; break;

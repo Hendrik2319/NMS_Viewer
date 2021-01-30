@@ -11,9 +11,9 @@ import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
@@ -33,7 +33,9 @@ public class TreeView {
 		private Equal allChildrenAreEqual;
 
 		public CompareTreeNode(JSON_Object<NVExtra,VExtra> json_Object1, JSON_Object<NVExtra,VExtra> json_Object2) {
-			this(null,null,new ObjectValue<>(json_Object1,SaveViewer.factoryForExtras.createValueExtra(Type.Object)),new ObjectValue<>(json_Object2,SaveViewer.factoryForExtras.createValueExtra(Type.Object)));
+			this(null,null,
+				SaveGameData.createObjectValue(json_Object1),
+				SaveGameData.createObjectValue(json_Object2));
 		}
 
 		private CompareTreeNode(CompareTreeNode parent, String name, Value<NVExtra,VExtra> value, Source source) {
@@ -252,7 +254,9 @@ public class TreeView {
 		}
 
 		public JsonTreeNode(JSON_Object<NVExtra,VExtra> data, boolean hideProcessedNodes) {
-			this(null,null,new ObjectValue<>(data,SaveViewer.factoryForExtras.createValueExtra(Type.Object)), true, hideProcessedNodes);
+			this(null,null,
+				SaveGameData.createObjectValue(data),
+				true, hideProcessedNodes);
 		}
 
 		@Override
@@ -264,8 +268,8 @@ public class TreeView {
 					children = new JsonTreeNode[objectValue.value.size()];
 					int i=0;
 					for (NamedValue<NVExtra,VExtra> namedvalue : objectValue.value)
-						if (!hideProcessedNodes || !namedvalue.value.wasProcessed || namedvalue.value.hasUnprocessedChildren())
-							children[i++] = new JsonTreeNode( this, namedvalue.name, namedvalue.value, namedvalue.wasDeObfuscated, hideProcessedNodes );
+						if (!hideProcessedNodes || !namedvalue.value.extra.wasProcessed || namedvalue.value.extra.hasUnprocessedChildren())
+							children[i++] = new JsonTreeNode( this, namedvalue.name, namedvalue.value, namedvalue.extra.wasDeObfuscated, hideProcessedNodes );
 					children = Arrays.copyOf(children, i);
 				} else
 					throw new IllegalStateException("Found a Value with type==Object, but not instance of ObjectValue");
@@ -276,7 +280,7 @@ public class TreeView {
 					children = new JsonTreeNode[arrayValue.value.size()];
 					int i=0;
 					for (Value<NVExtra,VExtra> value : arrayValue.value)
-						if (!hideProcessedNodes || !value.wasProcessed || value.hasUnprocessedChildren())
+						if (!hideProcessedNodes || !value.extra.wasProcessed || value.extra.hasUnprocessedChildren())
 							children[i++] = new JsonTreeNode(this,null,value, true, hideProcessedNodes);
 					children = Arrays.copyOf(children, i);
 				} else

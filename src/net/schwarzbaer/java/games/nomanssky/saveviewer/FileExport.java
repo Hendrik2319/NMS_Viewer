@@ -31,10 +31,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.NVExtra;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.VExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
