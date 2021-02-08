@@ -43,7 +43,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.PathIsNotSolvableException;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.TraverseException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
@@ -4654,7 +4654,7 @@ public class SaveGameData {
 	private static Value<NVExtra, VExtra> getSubNode(JSON_Object<NVExtra, VExtra> data, Object... path) {
 		try {
 			return JSON_Data.getSubNode(data, path);
-		} catch (PathIsNotSolvableException e) {
+		} catch (TraverseException e) {
 			Gui.log_error_ln("PathIsNotSolvableException: %s", e.getMessage());
 			return null;
 		}
@@ -4663,7 +4663,7 @@ public class SaveGameData {
 	private static Value<NVExtra, VExtra> getSubNode(JSON_Array<NVExtra, VExtra> data, Object... path) {
 		try {
 			return JSON_Data.getSubNode(data, path);
-		} catch (PathIsNotSolvableException e) {
+		} catch (TraverseException e) {
 			Gui.log_error_ln("PathIsNotSolvableException: %s", e.getMessage());
 			return null;
 		}
