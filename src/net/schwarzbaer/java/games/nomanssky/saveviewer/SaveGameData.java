@@ -49,9 +49,6 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
 public class SaveGameData {
-
-	public static Error error;
-	public static String errorMessage;
 	
 	public final String filename;
 	public final int index;
@@ -88,8 +85,6 @@ public class SaveGameData {
 	public Vector<MultiTool> altMultiTools;
 	
 	public SaveGameData(JSON_Object<NVExtra,VExtra> json_data, String filename, int index, boolean isPreNEXT) {
-		error = Error.NoError;
-		errorMessage = "";
 		
 		this.filename = filename;
 		this.index = index;
@@ -861,8 +856,8 @@ public class SaveGameData {
 				te.teleportHostStr  = getStringValue(objectValue, "TeleportHost");
 				te.teleportHost     = TeleportHost.parseValue(te.teleportHostStr);
 				te.name             = getStringValue(objectValue, "Name");
-				te.unknown_a__      = getBoolValue_checked(objectValue, "[??? a>; TeleportEndpoints Bool:false]");
-				te.unknown_tww      = getBoolValue_checked(objectValue, "[??? tww TeleportEndpoints Bool:false]");
+				te.unknown_a__      = getBoolValue_optional(objectValue, "[??? a>; TeleportEndpoints Bool:false]");
+				te.unknown_tww      = getBoolValue_optional(objectValue, "[??? tww TeleportEndpoints Bool:false]");
 				
 				
 				if (te.universeAddress!=null) {
@@ -902,7 +897,7 @@ public class SaveGameData {
 					
 					PersistentPlayerBase pb = new PersistentPlayerBase(data,baseIndex);
 					pb.baseVersion      = getIntegerValue (objectValue, "BaseVersion");
-					pb.baseMinorVersion = getIntegerValue_checked(objectValue, "[BaseMinorVersion]");
+					pb.baseMinorVersion = getIntegerValue_optional(objectValue, "[BaseMinorVersion]");
 					pb.galacticAddress  = parseUniverseAddressField(objectValue, "GalacticAddress");
 					pb.position         = Coordinates     .parse(objectValue, "Position");
 					pb.gpsCoords        = PolarCoordinates.parse(pb.position);
@@ -1086,7 +1081,7 @@ public class SaveGameData {
 			bbo.timestamp = TimeStamp.create(getIntegerValue (objectValue, "Timestamp"));
 			bbo.objectID  = getStringValue  (objectValue, "ObjectID");
 			bbo.userData  = getIntegerValue (objectValue, "UserData");
-			bbo.message   = getStringValue_checked(objectValue, "[Message]");
+			bbo.message   = getStringValue_optional(objectValue, "[Message]");
 			bbo.position  = Position.parse  (objectValue, "Position", "At", "Up"); // bug fixed
 			if (bbo.userData!=null) {
 				long userData = bbo.userData.longValue();
@@ -1318,12 +1313,21 @@ public class SaveGameData {
 		@Override protected String getTypeLabel() { return "SpaceShip"; }
 		@Override protected void setVehicleClass(String resourcefilename) {
 			switch (resourcefilename) {
+			
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/DROPSHIPS\\/DROPSHIP_PROC.SCENE.MBIN"        : shipClass = VehicleClass.Transporter; break;
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/FIGHTERS\\/FIGHTER_PROC.SCENE.MBIN"          : shipClass = VehicleClass.Fighter; break;
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/SHUTTLE\\/SHUTTLE_PROC.SCENE.MBIN"           : shipClass = VehicleClass.Shuttle; break;
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/SCIENTIFIC\\/SCIENTIFIC_PROC.SCENE.MBIN"     : shipClass = VehicleClass.Explorer; break;
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/S-CLASS_PROC.SCENE.MBIN"           : shipClass = VehicleClass.Exotic; break;
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/BIOPARTS\\/BIOSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Alien; break;
+			
 			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN"      : shipClass = VehicleClass.Transporter; break;
 			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"        : shipClass = VehicleClass.Fighter; break;
 			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"         : shipClass = VehicleClass.Shuttle; break;
 			case "MODELS/COMMON/SPACECRAFT/SCIENTIFIC/SCIENTIFIC_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Explorer; break;
 			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"         : shipClass = VehicleClass.Exotic; break;
 			case "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Alien; break;
+			
 			default:
 				SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
 			}
@@ -1476,7 +1480,7 @@ public class SaveGameData {
 		}
 		
 		private static Vector<MultiTool> parseAlternatives(SaveGameData data) {
-			JSON_Array<NVExtra,VExtra> arr = getArrayValue_checked(data.json_data, "PlayerStateData", "[AlternativeWeapons]");
+			JSON_Array<NVExtra,VExtra> arr = getArrayValue_optional(data.json_data, "PlayerStateData", "[AlternativeWeapons]");
 			if (arr==null) return null; 
 			
 			Vector<MultiTool> multiTools = new Vector<>();
@@ -1571,7 +1575,7 @@ public class SaveGameData {
 			inventory.width   = getIntegerValue(inventoryData, "Width");
 			inventory.height  = getIntegerValue(inventoryData, "Height");
 			inventory.isCool  = getBoolValue   (inventoryData, "IsCool");
-			inventory.name    = getStringValue_checked(inventoryData, "Name");
+			inventory.name    = getStringValue_optional(inventoryData, "Name");
 			inventory.version = getIntegerValue(inventoryData, "Version");
 			
 			inventory.inventoryClass = getStringValue(inventoryData, "Class","InventoryClass");
@@ -2533,7 +2537,7 @@ public class SaveGameData {
 					stData.OWS = Owner.parse(object, "OWS");
 					
 					// RID  String (evtl.)
-					stData.RID = getStringValue_checked(object,"RID");
+					stData.RID = getStringValue_optional(object,"RID");
 					if (stData.RID!=null) {
 						try {
 							stData.RID_bytes = Base64.getDecoder().decode(stData.RID/*.replace("\\","")*/);
@@ -2544,7 +2548,7 @@ public class SaveGameData {
 					}
 					
 					// PTK  String (evtl.)
-					stData.PTK = getStringValue_checked(object,"PTK");
+					stData.PTK = getStringValue_optional(object,"PTK");
 					
 					storeData.add(stData);
 				}
@@ -4291,9 +4295,9 @@ public class SaveGameData {
 				
 				JSON_Object<NVExtra,VExtra> statValue = getObjectValue(statObject,"Value");
 				if (statValue!=null) {
-					stat.IntValue    = getIntegerValue_checked(statValue,"IntValue");
-					stat.FloatValue  = getFloatValue_checked  (statValue,"FloatValue");
-					stat.Denominator = getFloatValue_checked  (statValue,"Denominator");
+					stat.IntValue    = getIntegerValue_optional(statValue,"IntValue");
+					stat.FloatValue  = getFloatValue_optional  (statValue,"FloatValue");
+					stat.Denominator = getFloatValue_optional  (statValue,"Denominator");
 				}
 				
 				stat.interpretValues();
@@ -4532,124 +4536,9 @@ public class SaveGameData {
 		return true;
 	}
 
-	public enum Error { NoError, UnexpectedType, PathIsNotSolvable, ValueIsNull, ArrayIndexOutOfBounds }
-
-	@SuppressWarnings("unused")
-	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { return JSON_Data.getArrayValue  (val); }
-	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { return JSON_Data.getObjectValue (val); }
-	private static String                      getString (Value<NVExtra,VExtra> val) { return JSON_Data.getStringValue (val); }
-	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { return JSON_Data.getBoolValue   (val); }
-	private static Long                        getInteger(Value<NVExtra,VExtra> val) { return JSON_Data.getIntegerValue(val); }
-	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { return JSON_Data.getFloatValue  (val); }
-//	@SuppressWarnings("unused")
-//	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { if (val==null || val.castToArrayValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToArrayValue  ().value;}
-//	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { if (val==null || val.castToObjectValue ()==null) return null; val.extra.wasProcessed=true; return val.castToObjectValue ().value;}
-//	private static String                      getString (Value<NVExtra,VExtra> val) { if (val==null || val.castToStringValue ()==null) return null; val.extra.wasProcessed=true; return val.castToStringValue ().value;}
-//	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { if (val==null || val.castToBoolValue   ()==null) return null; val.extra.wasProcessed=true; return val.castToBoolValue   ().value;}
-//	private static Long                        getInteger(Value<NVExtra,VExtra> val) { if (val==null || val.castToIntegerValue()==null) return null; val.extra.wasProcessed=true; return val.castToIntegerValue().value;}
-//	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { if (val==null || val.castToFloatValue  ()==null) return null; val.extra.wasProcessed=true; return val.castToFloatValue  ().value;}
-
 	static boolean hasValue(JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return JSON_Data.hasSubNode(data, path);
 	}
-
-//	private static Value<NVExtra,VExtra> getValue(JSON_Object<NVExtra,VExtra> data, Object... path) {
-//		Value<NVExtra,VExtra> value = null;
-//		if (path.length==0) throw new IllegalStateException("Calling getValue(JSON_Object data, Object... path) is not allowed with zero length path");
-//		try {
-//			value = JSON_Data.getSubNode(data, path);
-//			error = Error.NoError;
-//			errorMessage = "";
-//			if (value==null) {
-//				error = Error.ValueIsNull;
-//				errorMessage = String.format("Value is null. (path: %s)", Arrays.toString(path));
-//			}
-//		} catch (PathIsNotSolvableException e) {
-//			e.printStackTrace();
-//			error = Error.PathIsNotSolvable;
-//			errorMessage = "PathIsNotSolvable: "+Arrays.toString(path);
-//		}
-//		return value;
-//	}
-
-//	private static Value<NVExtra,VExtra> getValue(JSON_Array<NVExtra,VExtra> arr, int index) {
-//		Value<NVExtra,VExtra> value = null;
-//		if (0<=index && index<arr.size()) {
-//			value = arr.get(index);
-//			error = Error.NoError;
-//			errorMessage = "";
-//			if (value==null) {
-//				error = Error.ValueIsNull;
-//				errorMessage = String.format("Value is null. (Array Index: %d)", index);
-//			}
-//		} else {
-//			error = Error.ArrayIndexOutOfBounds;
-//			errorMessage = String.format("Array Index (%d) is out of bounds [0..%d].", index, arr.size());
-//		}
-//		return value;
-//	}
-
-//	private static <V> V generic_convert(GetValueHelper<V> helper, Value<NVExtra,VExtra> value, Supplier<String> source) {
-//		if (value==null) return null;
-//		if (helper.isInstance(value)) {
-//			error = Error.NoError;
-//			errorMessage = "";
-//			value.extra.wasProcessed = true;
-//			return helper.getValue(value);
-//		} else {
-//			error = Error.UnexpectedType;
-//			errorMessage = String.format("Value has not the expected type (%s). %s type found. %s", helper.getType(), value.type, source.get());
-//			return null;
-//		}
-//	}
-
-//	private static abstract class GetValueHelper<V> {
-//		private Value.Type type;
-//		public GetValueHelper(Value.Type type) { this.type = type;}
-//		public Value.Type getType() { return type; }
-//		public abstract boolean isInstance(Value<NVExtra,VExtra> value);
-//		public abstract V getValue(Value<NVExtra,VExtra> value);
-		
-//		private static final class GVH_Object extends GetValueHelper<JSON_Object<NVExtra,VExtra>> {
-//			private GVH_Object() { super(Type.Object); }
-//			@Override public boolean                     isInstance(Value<NVExtra,VExtra> value) { return value instanceof ObjectValue; }
-//			@Override public JSON_Object<NVExtra,VExtra> getValue  (Value<NVExtra,VExtra> value) { return value.castToObjectValue().value; }
-//		}
-//		private static final class GVH_Array extends GetValueHelper<JSON_Array<NVExtra,VExtra>> {
-//			private GVH_Array() { super(Type.Array); }
-//			@Override public boolean                    isInstance(Value<NVExtra,VExtra> value) { return value instanceof ArrayValue; }
-//			@Override public JSON_Array<NVExtra,VExtra> getValue  (Value<NVExtra,VExtra> value) { return value.castToArrayValue().value; }
-//		}
-//		private static final class GVH_String extends GetValueHelper<String> {
-//			private GVH_String() { super(Type.String); }
-//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof StringValue; }
-//			@Override public String  getValue  (Value<NVExtra,VExtra> value) { return value.castToStringValue().value; }
-//		}
-//		private static final class GVH_Double extends GetValueHelper<Double> {
-//			private GVH_Double() { super(Type.Float); }
-//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof FloatValue; }
-//			@Override public Double  getValue  (Value<NVExtra,VExtra> value) { return value.castToFloatValue().value; }
-//		}
-//		private static final class GVH_Integer extends GetValueHelper<Long> {
-//			private GVH_Integer() { super(Type.Integer); }
-//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof IntegerValue; }
-//			@Override public Long    getValue  (Value<NVExtra,VExtra> value) { return value.castToIntegerValue().value; }
-//		}
-//		private static final class GVH_Bool extends GetValueHelper<Boolean> {
-//			private GVH_Bool() { super(Type.Bool); }
-//			@Override public boolean isInstance(Value<NVExtra,VExtra> value) { return value instanceof BoolValue; }
-//			@Override public Boolean getValue  (Value<NVExtra,VExtra> value) { return value.castToBoolValue().value; }
-//		}
-	
-//	}
-
-//	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Array<NVExtra,VExtra> arr, int index) {
-//		return generic_convert(helper, getValue(arr, index), ()->"(Array Index: "+index+")");
-//	}
-//
-//	private static <V> V generic_getValue(GetValueHelper<V> helper, JSON_Object<NVExtra,VExtra> data, Object... path) {
-//		return generic_convert(helper, getValue(data, path), ()->"(path: "+Arrays.toString(path)+")");
-//	}
 
 	private static Value<NVExtra, VExtra> getSubNode(JSON_Object<NVExtra, VExtra> data, Object... path) {
 		try {
@@ -4668,6 +4557,14 @@ public class SaveGameData {
 			return null;
 		}
 	}
+
+	@SuppressWarnings("unused")
+	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { return JSON_Data.getArrayValue  (val); }
+	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { return JSON_Data.getObjectValue (val); }
+	private static String                      getString (Value<NVExtra,VExtra> val) { return JSON_Data.getStringValue (val); }
+	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { return JSON_Data.getBoolValue   (val); }
+	private static Long                        getInteger(Value<NVExtra,VExtra> val) { return JSON_Data.getIntegerValue(val); }
+	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { return JSON_Data.getFloatValue  (val); }
 
 	private static Boolean                     getBoolValue   (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getBoolValue   (getSubNode(obj, path)); }
 	private static Long                        getIntegerValue(JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getIntegerValue(getSubNode(obj, path)); }
@@ -4695,13 +4592,13 @@ public class SaveGameData {
 //	@SuppressWarnings("unused") private static JSON_Array <NVExtra,VExtra> getArrayValue  (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Array  (), arr, index); }
 //	@SuppressWarnings("unused") private static JSON_Object<NVExtra,VExtra> getObjectValue (JSON_Array<NVExtra,VExtra> arr, int index) { return generic_getValue(new GetValueHelper.GVH_Object (), arr, index); }
 
-	private static Boolean                     getBoolValue_checked   (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getBoolValue   (data, path); return null; }
-	private static Long                        getIntegerValue_checked(JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getIntegerValue(data, path); return null; }
-	private static Double                      getFloatValue_checked  (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getFloatValue  (data, path); return null; }
-	private static String                      getStringValue_checked (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getStringValue (data, path); return null; }
-	private static JSON_Array <NVExtra,VExtra> getArrayValue_checked  (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getArrayValue  (data, path); return null; }
+	private static Boolean                     getBoolValue_optional   (JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getBoolValue   (JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
+	private static Long                        getIntegerValue_optional(JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getIntegerValue(JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
+	private static Double                      getFloatValue_optional  (JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getFloatValue  (JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
+	private static String                      getStringValue_optional (JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getStringValue (JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
+	private static JSON_Array <NVExtra,VExtra> getArrayValue_optional  (JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getArrayValue  (JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
 	@SuppressWarnings("unused")
-	private static JSON_Object<NVExtra,VExtra> getObjectValue_checked (JSON_Object<NVExtra,VExtra> data, Object... path) { if (hasValue(data, path)) return getObjectValue (data, path); return null; }
+	private static JSON_Object<NVExtra,VExtra> getObjectValue_optional (JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getObjectValue (JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
 	
 	
 	public static ObjectValue<NVExtra, VExtra> createObjectValue(JSON_Object<NVExtra, VExtra> data) {
