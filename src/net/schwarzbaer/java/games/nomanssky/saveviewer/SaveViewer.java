@@ -716,8 +716,8 @@ public class SaveViewer implements ActionListener {
 	private JSON_Object<NVExtra, VExtra> loadAndParseSaveGameFile(File saveGameFile, boolean withConsoleLog) {
 		if (withConsoleLog) Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
 		
-		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,new FactoryForExtras()).parse();
-		JSON_Object<NVExtra,VExtra> new_json_data = result.object;
+		JSON_Data.Value<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,new FactoryForExtras()).parse();
+		JSON_Object<NVExtra,VExtra> new_json_data = JSON_Data.getObjectValue(result);
 		
 		if (new_json_data==null)
 			throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
@@ -1259,9 +1259,9 @@ public class SaveViewer implements ActionListener {
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
 		
-		JSON_Parser.Result<NVExtra,VExtra> result = new JSON_Parser<>(sourcefile,new FactoryForExtras()).parse();
-		if (result.object==null) return;
-		JSON_Object<NVExtra,VExtra> json_Object = result.object;
+		JSON_Data.Value<NVExtra,VExtra> result = new JSON_Parser<>(sourcefile,new FactoryForExtras()).parse();
+		JSON_Object<NVExtra,VExtra> json_Object = JSON_Data.getObjectValue(result);
+		if (json_Object==null) return;
 		
 		File htmlfile = new File("./"+sourcefile.getName()+".html"); 
 		FileExport.writeToHTML(sourcefile.getName(),json_Object,htmlfile);
