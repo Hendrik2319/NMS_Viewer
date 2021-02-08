@@ -220,21 +220,26 @@ public class SaveGameData {
 		if (value==null) return null;
 		switch(value.type) {
 		case String:
-			if (value instanceof StringValue) {
-				String addressStr = value.castToStringValue().value;
-				if (addressStr.startsWith("0x")) addressStr = addressStr.substring(2);
-				try {
-					long l = Long.parseUnsignedLong(addressStr, 16);
-					value.extra.wasProcessed=true;
-					return l;
-				} catch (NumberFormatException e) {}
+			StringValue<NVExtra, VExtra> stringValue = value.castToStringValue();
+			if (stringValue!=null) {
+				String addressStr = stringValue.value;
+				if (addressStr!=null) {
+					if (addressStr.startsWith("0x"))
+						addressStr = addressStr.substring(2);
+					try {
+						long l = Long.parseUnsignedLong(addressStr, 16);
+						value.extra.wasProcessed=true;
+						return l;
+					} catch (NumberFormatException e) {}
+				}
 			}
 			break;
 			
 		case Integer:
-			if (value instanceof IntegerValue) {
+			IntegerValue<NVExtra, VExtra> integerValue = value.castToIntegerValue();
+			if (integerValue!=null) {
 				value.extra.wasProcessed=true;
-				return value.castToIntegerValue().value;
+				return integerValue.value;
 			}
 			break;
 			
@@ -250,19 +255,21 @@ public class SaveGameData {
 		
 		switch(addressValue.type) {
 		case String:
-			if (addressValue instanceof StringValue) {
-				String addressStr = addressValue.castToStringValue().value;
+			StringValue<NVExtra, VExtra> stringValue = addressValue.castToStringValue();
+			if (stringValue!=null) {
+				String addressStr = stringValue.value;
 				if (isPlanetAddressOK(addressStr)) {
-					addressValue.extra.wasProcessed=true;
+					stringValue.extra.wasProcessed=true;
 					return new UniverseAddress( Long.parseLong(addressStr.substring(2), 16) );
 				}
 			}
 			break;
 			
 		case Integer:
-			if (addressValue instanceof IntegerValue) {
-				addressValue.extra.wasProcessed=true;
-				return new UniverseAddress( addressValue.castToIntegerValue().value );
+			IntegerValue<NVExtra, VExtra> integerValue = addressValue.castToIntegerValue();
+			if (integerValue!=null) {
+				integerValue.extra.wasProcessed=true;
+				return new UniverseAddress( integerValue.value );
 			}
 			break;
 			
@@ -468,10 +475,7 @@ public class SaveGameData {
 			for (int i=0; i<arrayValue.size(); ++i) {
 				Value<NVExtra,VExtra> value = arrayValue.get(i);
 				Double d = getFloat(value);
-				if (d!=null) {
-					value.extra.wasProcessed=true;
-					coords.set(i,d);
-				}
+				if (d!=null) coords.set(i,d);
 			}
 			
 			return coords;
@@ -4234,16 +4238,18 @@ public class SaveGameData {
 					long addressLong = -1;
 					switch(addressValue.type) {
 					case String:
-						if (!(addressValue instanceof StringValue)) { notParsedStats.add(groupValue); continue; }
-						String addressStr = addressValue.castToStringValue().value;
+						StringValue<NVExtra, VExtra> stringValue = addressValue.castToStringValue();
+						if (stringValue==null) { notParsedStats.add(groupValue); continue; }
+						String addressStr = stringValue.value;
 						if (!isPlanetAddressOK(addressStr)) { notParsedStats.add(groupValue); continue; }
-						addressValue.extra.wasProcessed=true;
+						stringValue.extra.wasProcessed=true;
 						addressLong = Long.parseLong(addressStr.substring(2), 16);
 						break;
 					case Integer:
-						if (!(addressValue instanceof IntegerValue)) { notParsedStats.add(groupValue); continue; }
-						addressValue.extra.wasProcessed=true;
-						addressLong = addressValue.castToIntegerValue().value;
+						IntegerValue<NVExtra, VExtra> integerValue = addressValue.castToIntegerValue();
+						if (integerValue==null) { notParsedStats.add(groupValue); continue; }
+						integerValue.extra.wasProcessed=true;
+						addressLong = integerValue.value;
 						break;
 					default:
 						{ notParsedStats.add(groupValue); continue; }
