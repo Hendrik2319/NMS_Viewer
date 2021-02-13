@@ -15,7 +15,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JList;
@@ -24,7 +23,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListCellRenderer;
 import javax.swing.SortOrder;
-import javax.swing.border.Border;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -459,13 +457,12 @@ public class TableView {
 	
 	public static abstract class IconTextRenderer<ValueType,IconKey> implements ListCellRenderer<ValueType>, TableCellRenderer {
 		
-		private static final Border DASHED_BORDER = BorderFactory.createDashedBorder(Color.BLACK, 1, 1);
-		private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder(1,1,1,1);
-		
-		private RendererComponent comp;
+		private HashMap<IconKey,Icon> iconCache;
+		private LabelRendererComponent comp;
 		
 		public IconTextRenderer(int prefWidth, int prefHeight) {
-			comp = new RendererComponent();
+			iconCache = new HashMap<>();
+			comp = new LabelRendererComponent();
 			if (prefWidth>0 && prefHeight>0)
 				comp.setPreferredSize(new Dimension(prefWidth,prefHeight));
 		}
@@ -475,50 +472,28 @@ public class TableView {
 		protected abstract IconKey getIconKey(ValueType value);
 		protected abstract String  getLabel  (ValueType value);
 		
+		private Icon getIcon(ValueType value) {
+			if (value==null) return null;
+			
+			IconKey iconKey = getIconKey(value);
+			if (iconKey==null) return null;
+			
+			Icon icon = iconCache.get(iconKey);
+			if (icon==null) iconCache.put(iconKey,icon = createIcon(value));
+			return icon;
+		}
+
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object obj, boolean isSelected, boolean hasFocus, int row, int column) {
 			ValueType value = cast(obj);
-			if (isSelected) comp.set(value,table.getSelectionBackground(),table.getSelectionForeground(),hasFocus);
-			else            comp.set(value,table.getBackground(),table.getForeground(),hasFocus);
+			comp.configureAsTableCellRendererComponent(table, getIcon(value), getLabel(value), isSelected, hasFocus);
 			return comp;
 		}
 
 		@Override
 		public Component getListCellRendererComponent(JList<? extends ValueType> list, ValueType value, int index, boolean isSelected, boolean hasFocus) {
-			if (isSelected) comp.set(value,list.getSelectionBackground(),list.getSelectionForeground(),hasFocus);
-			else            comp.set(value,null,list.getForeground(),hasFocus);
+			comp.configureAsListCellRendererComponent(list, getIcon(value), getLabel(value), index, isSelected, hasFocus);
 			return comp;
-		}
-
-		public class RendererComponent extends LabelRendererComponent {
-			private static final long serialVersionUID = -6729772313931767140L;
-			
-			private HashMap<IconKey,Icon> iconCache;
-			
-			private RendererComponent() {
-				iconCache = new HashMap<>();
-				//setOpaque(true);
-			}
-			
-			public void set(ValueType value, Color bgColor, Color textColor, boolean hasFocus) {
-				setBorder(!hasFocus?EMPTY_BORDER:DASHED_BORDER);
-				setOpaque(bgColor!=null);
-				setBackground(bgColor);
-				setForeground(textColor);
-				if (value==null) {
-					setIcon(null);
-				} else {
-					IconKey iconKey = getIconKey(value);
-					if (iconKey==null) {
-						setIcon(null);
-					} else {
-						Icon icon = iconCache.get(iconKey);
-						if (icon==null) iconCache.put(iconKey,icon = createIcon(value));
-						setIcon(icon);
-					}
-				}
-				setText(getLabel(value));
-			}
 		}
 	}
 
