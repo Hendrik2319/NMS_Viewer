@@ -1,5 +1,8 @@
 [IDs]
-^AF_METAL=
+^AF_METAL=Unreines Metall
+^AF_METAL.symbol=Un
+^AF_METAL.image=Tainted_metal.png
+^AF_METAL.imageBG=DEDCD1
 ^ASTEROID1=Silber
 ^ASTEROID1.type=Resource
 ^ASTEROID1.symbol=Ag
@@ -138,6 +141,7 @@
 ^LAVA1=Basalt
 ^LAVA1.type=Resource
 ^LAVA1.symbol=B
+^LAVA1.image=SUBSTANCE.BIOME.LAVA.png
 ^LAVA1.imageBG=1A2733
 ^LUSH1=Paraffinium
 ^LUSH1.type=Resource
