@@ -58,6 +58,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ContextMenuInvoker;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjAppearance;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Companions.Companion;
@@ -999,30 +1000,32 @@ public class SimplePanels {
 			
 			// [107, 120, 751, 113, 104, 357, 74, 74, 160, 160, 160, 173, 241, 243, 243, 240, 60, 60, 62, 62, 64, 125, 120]
 			CompanionColumnID[] blueprintColumns = new CompanionColumnID[] {
-				new CompanionColumnID("#"              ,   Integer.class, 20,-1, 20, 20, (c,i)->i+1),
-				new CompanionColumnID("Name"           ,    String.class, 20,-1,110,110, c->c.name),
-				new CompanionColumnID("Type"           ,    String.class, 20,-1,120,120, c->c.type),
-				new CompanionColumnID("Body Parts"     ,    String.class, 20,-1,400,400, c->c.bodyParts==null ? null : c.bodyParts.toString()),
-				new CompanionColumnID("UniverseAddress",    String.class, 20,-1,120,120, c->c.universeAddress==null ? null : c.universeAddress.getAddressStr()),
-				new CompanionColumnID("Coordinates"    ,    String.class, 20,-1,110,110, c->c.universeAddress==null ? null : c.universeAddress.getCoordinates()),
-				new CompanionColumnID("Planet/System"  ,    String.class, 20,-1,360,360, c->c.universeAddress==null ? null : c.universeAddress.getVerboseNameInOneLine(data.universe, 2)),
-				new CompanionColumnID("Origin Biome"   ,    String.class, 20,-1, 75, 75, c->c.originBiome),
-				new CompanionColumnID("Animal Role"    ,    String.class, 20,-1, 75, 75, c->c.animalRole),
-				new CompanionColumnID("Bool(Q6I)"      ,    String.class, 20,-1, 60, 60, c->c.unknownBool_Q6I==null ? "<null>" : c.unknownBool_Q6I.booleanValue() ? "true" : "false"),
-				new CompanionColumnID("Bool(eK9)"      ,    String.class, 20,-1, 60, 60, c->c.unknownBool_eK9==null ? "<null>" : c.unknownBool_eK9.booleanValue() ? "true" : "false"),
-				new CompanionColumnID("Bool(WQX)"      ,    String.class, 20,-1, 60, 60, c->c.unknownBool_WQX==null ? "<null>" : c.unknownBool_WQX.booleanValue() ? "true" : "false"),
-				new CompanionColumnID("Seed 1"         , SeedValue.class, 20,-1,120,120, c->c.seed1==null ? null : c.seed1.getSeedStr()),
-				new CompanionColumnID("Seed 2"         , SeedValue.class, 20,-1,120,120, c->c.seed2==null ? null : c.seed2.getSeedStr()),
-				new CompanionColumnID("Seed 3"         , SeedValue.class, 20,-1,120,120, c->c.seed3==null ? null : c.seed3.getSeedStr()),
-				new CompanionColumnID("Seed 4"         , SeedValue.class, 20,-1,120,120, c->c.seed4==null ? null : c.seed4.getSeedStr()),
-				new CompanionColumnID("Timestamp 1"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp1),
-				new CompanionColumnID("Timestamp 2"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp2),
-				new CompanionColumnID("Timestamp 3"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp3),
-				new CompanionColumnID("Timestamp 4"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp4),
-				new CompanionColumnID("Float(unY)"     ,    Double.class, 20,-1, 65, 65, c->c.unknownFloat_unY),
-				new CompanionColumnID("Float(xDJ)"     ,    Double.class, 20,-1, 65, 65, c->c.unknownFloat_xDJ),
-				new CompanionColumnID("String(m9o)"    ,    String.class, 20,-1,125,125, c->c.unknownString_m9o),
-				new CompanionColumnID("String(JrL)"    ,    String.class, 20,-1,125,125, c->c.unknownString_JrL),
+				new CompanionColumnID("#"              ,     Integer.class, 20,-1, 20, 20, (c,i)->i+1),
+				new CompanionColumnID("Name"           ,      String.class, 20,-1,110,110, c->c.name),
+				new CompanionColumnID("Type"           ,      String.class, 20,-1,120,120, c->c.type),
+				new CompanionColumnID("Body Parts"     ,      String.class, 20,-1,400,400, c->c.bodyParts==null ? null : c.bodyParts.toString()),
+				new CompanionColumnID("UniverseAddress",      String.class, 20,-1,120,120, c->c.universeAddress==null ? null : c.universeAddress.getAddressStr()),
+				new CompanionColumnID("Coordinates"    ,      String.class, 20,-1,110,110, c->c.universeAddress==null ? null : c.universeAddress.getCoordinates()),
+				new CompanionColumnID("Planet/System"  ,      String.class, 20,-1,360,360, c->c.universeAddress==null ? null : c.universeAddress.getVerboseNameInOneLine(data.universe, 2)),
+				new CompanionColumnID("Origin Biome"   ,      String.class, 20,-1, 75, 75, c->c.originBiome),
+				new CompanionColumnID("Animal Role"    ,      String.class, 20,-1, 75, 75, c->c.animalRole),
+				new CompanionColumnID("Bool(Q6I)"      ,      String.class, 20,-1, 60, 60, c->c.unknownBool_Q6I==null ? "<null>" : c.unknownBool_Q6I.booleanValue() ? "true" : "false"),
+				new CompanionColumnID("Bool(eK9)"      ,      String.class, 20,-1, 60, 60, c->c.unknownBool_eK9==null ? "<null>" : c.unknownBool_eK9.booleanValue() ? "true" : "false"),
+				new CompanionColumnID("Bool(WQX)"      ,      String.class, 20,-1, 60, 60, c->c.unknownBool_WQX==null ? "<null>" : c.unknownBool_WQX.booleanValue() ? "true" : "false"),
+				new CompanionColumnID("Seed 1"         ,   SeedValue.class, 20,-1,120,120, c->c.seed1==null ? null : c.seed1.getSeedStr()),
+				new CompanionColumnID("Seed 2"         ,   SeedValue.class, 20,-1,120,120, c->c.seed2==null ? null : c.seed2.getSeedStr()),
+				new CompanionColumnID("Seed 3"         ,   SeedValue.class, 20,-1,120,120, c->c.seed3==null ? null : c.seed3.getSeedStr()),
+				new CompanionColumnID("Seed 4"         ,   SeedValue.class, 20,-1,120,120, c->c.seed4==null ? null : c.seed4.getSeedStr()),
+				new CompanionColumnID("Timestamp 1"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp1==null ? null : c.timestamp1.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
+				new CompanionColumnID("Timestamp 2"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp2==null ? null : c.timestamp2.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
+				new CompanionColumnID("Timestamp 3"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp3==null ? null : c.timestamp3.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
+				new CompanionColumnID("Timestamp 4"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp4==null ? null : c.timestamp4.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
+				new CompanionColumnID("Float(unY)"     ,      String.class, 20,-1, 65, 65, c->c.unknownFloat_unY==null ? "<null>" : String.format(Locale.ENGLISH, "%1.6f", c.unknownFloat_unY)),
+				new CompanionColumnID("Float(xDJ)"     ,      String.class, 20,-1, 65, 65, c->c.unknownFloat_xDJ==null ? "<null>" : String.format(Locale.ENGLISH, "%1.6f", c.unknownFloat_xDJ)),
+				new CompanionColumnID("Long(m9o)"      ,      String.class, 20,-1,125,125, c->c.unknownLong_m9o==null ? "<null>" : String.format("0x%016X", c.unknownLong_m9o)),
+				new CompanionColumnID("Long(JrL)"      ,      String.class, 20,-1,125,125, c->c.unknownLong_JrL==null ? "<null>" : String.format("0x%016X", c.unknownLong_JrL)),
+				new CompanionColumnID("Coords(JAy)"    , Coordinates.class, 20,-1,175,175, c->c.unknownCoords_JAy),
+				new CompanionColumnID("Coords(IEo)"    , Coordinates.class, 20,-1,120,120, c->c.unknownCoords_IEo),
 			};
 			
 			JPanel tablePanel = new JPanel(new GridLayout(0,1));

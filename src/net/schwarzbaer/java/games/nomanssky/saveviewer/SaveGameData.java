@@ -471,6 +471,10 @@ public class SaveGameData {
 	
 		private static Coordinates parse(JSON_Object<NVExtra,VExtra> obj, String valueName) {
 			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(obj, valueName);
+			return parse(arrayValue);
+		}
+
+		private static Coordinates parse(JSON_Array<NVExtra, VExtra> arrayValue) {
 			if (arrayValue==null) return null;
 			
 			Coordinates coords = new Coordinates();
@@ -637,25 +641,42 @@ public class SaveGameData {
 	}
 
 	public static class TimeStamp implements Comparable<TimeStamp>{
+		public enum OutputType { Short_MonNumber, Complete_MonDayText }
+		
 		public final long value_s;
+		private OutputType type;
+		
 		private TimeStamp(long value_s) {
 			this.value_s = value_s;
+			type = OutputType.Complete_MonDayText;
 		}
 		public static TimeStamp create(Long value_s) {
 			if (value_s==null) return null;
 			return new TimeStamp(value_s);
 		}
+		public TimeStamp setOutputType(OutputType type) {
+			this.type = type;
+			return this;
+		}
 		@Override public String toString() {
 			//return DateFormat.getDateTimeInstance().format(new Date(value_s*1000));
-			return getTimeStr(value_s*1000);
+			return getTimeStr(value_s*1000,type);
 		}
 		@Override public int compareTo(TimeStamp other) {
 			return (int) (this.value_s-other.value_s);
 		}
 		
 		static String getTimeStr(long millis) {
+			return getTimeStr(millis, OutputType.Complete_MonDayText);
+		}
+		static String getTimeStr(long millis, OutputType type) {
 			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("CET"), Locale.GERMANY);
 			cal.setTimeInMillis(millis);
+			if (type!=null)
+				switch (type) {
+				case Complete_MonDayText: break;
+				case Short_MonNumber: return String.format(Locale.ENGLISH, "%1$td.%1$tm.%1$tY %1$tT", cal);
+				}
 			return String.format(Locale.ENGLISH, "%1$tA, %1$te. %1$tb %1$tY, %1$tT [%1$tZ:%1$tz]", cal);
 		}
 	}
@@ -1939,8 +1960,10 @@ public class SaveGameData {
 			public final Boolean unknownBool_WQX;
 			public final Double unknownFloat_unY;
 			public final Double unknownFloat_xDJ;
-			public final String unknownString_m9o;
-			public final String unknownString_JrL;
+			public final Long unknownLong_m9o;
+			public final Long unknownLong_JrL;
+			public final Coordinates unknownCoords_JAy;
+			public final Coordinates unknownCoords_IEo;
 
 			public Companion(JSON_Object<NVExtra, VExtra> objectValue) {
 				name = getStringValue(objectValue,"[UserDefinedName]");
@@ -1960,10 +1983,12 @@ public class SaveGameData {
 				unknownBool_Q6I  = getBoolValue(objectValue, "[??? Q6I Bool]");
 				unknownBool_eK9  = getBoolValue(objectValue, "[??? eK9 Bool]");
 				unknownBool_WQX  = getBoolValue(objectValue, "[??? WQX Bool]");
-				unknownFloat_unY = getFloatValue(objectValue, "??? [unY]");
+				unknownFloat_unY = getFloatValue(objectValue, "[??? unY Float]");
 				unknownFloat_xDJ = getFloatValue(objectValue, "[??? xDJ Float]");
-				unknownString_m9o = getStringValue(objectValue, "[??? m9o LongAsString]");
-				unknownString_JrL = getStringValue(objectValue, "[??? JrL LongAsString]");
+				unknownLong_m9o = parseHexFormatedNumber(objectValue, "[??? m9o LongAsString]");
+				unknownLong_JrL = parseHexFormatedNumber(objectValue, "[??? JrL LongAsString]");
+				unknownCoords_JAy = Coordinates.parse(objectValue, "[??? JAy Coordinate3]");
+				unknownCoords_IEo = Coordinates.parse(objectValue, "[??? IEo Coordinate2]");
 			}
 			
 		}
@@ -2279,7 +2304,7 @@ public class SaveGameData {
 				fr.unidentified.statVal8 = getIntegerValue(objectValue, "Stats",8);
 				fr.unidentified.statVal9 = getIntegerValue(objectValue, "Stats",9);
 				
-				fr.unidentified.val2_yJC = getIntegerValue(objectValue, "??? [yJC]");
+				fr.unidentified.val2_yJC = getIntegerValue(objectValue, "[??? yJC]");
 				
 				JSON_Array<NVExtra,VExtra> modArr = getArrayValue(objectValue,"[Modifications]");
 				if (modArr!=null) {
@@ -2911,9 +2936,9 @@ public class SaveGameData {
 			
 			DATA_Wu_() {
 				super("Wu?", Data::new, (item,objectValue)->{
-					item.value_E_X = getStringValue(objectValue, "??? [E=X]");
-					item.value_2Fk = getStringValue(objectValue, "??? [2Fk]");
-				}, "PlayerStateData","??? [Wu?]");
+					item.value_E_X = getStringValue(objectValue, "[??? E=X]");
+					item.value_2Fk = getStringValue(objectValue, "[??? 2Fk]");
+				}, "PlayerStateData","[??? Wu?]");
 			}
 		}
 
@@ -2927,8 +2952,8 @@ public class SaveGameData {
 			DATA_EQt() {
 				super("EQt", Data::new, (item,objectValue)->{
 					item.MissionID = getStringValue(objectValue, "MissionID");
-					item.value_oF_ = getIntegerValue(objectValue, "??? [oF@]");
-				}, "PlayerStateData","??? [EQt]");
+					item.value_oF_ = getIntegerValue(objectValue, "[??? oF@]");
+				}, "PlayerStateData","[??? EQt]");
 			}
 		}
 
@@ -2945,7 +2970,7 @@ public class SaveGameData {
 					item.Id    =  getStringValue(objectValue, "Id"   );
 					item.Type  =  getStringValue(objectValue, "Type" );
 					item.Value = getIntegerValue(objectValue, "Value");
-				}, "PlayerStateData","??? [m4I]");
+				}, "PlayerStateData","[??? m4I]");
 			}
 		}
 
@@ -4650,6 +4675,19 @@ public class SaveGameData {
 		if (addressStr.length()>2+1+3+2+2+3+3) return false;
 		for (int i=2; i<addressStr.length(); ++i) {
 			char ch = addressStr.charAt(i);
+			if ('0'<=ch && ch<='9') continue;
+			if ('a'<=ch && ch<='f') continue;
+			if ('A'<=ch && ch<='F') continue;
+			return false;
+		}
+		return true;
+	}
+	
+	public static boolean isLongHex(String str) {
+		if (!str.startsWith("0x")) return false;
+		if (str.length()>18) return false;
+		for (int i=2; i<str.length(); ++i) {
+			char ch = str.charAt(i);
 			if ('0'<=ch && ch<='9') continue;
 			if ('a'<=ch && ch<='f') continue;
 			if ('A'<=ch && ch<='F') continue;
