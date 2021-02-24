@@ -1958,11 +1958,11 @@ public class SaveGameData {
 			public final Boolean unknownBool_Q6I;
 			public final Boolean unknownBool_eK9;
 			public final Boolean unknownBool_WQX;
-			public final Double unknownFloat_unY;
-			public final Double unknownFloat_xDJ;
+			public final Double height_m;
+			public final Double hope;
 			public final Long unknownLong_m9o;
 			public final Long unknownLong_JrL;
-			public final Coordinates unknownCoords_JAy;
+			public final Coordinates character;
 			public final Coordinates unknownCoords_IEo;
 
 			public Companion(JSON_Object<NVExtra, VExtra> objectValue) {
@@ -1971,7 +1971,10 @@ public class SaveGameData {
 				bodyParts = parseStringArray("Companion.[BodyParts]", objectValue, "[BodyParts]");
 				universeAddress = parseUniverseAddressField(objectValue, "UA");
 				originBiome = getStringValue(objectValue,"[OriginBiome]","[OriginBiome]");
-				animalRole = getStringValue(objectValue,"[AnimalRole]","[AnimalRole]");
+				animalRole  = getStringValue(objectValue,"[AnimalRole]","[AnimalRole]");
+				height_m    = getFloatValue(objectValue, "[Height]");
+				hope        = getFloatValue(objectValue, "[Hope]");
+				character   = Coordinates.parse(objectValue, "[Character]");
 				seed1 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed1]"));
 				seed2 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed2]"));
 				seed3 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed3]"));
@@ -1983,12 +1986,19 @@ public class SaveGameData {
 				unknownBool_Q6I  = getBoolValue(objectValue, "[??? Q6I Bool]");
 				unknownBool_eK9  = getBoolValue(objectValue, "[??? eK9 Bool]");
 				unknownBool_WQX  = getBoolValue(objectValue, "[??? WQX Bool]");
-				unknownFloat_unY = getFloatValue(objectValue, "[??? unY Float]");
-				unknownFloat_xDJ = getFloatValue(objectValue, "[??? xDJ Float]");
 				unknownLong_m9o = parseHexFormatedNumber(objectValue, "[??? m9o LongAsString]");
 				unknownLong_JrL = parseHexFormatedNumber(objectValue, "[??? JrL LongAsString]");
-				unknownCoords_JAy = Coordinates.parse(objectValue, "[??? JAy Coordinate3]");
 				unknownCoords_IEo = Coordinates.parse(objectValue, "[??? IEo Coordinate2]");
+			}
+
+			public static String toCharacterStr(double value, int index) {
+				String characterLabel = "???";
+				switch (index) {
+				case 0: if (value<0) characterLabel = "Verspieltheit"; else characterLabel = "Hilfsbereitschaft"; break;
+				case 1: if (value<0) characterLabel = "Sanftmut";      else characterLabel = "Aggression"; break;
+				case 2: if (value<0) characterLabel = "Hingabe";       else characterLabel = "Selbständigkeit"; break;
+				}
+				return String.format(Locale.ENGLISH, "%1.1f%% %s", Math.abs(value)*100, characterLabel);
 			}
 			
 		}

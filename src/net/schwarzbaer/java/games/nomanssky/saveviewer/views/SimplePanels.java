@@ -998,7 +998,7 @@ public class SimplePanels {
 		public CompanionsPanel(SaveGameData data) {
 			super(data);
 			
-			// [107, 120, 751, 113, 104, 357, 74, 74, 160, 160, 160, 173, 241, 243, 243, 240, 60, 60, 62, 62, 64, 125, 120]
+			// [20, 110, 120, 400, 120, 110, 360, 75, 75, 46, 56, 132, 104, 123, 60, 60, 60, 120, 120, 120, 120, 115, 115, 115, 115, 125, 125, 120]
 			CompanionColumnID[] blueprintColumns = new CompanionColumnID[] {
 				new CompanionColumnID("#"              ,     Integer.class, 20,-1, 20, 20, (c,i)->i+1),
 				new CompanionColumnID("Name"           ,      String.class, 20,-1,110,110, c->c.name),
@@ -1009,6 +1009,11 @@ public class SimplePanels {
 				new CompanionColumnID("Planet/System"  ,      String.class, 20,-1,360,360, c->c.universeAddress==null ? null : c.universeAddress.getVerboseNameInOneLine(data.universe, 2)),
 				new CompanionColumnID("Origin Biome"   ,      String.class, 20,-1, 75, 75, c->c.originBiome),
 				new CompanionColumnID("Animal Role"    ,      String.class, 20,-1, 75, 75, c->c.animalRole),
+				new CompanionColumnID("Größe"          ,      String.class, 20,-1, 45, 45, c->c.height_m==null ? "<null>" : String.format(Locale.ENGLISH, "%1.2fm", c.height_m)),
+				new CompanionColumnID("Hoffnung"       ,      String.class, 20,-1, 60, 60, c->c.hope    ==null ? "<null>" : String.format(Locale.ENGLISH, "%1.1f%%", c.hope*100)),
+				new CompanionColumnID("Character 1"    ,      String.class, 20,-1,130,130, c->c.character==null ? "<null>" : SaveGameData.Companions.Companion.toCharacterStr(c.character.x, 0)),
+				new CompanionColumnID("Character 2"    ,      String.class, 20,-1,105,105, c->c.character==null ? "<null>" : SaveGameData.Companions.Companion.toCharacterStr(c.character.y, 1)),
+				new CompanionColumnID("Character 3"    ,      String.class, 20,-1,125,125, c->c.character==null ? "<null>" : SaveGameData.Companions.Companion.toCharacterStr(c.character.z, 2)),
 				new CompanionColumnID("Bool(Q6I)"      ,      String.class, 20,-1, 60, 60, c->c.unknownBool_Q6I==null ? "<null>" : c.unknownBool_Q6I.booleanValue() ? "true" : "false"),
 				new CompanionColumnID("Bool(eK9)"      ,      String.class, 20,-1, 60, 60, c->c.unknownBool_eK9==null ? "<null>" : c.unknownBool_eK9.booleanValue() ? "true" : "false"),
 				new CompanionColumnID("Bool(WQX)"      ,      String.class, 20,-1, 60, 60, c->c.unknownBool_WQX==null ? "<null>" : c.unknownBool_WQX.booleanValue() ? "true" : "false"),
@@ -1020,11 +1025,8 @@ public class SimplePanels {
 				new CompanionColumnID("Timestamp 2"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp2==null ? null : c.timestamp2.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
 				new CompanionColumnID("Timestamp 3"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp3==null ? null : c.timestamp3.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
 				new CompanionColumnID("Timestamp 4"    ,   TimeStamp.class, 50,-1,115,115, c->c.timestamp4==null ? null : c.timestamp4.setOutputType(TimeStamp.OutputType.Short_MonNumber)),
-				new CompanionColumnID("Float(unY)"     ,      String.class, 20,-1, 65, 65, c->c.unknownFloat_unY==null ? "<null>" : String.format(Locale.ENGLISH, "%1.6f", c.unknownFloat_unY)),
-				new CompanionColumnID("Float(xDJ)"     ,      String.class, 20,-1, 65, 65, c->c.unknownFloat_xDJ==null ? "<null>" : String.format(Locale.ENGLISH, "%1.6f", c.unknownFloat_xDJ)),
 				new CompanionColumnID("Long(m9o)"      ,      String.class, 20,-1,125,125, c->c.unknownLong_m9o==null ? "<null>" : String.format("0x%016X", c.unknownLong_m9o)),
 				new CompanionColumnID("Long(JrL)"      ,      String.class, 20,-1,125,125, c->c.unknownLong_JrL==null ? "<null>" : String.format("0x%016X", c.unknownLong_JrL)),
-				new CompanionColumnID("Coords(JAy)"    , Coordinates.class, 20,-1,175,175, c->c.unknownCoords_JAy),
 				new CompanionColumnID("Coords(IEo)"    , Coordinates.class, 20,-1,120,120, c->c.unknownCoords_IEo),
 			};
 			
