@@ -573,6 +573,7 @@ public class SaveViewer implements ActionListener {
 		if (isSavegameFolderKnown())
 			for (ActionCommand ac:ActionCommand.save_commands) {
 				File savefile = new File(getSavegameFolder()+ac.filename);
+				String lastModified = SaveGameData.TimeStamp.getTimeStr(savefile.lastModified());
 				Vector<JComponent> comps = contentPane.disabler.get(ac);
 				if (comps!=null) {
 					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile);
@@ -583,10 +584,10 @@ public class SaveViewer implements ActionListener {
 							comp.setToolTipText("PreNext SaveGame (will not be parsed)");
 							comp.setForeground(Color.RED);
 						} else if (data.version!=null && data.version>5000) {
-							comp.setToolTipText("Creative ( "+Duration.toString(data.general.totalPlayTime)+" h )");
+							comp.setToolTipText(String.format("Creative ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
 							comp.setForeground(Color.BLUE);
 						} else {
-							comp.setToolTipText("Normal ( "+Duration.toString(data.general.totalPlayTime)+" h )");
+							comp.setToolTipText(String.format("Normal ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
 							comp.setForeground(DEFAULT_BUTTON_FOREGROUND_COLOR);
 						}
 					}
@@ -605,13 +606,12 @@ public class SaveViewer implements ActionListener {
 	private SaveGameData openSaveGameForPreview(File saveGameFile) {
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, false);
 		
-		HashMap<String, Vector<String>> deObfuscatorUsage = null;
+		HashMap<String, HashSet<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
 		else {
-			new_json_data = deObfuscator.deObfuscate(new_json_data,false);
-			deObfuscatorUsage = deObfuscator.getUsage();
+			deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data,false);
 			isPreNEXT = false;
 		}
 		SaveGameData saveGameData;
@@ -631,14 +631,13 @@ public class SaveViewer implements ActionListener {
 		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, true);
 		
-		HashMap<String, Vector<String>> deObfuscatorUsage = null;
+		HashMap<String, HashSet<String>> deObfuscatorUsage = null;
 		boolean isPreNEXT;
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
 		else {
 			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
-			new_json_data = deObfuscator.deObfuscate(new_json_data);
-			deObfuscatorUsage = deObfuscator.getUsage();
+			deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data);
 			isPreNEXT = false;
 		}
 		
@@ -684,14 +683,13 @@ public class SaveViewer implements ActionListener {
 			Gui.log_ln("");
 			JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(view.file, true);
 			
-			HashMap<String, Vector<String>> deObfuscatorUsage = null;
+			HashMap<String, HashSet<String>> deObfuscatorUsage = null;
 			boolean isPreNEXT;
 			if (SaveGameData.hasValue(new_json_data, "Version")) // <--- UnObfuscated String "Version"
 				isPreNEXT = true;
 			else {
 				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
-				new_json_data = deObfuscator.deObfuscate(new_json_data);
-				deObfuscatorUsage = deObfuscator.getUsage();
+				deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data);
 				isPreNEXT = false;
 			}
 			
@@ -722,7 +720,7 @@ public class SaveViewer implements ActionListener {
 		if (new_json_data==null)
 			throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
 		
-		JSON_Data.traverseAllValues(new_json_data, (path,nv)->nv.extra.setHost(nv), (path,v)->v.extra.setHost(v));
+		JSON_Data.traverseAllValues(new_json_data, false, (path,nv)->nv.extra.setHost(nv), (path,v)->v.extra.setHost(v));
 		
 		if (withConsoleLog) Gui.log_ln(" done");
 		
@@ -925,44 +923,42 @@ public class SaveViewer implements ActionListener {
 	public static class DeObfuscator {
 		
 		private HashMap<String, String> replacements;
-		private HashMap<String, Vector<String>> usage;
 
 		DeObfuscator() {
 			replacements = new HashMap<>();
-			usage = null;
-		}
-		
-		public HashMap<String,Vector<String>> getUsage() {
-			return usage;
 		}
 
 		public String getReplacement(String originalStr) {
 			return replacements.get(originalStr);
 		}
 
-		public JSON_Object<NVExtra,VExtra> deObfuscate(JSON_Object<NVExtra,VExtra> data) {
+		public HashMap<String, HashSet<String>> deObfuscate(JSON_Object<NVExtra,VExtra> data) {
 			return deObfuscate(data, true);
 		}
-		public JSON_Object<NVExtra,VExtra> deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose) {
+		public HashMap<String, HashSet<String>> deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose) {
 			
-			usage = new HashMap<>();
+			HashMap<String, HashSet<String>> usage = new HashMap<>();
 			Result res = new Result();
 			
-			JSON_Data.traverseNamedValues(data, (path,nv)->{
+			JSON_Data.traverseNamedValues(data, false, (path,nv)->{
 				String originalStr = nv.name;
-				
-				Vector<String> u = usage.get(originalStr);
-				if (u==null) usage.put(originalStr, u = new Vector<>());
-				u.add(path);
 				
 				String newStr = getReplacement(originalStr);
 				res.all++;
 				if (newStr!=null) {
 					nv.name = newStr;
 					nv.extra.wasDeObfuscated = true;
+					nv.extra.originalStr = originalStr;
 					res.known++;
 				} else
 					res.unkown.add(nv.name);
+			});
+			
+			JSON_Data.traverseNamedValues(data, false, (path,nv)->{
+				String originalStr = nv.extra.wasDeObfuscated ? nv.extra.originalStr : nv.name;
+				HashSet<String> u = usage.get(originalStr);
+				if (u==null) usage.put(originalStr, u = new HashSet<>());
+				u.add(path);
 			});
 			
 			if (verbose) {
@@ -972,7 +968,7 @@ public class SaveViewer implements ActionListener {
 				Gui.log_ln("   %d known names",replacements.size());
 			}
 			
-			return data;
+			return usage;
 		}
 
 		private static class Result {

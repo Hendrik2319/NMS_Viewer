@@ -10,6 +10,7 @@ import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,6 +60,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Addressdable
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjAppearance;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjColor;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Companions.Companion;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.MissionProgress.Participant;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
@@ -100,6 +102,11 @@ public class SimplePanels {
 			else str+="0x"+Long.toHexString(n).toUpperCase();
 		}
 		return "["+str+"]";
+	}
+	static Vector<String> getSorted(Collection<String> collection) {
+		Vector<String> vec = new Vector<>(collection);
+		vec.sort(Comparator.<String,String>comparing(String::toLowerCase).thenComparing(Comparator.naturalOrder()));
+		return vec;
 	}
 	protected static void markSelectedObjectsInUniverse(JTable table, AddressdableObject[] objs, UniversePanel universePanel) {
 		int[] rowsV = table.getSelectedRows();
@@ -265,7 +272,7 @@ public class SimplePanels {
 			textArea.setEditable(false);
 			
 			LocalTableModel tableModel = new LocalTableModel();
-			SimplifiedTable<ColumnID> table = new SimplifiedTable<>("StoredInteractionsTable",tableModel,true,SaveViewer.DEBUG,true);
+			SimplifiedTable<ColumnID> table = new SimplifiedTable<>("DeObfuscatorUsageTable",tableModel,true,SaveViewer.DEBUG,true);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 			table.getSelectionModel().addListSelectionListener(e->{
 				textArea.setText("");
@@ -273,10 +280,12 @@ public class SimplePanels {
 				if (selectedRowV<0) return;
 				
 				String originalStr = tableModel.getValue(table.convertRowIndexToModel(selectedRowV));
-				Vector<String> paths = data.deObfuscatorUsage.get(originalStr);
-				if (paths!=null)
+				HashSet<String> pathSet = this.data.deObfuscatorUsage.get(originalStr);
+				if (pathSet!=null) {
+					Vector<String> paths = getSorted(pathSet); 
 					for (String str:paths)
 						textArea.append(str+"\r\n");
+				}
 			});
 			
 			JScrollPane tableScrollPane = new JScrollPane(table);
@@ -287,7 +296,7 @@ public class SimplePanels {
 			add(textAreaScrollPane,BorderLayout.CENTER);
 			
 		}
-		
+
 		private enum ColumnID implements SimplifiedColumnIDInterface {
 			Original    ("Original"   , String.class,  35,-1,  60,  60),
 			Replacement ("Replacement", String.class,  35,-1, 180, 180);
@@ -968,6 +977,85 @@ public class SimplePanels {
 				new ColumnID("Name"           , String.class,  20,-1,700,700, sys->sys.ua==null ? null : sys.ua.getVerboseNameInOneLine(data.universe, 2)),
 			});
 			new MarkAddressesAddOn().setData(this.data.visitedSystems).addTo(table, universePanel, this.data.universe);
+		}
+	}
+
+	public static class CompanionsPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = 1816950969983315262L;
+
+		private static class CompanionColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Companions.Companion> {
+			public CompanionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Companions.Companion, Integer, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+			public CompanionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.Companions.Companion, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		private final VerySimpleTable<Companion> techsTable;
+		private final VerySimpleTable<Companion> productsTable;
+
+		public CompanionsPanel(SaveGameData data) {
+			super(data);
+			
+			// [107, 120, 751, 113, 104, 357, 74, 74, 160, 160, 160, 173, 241, 243, 243, 240, 60, 60, 62, 62, 64, 125, 120]
+			CompanionColumnID[] blueprintColumns = new CompanionColumnID[] {
+				new CompanionColumnID("#"              ,   Integer.class, 20,-1, 20, 20, (c,i)->i+1),
+				new CompanionColumnID("Name"           ,    String.class, 20,-1,110,110, c->c.name),
+				new CompanionColumnID("Type"           ,    String.class, 20,-1,120,120, c->c.type),
+				new CompanionColumnID("Body Parts"     ,    String.class, 20,-1,400,400, c->c.bodyParts==null ? null : c.bodyParts.toString()),
+				new CompanionColumnID("UniverseAddress",    String.class, 20,-1,120,120, c->c.universeAddress==null ? null : c.universeAddress.getAddressStr()),
+				new CompanionColumnID("Coordinates"    ,    String.class, 20,-1,110,110, c->c.universeAddress==null ? null : c.universeAddress.getCoordinates()),
+				new CompanionColumnID("Planet/System"  ,    String.class, 20,-1,360,360, c->c.universeAddress==null ? null : c.universeAddress.getVerboseNameInOneLine(data.universe, 2)),
+				new CompanionColumnID("Origin Biome"   ,    String.class, 20,-1, 75, 75, c->c.originBiome),
+				new CompanionColumnID("Animal Role"    ,    String.class, 20,-1, 75, 75, c->c.animalRole),
+				new CompanionColumnID("Bool(Q6I)"      ,    String.class, 20,-1, 60, 60, c->c.unknownBool_Q6I==null ? "<null>" : c.unknownBool_Q6I.booleanValue() ? "true" : "false"),
+				new CompanionColumnID("Bool(eK9)"      ,    String.class, 20,-1, 60, 60, c->c.unknownBool_eK9==null ? "<null>" : c.unknownBool_eK9.booleanValue() ? "true" : "false"),
+				new CompanionColumnID("Bool(WQX)"      ,    String.class, 20,-1, 60, 60, c->c.unknownBool_WQX==null ? "<null>" : c.unknownBool_WQX.booleanValue() ? "true" : "false"),
+				new CompanionColumnID("Seed 1"         , SeedValue.class, 20,-1,120,120, c->c.seed1==null ? null : c.seed1.getSeedStr()),
+				new CompanionColumnID("Seed 2"         , SeedValue.class, 20,-1,120,120, c->c.seed2==null ? null : c.seed2.getSeedStr()),
+				new CompanionColumnID("Seed 3"         , SeedValue.class, 20,-1,120,120, c->c.seed3==null ? null : c.seed3.getSeedStr()),
+				new CompanionColumnID("Seed 4"         , SeedValue.class, 20,-1,120,120, c->c.seed4==null ? null : c.seed4.getSeedStr()),
+				new CompanionColumnID("Timestamp 1"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp1),
+				new CompanionColumnID("Timestamp 2"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp2),
+				new CompanionColumnID("Timestamp 3"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp3),
+				new CompanionColumnID("Timestamp 4"    , TimeStamp.class, 50,-1,240,240, c->c.timestamp4),
+				new CompanionColumnID("Float(unY)"     ,    Double.class, 20,-1, 65, 65, c->c.unknownFloat_unY),
+				new CompanionColumnID("Float(xDJ)"     ,    Double.class, 20,-1, 65, 65, c->c.unknownFloat_xDJ),
+				new CompanionColumnID("String(m9o)"    ,    String.class, 20,-1,125,125, c->c.unknownString_m9o),
+				new CompanionColumnID("String(JrL)"    ,    String.class, 20,-1,125,125, c->c.unknownString_JrL),
+			};
+			
+			JPanel tablePanel = new JPanel(new GridLayout(0,1));
+			if (data.companions!=null) {
+				techsTable    = addTable(tablePanel, "Companions", data.companions.companions, blueprintColumns);
+				productsTable = addTable(tablePanel, "Eggs"      , data.companions.eggs      , blueprintColumns);
+			} else {
+				techsTable   = null;
+				productsTable= null;
+			}
+			add(tablePanel,BorderLayout.CENTER);
+		}
+		
+		@Override
+		public void updateContent() {
+			if (techsTable   !=null) techsTable   .getModel_SimplifiedTableModel().fireTableUpdate();
+			if (productsTable!=null) productsTable.getModel_SimplifiedTableModel().fireTableUpdate();
+		}
+		
+		private VerySimpleTable<SaveGameData.Companions.Companion> addTable(JPanel tablePanel, String label, SaveGameData.Companions.Companion[] data, CompanionColumnID[] columns) {
+			VerySimpleTable<SaveGameData.Companions.Companion> table = null;
+			if (data==null)
+				tablePanel.add(createLabeledScrollPane(label, new JLabel()));
+			else {
+				table = new VerySimpleTable<>(label+" Table",true,SaveViewer.DEBUG,true,data,columns);
+				tablePanel.add(createLabeledScrollPane(label, table));
+			}
+			return table;
+		}
+		private JScrollPane createLabeledScrollPane(String label, Component view) {
+			JScrollPane scrollPane = new JScrollPane(view);
+			scrollPane.setBorder(BorderFactory.createTitledBorder(label));
+			return scrollPane;
 		}
 	}
 

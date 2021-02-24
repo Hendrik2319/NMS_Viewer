@@ -244,17 +244,19 @@ public class TreeView {
 //			this(null,null,new ArrayValue(data));
 //		}
 
-		private boolean hideProcessedNodes;
-		boolean wasDeObfuscated;
+		private final boolean hideProcessedNodes;
+		final boolean wasDeObfuscated;
+		final String originalName;
 
-		private JsonTreeNode(JsonTreeNode parent, String name, Value<NVExtra,VExtra> value, boolean wasDeObfuscated, boolean hideProcessedNodes) {
+		private JsonTreeNode(JsonTreeNode parent, String name, String originalName, Value<NVExtra,VExtra> value, boolean wasDeObfuscated, boolean hideProcessedNodes) {
 			super(parent,name,value);
+			this.originalName = originalName;
 			this.wasDeObfuscated = wasDeObfuscated;
 			this.hideProcessedNodes = hideProcessedNodes;
 		}
 
 		public JsonTreeNode(JSON_Object<NVExtra,VExtra> data, boolean hideProcessedNodes) {
-			this(null,null,
+			this(null,null,null,
 				SaveGameData.createObjectValue(data),
 				true, hideProcessedNodes);
 		}
@@ -269,7 +271,7 @@ public class TreeView {
 					int i=0;
 					for (NamedValue<NVExtra,VExtra> namedvalue : objectValue.value)
 						if (!hideProcessedNodes || !namedvalue.value.extra.wasProcessed || namedvalue.value.extra.hasUnprocessedChildren())
-							children[i++] = new JsonTreeNode( this, namedvalue.name, namedvalue.value, namedvalue.extra.wasDeObfuscated, hideProcessedNodes );
+							children[i++] = new JsonTreeNode( this, namedvalue.name, namedvalue.extra.originalStr, namedvalue.value, namedvalue.extra.wasDeObfuscated, hideProcessedNodes );
 					children = Arrays.copyOf(children, i);
 				} else
 					throw new IllegalStateException("Found a Value with type==Object, but not instance of ObjectValue");
@@ -281,7 +283,7 @@ public class TreeView {
 					int i=0;
 					for (Value<NVExtra,VExtra> value : arrayValue.value)
 						if (!hideProcessedNodes || !value.extra.wasProcessed || value.extra.hasUnprocessedChildren())
-							children[i++] = new JsonTreeNode(this,null,value, true, hideProcessedNodes);
+							children[i++] = new JsonTreeNode(this,null,null,value, true, hideProcessedNodes);
 					children = Arrays.copyOf(children, i);
 				} else
 					throw new IllegalStateException("Found a Value with type==Array, but not instance of ArrayValue");

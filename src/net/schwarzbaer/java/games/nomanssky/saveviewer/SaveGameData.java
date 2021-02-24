@@ -11,12 +11,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +23,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -43,8 +43,8 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.TraverseException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Data.TraverseException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 
@@ -53,7 +53,7 @@ public class SaveGameData {
 	public final String filename;
 	public final int index;
 	public final JSON_Object<NVExtra,VExtra> json_data;
-	public HashMap<String, Vector<String>> deObfuscatorUsage = null;
+	public HashMap<String,HashSet<String>> deObfuscatorUsage = null;
 	public final boolean isPreNEXT;
 	
 	public Long version;
@@ -81,8 +81,9 @@ public class SaveGameData {
 	public Vector<UniverseAddress> NewAtlasStationAdressData = null;
 	public Vector<UniverseAddress> VisitedAtlasStationsData = null;
 	public Vector<VisitedSystems.VisitedSystem> visitedSystems = null;
-	public Inventory mainMultiTool;
-	public Vector<MultiTool> altMultiTools;
+	public Inventory mainMultiTool = null;
+	public Vector<MultiTool> altMultiTools = null;
+	public Companions companions = null;
 	
 	public SaveGameData(JSON_Object<NVExtra,VExtra> json_data, String filename, int index, boolean isPreNEXT) {
 		
@@ -96,7 +97,7 @@ public class SaveGameData {
 		this.experimentalData = new ExperimentalData(this);
 	}
 
-	public void setDeObfuscatorUsage(HashMap<String, Vector<String>> deObfuscatorUsage) {
+	public void setDeObfuscatorUsage(HashMap<String, HashSet<String>> deObfuscatorUsage) {
 		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
@@ -116,6 +117,7 @@ public class SaveGameData {
 		inventories = Inventories.parseInventories(this);
 		mainMultiTool = MultiTools.parseMain(this);
 		altMultiTools = MultiTools.parseAlternatives(this);
+		companions = Companions.parse(this);
 		
 		baseBuildingObjects   = UnboundBuildingObject.parse(this);
 		persistentPlayerBases = PersistentPlayerBase.parseBases(this);
@@ -144,7 +146,7 @@ public class SaveGameData {
 		
 		return this;
 	}
-
+	
 	private void determineAdditionalInfos() {
 		if (baseBuildingObjects!=null) {
 			for (UnboundBuildingObject bbo:baseBuildingObjects) {
@@ -499,7 +501,7 @@ public class SaveGameData {
 		public Coordinates(Point3D p) {
 			super(p);
 			this.w1 = 0;
-			this.length = 0; 
+			this.length = 3; 
 		}
 
 		public void set(int i, double value) {
@@ -644,10 +646,17 @@ public class SaveGameData {
 			return new TimeStamp(value_s);
 		}
 		@Override public String toString() {
-			return DateFormat.getDateTimeInstance().format(new Date(value_s*1000));
+			//return DateFormat.getDateTimeInstance().format(new Date(value_s*1000));
+			return getTimeStr(value_s*1000);
 		}
 		@Override public int compareTo(TimeStamp other) {
 			return (int) (this.value_s-other.value_s);
+		}
+		
+		static String getTimeStr(long millis) {
+			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("CET"), Locale.GERMANY);
+			cal.setTimeInMillis(millis);
+			return String.format(Locale.ENGLISH, "%1$tA, %1$te. %1$tb %1$tY, %1$tT [%1$tZ:%1$tz]", cal);
 		}
 	}
 	
@@ -1853,6 +1862,113 @@ public class SaveGameData {
 	
 	}
 	
+	public static class Companions {
+
+		public final Companion[] companions;
+		public final Companion[] eggs;
+		public final Boolean[] isUnlocked;
+		
+		public Companions(JSON_Array<NVExtra, VExtra> arrCompanions, JSON_Array<NVExtra, VExtra> arrCompanionEggs, JSON_Array<NVExtra, VExtra> arrUnlockedCompanionSlots) {
+			companions = parseCompanionArray("Companions", arrCompanions);
+			eggs       = parseCompanionArray("CompanionEggs",arrCompanionEggs);
+			isUnlocked = parseBoolArray("UnlockedCompanionSlots",arrUnlockedCompanionSlots); 
+		}
+
+		static Companions parse(SaveGameData data) {
+			JSON_Array<NVExtra,VExtra> arrCompanions = getArrayValue_optional(data.json_data, "PlayerStateData", "[Companions]");
+			JSON_Array<NVExtra,VExtra> arrCompanionEggs = getArrayValue_optional(data.json_data, "PlayerStateData", "[CompanionEggs]");
+			JSON_Array<NVExtra,VExtra> arrUnlockedCompanionSlots = getArrayValue_optional(data.json_data, "PlayerStateData", "[UnlockedCompanionSlots]");
+			
+			if (arrCompanions==null && arrCompanionEggs==null && arrUnlockedCompanionSlots==null)
+				return null;
+			
+			return new Companions(arrCompanions, arrCompanionEggs, arrUnlockedCompanionSlots);
+		}
+		
+		private Boolean[] parseBoolArray(String label, JSON_Array<NVExtra, VExtra> arr) {
+			if (arr==null) return null;
+			
+			if (arr.size()!=6) {
+				Gui.log_error_ln("Companion Array \"%s\" has unexpected number of values: %d (!=6)", label, arr.size());
+				return null;
+			}
+			
+			Boolean[] result = new Boolean[arr.size()];
+			for (int i=0; i<arr.size(); i++)
+				result[i] = getBool(arr.get(i));
+			
+			return result;
+		}
+
+		private static Companion[] parseCompanionArray(String label, JSON_Array<NVExtra, VExtra> arr) {
+			if (arr==null) return null;
+			
+			if (arr.size()!=6) {
+				Gui.log_error_ln("Companion Array \"%s\" has unexpected number of values: %d (!=6)", label, arr.size());
+				return null;
+			}
+			
+			Companion[] result = new Companion[arr.size()];
+			Arrays.fill(result, null);
+			for (int i=0; i<arr.size(); i++) {
+				JSON_Object<NVExtra, VExtra> object = getObject(arr.get(i));
+				if (object==null) continue;
+				result[i] = new Companion(object);
+			}
+			return result;
+		}
+
+		public static class Companion {
+
+			public final String name;
+			public final String type;
+			public final Vector<String> bodyParts;
+			public final UniverseAddress universeAddress;
+			public final String originBiome;
+			public final String animalRole;
+			public final SeedValue seed1;
+			public final SeedValue seed2;
+			public final SeedValue seed3;
+			public final SeedValue seed4;
+			public final TimeStamp timestamp1;
+			public final TimeStamp timestamp2;
+			public final TimeStamp timestamp3;
+			public final TimeStamp timestamp4;
+			public final Boolean unknownBool_Q6I;
+			public final Boolean unknownBool_eK9;
+			public final Boolean unknownBool_WQX;
+			public final Double unknownFloat_unY;
+			public final Double unknownFloat_xDJ;
+			public final String unknownString_m9o;
+			public final String unknownString_JrL;
+
+			public Companion(JSON_Object<NVExtra, VExtra> objectValue) {
+				name = getStringValue(objectValue,"[UserDefinedName]");
+				type = getStringValue(objectValue,"[AnimalType]");
+				bodyParts = parseStringArray("Companion.[BodyParts]", objectValue, "[BodyParts]");
+				universeAddress = parseUniverseAddressField(objectValue, "UA");
+				originBiome = getStringValue(objectValue,"[OriginBiome]","[OriginBiome]");
+				animalRole = getStringValue(objectValue,"[AnimalRole]","[AnimalRole]");
+				seed1 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed1]"));
+				seed2 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed2]"));
+				seed3 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed3]"));
+				seed4 = SeedValue.parse(getArrayValue(objectValue, "[CompanionSeed4]"));
+				timestamp1 = TimeStamp.create(getIntegerValue(objectValue, "[CompanionTimestamp1]"));
+				timestamp2 = TimeStamp.create(getIntegerValue(objectValue, "[CompanionTimestamp2]"));
+				timestamp3 = TimeStamp.create(getIntegerValue(objectValue, "[CompanionTimestamp3]"));
+				timestamp4 = TimeStamp.create(getIntegerValue(objectValue, "[CompanionTimestamp4]"));
+				unknownBool_Q6I  = getBoolValue(objectValue, "[??? Q6I Bool]");
+				unknownBool_eK9  = getBoolValue(objectValue, "[??? eK9 Bool]");
+				unknownBool_WQX  = getBoolValue(objectValue, "[??? WQX Bool]");
+				unknownFloat_unY = getFloatValue(objectValue, "??? [unY]");
+				unknownFloat_xDJ = getFloatValue(objectValue, "[??? xDJ Float]");
+				unknownString_m9o = getStringValue(objectValue, "[??? m9o LongAsString]");
+				unknownString_JrL = getStringValue(objectValue, "[??? JrL LongAsString]");
+			}
+			
+		}
+	}
+
 	public static class Frigate {
 	
 		public interface Modification {
@@ -4623,11 +4739,13 @@ public class SaveGameData {
 		public final Type type;
 		public NamedValue<NVExtra, VExtra> host;
 		public boolean wasDeObfuscated;
+		public String originalStr;
 	
 		public NVExtra(Type type) {
 			this.type = type;
 			this.host = null; 
 			wasDeObfuscated = false;
+			originalStr = null;
 		}
 		void setHost(NamedValue<NVExtra, VExtra> host) {
 			this.host = host;

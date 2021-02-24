@@ -9,16 +9,22 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.HashSet;
+import java.util.Vector;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.ValueListOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
@@ -68,9 +74,23 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			}
 		});
 		tree.setCellRenderer(new CellRenderer());
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		tree.addTreeSelectionListener(e -> {
+			TreePath path = e.getPath();
+			if (path==null) return;
+			Object pathComp = path.getLastPathComponent();
+			if (pathComp instanceof JsonTreeNode)
+				showValues(path, (JsonTreeNode) pathComp);
+		});
+		
 		JScrollPane treeScrollPane = new JScrollPane(tree);
 		treeScrollPane.setPreferredSize(new Dimension(600, 500));
 		SaveViewer.log_ln(" done");
+		
+		infoTextArea = new JTextArea();
+		infoTextArea.setEditable(false);
+		JScrollPane infoTextScrollPane = new JScrollPane(infoTextArea);
+		infoTextScrollPane.setPreferredSize(new Dimension(600,300));
 		
 		contextMenu_tree = new JPopupMenu("Contextmenu");
 		contextMenu_tree.add(miHideShowProcessedNodes_tree = Gui.createMenuItem("Hide Processed Nodes", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
@@ -85,7 +105,34 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		
 		updateMenuItems();
 		
-		add(treeScrollPane,BorderLayout.CENTER);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, infoTextScrollPane);
+		splitPane.setResizeWeight(1);
+		
+		add(splitPane,BorderLayout.CENTER);
+	}
+
+	private void showValues(TreePath path, JsonTreeNode treeNode) {
+		ValueListOutput out = new ValueListOutput();
+		
+		out.add(0, "Path", "%s", path==null ? "<null>" : pathToShortString(path));
+		if (treeNode!=null) {
+			out.add(0, "Name", "%s", getName(treeNode));
+			if (treeNode.originalName!=null)
+				out.add(0, "Original Name", "%s", treeNode.originalName);
+			out.add(0, "Value", "%s", treeNode.data.toString());
+			
+			String originalStr = treeNode.originalName!=null ? treeNode.originalName : treeNode.name;
+			if (originalStr!=null) {
+				HashSet<String> paths = data.deObfuscatorUsage.get(originalStr);
+				if (paths!=null && !paths.isEmpty()) {
+					Vector<String> sorted = SimplePanels.getSorted(paths);
+					out.add(0, "Usage","Original Name \"%s\" used in", originalStr);
+					for (String str:sorted)
+						out.add(1, null, "%s", str);
+				}
+			}
+		}
+		infoTextArea.setText(out.generateOutput());
 	}
 
 	private void updateMenuItems() {
@@ -165,6 +212,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 	private static final Color COLOR_WAS_NOT_DEOBFUSCATED    = new Color(0xFF00FF);
 	private static final Color COLOR_WAS_PROCESSED           = new Color(0x808080);
 	private static final Color COLOR_WAS_FULLY_PROCESSED     = new Color(0x00C000);
+private JTextArea infoTextArea;
 	
 	private final class CellRenderer extends DefaultTreeCellRenderer {
 		private static final long serialVersionUID = 7697237514743853958L;
