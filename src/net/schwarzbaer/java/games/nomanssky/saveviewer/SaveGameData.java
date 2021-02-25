@@ -46,7 +46,6 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.TraverseException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Helper;
 
 public class SaveGameData {
@@ -2929,11 +2928,83 @@ public class SaveGameData {
 			data_EQt = new DATA_EQt(); data_EQt.parse(data);
 			data_m4I = new DATA_m4I(); data_m4I.parse(data);
 			
-			// TODO: PlayerStateData -> cf5 | [??? j30] | [??? l:j]
-//			globalOptionalValues.scan(json_data,"PlayerStateData","[??? j30]");
-//			globalOptionalValues.scan(json_data,"PlayerStateData","cf5"      );
-//			globalOptionalValues.scan(json_data,"PlayerStateData","[??? l:j]");
+//			globalOptionalValues.scan(data.json_data,"PlayerStateData","[??? j30]");
+//			globalOptionalValues.scan(data.json_data,"PlayerStateData","cf5"      );
+//			globalOptionalValues.scan(data.json_data,"PlayerStateData","[??? l:j]");
+			
+			JSON_Array<NVExtra, VExtra> array_cf5 = getArrayValue(data.json_data, "PlayerStateData","cf5");
+			if (array_cf5!=null)
+				for (Value<NVExtra, VExtra> value : array_cf5) {
+					JSON_Object<NVExtra, VExtra> object = getObject(value);
+					parseAppearanceBlock(object);
+				}
+			
+			JSON_Array<NVExtra, VExtra> array_lj = getArrayValue(data.json_data, "PlayerStateData","[??? l:j]");
+			parseAppearanceArray(array_lj);
+			
+			JSON_Array<NVExtra, VExtra> array_j30 = getArrayValue_optional(data.json_data, "PlayerStateData","[??? j30]");
+			if (array_j30!=null)
+				for (Value<NVExtra, VExtra> value : array_j30) {
+					JSON_Object<NVExtra, VExtra> object = getObject(value);
+					if (object==null) continue;
+					JSON_Array<NVExtra, VExtra> apperArr = getArrayValue(object, "Data");
+					parseAppearanceArray(apperArr);
+				}
 		}
+
+		@SuppressWarnings("unused")
+		private void parseAppearanceArray(JSON_Array<NVExtra, VExtra> array) {
+			if (array==null) return;
+			for (Value<NVExtra, VExtra> value : array) {
+				JSON_Object<NVExtra, VExtra> object = getObject(value);
+				if (object==null) continue;
+				String stringValue = getStringValue(object, "[??? VFd ID?]");
+				JSON_Object<NVExtra, VExtra> block = getObjectValue(object, "[??? wnR]");
+				parseAppearanceBlock(block);
+				// TODO Auto-generated method stub
+			}
+		}
+
+		private void parseAppearanceBlock(JSON_Object<NVExtra, VExtra> object) {
+			globalOptionalValues.scan(object,"AppearanceBlock");
+			// TODO Auto-generated method stub
+		}
+		
+		public static class AppearanceBlock {
+			
+			AppearanceBlock(JSON_Object<NVExtra, VExtra> object) {
+				if (object==null) throw new IllegalArgumentException("new AppearanceBlock(<null>) is not allowed");
+				
+			}
+			
+		}
+		
+		/*
+    Block "AppearanceBlock" [5]
+        [??? Aak]:Array
+        [??? Aak][]:Object or empty array
+        [??? SMP]:Array
+        [??? SMP][]:String or empty array
+        [??? T>1]:Array
+        [??? T>1][]:Object or empty array
+        [??? gsg]:Array
+        [??? gsg][]:Object or empty array
+        [Height]:Float
+    Block "AppearanceBlock.[??? Aak][]" [2]
+        [??? RVl]:Object
+        [??? xEg]:Array
+        [??? xEg][]:Float
+    Block "AppearanceBlock.[??? Aak][].[??? RVl]" [2]
+        [??? RVl]:String
+        [??? Ty=]:String
+    Block "AppearanceBlock.[??? T>1][]" [2]
+        [??? =Cv]:String
+        [??? @6c]:String
+    Block "AppearanceBlock.[??? gsg][]" [2]
+        [??? tIm]:String
+        [Height]:Float
+		
+		 */
 
 		public static abstract class RawData<DataType> {
 			
@@ -4797,24 +4868,24 @@ public class SaveGameData {
 	
 	
 	public static ObjectValue<NVExtra, VExtra> createObjectValue(JSON_Object<NVExtra, VExtra> data) {
-		VExtra extra = new VExtra(Type.Object);
+		VExtra extra = new VExtra(Value.Type.Object);
 		ObjectValue<NVExtra, VExtra> host = new ObjectValue<>(data,extra);
 		extra.setHost(host);
 		return host;
 	}
 	
 	public static class FactoryForExtras implements JSON_Data.FactoryForExtras<NVExtra,VExtra> {
-		@Override public NVExtra createNamedValueExtra(Type type) { return new NVExtra(type); }
-		@Override public VExtra createValueExtra(Type type) { return new VExtra(type); }
+		@Override public NVExtra createNamedValueExtra(Value.Type type) { return new NVExtra(type); }
+		@Override public VExtra createValueExtra(Value.Type type) { return new VExtra(type); }
 	}
 
 	public static class NVExtra implements JSON_Data.NamedValueExtra {
-		public final Type type;
+		public final Value.Type type;
 		public NamedValue<NVExtra, VExtra> host;
 		public boolean wasDeObfuscated;
 		public String originalStr;
 	
-		public NVExtra(Type type) {
+		public NVExtra(Value.Type type) {
 			this.type = type;
 			this.host = null; 
 			wasDeObfuscated = false;
@@ -4829,13 +4900,13 @@ public class SaveGameData {
 
 	public static class VExtra implements JSON_Data.ValueExtra {
 		
-		public final Type type;
+		public final Value.Type type;
 		public Value<NVExtra, VExtra> host;
 		public boolean wasProcessed;
 		public Boolean hasUnprocessedChildren;
 		public Boolean hasObfuscatedChildren;
 		
-		public VExtra(Type type) {
+		public VExtra(Value.Type type) {
 			this.type = type;
 			this.host = null; 
 			wasProcessed = false;
@@ -4855,14 +4926,14 @@ public class SaveGameData {
 		public boolean hasUnprocessedChildren() {
 			// ArrayValue   @Override public boolean hasUnprocessedChildren() { return JSON_Data.hasUnprocessedChildren(this,this.value, v-> v      ); }
 			// ObjectValue  @Override public boolean hasUnprocessedChildren() { return JSON_Data.hasUnprocessedChildren(this,this.value,nv->nv.value); }
-			if (type==Type.Array ) {
+			if (type==Value.Type.Array ) {
 				if (host==null)
 					throw new IllegalStateException();
 				if (host.castToArrayValue()==null)
 					throw new IllegalStateException();
 				return hasUnprocessedChildren(host,host.castToArrayValue ().value, v-> v      );
 			}
-			if (type==Type.Object) {
+			if (type==Value.Type.Object) {
 				if (host==null)
 					throw new IllegalStateException();
 				if (host.castToObjectValue()==null)
@@ -4874,8 +4945,8 @@ public class SaveGameData {
 		public boolean hasObfuscatedChildren() {
 			// ArrayValue   @Override public boolean hasObfuscatedChildren () { return JSON_Data.hasObfuscatedChildren (this,this.value, v-> v      , v->true              ); }
 			// ObjectValue  @Override public boolean hasObfuscatedChildren () { return JSON_Data.hasObfuscatedChildren (this,this.value,nv->nv.value,nv->nv.wasDeObfuscated); }
-			if (type==Type.Array ) return hasObfuscatedChildren(host,host.castToArrayValue ().value, v-> v      , v->true                    );
-			if (type==Type.Object) return hasObfuscatedChildren(host,host.castToObjectValue().value,nv->nv.value,nv->nv.extra.wasDeObfuscated);
+			if (type==Value.Type.Array ) return hasObfuscatedChildren(host,host.castToArrayValue ().value, v-> v      , v->true                    );
+			if (type==Value.Type.Object) return hasObfuscatedChildren(host,host.castToObjectValue().value,nv->nv.value,nv->nv.extra.wasDeObfuscated);
 			return false;
 		}
 		
