@@ -30,12 +30,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -1290,8 +1292,14 @@ public class Images {
 	public static class ColorListDialog extends StandardDialog {
 		private static final long serialVersionUID = 1195618468891906980L;
 
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<NamedColor> {
-			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue) {
+		private static class NamedColorColumnID extends TableView.VerySimpleTable.ColumnID<NamedColor> {
+			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+
+		private static class ColorUsingIDColumnID extends TableView.VerySimpleTable.ColumnID<ColorUsingID> {
+			public ColorUsingIDColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<ColorUsingID, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
@@ -1305,11 +1313,19 @@ public class Images {
 		private NamedColor similarityBase;
 		private HashMap<Integer, ColorUsage> colorUsage;
 		
-		private final ColumnID[] columns = new ColumnID[] {
-				new ColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
-				new ColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name),
-				new ColumnID("Used" , ColorUsage.class,  20,-1, 80, 80, nc->colorUsage.get(nc.value)),
-			};
+		private final NamedColorColumnID[] colorListColumns = new NamedColorColumnID[] {
+			new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
+			new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name),
+			new NamedColorColumnID("Used" , ColorUsage.class,  20,-1, 80, 80, nc->colorUsage.get(nc.value)),
+		};
+		
+		private final ColorUsingIDColumnID[] usageViewColumns = new ColorUsingIDColumnID[] {
+			new ColorUsingIDColumnID("Type"  , ColorUsage.IDType.class,  20,-1, 60, 60, cuid->cuid.idType),
+			new ColorUsingIDColumnID("ID"    ,            String.class,  20,-1,120,120, cuid->cuid.id.id),
+			new ColorUsingIDColumnID("Symbol",            String.class,  20,-1, 45, 45, cuid->cuid.id.symbol),
+			new ColorUsingIDColumnID("Name"  ,            String.class,  20,-1,300,300, cuid->cuid.id.label),
+			new ColorUsingIDColumnID("Image" ,            String.class,  20,-1,300,300, cuid->cuid.id.imageFileName),
+		};
 		
 		public ColorListDialog(Window parent, String title, Images context) {
 			super(parent, title);
@@ -1321,20 +1337,24 @@ public class Images {
 			disabler.setCareFor(Action.values());
 			
 			selected = null;
-			colorList = new TableView.VerySimpleTable<NamedColor>("ColorTable", true, true, false);
+			colorList = new TableView.VerySimpleTable<NamedColor>("ColorListDialog.NamedColorTable", true, true, false);
 			colorList.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
 			colorList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			
+			int colorListPrefWidth = NamedColorColumnID.getSumOfPrefWidths(colorListColumns);
 			JScrollPane colorListScrollPane = new JScrollPane(colorList);
-			colorListScrollPane.setPreferredSize(new Dimension(360, 500));
 			
 			JTextArea similarityView = new JTextArea();
 			JScrollPane similarityViewScrollPane = new JScrollPane(similarityView);
-			similarityViewScrollPane.setPreferredSize(new Dimension(500, 60));
 			
-			JTextArea usageView = new JTextArea();
+//			JTextArea usageView = new JTextArea();
+			TableView.VerySimpleTable<ColorUsingID> usageView = new TableView.VerySimpleTable<ColorUsingID>("ColorListDialog.ColorUsingIDTable", true, true, false);
+			usageView.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			int usageViewPrefWidth = ColorUsingIDColumnID.getSumOfPrefWidths(usageViewColumns);
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
-			usageViewScrollPane.setPreferredSize(new Dimension(500, 500));
+			
+			colorListScrollPane     .setPreferredSize(new Dimension(colorListPrefWidth+40, 500));
+			similarityViewScrollPane.setPreferredSize(new Dimension(usageViewPrefWidth+40,  60));
+			usageViewScrollPane     .setPreferredSize(new Dimension(usageViewPrefWidth+40, 500));
 			
 			JToggleButton sortBySimilarityBtn;
 			JLabel sortOrderOutput;
@@ -1382,9 +1402,11 @@ public class Images {
 			showUsage(usageView,similarityView);
 		}
 
-		private void showUsage(JTextArea usageView, JTextArea similarityView) {
+		private void showUsage(TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {
+//			private void showUsage(JTextArea usageView, JTextArea similarityView) {
 			if (selected==null) {
-				usageView.setText("");
+				usageView.setData(new ColorUsingID[0], usageViewColumns);
+				//usageView.setText("");
 				similarityView.setText("");
 				return;
 			}
@@ -1396,6 +1418,12 @@ public class Images {
 				similarityView.setText(str);
 			}
 			
+			ColorUsage usage = colorUsage.get(selected.value);
+			if (usage==null)
+				usageView.setData(new Vector<>(), usageViewColumns);
+			else
+				usageView.setData(usage.createVector(), usageViewColumns);
+			/*
 			String str = "";
 			str += "Usage:\r\n";
 			ColorUsage usage = colorUsage.get(selected.value);
@@ -1413,12 +1441,13 @@ public class Images {
 			}
 			
 			usageView.setText(str);
+			*/
 		}
 
 		private String setDefaultOrder() {
 			similarityBase = null;
 			NamedColor oldSelected = selected;
-			colorList.setData(context.colorValues,columns);
+			colorList.setData(context.colorValues,colorListColumns);
 			colorList.setSelectedValue(oldSelected, true);
 			return "Default Order";
 		}
@@ -1429,7 +1458,7 @@ public class Images {
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(context.colorValues));
 			colors.sort(Comparator.<NamedColor,Integer>comparing(nc->getDistance(nc,selected)).thenComparing(nc->nc.value));
 			NamedColor oldSelected = selected;
-			colorList.setData(colors.toArray(new NamedColor[colors.size()]),columns);
+			colorList.setData(colors.toArray(new NamedColor[colors.size()]),colorListColumns);
 			colorList.setSelectedValue(oldSelected, true);
 			return String.format("Similarity to %s", selected==null ? "<null>" : selected.getLabel());
 		}
@@ -1459,6 +1488,15 @@ public class Images {
 			return (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2);
 		}
 		
+		private static class ColorUsingID {
+			ColorUsage.IDType idType;
+			GeneralizedID id;
+			private ColorUsingID( ColorUsage.IDType idType, GeneralizedID id) {
+				this.idType = idType;
+				this.id = id;
+			}
+		}
+		
 		private static class ColorUsage {
 			enum IDType { Product, Substance, Tech }
 
@@ -1470,28 +1508,40 @@ public class Images {
 				usedObsoleteOnly = null;
 			}
 			
-			@Override
-			public String toString() {
-				StringBuilder sb = new StringBuilder();
+			private Vector<ColorUsingID> createVector() {
+				Vector<ColorUsingID> vector = new Vector<>();
+				forEachIdList((idType,vec)->Collections.addAll(vector, vec.stream().map(id->new ColorUsingID(idType,id)).toArray(ColorUsingID[]::new)));
+				return vector;
+			}
+			
+			private void forEachIdList(BiConsumer<IDType,Vector<GeneralizedID>> action) {
 				for (IDType id:IDType.values()) {
 					Vector<GeneralizedID> vec = ids.get(id);
 					if (vec==null || vec.isEmpty()) continue;
+					action.accept(id, vec);
+				}
+			}
+			
+			@Override
+			public String toString() {
+				StringBuilder sb = new StringBuilder();
+				forEachIdList((id,vec)->{
 					int n = vec.size();
 					switch (id) {
 					case Product  : sb.append("P:"+n+" "); break;
 					case Substance: sb.append("S:"+n+" "); break;
 					case Tech     : sb.append("T:"+n+" "); break;
 					}
-				}
+				});
 				if (usedObsoleteOnly!=null && usedObsoleteOnly.booleanValue()) sb.append("#"); 
 				return sb.toString();
 			}
 
 			private static HashMap<Integer,ColorUsage> scanUsage() {
 				HashMap<Integer,ColorUsage> usage = new HashMap<>();
-				scanIdMap(usage,GameInfos.productIDs,IDType.Product);
+				scanIdMap(usage,GameInfos.productIDs  ,IDType.Product  );
 				scanIdMap(usage,GameInfos.substanceIDs,IDType.Substance);
-				scanIdMap(usage,GameInfos.techIDs,IDType.Tech);
+				scanIdMap(usage,GameInfos.techIDs     ,IDType.Tech     );
 				return usage;
 			}
 

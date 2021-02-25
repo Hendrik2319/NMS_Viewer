@@ -145,10 +145,6 @@ public class SaveGameData {
 		GameInfos.saveAllIDsToFiles();
 		SaveViewer.steamIDs.writeToFile();
 		
-//		globalOptionalValues.scan(json_data,"PlayerStateData","[??? j30]");
-//		globalOptionalValues.scan(json_data,"PlayerStateData","cf5"      );
-//		globalOptionalValues.scan(json_data,"PlayerStateData","[??? l:j]");
-		
 		return this;
 	}
 	
@@ -2932,6 +2928,11 @@ public class SaveGameData {
 			data_Wu_ = new DATA_Wu_(); data_Wu_.parse(data);
 			data_EQt = new DATA_EQt(); data_EQt.parse(data);
 			data_m4I = new DATA_m4I(); data_m4I.parse(data);
+			
+			// TODO: PlayerStateData -> cf5 | [??? j30] | [??? l:j]
+//			globalOptionalValues.scan(json_data,"PlayerStateData","[??? j30]");
+//			globalOptionalValues.scan(json_data,"PlayerStateData","cf5"      );
+//			globalOptionalValues.scan(json_data,"PlayerStateData","[??? l:j]");
 		}
 
 		public static abstract class RawData<DataType> {
