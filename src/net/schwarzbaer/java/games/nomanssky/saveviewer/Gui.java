@@ -65,6 +65,7 @@ import javax.swing.border.CompoundBorder;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
@@ -81,30 +82,11 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
 
-	public enum ToolbarIcons { SwitchFolder, Open, Save, SaveAs, Close, Reload, Compare, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
-	public static IconSource<ToolbarIcons> toolbarIS;
+	public enum ToolbarIcons { EmptyDoc, Open, Save, SaveAs, Reload, Close, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
+	public static CachedIcons<ToolbarIcons> toolbarIS;
 	
 	static void loadToolbarIcons() {
-		toolbarIS = new IconSource<ToolbarIcons>(16,16){
-			@Override protected int getIconIndexInImage(ToolbarIcons key) {
-				switch(key) {
-				case Compare     : return 0;
-				case SwitchFolder: return 1;
-				case Open        : return 1;
-				case Save        : return 2;
-				case SaveAs      : return 3;
-				case Reload      : return 4;
-				case Close       : return 5;
-				case ComputePortalGlyphs: return 6;
-				case Cut   : return 7;
-				case Copy  : return 8;
-				case Paste : return 9;
-				case Delete: return 10;
-				}
-			 	throw new IllegalArgumentException("Unknown icon key: "+key);
-			}
-		};
-		toolbarIS.readIconsFromResource(FileExport.RES_IMAGES_TOOLBAR_PNG);
+		toolbarIS = IconSource.createCachedIcons(16,16, FileExport.RES_IMAGES_TOOLBAR_PNG, ToolbarIcons.values());
 	}
 
 	public static Color brighter(Color color, float fraction) {
@@ -792,7 +774,7 @@ public class Gui {
 			@Override public void configureMenuItem(JMenuItem menuItem, NamedColor color) {
 				if (color!=null) {
 					menuItem.setText(color.name);
-					menuItem.setIcon(new ImageIcon(color.createImage(20,13)));
+					menuItem.setIcon(new ImageIcon(Images.createImage(20, 13, color.color)));
 				} else {
 					menuItem.setText("<none>");
 					menuItem.setIcon(null);
@@ -1341,7 +1323,7 @@ public class Gui {
 		return setComp(new JButton(title), null, l, disabler, actionCommand, enabled, icon);
 	}
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
-		return createButton(title, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
+		return createButton(title, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getCachedIcon(icon) : null);
 	}
 	
 	public static <AC extends Enum<AC>> JRadioButton createRadioButton(String title, ButtonGroup bg, boolean isSelected, boolean enabled, ActionListener l) {
@@ -1394,7 +1376,7 @@ public class Gui {
 
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
 		JMenuItem menuItem = new JMenuItem(title);
-		setComp(menuItem, null, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getIcon(icon) : null);
+		setComp(menuItem, null, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getCachedIcon(icon) : null);
 		return menuItem;
 	}
 

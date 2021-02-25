@@ -358,6 +358,14 @@ public class TableView {
 			return tableModel.columns[i];
 		}
 		
+		public void setSelectedValue(DataType selected, boolean shouldScroll) {
+			int rowM = tableModel.indexOf(selected);
+			int rowV = rowM<0 ? -1 : convertRowIndexToView(rowM);
+			if (rowV<0) clearSelection();
+			else setRowSelectionInterval(rowV,rowV);
+			if (shouldScroll)
+				scrollRectToVisible(getCellRect(rowV, 0, true));
+		}
 		public void addSelectionListener(BiConsumer<DataType,Integer> selectionChanged) {
 			getSelectionModel().addListSelectionListener(e->{
 				if (tableModel==null) return;
@@ -373,9 +381,9 @@ public class TableView {
 		
 		public static class VerySimpleTableModel<DataType> extends Tables.SimplifiedTableModel<ColumnID<DataType>> {
 
-			private ColumnID<DataType>[] columns;
-			private Vector<DataType> dataVector;
-			private DataType[] dataArray;
+			private final ColumnID<DataType>[] columns;
+			private final Vector<DataType> dataVector;
+			private final DataType[] dataArray;
 
 			public VerySimpleTableModel(DataType[] data, ColumnID<DataType>[] columns) {
 				this(columns,null,data);
@@ -392,6 +400,14 @@ public class TableView {
 			
 			@Override public int getRowCount() {
 				return dataVector!=null ? dataVector.size() : dataArray!=null ? dataArray.length : 0;
+			}
+			private int indexOf(DataType value) {
+				if (dataVector!=null) return dataVector.indexOf(value);
+				if (dataArray !=null)
+					for (int i=0; i<dataArray.length; i++)
+						if (dataArray[i].equals(value))
+							return i;
+				return -1;
 			}
 
 			private DataType getValue(int rowIndex) {
@@ -440,7 +456,9 @@ public class TableView {
 	
 	public static class NamedColorRenderer extends IconTextRenderer<NamedColor,Integer> {
 		
-		public NamedColorRenderer() { super(50,16); }
+		private final boolean withName;
+		public NamedColorRenderer() { this(true); }
+		public NamedColorRenderer(boolean withName) { super(50,16); this.withName = withName; }
 		
 		@Override protected NamedColor cast(Object obj) {
 			if (obj instanceof NamedColor) return (NamedColor)obj;
@@ -448,11 +466,11 @@ public class TableView {
 		}
 
 		@Override protected Icon createIcon(NamedColor color) {
-			return new ImageIcon(color.createImage(20,13));
+			return new ImageIcon(Images.createImage(20, 13, color.color));
 		}
 
 		@Override protected Integer getIconKey(NamedColor value) { return value.value; }
-		@Override protected String  getLabel  (NamedColor value) { return value==null ? null : value.getLabel(); }
+		@Override protected String  getLabel  (NamedColor value) { return value==null ? null : withName ? value.getLabel() : value.getValueStr(); }
 	}
 	
 	public static abstract class IconTextRenderer<ValueType,IconKey> implements ListCellRenderer<ValueType>, TableCellRenderer {

@@ -47,6 +47,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.TraverseException;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
+import net.schwarzbaer.java.lib.jsonparser.JSON_Helper;
 
 public class SaveGameData {
 	
@@ -144,7 +145,30 @@ public class SaveGameData {
 		GameInfos.saveAllIDsToFiles();
 		SaveViewer.steamIDs.writeToFile();
 		
+//		globalOptionalValues.scan(json_data,"PlayerStateData","[??? j30]");
+//		globalOptionalValues.scan(json_data,"PlayerStateData","cf5"      );
+//		globalOptionalValues.scan(json_data,"PlayerStateData","[??? l:j]");
+		
 		return this;
+	}
+	
+	static OptionalValues globalOptionalValues = new OptionalValues();
+	static class OptionalValues extends JSON_Helper.OptionalValues<NVExtra,VExtra> {
+		private static final long serialVersionUID = 1738184173309879079L;
+		
+		void scan(JSON_Object<NVExtra, VExtra> data, Object... path) {
+			scan(getSubNode(data,path), toString(path));
+		}
+
+		private String toString(Object[] path) {
+			Iterator<String> it = Arrays.stream(path).<String>map(obj->{
+				if (obj==null) return "<null>";
+				if (obj instanceof String ) return (String) obj;
+				if (obj instanceof Integer) return String.format("[%d]", obj);
+				return String.format("<%s:%s>", obj.getClass().getName(), obj);
+			}).iterator();
+			return String.join(".", (Iterable<String>)()->it);
+		}
 	}
 	
 	private void determineAdditionalInfos() {

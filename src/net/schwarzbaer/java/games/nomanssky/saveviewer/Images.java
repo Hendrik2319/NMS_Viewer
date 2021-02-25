@@ -47,7 +47,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -56,10 +55,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
-import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListDataEvent;
-import javax.swing.event.ListDataListener;
 
 import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.Disabler;
@@ -758,6 +754,14 @@ public class Images {
 		}
 	}
 
+	public static BufferedImage createImage(int width, int height, Color color) {
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics g = image.getGraphics();
+		g.setColor(color);
+		g.fillRect(0,0,width,height);
+		return image;
+	}
+
 	public static class NamedColor {
 	
 		public final int value;
@@ -776,13 +780,10 @@ public class Images {
 		}
 		
 		public String getLabel() { return String.format("[%06X] %s", value, name); }
+		public String getValueStr() { return String.format("[%06X]", value); }
 
 		public BufferedImage createImage(int width, int height) {
-			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			Graphics g = image.getGraphics();
-			g.setColor(color);
-			g.fillRect(0,0,width,height);
-			return image;
+			return Images.createImage(width, height, color);
 		}
 	}
 	
@@ -1288,15 +1289,27 @@ public class Images {
 
 	public static class ColorListDialog extends StandardDialog {
 		private static final long serialVersionUID = 1195618468891906980L;
+
+		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<NamedColor> {
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
 		
 		enum Action { SortBySimilarity, SetDefaultOrder }
 
 		private final Disabler<Action> disabler;
-		private final ColorListModel colorListModel;
+		private final TableView.VerySimpleTable<NamedColor> colorList;
 		private final Images context;
 		private NamedColor selected;
 		private NamedColor similarityBase;
 		private HashMap<Integer, ColorUsage> colorUsage;
+		
+		private final ColumnID[] columns = new ColumnID[] {
+				new ColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
+				new ColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name),
+				new ColumnID("Used" , ColorUsage.class,  20,-1, 80, 80, nc->colorUsage.get(nc.value)),
+			};
 		
 		public ColorListDialog(Window parent, String title, Images context) {
 			super(parent, title);
@@ -1308,13 +1321,16 @@ public class Images {
 			disabler.setCareFor(Action.values());
 			
 			selected = null;
-			colorListModel = new ColorListModel();
-			JList<NamedColor> colorList = new JList<>(colorListModel);
-			colorList.setCellRenderer(new TableView.NamedColorRenderer());
-			colorList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			colorList = new TableView.VerySimpleTable<NamedColor>("ColorTable", true, true, false);
+			colorList.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
+			colorList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			
 			JScrollPane colorListScrollPane = new JScrollPane(colorList);
-			colorListScrollPane.setPreferredSize(new Dimension(300, 500));
+			colorListScrollPane.setPreferredSize(new Dimension(360, 500));
+			
+			JTextArea similarityView = new JTextArea();
+			JScrollPane similarityViewScrollPane = new JScrollPane(similarityView);
+			similarityViewScrollPane.setPreferredSize(new Dimension(500, 60));
 			
 			JTextArea usageView = new JTextArea();
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
@@ -1324,40 +1340,38 @@ public class Images {
 			JLabel sortOrderOutput;
 			
 			ButtonGroup bg = new ButtonGroup();
-			JPanel sortButtonPanel = new JPanel(new GridBagLayout());
+			JPanel contentPane = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
 			
-			c.weightx = 0;
-			sortButtonPanel.add(new JLabel("Sorted by: "),c);
-			c.weightx = 1; c.gridwidth = GridBagConstraints.REMAINDER;
-			sortButtonPanel.add(sortOrderOutput = new JLabel(""),c);
+			c.gridy = 0; c.gridwidth = 1; c.gridheight = 1; c.weighty = 0;  
+			c.gridx = 0; c.weightx = 0; contentPane.add(new JLabel("Sorted by: "),c);
+			c.gridx = 1; c.weightx = 0; contentPane.add(sortOrderOutput = new JLabel(""),c);
+			c.gridx = 2; c.weightx = 1; c.gridheight = 3;
+			contentPane.add(similarityViewScrollPane, c);
 			
-			c.weightx = 1;
-			sortButtonPanel.add(sortBySimilarityBtn = Gui.createToggleButton("Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->{
+			c.gridy = 0;
+			c.gridx = 0; c.weightx = 0; c.gridwidth = 2; c.gridheight = 1; 
+			c.gridy++; contentPane.add(sortBySimilarityBtn = Gui.createToggleButton("Sort by Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->{
 				String str = sortBySimilarity(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
 			}),c);
-			sortButtonPanel.add(Gui.createToggleButton("Standard", bg , disabler, Action.SetDefaultOrder, true, true, e->{
+			c.gridy++; contentPane.add(Gui.createToggleButton("Standard Order", bg , disabler, Action.SetDefaultOrder, true, true, e->{
 				String str = setDefaultOrder(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
 			}),c);
 			
-			JPanel westPanel = new JPanel(new BorderLayout(3,3));
-			westPanel.add(sortButtonPanel,BorderLayout.NORTH);
-			westPanel.add(colorListScrollPane,BorderLayout.CENTER);
+			c.gridy++;
+			c.gridx = 0; c.weightx = 0; c.gridwidth = 2; c.gridheight = 1; c.weighty = 1;
+			contentPane.add(colorListScrollPane,c);
+			c.gridx = 2; c.weightx = 1; c.gridwidth = 1;
+			contentPane.add(usageViewScrollPane, c);
 			
-			JPanel contentPane = new JPanel(new BorderLayout(3,3));
-			contentPane.add(westPanel, BorderLayout.WEST);
-			contentPane.add(usageViewScrollPane, BorderLayout.CENTER);
-			
-			
-			colorList.addListSelectionListener(e->{
-				selected = colorList.getSelectedValue();
-				String text = "Similarity to Color";
-				if (selected!=null)
-					text = String.format("Similarity to %s", selected.getLabel());
+			colorList.addSelectionListener((nc,i)->{
+				selected = nc;
+				String text = "Sort by Similarity to Color";
+				if (selected!=null) text = String.format("Sort by Similarity to %s", selected.getLabel());
 				sortBySimilarityBtn.setText(text);
 				sortBySimilarityBtn.setEnabled(selected!=null);
-				showUsage(usageView);
+				showUsage(usageView,similarityView);
 			});
 			
 			this.createGUI(contentPane, Gui.createButton("Close", e->closeDialog()));
@@ -1365,23 +1379,24 @@ public class Images {
 			String sortOrderOutputStr = setDefaultOrder();
 			updateGuiAfterReordering(sortOrderOutput, colorList, sortOrderOutputStr);
 			sortBySimilarityBtn.setEnabled(selected!=null);
-			showUsage(usageView);
+			showUsage(usageView,similarityView);
 		}
 
-		private void showUsage(JTextArea usageView) {
+		private void showUsage(JTextArea usageView, JTextArea similarityView) {
 			if (selected==null) {
 				usageView.setText("");
+				similarityView.setText("");
 				return;
 			}
 			
-			String str = "";
-			
 			if (similarityBase!=null) {
-				str += String.format("Similarity to %s:%n", selected.getLabel());
+				String str = "";
+				str += String.format("Similarity to %s:%n", similarityBase.getLabel());
 				str += String.format("    Diff.: %s%n", getDiffStr(selected, similarityBase));
-				str += "\r\n";
+				similarityView.setText(str);
 			}
 			
+			String str = "";
 			str += "Usage:\r\n";
 			ColorUsage usage = colorUsage.get(selected.value);
 			if (usage==null)
@@ -1402,7 +1417,9 @@ public class Images {
 
 		private String setDefaultOrder() {
 			similarityBase = null;
-			colorListModel.setData(context.colorValues);
+			NamedColor oldSelected = selected;
+			colorList.setData(context.colorValues,columns);
+			colorList.setSelectedValue(oldSelected, true);
 			return "Default Order";
 		}
 
@@ -1411,11 +1428,13 @@ public class Images {
 			similarityBase = selected;
 			Vector<NamedColor> colors = new Vector<>(Arrays.asList(context.colorValues));
 			colors.sort(Comparator.<NamedColor,Integer>comparing(nc->getDistance(nc,selected)).thenComparing(nc->nc.value));
-			colorListModel.setData(colors.toArray(new NamedColor[colors.size()]));
-			return String.format("Similarity to %s", selected.getLabel());
+			NamedColor oldSelected = selected;
+			colorList.setData(colors.toArray(new NamedColor[colors.size()]),columns);
+			colorList.setSelectedValue(oldSelected, true);
+			return String.format("Similarity to %s", selected==null ? "<null>" : selected.getLabel());
 		}
 
-		private void updateGuiAfterReordering(JLabel sortOrderOutput, JList<NamedColor> colorList, String sortOrderOutputStr) {
+		private void updateGuiAfterReordering(JLabel sortOrderOutput, TableView.VerySimpleTable<NamedColor> colorList, String sortOrderOutputStr) {
 			sortOrderOutput.setText(sortOrderOutputStr);
 			colorList.setSelectedValue(selected, true);
 		}
@@ -1439,34 +1458,6 @@ public class Images {
 			int b2 = (color2.value>> 0)&0xFF;
 			return (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2);
 		}
-
-		private class ColorListModel implements ListModel<NamedColor> {
-			
-			Vector<ListDataListener> listDataListeners = new Vector<>();
-			private NamedColor[] data = null;
-			
-			@Override public void addListDataListener(ListDataListener l) { listDataListeners.add(l); }
-			@Override public void removeListDataListener(ListDataListener l) { listDataListeners.remove(l); }
-			
-			private void fireContentsChangedEvent(int index0, int index1) {
-				ListDataEvent e = new ListDataEvent(this, ListDataEvent.CONTENTS_CHANGED, index0, index1);
-				listDataListeners.forEach(l->l.contentsChanged(e));
-			}
-			
-			private void setData(NamedColor[] data) {
-				this.data = data;
-				fireContentsChangedEvent(0, Integer.MAX_VALUE);
-			}
-			
-			@Override public int getSize() { return data==null ? 0 : data.length; }
-		
-			@Override public NamedColor getElementAt(int index) {
-				if (data==null) return null;
-				if (index<0 || index>=data.length) return null;
-				return data[index];
-			}
-		
-		}
 		
 		private static class ColorUsage {
 			enum IDType { Product, Substance, Tech }
@@ -1479,7 +1470,23 @@ public class Images {
 				usedObsoleteOnly = null;
 			}
 			
-			
+			@Override
+			public String toString() {
+				StringBuilder sb = new StringBuilder();
+				for (IDType id:IDType.values()) {
+					Vector<GeneralizedID> vec = ids.get(id);
+					if (vec==null || vec.isEmpty()) continue;
+					int n = vec.size();
+					switch (id) {
+					case Product  : sb.append("P:"+n+" "); break;
+					case Substance: sb.append("S:"+n+" "); break;
+					case Tech     : sb.append("T:"+n+" "); break;
+					}
+				}
+				if (usedObsoleteOnly!=null && usedObsoleteOnly.booleanValue()) sb.append("#"); 
+				return sb.toString();
+			}
+
 			private static HashMap<Integer,ColorUsage> scanUsage() {
 				HashMap<Integer,ColorUsage> usage = new HashMap<>();
 				scanIdMap(usage,GameInfos.productIDs,IDType.Product);

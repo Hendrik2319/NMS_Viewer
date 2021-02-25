@@ -382,7 +382,7 @@ public class SaveViewer implements ActionListener {
 		 save7_hg( 6, "save7.hg","..7"    ),
 		 save8_hg( 7, "save8.hg","..8"    ),
 		 save9_hg( 8, "save9.hg","..9"    ),
-		save10_hg( 9,"save10.hg","..10"   ), EditItemBackgroundColors,
+		save10_hg( 9,"save10.hg","..10"   ), EditItemBackgroundColors, ClearOptionalValues, ShowOptionalValues,
 		;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
@@ -535,6 +535,10 @@ public class SaveViewer implements ActionListener {
 				SaveViewer.config.writeToFile();
 			}
 			break;
+			
+		case ClearOptionalValues: SaveGameData.globalOptionalValues.clear(); break;
+		case ShowOptionalValues : SaveGameData.globalOptionalValues.show(System.err); break;
+		
 		}
 	}
 
@@ -1141,26 +1145,29 @@ public class SaveViewer implements ActionListener {
 			toolsMenu.add(createMenuItem("Find New Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.FindNewExtraImages,true));
 			toolsMenu.add(createMenuItem("Show Extra Images"    , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			toolsMenu.addSeparator();
-			toolsMenu.add(createMenuItem("Edit Item Background Colors", Gui.ToolbarIcons.Compare, ActionCommand.EditItemBackgroundColors,true));
+			toolsMenu.add(createMenuItem("Edit Item Background Colors", Gui.ToolbarIcons.EmptyDoc, ActionCommand.EditItemBackgroundColors,true));
 			toolsMenu.addSeparator();
 			toolsMenu.add(createMenuItem("Recipe Analyser"     , Gui.ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
 			toolsMenu.add(createMenuItem("Production Optimiser", Gui.ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
 			toolsMenu.add(createMenuItem("UpgradeModule InstallHelper", Gui.ToolbarIcons.Open, ActionCommand.OpenUpgradeModuleInstallHelper,true));
 			
 			JPopupMenu extraMenu = new JPopupMenu("Extra");
-			extraMenu.add(createMenuItem("Set path to VRML viewer", Gui.ToolbarIcons.SwitchFolder, ActionCommand.SetPathToVRMLviewer,true));
+			extraMenu.add(createMenuItem("Set path to VRML viewer", Gui.ToolbarIcons.Open, ActionCommand.SetPathToVRMLviewer,true));
 			extraMenu.addSeparator();
-			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", Gui.ToolbarIcons.SwitchFolder, ActionCommand.WriteKnownSteamIDsToHTML,true));
+			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", Gui.ToolbarIcons.Save, ActionCommand.WriteKnownSteamIDsToHTML,true));
 			extraMenu.addSeparator();
-			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", Gui.ToolbarIcons.SwitchFolder, ActionCommand.SwitchToGameFolder ,true));
-			extraMenu.add(createMenuItem("Switch to Backup Folder"      , Gui.ToolbarIcons.SwitchFolder, ActionCommand.SwitchToBackupFolder,true));
+			extraMenu.add(createMenuItem("Switch to NMS Savegame Folder", Gui.ToolbarIcons.Open, ActionCommand.SwitchToGameFolder ,true));
+			extraMenu.add(createMenuItem("Switch to Backup Folder"      , Gui.ToolbarIcons.Open, ActionCommand.SwitchToBackupFolder,true));
 			extraMenu.add(createMenuItem("Open Savegame"    , Gui.ToolbarIcons.Open   , ActionCommand.Open   ,true));
 //			extraMenu.add(createMenuItem("Reload"           , Gui.ToolbarIcons.Reload , ActionCommand.Reload ,false));
 //			extraMenu.add(createMenuItem("Close"            , Gui.ToolbarIcons.Close  , ActionCommand.Close  ,false));
-			extraMenu.add(createMenuItem("Compare Savegames", Gui.ToolbarIcons.Compare, ActionCommand.Compare,false));
+			extraMenu.add(createMenuItem("Compare Savegames", Gui.ToolbarIcons.EmptyDoc, ActionCommand.Compare,false));
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Write as HTML", Gui.ToolbarIcons.SaveAs, ActionCommand.WriteHTML,false));
 			extraMenu.add(createMenuItem("Write as JSON", Gui.ToolbarIcons.SaveAs, ActionCommand.WriteJSON,false));
+			extraMenu.addSeparator();
+			extraMenu.add(createMenuItem("Clear ScanResults of Optional Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearOptionalValues,true));
+			extraMenu.add(createMenuItem("Show ScanResults of Optional Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowOptionalValues ,true));
 
 			toolBar.addSeparator();
 			toolBar.add(createButton("Tools", toolsMenu, true));
