@@ -437,6 +437,7 @@ jl; [??? jl; AlternativeWeapons Int:5]
 ux@ [??? ux@ UniverseAddress]
 j30 [??? j30]
 j3E [??? j3E]
+cf5 [??? cf5]
 
 Mcl [Companions]
 uKZ [CompanionEggs]
