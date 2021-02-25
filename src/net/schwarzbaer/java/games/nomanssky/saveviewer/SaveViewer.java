@@ -85,7 +85,6 @@ public class SaveViewer implements ActionListener {
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
 	static IconSource<TabHeaderIcons> tabheaderIS;
-	public static Images images;
 	public static Config config;
 	public static DeObfuscator deObfuscator;
 	public static KnownSteamIDs steamIDs;
@@ -145,9 +144,6 @@ public class SaveViewer implements ActionListener {
 //		selectLookAndFeel();
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
-		
-		images = new Images();
-		images.init();
 		
 		loadTabHeaderIcons();
 		Gui.loadToolbarIcons();
@@ -496,13 +492,13 @@ public class SaveViewer implements ActionListener {
 			
 		case RefreshExtraImages:
 			runWithProgressDialog(mainWindow,"Refresh Extra Images", pd->{
-				images.images.reload(pd);
+				Images.getInstance().extraImages.reload(pd);
 			});
 			break;
 			
 		case FindNewExtraImages:
 			runWithProgressDialog(mainWindow,"Find New Extra Images", pd->{
-				images.images.findNewImages(pd);
+				Images.getInstance().extraImages.findNewImages(pd);
 			});
 			break;
 			
@@ -511,7 +507,7 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case EditItemBackgroundColors:
-			new Images.ColorListDialog(mainWindow,"Edit Item Background Colors",images).showDialog();
+			new Images.ColorListDialog(mainWindow,"Edit Item Background Colors").showDialog();
 			break;
 			
 		case OpenRecipeAnalyser:

@@ -9,6 +9,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Window;
@@ -71,24 +72,33 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
 public class Images {
 	
-	public ImageList images;
+	public static final Images instance = new Images();
+	public static Images getInstance() {
+		if (!instance.wasInitialized) instance.init();
+		return instance;
+	}
+	
+	public ExtraImageList extraImages;
 	
 	public NamedColor[] colorValues;
 	private final HashMap<Integer,NamedColor> colorMap; 
 	private final Vector<ColorListListender> colorListListenders;
+	private boolean wasInitialized;
 	
 	public Images() {
+		wasInitialized = false;
 		colorValues = null;
 		colorMap = new HashMap<>();
 		colorListListenders = new Vector<>();
 		
-		images = new ImageList();
+		extraImages = new ExtraImageList();
 	}
 	
 	public void init() {
 		prepareColors();
-		images.readImages(null,true);
+		extraImages.readImages(null,true);
 		UpgradeCategoryImages.init();
+		wasInitialized = true;
 	}
 	
 	private void prepareColors() {
@@ -272,6 +282,37 @@ public class Images {
 		colorListListenders.remove(cll);
 	}
 	
+	private static BufferedImage generateAlphaImage(BufferedImage image) {
+		if (image==null) return null;
+		
+		int width = image.getWidth();
+		int height = image.getHeight();
+		BufferedImage alphaImage = new BufferedImage(width,height,BufferedImage.TYPE_INT_ARGB);
+		
+		for (int x=0; x<width; x++)
+			for (int y=0; y<height; y++) {
+				int argb = image.getRGB(x,y);
+				int alpha = (argb>>24) & 0xFF;
+				int rgb;
+				if (alpha==0)
+					rgb = 0xFFFF00FF;
+				else {
+					// #00C0FF
+					rgb  =  0xFF000000;
+					rgb += ((0xC0*(255-alpha))/255) << 8;
+					rgb +=  (0xFF*(255-alpha))/255;
+				}
+				alphaImage.setRGB(x,y, rgb);
+			}
+		return alphaImage;
+	}
+
+	public static BufferedImage generateAlphaImage(String imageFileName) {
+		BufferedImage rawImage = Images.getInstance().extraImages.imageMap.get(imageFileName);
+		if (rawImage!=null) return generateAlphaImage(rawImage);
+		return null;
+	}
+
 	public void showAddColorDialog(Window parent, String title) {
 		AddColorDialog dlg = new AddColorDialog(parent, title);
 		dlg.showDialog();
@@ -386,15 +427,15 @@ public class Images {
 		
 	}
 	
-	public static class ImageList {
+	public static class ExtraImageList {
 		
 		public String[] names;
-		private final HashMap<String,BufferedImage> images;
+		private final HashMap<String,BufferedImage> imageMap;
 		private final Vector<ImageListListener> listeners;
 		
-		ImageList() {
+		ExtraImageList() {
 			names = null;
-			images = new HashMap<String,BufferedImage>();
+			imageMap = new HashMap<String,BufferedImage>();
 			listeners = new Vector<>();
 		}
 		
@@ -479,11 +520,11 @@ public class Images {
 			Vector<String> newNamesList = new Vector<>(Arrays.asList(names));
 			for (int i=0; i<foundImages.length; ++i) {
 				String fileName = foundImages[i];
-				if (!images.containsKey(fileName)) {
+				if (!imageMap.containsKey(fileName)) {
 					BufferedImage image = readImage(folder,fileName);
 					
 					if (image!=null) {
-						images.put(fileName, image);
+						imageMap.put(fileName, image);
 						newNamesList.add(fileName);
 					}
 					
@@ -506,13 +547,13 @@ public class Images {
 				});
 			
 			int listChunkIndex = 0;
-			images.clear();
+			imageMap.clear();
 			for (int i=0; i<names.length; ++i) {
 				String fileName = names[i];
 				BufferedImage image = readImage(folder,fileName);
 				
 				if (image!=null)
-					images.put(fileName, image);
+					imageMap.put(fileName, image);
 				
 				int value = i+1;
 				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
@@ -520,12 +561,12 @@ public class Images {
 					int n= i*6/names.length;
 					if (listChunkIndex != n) {
 						listChunkIndex = n;
-						SaveViewer.log(" .. %d",images.size());
+						SaveViewer.log(" .. %d",imageMap.size());
 					}
 				}
 			}
 			if (pd==null)
-				SaveViewer.log_ln(" .. %d",images.size());
+				SaveViewer.log_ln(" .. %d",imageMap.size());
 		}
 	
 		private BufferedImage readImage(File folder, String fileName) {
@@ -539,11 +580,11 @@ public class Images {
 		}
 		public BufferedImage[] getImages(boolean sorted) {
 			if (!sorted)
-				return images.values().toArray(new BufferedImage[0]);
+				return imageMap.values().toArray(new BufferedImage[0]);
 			
 			BufferedImage[] array = new BufferedImage[names.length];
 			for (int i=0; i<names.length; ++i)
-				array[i] = images.get(names[i]);
+				array[i] = imageMap.get(names[i]);
 			
 			return array;
 		}
@@ -551,7 +592,7 @@ public class Images {
 		public BufferedImage getImage(String imageFileName, Integer imageBackground, int width, int height) {
 			BufferedImage baseImage = null;
 			if (imageFileName!=null)
-				baseImage = images.get(imageFileName);
+				baseImage = imageMap.get(imageFileName);
 			
 			if (imageBackground==null) {
 				if (baseImage==null) return baseImage;
@@ -604,7 +645,7 @@ public class Images {
 			vector.remove(index);
 			names = vector.toArray(new String[0]);
 			
-			images.remove(imageFileName);
+			imageMap.remove(imageFileName);
 			
 			if (taskBeforeUpdatingImageListListeners!=null)
 				taskBeforeUpdatingImageListListeners.accept(index);
@@ -651,8 +692,8 @@ public class Images {
 			
 			names[index] = newName;
 			
-			BufferedImage image = images.remove(oldName);
-			if (image!=null) images.put(newName,image);
+			BufferedImage image = imageMap.remove(oldName);
+			if (image!=null) imageMap.put(newName,image);
 			
 			if (taskBeforeUpdatingImageListListeners!=null)
 				taskBeforeUpdatingImageListListeners.run();
@@ -848,7 +889,7 @@ public class Images {
 		}
 		private int getLength() {
 			if (sortedIndexes!=null) return sortedIndexes.length; 
-			return SaveViewer.images.images.names.length;
+			return getInstance().extraImages.names.length;
 		}
 		
 		@Override
@@ -859,8 +900,8 @@ public class Images {
 					return index < getLength();
 				}
 				@Override public ImageData next() {
-					String imageName = SaveViewer.images.images.names[getIndex(index++)];
-					BufferedImage image = SaveViewer.images.images.getImage(imageName,null,64,64);
+					String imageName = Images.getInstance().extraImages.names[getIndex(index++)];
+					BufferedImage image = Images.getInstance().extraImages.getImage(imageName,null,64,64);
 					return new ImageData(imageName, imageName, image);
 				}
 			};
@@ -879,7 +920,7 @@ public class Images {
 			if (pd!=null) {
 				SaveViewer.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Create new image grid");
-					pd.setValue(0, SaveViewer.images.images.names.length);
+					pd.setValue(0, Images.getInstance().extraImages.names.length);
 				});
 			}
 			createImageItems(selectedImageID, this, pd==null ? null : i->SaveViewer.runInEventThreadAndWait(()->pd.setValue(i)));
@@ -1070,8 +1111,8 @@ public class Images {
 				});
 				
 				int[] sortedIndexes = ImageSimilarity.computeOrder(
-						imageName, SaveViewer.images.images.names,
-						(image, backgroundColor, width, height) -> SaveViewer.images.images.getImage(image,backgroundColor,width,height).getRaster()
+						imageName, Images.getInstance().extraImages.names,
+						(image, backgroundColor, width, height) -> Images.getInstance().extraImages.getImage(image,backgroundColor,width,height).getRaster()
 					);
 				
 				imageGridPanel.setOrder(sortedIndexes);
@@ -1146,7 +1187,7 @@ public class Images {
 						return;
 			}
 			
-			boolean wasSuccessful = SaveViewer.images.images.deleteImage(clickedName, index->{
+			boolean wasSuccessful = Images.getInstance().extraImages.deleteImage(clickedName, index->{
 				IdUsage removedIdUsage = usage.remove(clickedName);
 				if (removedIdUsage!=null)
 					removedIdUsage.setImageFileName(null);
@@ -1171,12 +1212,12 @@ public class Images {
 		private void renameSelectedImage() {
 			String oldName = clickedName;
 			String newName = JOptionPane.showInputDialog(this, "Enter new name:", oldName);
-			while (newName!=null && SaveViewer.images.images.existImage(newName))
+			while (newName!=null && Images.getInstance().extraImages.existImage(newName))
 				newName = JOptionPane.showInputDialog(this, "Sorry, image name already exists. Please enter another name:", newName);
 			if (newName==null) return;
 			
 			String finalNewName = newName;
-			boolean wasSuccessful = SaveViewer.images.images.renameImage(oldName, newName, null, ()->{
+			boolean wasSuccessful = Images.getInstance().extraImages.renameImage(oldName, newName, null, ()->{
 				IdUsage idUsage = usage.remove(oldName);
 				if (idUsage!=null) {
 					usage.put(finalNewName, idUsage);
@@ -1206,7 +1247,7 @@ public class Images {
 			output.setText("");
 			if (selectedName==null) return;
 			
-			BufferedImage image = SaveViewer.images.images.getImage(selectedName,null,-1,-1);
+			BufferedImage image = Images.getInstance().extraImages.getImage(selectedName,null,-1,-1);
 			imageField.setIcon(image!=null?new ImageIcon(image):null);
 			
 			output.append("Image:\r\n");
@@ -1289,9 +1330,38 @@ public class Images {
 		}
 	}
 
+	public static class CachedAlphaImages extends CachedImages<String> {
+		
+		CachedAlphaImages() { super(Images::generateAlphaImage); }
+
+		@Override public BufferedImage get(String imageFileName) {
+			return super.get(imageFileName);
+		}
+		
+	}
+
+	public static class CachedImages<KeyType> {
+		
+		protected final HashMap<KeyType,BufferedImage> cache;
+		private final Function<KeyType, BufferedImage> createImage;
+		CachedImages(Function<KeyType,BufferedImage> createImage) {
+			this.createImage = createImage;
+			cache = new HashMap<>();
+		}
+		
+		public BufferedImage get(KeyType key) {
+			BufferedImage image = cache.get(key);
+			if (image==null) {
+				image = createImage.apply(key);
+				if (image!=null) cache.put(key, image);
+			}
+			return image;
+		}
+	}
+
 	public static class ColorListDialog extends StandardDialog {
 		private static final long serialVersionUID = 1195618468891906980L;
-
+		
 		private static class NamedColorColumnID extends TableView.VerySimpleTable.ColumnID<NamedColor> {
 			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
@@ -1308,30 +1378,34 @@ public class Images {
 
 		private final Disabler<Action> disabler;
 		private final TableView.VerySimpleTable<NamedColor> colorList;
-		private final Images context;
 		private NamedColor selected;
 		private NamedColor similarityBase;
-		private HashMap<Integer, ColorUsage> colorUsage;
+		private final HashMap<Integer, ColorUsage> colorUsage;
+		private final CachedImages<GeneralizedID> cachedImages;
+		private final CachedAlphaImages cachedAlphaImages;
+		private final NamedColorColumnID[] colorListColumns;
+		private final ColorUsingIDColumnID[] usageViewColumns;
 		
-		private final NamedColorColumnID[] colorListColumns = new NamedColorColumnID[] {
-			new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
-			new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name),
-			new NamedColorColumnID("Used" , ColorUsage.class,  20,-1, 80, 80, nc->colorUsage.get(nc.value)),
-		};
-		
-		private final ColorUsingIDColumnID[] usageViewColumns = new ColorUsingIDColumnID[] {
-			new ColorUsingIDColumnID("Type"  , ColorUsage.IDType.class,  20,-1, 60, 60, cuid->cuid.idType),
-			new ColorUsingIDColumnID("ID"    ,            String.class,  20,-1,120,120, cuid->cuid.id.id),
-			new ColorUsingIDColumnID("Symbol",            String.class,  20,-1, 45, 45, cuid->cuid.id.symbol),
-			new ColorUsingIDColumnID("Name"  ,            String.class,  20,-1,300,300, cuid->cuid.id.label),
-			new ColorUsingIDColumnID("Image" ,            String.class,  20,-1,300,300, cuid->cuid.id.imageFileName),
-		};
-		
-		public ColorListDialog(Window parent, String title, Images context) {
+		public ColorListDialog(Window parent, String title) {
 			super(parent, title);
-			this.context = context;
 			
+			cachedImages = new CachedImages<>(id->id.getCachedImage(256, 256));
+			cachedAlphaImages = new CachedAlphaImages();
 			colorUsage = ColorUsage.scanUsage();
+			
+			colorListColumns = new NamedColorColumnID[] {
+				new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
+				new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name),
+				new NamedColorColumnID("Used" , ColorUsage.class,  20,-1,130,130, nc->colorUsage.get(nc.value)),
+			};
+			usageViewColumns = new ColorUsingIDColumnID[] {
+				new ColorUsingIDColumnID("Type"  , ColorUsage.IDType.class,  20,-1, 60, 60, cuid->cuid.idType),
+				new ColorUsingIDColumnID("Obs"   ,            String.class,  20,-1, 30, 30, cuid->cuid.id.isObsolete?"#":""),
+				new ColorUsingIDColumnID("ID"    ,            String.class,  20,-1,120,120, cuid->cuid.id.id),
+				new ColorUsingIDColumnID("Symbol",            String.class,  20,-1, 45, 45, cuid->cuid.id.symbol),
+				new ColorUsingIDColumnID("Name"  ,            String.class,  20,-1,300,300, cuid->cuid.id.label),
+				new ColorUsingIDColumnID("Image" ,            String.class,  20,-1,300,300, cuid->cuid.id.imageFileName),
+			};
 			
 			disabler = new Disabler<>();
 			disabler.setCareFor(Action.values());
@@ -1356,6 +1430,15 @@ public class Images {
 			similarityViewScrollPane.setPreferredSize(new Dimension(usageViewPrefWidth+40,  60));
 			usageViewScrollPane     .setPreferredSize(new Dimension(usageViewPrefWidth+40, 500));
 			
+			JLabel originalImageField, alphaImageField;
+			JPanel imagePanel = new JPanel(new GridLayout(2,1));
+			imagePanel.add(originalImageField = new JLabel());
+			imagePanel.add(alphaImageField    = new JLabel());
+			originalImageField.setBorder(BorderFactory.createTitledBorder("Original Image"));
+			alphaImageField.setBorder(BorderFactory.createTitledBorder("Alpha Image"));
+			originalImageField.setPreferredSize(new Dimension(256+16,256+26));
+			alphaImageField   .setPreferredSize(new Dimension(256+16,256+26));
+			
 			JToggleButton sortBySimilarityBtn;
 			JLabel sortOrderOutput;
 			
@@ -1367,7 +1450,7 @@ public class Images {
 			c.gridy = 0; c.gridwidth = 1; c.gridheight = 1; c.weighty = 0;  
 			c.gridx = 0; c.weightx = 0; contentPane.add(new JLabel("Sorted by: "),c);
 			c.gridx = 1; c.weightx = 0; contentPane.add(sortOrderOutput = new JLabel(""),c);
-			c.gridx = 2; c.weightx = 1; c.gridheight = 3;
+			c.gridx = 2; c.weightx = 1; c.gridwidth = 2; c.gridheight = 3;
 			contentPane.add(similarityViewScrollPane, c);
 			
 			c.gridy = 0;
@@ -1384,6 +1467,8 @@ public class Images {
 			contentPane.add(colorListScrollPane,c);
 			c.gridx = 2; c.weightx = 1; c.gridwidth = 1;
 			contentPane.add(usageViewScrollPane, c);
+			c.gridx = 3; c.weightx = 0;
+			contentPane.add(imagePanel, c);
 			
 			colorList.addSelectionListener((nc,i)->{
 				selected = nc;
@@ -1394,6 +1479,20 @@ public class Images {
 				showUsage(usageView,similarityView);
 			});
 			
+			usageView.addSelectionListener((cuid,i)->{
+				if (cuid==null) {
+					originalImageField.setIcon(null);
+					alphaImageField.setIcon(null);
+					return;
+				}
+				
+				BufferedImage originalImage = cachedImages.get(cuid.id);
+				BufferedImage alphaImage    = cachedAlphaImages.get(cuid.id.imageFileName);
+				
+				originalImageField.setIcon(originalImage==null ? null : new ImageIcon(originalImage));
+				alphaImageField   .setIcon(alphaImage   ==null ? null : new ImageIcon(alphaImage   ));
+			});
+			
 			this.createGUI(contentPane, Gui.createButton("Close", e->closeDialog()));
 			
 			String sortOrderOutputStr = setDefaultOrder();
@@ -1401,12 +1500,10 @@ public class Images {
 			sortBySimilarityBtn.setEnabled(selected!=null);
 			showUsage(usageView,similarityView);
 		}
-
+		
 		private void showUsage(TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {
-//			private void showUsage(JTextArea usageView, JTextArea similarityView) {
 			if (selected==null) {
 				usageView.setData(new ColorUsingID[0], usageViewColumns);
-				//usageView.setText("");
 				similarityView.setText("");
 				return;
 			}
@@ -1419,35 +1516,14 @@ public class Images {
 			}
 			
 			ColorUsage usage = colorUsage.get(selected.value);
-			if (usage==null)
-				usageView.setData(new Vector<>(), usageViewColumns);
-			else
-				usageView.setData(usage.createVector(), usageViewColumns);
-			/*
-			String str = "";
-			str += "Usage:\r\n";
-			ColorUsage usage = colorUsage.get(selected.value);
-			if (usage==null)
-				str += "    no ID\r\n";
-			else {
-				for (ColorUsage.IDType type:ColorUsage.IDType.values()) {
-					Vector<GeneralizedID> idList = usage.ids.get(type);
-					if (idList==null) continue;
-					idList.sort(Comparator.<GeneralizedID,String>comparing(id->id.id));
-					str += String.format("    %ss:%n", type);
-					for (GeneralizedID id:idList)
-						str += String.format("      %s %s%n", id.isObsolete?"#":" ", id.toString());
-				}
-			}
-			
-			usageView.setText(str);
-			*/
+			Vector<ColorUsingID> data = usage!=null ? usage.createVector() : new Vector<>();
+			usageView.setData(data, usageViewColumns);
 		}
 
 		private String setDefaultOrder() {
 			similarityBase = null;
 			NamedColor oldSelected = selected;
-			colorList.setData(context.colorValues,colorListColumns);
+			colorList.setData(Images.getInstance().colorValues,colorListColumns);
 			colorList.setSelectedValue(oldSelected, true);
 			return "Default Order";
 		}
@@ -1455,7 +1531,7 @@ public class Images {
 		private String sortBySimilarity() {
 			if (selected==null) return "";
 			similarityBase = selected;
-			Vector<NamedColor> colors = new Vector<>(Arrays.asList(context.colorValues));
+			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.getInstance().colorValues));
 			colors.sort(Comparator.<NamedColor,Integer>comparing(nc->getDistance(nc,selected)).thenComparing(nc->nc.value));
 			NamedColor oldSelected = selected;
 			colorList.setData(colors.toArray(new NamedColor[colors.size()]),colorListColumns);
@@ -1501,11 +1577,13 @@ public class Images {
 			enum IDType { Product, Substance, Tech }
 
 			private final EnumMap<IDType,Vector<GeneralizedID>> ids;
-			private Boolean usedObsoleteOnly;
+			private int obsoleteIDs;
+			private int total;
 			
 			ColorUsage() {
 				ids = new EnumMap<>(IDType.class);
-				usedObsoleteOnly = null;
+				obsoleteIDs = 0;
+				total = 0;
 			}
 			
 			private Vector<ColorUsingID> createVector() {
@@ -1525,15 +1603,20 @@ public class Images {
 			@Override
 			public String toString() {
 				StringBuilder sb = new StringBuilder();
-				forEachIdList((id,vec)->{
-					int n = vec.size();
-					switch (id) {
-					case Product  : sb.append("P:"+n+" "); break;
-					case Substance: sb.append("S:"+n+" "); break;
-					case Tech     : sb.append("T:"+n+" "); break;
-					}
-				});
-				if (usedObsoleteOnly!=null && usedObsoleteOnly.booleanValue()) sb.append("#"); 
+				sb.append(total);
+				if (total>0) {
+					sb.append(" ( ");
+					forEachIdList((id,vec)->{
+						int n = vec.size();
+						switch (id) {
+						case Product  : sb.append("P:"+n+" "); break;
+						case Substance: sb.append("S:"+n+" "); break;
+						case Tech     : sb.append("T:"+n+" "); break;
+						}
+					});
+					sb.append(")");
+				}
+				if (obsoleteIDs>0) sb.append(" #:"+obsoleteIDs); 
 				return sb.toString();
 			}
 
@@ -1560,10 +1643,8 @@ public class Images {
 				Vector<GeneralizedID> idList = ids.get(idType);
 				if (idList==null) ids.put(idType, idList = new Vector<>());
 				idList.add(id);
-				if (!id.isObsolete)
-					usedObsoleteOnly = false;
-				else if (usedObsoleteOnly==null)
-					usedObsoleteOnly = true;
+				if (id.isObsolete) obsoleteIDs++;
+				total++;
 			}
 		}
 	}

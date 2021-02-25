@@ -1085,6 +1085,20 @@ public class Gui {
 		}
 	}
 
+	public static class SimpleContextMenu extends JPopupMenu {
+		private static final long serialVersionUID = -5203917645953868408L;
+		private ContextMenuInvoker cmi;
+
+		public SimpleContextMenu(Component invoker) { this(invoker,null); }
+		public SimpleContextMenu(Component invoker, ContextMenuInvoker.ContextMenuInvokeListener listener) {
+			cmi = new ContextMenuInvoker(invoker, this);
+			addContextMenuInvokeListener(listener);
+		}
+		public void addContextMenuInvokeListener(ContextMenuInvoker.ContextMenuInvokeListener listener) {
+			if (listener!=null) cmi.addContextMenuInvokeListener(listener);
+		}
+	}
+
 	public static class ContextMenuInvoker implements MouseListener {
 		
 		private Component invoker;

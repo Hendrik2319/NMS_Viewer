@@ -54,14 +54,13 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ContextMenuInvoker;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjAppearance;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Companions.Companion;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.MissionProgress.Participant;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
@@ -1513,10 +1512,9 @@ public class SimplePanels {
 				textAreaScrollPane.setPreferredSize(new Dimension(500, 50));
 				
 				JMenuItem miMarkInUniverse;
-				JPopupMenu textAreaContextMenu = new JPopupMenu();
+				Gui.SimpleContextMenu textAreaContextMenu = new Gui.SimpleContextMenu(textArea);
 				textAreaContextMenu.add(miMarkInUniverse = Gui.createMenuItem("Mark Galactic Address in \"Known Universe\"",e->mainPanel.markGalacticAddressInUniverse(selectedBase)));
-				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
-				cmi.addContextMenuInvokeListener((x, y) -> miMarkInUniverse.setEnabled(selectedBase!=null));
+				textAreaContextMenu.addContextMenuInvokeListener((x, y) -> miMarkInUniverse.setEnabled(selectedBase!=null));
 				
 				add(listScrollPane,BorderLayout.WEST);
 				add(textAreaScrollPane,BorderLayout.CENTER);
@@ -1588,11 +1586,10 @@ public class SimplePanels {
 					updateVRMLtasks1.run();
 				});
 				
-				JPopupMenu textAreaContextMenu = new JPopupMenu();
+				Gui.SimpleContextMenu textAreaContextMenu = new Gui.SimpleContextMenu(textArea);
 				textAreaContextMenu.add(Gui.createMenuItem("Mark Galactic Address in \"Known Universe\"",e->this.mainPanel.markGalacticAddressInUniverse(this.playerbase)));
 				Runnable updateVRMLtasks2 = addVRMLtasks(textAreaContextMenu,mainWindow);
-				ContextMenuInvoker cmi = new Gui.ContextMenuInvoker(textArea, textAreaContextMenu);
-				cmi.addContextMenuInvokeListener((x, y) -> updateVRMLtasks2.run());
+				textAreaContextMenu.addContextMenuInvokeListener((x, y) -> updateVRMLtasks2.run());
 				
 				ImagePanel objectIdImage,objColorImage,objAppearImage;
 				JPanel imagePanel = new JPanel(new GridLayout(1,0));
