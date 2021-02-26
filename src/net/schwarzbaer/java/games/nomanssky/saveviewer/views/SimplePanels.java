@@ -778,6 +778,7 @@ public class SimplePanels {
 			if (data.experimentalData.data_EQt.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_EQt.getTabTitel(),new DATA_EQt_Panel(data));
 			if (data.experimentalData.data_m4I.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_m4I.getTabTitel(),new DATA_m4I_Panel(data));
 			if (data.experimentalData.array_cf5         !=null) rawDataPanel.addPanel("Array cf5",new SaveGameViewPanelGroupingPanel(data, false, true, data.experimentalData.array_cf5,(v,i)->new AppearanceBlockPanel(data,v),(v,i)->AppearanceBlockPanel.generateTitle(v)));
+			// TODO: other appearance arrays
 		}
 
 		private static class AppearanceBlockPanel extends SaveGameViewTabPanel {
