@@ -325,6 +325,7 @@ public class TableView {
 
 		public VerySimpleTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
 			super(name, disableAutoResize, installDebugContextMenu, useRowSorter);
+			tableModel = null;
 		}
 		public VerySimpleTable(String name, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, DataType[] data, ColumnID<DataType>[] columns) {
 			this(name, disableAutoResize, installDebugContextMenu, useRowSorter);
@@ -351,6 +352,13 @@ public class TableView {
 		}
 		public VerySimpleTableModel<DataType> getModel_VerySimpleTableModel() {
 			return tableModel;
+		}
+		
+		public VerySimpleTable<DataType> computePreferredScrollableViewportSize(int height) {
+			SimplifiedTableModel<?> model = this.getModel_SimplifiedTableModel();
+			int width = model==null ? 200 : model.getSumOfPrefColumnWidths()+40;
+			setPreferredScrollableViewportSize(new Dimension(width,height));
+			return this;
 		}
 		
 		public ColumnID<DataType> getColumn(int i) {
@@ -415,7 +423,8 @@ public class TableView {
 			}
 			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
 				if (rowIndex<0 || rowIndex>=getRowCount()) return null;
-				return columnID.getValue.apply(getValue(rowIndex),rowIndex);
+				DataType value = getValue(rowIndex);
+				return value == null ? null : columnID.getValue.apply(value,rowIndex);
 			}
 		}
 		

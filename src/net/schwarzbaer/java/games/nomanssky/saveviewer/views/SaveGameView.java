@@ -7,6 +7,7 @@ import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Vector;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
@@ -14,6 +15,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -153,14 +155,28 @@ public class SaveGameView extends JPanel {
 		}
 	}
 	
-	static class SaveGameViewPanelGroupingPanel extends SaveGameViewGroupingPanel {
+	public static class SaveGameViewPanelGroupingPanel extends SaveGameViewGroupingPanel {
 		private static final long serialVersionUID = 3371660682332165241L;
 		private JPanel gridPanel;
 
-		public SaveGameViewPanelGroupingPanel(SaveGameData data) {
+		public SaveGameViewPanelGroupingPanel(SaveGameData data, boolean horizontal, boolean scrollable) {
 			super(data);
-			gridPanel = new JPanel(new GridLayout(1,0,3,3));
-			add(gridPanel,BorderLayout.CENTER);
+			if (horizontal) gridPanel = new JPanel(new GridLayout(1,0,3,3));
+			else            gridPanel = new JPanel(new GridLayout(0,1,3,3));
+			if (scrollable) add(new JScrollPane(gridPanel),BorderLayout.CENTER);
+			else add(gridPanel,BorderLayout.CENTER);
+		}
+		
+		public <ValueType> SaveGameViewPanelGroupingPanel(
+				SaveGameData data, boolean horizontal, boolean scrollable, Vector<ValueType> array,
+				BiFunction<ValueType,Integer,SaveGameViewTabPanel> createPanel,
+				BiFunction<ValueType,Integer,String> getTitle
+		) {
+			this(data,horizontal,scrollable);
+			for (int i=0; i<array.size(); i++) {
+				ValueType value = array.get(i);
+				addPanelToGUI(getTitle.apply(value,i), createPanel.apply(value,i));
+			}
 		}
 		
 		@Override

@@ -378,7 +378,10 @@ public class SaveViewer implements ActionListener {
 		 save7_hg( 6, "save7.hg","..7"    ),
 		 save8_hg( 7, "save8.hg","..8"    ),
 		 save9_hg( 8, "save9.hg","..9"    ),
-		save10_hg( 9,"save10.hg","..10"   ), EditItemBackgroundColors, ClearOptionalValues, ShowOptionalValues,
+		save10_hg( 9,"save10.hg","..10"   ),
+		EditItemBackgroundColors,
+		ClearOptionalValues, ShowOptionalValues,
+		ClearUnknownValues, ShowUnknownValues,
 		;
 		
 		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
@@ -535,6 +538,8 @@ public class SaveViewer implements ActionListener {
 		case ClearOptionalValues: SaveGameData.globalOptionalValues.clear(); break;
 		case ShowOptionalValues : SaveGameData.globalOptionalValues.show(System.err); break;
 		
+		case ClearUnknownValues: SaveGameData.globalUnknownValues.clear(); break;
+		case ShowUnknownValues : SaveGameData.globalUnknownValues.show(System.err); break;
 		}
 	}
 
@@ -1164,6 +1169,9 @@ public class SaveViewer implements ActionListener {
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Clear ScanResults of Optional Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearOptionalValues,true));
 			extraMenu.add(createMenuItem("Show ScanResults of Optional Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowOptionalValues ,true));
+			extraMenu.addSeparator();
+			extraMenu.add(createMenuItem("Clear Unknown Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearUnknownValues,true));
+			extraMenu.add(createMenuItem("Show Unknown Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowUnknownValues ,true));
 
 			toolBar.addSeparator();
 			toolBar.add(createButton("Tools", toolsMenu, true));
