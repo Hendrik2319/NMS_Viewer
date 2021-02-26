@@ -2,7 +2,8 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -150,6 +151,22 @@ public class SaveGameView extends JPanel {
 			add(tabbedPane_,BorderLayout.CENTER);
 		}
 		
+		public <ValueType> SaveGameViewTabGroupingPanel(
+				SaveGameData data, Vector<ValueType> array,
+				PanelConstructor<ValueType> panelConstructor,
+				BiFunction<ValueType,Integer,String> getTitle
+		) {
+			this(data);
+			for (int i=0; i<array.size(); i++) {
+				ValueType value = array.get(i);
+				addPanel(getTitle.apply(value,i), panelConstructor.construct(data,value,i));
+			}
+		}
+		
+		public interface PanelConstructor<ValueType> {
+			SaveGameViewTabPanel construct(SaveGameData data, ValueType value, Integer index);
+		}
+		
 		@Override protected void addPanelToGUI(String title, SaveGameViewTabPanel panel) {
 			tabbedPane_.addTab(title, panel);
 		}
@@ -157,34 +174,48 @@ public class SaveGameView extends JPanel {
 	
 	public static class SaveGameViewPanelGroupingPanel extends SaveGameViewGroupingPanel {
 		private static final long serialVersionUID = 3371660682332165241L;
-		private JPanel gridPanel;
+		private final JPanel gridPanel;
+		private final GridBagConstraints c;
+		private final boolean horizontal;
 
 		public SaveGameViewPanelGroupingPanel(SaveGameData data, boolean horizontal, boolean scrollable) {
 			super(data);
-			if (horizontal) gridPanel = new JPanel(new GridLayout(1,0,3,3));
-			else            gridPanel = new JPanel(new GridLayout(0,1,3,3));
+			this.horizontal = horizontal;
+			gridPanel = new JPanel(new GridBagLayout());
+			c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.weightx = 1;
+			c.weighty = 1;
+			c.gridwidth = 1;
+			c.gridheight = 1;
+			c.gridx = 0;
+			c.gridy = 0;
 			if (scrollable) add(new JScrollPane(gridPanel),BorderLayout.CENTER);
 			else add(gridPanel,BorderLayout.CENTER);
 		}
 		
 		public <ValueType> SaveGameViewPanelGroupingPanel(
 				SaveGameData data, boolean horizontal, boolean scrollable, Vector<ValueType> array,
-				BiFunction<ValueType,Integer,SaveGameViewTabPanel> createPanel,
+				PanelConstructor<ValueType> panelConstructor,
 				BiFunction<ValueType,Integer,String> getTitle
 		) {
 			this(data,horizontal,scrollable);
 			for (int i=0; i<array.size(); i++) {
 				ValueType value = array.get(i);
-				addPanelToGUI(getTitle.apply(value,i), createPanel.apply(value,i));
+				addPanel(getTitle.apply(value,i), panelConstructor.construct(data,value,i));
 			}
+		}
+		
+		public interface PanelConstructor<ValueType> {
+			SaveGameViewTabPanel construct(SaveGameData data, ValueType value, Integer index);
 		}
 		
 		@Override
 		protected void addPanelToGUI(String title, SaveGameViewTabPanel panel) {
-			JPanel borderPanel = new JPanel(new BorderLayout());
-			borderPanel.setBorder(BorderFactory.createTitledBorder(title));
-			borderPanel.add(panel,BorderLayout.CENTER);
-			gridPanel.add(borderPanel);
+			if (horizontal) c.gridx++;
+			else c.gridy++;
+			panel.setBorder(BorderFactory.createTitledBorder(title));
+			gridPanel.add(panel,c);
 		}
 	}
 	

@@ -54,6 +54,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
@@ -62,6 +63,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObje
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Companions.Companion;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock.Object_Aak;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock.Object_T1;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock.Object_gsg;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.MissionProgress.Participant;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
@@ -777,8 +781,45 @@ public class SimplePanels {
 			if (data.experimentalData.data_Wu_.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_Wu_.getTabTitel(),new DATA_Wu__Panel(data));
 			if (data.experimentalData.data_EQt.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_EQt.getTabTitel(),new DATA_EQt_Panel(data));
 			if (data.experimentalData.data_m4I.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_m4I.getTabTitel(),new DATA_m4I_Panel(data));
-			if (data.experimentalData.array_cf5         !=null) rawDataPanel.addPanel("Array cf5",new SaveGameViewPanelGroupingPanel(data, false, true, data.experimentalData.array_cf5,(v,i)->new AppearanceBlockPanel(data,v),(v,i)->AppearanceBlockPanel.generateTitle(v)));
-			// TODO: other appearance arrays
+			if (data.experimentalData.array_cf5         !=null) rawDataPanel.addPanel("Player Appearance Presets",new SaveGameViewPanelGroupingPanel(data, false, true, data.experimentalData.array_cf5,AppearanceBlockPanel::new,AppearanceBlockPanel::generateTitle));
+			if (data.experimentalData.array_lj          !=null) rawDataPanel.addPanel("Appearances (Player/Vehicles)" ,new SaveGameViewPanelGroupingPanel(data, false, true, data.experimentalData.array_lj ,AppearanceBlockContainerPanel::new,AppearanceBlockContainerPanel::generateTitle));
+			if (data.experimentalData.array_j30         !=null) rawDataPanel.addPanel("Companion Equipment",new SaveGameViewTabGroupingPanel(data, data.experimentalData.array_j30,AppearanceBlockContainerArrayPanel::new,AppearanceBlockContainerArrayPanel::generateTitle));
+			// TODO: transfer view of experimental arrays into final views
+		}
+
+		private static class AppearanceBlockContainerArrayPanel extends SaveGameViewPanelGroupingPanel {
+			private static final long serialVersionUID = -695460646232684753L;
+
+			AppearanceBlockContainerArrayPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlockContainerArray value, int index) {
+				super(data, false, true, value==null ? null : value.data, AppearanceBlockContainerPanel::new, AppearanceBlockContainerPanel::generateTitle);
+			}
+			
+			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlockContainerArray data, int index) {
+				return String.format("%d", index+1);
+			}
+		}
+
+		private static class AppearanceBlockContainerPanel extends AppearanceBlockPanel {
+			private static final long serialVersionUID = 8497162844923811394L;
+
+			AppearanceBlockContainerPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlockContainer appearanceBlockContainer, int index) {
+				super(data, appearanceBlockContainer==null ? null : appearanceBlockContainer.appearanceBlock, index);
+			}
+			
+			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlockContainer data, int index) {
+				return ""+(index+1)+": "+generateTitle(data);
+			}
+			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlockContainer data) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("Appearance");
+				if (data==null) sb.append(" <null>");
+				else {
+					if (data.id_VFd!=null) sb.append("\"").append(data.id_VFd).append("\"");
+					addValuesToTitle(data.appearanceBlock, sb);
+				}
+				return sb.toString();
+			}
+			
 		}
 
 		private static class AppearanceBlockPanel extends SaveGameViewTabPanel {
@@ -805,68 +846,85 @@ public class SimplePanels {
 				}
 			}
 			
-			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlock appearanceBlock) {
-				String title = "AppearanceBlock";
-				if (appearanceBlock==null) title += " <null>";
+			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlock data, int index) {
+				return ""+(index+1)+": "+generateTitle(data);
+			}
+			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlock data) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("Appearance");
+				addValuesToTitle(data, sb);
+				return sb.toString();
+			}
+			protected static void addValuesToTitle(SaveGameData.ExperimentalData.AppearanceBlock data, StringBuilder sb) {
+				if (data==null) sb.append(" <null>");
 				else {
-					if (appearanceBlock.index>=0) title += String.format("[%d]", appearanceBlock.index+1);
-					if (appearanceBlock.height!=null) title += String.format(Locale.ENGLISH, "   height:%1.2f", appearanceBlock.height);
+					if (data.index >=0   ) sb.append(String.format("[%d]", data.index+1));
+					if (data.height!=null) sb.append(String.format(Locale.ENGLISH, "   height:%1.2f", data.height));
 				}
-				return title;
 			}
 			
 			private final AppearanceBlock appearanceBlock;
 		
-			AppearanceBlockPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlock appearanceBlock) {
+			AppearanceBlockPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlock appearanceBlock, int index) {
 				super(data);
 				setLayout(new GridBagLayout());
 				this.appearanceBlock = appearanceBlock;
 				
 				//setBorder(BorderFactory.createTitledBorder(generateTitle(appearanceBlock)));
 				
+				Vector<String>     array_SMP  = this.appearanceBlock==null ? null : this.appearanceBlock.array_SMP;
+				Vector<Object_Aak> colors_Aak = this.appearanceBlock==null ? null : this.appearanceBlock.colors_Aak;
+				Vector<Object_T1>  styles_T1  = this.appearanceBlock==null ? null : this.appearanceBlock.styles_T1;
+				Vector<Object_gsg> array_gsg  = this.appearanceBlock==null ? null : this.appearanceBlock.array_gsg;
+				
 				TableView.VerySimpleTable<String> array_SMP_Table;
 				TableView.VerySimpleTable<SaveGameData.ExperimentalData.AppearanceBlock.Object_Aak> array_Aak_Table;
 				TableView.VerySimpleTable<SaveGameData.ExperimentalData.AppearanceBlock.Object_T1>  array_T1_Table;
 				TableView.VerySimpleTable<SaveGameData.ExperimentalData.AppearanceBlock.Object_gsg> array_gsg_Table;
-				array_SMP_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.array_SMP ", this.appearanceBlock.array_SMP , new Array_SMP_ColumnID[] {
+				array_SMP_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.array_SMP ", array_SMP , new Array_SMP_ColumnID[] {
 						new Array_SMP_ColumnID("#"           , Integer.class, 20,-1, 30, 30, (str,i)->i+1),
 						new Array_SMP_ColumnID("Component ID",  String.class, 20,-1,250,250, (str,i)->str)
 				});
-				array_Aak_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", this.appearanceBlock.colors_Aak, new Array_Aak_ColumnID[] {
-						new Array_Aak_ColumnID("#1"   , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
-						new Array_Aak_ColumnID("#2"   , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
-						new Array_Aak_ColumnID("Label",  String.class, 20,-1,140,140, (v,i)->v==null ? null : v.label_RVl),
-						new Array_Aak_ColumnID("Type" ,  String.class, 20,-1, 80, 80, (v,i)->v==null ? null : v.type_Ty),
-						new Array_Aak_ColumnID("Color",  String.class, 20,-1,140,140, (v,i)->v==null ? null : v.color_xEg==null ? "<null>" : v.color_xEg.toString(" %1.2f ")),
+				array_Aak_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", colors_Aak, new Array_Aak_ColumnID[] {
+						new Array_Aak_ColumnID("#1"   ,    Integer.class, 20,-1, 30, 30, (v,i)->i+1),
+						new Array_Aak_ColumnID("#2"   ,    Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
+						new Array_Aak_ColumnID("Label",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.label_RVl),
+						new Array_Aak_ColumnID("Type" ,     String.class, 20,-1, 80, 80, (v,i)->v==null ? null : v.type_Ty),
+						new Array_Aak_ColumnID("Color",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.color_xEg==null ? "<null>" : v.color_xEg.toString(" %1.2f ")),
+						new Array_Aak_ColumnID("Color", NamedColor.class, 20,-1,100,100, (v,i)->v==null ? null : v.itemColor),
 				});
-				array_T1_Table  = new TableView.VerySimpleTable<>("AppearanceBlockPanel.styles_T1" , this.appearanceBlock.styles_T1 , new Array_T1_ColumnID [] {
+				array_T1_Table  = new TableView.VerySimpleTable<>("AppearanceBlockPanel.styles_T1" , styles_T1 , new Array_T1_ColumnID [] {
 						new Array_T1_ColumnID("#1"   , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
 						new Array_T1_ColumnID("#2"   , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
 						new Array_T1_ColumnID("Item" ,  String.class, 20,-1,100,100, (v,i)->v==null ? null : v.item_6c),
 						new Array_T1_ColumnID("Style",  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.style_Cv),
 				});
-				array_gsg_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", this.appearanceBlock.array_gsg , new Array_gsg_ColumnID[] {
+				array_gsg_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", array_gsg , new Array_gsg_ColumnID[] {
 						new Array_gsg_ColumnID("#1"    , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
 						new Array_gsg_ColumnID("#2"    , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
 						new Array_gsg_ColumnID("ID"    ,  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.id_tIm),
 						new Array_gsg_ColumnID("Height",  String.class, 20,-1, 60, 60, (v,i)->v==null ? null : String.format(Locale.ENGLISH, "%1.5f", v.height)),
 				});
-				array_SMP_Table.computePreferredScrollableViewportSize(120);
-				array_Aak_Table.computePreferredScrollableViewportSize(120);
-				array_T1_Table .computePreferredScrollableViewportSize(120);
-				array_gsg_Table.computePreferredScrollableViewportSize(120);
-				
-				// TODO: show Colors in array_Aak_Table
+				array_SMP_Table.computePreferredScrollableViewportSize(computeHeight(array_SMP ));
+				array_Aak_Table.computePreferredScrollableViewportSize(computeHeight(colors_Aak));
+				array_T1_Table .computePreferredScrollableViewportSize(computeHeight(styles_T1 ));
+				array_gsg_Table.computePreferredScrollableViewportSize(computeHeight(array_gsg ));
+				array_Aak_Table.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
 				
 				GridBagConstraints c = new GridBagConstraints();
 				c.fill = GridBagConstraints.BOTH;
 				c.weightx = 1;
-				add(wrap("Components" + (isEmpty(this.appearanceBlock.array_SMP ) ? " (empty)" : ""), array_SMP_Table),c);
-				add(wrap("Colors"     + (isEmpty(this.appearanceBlock.colors_Aak) ? " (empty)" : ""), array_Aak_Table),c);
-				add(wrap("Styles"     + (isEmpty(this.appearanceBlock.styles_T1 ) ? " (empty)" : ""), array_T1_Table ),c);
-				add(wrap("Sizes"      + (isEmpty(this.appearanceBlock.array_gsg ) ? " (empty)" : ""), array_gsg_Table),c);
+				c.weighty = 1;
+				add(wrap("Components" + (isEmpty(array_SMP ) ? " (empty)" : ""), array_SMP_Table),c);
+				add(wrap("Colors"     + (isEmpty(colors_Aak) ? " (empty)" : ""), array_Aak_Table),c);
+				add(wrap("Styles"     + (isEmpty(styles_T1 ) ? " (empty)" : ""), array_T1_Table ),c);
+				add(wrap("Sizes"      + (isEmpty(array_gsg ) ? " (empty)" : ""), array_gsg_Table),c);
 			}
 		
+			private int computeHeight(Vector<?> array) {
+				if (isEmpty(array)) return 50;
+				return 120;
+			}
 			private boolean isEmpty(Vector<?> vec) {
 				return vec==null || vec.isEmpty();
 			}

@@ -2943,7 +2943,9 @@ public class SaveGameData {
 	}
 
 	public static final class ExperimentalData {
-
+		
+		private static final boolean DEBUG_LOG_VALUES = false;
+		
 		private SaveGameData data;
 		public Vector<StoredInteraction> storedInteractions = null;
 		public Vector<MissionProgress.Mission> missionProgress = null;
@@ -2974,13 +2976,14 @@ public class SaveGameData {
 			//globalOptionalValues.scan(data.json_data,"PlayerStateData","[??? l:j]");
 			
 			
+			// TODO: transfer experimental arrays into final data
 			array_cf5 = parseArray(AppearanceBlock::parse_arrayItem, "PlayerStateData.[??? cf5]", data.json_data, "PlayerStateData","[??? cf5]");
 			array_lj  = parseArray(AppearanceBlockContainer::parse, "PlayerStateData.[??? l:j]", data.json_data, "PlayerStateData","[??? l:j]");
 			array_j30 = parseArray(AppearanceBlockContainerArray::parse, "PlayerStateData.[??? j30]", data.json_data, "PlayerStateData","[??? j30]");
 			
-			logArray("ExperimentalData", "array_cf5", array_cf5);
-			logArray("ExperimentalData", "array_lj" , array_lj );
-			logArray("ExperimentalData", "array_j30", array_j30);
+			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_cf5", array_cf5);
+			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_lj" , array_lj );
+			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_j30", array_j30);
 		}
 		
 		private static void logArray(String prefix, String arrayName, Vector<?> array) {
@@ -2996,7 +2999,7 @@ public class SaveGameData {
 			public AppearanceBlockContainerArray(JSON_Object<NVExtra, VExtra> object, int index) {
 				this.index = index;
 				data = parseArray(AppearanceBlockContainer::parse, "AppearanceBlockContainerArray.Data", object, "Data");
-				logArray("AppearanceBlockContainerArray", "data", data);
+				if (DEBUG_LOG_VALUES) logArray("AppearanceBlockContainerArray", "data", data);
 			}
 
 			private static AppearanceBlockContainerArray parse(Value<NVExtra, VExtra> value, int index) {
@@ -3016,7 +3019,7 @@ public class SaveGameData {
 				this.index = index;
 				id_VFd = getStringValue(object, "[??? VFd ID?]");
 				appearanceBlock = AppearanceBlock.parse(object, "[??? wnR]");
-				globalUnknownValues.add("AppearanceBlockContainer", "id_VFd = \"%s\"", id_VFd);
+				if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlockContainer", "id_VFd = \"%s\"", id_VFd);
 			}
 
 			private static AppearanceBlockContainer parse(Value<NVExtra, VExtra> value, int index) {
@@ -3043,11 +3046,11 @@ public class SaveGameData {
 				styles_T1  = parseArray(Object_T1 ::parse, "AppearanceBlock.T1" , object, "[??? T>1]");
 				array_gsg  = parseArray(Object_gsg::parse, "AppearanceBlock.gsg" , object, "[??? gsg]");
 				height = getFloatValue(object, "[Height]");
-				logArray("AppearanceBlock", "array_SMP" , array_SMP );
-				logArray("AppearanceBlock", "colors_Aak", colors_Aak);
-				logArray("AppearanceBlock", "styles_T1" , styles_T1 );
-				logArray("AppearanceBlock", "array_gsg" , array_gsg );
-				globalUnknownValues.add("AppearanceBlock", "height = %s", height);
+				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "array_SMP" , array_SMP );
+				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "colors_Aak", colors_Aak);
+				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "styles_T1" , styles_T1 );
+				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "array_gsg" , array_gsg );
+				if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock", "height = %s", height);
 			}
 			
 			public static AppearanceBlock parse_arrayItem(Value<NVExtra, VExtra> value, int index) {
@@ -3069,15 +3072,38 @@ public class SaveGameData {
 				public final String label_RVl;
 				public final String type_Ty;
 				public final Coordinates color_xEg;
+				public final Images.NamedColor itemColor;
 
 				private Object_Aak(JSON_Object<NVExtra, VExtra> object, int index) {
 					this.index = index;
-					color_xEg = Coordinates.parse(object, "[??? xEg]"); // TODO: compute color
+					color_xEg = Coordinates.parse(object, "[??? xEg]");
 					label_RVl = getStringValue(object, "[??? RVl]","[??? RVl]");
 					type_Ty   = getStringValue(object, "[??? RVl]","[??? Ty=]");
-					globalUnknownValues.add("AppearanceBlock.Object_Aak", "color_xEg = %s", color_xEg==null ? "<null>" : color_xEg.toString("%1.2f", true));
-					globalUnknownValues.add("AppearanceBlock.Object_Aak", "label_RVl = \"%s\"", label_RVl);
-					globalUnknownValues.add("AppearanceBlock.Object_Aak", "type_Ty   = \"%s\"", type_Ty);
+					itemColor = parseItemColor();
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_Aak", "color_xEg = %s", color_xEg==null ? "<null>" : color_xEg.toString("%1.2f", true));
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_Aak", "label_RVl = \"%s\"", label_RVl);
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_Aak", "type_Ty   = \"%s\"", type_Ty);
+				}
+
+				private Images.NamedColor parseItemColor() {
+					if (color_xEg==null) return null;
+					if (color_xEg.length<3) return null;
+					if (color_xEg.length>4) return null;
+					int r = ((int) Math.floor(color_xEg.x*255)) & 0xFF;
+					int g = ((int) Math.floor(color_xEg.y*255)) & 0xFF;
+					int b = ((int) Math.floor(color_xEg.z*255)) & 0xFF;
+					int value = r<<16 | g<<8 | b;
+					double alpha = color_xEg.length==4 ? color_xEg.w1 : 1;
+					
+					return new Images.NamedColor(value, alpha, getName());
+				}
+
+				public String getName() {
+					StringBuilder sb = new StringBuilder();
+					sb.append(label_RVl!=null ? label_RVl : "<ItemColor>");
+					if (type_Ty!=null) sb.append(":  ").append(type_Ty);
+					String colorName = sb.toString();
+					return colorName;
 				}
 
 				static Object_Aak parse(Value<NVExtra, VExtra> value, int index) {
@@ -3097,8 +3123,8 @@ public class SaveGameData {
 					this.index = index;
 					item_6c  = getStringValue(object, "[??? @6c]");
 					style_Cv = getStringValue(object, "[??? =Cv]");
-					globalUnknownValues.add("AppearanceBlock.Object_T1", "item_6c  = \"%s\"", item_6c );
-					globalUnknownValues.add("AppearanceBlock.Object_T1", "style_Cv = \"%s\"", style_Cv);
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_T1", "item_6c  = \"%s\"", item_6c );
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_T1", "style_Cv = \"%s\"", style_Cv);
 				}
 
 				static Object_T1 parse(Value<NVExtra, VExtra> value, int index) {
@@ -3118,8 +3144,8 @@ public class SaveGameData {
 					this.index = index;
 					id_tIm = getStringValue(object, "[??? tIm]");
 					height = getFloatValue (object, "[Height]");
-					globalUnknownValues.add("AppearanceBlock.Object_gsg", "id_tIm = \"%s\"", id_tIm);
-					globalUnknownValues.add("AppearanceBlock.Object_gsg", "height = \"%s\"", height);
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_gsg", "id_tIm = \"%s\"", id_tIm);
+					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_gsg", "height = \"%s\"", height);
 				}
 
 				static Object_gsg parse(Value<NVExtra, VExtra> value, int index) {

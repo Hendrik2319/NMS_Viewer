@@ -37,6 +37,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -808,22 +809,30 @@ public class Images {
 	public static class NamedColor {
 	
 		public final int value;
+		public final Double alpha;
 		public String name;
 		public final Color color;
 	
 		public NamedColor(int value, String name) {
+			this(value, null, name);
+		}
+		public NamedColor(int value, Double alpha, String name) {
 			this.value = value;
+			this.alpha = alpha;
 			this.color = new Color(value);
 			this.name = name;
 		}
 
 		@Override
 		public String toString() {
-			return String.format("Color( %06X, \"%s\" )",value,name);
+			return String.format(Locale.ENGLISH, "Color( %06X, %s, \"%s\" )", value, alpha, name);
 		}
 		
-		public String getLabel() { return String.format("[%06X] %s", value, name); }
-		public String getValueStr() { return String.format("[%06X]", value); }
+		public String getLabel() { return String.format("%s %s", getValueStr(), name); }
+		public String getValueStr() {
+			if (alpha!=null) return String.format(Locale.ENGLISH, "[%06X:%1.2f]", value, alpha);
+			return String.format("[%06X]", value);
+		}
 
 		public BufferedImage createImage(int width, int height) {
 			return Images.createImage(width, height, color);
