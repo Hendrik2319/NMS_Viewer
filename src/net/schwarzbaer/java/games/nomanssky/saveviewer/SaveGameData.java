@@ -37,6 +37,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Appearances.BlockCArray;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Appearances.BlockContainer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
@@ -1456,10 +1457,25 @@ public class SaveGameData {
 	}
 
 	public static class Exocraft extends Vehicle {
-		private static final String[] VehicleNames = new String[]{"Roamer", "Nomad", "Colossus", "Pilgrim", null, "Nautilon"};
+		public enum Instance {
+			Roamer(0,"Roamer"), Nomad(1,"Nomad"), Colossus(2,"Colossus"), Pilgrim(3,"Pilgrim"), Nautilon(5,"Nautilon"), Minotaurus(6,"Minotaurus"),
+			;
+			public final int index;
+			public final String label;
+			private Instance(int index, String label) { this.index = index; this.label = label; }
+			public static String getName(int i) {
+				Instance instance = get(i);
+				return instance==null ? null : instance.label;
+			}
+			private static Instance get(int i) {
+				for (Instance inst:values())
+					if (inst.index==i)
+						return inst;
+				return null;
+			}
+		}
 		@Override protected String getPredefinedName(int i) {
-			if (0<=i && i<VehicleNames.length) return VehicleNames[i];
-			return null;
+			return Instance.getName(i);
 		}
 		@Override protected String getTypeLabel() { return "Exocraft"; }
 		@Override protected void setVehicleClass(String resourcefilename) {}
@@ -2070,6 +2086,10 @@ public class SaveGameData {
 		public static String generateLabelForEquipment(BlockCArray value, int index) {
 			return String.format("Companion %d", index+1);
 		}
+
+		public static String generateLabelForEquipmentBlock(BlockContainer value, int index) {
+			return Appearances.generateLabel("Equipment Position ", null, value, index);
+		}
 	}
 
 	public static class Appearances {
@@ -2100,40 +2120,53 @@ public class SaveGameData {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Preset");
 			if (value==null) {
-				sb.append("[").append(index+1).append("] ");
+				sb.append(String.format("[%d]", index+1));
 				sb.append(" <null>");
 			} else {
-				if (value.index >=0   ) sb.append(String.format("[%d|%d]", index+1, value.index+1));
-				else                    sb.append(String.format("[%d]", index+1));
+				if (value.index<0 || index==value.index) sb.append(String.format("[%d]", index+1));
+				else                                     sb.append(String.format("[%d|%d]", index+1, value.index+1));
 				if (value.height!=null) sb.append(String.format(Locale.ENGLISH, "   height:%1.2f", value.height));
 			}
 			return sb.toString();
 		}
 
 		public static String generateLabelForCurrentSet(BlockContainer value, int index) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Set");
-			if (value==null) {
-				sb.append("[").append(index+1).append("] ");
-				sb.append(" \"").append(getSetLabel(index)).append("\"");
-				sb.append(" <null>");
-			} else {
-				if (value.index >=0   ) sb.append(String.format("[%d|%d]", index+1, value.index+1));
-				else                    sb.append(String.format("[%d]", index+1));
-				sb.append(" \"").append(getSetLabel(index)).append("\"");
-				if (value.id_VFd!=null) sb.append("   ID:\"").append(value.id_VFd).append("\"");
-				if (value.appearanceBlock==null) sb.append(" <null>");
-				else {
-					if (value.appearanceBlock.index >=0   ) sb.append(String.format("  [%d]", value.appearanceBlock.index+1));
-					if (value.appearanceBlock.height!=null) sb.append(String.format(Locale.ENGLISH, "   height:%1.2f", value.appearanceBlock.height));
-				}
-			}
-			return sb.toString();
+			return generateLabel("Set", getSetLabel(index), value, index);
 		}
 
 		private static String getSetLabel(int index) {
-			// TODO: SetLabel
-			return "SETLABEL";
+			switch (index) {
+			case 0: return "Player";
+			case 1: return Exocraft.Instance.Roamer.label;
+			case 9: return Exocraft.Instance.Nomad.label;
+			case 10: return Exocraft.Instance.Colossus.label;
+			case 11: return Exocraft.Instance.Pilgrim.label;
+			case 13: return Exocraft.Instance.Nautilon.label;
+			case 14: return Exocraft.Instance.Minotaurus.label;
+			case 15: return "Freighter";
+			}
+			return null;
+		}
+
+		private static String generateLabel(String title, String containerLabel, BlockContainer value, int index) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(title);
+			if (value==null) {
+				sb.append(String.format("[%d]", index+1));
+				if (containerLabel!=null) sb.append(" \"").append(containerLabel).append("\"");
+				sb.append(" <null>");
+			} else {
+				if (value.index<0 || index==value.index) sb.append(String.format("[%d]", index+1));
+				else                                     sb.append(String.format("[%d|%d]", index+1, value.index+1));
+				if (containerLabel!=null) sb.append(" \"").append(containerLabel).append("\"");
+				if (value.id_VFd  !=null) sb.append("   ID:\"").append(value.id_VFd).append("\"");
+				if (value.block   ==null) sb.append(" <null>");
+				else {
+					if (value.block.index >=0   ) sb.append(String.format("  [%d]", value.block.index+1));
+					if (value.block.height!=null) sb.append(String.format(Locale.ENGLISH, "   height:%1.2f", value.block.height));
+				}
+			}
+			return sb.toString();
 		}
 
 		public static class Block {
@@ -2268,12 +2301,12 @@ public class SaveGameData {
 			
 			public final int index;
 			public final String id_VFd;
-			public final Block appearanceBlock;
+			public final Block block;
 		
 			public BlockContainer(JSON_Object<NVExtra, VExtra> object, int index) {
 				this.index = index;
 				id_VFd = getStringValue(object, "[??? VFd ID?]");
-				appearanceBlock = Block.parse(object, "[??? wnR]");
+				block = Block.parse(object, "[??? wnR]");
 				if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlockContainer", "id_VFd = \"%s\"", id_VFd);
 			}
 		

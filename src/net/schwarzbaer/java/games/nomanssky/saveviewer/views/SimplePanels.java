@@ -971,7 +971,10 @@ public class SimplePanels {
 		private static final long serialVersionUID = -695460646232684753L;
 	
 		AppearanceBlockContainerArrayPanel(SaveGameData data, SaveGameData.Appearances.BlockCArray value, int index) {
-			super(data, false, true, value==null ? null : value.data, AppearanceBlockContainerPanel::new, AppearanceBlockContainerPanel::generateTitle);
+			this(data, value, index, AppearanceBlockContainerPanel::generateTitle);
+		}
+		AppearanceBlockContainerArrayPanel(SaveGameData data, SaveGameData.Appearances.BlockCArray value, int index, BiFunction<SaveGameData.Appearances.BlockContainer,Integer,String> getTitle) {
+			super(data, false, true, value==null ? null : value.data, AppearanceBlockContainerPanel::new, getTitle);
 		}
 		
 		public static String generateTitle(SaveGameData.Appearances.BlockCArray data, int index) {
@@ -983,7 +986,7 @@ public class SimplePanels {
 		private static final long serialVersionUID = 8497162844923811394L;
 	
 		AppearanceBlockContainerPanel(SaveGameData data, SaveGameData.Appearances.BlockContainer appearanceBlockContainer, int index) {
-			super(data, appearanceBlockContainer==null ? null : appearanceBlockContainer.appearanceBlock, index);
+			super(data, appearanceBlockContainer==null ? null : appearanceBlockContainer.block, index);
 		}
 		
 		public static String generateTitle(SaveGameData.Appearances.BlockContainer data, int index) {
@@ -995,7 +998,7 @@ public class SimplePanels {
 			if (data==null) sb.append(" <null>");
 			else {
 				if (data.id_VFd!=null) sb.append("\"").append(data.id_VFd).append("\"");
-				addValuesToTitle(data.appearanceBlock, sb);
+				addValuesToTitle(data.block, sb);
 			}
 			return sb.toString();
 		}
@@ -1199,7 +1202,7 @@ public class SimplePanels {
 				if (data.companions.equipment!=null) {
 					equipmentPanel = new SaveGameViewTabGroupingPanel(
 							data, data.companions.equipment,
-							AppearanceBlockContainerArrayPanel::new, // TODO: generateTitle for each BlockContainer
+							(d,bca,i) -> new AppearanceBlockContainerArrayPanel(d,bca,i, SaveGameData.Companions::generateLabelForEquipmentBlock),
 							SaveGameData.Companions::generateLabelForEquipment
 					);
 					equipmentPanel.setBorder(BorderFactory.createTitledBorder("Companion Equipment"));

@@ -191,8 +191,12 @@ public class SaveGameView extends JPanel {
 			c.gridheight = 1;
 			c.gridx = 0;
 			c.gridy = 0;
-			if (scrollable) add(new JScrollPane(gridPanel),BorderLayout.CENTER);
-			else add(gridPanel,BorderLayout.CENTER);
+			if (scrollable) {
+				JScrollPane scrollPane = new JScrollPane(gridPanel);
+				scrollPane.getVerticalScrollBar  ().setUnitIncrement(10);
+				scrollPane.getHorizontalScrollBar().setUnitIncrement(10);
+				add(scrollPane,BorderLayout.CENTER);
+			} else add(gridPanel,BorderLayout.CENTER);
 		}
 		
 		public <ValueType> SaveGameViewPanelGroupingPanel(

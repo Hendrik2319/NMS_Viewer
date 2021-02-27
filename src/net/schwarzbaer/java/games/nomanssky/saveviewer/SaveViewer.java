@@ -536,7 +536,7 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case ClearOptionalValues: SaveGameData.globalOptionalValues.clear(); break;
-		case ShowOptionalValues : SaveGameData.globalOptionalValues.show(System.err); break;
+		case ShowOptionalValues : SaveGameData.globalOptionalValues.show("Optional Values",System.err); break;
 		
 		case ClearUnknownValues: SaveGameData.globalUnknownValues.clear(); break;
 		case ShowUnknownValues : SaveGameData.globalUnknownValues.show(System.err); break;
@@ -1044,13 +1044,13 @@ public class SaveViewer implements ActionListener {
 	private class ContentPane extends JPanel {
 		private static final long serialVersionUID = -2737846401785644788L;
 		
-		private Disabler<ActionCommand> disabler;
-		private JTabbedPane tabbedPane;
+		private final Disabler<ActionCommand> disabler;
+		private final JTabbedPane tabbedPane;
 		private SaveGameView selectedSaveGameView;
 
-		private GameInfos.GeneralizedIDPanel techIDsPanel;
-		private GameInfos.GeneralizedIDPanel productIDsPanel;
-		private GameInfos.GeneralizedIDPanel substanceIDsPanel;
+		private final GameInfos.GeneralizedIDPanel techIDsPanel;
+		private final GameInfos.GeneralizedIDPanel productIDsPanel;
+		private final GameInfos.GeneralizedIDPanel substanceIDsPanel;
 		
 		ContentPane() {
 			super( new BorderLayout(3,3) );
