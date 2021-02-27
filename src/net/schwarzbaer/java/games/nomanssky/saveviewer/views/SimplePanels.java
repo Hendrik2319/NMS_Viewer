@@ -25,6 +25,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
@@ -62,14 +63,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObje
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Companions.Companion;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock.Object_Aak;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock.Object_T1;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.AppearanceBlock.Object_gsg;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.MissionProgress.Participant;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.EditableModification;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate.Modification;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission.FrigateMissionTask;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
@@ -137,6 +131,14 @@ public class SimplePanels {
 			if (0<=rowM && rowM<objs.size())
 				universePanel.markAddress(objs.get(rowM));
 		}
+	}
+
+	private static JComponent createLabeledScrollPane(String label, Component view) {
+		JScrollPane scrollPane = new JScrollPane(view);
+		JPanel panel = new JPanel(new BorderLayout());
+		panel.setBorder(BorderFactory.createTitledBorder(label));
+		panel.add(scrollPane,BorderLayout.CENTER);
+		return panel;
 	}
 
 	private static class MarkAddressesAddOn {
@@ -433,10 +435,10 @@ public class SimplePanels {
 			
 		}
 		
-		private String showValue(Vector<Modification> modifications) {
+		private String showValue(Vector<Frigate.Modification> modifications) {
 			int i=0;
-			for (Modification mod:modifications)
-				if (mod instanceof EditableModification && ((EditableModification)mod).isUndefined()) i++;
+			for (Frigate.Modification mod:modifications)
+				if (mod instanceof Frigate.EditableModification && ((Frigate.EditableModification)mod).isUndefined()) i++;
 			return modifications.size()+(i==0?"":(" ("+i+")"));
 		}
 
@@ -473,7 +475,7 @@ public class SimplePanels {
 			appendln("Diplomacy   : %s ", selected.diplomacyValue  ==null ? "" : selected.diplomacyValue   );
 			appendln();
 			appendln("Modifications :");
-			for (Modification mod:selected.modifications) {
+			for (Frigate.Modification mod:selected.modifications) {
 				appendln("    %s:", mod.getLabel());
 				appendln("        %s", mod.getValue() );
 			}
@@ -781,159 +783,6 @@ public class SimplePanels {
 			if (data.experimentalData.data_Wu_.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_Wu_.getTabTitel(),new DATA_Wu__Panel(data));
 			if (data.experimentalData.data_EQt.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_EQt.getTabTitel(),new DATA_EQt_Panel(data));
 			if (data.experimentalData.data_m4I.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_m4I.getTabTitel(),new DATA_m4I_Panel(data));
-			if (data.experimentalData.array_cf5         !=null) rawDataPanel.addPanel("Player Appearance Presets",new SaveGameViewPanelGroupingPanel(data, false, true, data.experimentalData.array_cf5,AppearanceBlockPanel::new,AppearanceBlockPanel::generateTitle));
-			if (data.experimentalData.array_lj          !=null) rawDataPanel.addPanel("Appearances (Player/Vehicles)" ,new SaveGameViewPanelGroupingPanel(data, false, true, data.experimentalData.array_lj ,AppearanceBlockContainerPanel::new,AppearanceBlockContainerPanel::generateTitle));
-			if (data.experimentalData.array_j30         !=null) rawDataPanel.addPanel("Companion Equipment",new SaveGameViewTabGroupingPanel(data, data.experimentalData.array_j30,AppearanceBlockContainerArrayPanel::new,AppearanceBlockContainerArrayPanel::generateTitle));
-			// TODO: transfer view of experimental arrays into final views
-		}
-
-		private static class AppearanceBlockContainerArrayPanel extends SaveGameViewPanelGroupingPanel {
-			private static final long serialVersionUID = -695460646232684753L;
-
-			AppearanceBlockContainerArrayPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlockContainerArray value, int index) {
-				super(data, false, true, value==null ? null : value.data, AppearanceBlockContainerPanel::new, AppearanceBlockContainerPanel::generateTitle);
-			}
-			
-			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlockContainerArray data, int index) {
-				return String.format("%d", index+1);
-			}
-		}
-
-		private static class AppearanceBlockContainerPanel extends AppearanceBlockPanel {
-			private static final long serialVersionUID = 8497162844923811394L;
-
-			AppearanceBlockContainerPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlockContainer appearanceBlockContainer, int index) {
-				super(data, appearanceBlockContainer==null ? null : appearanceBlockContainer.appearanceBlock, index);
-			}
-			
-			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlockContainer data, int index) {
-				return ""+(index+1)+": "+generateTitle(data);
-			}
-			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlockContainer data) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("Appearance");
-				if (data==null) sb.append(" <null>");
-				else {
-					if (data.id_VFd!=null) sb.append("\"").append(data.id_VFd).append("\"");
-					addValuesToTitle(data.appearanceBlock, sb);
-				}
-				return sb.toString();
-			}
-			
-		}
-
-		private static class AppearanceBlockPanel extends SaveGameViewTabPanel {
-			private static final long serialVersionUID = -7367567415965481666L;
-
-			private static class Array_SMP_ColumnID extends TableView.VerySimpleTable.ColumnID<String> {
-				public Array_SMP_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<String, Integer, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-			}
-			private static class Array_Aak_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.AppearanceBlock.Object_Aak> {
-				public Array_Aak_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.AppearanceBlock.Object_Aak, Integer, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-			}
-			private static class Array_T1_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.AppearanceBlock.Object_T1> {
-				public Array_T1_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.AppearanceBlock.Object_T1, Integer, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-			}
-			private static class Array_gsg_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.AppearanceBlock.Object_gsg> {
-				public Array_gsg_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.AppearanceBlock.Object_gsg, Integer, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-			}
-			
-			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlock data, int index) {
-				return ""+(index+1)+": "+generateTitle(data);
-			}
-			public static String generateTitle(SaveGameData.ExperimentalData.AppearanceBlock data) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("Appearance");
-				addValuesToTitle(data, sb);
-				return sb.toString();
-			}
-			protected static void addValuesToTitle(SaveGameData.ExperimentalData.AppearanceBlock data, StringBuilder sb) {
-				if (data==null) sb.append(" <null>");
-				else {
-					if (data.index >=0   ) sb.append(String.format("[%d]", data.index+1));
-					if (data.height!=null) sb.append(String.format(Locale.ENGLISH, "   height:%1.2f", data.height));
-				}
-			}
-			
-			private final AppearanceBlock appearanceBlock;
-		
-			AppearanceBlockPanel(SaveGameData data, SaveGameData.ExperimentalData.AppearanceBlock appearanceBlock, int index) {
-				super(data);
-				setLayout(new GridBagLayout());
-				this.appearanceBlock = appearanceBlock;
-				
-				//setBorder(BorderFactory.createTitledBorder(generateTitle(appearanceBlock)));
-				
-				Vector<String>     array_SMP  = this.appearanceBlock==null ? null : this.appearanceBlock.array_SMP;
-				Vector<Object_Aak> colors_Aak = this.appearanceBlock==null ? null : this.appearanceBlock.colors_Aak;
-				Vector<Object_T1>  styles_T1  = this.appearanceBlock==null ? null : this.appearanceBlock.styles_T1;
-				Vector<Object_gsg> array_gsg  = this.appearanceBlock==null ? null : this.appearanceBlock.array_gsg;
-				
-				TableView.VerySimpleTable<String> array_SMP_Table;
-				TableView.VerySimpleTable<SaveGameData.ExperimentalData.AppearanceBlock.Object_Aak> array_Aak_Table;
-				TableView.VerySimpleTable<SaveGameData.ExperimentalData.AppearanceBlock.Object_T1>  array_T1_Table;
-				TableView.VerySimpleTable<SaveGameData.ExperimentalData.AppearanceBlock.Object_gsg> array_gsg_Table;
-				array_SMP_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.array_SMP ", array_SMP , new Array_SMP_ColumnID[] {
-						new Array_SMP_ColumnID("#"           , Integer.class, 20,-1, 30, 30, (str,i)->i+1),
-						new Array_SMP_ColumnID("Component ID",  String.class, 20,-1,250,250, (str,i)->str)
-				});
-				array_Aak_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", colors_Aak, new Array_Aak_ColumnID[] {
-						new Array_Aak_ColumnID("#1"   ,    Integer.class, 20,-1, 30, 30, (v,i)->i+1),
-						new Array_Aak_ColumnID("#2"   ,    Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
-						new Array_Aak_ColumnID("Label",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.label_RVl),
-						new Array_Aak_ColumnID("Type" ,     String.class, 20,-1, 80, 80, (v,i)->v==null ? null : v.type_Ty),
-						new Array_Aak_ColumnID("Color",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.color_xEg==null ? "<null>" : v.color_xEg.toString(" %1.2f ")),
-						new Array_Aak_ColumnID("Color", NamedColor.class, 20,-1,100,100, (v,i)->v==null ? null : v.itemColor),
-				});
-				array_T1_Table  = new TableView.VerySimpleTable<>("AppearanceBlockPanel.styles_T1" , styles_T1 , new Array_T1_ColumnID [] {
-						new Array_T1_ColumnID("#1"   , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
-						new Array_T1_ColumnID("#2"   , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
-						new Array_T1_ColumnID("Item" ,  String.class, 20,-1,100,100, (v,i)->v==null ? null : v.item_6c),
-						new Array_T1_ColumnID("Style",  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.style_Cv),
-				});
-				array_gsg_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", array_gsg , new Array_gsg_ColumnID[] {
-						new Array_gsg_ColumnID("#1"    , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
-						new Array_gsg_ColumnID("#2"    , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
-						new Array_gsg_ColumnID("ID"    ,  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.id_tIm),
-						new Array_gsg_ColumnID("Height",  String.class, 20,-1, 60, 60, (v,i)->v==null ? null : String.format(Locale.ENGLISH, "%1.5f", v.height)),
-				});
-				array_SMP_Table.computePreferredScrollableViewportSize(computeHeight(array_SMP ));
-				array_Aak_Table.computePreferredScrollableViewportSize(computeHeight(colors_Aak));
-				array_T1_Table .computePreferredScrollableViewportSize(computeHeight(styles_T1 ));
-				array_gsg_Table.computePreferredScrollableViewportSize(computeHeight(array_gsg ));
-				array_Aak_Table.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
-				
-				GridBagConstraints c = new GridBagConstraints();
-				c.fill = GridBagConstraints.BOTH;
-				c.weightx = 1;
-				c.weighty = 1;
-				add(wrap("Components" + (isEmpty(array_SMP ) ? " (empty)" : ""), array_SMP_Table),c);
-				add(wrap("Colors"     + (isEmpty(colors_Aak) ? " (empty)" : ""), array_Aak_Table),c);
-				add(wrap("Styles"     + (isEmpty(styles_T1 ) ? " (empty)" : ""), array_T1_Table ),c);
-				add(wrap("Sizes"      + (isEmpty(array_gsg ) ? " (empty)" : ""), array_gsg_Table),c);
-			}
-		
-			private int computeHeight(Vector<?> array) {
-				if (isEmpty(array)) return 50;
-				return 120;
-			}
-			private boolean isEmpty(Vector<?> vec) {
-				return vec==null || vec.isEmpty();
-			}
-
-			private JScrollPane wrap(String title, Component view) {
-				JScrollPane scrollPane = new JScrollPane(view);
-				scrollPane.setBorder(BorderFactory.createTitledBorder(title));
-				return scrollPane;
-			}
 		}
 
 		private static class DATA_Wu__Panel extends VerySimpleTableTabPanel<SaveGameData.ExperimentalData.DATA_Wu_.Data> {
@@ -1101,7 +950,7 @@ public class SimplePanels {
 				missionsTable.addSelectionListener((mission,rowIndex)->{
 					participantsTableTitledBorder.setTitle(String.format("Mission[%s].Participants", rowIndex==null || rowIndex<0 ? "#" : rowIndex+1));
 					participantsTableScrollPane.repaint();
-					Vector<Participant> participantsTableData = mission==null ? null : mission.Participants;
+					Vector<SaveGameData.ExperimentalData.MissionProgress.Participant> participantsTableData = mission==null ? null : mission.Participants;
 					participantsTable.setData(participantsTableData, participantColumns);
 					participantsTableAddOn.setData(participantsTableData);
 				});
@@ -1116,6 +965,157 @@ public class SimplePanels {
 			
 		}
 		
+	}
+
+	public static class AppearanceBlockContainerArrayPanel extends SaveGameViewPanelGroupingPanel {
+		private static final long serialVersionUID = -695460646232684753L;
+	
+		AppearanceBlockContainerArrayPanel(SaveGameData data, SaveGameData.Appearances.BlockCArray value, int index) {
+			super(data, false, true, value==null ? null : value.data, AppearanceBlockContainerPanel::new, AppearanceBlockContainerPanel::generateTitle);
+		}
+		
+		public static String generateTitle(SaveGameData.Appearances.BlockCArray data, int index) {
+			return String.format("%d", index+1);
+		}
+	}
+
+	public static class AppearanceBlockContainerPanel extends AppearanceBlockPanel {
+		private static final long serialVersionUID = 8497162844923811394L;
+	
+		AppearanceBlockContainerPanel(SaveGameData data, SaveGameData.Appearances.BlockContainer appearanceBlockContainer, int index) {
+			super(data, appearanceBlockContainer==null ? null : appearanceBlockContainer.appearanceBlock, index);
+		}
+		
+		public static String generateTitle(SaveGameData.Appearances.BlockContainer data, int index) {
+			return ""+(index+1)+": "+generateTitle(data);
+		}
+		public static String generateTitle(SaveGameData.Appearances.BlockContainer data) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Appearance");
+			if (data==null) sb.append(" <null>");
+			else {
+				if (data.id_VFd!=null) sb.append("\"").append(data.id_VFd).append("\"");
+				addValuesToTitle(data.appearanceBlock, sb);
+			}
+			return sb.toString();
+		}
+		
+	}
+
+	public static class AppearanceBlockPanel extends SaveGameViewTabPanel {
+		private static final long serialVersionUID = -7367567415965481666L;
+	
+		private static class Array_SMP_ColumnID extends TableView.VerySimpleTable.ColumnID<String> {
+			public Array_SMP_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<String, Integer, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		private static class Array_Aak_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_Aak> {
+			public Array_Aak_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Appearances.Block.Object_Aak, Integer, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		private static class Array_T1_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_T1> {
+			public Array_T1_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Appearances.Block.Object_T1, Integer, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		private static class Array_gsg_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_gsg> {
+			public Array_gsg_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Appearances.Block.Object_gsg, Integer, Object> getValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+			}
+		}
+		
+		public static String generateTitle(SaveGameData.Appearances.Block block, int index) {
+			return ""+(index+1)+": "+generateTitle(block);
+		}
+		public static String generateTitle(SaveGameData.Appearances.Block block) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Appearance");
+			addValuesToTitle(block, sb);
+			return sb.toString();
+		}
+		public static void addValuesToTitle(SaveGameData.Appearances.Block block, StringBuilder sb) {
+			if (block==null) sb.append(" <null>");
+			else {
+				if (block.index >=0   ) sb.append(String.format("[%d]", block.index+1));
+				if (block.height!=null) sb.append(String.format(Locale.ENGLISH, "   height:%1.2f", block.height));
+			}
+		}
+		
+		private final SaveGameData.Appearances.Block block;
+		private TableView.VerySimpleTable<String> array_SMP_Table;
+		private TableView.VerySimpleTable<SaveGameData.Appearances.Block.Object_Aak> array_Aak_Table;
+		private TableView.VerySimpleTable<SaveGameData.Appearances.Block.Object_T1>  array_T1_Table;
+		private TableView.VerySimpleTable<SaveGameData.Appearances.Block.Object_gsg> array_gsg_Table;
+	
+		AppearanceBlockPanel(SaveGameData data, SaveGameData.Appearances.Block block, int index) {
+			super(data);
+			setLayout(new GridBagLayout());
+			this.block = block;
+			
+			//setBorder(BorderFactory.createTitledBorder(generateTitle(appearanceBlock)));
+			
+			Vector<String>     array_SMP  = this.block==null ? null : this.block.array_SMP;
+			Vector<SaveGameData.Appearances.Block.Object_Aak> colors_Aak = this.block==null ? null : this.block.colors_Aak;
+			Vector<SaveGameData.Appearances.Block.Object_T1>  styles_T1  = this.block==null ? null : this.block.styles_T1;
+			Vector<SaveGameData.Appearances.Block.Object_gsg> array_gsg  = this.block==null ? null : this.block.array_gsg;
+			
+			array_SMP_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.array_SMP ", array_SMP , new Array_SMP_ColumnID[] {
+					new Array_SMP_ColumnID("#"           , Integer.class, 20,-1, 30, 30, (str,i)->i+1),
+					new Array_SMP_ColumnID("Component ID",  String.class, 20,-1,250,250, (str,i)->str)
+			});
+			array_Aak_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", colors_Aak, new Array_Aak_ColumnID[] {
+					new Array_Aak_ColumnID("#1"   ,    Integer.class, 20,-1, 30, 30, (v,i)->i+1),
+					new Array_Aak_ColumnID("#2"   ,    Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
+					new Array_Aak_ColumnID("Label",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.label_RVl),
+					new Array_Aak_ColumnID("Type" ,     String.class, 20,-1, 80, 80, (v,i)->v==null ? null : v.type_Ty),
+					new Array_Aak_ColumnID("Color",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.color_xEg==null ? "<null>" : v.color_xEg.toString(" %1.2f ")),
+					new Array_Aak_ColumnID("Color", NamedColor.class, 20,-1,100,100, (v,i)->v==null ? null : v.itemColor),
+			});
+			array_T1_Table  = new TableView.VerySimpleTable<>("AppearanceBlockPanel.styles_T1" , styles_T1 , new Array_T1_ColumnID [] {
+					new Array_T1_ColumnID("#1"   , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
+					new Array_T1_ColumnID("#2"   , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
+					new Array_T1_ColumnID("Item" ,  String.class, 20,-1,100,100, (v,i)->v==null ? null : v.item_6c),
+					new Array_T1_ColumnID("Style",  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.style_Cv),
+			});
+			array_gsg_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", array_gsg , new Array_gsg_ColumnID[] {
+					new Array_gsg_ColumnID("#1"    , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
+					new Array_gsg_ColumnID("#2"    , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
+					new Array_gsg_ColumnID("ID"    ,  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.id_tIm),
+					new Array_gsg_ColumnID("Height",  String.class, 20,-1, 60, 60, (v,i)->v==null ? null : String.format(Locale.ENGLISH, "%1.5f", v.height)),
+			});
+			array_SMP_Table.computePreferredScrollableViewportSize(-1, computeHeight(array_SMP ));
+			array_Aak_Table.computePreferredScrollableViewportSize(-1, computeHeight(colors_Aak));
+			array_T1_Table .computePreferredScrollableViewportSize(-1, computeHeight(styles_T1 ));
+			array_gsg_Table.computePreferredScrollableViewportSize(-1, computeHeight(array_gsg ));
+			array_Aak_Table.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
+			
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.weightx = 1;
+			c.weighty = 1;
+			add(createLabeledScrollPane("Components" + (isEmpty(array_SMP ) ? " (empty)" : ""), array_SMP_Table),c);
+			add(createLabeledScrollPane("Colors"     + (isEmpty(colors_Aak) ? " (empty)" : ""), array_Aak_Table),c);
+			add(createLabeledScrollPane("Styles"     + (isEmpty(styles_T1 ) ? " (empty)" : ""), array_T1_Table ),c);
+			add(createLabeledScrollPane("Sizes"      + (isEmpty(array_gsg ) ? " (empty)" : ""), array_gsg_Table),c);
+		}
+	
+		private int computeHeight(Vector<?> array) {
+			if (isEmpty(array)) return 50;
+			return 120;
+		}
+		private boolean isEmpty(Vector<?> vec) {
+			return vec==null || vec.isEmpty();
+		}
+		
+		@Override
+		public void updateContent() {
+			array_SMP_Table.getModel_SimplifiedTableModel().fireTableUpdate();
+			array_Aak_Table.getModel_SimplifiedTableModel().fireTableUpdate();
+			array_T1_Table .getModel_SimplifiedTableModel().fireTableUpdate();
+			array_gsg_Table.getModel_SimplifiedTableModel().fireTableUpdate();
+		}
 	}
 
 	public static class VisitedSystemsPanel extends VerySimpleTableTabPanel<SaveGameData.VisitedSystems.VisitedSystem> {
@@ -1150,8 +1150,9 @@ public class SimplePanels {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
-		private final VerySimpleTable<Companion> techsTable;
-		private final VerySimpleTable<Companion> productsTable;
+		private final VerySimpleTable<Companion> companionsTable;
+		private final VerySimpleTable<Companion> eggsTable;
+		private final SaveGameViewTabGroupingPanel equipmentPanel;
 
 		public CompanionsPanel(SaveGameData data) {
 			super(data);
@@ -1188,37 +1189,74 @@ public class SimplePanels {
 				new CompanionColumnID("Coords(IEo)"    , Coordinates.class, 20,-1,120,120, c->c.unknownCoords_IEo),
 			};
 			
-			JPanel tablePanel = new JPanel(new GridLayout(0,1));
+			JPanel tablePanel = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			c.weightx = 1; c.weighty = 1; c.gridwidth = 1; c.gridheight = 1; c.gridx = 0; c.gridy = 0;
 			if (data.companions!=null) {
-				techsTable    = addTable(tablePanel, "Companions", data.companions.companions, blueprintColumns);
-				productsTable = addTable(tablePanel, "Eggs"      , data.companions.eggs      , blueprintColumns);
+				companionsTable = addTable(tablePanel, c, "Companions", data.companions.companions, blueprintColumns);
+				eggsTable       = addTable(tablePanel, c, "Eggs"      , data.companions.eggs      , blueprintColumns);
+				if (data.companions.equipment!=null) {
+					equipmentPanel = new SaveGameViewTabGroupingPanel(
+							data, data.companions.equipment,
+							AppearanceBlockContainerArrayPanel::new, // TODO: generateTitle for each BlockContainer
+							SaveGameData.Companions::generateLabelForEquipment
+					);
+					equipmentPanel.setBorder(BorderFactory.createTitledBorder("Companion Equipment"));
+					add(equipmentPanel,BorderLayout.CENTER);
+				} else
+					equipmentPanel = null;
 			} else {
-				techsTable   = null;
-				productsTable= null;
+				companionsTable = null;
+				eggsTable       = null;
+				equipmentPanel  = null;
 			}
-			add(tablePanel,BorderLayout.CENTER);
+			add(tablePanel,BorderLayout.NORTH);
 		}
 		
 		@Override
 		public void updateContent() {
-			if (techsTable   !=null) techsTable   .getModel_SimplifiedTableModel().fireTableUpdate();
-			if (productsTable!=null) productsTable.getModel_SimplifiedTableModel().fireTableUpdate();
+			if (companionsTable!=null) companionsTable.getModel_SimplifiedTableModel().fireTableUpdate();
+			if (eggsTable      !=null) eggsTable      .getModel_SimplifiedTableModel().fireTableUpdate();
+			if (equipmentPanel !=null) equipmentPanel.updateContent();
 		}
 		
-		private VerySimpleTable<SaveGameData.Companions.Companion> addTable(JPanel tablePanel, String label, SaveGameData.Companions.Companion[] data, CompanionColumnID[] columns) {
+		private VerySimpleTable<SaveGameData.Companions.Companion> addTable(JPanel tablePanel, GridBagConstraints c, String label, SaveGameData.Companions.Companion[] data, CompanionColumnID[] columns) {
 			VerySimpleTable<SaveGameData.Companions.Companion> table = null;
 			if (data==null)
-				tablePanel.add(createLabeledScrollPane(label, new JLabel()));
+				tablePanel.add(createLabeledScrollPane(label+" <null>", new JLabel()),c);
 			else {
 				table = new VerySimpleTable<>(label+" Table",true,SaveViewer.DEBUG,true,data,columns);
-				tablePanel.add(createLabeledScrollPane(label, table));
+				table.computePreferredScrollableViewportSize(800,130);
+				tablePanel.add(createLabeledScrollPane(label, table),c);
 			}
+			c.gridy++;
 			return table;
 		}
-		private JScrollPane createLabeledScrollPane(String label, Component view) {
-			JScrollPane scrollPane = new JScrollPane(view);
-			scrollPane.setBorder(BorderFactory.createTitledBorder(label));
-			return scrollPane;
+	}
+
+	public static class AppearancesPanel extends SaveGameViewTabGroupingPanel {
+		private static final long serialVersionUID = 1495283607483088597L;
+		public AppearancesPanel(SaveGameData data) {
+			super(data);
+			if (data.appearances.playerPresets!=null)
+				addPanel("Player Presets",
+					new SaveGameViewPanelGroupingPanel(
+							data, false, true,
+							data.appearances.playerPresets,
+							AppearanceBlockPanel         ::new,
+							SaveGameData.Appearances::generateLabelForPreset
+					)
+				);
+			if (data.appearances.currentSets!=null)
+				addPanel("Current Sets (Player/Vehicles)",
+					new SaveGameViewPanelGroupingPanel(
+							data, false, true,
+							data.appearances.currentSets,
+							AppearanceBlockContainerPanel::new,
+							SaveGameData.Appearances::generateLabelForCurrentSet
+					)
+				);
 		}
 	}
 

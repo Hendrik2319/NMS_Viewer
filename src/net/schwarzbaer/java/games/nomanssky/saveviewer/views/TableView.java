@@ -354,15 +354,13 @@ public class TableView {
 			return tableModel;
 		}
 		
-		public VerySimpleTable<DataType> computePreferredScrollableViewportSize(int height) {
+		public VerySimpleTable<DataType> computePreferredScrollableViewportSize(int maxWidth, int maxHeight) {
 			//SimplifiedTableModel<?> model = this.getModel_SimplifiedTableModel();
 			//int width = model==null ? 200 : model.getSumOfPrefColumnWidths()+30;
 			//setPreferredScrollableViewportSize(new Dimension(width, height));
 			Dimension size = new Dimension(getPreferredSize());
-			if (size.height>height) {
-				//size.width += 25;
-				size.height = height;
-			}
+			if (maxWidth >0 && size.width >maxWidth ) size.width  = maxWidth ;
+			if (maxHeight>0 && size.height>maxHeight) size.height = maxHeight;
 			setPreferredScrollableViewportSize(size);
 			return this;
 		}
