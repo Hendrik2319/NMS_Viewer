@@ -83,7 +83,7 @@ public class Images {
 	
 	public NamedColor[] colorValues;
 	private final HashMap<Integer,NamedColor> colorMap; 
-	private final Vector<ColorListListender> colorListListenders;
+	private final Vector<ColorListListender_> colorListListenders;
 	private boolean wasInitialized;
 	
 	public Images() {
@@ -250,7 +250,7 @@ public class Images {
 	}
 	
 	private void addColor(Vector<NamedColor> colorValuesVec, int value, String name) {
-		if (name==null) name=String.format("[%d]%06X", colorValuesVec.size()+1, value);
+		if (name==null || name.isEmpty()) name=String.format("[%d]%06X", colorValuesVec.size()+1, value);
 		addColor(colorValuesVec, new NamedColor(value,name));
 	}
 
@@ -261,25 +261,32 @@ public class Images {
 	
 	private boolean addColor(int value, String name) {
 		if (colorMap.containsKey(value)) return false;
-		if (name.isEmpty()) name = String.format("%06X", value);
 		NamedColor namedColor = new NamedColor(value,name);
 		colorMap.put(value, namedColor);
 		colorValues = Arrays.copyOf(colorValues, colorValues.length+1);
 		colorValues[colorValues.length-1] = namedColor;
-		for (ColorListListender ccl:colorListListenders)
+		for (ColorListListender_ ccl:colorListListenders)
 			ccl.colorAdded(namedColor);
 		return true;
 	}
 	
-	public static interface ColorListListender {
-		public void colorAdded(NamedColor color);
+	private void setNameOfColor(NamedColor color, String name) {
+		if (color==null) return;
+		color.setName(name);
+		for (ColorListListender_ ccl:colorListListenders)
+			ccl.colorChanged(color);
 	}
 	
-	public void addColorListListender(ColorListListender cll) {
+	public static interface ColorListListender_ {
+		public void colorAdded(NamedColor color);
+		public void colorChanged(NamedColor color);
+	}
+	
+	public void addColorListListender(ColorListListender_ cll) {
 		colorListListenders.add(cll);
 	}
 	
-	public void removeColorListListender(ColorListListender cll) {
+	public void removeColorListListender(ColorListListender_ cll) {
 		colorListListenders.remove(cll);
 	}
 	
@@ -820,7 +827,10 @@ public class Images {
 			this.value = value;
 			this.alpha = alpha;
 			this.color = new Color(value);
-			this.name = name;
+			setName(name);
+		}
+		public void setName(String name) {
+			this.name = name==null || name.isEmpty() ? name = String.format("%06X", value) : name;
 		}
 
 		@Override
@@ -1375,6 +1385,9 @@ public class Images {
 			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
+			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue, BiConsumer<NamedColor, Object> setValue) {
+				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue, setValue);
+			}
 		}
 
 		private static class ColorUsingIDColumnID extends TableView.VerySimpleTable.ColumnID<ColorUsingID> {
@@ -1395,6 +1408,13 @@ public class Images {
 		private final NamedColorColumnID[] colorListColumns;
 		private final ColorUsingIDColumnID[] usageViewColumns;
 		
+		private static void setNameOfColor(NamedColor nc, Object value) {
+			String name = value==null ? null : value.toString();
+			Images images = Images.getInstance();
+			images.setNameOfColor(nc, name);
+			images.saveColorsToFile();
+		}
+		
 		public ColorListDialog(Window parent, String title) {
 			super(parent, title);
 			
@@ -1404,7 +1424,7 @@ public class Images {
 			
 			colorListColumns = new NamedColorColumnID[] {
 				new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
-				new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name),
+				new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name, ColorListDialog::setNameOfColor),
 				new NamedColorColumnID("Used" , ColorUsage.class,  20,-1,130,130, nc->colorUsage.get(nc.value)),
 			};
 			usageViewColumns = new ColorUsingIDColumnID[] {

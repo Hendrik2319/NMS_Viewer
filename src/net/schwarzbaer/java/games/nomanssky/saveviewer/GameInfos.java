@@ -1661,8 +1661,10 @@ public class GameInfos {
 			Gui.NamedColorListMenu colorListMenu_ImageBG     = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_UpgradeIcon = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_Group       = new Gui.NamedColorListMenu("Background of selected", colors, null, setImageBG);
-			Images.getInstance().addColorListListender(new Images.ColorListListender() {
-				@Override public void colorAdded(NamedColor color) {
+			Images.getInstance().addColorListListender(new Images.ColorListListender_() {
+				@Override public void colorAdded  (NamedColor color) { updateColors(); }
+				@Override public void colorChanged(NamedColor color) { updateColors(); }
+				private void updateColors() {
 					NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colorValues);
 					colorListMenu_Std        .updateValues(colors);
 					colorListMenu_Image      .updateValues(colors);
@@ -1977,9 +1979,12 @@ public class GameInfos {
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
 					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(Images.getInstance().colorValues));
-			Images.getInstance().addColorListListender(new Images.ColorListListender() {
+			Images.getInstance().addColorListListender(new Images.ColorListListender_() {
 				@Override public void colorAdded(NamedColor color) {
-					colorCellEditor.addValue(color);
+					colorCellEditor.setValues(Images.getInstance().colorValues);
+				}
+				@Override public void colorChanged(NamedColor color) {
+					colorCellEditor.setValues(Images.getInstance().colorValues);
 				}
 			});
 			
@@ -2100,6 +2105,11 @@ public class GameInfos {
 				this.sourceIdMap = sourceIdMap;
 				updateIdList();
 				updateNumberOfLabledIDs();
+				
+				Images.getInstance().addColorListListender(new Images.ColorListListender_() {
+					@Override public void colorChanged(NamedColor color) { updateTableColumn(GeneralizedIDColumnID.ImgBG); }
+					@Override public void colorAdded(NamedColor color) {}
+				});
 			}
 
 			public void updateTableRowsRemoved(Vector<Integer> deletedRows) {
@@ -2288,7 +2298,7 @@ public class GameInfos {
 		private boolean wasIdTemplateAdded;
 		private boolean showAlphaImage;
 	
-		private final Images.ColorListListender colorListListender;
+		private final Images.ColorListListender_ colorListListender;
 		private final ImageListListener imageListListender;
 
 		private final JTextField txtfldLabel;
@@ -2365,9 +2375,12 @@ public class GameInfos {
 				idDataChanged();
 			});
 			
-			colorListListender = new Images.ColorListListender() {
+			colorListListender = new Images.ColorListListender_() {
 				@Override public void colorAdded(Images.NamedColor color) {
 					cmbbxBgColor.addItem(color);
+					cmbbxBgColor.revalidate();
+				}
+				@Override public void colorChanged(NamedColor color) {
 					cmbbxBgColor.revalidate();
 				}
 			};
@@ -2388,7 +2401,7 @@ public class GameInfos {
 			c.insets = new Insets(1, 0, 1, 0);
 			
 			JButton selectImageButton = createButton("Select Image",e->showImageList(cmbbxBgImage));
-			JButton    addColorButton = createButton("Add Color"   ,e->Images.getInstance().showAddColorDialog(EditIdDialog.this,"Add Color"));
+			JButton    addColorButton = createButton("Add Color"   ,e->Images.getInstance().showAddColorDialog(this,"Add Color"));
 			
 			addComp(cmbbxPanel,c,textareaScrollPane,1,1,GridBagConstraints.REMAINDER,1, GridBagConstraints.BOTH);
 			

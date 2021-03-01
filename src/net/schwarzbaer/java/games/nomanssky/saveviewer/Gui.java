@@ -82,7 +82,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {
 
-	public enum ToolbarIcons { EmptyDoc, Open, Save, SaveAs, Reload, Close, ComputePortalGlyphs, Cut, Copy, Paste, Delete }
+	public enum ToolbarIcons { EmptyDoc, Open, Save, SaveAs, Reload, Close, ComputePortalGlyphs, Cut, Copy, Paste, Delete, ColorEdit }
 	public static CachedIcons<ToolbarIcons> toolbarIS;
 	
 	static void loadToolbarIcons() {

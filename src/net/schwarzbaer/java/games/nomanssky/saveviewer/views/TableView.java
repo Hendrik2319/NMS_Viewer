@@ -428,20 +428,48 @@ public class TableView {
 			@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
 				if (rowIndex<0 || rowIndex>=getRowCount()) return null;
 				DataType value = getValue(rowIndex);
-				return value == null ? null : columnID.getValue.apply(value,rowIndex);
+				return value==null || columnID.getValue==null ? null : columnID.getValue.apply(value,rowIndex);
 			}
+			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
+				return columnID.setValue!=null;
+			}
+			@Override protected void setValueAt(Object newValue, int rowIndex, int columnIndex, ColumnID<DataType> columnID) {
+				if (rowIndex<0 || rowIndex>=getRowCount()) return;
+				DataType value = getValue(rowIndex);
+				if (value!=null && columnID.setValue!=null) 
+					columnID.setValue.setValue(value, rowIndex, newValue);
+			}
+			
 		}
 		
 		public static class ColumnID<DataType> extends Tables.SimplifiedColumnConfig implements Tables.SimplifiedColumnIDInterface {
 			
-			private BiFunction<DataType, Integer, Object> getValue;
+			private final BiFunction<DataType, Integer, Object> getValue;
+			private final SetValue<DataType> setValue;
 
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<DataType,Object> getValue) {
-				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, (d,i)->getValue.apply(d));
+				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue==null ? null : (d,i)->getValue.apply(d));
+			}
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<DataType,Object> getValue, BiConsumer<DataType, Object> setValue) {
+				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue==null ? null : (d,i)->getValue.apply(d), setValue);
+			}
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<DataType,Object> getValue, SetValue<DataType> setValue) {
+				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue==null ? null : (d,i)->getValue.apply(d), setValue);
 			}
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<DataType, Integer, Object> getValue) {
+				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue, (SetValue<DataType>)null);
+			}
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<DataType, Integer, Object> getValue, BiConsumer<DataType, Object> setValue) {
+				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue, setValue==null ? null :  (row,i,v)->setValue.accept(row, v));
+			}
+			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<DataType, Integer, Object> getValue, SetValue<DataType> setValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 				this.getValue = getValue;
+				this.setValue = setValue;
+			}
+			
+			public interface SetValue<DataType> {
+				void setValue(DataType row, int index, Object newValue);
 			}
 
 			@Override public SimplifiedColumnConfig getColumnConfig() {

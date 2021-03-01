@@ -1146,7 +1146,7 @@ public class SaveViewer implements ActionListener {
 			toolsMenu.add(createMenuItem("Find New Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.FindNewExtraImages,true));
 			toolsMenu.add(createMenuItem("Show Extra Images"    , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
 			toolsMenu.addSeparator();
-			toolsMenu.add(createMenuItem("Edit Item Background Colors", Gui.ToolbarIcons.EmptyDoc, ActionCommand.EditItemBackgroundColors,true));
+			toolsMenu.add(createMenuItem("Edit Item Background Colors", Gui.ToolbarIcons.ColorEdit, ActionCommand.EditItemBackgroundColors,true));
 			toolsMenu.addSeparator();
 			toolsMenu.add(createMenuItem("Recipe Analyser"     , Gui.ToolbarIcons.Open, ActionCommand.OpenRecipeAnalyser,true));
 			toolsMenu.add(createMenuItem("Production Optimiser", Gui.ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
