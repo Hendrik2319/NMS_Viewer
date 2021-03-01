@@ -356,7 +356,7 @@ public class SaveGameData {
 	}
 	
 	private static Vector<UniverseAddress> parseUniverseAddressStructureArray(String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
-		return parseObjectArray(SaveGameData::parseUniverseAddressStructure, sourceLabel, data, path);
+		return parseObjectArray(v->parseUniverseAddressStructure(v), sourceLabel, data, path);
 	}
 	@SuppressWarnings("unused")
 	private static Vector<UniverseAddress> parseUniverseAddressFieldArray(String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
@@ -382,6 +382,18 @@ public class SaveGameData {
 			return parseObject.apply(objectValue);
 		}, sourceLabel, data, path);
 	}
+	
+	private static <ValueType> Vector<ValueType> parseObjectArray(BiFunction<JSON_Object<NVExtra,VExtra>,Integer,ValueType> parseObject, String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
+		return parseObjectArray(parseObject, sourceLabel, false, data, path);
+	}
+	private static <ValueType> Vector<ValueType> parseObjectArray(BiFunction<JSON_Object<NVExtra,VExtra>,Integer,ValueType> parseObject, String sourceLabel, boolean isOptional, JSON_Object<NVExtra,VExtra> data, Object... path) {
+		return parseArray((value,index)->{
+			JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
+			if (objectValue==null) return null;
+			return parseObject.apply(objectValue,index);
+		}, sourceLabel, data, path);
+	}
+	
 	@SuppressWarnings("unused")
 	private static Vector<Long> parseIntegerArray(String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return parseArray(SaveGameData::getInteger, sourceLabel, data, path);
@@ -389,6 +401,7 @@ public class SaveGameData {
 	private static Vector<String> parseStringArray(String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return parseArray(SaveGameData::getString, sourceLabel, data, path);
 	}
+	
 	private static <ValueType> Vector<ValueType> parseArray(Function<Value<NVExtra,VExtra>,ValueType> parseValue, String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return parseArray((value,i)->parseValue.apply(value), sourceLabel, data, path);
 	}
@@ -1980,7 +1993,7 @@ public class SaveGameData {
 			companions = parseCompanionArray("Companions", arrCompanions);
 			eggs       = parseCompanionArray("CompanionEggs",arrCompanionEggs);
 			isUnlocked = parseBoolArray("UnlockedCompanionSlots",arrUnlockedCompanionSlots);
-			equipment = parseArray(Appearances.BlockCArray::parse, "PlayerStateData.[??? j30]", true, data.json_data, "PlayerStateData","[??? j30]");
+			equipment = parseObjectArray(Appearances.BlockCArray::new, "PlayerStateData.[??? j30]", true, data.json_data, "PlayerStateData","[??? j30]");
 		}
 		
 		public boolean isEmpty() {
@@ -2108,8 +2121,8 @@ public class SaveGameData {
 		public final Vector<BlockContainer> currentSets;
 		
 		Appearances(SaveGameData data) {
-			playerPresets = parseArray(Appearances.Block::parse_arrayItem, "PlayerStateData.[??? cf5]", true, data.json_data, "PlayerStateData","[??? cf5]");
-			currentSets   = parseArray(Appearances.BlockContainer::parse, "PlayerStateData.[??? l:j]", data.json_data, "PlayerStateData","[??? l:j]");
+			playerPresets = parseObjectArray(Appearances.Block::new, "PlayerStateData.[??? cf5]", true, data.json_data, "PlayerStateData","[??? cf5]");
+			currentSets   = parseObjectArray(Appearances.BlockContainer::new, "PlayerStateData.[??? l:j]", data.json_data, "PlayerStateData","[??? l:j]");
 			
 			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_cf5", playerPresets);
 			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_lj" , currentSets  );
@@ -2182,32 +2195,19 @@ public class SaveGameData {
 			public final Vector<Object_gsg> array_gsg;
 			public final Double height;
 		
-			private Block(JSON_Object<NVExtra, VExtra> object, int index) {
+			Block(JSON_Object<NVExtra, VExtra> object, int index) {
 				this.index = index;
-				if (object==null) throw new IllegalArgumentException("new AppearanceBlock(<null>) is not allowed");
-				array_SMP  = parseStringArray("AppearanceBlock.[??? SMP]", object, "[??? SMP]");
-				colors_Aak = parseArray(Object_Aak::parse, "AppearanceBlock.Aak", object, "[??? Aak]");
-				styles_T1  = parseArray(Object_T1 ::parse, "AppearanceBlock.T1" , object, "[??? T>1]");
-				array_gsg  = parseArray(Object_gsg::parse, "AppearanceBlock.gsg" , object, "[??? gsg]");
+				if (object==null) throw new IllegalArgumentException("new Appearance.Block(<null>) is not allowed");
+				array_SMP  = parseStringArray("Appearance.Block.[??? SMP]", object, "[??? SMP]");
+				colors_Aak = parseObjectArray(Object_Aak::new, "Appearance.Block.Aak", object, "[??? Aak]");
+				styles_T1  = parseObjectArray(Object_T1 ::new, "Appearance.Block.T1" , object, "[??? T>1]");
+				array_gsg  = parseObjectArray(Object_gsg::new, "Appearance.Block.gsg", object, "[??? gsg]");
 				height = getFloatValue(object, "[Height]");
-				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "array_SMP" , array_SMP );
-				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "colors_Aak", colors_Aak);
-				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "styles_T1" , styles_T1 );
-				if (DEBUG_LOG_VALUES) logArray("AppearanceBlock", "array_gsg" , array_gsg );
-				if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock", "height = %s", height);
-			}
-			
-			public static Block parse_arrayItem(Value<NVExtra, VExtra> value, int index) {
-				//globalOptionalValues.scan(value,"AppearanceBlock");
-				JSON_Object<NVExtra, VExtra> object = getObject(value);
-				if (object==null) return null;
-				return new Block(object,index);
-			}
-			public static Block parse(JSON_Object<NVExtra, VExtra> object, Object... path) {
-				JSON_Object<NVExtra, VExtra> block = getObjectValue(object, path);
-				//globalOptionalValues.scan(block,"AppearanceBlock<Object>");
-				if (block==null) return null;
-				return new Block(block,-1);
+				if (DEBUG_LOG_VALUES) logArray("Appearance.Block", "array_SMP" , array_SMP );
+				if (DEBUG_LOG_VALUES) logArray("Appearance.Block", "colors_Aak", colors_Aak);
+				if (DEBUG_LOG_VALUES) logArray("Appearance.Block", "styles_T1" , styles_T1 );
+				if (DEBUG_LOG_VALUES) logArray("Appearance.Block", "array_gsg" , array_gsg );
+				if (DEBUG_LOG_VALUES) globalUnknownValues.add("Appearance.Block", "height = %s", height);
 			}
 			
 			public static class Object_Aak {
@@ -2249,12 +2249,6 @@ public class SaveGameData {
 					String colorName = sb.toString();
 					return colorName;
 				}
-		
-				static Object_Aak parse(Value<NVExtra, VExtra> value, int index) {
-					JSON_Object<NVExtra, VExtra> object = getObject(value);
-					if (object==null) return null;
-					return new Object_Aak(object,index);
-				}
 			}
 			
 			public static class Object_T1 {
@@ -2269,12 +2263,6 @@ public class SaveGameData {
 					style_Cv = getStringValue(object, "[??? =Cv]");
 					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_T1", "item_6c  = \"%s\"", item_6c );
 					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_T1", "style_Cv = \"%s\"", style_Cv);
-				}
-		
-				static Object_T1 parse(Value<NVExtra, VExtra> value, int index) {
-					JSON_Object<NVExtra, VExtra> object = getObject(value);
-					if (object==null) return null;
-					return new Object_T1(object,index);
 				}
 			}
 			
@@ -2291,12 +2279,6 @@ public class SaveGameData {
 					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_gsg", "id_tIm = \"%s\"", id_tIm);
 					if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlock.Object_gsg", "height = \"%s\"", height);
 				}
-		
-				static Object_gsg parse(Value<NVExtra, VExtra> value, int index) {
-					JSON_Object<NVExtra, VExtra> object = getObject(value);
-					if (object==null) return null;
-					return new Object_gsg(object,index);
-				}
 			}
 			
 		}
@@ -2307,17 +2289,12 @@ public class SaveGameData {
 			public final String id_VFd;
 			public final Block block;
 		
-			public BlockContainer(JSON_Object<NVExtra, VExtra> object, int index) {
+			BlockContainer(JSON_Object<NVExtra, VExtra> object, int index) {
 				this.index = index;
 				id_VFd = getStringValue(object, "[??? VFd ID?]");
-				block = Block.parse(object, "[??? wnR]");
+				JSON_Object<NVExtra, VExtra> blockObj = getObjectValue(object, "[??? wnR]");
+				block = blockObj==null ? null : new Block(blockObj,-1);
 				if (DEBUG_LOG_VALUES) globalUnknownValues.add("AppearanceBlockContainer", "id_VFd = \"%s\"", id_VFd);
-			}
-		
-			private static BlockContainer parse(Value<NVExtra, VExtra> value, int index) {
-				JSON_Object<NVExtra, VExtra> object = getObject(value);
-				if (object==null) return null;
-				return new BlockContainer(object,index);
 			}
 		}
 	
@@ -2328,14 +2305,8 @@ public class SaveGameData {
 		
 			public BlockCArray(JSON_Object<NVExtra, VExtra> object, int index) {
 				this.index = index;
-				data = parseArray(BlockContainer::parse, "AppearanceBlockContainerArray.Data", object, "Data");
+				data = parseObjectArray(BlockContainer::new, "AppearanceBlockContainerArray.Data", object, "Data");
 				if (DEBUG_LOG_VALUES) logArray("AppearanceBlockContainerArray", "data", data);
-			}
-		
-			private static BlockCArray parse(Value<NVExtra, VExtra> value, int index) {
-				JSON_Object<NVExtra, VExtra> object = getObject(value);
-				if (object==null) return null;
-				return new BlockCArray(object,index);
 			}
 		}
 	}
