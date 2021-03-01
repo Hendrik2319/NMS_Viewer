@@ -3298,25 +3298,17 @@ public class SaveGameData {
 		public static class StoredInteraction {
 			
 			private static Vector<StoredInteraction> parse(SaveGameData data) {
-				return parseArray(StoredInteraction::new, "PlayerStateData.StoredInteractions", data.json_data,"PlayerStateData","StoredInteractions");
+				return parseObjectArray(StoredInteraction::new, "PlayerStateData.StoredInteractions", data.json_data,"PlayerStateData","StoredInteractions");
 			}
 
 			public final int index;
 			public final Long intXf4;
 			public final Vector<Interaction> interactions;
 			
-			public StoredInteraction(Value<NVExtra,VExtra> value, int index) {
+			public StoredInteraction(JSON_Object<NVExtra,VExtra> objectValue, int index) {
 				this.index = index;
-				
-				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
-				if (objectValue==null) {
-					intXf4 = null;
-					interactions = null;
-					return;
-				}
-				
 				intXf4 = getIntegerValue(objectValue, "[??? Xf4]");
-				interactions = parseArray(Interaction::new, "PlayerStateData.StoredInteractions[].Interactions", objectValue,"Interactions");
+				interactions = parseObjectArray(Interaction::new, "PlayerStateData.StoredInteractions[].Interactions", objectValue,"Interactions");
 			}
 			
 			public static class Interaction implements AddressdableObject {
@@ -3327,18 +3319,8 @@ public class SaveGameData {
 				public final Coordinates position;
 				public final PolarCoordinates gpsCoords;
 				
-				public Interaction(Value<NVExtra,VExtra> rawValue, int index) {
+				public Interaction(JSON_Object<NVExtra,VExtra> objectValue, int index) {
 					this.index = index;
-					
-					JSON_Object<NVExtra,VExtra> objectValue = getObject(rawValue);
-					if (objectValue==null) {
-						galacticAddress = null;
-						value           = null;
-						position        = null;
-						gpsCoords       = null;
-						return;
-					}
-					
 					galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
 					value           = getIntegerValue(objectValue, "Value");
 					position        = Coordinates.parse(objectValue, "Position");
