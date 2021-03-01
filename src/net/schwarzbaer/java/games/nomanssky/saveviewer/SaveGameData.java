@@ -3324,67 +3324,57 @@ public class SaveGameData {
 			}
 		}
 
-		public static class StoredInteraction implements AddressdableObject {
+		public static class StoredInteraction {
 			
-			public int groupIndex;
-			public int interactionIndex;
-			public UniverseAddress galacticAddress;
-			public Long value;
-			public Coordinates position;
-			public PolarCoordinates gpsCoords;
-			
-			public StoredInteraction() {
-				this.groupIndex = -1; // TODO: restore array hierarchy: StoredInteractions[] -> Interactions[]
-				this.interactionIndex = -1;
-				this.galacticAddress = null;
-				this.value = null;
-				this.position = null;
-				this.gpsCoords = null;
-			}
-			
-			@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
-
 			private static Vector<StoredInteraction> parse(SaveGameData data) {
-				JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.json_data,"PlayerStateData","StoredInteractions");
-				if (arrayValue==null) return null;
-				Vector<Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
+				return parseArray(StoredInteraction::new, "PlayerStateData.StoredInteractions", data.json_data,"PlayerStateData","StoredInteractions");
+			}
+
+			public final int index;
+			public final Long intXf4;
+			public final Vector<Interaction> interactions;
+			
+			public StoredInteraction(Value<NVExtra,VExtra> value, int index) {
+				this.index = index;
 				
-				Vector<StoredInteraction> storedInteractions = new Vector<StoredInteraction>();
-				for (int i=0; i<arrayValue.size(); ++i) {
-					Value<NVExtra,VExtra> value = arrayValue.get(i);
-					JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
-					if (objectValue==null) {
-						notParsableObjects.add(value);
-						continue;
-					}
-					
-					JSON_Array<NVExtra,VExtra> interactions = getArrayValue(objectValue,"Interactions");
-					if (interactions==null) continue;
-					
-					for (int j=0; j<interactions.size(); ++j) {
-						Value<NVExtra,VExtra> interactionValue = interactions.get(j);
-						JSON_Object<NVExtra,VExtra> interaction = getObject(interactionValue);
-						if (interaction==null) {
-							notParsableObjects.add(interactionValue);
-							continue;
-						}
-						StoredInteraction si = new StoredInteraction();
-						si.groupIndex       = i;
-						si.interactionIndex = j;
-						si.galacticAddress  = parseUniverseAddressField(interaction, "GalacticAddress");
-						si.value            = getIntegerValue(interaction, "Value");
-						si.position         = Coordinates.parse(interaction, "Position");
-						si.gpsCoords        = PolarCoordinates.parse(si.position);
-						// TODO: add "Xf4"
-						
-						storedInteractions.add(si);
-					}
+				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
+				if (objectValue==null) {
+					intXf4 = null;
+					interactions = null;
+					return;
 				}
 				
-				if (!notParsableObjects.isEmpty())
-					SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable StoredInteractions.");
+				intXf4 = getIntegerValue(objectValue, "[??? Xf4]");
+				interactions = parseArray(Interaction::new, "PlayerStateData.StoredInteractions[].Interactions", objectValue,"Interactions");
+			}
+			
+			public static class Interaction implements AddressdableObject {
 				
-				return storedInteractions;
+				public final int index;
+				public final UniverseAddress galacticAddress;
+				public final Long value;
+				public final Coordinates position;
+				public final PolarCoordinates gpsCoords;
+				
+				public Interaction(Value<NVExtra,VExtra> rawValue, int index) {
+					this.index = index;
+					
+					JSON_Object<NVExtra,VExtra> objectValue = getObject(rawValue);
+					if (objectValue==null) {
+						galacticAddress = null;
+						value           = null;
+						position        = null;
+						gpsCoords       = null;
+						return;
+					}
+					
+					galacticAddress = parseUniverseAddressField(objectValue, "GalacticAddress");
+					value           = getIntegerValue(objectValue, "Value");
+					position        = Coordinates.parse(objectValue, "Position");
+					gpsCoords       = PolarCoordinates.parse(position);
+				}
+				
+				@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
 			}
 		}
 

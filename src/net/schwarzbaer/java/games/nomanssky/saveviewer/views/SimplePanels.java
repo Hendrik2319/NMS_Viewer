@@ -59,8 +59,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjAppearance;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject.BaseObjColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Companions.Companion;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
@@ -241,23 +239,23 @@ public class SimplePanels {
 		private static final long serialVersionUID = -9113552065575773276L;
 		protected VerySimpleTable<DataType> table;
 	
-		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, DataType[] tableData, TableView.VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new TableView.VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
+		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, DataType[] tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
+			this(data, tableName, new VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
 		}
-		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, Vector<DataType> tableData, TableView.VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new TableView.VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
+		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, Vector<DataType> tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
+			this(data, tableName, new VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
 		}
-		public VerySimpleTableTabPanel(SaveGameData data, String tableName, DataType[] tableData, TableView.VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new TableView.VerySimpleTable<DataType>(tableName, tableData, tableColumns));
+		public VerySimpleTableTabPanel(SaveGameData data, String tableName, DataType[] tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
+			this(data, tableName, new VerySimpleTable<DataType>(tableName, tableData, tableColumns));
 		}
-		public VerySimpleTableTabPanel(SaveGameData data, String tableName, Vector<DataType> tableData, TableView.VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new TableView.VerySimpleTable<DataType>(tableName, tableData, tableColumns));
+		public VerySimpleTableTabPanel(SaveGameData data, String tableName, Vector<DataType> tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
+			this(data, tableName, new VerySimpleTable<DataType>(tableName, tableData, tableColumns));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
-			this(data, tableName, new TableView.VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter));
+			this(data, tableName, new VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName) {
-			this(data, tableName, new TableView.VerySimpleTable<DataType>(tableName));
+			this(data, tableName, new VerySimpleTable<DataType>(tableName));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, VerySimpleTable<DataType> table) {
 			super(data);
@@ -265,7 +263,7 @@ public class SimplePanels {
 			JScrollPane tableScrollPane = new JScrollPane(table);
 			add(tableScrollPane,BorderLayout.CENTER);
 		}
-		public void setData(Vector<DataType> tableData, TableView.VerySimpleTable.ColumnID<DataType>[] tableColumns) {
+		public void setData(Vector<DataType> tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
 			table.setData(tableData, tableColumns);
 		}
 	}
@@ -350,7 +348,7 @@ public class SimplePanels {
 	public static class FrigatesPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 1017824861605442560L;
 		
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Frigate> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.Frigate> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Frigate, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -561,7 +559,7 @@ public class SimplePanels {
 		
 		private JTextArea textArea;
 		
-		private static class MissionTaskColumnID extends TableView.VerySimpleTable.ColumnID<FrigateMissionTask> {
+		private static class MissionTaskColumnID extends VerySimpleTable.ColumnID<FrigateMissionTask> {
 			public MissionTaskColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<FrigateMissionTask, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -570,7 +568,7 @@ public class SimplePanels {
 			}
 		}
 		
-		private static class MissionColumnID extends TableView.VerySimpleTable.ColumnID<FrigateMission> {
+		private static class MissionColumnID extends VerySimpleTable.ColumnID<FrigateMission> {
 			public MissionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<FrigateMission, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -711,7 +709,7 @@ public class SimplePanels {
 			new MarkAddressesAddOn().setData(this.data.discoveryData.availableData).addTo(table, universePanel, this.data.universe);
 		}
 		
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.DiscoveryData.AvailableData> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.DiscoveryData.AvailableData> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.DiscoveryData.AvailableData, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -741,7 +739,7 @@ public class SimplePanels {
 			new MarkAddressesAddOn().setData(this.data.discoveryData.storeData).addTo(table, universePanel, this.data.universe);
 		}
 		
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.DiscoveryData.StoreData> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.DiscoveryData.StoreData> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.DiscoveryData.StoreData, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -767,7 +765,7 @@ public class SimplePanels {
 			new MarkAddressesAddOn().setData(this.data.teleportEndpoints).addTo(table, universePanel, this.data.universe);
 		}
 		
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.TeleportEndpoints> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.TeleportEndpoints> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.TeleportEndpoints, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -797,7 +795,7 @@ public class SimplePanels {
 				);
 			}
 			
-			private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.DATA_Wu_.Data> {
+			private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.DATA_Wu_.Data> {
 				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.DATA_Wu_.Data, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
@@ -816,7 +814,7 @@ public class SimplePanels {
 				);
 			}
 			
-			private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.DATA_EQt.Data> {
+			private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.DATA_EQt.Data> {
 				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.DATA_EQt.Data, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
@@ -836,32 +834,65 @@ public class SimplePanels {
 				);
 			}
 			
-			private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.DATA_m4I.Data> {
+			private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.DATA_m4I.Data> {
 				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.DATA_m4I.Data, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
 			}
 		}
 
-		private static class StoredInteractionsPanel extends VerySimpleTableTabPanel<SaveGameData.ExperimentalData.StoredInteraction> {
+		private static class StoredInteractionsPanel extends SaveGameViewTabPanel {
 			private static final long serialVersionUID = 1017824861605442560L;
 		
 			public StoredInteractionsPanel(SaveGameData data, UniversePanel universePanel) {
-				super(data,"StoredInteractionsTable",true,SaveViewer.DEBUG,true,data.experimentalData.storedInteractions,
-					new ColumnID[] {
-						new ColumnID("G"               , String.class,  35,-1, 35, 35, si->si.groupIndex),
-						new ColumnID("I"               , String.class,  35,-1, 35, 35, si->si.interactionIndex),
-						new ColumnID("GalacticAddress" , String.class,  80,-1,400,400, si->si.galacticAddress==null ? "" : si.galacticAddress.getVerboseNameInOneLine(data.universe,2)),
-						new ColumnID("Value"           , String.class,  65,-1,100,100, si->si.value          ==null ? "" : String.format("[0x%04X] %d", si.value, si.value) ),
-						new ColumnID("GPS Coords"      , String.class, 150,-1,250,250, si->si.gpsCoords      ==null ? "" : si.gpsCoords.toString()),
-						new ColumnID("Position"        , String.class, 150,-1,250,250, si->si.position       ==null ? "" : si.position.toString(" %1.2f ")),
+				super(data);
+				
+				VerySimpleTable<SaveGameData.ExperimentalData.StoredInteraction> storedIntTable;
+				VerySimpleTable<SaveGameData.ExperimentalData.StoredInteraction.Interaction> intTable;
+				
+				InteractionColumnID[] intTableColumnIDs = new InteractionColumnID[] {
+					new InteractionColumnID("#"               , Integer.class,  35,-1, 35, 35, i->i.index),
+					new InteractionColumnID("GalacticAddress" ,  String.class,  80,-1,400,400, i->i.galacticAddress==null ? "" : i.galacticAddress.getVerboseNameInOneLine(data.universe,2)),
+					new InteractionColumnID("Value"           ,  String.class,  65,-1,100,100, i->i.value          ==null ? "" : String.format("[0x%04X] %d", i.value, i.value) ),
+					new InteractionColumnID("GPS Coords"      ,  String.class, 150,-1,250,250, i->i.gpsCoords      ==null ? "" : i.gpsCoords.toString()),
+					new InteractionColumnID("Position"        ,  String.class, 150,-1,250,250, i->i.position       ==null ? "" : i.position.toString(" %1.2f ")),
+				};
+				
+				intTable = new VerySimpleTable<SaveGameData.ExperimentalData.StoredInteraction.Interaction>(
+					"Table[StoredInteraction.Interactions]",true,SaveViewer.DEBUG,true
+				);
+				
+				storedIntTable = new VerySimpleTable<SaveGameData.ExperimentalData.StoredInteraction>(
+					"Table[StoredInteractions]",true,SaveViewer.DEBUG,true,
+					data.experimentalData.storedInteractions,
+					new StoredInteractionColumnID[] {
+						new StoredInteractionColumnID("#"           , Integer.class,  20,-1, 35, 35, si->si.index),
+						new StoredInteractionColumnID("(int)Xf4"    , Integer.class,  20,-1, 50, 50, si->si.intXf4),
+						new StoredInteractionColumnID("interactions", Integer.class,  20,-1, 70, 70, si->si.interactions==null ? 0 : si.interactions.size()),
 					}
 				);
-				new MarkAddressesAddOn().setData(this.data.experimentalData.storedInteractions).addTo(table, universePanel, this.data.universe);
+				storedIntTable.computePreferredScrollableViewportSize(200,800);
+				storedIntTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+				
+				MarkAddressesAddOn markAddressesAddOn = new MarkAddressesAddOn().addTo(intTable, universePanel, this.data.universe);
+				storedIntTable.addSelectionListener((si,index)->{
+					Vector<SaveGameData.ExperimentalData.StoredInteraction.Interaction> interactions = si==null ? null : si.interactions;
+					intTable.setData(interactions, intTableColumnIDs);
+					markAddressesAddOn.setData(interactions);
+				});
+				
+				add(createLabeledScrollPane("Interactions"      , intTable      ), BorderLayout.CENTER);
+				add(createLabeledScrollPane("StoredInteractions", storedIntTable), BorderLayout.WEST);
 			}
 			
-			private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.StoredInteraction> {
-				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.StoredInteraction, Object> getValue) {
+			private static class StoredInteractionColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.StoredInteraction> {
+				public StoredInteractionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.StoredInteraction, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+			}
+			
+			private static class InteractionColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.StoredInteraction.Interaction> {
+				public InteractionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.StoredInteraction.Interaction, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
 			}
@@ -870,7 +901,7 @@ public class SimplePanels {
 		private static class MarkerStackPanel extends VerySimpleTableTabPanel<SaveGameData.ExperimentalData.MarkerStack.Marker> {
 			private static final long serialVersionUID = -2754433276487371566L;
 			
-			private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MarkerStack.Marker> {
+			private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MarkerStack.Marker> {
 				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.MarkerStack.Marker, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
@@ -897,7 +928,7 @@ public class SimplePanels {
 		private static class MissionProgressPanel extends SaveGameViewTabPanel {
 			private static final long serialVersionUID = -5481267548249025769L;
 			
-			private static class MissionColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Mission> {
+			private static class MissionColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Mission> {
 				public MissionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.MissionProgress.Mission, Integer, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
@@ -906,7 +937,7 @@ public class SimplePanels {
 				}
 			}
 			
-			private static class ParticipantColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Participant> {
+			private static class ParticipantColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Participant> {
 				public ParticipantColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.MissionProgress.Participant, Integer, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
@@ -1008,22 +1039,22 @@ public class SimplePanels {
 	public static class AppearanceBlockPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -7367567415965481666L;
 	
-		private static class Array_SMP_ColumnID extends TableView.VerySimpleTable.ColumnID<String> {
+		private static class Array_SMP_ColumnID extends VerySimpleTable.ColumnID<String> {
 			public Array_SMP_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<String, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
-		private static class Array_Aak_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_Aak> {
+		private static class Array_Aak_ColumnID extends VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_Aak> {
 			public Array_Aak_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Appearances.Block.Object_Aak, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
-		private static class Array_T1_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_T1> {
+		private static class Array_T1_ColumnID extends VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_T1> {
 			public Array_T1_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Appearances.Block.Object_T1, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
-		private static class Array_gsg_ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_gsg> {
+		private static class Array_gsg_ColumnID extends VerySimpleTable.ColumnID<SaveGameData.Appearances.Block.Object_gsg> {
 			public Array_gsg_ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Appearances.Block.Object_gsg, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -1047,10 +1078,10 @@ public class SimplePanels {
 		}
 		
 		private final SaveGameData.Appearances.Block block;
-		private TableView.VerySimpleTable<String> array_SMP_Table;
-		private TableView.VerySimpleTable<SaveGameData.Appearances.Block.Object_Aak> array_Aak_Table;
-		private TableView.VerySimpleTable<SaveGameData.Appearances.Block.Object_T1>  array_T1_Table;
-		private TableView.VerySimpleTable<SaveGameData.Appearances.Block.Object_gsg> array_gsg_Table;
+		private VerySimpleTable<String> array_SMP_Table;
+		private VerySimpleTable<SaveGameData.Appearances.Block.Object_Aak> array_Aak_Table;
+		private VerySimpleTable<SaveGameData.Appearances.Block.Object_T1>  array_T1_Table;
+		private VerySimpleTable<SaveGameData.Appearances.Block.Object_gsg> array_gsg_Table;
 	
 		AppearanceBlockPanel(SaveGameData data, SaveGameData.Appearances.Block block, int index) {
 			super(data);
@@ -1064,11 +1095,11 @@ public class SimplePanels {
 			Vector<SaveGameData.Appearances.Block.Object_T1>  styles_T1  = this.block==null ? null : this.block.styles_T1;
 			Vector<SaveGameData.Appearances.Block.Object_gsg> array_gsg  = this.block==null ? null : this.block.array_gsg;
 			
-			array_SMP_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.array_SMP ", array_SMP , new Array_SMP_ColumnID[] {
+			array_SMP_Table = new VerySimpleTable<>("AppearanceBlockPanel.array_SMP ", array_SMP , new Array_SMP_ColumnID[] {
 					new Array_SMP_ColumnID("#"           , Integer.class, 20,-1, 30, 30, (str,i)->i+1),
 					new Array_SMP_ColumnID("Component ID",  String.class, 20,-1,250,250, (str,i)->str)
 			});
-			array_Aak_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", colors_Aak, new Array_Aak_ColumnID[] {
+			array_Aak_Table = new VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", colors_Aak, new Array_Aak_ColumnID[] {
 					new Array_Aak_ColumnID("#1"   ,    Integer.class, 20,-1, 30, 30, (v,i)->i+1),
 					new Array_Aak_ColumnID("#2"   ,    Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
 					new Array_Aak_ColumnID("Label",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.label_RVl),
@@ -1076,13 +1107,13 @@ public class SimplePanels {
 					new Array_Aak_ColumnID("Color",     String.class, 20,-1,140,140, (v,i)->v==null ? null : v.color_xEg==null ? "<null>" : v.color_xEg.toString(" %1.2f ")),
 					new Array_Aak_ColumnID("Color", NamedColor.class, 20,-1,100,100, (v,i)->v==null ? null : v.itemColor),
 			});
-			array_T1_Table  = new TableView.VerySimpleTable<>("AppearanceBlockPanel.styles_T1" , styles_T1 , new Array_T1_ColumnID [] {
+			array_T1_Table  = new VerySimpleTable<>("AppearanceBlockPanel.styles_T1" , styles_T1 , new Array_T1_ColumnID [] {
 					new Array_T1_ColumnID("#1"   , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
 					new Array_T1_ColumnID("#2"   , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
 					new Array_T1_ColumnID("Item" ,  String.class, 20,-1,100,100, (v,i)->v==null ? null : v.item_6c),
 					new Array_T1_ColumnID("Style",  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.style_Cv),
 			});
-			array_gsg_Table = new TableView.VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", array_gsg , new Array_gsg_ColumnID[] {
+			array_gsg_Table = new VerySimpleTable<>("AppearanceBlockPanel.colors_Aak", array_gsg , new Array_gsg_ColumnID[] {
 					new Array_gsg_ColumnID("#1"    , Integer.class, 20,-1, 30, 30, (v,i)->i+1),
 					new Array_gsg_ColumnID("#2"    , Integer.class, 20,-1, 30, 30, (v,i)->v==null ? null : v.index+1),
 					new Array_gsg_ColumnID("ID"    ,  String.class, 20,-1, 90, 90, (v,i)->v==null ? null : v.id_tIm),
@@ -1124,7 +1155,7 @@ public class SimplePanels {
 	public static class VisitedSystemsPanel extends VerySimpleTableTabPanel<SaveGameData.VisitedSystems.VisitedSystem> {
 		private static final long serialVersionUID = -3829006848316518198L;
 
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.VisitedSystems.VisitedSystem> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.VisitedSystems.VisitedSystem> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.VisitedSystems.VisitedSystem, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -1145,7 +1176,7 @@ public class SimplePanels {
 	public static class CompanionsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 1816950969983315262L;
 
-		private static class CompanionColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.Companions.Companion> {
+		private static class CompanionColumnID extends VerySimpleTable.ColumnID<SaveGameData.Companions.Companion> {
 			public CompanionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.Companions.Companion, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -1266,12 +1297,12 @@ public class SimplePanels {
 	public static class AllBlueprintsPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = 3973411381549824254L;
 
-		private static class BlueprintColumnID extends TableView.VerySimpleTable.ColumnID<GeneralizedID> {
+		private static class BlueprintColumnID extends VerySimpleTable.ColumnID<GeneralizedID> {
 			public BlueprintColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<GeneralizedID, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
 		}
-		private static class RecipeColumnID extends TableView.VerySimpleTable.ColumnID<String> {
+		private static class RecipeColumnID extends VerySimpleTable.ColumnID<String> {
 			public RecipeColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<String, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -1329,7 +1360,7 @@ public class SimplePanels {
 	public static class AtlasStationAdressDataPanel extends SaveGameViewTabPanel {
 		private static final long serialVersionUID = -3518416131249623285L;
 		
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<SaveGameData.UniverseAddress> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.UniverseAddress> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.UniverseAddress, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
@@ -1392,12 +1423,12 @@ public class SimplePanels {
 			setText(id!=null ? id.getName() : objectID!=null ? objectID : "" );
 		}
 
-		public void set(BaseObjColor color) {
+		public void set(BuildingObject.BaseObjColor color) {
 			setIcon(color==null ? null : BaseObjColorIconsIS.getCachedIcon(color));
 			setText(color==null ? "" : color.label);
 		}
 
-		public void set(BaseObjAppearance appearance) {
+		public void set(BuildingObject.BaseObjAppearance appearance) {
 			setIcon(appearance==null ? null : BaseObjAppearanceIconsIS.getCachedIcon(appearance));
 			setText(appearance==null ? "" : appearance.label);
 		}
@@ -1409,7 +1440,7 @@ public class SimplePanels {
 		private Window mainWindow;
 		private Long addressToHighlight;
 		
-		private static class ColumnID extends TableView.VerySimpleTable.ColumnID<UnboundBuildingObject> {
+		private static class ColumnID extends VerySimpleTable.ColumnID<UnboundBuildingObject> {
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<UnboundBuildingObject, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
