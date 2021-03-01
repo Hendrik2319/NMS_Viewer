@@ -307,14 +307,18 @@ public class TableView {
 		@Override
 		protected boolean isNewClass(Class<?> columnClass) {
 			return
-				(columnClass == TimeStamp         .class) ||
-				(columnClass == GeneralizedID.Type.class);
+				(columnClass == TimeStamp                        .class) ||
+				(columnClass == GeneralizedID.Type               .class) ||
+				(columnClass == Images.NamedColor                .class) ||
+				(columnClass == Images.ColorListDialog.ColorUsage.class);
 		}
 
 		@Override
 		protected Comparator<Integer> addComparatorForNewClass(Comparator<Integer> comparator, SortOrder sortOrder, int column) {
-			if      (model.getColumnClass(column) == TimeStamp         .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(TimeStamp         )model.getValueAt(row,column));
-			else if (model.getColumnClass(column) == GeneralizedID.Type.class) comparator = addComparator(comparator,sortOrder,(Integer row)->(GeneralizedID.Type)model.getValueAt(row,column));
+			if      (model.getColumnClass(column) == TimeStamp                        .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(TimeStamp                        )model.getValueAt(row,column));
+			else if (model.getColumnClass(column) == GeneralizedID.Type               .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(GeneralizedID.Type               )model.getValueAt(row,column));
+			else if (model.getColumnClass(column) == Images.NamedColor                .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Images.NamedColor                )model.getValueAt(row,column));
+			else if (model.getColumnClass(column) == Images.ColorListDialog.ColorUsage.class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Images.ColorListDialog.ColorUsage)model.getValueAt(row,column));
 			return comparator;
 		}
 	}

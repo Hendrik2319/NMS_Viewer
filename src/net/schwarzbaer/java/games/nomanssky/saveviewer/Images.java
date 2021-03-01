@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -813,7 +814,7 @@ public class Images {
 		return image;
 	}
 
-	public static class NamedColor {
+	public static class NamedColor implements Comparable<NamedColor>{
 	
 		public final int value;
 		public final Double alpha;
@@ -833,6 +834,28 @@ public class Images {
 			this.name = name==null || name.isEmpty() ? name = String.format("%06X", value) : name;
 		}
 
+		@Override
+		public int compareTo(NamedColor other) {
+			if (other==null) return -1;
+			if (this.value!=other.value) return this.value-other.value;
+			
+			int cmp;
+			cmp = compare(this.alpha,other.alpha,(d1,d2)->Double.compare(d1,d2));
+			if (cmp!=0) return cmp;
+			
+			cmp = compare(this.name,other.name,String::compareTo);
+			if (cmp!=0) return cmp;
+			
+			return 0;
+		}
+		
+		private static <ValueType> int compare(ValueType v1, ValueType v2, BiFunction<ValueType,ValueType,Integer> compareNonNulls) {
+			if (v1!=null && v2!=null) return compareNonNulls.apply(v1, v2);
+			if (v1!=null) return -1;
+			if (v2!=null) return +1;
+			return 0;
+		}
+		
 		@Override
 		public String toString() {
 			return String.format(Locale.ENGLISH, "Color( %06X, %s, \"%s\" )", value, alpha, name);
@@ -1440,7 +1463,7 @@ public class Images {
 			disabler.setCareFor(Action.values());
 			
 			selected = null;
-			colorList = new TableView.VerySimpleTable<NamedColor>("ColorListDialog.NamedColorTable", true, true, false);
+			colorList = new TableView.VerySimpleTable<NamedColor>("ColorListDialog.NamedColorTable", true, true, true);
 			colorList.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
 			colorList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			int colorListPrefWidth = NamedColorColumnID.getSumOfPrefWidths(colorListColumns);
@@ -1450,7 +1473,7 @@ public class Images {
 			JScrollPane similarityViewScrollPane = new JScrollPane(similarityView);
 			
 //			JTextArea usageView = new JTextArea();
-			TableView.VerySimpleTable<ColorUsingID> usageView = new TableView.VerySimpleTable<ColorUsingID>("ColorListDialog.ColorUsingIDTable", true, true, false);
+			TableView.VerySimpleTable<ColorUsingID> usageView = new TableView.VerySimpleTable<ColorUsingID>("ColorListDialog.ColorUsingIDTable", true, true, true);
 			usageView.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			int usageViewPrefWidth = ColorUsingIDColumnID.getSumOfPrefWidths(usageViewColumns);
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
@@ -1472,32 +1495,30 @@ public class Images {
 			JLabel sortOrderOutput;
 			
 			ButtonGroup bg = new ButtonGroup();
-			JPanel contentPane = new JPanel(new GridBagLayout());
+			JPanel northPanel = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
 			
 			c.gridy = 0; c.gridwidth = 1; c.gridheight = 1; c.weighty = 0;  
-			c.gridx = 0; c.weightx = 0; contentPane.add(new JLabel("Sorted by: "),c);
-			c.gridx = 1; c.weightx = 0; contentPane.add(sortOrderOutput = new JLabel(""),c);
+			c.gridx = 0; c.weightx = 0; northPanel.add(new JLabel("Sorted by: "),c);
+			c.gridx = 1; c.weightx = 0; northPanel.add(sortOrderOutput = new JLabel(""),c);
 			c.gridx = 2; c.weightx = 1; c.gridwidth = 2; c.gridheight = 3;
-			contentPane.add(similarityViewScrollPane, c);
+			northPanel.add(similarityViewScrollPane, c);
 			
 			c.gridy = 0;
 			c.gridx = 0; c.weightx = 0; c.gridwidth = 2; c.gridheight = 1; 
-			c.gridy++; contentPane.add(sortBySimilarityBtn = Gui.createToggleButton("Sort by Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->{
+			c.gridy++; northPanel.add(sortBySimilarityBtn = Gui.createToggleButton("Sort by Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->{
 				String str = sortBySimilarity(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
 			}),c);
-			c.gridy++; contentPane.add(Gui.createToggleButton("Standard Order", bg , disabler, Action.SetDefaultOrder, true, true, e->{
+			c.gridy++; northPanel.add(Gui.createToggleButton("Standard Order", bg , disabler, Action.SetDefaultOrder, true, true, e->{
 				String str = setDefaultOrder(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
 			}),c);
 			
-			c.gridy++;
-			c.gridx = 0; c.weightx = 0; c.gridwidth = 2; c.gridheight = 1; c.weighty = 1;
-			contentPane.add(colorListScrollPane,c);
-			c.gridx = 2; c.weightx = 1; c.gridwidth = 1;
-			contentPane.add(usageViewScrollPane, c);
-			c.gridx = 3; c.weightx = 0;
-			contentPane.add(imagePanel, c);
+			JPanel contentPane = new JPanel(new BorderLayout());
+			contentPane.add(northPanel, BorderLayout.NORTH);
+			contentPane.add(colorListScrollPane, BorderLayout.WEST);
+			contentPane.add(usageViewScrollPane, BorderLayout.CENTER);
+			contentPane.add(imagePanel, BorderLayout.EAST);
 			
 			colorList.addSelectionListener((nc,i)->{
 				selected = nc;
@@ -1602,7 +1623,7 @@ public class Images {
 			}
 		}
 		
-		private static class ColorUsage {
+		public static class ColorUsage implements Comparable<ColorUsage>{
 			enum IDType { Product, Substance, Tech }
 
 			private final EnumMap<IDType,Vector<GeneralizedID>> ids;
@@ -1615,6 +1636,21 @@ public class Images {
 				total = 0;
 			}
 			
+			@Override
+			public int compareTo(ColorUsage other) {
+				if (other==null) return -1;
+				if (this.total!=other.total) return other.total-this.total;
+				for (IDType idType:IDType.values()) {
+					Vector<GeneralizedID>  thisIDs = this .ids.get(idType);
+					Vector<GeneralizedID> otherIDs = other.ids.get(idType);
+					int  thisN =  thisIDs==null ? 0 :  thisIDs.size();
+					int otherN = otherIDs==null ? 0 : otherIDs.size();
+					if (thisN!=otherN) return otherN-thisN;
+				}
+				if (this.obsoleteIDs!=other.obsoleteIDs) return this.obsoleteIDs-other.obsoleteIDs;
+				return 0;
+			}
+
 			private Vector<ColorUsingID> createVector() {
 				Vector<ColorUsingID> vector = new Vector<>();
 				forEachIdList((idType,vec)->Collections.addAll(vector, vec.stream().map(id->new ColorUsingID(idType,id)).toArray(ColorUsingID[]::new)));

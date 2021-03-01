@@ -1671,7 +1671,7 @@ public class SaveGameData {
 			inventories.chests = new Inventory[10];
 			for (int i=0; i<inventories.chests.length; ++i)
 				inventories.chests[i] = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-			inventories.magicChest        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" );
+			inventories.magicChest        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" ); // TODO: determine real names of Magic Chests
 			inventories.magicChest2       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
 			if (hasValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"))
 				inventories.ingredientStorage = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
@@ -1681,6 +1681,8 @@ public class SaveGameData {
 		
 		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
+			// TODO: rework Inventory parsing: support more cases, read more values, prevent unread arrays
+			// TODO: read ChestLayouts
 			
 			Inventory inventory = new Inventory(inventoryLabel);
 			inventory.substanceMaxStorageMultiplier = getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
@@ -1789,6 +1791,7 @@ public class SaveGameData {
 						slot.damageFactor = getFloatValue  (slotObj, "DamageFactor");
 						slot.indexX       = getIntegerValue(slotObj, "Index","X");
 						slot.indexY       = getIntegerValue(slotObj, "Index","Y");
+						slot.unknownBool  = getBoolValue_optional(slotObj, "[??? b76 InventorySlot Bool:true]");
 						
 						if (slot.typeStr!=null) {
 							switch(slot.typeStr) {
@@ -1901,6 +1904,7 @@ public class SaveGameData {
 				public enum SlotType { Product, Technology, Substance }
 		
 				public final static class Slot {
+					public Boolean unknownBool;
 					public Long indexX;
 					public Long indexY;
 					public String idStr;
@@ -2104,7 +2108,7 @@ public class SaveGameData {
 		public final Vector<BlockContainer> currentSets;
 		
 		Appearances(SaveGameData data) {
-			playerPresets = parseArray(Appearances.Block::parse_arrayItem, "PlayerStateData.[??? cf5]", data.json_data, "PlayerStateData","[??? cf5]");
+			playerPresets = parseArray(Appearances.Block::parse_arrayItem, "PlayerStateData.[??? cf5]", true, data.json_data, "PlayerStateData","[??? cf5]");
 			currentSets   = parseArray(Appearances.BlockContainer::parse, "PlayerStateData.[??? l:j]", data.json_data, "PlayerStateData","[??? l:j]");
 			
 			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_cf5", playerPresets);
@@ -3330,7 +3334,7 @@ public class SaveGameData {
 			public PolarCoordinates gpsCoords;
 			
 			public StoredInteraction() {
-				this.groupIndex = -1;
+				this.groupIndex = -1; // TODO: restore array hierarchy: StoredInteractions[] -> Interactions[]
 				this.interactionIndex = -1;
 				this.galacticAddress = null;
 				this.value = null;
@@ -3371,6 +3375,7 @@ public class SaveGameData {
 						si.value            = getIntegerValue(interaction, "Value");
 						si.position         = Coordinates.parse(interaction, "Position");
 						si.gpsCoords        = PolarCoordinates.parse(si.position);
+						// TODO: add "Xf4"
 						
 						storedInteractions.add(si);
 					}
@@ -3404,7 +3409,7 @@ public class SaveGameData {
 				return parseObjectArray(Mission::new, (mission,objectValue)->{
 					mission.Mission      = getStringValue (objectValue, "Mission");
 					mission.Progress     = getIntegerValue(objectValue, "Progress");
-					mission.Seed         = getIntegerValue(objectValue, "Seed");
+					mission.Seed         = parseHexFormatedNumber(objectValue, "Seed");
 					mission.Data         = getIntegerValue(objectValue, "Data");
 					mission.Participants = parseObjectArray(Participant::new, (participant,objectValue2)->{
 						participant.UA               = parseUniverseAddressField(objectValue2, "UA");
