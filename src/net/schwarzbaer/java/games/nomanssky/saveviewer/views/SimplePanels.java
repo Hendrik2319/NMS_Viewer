@@ -795,7 +795,7 @@ public class SimplePanels {
 				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.Data_wyZ, Object> getValue) {
 					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 				}
-				public ColumnID(MaintenanceInteractionsTablePanel.ColumnID columnID) { super(columnID, item->item.data_YC); }
+				public ColumnID(VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MaintenanceInteraction> columnID) { super(columnID, item->item.data_YC); }
 			}
 			
 			static final ColumnID[] columns = new ColumnID[] {
