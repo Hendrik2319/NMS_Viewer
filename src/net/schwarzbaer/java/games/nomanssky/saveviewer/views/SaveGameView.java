@@ -105,7 +105,7 @@ public class SaveGameView extends JPanel {
 			
 			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data));
 			
-			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data,universePanel);
+			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data,mainWindow,universePanel);
 			if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data,universePanel));
 			rawDataPanel.addPanel("Atlas Stations",new SimplePanels.AtlasStationAdressDataPanel(data,universePanel));
 			

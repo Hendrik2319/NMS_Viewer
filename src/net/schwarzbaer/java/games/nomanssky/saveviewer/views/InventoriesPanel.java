@@ -166,7 +166,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		}	
 	}
 
-	private final static class InventoryPanel extends JPanel implements Updatable, ActionListener {
+	final static class InventoryPanel extends JPanel implements Updatable, ActionListener {
 		private static final long serialVersionUID = 8549406812793642121L;
 		
 		private Inventory inventory;

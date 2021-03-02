@@ -451,6 +451,17 @@ public class TableView {
 			private final BiFunction<DataType, Integer, Object> getValue;
 			private final SetValue<DataType> setValue;
 
+			public <OtherDataType> ColumnID(ColumnID<OtherDataType> other, Function<DataType,OtherDataType> get) {
+				super(other);
+				getValue = other.getValue==null ? null : (d,i) -> {
+					OtherDataType o = d==null ? null : get.apply(d);
+					return o==null ? null : other.getValue.apply(o,i);
+				};
+				setValue = other.setValue==null ? null : (d,i,v)->{
+					OtherDataType o = d==null ? null : get.apply(d);
+					if (o!=null) other.setValue.setValue(o,i,v);
+				};
+			}
 			public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<DataType,Object> getValue) {
 				this(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue==null ? null : (d,i)->getValue.apply(d));
 			}

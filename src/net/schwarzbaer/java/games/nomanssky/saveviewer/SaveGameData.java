@@ -174,7 +174,7 @@ public class SaveGameData {
 	static class OptionalValues extends JSON_Helper.OptionalValues<NVExtra,VExtra> {
 		private static final long serialVersionUID = 1738184173309879079L;
 		
-		void scan(JSON_Object<NVExtra, VExtra> data, Object... path) {
+		void scanStructure(JSON_Object<NVExtra, VExtra> data, Object... path) {
 			scan(getSubNode(data,path), toString(path));
 		}
 
@@ -1692,12 +1692,11 @@ public class SaveGameData {
 					label = String.format("\"%s\" [%s]", name, label);
 				
 				Vector<String> unknown_values = new Vector<>(); // unknown_values 
-				if (unknown_OGV_active!=null || unknown_qVG_int1!=null || unknown_jl__int2!=null) {
-					if (unknown_OGV_active!=null) unknown_values.add(unknown_OGV_active.toString());
-					if (unknown_qVG_int1  !=null) unknown_values.add(unknown_qVG_int1  .toString());
-					if (unknown_jl__int2  !=null) unknown_values.add(unknown_jl__int2  .toString());
+				if (unknown_OGV_active!=null) unknown_values.add(unknown_OGV_active.toString());
+				if (unknown_qVG_int1  !=null) unknown_values.add(unknown_qVG_int1  .toString());
+				if (unknown_jl__int2  !=null) unknown_values.add(unknown_jl__int2  .toString());
+				if (!unknown_values.isEmpty())
 					label += " <"+String.join(",", unknown_values)+">";
-				}
 				
 				inventory = Inventories.parse(data, getObjectValue(obj, "Store"), getObjectValue(obj, "[??? CA4]"), label, sourcePath+".Store");
 				if (inventory!=null)
@@ -1830,7 +1829,7 @@ public class SaveGameData {
 				validSlots = arrValidSlotIndices == null ? null : arrValidSlotIndices.size();
 				slots = parseSlots(source, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
 				
-				baseStatValues = parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
+				baseStatValues = parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"));
 				
 				inventoryLayout = inventoryLayoutData==null ? null : new Inventory.InventoryLayout(inventoryLayoutData);
 				
@@ -1921,7 +1920,7 @@ public class SaveGameData {
 				return slots;
 			}
 
-			private BaseStatValue[] parseBaseStatValues(JSON_Array<NVExtra,VExtra> valueArray, String inventoryLabel, String inventorySourcePath) {
+			private BaseStatValue[] parseBaseStatValues(JSON_Array<NVExtra,VExtra> valueArray) {
 				if (valueArray==null) return null;
 				
 				BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
@@ -3272,6 +3271,9 @@ public class SaveGameData {
 		public DATA_Wu_ data_Wu_ = null;
 		public DATA_EQt data_EQt = null;
 		public DATA_m4I data_m4I = null;
+		public Vector<MaintenanceInteraction> maintenanceInteractions;
+		public Vector<MaintenanceInteraction> array_VhC;
+		public Vector<Data_wyZ>               array_wyZ;
 
 		public ExperimentalData(SaveGameData data) {
 			this.data = data;
@@ -3287,9 +3289,57 @@ public class SaveGameData {
 			data_EQt = new DATA_EQt(); data_EQt.parse(data);
 			data_m4I = new DATA_m4I(); data_m4I.parse(data);
 			
-			//globalOptionalValues.scan(data.json_data,"PlayerStateData","[??? j30]");
-			//globalOptionalValues.scan(data.json_data,"PlayerStateData","[??? cf5]");
-			//globalOptionalValues.scan(data.json_data,"PlayerStateData","[??? l:j]");
+			maintenanceInteractions = parseObjectArray((o,i)->new MaintenanceInteraction(o,i, data, "MaintInt"     , "PlayerStateData.MaintenanceInteractions"), "PlayerStateData.MaintenanceInteractions", data.json_data,"PlayerStateData","MaintenanceInteractions");
+			array_VhC               = parseObjectArray((o,i)->new MaintenanceInteraction(o,i, data, "MaintInt(VhC)", "PlayerStateData.[??? VhC]"              ), "PlayerStateData.[??? VhC]"              , data.json_data,"PlayerStateData","[??? VhC]");
+			array_wyZ               = parseObjectArray((o,i)->new Data_wyZ(o,i,data), "PlayerStateData.[??? wyZ]", data.json_data,"PlayerStateData","[??? wyZ]");
+			
+			//globalOptionalValues.scanStructure(data.json_data,"PlayerStateData","MaintenanceInteractions");
+			//globalOptionalValues.scanStructure(data.json_data,"PlayerStateData","[??? VhC]");
+			//globalOptionalValues.scanStructure(data.json_data,"PlayerStateData","[??? wyZ]");
+		}
+		
+		public static class Data_wyZ {
+			
+			public final int index;
+			public final Long inventoryType;
+			public final Long x_WX8;
+			public final Long y_WX8;
+			public final MaintenanceInteraction data_YC;
+
+			Data_wyZ(JSON_Object<NVExtra,VExtra> object, int index, SaveGameData source) {
+				this.index = index;
+				JSON_Object<NVExtra, VExtra> data_YC_obj;
+				inventoryType = getIntegerValue(object, "InventoryType");
+				x_WX8         = getIntegerValue(object, "[??? WX8]", "X");
+				y_WX8         = getIntegerValue(object, "[??? WX8]", "Y");
+				data_YC_obj   = getObjectValue (object, "[??? ;YC]");
+				data_YC = data_YC_obj == null ? null : new MaintenanceInteraction(data_YC_obj, -1, source, "Data_wyZ["+index+"] -> [??? ;YC]", "PlayerStateData.[??? wyZ]["+index+"].[??? ;YC]");
+			}
+			
+		}
+
+		public static class MaintenanceInteraction {
+			
+			public final int index;
+			public final TimeStamp lastUpdateTimestamp;
+			public final TimeStamp timestamp_FML;
+			public final TimeStamp timestamp_eyv;
+			public final Vector<Double> damageTimers;
+			public final Long flags;
+			public final Inventory inventoryContainer;
+
+			MaintenanceInteraction(JSON_Object<NVExtra,VExtra> object, int index, SaveGameData source, String label, String sourcePath) {
+				this.index = index;
+				//globalOptionalValues.scan(object,"ExperimentalData.MaintenanceInteraction");
+				JSON_Object<NVExtra, VExtra> inventoryContainer_obj;
+				lastUpdateTimestamp    = TimeStamp.create(getIntegerValue(object, "LastUpdateTimestamp"));
+				timestamp_FML          = TimeStamp.create(getIntegerValue(object, "[??? FML]"));
+				timestamp_eyv          = TimeStamp.create(getIntegerValue(object, "[??? eyv]"));
+				damageTimers           = parseArray(SaveGameData::getFloat, "ExperimentalData.MaintenanceInteraction.DamageTimers", object, "DamageTimers");
+				flags                  = getIntegerValue(object, "Flags");
+				inventoryContainer_obj = getObjectValue(object, "InventoryContainer");
+				inventoryContainer = inventoryContainer_obj == null ? null : Inventories.parse(source, inventoryContainer_obj, label+"["+index+"] -> InvCont", sourcePath+"["+index+"].InventoryContainer");
+			}
 		}
 		
 		public static abstract class RawData<DataType> {

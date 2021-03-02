@@ -10,6 +10,7 @@ import java.awt.GridLayout;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -64,6 +65,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Coordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Frigate;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FrigateMission.FrigateMissionTask;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.SeedValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
@@ -774,13 +776,189 @@ public class SimplePanels {
 	
 	public static class ExperimentalData {
 
-		public static void addPanels(SaveGameViewTabGroupingPanel rawDataPanel, SaveGameData data, UniversePanel universePanel) {
-			if (data.experimentalData.storedInteractions!=null) rawDataPanel.addPanel("Stored Interactions",new StoredInteractionsPanel(data, universePanel));
-			if (data.experimentalData.markerStack       !=null) rawDataPanel.addPanel("Marker Stack"       ,new MarkerStackPanel(data, universePanel));
-			if (data.experimentalData.missionProgress   !=null) rawDataPanel.addPanel("Mission Progress"   ,new MissionProgressPanel(data, universePanel));
-			if (data.experimentalData.data_Wu_.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_Wu_.getTabTitel(),new DATA_Wu__Panel(data));
-			if (data.experimentalData.data_EQt.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_EQt.getTabTitel(),new DATA_EQt_Panel(data));
-			if (data.experimentalData.data_m4I.data     !=null) rawDataPanel.addPanel(data.experimentalData.data_m4I.getTabTitel(),new DATA_m4I_Panel(data));
+		public static void addPanels(SaveGameViewTabGroupingPanel rawDataPanel, SaveGameData data, Window mainWindow, UniversePanel universePanel) {
+			if (data.experimentalData.storedInteractions     !=null) rawDataPanel.addPanel("Stored Interactions",new StoredInteractionsPanel(data, universePanel));
+			if (data.experimentalData.markerStack            !=null) rawDataPanel.addPanel("Marker Stack"       ,new MarkerStackPanel(data, universePanel));
+			if (data.experimentalData.missionProgress        !=null) rawDataPanel.addPanel("Mission Progress"   ,new MissionProgressPanel(data, universePanel));
+			if (data.experimentalData.data_Wu_.data          !=null) rawDataPanel.addPanel(data.experimentalData.data_Wu_.getTabTitel(),new DATA_Wu__Panel(data));
+			if (data.experimentalData.data_EQt.data          !=null) rawDataPanel.addPanel(data.experimentalData.data_EQt.getTabTitel(),new DATA_EQt_Panel(data));
+			if (data.experimentalData.data_m4I.data          !=null) rawDataPanel.addPanel(data.experimentalData.data_m4I.getTabTitel(),new DATA_m4I_Panel(data));
+			if (data.experimentalData.maintenanceInteractions!=null) rawDataPanel.addPanel("MaintenanceInteractions"              , new MaintenanceInteractionsTablePanel(data,mainWindow,data.experimentalData.maintenanceInteractions));
+			if (data.experimentalData.array_VhC              !=null) rawDataPanel.addPanel("MaintenanceInteractions \"[??? VhC]\"", new MaintenanceInteractionsTablePanel(data,mainWindow,data.experimentalData.array_VhC));
+			if (data.experimentalData.array_wyZ              !=null) rawDataPanel.addPanel("PlayerStateData -> [??? wyZ]"         , new Data_wyZ_TablePanel(data,mainWindow,data.experimentalData.array_wyZ));
+		}
+
+		private static class Data_wyZ_TablePanel extends TableAndInventoryPanel<SaveGameData.ExperimentalData.Data_wyZ> {
+			private static final long serialVersionUID = 3911814142801819114L;
+
+			private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.Data_wyZ> {
+				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.Data_wyZ, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+				public ColumnID(MaintenanceInteractionsTablePanel.ColumnID columnID) { super(columnID, item->item.data_YC); }
+			}
+			
+			static final ColumnID[] columns = new ColumnID[] {
+				new ColumnID("#"   , Integer.class,  20,-1,35,35, item->item.index),
+				new ColumnID("Type",    Long.class,  20,-1,35,35, item->item.inventoryType),
+				new ColumnID("X"   ,    Long.class,  20,-1,20,20, item->item.x_WX8),
+				new ColumnID("Y"   ,    Long.class,  20,-1,20,20, item->item.y_WX8),
+			};
+			
+			Data_wyZ_TablePanel(SaveGameData data, Window mainwindow, Vector<SaveGameData.ExperimentalData.Data_wyZ> dataVec) {
+				super(data, mainwindow, "Data_wyZ_Table", "Data_wyZ", "No InventoryContainer", 0.5, dataVec, merge(columns,MaintenanceInteractionsTablePanel.columns));
+			}
+
+			private static ColumnID[] merge( ColumnID[] columns, MaintenanceInteractionsTablePanel.ColumnID[] maintIntColumns) {
+				ColumnID[] newColumns = Arrays.copyOf(columns, columns.length+maintIntColumns.length);
+				for (int i=0; i<maintIntColumns.length; i++) newColumns[columns.length+i] = new ColumnID(maintIntColumns[i]);
+				return newColumns;
+			}
+
+			@Override protected Inventory getInventory(SaveGameData.ExperimentalData.Data_wyZ item) {
+				return item==null ? null : item.data_YC==null ? null : item.data_YC.inventoryContainer;
+			}
+		}
+
+		private static class MaintenanceInteractionsTablePanel extends TableAndInventoryPanel<SaveGameData.ExperimentalData.MaintenanceInteraction> {
+			private static final long serialVersionUID = -3316149223413000850L;
+
+			private static class ColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MaintenanceInteraction> {
+				public ColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.MaintenanceInteraction, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+			}
+
+			private static String getInvStr(SaveGameData.ExperimentalData.MaintenanceInteraction item) {
+				if (item==null) return null;
+				if (item.inventoryContainer==null) return null;
+				SaveGameData.Inventories.Inventory inv = item.inventoryContainer;
+				if ( (inv.usedSlots==null || inv.usedSlots.intValue()==0) && (inv.validSlots==null || inv.validSlots.intValue()==0)) return null; 
+				return String.format("%s/%s", inv.usedSlots==null?"??":inv.usedSlots, inv.validSlots==null?"??":inv.validSlots);
+			}
+			
+			static final ColumnID[] columns = new ColumnID[] {
+				new ColumnID("#"         ,   Integer.class,  20,-1, 35, 35, item->item.index),
+				new ColumnID("Inventory" ,    String.class,  20,-1, 60, 60, item->getInvStr(item)),
+				new ColumnID("lastUpdate", TimeStamp.class,  20,-1,250,250, item->item.lastUpdateTimestamp),
+				new ColumnID("eyv"       , TimeStamp.class,  20,-1,250,250, item->item.timestamp_eyv),
+				new ColumnID("FML"       , TimeStamp.class,  20,-1,250,250, item->item.timestamp_FML),
+				new ColumnID("Flags"     ,    String.class,  20,-1, 60, 60, item->item.flags==null ? "" : String.format("0x%04X", item.flags)),
+				new ColumnID("Damage Timers", String.class,  20,-1, 90, 90, item->item.damageTimers==null ? "" : item.damageTimers.toString()),
+			};
+			
+			MaintenanceInteractionsTablePanel(SaveGameData data, Window mainwindow, Vector<SaveGameData.ExperimentalData.MaintenanceInteraction> dataVec) {
+				super(data, mainwindow, "MaintenanceInteractionsTable", "MaintenanceInteractions", "No InventoryContainer", 0.5, dataVec, columns);
+			}
+
+			@Override protected Inventory getInventory(SaveGameData.ExperimentalData.MaintenanceInteraction item) {
+				return item==null ? null : item.inventoryContainer;
+			}
+		}
+
+		private static abstract class TableAndInventoryPanel<DataType> extends SaveGameViewTabPanel {
+			private static final long serialVersionUID = 3484599291713688832L;
+			private Component lastInventoryPanel;
+
+			public TableAndInventoryPanel(SaveGameData data, Window mainwindow, String tableDebugLabel, String tableTitle, String noInvStr, double dividerLocation, Vector<DataType> dataVec, VerySimpleTable.ColumnID<DataType>[] columns) {
+				super(data);
+				
+				VerySimpleTable<DataType> table = new VerySimpleTable<>(tableDebugLabel, true, SaveViewer.DEBUG, true, dataVec, columns);
+				table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
+				JScrollPane tableScrollPane = new JScrollPane(table);
+				tableScrollPane.setBorder(BorderFactory.createTitledBorder(tableTitle));
+				
+				lastInventoryPanel = new JLabel(noInvStr);
+				JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tableScrollPane, lastInventoryPanel);
+				splitPane.setResizeWeight(1);
+				splitPane.setDividerLocation(dividerLocation);
+				
+				table.addSelectionListener((item,index)->{
+					int pos = splitPane.getDividerLocation();
+					splitPane.remove(lastInventoryPanel);
+					SaveGameData.Inventories.Inventory inv = item==null ? null : getInventory(item);
+					if (inv!=null)
+						splitPane.setRightComponent(lastInventoryPanel = new InventoriesPanel.InventoryPanel(mainwindow, inv, true, true, null));
+					else
+						splitPane.setRightComponent(lastInventoryPanel = new JLabel(noInvStr));
+					splitPane.setDividerLocation(pos);
+				});
+				
+				add(splitPane,BorderLayout.CENTER);
+			}
+
+			protected abstract SaveGameData.Inventories.Inventory getInventory(DataType item);
+		}
+
+		private static class MissionProgressPanel extends SaveGameViewTabPanel {
+			private static final long serialVersionUID = -5481267548249025769L;
+			
+			private static class MissionColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Mission> {
+				public MissionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.MissionProgress.Mission, Integer, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+				public MissionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.MissionProgress.Mission, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+			}
+			
+			private static class ParticipantColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Participant> {
+				public ParticipantColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.MissionProgress.Participant, Integer, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+				public ParticipantColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.MissionProgress.Participant, Object> getValue) {
+					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
+				}
+			}
+			public MissionProgressPanel(SaveGameData data, UniversePanel universePanel) {
+				super(data);
+				
+				MissionColumnID[] missionColumns = new MissionColumnID[] {
+						// [50, 129, 61, 120, 50, 96]
+					new MissionColumnID("#"           , Integer.class, 20,-1, 30, 30, (mission,i)->i+1),
+					new MissionColumnID("Mission"     ,  String.class, 20,-1,120,120, mission->mission.Mission),
+					new MissionColumnID("Progress"    ,    Long.class, 20,-1, 60, 60, mission->mission.Progress),
+					new MissionColumnID("Seed"        ,  String.class, 20,-1,120,120, mission->mission.Seed==null ? null : String.format("0x%016X", mission.Seed)),
+					new MissionColumnID("Data"        ,    Long.class, 20,-1, 40, 40, mission->mission.Data),
+					new MissionColumnID("Participants",  String.class, 20,-1,100,100, mission->mission.Participants==null ? "" : String.format("%d Participant(s)", mission.Participants.size())),
+				};
+				ParticipantColumnID[] participantColumns = new ParticipantColumnID[] {
+					new ParticipantColumnID("UA"              , String.class,  20,-1,160,160, part->part.UA==null ? "" : part.UA.getCoordinates()),
+					new ParticipantColumnID("Planet / System" , String.class,  20,-1,420,420, part->part.UA==null ? "" : part.UA.getVerboseNameInOneLine(data.universe, 2)),
+					new ParticipantColumnID("BuildingSeed"    , String.class,  20,-1,130,130, part->part.BuildingSeed    ==null ? null : part.BuildingSeed.getSeedStr()),
+					new ParticipantColumnID("BuildingLocation", String.class,  20,-1,220,220, part->part.BuildingLocation==null ? null : part.BuildingLocation.toString(" %1.2f ")),
+					new ParticipantColumnID("ParticipantType" , String.class,  20,-1, 90, 90, part->part.ParticipantType),
+				};
+				
+				VerySimpleTable<SaveGameData.ExperimentalData.MissionProgress.Mission> missionsTable =
+						new VerySimpleTable<>("MissionProgress.MissionTable",true,SaveViewer.DEBUG,true,data.experimentalData.missionProgress,missionColumns);
+				JScrollPane missionsTableScrollPane = new JScrollPane(missionsTable);
+				missionsTableScrollPane.setBorder(BorderFactory.createTitledBorder("Missions"));
+				
+				VerySimpleTable<SaveGameData.ExperimentalData.MissionProgress.Participant> participantsTable =
+						new VerySimpleTable<>("MissionProgress.Mission.ParticipantTable",true,SaveViewer.DEBUG,true);
+				JScrollPane participantsTableScrollPane = new JScrollPane(participantsTable);
+				TitledBorder participantsTableTitledBorder = BorderFactory.createTitledBorder("Mission[#].Participants");
+				participantsTableScrollPane.setBorder(participantsTableTitledBorder);
+				MarkAddressesAddOn participantsTableAddOn = new MarkAddressesAddOn().addTo(participantsTable, universePanel, this.data.universe);
+				
+				missionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
+				missionsTable.addSelectionListener((mission,rowIndex)->{
+					participantsTableTitledBorder.setTitle(String.format("Mission[%s].Participants", rowIndex==null || rowIndex<0 ? "#" : rowIndex+1));
+					participantsTableScrollPane.repaint();
+					Vector<SaveGameData.ExperimentalData.MissionProgress.Participant> participantsTableData = mission==null ? null : mission.Participants;
+					participantsTable.setData(participantsTableData, participantColumns);
+					participantsTableAddOn.setData(participantsTableData);
+				});
+				
+				
+				JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+				splitPane.setLeftComponent(missionsTableScrollPane);
+				splitPane.setRightComponent(participantsTableScrollPane);
+				
+				add(splitPane,BorderLayout.CENTER);
+			}
+			
 		}
 
 		private static class DATA_Wu__Panel extends VerySimpleTableTabPanel<SaveGameData.ExperimentalData.DATA_Wu_.Data> {
@@ -923,77 +1101,6 @@ public class SimplePanels {
 					});
 				new MarkAddressesAddOn().setData(this.data.experimentalData.markerStack).addTo(table, universePanel, this.data.universe);
 			}
-		}
-
-		private static class MissionProgressPanel extends SaveGameViewTabPanel {
-			private static final long serialVersionUID = -5481267548249025769L;
-			
-			private static class MissionColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Mission> {
-				public MissionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.MissionProgress.Mission, Integer, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-				public MissionColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.MissionProgress.Mission, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-			}
-			
-			private static class ParticipantColumnID extends VerySimpleTable.ColumnID<SaveGameData.ExperimentalData.MissionProgress.Participant> {
-				public ParticipantColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<SaveGameData.ExperimentalData.MissionProgress.Participant, Integer, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-				public ParticipantColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<SaveGameData.ExperimentalData.MissionProgress.Participant, Object> getValue) {
-					super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
-				}
-			}
-			public MissionProgressPanel(SaveGameData data, UniversePanel universePanel) {
-				super(data);
-				
-				MissionColumnID[] missionColumns = new MissionColumnID[] {
-						// [50, 129, 61, 120, 50, 96]
-					new MissionColumnID("#"           , Integer.class, 20,-1, 30, 30, (mission,i)->i+1),
-					new MissionColumnID("Mission"     ,  String.class, 20,-1,120,120, mission->mission.Mission),
-					new MissionColumnID("Progress"    ,    Long.class, 20,-1, 60, 60, mission->mission.Progress),
-					new MissionColumnID("Seed"        ,  String.class, 20,-1,120,120, mission->mission.Seed==null ? null : String.format("0x%016X", mission.Seed)),
-					new MissionColumnID("Data"        ,    Long.class, 20,-1, 40, 40, mission->mission.Data),
-					new MissionColumnID("Participants",  String.class, 20,-1,100,100, mission->mission.Participants==null ? "" : String.format("%d Participant(s)", mission.Participants.size())),
-				};
-				ParticipantColumnID[] participantColumns = new ParticipantColumnID[] {
-					new ParticipantColumnID("UA"              , String.class,  20,-1,160,160, part->part.UA==null ? "" : part.UA.getCoordinates()),
-					new ParticipantColumnID("Planet / System" , String.class,  20,-1,420,420, part->part.UA==null ? "" : part.UA.getVerboseNameInOneLine(data.universe, 2)),
-					new ParticipantColumnID("BuildingSeed"    , String.class,  20,-1,130,130, part->part.BuildingSeed    ==null ? null : part.BuildingSeed.getSeedStr()),
-					new ParticipantColumnID("BuildingLocation", String.class,  20,-1,220,220, part->part.BuildingLocation==null ? null : part.BuildingLocation.toString(" %1.2f ")),
-					new ParticipantColumnID("ParticipantType" , String.class,  20,-1, 90, 90, part->part.ParticipantType),
-				};
-				
-				VerySimpleTable<SaveGameData.ExperimentalData.MissionProgress.Mission> missionsTable =
-						new VerySimpleTable<>("MissionProgress.MissionTable",true,SaveViewer.DEBUG,true,data.experimentalData.missionProgress,missionColumns);
-				JScrollPane missionsTableScrollPane = new JScrollPane(missionsTable);
-				missionsTableScrollPane.setBorder(BorderFactory.createTitledBorder("Missions"));
-				
-				VerySimpleTable<SaveGameData.ExperimentalData.MissionProgress.Participant> participantsTable =
-						new VerySimpleTable<>("MissionProgress.Mission.ParticipantTable",true,SaveViewer.DEBUG,true);
-				JScrollPane participantsTableScrollPane = new JScrollPane(participantsTable);
-				TitledBorder participantsTableTitledBorder = BorderFactory.createTitledBorder("Mission[#].Participants");
-				participantsTableScrollPane.setBorder(participantsTableTitledBorder);
-				MarkAddressesAddOn participantsTableAddOn = new MarkAddressesAddOn().addTo(participantsTable, universePanel, this.data.universe);
-				
-				missionsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
-				missionsTable.addSelectionListener((mission,rowIndex)->{
-					participantsTableTitledBorder.setTitle(String.format("Mission[%s].Participants", rowIndex==null || rowIndex<0 ? "#" : rowIndex+1));
-					participantsTableScrollPane.repaint();
-					Vector<SaveGameData.ExperimentalData.MissionProgress.Participant> participantsTableData = mission==null ? null : mission.Participants;
-					participantsTable.setData(participantsTableData, participantColumns);
-					participantsTableAddOn.setData(participantsTableData);
-				});
-				
-				
-				JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-				splitPane.setLeftComponent(missionsTableScrollPane);
-				splitPane.setRightComponent(participantsTableScrollPane);
-				
-				add(splitPane,BorderLayout.CENTER);
-			}
-			
 		}
 		
 	}

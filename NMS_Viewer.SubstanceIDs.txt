@@ -273,7 +273,6 @@
 ^SUNGOLD.image=SUB.SUNGOLD.png
 ^SUNGOLD.imageBG=E59001
 ^TECHFRAG=Nanit-Haufen
-^TECHFRAG.obsolete=
 ^TECHFRAG.image=NmsMisc_Nanite_Cluster.png
 ^TECHFRAG.imageBG=1C364D
 ^TOXIC1=Ammoniak
@@ -281,6 +280,7 @@
 ^TOXIC1.symbol=NH3
 ^TOXIC1.image=Ammonia.png
 ^TOXIC1.imageBG=00A64C
+^TRADEABLE6=
 ^WATER1=Salz
 ^WATER1.type=Resource
 ^WATER1.symbol=NaCl
