@@ -865,7 +865,7 @@ class RecipeAnalyser implements ActionListener {
 			}
 			
 			@Override GeneralizedID getGeneralizedID() {
-				// TODO: getGeneralizedID()
+				// TODO [OLD] NutrientProcessorDataModel.Ingredient.getGeneralizedID()
 				return null;
 			}
 		}
@@ -1892,7 +1892,7 @@ class RecipeAnalyser implements ActionListener {
 			
 			public Vector<SpecificRecipe> getSpecificRecipes(InputValueCombination inputs) {
 				Vector<SpecificRecipe> foundRecipes = new Vector<>();
-				// TODO Auto-generated method stub: getSpecificRecipes
+				// TODO [OLD] DataModel.Recipe.getSpecificRecipes(InputValueCombination)
 				return foundRecipes;
 			}
 
@@ -1969,7 +1969,7 @@ class RecipeAnalyser implements ActionListener {
 				if (res.length==0) return true; // no inputs
 				if (res.length==1) return true; // 1 input && res[0]!=0
 				
-				// TODO Auto-generated method stub
+				// TODO [OLD] DataModel.Recipe.hasInput(InputValueCombination)
 				return false;
 			}
 

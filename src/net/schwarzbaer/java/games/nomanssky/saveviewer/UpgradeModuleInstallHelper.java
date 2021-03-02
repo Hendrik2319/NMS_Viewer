@@ -1147,17 +1147,17 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			for (KnownModule.ValueDefinition announcedVD:announcedValueDefinitions) {
 				KnownModule.ValueDefinition knownVD = module.getValueDefinition(announcedVD.uniqueID);
 				if (knownVD==null) {
-					// TODO InstalledUpgrade -> checkValueDefinitions -> error message
+					// TODO [OLD] InstalledUpgrade -> checkValueDefinitions -> error message
 					Debug.Assert(false);
 				} else {
 					Debug.Assert(knownVD.module==module);
 					Debug.Assert(announcedVD.module==module);
 					if (!knownVD.label.equals(announcedVD.label) && !announcedVD.label.isEmpty()) {
-						// TODO InstalledUpgrade -> checkValueDefinitions -> error message
+						// TODO [OLD] InstalledUpgrade -> checkValueDefinitions -> error message
 						Debug.Assert(false);
 					}
 					if (knownVD.format!=announcedVD.format && announcedVD.format!=null) {
-						// TODO InstalledUpgrade -> checkValueDefinitions -> error message
+						// TODO [OLD] InstalledUpgrade -> checkValueDefinitions -> error message
 						Debug.Assert(false);
 					}
 				}
@@ -1757,12 +1757,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 			@Override
 			protected void prepareTable() {
-				// TODO Auto-generated method stub
+				// TODO [OLD] PreliminarySequencesTableModel.prepareTable()
 				
 			}
 			@Override
 			protected int getPrefColumnWidth(int columnIndex) {
-				// TODO Auto-generated method stub
+				// TODO [OLD] PreliminarySequencesTableModel.getPrefColumnWidth
 				return 0;
 			}
 			@Override public int getRowCount() { return 0; }
@@ -1775,12 +1775,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			}
 			
 			@Override public Object getValueAt(int rowIndex, int columnIndex) {
-				// TODO Auto-generated method stub
+				// TODO [OLD] PreliminarySequencesTableModel.getValueAt
 				return null;
 			}
 
 			@Override public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-				// TODO Auto-generated method stub
+				// TODO [OLD] PreliminarySequencesTableModel.setValueAt
 				
 			}
 			

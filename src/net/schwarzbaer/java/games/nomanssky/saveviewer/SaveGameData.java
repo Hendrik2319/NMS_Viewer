@@ -205,7 +205,7 @@ public class SaveGameData {
 				if (base.galacticAddress==null) continue;
 				if (base.baseType==null) continue;
 				switch(base.baseType) {
-				case SpaceBase: break; // TODO SpaceBase
+				case SpaceBase: break; // TODO [OLD] PersistentPlayerBase.baseType == SpaceBase
 				case FreighterBase: {
 					Universe.SolarSystem system = universe.findSolarSystem(base.galacticAddress);
 					if (system!=null) system.additionalInfos.hasFreighter = true;

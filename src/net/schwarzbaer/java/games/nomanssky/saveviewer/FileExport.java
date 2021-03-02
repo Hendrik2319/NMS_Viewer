@@ -3286,7 +3286,7 @@ public class FileExport {
 				});
 				vrml.println("");
 				
-				// TODO Solitary Walls & Floors 
+				// TODO [OLD] VRMLoutput.writeTemplateToFile(): Solitary Walls & Floors 
 			}
 			
 			writeProtoToFile(vrml, "SMALLLIGHT", 0.2, 0, ()->{
@@ -4081,7 +4081,7 @@ public class FileExport {
 						}
 					}
 				}
-				// TODO optimizeSegments()
+				// TODO [OLD] LineGeometry.IndexedLineSet.optimizeSegments()
 			}
 			
 		}
