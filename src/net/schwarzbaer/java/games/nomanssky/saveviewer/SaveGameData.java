@@ -77,8 +77,8 @@ public class SaveGameData {
 	public Vector<FrigateMission> frigateMissions = null;
 	
 	public Freighter  freighter  = null;
-	public VehicleGroup<SpaceShip> spaceShips = null;
-	public VehicleGroup<Exocraft>  exocrafts  = null;
+	public VehicleGroup.SpaceShips spaceShips = null;
+	public VehicleGroup.Exocrafts  exocrafts  = null;
 	
 	public Vector<UniverseAddress> AtlasStationAdressData = null;
 	public Vector<UniverseAddress> NewAtlasStationAdressData = null;
@@ -133,8 +133,8 @@ public class SaveGameData {
 		
 		teleportEndpoints = TeleportEndpoints.parse(this);
 		freighter  = Freighter .parse(this);
-		spaceShips = VehicleGroup.parseSpaceShips(this);
-		exocrafts  = VehicleGroup.parseExocrafts(this);
+		spaceShips = new VehicleGroup.SpaceShips(this);
+		exocrafts  = new VehicleGroup.Exocrafts(this);
 		frigates   = Frigate   .parse(this);
 		parseFrigateMissions();
 		
@@ -391,7 +391,7 @@ public class SaveGameData {
 			JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 			if (objectValue==null) return null;
 			return parseObject.apply(objectValue,index);
-		}, sourceLabel, data, path);
+		}, sourceLabel, isOptional, data, path);
 	}
 	
 	@SuppressWarnings("unused")
@@ -482,7 +482,7 @@ public class SaveGameData {
 			double latitude  = Math.asin(pos.y/radius)/Math.PI*180;
 			double longitude = Math.atan2(pos.x,pos.z)/Math.PI*180;
 			
-			return new PolarCoordinates(latitude, longitude, radius);
+			return radius==0 ? null : new PolarCoordinates(latitude, longitude, radius);
 		}
 
 		@Override
@@ -844,30 +844,36 @@ public class SaveGameData {
 		public final Boolean isValid;
 		public final Long seedValue;
 
-		public SeedValue(Boolean boolVal, Long longVal) {
+		public SeedValue(Boolean isValid, Long seedValue) {
 			super();
-			this.isValid = boolVal;
-			this.seedValue = longVal;
+			this.isValid = isValid;
+			this.seedValue = seedValue;
 		}
 
-		public static SeedValue parse(JSON_Array<NVExtra,VExtra> json_Array) {
-			if (json_Array==null) return null;
+		public static SeedValue parse(JSON_Object<NVExtra,VExtra> object, Object... path) {
+			return parse( getArrayValue(object, path) );
+		}
+		public static SeedValue parse(JSON_Array<NVExtra,VExtra> array) {
+			if (array==null || array.size()<2) return null;
 			return new SeedValue(
-				getBoolValue(json_Array, 0),
-				parseHexFormatedNumber(getSubNode(json_Array, 1))
+				getBoolValue(array, 0),
+				parseHexFormatedNumber(getSubNode(array, 1))
 			);
 		}
 
 		@Override public String toString() {
 			if (seedValue==null)
-				return String.format("<%s> <null>", isValid, seedValue);
+				return String.format("<%s> <null>" , isValid);
 			return     String.format("<%s> 0x%016X", isValid, seedValue);
 		}
 		
 		public String getSeedStr() {
-			if (!isValid) return "<no valid seed>";
+			return getSeedStr(true);
+		}
+		public String getSeedStr(boolean withLeadingZeros) {
+			if (isValid!=null && !isValid.booleanValue()) return "<no valid seed>";
 			if (seedValue==null) return "<null>";
-			return String.format("0x%016X", seedValue);
+			return String.format(withLeadingZeros ? "0x%016X" : "0x%X", seedValue);
 		}
 		
 		public UniverseAddress getSeedAsUniverseAddress() {
@@ -878,22 +884,21 @@ public class SaveGameData {
 
 	public static class ResourceBlock {
 	
-		public String filename = null;
-		public SeedValue seed = null;
-		public String altID = null;
-		public JSON_Array<NVExtra,VExtra> ProceduralTexture_Samplers = null;
+		public final String filename;
+		public final SeedValue seed;
+		public final String altID;
+		public final JSON_Array<NVExtra,VExtra> ProceduralTexture_Samplers;
 	
+		public ResourceBlock(JSON_Object<NVExtra, VExtra> resourceObj) {
+			filename = getStringValue(resourceObj, "Filename");
+			seed     = SeedValue.parse( getArrayValue(resourceObj, "Seed") );
+			altID    = getStringValue(resourceObj, "AltId");
+			ProceduralTexture_Samplers = getArrayValue(resourceObj, "ProceduralTexture", "Samplers");
+		}
+
 		public static ResourceBlock parse(JSON_Object<NVExtra,VExtra> data, Object... path) {
 			JSON_Object<NVExtra,VExtra> resourceObj = getObjectValue(data, path);
-			if (resourceObj==null) return null;
-	
-			ResourceBlock resourceBlock = new ResourceBlock();
-			resourceBlock.filename = getStringValue(resourceObj, "Filename");
-			resourceBlock.seed = SeedValue.parse( getArrayValue(resourceObj, "Seed") );
-			resourceBlock.altID = getStringValue(resourceObj, "AltId");
-			resourceBlock.ProceduralTexture_Samplers = getArrayValue(resourceObj, "ProceduralTexture", "Samplers");
-			
-			return resourceBlock;
+			return resourceObj==null ? null : new ResourceBlock(resourceObj);
 		}
 	}
 
@@ -1358,12 +1363,20 @@ public class SaveGameData {
 				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Korvax; break;
 				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Vykeen; break;
 				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Universe.SolarSystem.Race.Gek; break;
+				case "MODELS\\/COMMON\\/PLAYER\\/PLAYERCHARACTER\\/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Korvax; break;
+				case "MODELS\\/COMMON\\/PLAYER\\/PLAYERCHARACTER\\/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Vykeen; break;
+				case "MODELS\\/COMMON\\/PLAYER\\/PLAYERCHARACTER\\/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Universe.SolarSystem.Race.Gek; break;
+				default: Gui.log_warn_ln("Found unknown crew race. ResourceBlock.Filename: \"%s\"", freighter.crewResourceBlock.filename);
 				}
 			}
 			if (freighter.freighterResourceBlock!=null && freighter.freighterResourceBlock.filename!=null) {
 				switch (freighter.freighterResourceBlock.filename) {
 				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/CAPITALFREIGHTER_PROC.SCENE.MBIN": freighter.freighterClass = FreighterClass.CapitalFreighter; break;
 				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/FREIGHTER_PROC.SCENE.MBIN"       : freighter.freighterClass = FreighterClass.Freighter; break;
+				case "MODELS\\/COMMON\\/SPACECRAFT\\/INDUSTRIAL\\/CAPITALFREIGHTER_PROC.SCENE.MBIN": freighter.freighterClass = FreighterClass.CapitalFreighter; break;
+				case "MODELS\\/COMMON\\/SPACECRAFT\\/INDUSTRIAL\\/FREIGHTER_PROC.SCENE.MBIN"       : freighter.freighterClass = FreighterClass.Freighter; break;
+				case "": break;
+				default: Gui.log_warn_ln("Found unknown freighter class. ResourceBlock.Filename: \"%s\"", freighter.freighterResourceBlock.filename);
 				}
 			}
 			
@@ -1381,8 +1394,19 @@ public class SaveGameData {
 				inventoryLabel += "  ( "+values+" )";
 			}
 			
-			freighter.inventory     = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory"         ), inventoryLabel    , "FreighterInventory");
-			freighter.inventoryTech = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory_TechOnly"), "Freighter (Tech)", "FreighterInventory_TechOnly");
+			freighter.inventory     = Inventories.parse(
+				data,
+				getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory"),
+				getObjectValue(data.json_data, "PlayerStateData", "FreighterLayout"),
+				inventoryLabel,
+				"FreighterInventory"
+			);
+			freighter.inventoryTech = Inventories.parse(
+				data,
+				getObjectValue(data.json_data, "PlayerStateData", "FreighterInventory_TechOnly"),
+				"Freighter (Tech)",
+				"FreighterInventory_TechOnly"
+			);
 			
 			if (freighter.inventory!=null) {
 				//data.universe;
@@ -1415,57 +1439,43 @@ public class SaveGameData {
 	}
 
 	public static class SpaceShip extends Vehicle {
-		public enum VehicleClass { Transporter, Fighter, Shuttle, Explorer, Exotic, Alien }
+		public enum ShipClass { Transporter, Fighter, Shuttle, Explorer, Exotic, Alien }
 		
-		public boolean usesOldColors = false;
-		public VehicleClass shipClass = null;
+		public boolean usesOldColors;
 		
-		@Override protected String getPredefinedName(int i) { return null; }
-		@Override protected String getTypeLabel() { return "SpaceShip"; }
-		@Override protected void setVehicleClass(String resourcefilename) {
+		private SpaceShip(SaveGameData data, JSON_Object<NVExtra, VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary) {
+			super(data, vehicleData, i, dataSourcePath, isPrimary,"SpaceShip", null, SpaceShip::getVehicleClass, SpaceShip::getExtraInfosOutput);
+		}
+		
+		private static String getVehicleClass(String resourcefilename) {
 			switch (resourcefilename) {
 			
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/DROPSHIPS\\/DROPSHIP_PROC.SCENE.MBIN"        : shipClass = VehicleClass.Transporter; break;
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/FIGHTERS\\/FIGHTER_PROC.SCENE.MBIN"          : shipClass = VehicleClass.Fighter; break;
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/SHUTTLE\\/SHUTTLE_PROC.SCENE.MBIN"           : shipClass = VehicleClass.Shuttle; break;
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/SCIENTIFIC\\/SCIENTIFIC_PROC.SCENE.MBIN"     : shipClass = VehicleClass.Explorer; break;
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/S-CLASS_PROC.SCENE.MBIN"           : shipClass = VehicleClass.Exotic; break;
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/BIOPARTS\\/BIOSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Alien; break;
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/DROPSHIPS\\/DROPSHIP_PROC.SCENE.MBIN"        : return "Transporter";
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/FIGHTERS\\/FIGHTER_PROC.SCENE.MBIN"          : return "Fighter";
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/SHUTTLE\\/SHUTTLE_PROC.SCENE.MBIN"           : return "Shuttle";
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/SCIENTIFIC\\/SCIENTIFIC_PROC.SCENE.MBIN"     : return "Explorer";
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/S-CLASS_PROC.SCENE.MBIN"           : return "Exotic";
+			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/BIOPARTS\\/BIOSHIP_PROC.SCENE.MBIN": return "LivingShip";
 			
-			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN"      : shipClass = VehicleClass.Transporter; break;
-			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"        : shipClass = VehicleClass.Fighter; break;
-			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"         : shipClass = VehicleClass.Shuttle; break;
-			case "MODELS/COMMON/SPACECRAFT/SCIENTIFIC/SCIENTIFIC_PROC.SCENE.MBIN"   : shipClass = VehicleClass.Explorer; break;
-			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"         : shipClass = VehicleClass.Exotic; break;
-			case "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOSHIP_PROC.SCENE.MBIN": shipClass = VehicleClass.Alien; break;
+			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN"      : return "Transporter";
+			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"        : return "Fighter";
+			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"         : return "Shuttle";
+			case "MODELS/COMMON/SPACECRAFT/SCIENTIFIC/SCIENTIFIC_PROC.SCENE.MBIN"   : return "Explorer";
+			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"         : return "Exotic";
+			case "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOSHIP_PROC.SCENE.MBIN": return "LivingShip";
 			
 			default:
 				SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
 			}
-		}
-		@Override protected String getVehicleClass() {
-			if (shipClass == null) return null;
-			return shipClass.toString();
+			return null;
 		}
 		
-		@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() {
-			return out->{
-				if (resourceBlock!=null) {
-					out.printf("Ship Infos:%n");
-					if (name!=null)
-						out.printf("   Name: %s%n", name.isEmpty() ? "<Original Name>" : "\""+name+"\"");
-					if (inventory.validSlots!=null && inventory.inventoryClass!=null)
-						out.printf("   Type: %s-%d%n", inventory.inventoryClass, inventory.validSlots);
-					if (shipClass!=null)
-						out.printf("   Class: %s%n", shipClass);
-					if (isPrimary)
-					out.printf("   is Primary Ship%n");
-					if (resourceBlock.seed!=null)
-						out.printf("   Model Seed: %s%n", resourceBlock.seed.getSeedStr());
-					if (usesOldColors)
-						out.printf("   Model uses old colors%n");
-				}
-			};
+		private static void getExtraInfosOutput(Vehicle thisVehicle, TextAreaOutput out) {
+			if (thisVehicle instanceof SpaceShip) {
+				SpaceShip spaceShip = (SpaceShip) thisVehicle;
+				if (spaceShip.usesOldColors)
+					out.printf("   Model uses old colors%n");
+			}
 		}
 	}
 
@@ -1487,122 +1497,160 @@ public class SaveGameData {
 				return null;
 			}
 		}
-		@Override protected String getPredefinedName(int i) {
-			return Instance.getName(i);
+		
+		private Exocraft(SaveGameData data, JSON_Object<NVExtra, VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary) {
+			super(data, vehicleData, i, dataSourcePath, isPrimary, "Exocraft", Instance.getName(i), null, null);
 		}
-		@Override protected String getTypeLabel() { return "Exocraft"; }
-		@Override protected void setVehicleClass(String resourcefilename) {}
-		@Override protected String getVehicleClass() { return null; }
-		@Override protected Consumer<TextAreaOutput> getExtraInfosOutput() { return null; }
 	}
 
 	public static abstract class Vehicle {
-		public Inventory inventory = null;
-		public Inventory inventoryTech = null;
-		public ResourceBlock resourceBlock = null;
-		public String name;
-		public boolean isPrimary;
+		public final Inventory inventory;
+		public final Inventory inventoryTech;
+		public final ResourceBlock resourceBlock;
+		public final UniverseAddress location;
+		public final Coordinates position;
+		public final PolarCoordinates gpsCoords;
+		public final Coordinates direction;
+		public final String name;
+		public final boolean isPrimary;
+		public final String vehicleClass;
 		
-		protected abstract String getPredefinedName(int i);
-		protected abstract String getTypeLabel();
-		protected abstract void setVehicleClass(String resourcefilename);
-		protected abstract String getVehicleClass();
-		protected abstract Consumer<TextAreaOutput> getExtraInfosOutput();
-		
-		public static <VehicleType extends Vehicle> VehicleType parse(SaveGameData data, JSON_Object<NVExtra,VExtra> vehicleData, int i, String dataSourcePath, Supplier<VehicleType> createVehicle, boolean isPrimary) {
-			if (vehicleData == null) return null;
+		protected Vehicle(SaveGameData data, JSON_Object<NVExtra,VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary, String typeLabel, String predefinedName, Function<String,String> getVehicleClass, BiConsumer<Vehicle,TextAreaOutput> extraInfosOutput) {
 			
-			VehicleType vehicle = createVehicle.get();
+			resourceBlock = ResourceBlock.parse(vehicleData,"Resource");
+			if (resourceBlock!=null && resourceBlock.filename!=null && !resourceBlock.filename.isEmpty() && getVehicleClass!=null)
+				vehicleClass = getVehicleClass.apply(resourceBlock.filename);
+			else
+				vehicleClass = null;
 			
-			vehicle.resourceBlock = ResourceBlock.parse(vehicleData,"Resource");
-			if (vehicle.resourceBlock!=null && vehicle.resourceBlock.filename!=null && !vehicle.resourceBlock.filename.isEmpty())
-				vehicle.setVehicleClass(vehicle.resourceBlock.filename);
+			String inventoryLabel;
+			if (predefinedName == null || predefinedName.isEmpty())
+				inventoryLabel = typeLabel+" "+(i+1);
+			else
+				inventoryLabel = "["+(i+1)+"] "+predefinedName;
 			
-			String baseLabel = vehicle.getTypeLabel()+" "+(i+1);
+			inventory     = Inventories.parse(
+				data,
+				getObjectValue(vehicleData,"Inventory"),
+				getObjectValue(vehicleData,"InventoryLayout"),
+				inventoryLabel,
+				dataSourcePath+".Inventory"
+			);
+			inventoryTech = Inventories.parse(
+				data,
+				getObjectValue(vehicleData,"Inventory_TechOnly"),
+				inventoryLabel+" (Tech)",
+				dataSourcePath+".Inventory_TechOnly"
+			);
 			
-			String predefinedName = vehicle.getPredefinedName(i);
-			if (predefinedName!=null && !predefinedName.isEmpty()) baseLabel = "["+(i+1)+"] "+predefinedName;
+			name = getStringValue(vehicleData,"Name");
+			this.isPrimary = isPrimary;
 			
-			String inventoryLabel     = baseLabel;
-			String inventoryTechLabel = baseLabel+" (Tech)";
+			location  = parseUniverseAddressField(vehicleData, "Location");
+			position  = Coordinates.parse(vehicleData, "Position");
+			gpsCoords = PolarCoordinates.parse(position);
+			direction = Coordinates.parse(vehicleData, "Direction");
 			
-			vehicle.inventory     = Inventories.parse(data,getObjectValue(vehicleData,"Inventory"         ), inventoryLabel    , dataSourcePath+".Inventory");
-			vehicle.inventoryTech = Inventories.parse(data,getObjectValue(vehicleData,"Inventory_TechOnly"), inventoryTechLabel, dataSourcePath+".Inventory_TechOnly");
-			
-			vehicle.name = getStringValue(vehicleData,"Name");
-			vehicle.isPrimary = isPrimary;
-			
-			if (vehicle.inventory!=null) {
-				if (vehicle.name!=null && !vehicle.name.isEmpty()) inventoryLabel += " \""+vehicle.name+"\"";
-				String iClass = vehicle.inventory.inventoryClass;
-				Integer validSlots = vehicle.inventory.validSlots;
-				String vClass = vehicle.getVehicleClass();
-				inventoryLabel += String.format("<%s%s-%s>", vClass==null?"":vClass+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
-				if (vehicle.isPrimary) inventoryLabel += "   [Primary]";
+			if (inventory!=null) {
+				if (name!=null && !name.isEmpty()) inventoryLabel += " \""+name+"\"";
+				String iClass = inventory.inventoryClass;
+				Integer validSlots = inventory.validSlots;
+				inventoryLabel += String.format("<%s%s-%s>", vehicleClass==null?"":vehicleClass+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
+				if (this.isPrimary) inventoryLabel += "   [Primary]";
 				
-				vehicle.inventory.label = inventoryLabel;
+				inventory.label = inventoryLabel;
 			}
 			
-			if (vehicle.inventory!=null)
-				vehicle.inventory.addExtraInfos(vehicle.getExtraInfosOutput());
-			
-			return vehicle;
+			if (inventory!=null) {
+				inventory.addExtraInfos(out->{
+					out.printf("%s Infos:%n", typeLabel);
+					if (name!=null)
+						out.printf("   Name: %s%n", name.isEmpty() ? "<Original Name>" : "\""+name+"\"");
+					if (this.isPrimary)
+						out.printf("   is Primary %s%n", typeLabel);
+					if (inventory.validSlots!=null && inventory.inventoryClass!=null)
+						out.printf("   Type: %s-%d%n", inventory.inventoryClass, inventory.validSlots);
+					if (vehicleClass!=null)
+						out.printf("   Class: %s%n", vehicleClass);
+					if (resourceBlock!=null && resourceBlock.seed!=null && (resourceBlock.seed.isValid==null || resourceBlock.seed.isValid.booleanValue()))
+						out.printf("   Model Seed: %s%n", resourceBlock.seed.getSeedStr());
+					if (location!=null) {
+						out.printf("   Location: 0x%016X%n", location.address);
+						Vector<String> verboseName = location.getVerboseName(data.universe);
+						for (String str:verboseName)
+							out.printf("             %s%n", str);
+					}
+					if (position !=null) out.printf("   Position : %s%n", position .toString("%1.2f"));
+					if (direction!=null) out.printf("   Direction: %s%n", direction.toString("%1.2f"));
+					if (gpsCoords!=null) out.printf("   GPS      : %s%n", gpsCoords.toString());
+				});
+				if (extraInfosOutput!=null)
+					inventory.addExtraInfos(out->extraInfosOutput.accept(this, out));
+			}
 		}
 	}
 
 	public static class VehicleGroup<VehicleType extends Vehicle> {
 		
-		public Long primary = null;
-		public VehicleType[] vehicles = null;
+		public final Long primary;
+		public final VehicleType[] vehicles;
 
-		private static <V extends Vehicle> void parseGroup(VehicleGroup<V> group, SaveGameData data, JSON_Array<NVExtra,VExtra> json_Array, String arraySourcePath, Long primary, Supplier<V> createVehicle, Function<Integer,V[]> createArray) {
-			group.primary = primary;
+		private VehicleGroup(SaveGameData data, JSON_Array<NVExtra,VExtra> json_Array, String arraySourcePath, Long primary, Constructor<VehicleType> constructor, Function<Integer,VehicleType[]> createArray) {
+			this.primary = primary;
 			
 			if (json_Array!=null) {
-				group.vehicles = createArray.apply(json_Array.size());
-				for (int i=0; i<json_Array.size(); ++i)
-					group.vehicles[i] = Vehicle.parse(data, getObject(json_Array.get(i)), i, arraySourcePath+"["+i+"]", createVehicle, i==group.primary);
-			}	
+				vehicles = createArray.apply(json_Array.size());
+				for (int i=0; i<json_Array.size(); ++i) {
+					JSON_Object<NVExtra, VExtra> object = getObject(json_Array.get(i));
+					vehicles[i] = object==null ? null : constructor.construct(data, object, i, arraySourcePath+"["+i+"]", i==this.primary);
+				}
+			} else
+				vehicles = null;
+		}
+		
+		interface Constructor<VehicleType extends Vehicle> {
+			VehicleType construct(SaveGameData data, JSON_Object<NVExtra,VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary);
 		}
 
-		public static VehicleGroup<Exocraft> parseExocrafts(SaveGameData data) {
-			VehicleGroup<Exocraft> exocrafts = new VehicleGroup<Exocraft>();
-			parseGroup(
-				exocrafts, 
-				data,
-				getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
-				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryVehicle"),
-				Exocraft::new, Exocraft[]::new
-			);
-			return exocrafts;
+		public static class Exocrafts extends VehicleGroup<Exocraft> {
+			public Exocrafts(SaveGameData data) {
+				super(
+					data,
+					getArrayValue(data.json_data, "PlayerStateData", "VehicleOwnership"), "VehicleOwnership",
+					getIntegerValue(data.json_data, "PlayerStateData", "PrimaryVehicle"),
+					Exocraft::new, Exocraft[]::new
+				);
+			}
 		}
 
-		public static VehicleGroup<SpaceShip> parseSpaceShips(SaveGameData data) {
-			VehicleGroup<SpaceShip> ships = new VehicleGroup<SpaceShip>();
-			parseGroup(
-				ships,
-				data,
-				getArrayValue(data.json_data, "PlayerStateData", "ShipOwnership"), "ShipOwnership",
-				getIntegerValue(data.json_data, "PlayerStateData", "PrimaryShip"),
-				SpaceShip::new, SpaceShip[]::new
-			);
-			
-			if (hasValue(data.json_data, "PlayerStateData", "[ShipUsesOldColors]")) {
-				JSON_Array<NVExtra,VExtra> array = getArrayValue(data.json_data, "PlayerStateData", "[ShipUsesOldColors]");
-				if (array!=null)
+		public static class SpaceShips extends VehicleGroup<SpaceShip> {
+			public SpaceShips(SaveGameData data) {
+				super(
+					data,
+					getArrayValue(data.json_data, "PlayerStateData", "ShipOwnership"), "ShipOwnership",
+					getIntegerValue(data.json_data, "PlayerStateData", "PrimaryShip"),
+					SpaceShip::new, SpaceShip[]::new
+				);
+				
+				JSON_Array<NVExtra,VExtra> array = getArrayValue_optional(data.json_data, "PlayerStateData", "[ShipUsesOldColors]");
+				if (array!=null && vehicles!=null)
 					for (int i=0; i<array.size(); i++) {
 						Boolean b = getBool(array.get(i));
-						if (b!=null) ships.vehicles[i].usesOldColors = b;
+						if (b!=null && i<vehicles.length) vehicles[i].usesOldColors = b;
 					}
 			}
-			return ships;
 		}
 	}
 	
 	public final static class MultiTools {
 		
 		private static Inventory parseMain(SaveGameData data) {
-			return Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "WeaponInventory"   ), "Main MultiTool", "WeaponInventory");
+			return Inventories.parse(
+					data,
+					getObjectValue(data.json_data, "PlayerStateData", "WeaponInventory"),
+					getObjectValue(data.json_data, "PlayerStateData", "WeaponLayout"),
+					"Main MultiTool", "WeaponInventory"
+				);
 		}
 		
 		private static Vector<MultiTool> parseAlternatives(SaveGameData data) {
@@ -1675,27 +1723,49 @@ public class SaveGameData {
 
 		private static Inventories parseInventories(SaveGameData data) {
 			Inventories inventories = new Inventories();
-			inventories.player.standard    = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory"         ), "Player"          , "Inventory"         );
-			inventories.player.tech        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_TechOnly"), "Player (Tech)"   , "Inventory_TechOnly");
-			inventories.player.cargo       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Inventory_Cargo"   ), "Player (Cargo)"  , "Inventory_Cargo"   );
-			inventories.ship_old           = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ShipInventory"     ), "Ship (old)"      , "ShipInventory"     );
-			inventories.grave              = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "GraveInventory"    ), "Grave"           , "GraveInventory"    );
+			inventories.player.standard    = Inventories.parse(data, getObjectValue(data.json_data, "PlayerStateData", "Inventory"         ), "Player"          , "Inventory"         );
+			inventories.player.tech        = Inventories.parse(data, getObjectValue(data.json_data, "PlayerStateData", "Inventory_TechOnly"), "Player (Tech)"   , "Inventory_TechOnly");
+			inventories.player.cargo       = Inventories.parse(data, getObjectValue(data.json_data, "PlayerStateData", "Inventory_Cargo"   ), "Player (Cargo)"  , "Inventory_Cargo"   );
+			inventories.grave              = Inventories.parse(data, getObjectValue(data.json_data, "PlayerStateData", "GraveInventory"    ), "Grave"           , "GraveInventory"    );
+			inventories.ship_old           = Inventories.parse(data, getObjectValue(data.json_data, "PlayerStateData", "ShipInventory"     ), getObjectValue(data.json_data, "PlayerStateData", "ShipLayout"), "Ship (old)", "ShipInventory");
 			
 			inventories.chests = new Inventory[10];
 			for (int i=0; i<inventories.chests.length; ++i)
-				inventories.chests[i] = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"), "Container "+i, "Chest"+(i+1)+"Inventory");
-			inventories.magicChest        = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ), "Magic Chest"  , "ChestMagicInventory" ); // TODO: determine real names of Magic Chests
-			inventories.magicChest2       = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"), "Magic Chest 2", "ChestMagic2Inventory");
+				inventories.chests[i] = Inventories.parse(
+					data,
+					getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Inventory"),
+					getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Layout"),
+					"Container "+i, "Chest"+(i+1)+"Inventory"
+				);
+			inventories.magicChest = Inventories.parse(
+				data,
+				getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ),
+				getObjectValue(data.json_data, "PlayerStateData", "ChestMagicLayout" ),
+				"Magic Chest", "ChestMagicInventory"
+			); // TODO: determine real names of Magic Chests
+			inventories.magicChest2 = Inventories.parse(
+				data,
+				getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"),
+				getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Layout"),
+				"Magic Chest 2", "ChestMagic2Inventory"
+			);
 			if (hasValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"))
-				inventories.ingredientStorage = Inventories.parse(data,getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"), "Ingredient Storage", "IngredientStorageInventory");
+				inventories.ingredientStorage = Inventories.parse(
+					data,
+					getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"),
+					getObjectValue(data.json_data, "PlayerStateData", "IngredientStorageLayout"),
+					"Ingredient Storage", "IngredientStorageInventory"
+				);
 			
 			return inventories;
 		}
 		
 		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, String inventoryLabel, String inventorySourcePath) {
+			return parse(source, inventoryData, null, inventoryLabel, inventorySourcePath);
+		}
+		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, JSON_Object<NVExtra,VExtra> inventoryLayoutData, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
 			// TODO: rework Inventory parsing: support more cases, read more values, prevent unread arrays
-			// TODO: read ChestLayouts
 			
 			Inventory inventory = new Inventory(inventoryLabel);
 			inventory.substanceMaxStorageMultiplier = getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
@@ -1728,6 +1798,9 @@ public class SaveGameData {
 				inventory.parseSlots(source, (int)(long)inventory.width, (int)(long)inventory.height, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
 			}
 			inventory.parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
+			
+			if (inventoryLayoutData!=null)
+				inventory.inventoryLayout = new Inventory.InventoryLayout(inventoryLayoutData);
 			
 			return inventory;
 		}
@@ -1882,6 +1955,7 @@ public class SaveGameData {
 				public Integer usedSlots;
 				public Integer validSlots;
 				public BaseStatValue[] baseStatValues;
+				public InventoryLayout inventoryLayout;
 				public final Vector<Consumer<TextAreaOutput>> extraInfosOutputs;
 				
 				public Inventory(String label) {
@@ -1898,16 +1972,9 @@ public class SaveGameData {
 					this.baseStatValues = null;
 					this.usedSlots = null;
 					this.validSlots = null;
+					inventoryLayout = null;
 					extraInfosOutputs = new Vector<>();
 				}
-		
-		//		private SaveGameData getSource2() {
-		//			return SaveGameData.this;
-		//		}
-		
-		//		public SaveGameData getSource() {
-		//			return getSource2();
-		//		}
 		
 				public void addExtraInfos(Consumer<TextAreaOutput> extraInfosOutput) {
 					if (extraInfosOutput!=null)
@@ -1960,10 +2027,6 @@ public class SaveGameData {
 							}
 						return null;
 					}
-		
-		//			public SaveGameData getSource() {
-		//				return SaveGameData.this;
-		//			}
 				
 				}
 		
@@ -1973,6 +2036,28 @@ public class SaveGameData {
 					private BaseStatValue(String baseStatID, Double value) {
 						this.baseStatID = baseStatID;
 						this.value = value;
+					}
+				}
+
+				public static class InventoryLayout {
+				
+					public final Long slots;
+					public final SeedValue seed;
+					public final Long level;
+
+					public InventoryLayout(JSON_Object<NVExtra, VExtra> data) {
+						this.slots = getIntegerValue(data, "Slots");
+						this.seed  = SeedValue.parse(data, "Seed");
+						this.level = getIntegerValue(data, "Level");
+					}
+
+					@Override
+					public String toString() {
+						StringBuilder sb = new StringBuilder();
+						if (slots!=null) sb.append(String.format("%d Slots", slots));
+						if (level!=null) sb.append(String.format("%sLevel %d", sb.length()>0 ? ", " :"", level));
+						if (seed !=null) sb.append(String.format("%sSeed: %s", sb.length()>0 ? ", " :"", seed.getSeedStr(false)));
+						return sb.toString();
 					}
 				}
 			}
@@ -1993,7 +2078,7 @@ public class SaveGameData {
 			companions = parseCompanionArray("Companions", arrCompanions);
 			eggs       = parseCompanionArray("CompanionEggs",arrCompanionEggs);
 			isUnlocked = parseBoolArray("UnlockedCompanionSlots",arrUnlockedCompanionSlots);
-			equipment = parseObjectArray(Appearances.BlockCArray::new, "PlayerStateData.[??? j30]", true, data.json_data, "PlayerStateData","[??? j30]");
+			equipment  = parseObjectArray(Appearances.BlockCArray::new, "PlayerStateData.[??? j30]", true, data.json_data, "PlayerStateData","[??? j30]");
 		}
 		
 		public boolean isEmpty() {
@@ -3307,7 +3392,7 @@ public class SaveGameData {
 			
 			public StoredInteraction(JSON_Object<NVExtra,VExtra> objectValue, int index) {
 				this.index = index;
-				intXf4 = getIntegerValue(objectValue, "[??? Xf4]");
+				intXf4 = getIntegerValue_optional(objectValue, "[??? Xf4]");
 				interactions = parseObjectArray(Interaction::new, "PlayerStateData.StoredInteractions[].Interactions", objectValue,"Interactions");
 			}
 			

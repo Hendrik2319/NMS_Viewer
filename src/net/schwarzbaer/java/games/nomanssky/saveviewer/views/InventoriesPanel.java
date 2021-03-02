@@ -325,6 +325,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				textarea.append("Version      : "+inventory.version+"\r\n");
 				textarea.append("Product MaxStorage Multiplier  : "+inventory.productMaxStorageMultiplier+"\r\n");
 				textarea.append("Substance MaxStorage Multiplier: "+inventory.substanceMaxStorageMultiplier+"\r\n");
+				if (inventory.inventoryLayout!=null)
+					textarea.append(String.format("\"Layout\"     :%n   %s\r\n", inventory.inventoryLayout.toString()));
 				if (inventory.baseStatValues==null || inventory.baseStatValues.length==0)
 					textarea.append("Base Status Values: none\r\n");
 				else {
