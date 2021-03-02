@@ -1552,13 +1552,11 @@ public class SaveGameData {
 			direction = Coordinates.parse(vehicleData, "Direction");
 			
 			if (inventory!=null) {
-				if (name!=null && !name.isEmpty()) inventoryLabel += " \""+name+"\"";
+				if (name!=null && !name.isEmpty()) inventory.label += " \""+name+"\"";
 				String iClass = inventory.inventoryClass;
 				Integer validSlots = inventory.validSlots;
-				inventoryLabel += String.format("<%s%s-%s>", vehicleClass==null?"":vehicleClass+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
-				if (this.isPrimary) inventoryLabel += "   [Primary]";
-				
-				inventory.label = inventoryLabel;
+				inventory.label += String.format("<%s%s-%s>", vehicleClass==null?"":vehicleClass+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
+				if (this.isPrimary) inventory.label += "   [Primary]";
 			}
 			
 			if (inventory!=null) {
@@ -1765,46 +1763,9 @@ public class SaveGameData {
 		}
 		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, JSON_Object<NVExtra,VExtra> inventoryLayoutData, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
-			// TODO: rework Inventory parsing: support more cases, read more values, prevent unread arrays
-			
-			Inventory inventory = new Inventory(inventoryLabel);
-			inventory.substanceMaxStorageMultiplier = getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
-			inventory.productMaxStorageMultiplier   = getIntegerValue(inventoryData, "ProductMaxStorageMultiplier");
-			inventory.width   = getIntegerValue(inventoryData, "Width");
-			inventory.height  = getIntegerValue(inventoryData, "Height");
-			inventory.isCool  = getBoolValue   (inventoryData, "IsCool");
-			inventory.name    = getStringValue_optional(inventoryData, "Name");
-			inventory.version = getIntegerValue(inventoryData, "Version");
-			
-			inventory.inventoryClass = getStringValue(inventoryData, "Class","InventoryClass");
-
-			if (inventory.inventoryClass==null) {
-				JSON_Object<NVExtra,VExtra> classObj = getObjectValue(inventoryData, "Class");
-				if (classObj==null) inventory.inventoryClass = "<no \"Class\" value>";
-				else {
-					Value<NVExtra,VExtra> value = classObj.getValue("InventoryClass");
-					if (value==null) inventory.inventoryClass = "<no \"Class.InventoryClass\" value>";
-					else             inventory.inventoryClass = "<wrong \"Class.InventoryClass\" value>";
-				}
-			}
-			
-			if (inventory.width!=null && inventory.height!=null && inventory.width>0 && inventory.height>0) {
-				JSON_Array<NVExtra,VExtra> arrSlots            = getArrayValue(inventoryData,"Slots");
-				JSON_Array<NVExtra,VExtra> arrValidSlotIndices = getArrayValue(inventoryData,"ValidSlotIndices");
-				JSON_Array<NVExtra,VExtra> arrSpecialSlots     = getArrayValue(inventoryData,"SpecialSlots"    );
-				if (arrSlots           !=null) inventory.usedSlots  = arrSlots.size();
-				if (arrValidSlotIndices!=null) inventory.validSlots = arrValidSlotIndices.size();
-				
-				inventory.parseSlots(source, (int)(long)inventory.width, (int)(long)inventory.height, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
-			}
-			inventory.parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
-			
-			if (inventoryLayoutData!=null)
-				inventory.inventoryLayout = new Inventory.InventoryLayout(inventoryLayoutData);
-			
-			return inventory;
+			return new Inventory(source, inventoryData, inventoryLayoutData, inventoryLabel, inventorySourcePath);
 		}
-		
+
 		public Player player;
 		public Inventory[] chests = null;
 		public Inventory magicChest = null;
@@ -1829,238 +1790,268 @@ public class SaveGameData {
 		}
 		public final static class Inventory {
 		
-				private void parseSlots(SaveGameData source, int width, int height, JSON_Array<NVExtra,VExtra> arrSlots, JSON_Array<NVExtra,VExtra> arrValidSlotIndices, JSON_Array<NVExtra,VExtra> arrSpecialSlots, String inventoryLabel, String inventorySourcePath) {
-					slots = new Slot[width][height];
-					for (Slot[] row:slots)
-						Arrays.fill(row, null);
-					
-					if (arrSlots==null) {
-						SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no slots.");
-						return;
+			public String label;
+			public final String name;
+			public final Long width;
+			public final Long height;
+			public final Long version;
+			public final String inventoryClass;
+			public final Boolean isCool;
+			public final Long productMaxStorageMultiplier;
+			public final Long substanceMaxStorageMultiplier;
+			public final Slot[][] slots;
+			public final Integer usedSlots;
+			public final Integer validSlots;
+			public final BaseStatValue[] baseStatValues;
+			public final InventoryLayout inventoryLayout;
+			public final Vector<Consumer<TextAreaOutput>> extraInfosOutputs;
+	
+			private Inventory(SaveGameData source, JSON_Object<NVExtra, VExtra> inventoryData, JSON_Object<NVExtra, VExtra> inventoryLayoutData, String inventoryLabel, String inventorySourcePath) {
+				this.label = inventoryLabel;
+				extraInfosOutputs = new Vector<>();
+				
+				// TODO: rework Inventory parsing: support more cases, read more values, prevent unread arrays
+				substanceMaxStorageMultiplier = getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
+				productMaxStorageMultiplier   = getIntegerValue(inventoryData, "ProductMaxStorageMultiplier");
+				width   = getIntegerValue(inventoryData, "Width");
+				height  = getIntegerValue(inventoryData, "Height");
+				isCool  = getBoolValue   (inventoryData, "IsCool");
+				name    = getStringValue_optional(inventoryData, "Name");
+				version = getIntegerValue(inventoryData, "Version");
+				
+				String preInventoryClass = getStringValue(inventoryData, "Class","InventoryClass");
+			
+				if (preInventoryClass != null)
+					inventoryClass = preInventoryClass;
+				else {
+					JSON_Object<NVExtra,VExtra> classObj = getObjectValue(inventoryData, "Class");
+					if (classObj==null) inventoryClass = "<no \"Class\" value>";
+					else {
+						Value<NVExtra,VExtra> value = classObj.getValue("InventoryClass");
+						if (value==null) inventoryClass = "<no \"Class.InventoryClass\" value>";
+						else             inventoryClass = "<wrong \"Class.InventoryClass\" value>";
 					}
+				}
+				
+				if (width!=null && height!=null && width>0 && height>0) {
+					JSON_Array<NVExtra,VExtra> arrSlots            = getArrayValue(inventoryData,"Slots");
+					JSON_Array<NVExtra,VExtra> arrValidSlotIndices = getArrayValue(inventoryData,"ValidSlotIndices");
+					JSON_Array<NVExtra,VExtra> arrSpecialSlots     = getArrayValue(inventoryData,"SpecialSlots"    );
+					usedSlots  = arrSlots            == null ? null : arrSlots           .size();
+					validSlots = arrValidSlotIndices == null ? null : arrValidSlotIndices.size();
+					slots = parseSlots(source, (int)(long)width, (int)(long)height, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
+				} else {
+					usedSlots  = null;
+					validSlots = null;
+					slots = null;
+				}
+				
+				baseStatValues = parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"), inventoryLabel, inventorySourcePath);
+				
+				inventoryLayout = inventoryLayoutData==null ? null : new Inventory.InventoryLayout(inventoryLayoutData);
+				
+			}
+
+			private Slot[][] parseSlots(SaveGameData source, int width, int height, JSON_Array<NVExtra,VExtra> arrSlots, JSON_Array<NVExtra,VExtra> arrValidSlotIndices, JSON_Array<NVExtra,VExtra> arrSpecialSlots, String inventoryLabel, String inventorySourcePath) {
+				Slot[][] slots = new Slot[width][height];
+				for (Slot[] row:slots)
+					Arrays.fill(row, null);
+				
+				if (arrSlots==null) {
+					SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no slots.");
+					return slots;
+				}
+				
+				if (arrValidSlotIndices==null) {
+					SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
+					return slots;
+				}
+				
+				int redundantIndices = 0;
+				Vector<Value<NVExtra,VExtra>> wrongIndices = new Vector<>();
+				for (Value<NVExtra,VExtra> value:arrValidSlotIndices) {
+					JSON_Object<NVExtra,VExtra> indexObj = getObject(value);
+					if (indexObj==null) continue;
+					Long indexX = getIntegerValue(indexObj, "X");
+					Long indexY = getIntegerValue(indexObj, "Y");
+					if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
+					if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
+					if (slots[(int)(long)indexX][(int)(long)indexY]==null) {
+						slots[(int)(long)indexX][(int)(long)indexY] = new Slot(true,indexX,indexY);
+					} else
+						++redundantIndices;
+				}
+				if (!wrongIndices.isEmpty())
+					SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
+				if (redundantIndices>0)
+					SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
+				
+				redundantIndices = 0;
+				int notValidSlots = 0;
+				Vector<Value<NVExtra,VExtra>> wrongSlots = new Vector<>();
+				for (Value<NVExtra,VExtra> value:arrSlots) {
+					JSON_Object<NVExtra,VExtra> slotObj = getObject(value);
+					if (slotObj==null) { wrongSlots.add(value); continue; }
+					Slot slot = new Slot(false);
+					slot.typeStr      = getStringValue (slotObj, "Type","InventoryType");
+					slot.idStr        = getStringValue (slotObj, "Id");
+					slot.amount       = getIntegerValue(slotObj, "Amount");
+					slot.maxAmount    = getIntegerValue(slotObj, "MaxAmount");
+					slot.damageFactor = getFloatValue  (slotObj, "DamageFactor");
+					slot.indexX       = getIntegerValue(slotObj, "Index","X");
+					slot.indexY       = getIntegerValue(slotObj, "Index","Y");
+					slot.unknownBool  = getBoolValue_optional(slotObj, "[??? b76 InventorySlot Bool:true]");
 					
-					if (arrValidSlotIndices==null) {
-						SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
-						return;
-					}
-					
-					int redundantIndices = 0;
-					Vector<Value<NVExtra,VExtra>> wrongIndices = new Vector<>();
-					for (Value<NVExtra,VExtra> value:arrValidSlotIndices) {
-						JSON_Object<NVExtra,VExtra> indexObj = getObject(value);
-						if (indexObj==null) continue;
-						Long indexX = getIntegerValue(indexObj, "X");
-						Long indexY = getIntegerValue(indexObj, "Y");
-						if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
-						if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
-						if (slots[(int)(long)indexX][(int)(long)indexY]==null) {
-							slots[(int)(long)indexX][(int)(long)indexY] = new Slot(true,indexX,indexY);
-						} else
-							++redundantIndices;
-					}
-					if (!wrongIndices.isEmpty())
-						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
-					if (redundantIndices>0)
-						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
-					
-					redundantIndices = 0;
-					int notValidSlots = 0;
-					Vector<Value<NVExtra,VExtra>> wrongSlots = new Vector<>();
-					for (Value<NVExtra,VExtra> value:arrSlots) {
-						JSON_Object<NVExtra,VExtra> slotObj = getObject(value);
-						if (slotObj==null) { wrongSlots.add(value); continue; }
-						Slot slot = new Slot(false);
-						slot.typeStr      = getStringValue (slotObj, "Type","InventoryType");
-						slot.idStr        = getStringValue (slotObj, "Id");
-						slot.amount       = getIntegerValue(slotObj, "Amount");
-						slot.maxAmount    = getIntegerValue(slotObj, "MaxAmount");
-						slot.damageFactor = getFloatValue  (slotObj, "DamageFactor");
-						slot.indexX       = getIntegerValue(slotObj, "Index","X");
-						slot.indexY       = getIntegerValue(slotObj, "Index","Y");
-						slot.unknownBool  = getBoolValue_optional(slotObj, "[??? b76 InventorySlot Bool:true]");
-						
-						if (slot.typeStr!=null) {
-							switch(slot.typeStr) {
-							case "Product"   : slot.type = SlotType.Product; break;
-							case "Technology": slot.type = SlotType.Technology; break;
-							case "Substance" : slot.type = SlotType.Substance; break;
-							}
+					if (slot.typeStr!=null) {
+						switch(slot.typeStr) {
+						case "Product"   : slot.type = SlotType.Product; break;
+						case "Technology": slot.type = SlotType.Technology; break;
+						case "Substance" : slot.type = SlotType.Substance; break;
 						}
-						if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
-						if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
-						int x = (int)(long)slot.indexX;
-						int y = (int)(long)slot.indexY;
-						if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
-						if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantIndices; continue; }
-						
-						slots[x][y] = slot;
-						
-						if (slot.type!=null && slot.idStr!=null) {
-							IDMap map = slot.getIDMap();
-							if (map!=null) {
-								slot.id = map.get(slot.idStr,source,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
-								slot.id.getUsage(source).addInventoryUsage(inventoryLabel,x,y);
-							}
+					}
+					if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
+					if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
+					int x = (int)(long)slot.indexX;
+					int y = (int)(long)slot.indexY;
+					if (slots[x][y]==null   ) { wrongSlots.add(value); ++notValidSlots; continue; }
+					if (!slots[x][y].isEmpty) { wrongSlots.add(value); ++redundantIndices; continue; }
+					
+					slots[x][y] = slot;
+					
+					if (slot.type!=null && slot.idStr!=null) {
+						IDMap map = slot.getIDMap();
+						if (map!=null) {
+							slot.id = map.get(slot.idStr,source,GeneralizedID.Usage.Type.InventorySlot); // addGeneralizedID(map, slot.idStr);
+							slot.id.getUsage(source).addInventoryUsage(inventoryLabel,x,y);
 						}
 					}
-					if (!wrongSlots.isEmpty()) SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
-					if (redundantIndices>0   ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
-					if (notValidSlots>0      ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
-					
-					redundantIndices = 0;
-					wrongIndices.clear();
-					for (Value<NVExtra,VExtra> value:arrSpecialSlots) {
-						JSON_Object<NVExtra,VExtra> indexObj = getObject(value);
-						if (indexObj==null) continue;
-						Long   indexX = getIntegerValue(indexObj, "Index","X");
-						Long   indexY = getIntegerValue(indexObj, "Index","Y");
-						String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
-						if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
-						if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
-						Slot slot = slots[(int)(long)indexX][(int)(long)indexY];
-						if (slot==null) { wrongIndices.add(value); continue; }
-						if (slot.specialSlotType==null) {
-							slot.specialSlotType = type;
-						} else
-							++redundantIndices;
-					}
-					if (!wrongIndices.isEmpty())
-						SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
-					if (redundantIndices>0)
-						SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
 				}
-		
-				private void parseBaseStatValues(JSON_Array<NVExtra,VExtra> valueArray, String inventoryLabel, String inventorySourcePath) {
-					baseStatValues = null;
-					if (valueArray==null) return;
-					
-					baseStatValues = new BaseStatValue[valueArray.size()];
-					for (int i=0; i<valueArray.size(); ++i) {
-						JSON_Object<NVExtra,VExtra> obj = getObject(valueArray.get(i));
-						if (obj==null) { baseStatValues[i]=null; continue; }
-						baseStatValues[i] = new BaseStatValue(getStringValue(obj,"BaseStatID"),getFloatValue(obj,"Value"));
-					}
-				}
-		
-				public String label;
-				public String name;
-				public Long width;
-				public Long height;
-				public Long version;
-				public String inventoryClass;
-				public Boolean isCool;
-				public Long productMaxStorageMultiplier;
-				public Long substanceMaxStorageMultiplier;
-				public Slot[][] slots;
-				public Integer usedSlots;
-				public Integer validSlots;
-				public BaseStatValue[] baseStatValues;
-				public InventoryLayout inventoryLayout;
-				public final Vector<Consumer<TextAreaOutput>> extraInfosOutputs;
+				if (!wrongSlots.isEmpty()) SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
+				if (redundantIndices>0   ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
+				if (notValidSlots>0      ) SaveViewer.log_error_ln(inventorySourcePath+": Found "+notValidSlots+" not valid slots.");
 				
-				public Inventory(String label) {
-					this.label = label;
-					this.name = null;
-					this.width = null;
-					this.height = null;
-					this.version = null;
-					this.inventoryClass = null;
-					this.isCool = null;
-					this.productMaxStorageMultiplier = null;
-					this.substanceMaxStorageMultiplier = null;
-					this.slots = null;
-					this.baseStatValues = null;
-					this.usedSlots = null;
-					this.validSlots = null;
-					inventoryLayout = null;
-					extraInfosOutputs = new Vector<>();
+				redundantIndices = 0;
+				wrongIndices.clear();
+				for (Value<NVExtra,VExtra> value:arrSpecialSlots) {
+					JSON_Object<NVExtra,VExtra> indexObj = getObject(value);
+					if (indexObj==null) continue;
+					Long   indexX = getIntegerValue(indexObj, "Index","X");
+					Long   indexY = getIntegerValue(indexObj, "Index","Y");
+					String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
+					if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
+					if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
+					Slot slot = slots[(int)(long)indexX][(int)(long)indexY];
+					if (slot==null) { wrongIndices.add(value); continue; }
+					if (slot.specialSlotType==null) {
+						slot.specialSlotType = type;
+					} else
+						++redundantIndices;
 				}
-		
-				public void addExtraInfos(Consumer<TextAreaOutput> extraInfosOutput) {
-					if (extraInfosOutput!=null)
-						extraInfosOutputs.add(extraInfosOutput);
-				}
-
-				public enum SlotType { Product, Technology, Substance }
-		
-				public final static class Slot {
-					public Boolean unknownBool;
-					public Long indexX;
-					public Long indexY;
-					public String idStr;
-					public GeneralizedID id;
-					public String typeStr;
-					public SlotType type;
-					public Long amount;
-					public Long maxAmount;
-					public Double damageFactor;
-					public final boolean isEmpty;
-					public String specialSlotType;
-					
-					
-					public Slot(boolean isEmpty) {
-						this.indexX = null;
-						this.indexY = null;
-						this.idStr = null;
-						this.id = null;
-						this.typeStr = null;
-						this.type = null;
-						this.amount = null;
-						this.maxAmount = null;
-						this.damageFactor = null;
-						this.isEmpty = isEmpty;
-						this.specialSlotType = null;
-					}
-		
-					public Slot(boolean isEmpty, Long indexX, Long indexY) {
-						this(isEmpty);
-						this.indexX = indexX;
-						this.indexY = indexY;
-					}
-
-					public IDMap getIDMap() {
-						if (type!=null)
-							switch(type) {
-							case Product   : return GameInfos.productIDs;
-							case Technology: return GameInfos.techIDs;
-							case Substance : return GameInfos.substanceIDs;
-							}
-						return null;
-					}
+				if (!wrongIndices.isEmpty())
+					SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
+				if (redundantIndices>0)
+					SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
 				
-				}
-		
-				public final static class BaseStatValue {
-					public final String baseStatID;
-					public final Double value;
-					private BaseStatValue(String baseStatID, Double value) {
-						this.baseStatID = baseStatID;
-						this.value = value;
-					}
-				}
+				return slots;
+			}
 
-				public static class InventoryLayout {
+			private BaseStatValue[] parseBaseStatValues(JSON_Array<NVExtra,VExtra> valueArray, String inventoryLabel, String inventorySourcePath) {
+				if (valueArray==null) return null;
 				
-					public final Long slots;
-					public final SeedValue seed;
-					public final Long level;
+				BaseStatValue[] baseStatValues = new BaseStatValue[valueArray.size()];
+				for (int i=0; i<valueArray.size(); ++i) {
+					JSON_Object<NVExtra,VExtra> obj = getObject(valueArray.get(i));
+					if (obj==null) { baseStatValues[i]=null; continue; }
+					baseStatValues[i] = new BaseStatValue(getStringValue(obj,"BaseStatID"),getFloatValue(obj,"Value"));
+				}
+				return baseStatValues;
+			}
 
-					public InventoryLayout(JSON_Object<NVExtra, VExtra> data) {
-						this.slots = getIntegerValue(data, "Slots");
-						this.seed  = SeedValue.parse(data, "Seed");
-						this.level = getIntegerValue(data, "Level");
-					}
+			public void addExtraInfos(Consumer<TextAreaOutput> extraInfosOutput) {
+				if (extraInfosOutput!=null)
+					extraInfosOutputs.add(extraInfosOutput);
+			}
 
-					@Override
-					public String toString() {
-						StringBuilder sb = new StringBuilder();
-						if (slots!=null) sb.append(String.format("%d Slots", slots));
-						if (level!=null) sb.append(String.format("%sLevel %d", sb.length()>0 ? ", " :"", level));
-						if (seed !=null) sb.append(String.format("%sSeed: %s", sb.length()>0 ? ", " :"", seed.getSeedStr(false)));
-						return sb.toString();
-					}
+			public enum SlotType { Product, Technology, Substance }
+	
+			public final static class Slot {
+				public Boolean unknownBool;
+				public Long indexX;
+				public Long indexY;
+				public String idStr;
+				public GeneralizedID id;
+				public String typeStr;
+				public SlotType type;
+				public Long amount;
+				public Long maxAmount;
+				public Double damageFactor;
+				public final boolean isEmpty;
+				public String specialSlotType;
+				
+				
+				public Slot(boolean isEmpty) {
+					this.indexX = null;
+					this.indexY = null;
+					this.idStr = null;
+					this.id = null;
+					this.typeStr = null;
+					this.type = null;
+					this.amount = null;
+					this.maxAmount = null;
+					this.damageFactor = null;
+					this.isEmpty = isEmpty;
+					this.specialSlotType = null;
+				}
+	
+				public Slot(boolean isEmpty, Long indexX, Long indexY) {
+					this(isEmpty);
+					this.indexX = indexX;
+					this.indexY = indexY;
+				}
+
+				public IDMap getIDMap() {
+					if (type!=null)
+						switch(type) {
+						case Product   : return GameInfos.productIDs;
+						case Technology: return GameInfos.techIDs;
+						case Substance : return GameInfos.substanceIDs;
+						}
+					return null;
+				}
+			
+			}
+	
+			public final static class BaseStatValue {
+				public final String baseStatID;
+				public final Double value;
+				private BaseStatValue(String baseStatID, Double value) {
+					this.baseStatID = baseStatID;
+					this.value = value;
 				}
 			}
+
+			public static class InventoryLayout {
+			
+				public final Long slots;
+				public final SeedValue seed;
+				public final Long level;
+
+				public InventoryLayout(JSON_Object<NVExtra, VExtra> data) {
+					this.slots = getIntegerValue(data, "Slots");
+					this.seed  = SeedValue.parse(data, "Seed");
+					this.level = getIntegerValue(data, "Level");
+				}
+
+				@Override
+				public String toString() {
+					StringBuilder sb = new StringBuilder();
+					if (slots!=null) sb.append(String.format("%d Slots", slots));
+					if (level!=null) sb.append(String.format("%sLevel %d", sb.length()>0 ? ", " :"", level));
+					if (seed !=null) sb.append(String.format("%sSeed: %s", sb.length()>0 ? ", " :"", seed.getSeedStr(false)));
+					return sb.toString();
+				}
+			}
+		}
 	
 	}
 	
