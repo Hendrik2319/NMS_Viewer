@@ -115,14 +115,18 @@ public class Images {
 		addColor(colorValuesVec, 0x701781, "Exotisch" );
 		addColor(colorValuesVec, 0x4B2A57, "Pflanze Violet" );
 		addColor(colorValuesVec, 0x542640, "Pflanze Violet1" );
+		addColor(colorValuesVec, 0x4E2A58, "(E) Pflanze Violet" );
+		addColor(colorValuesVec, 0x512741, "(E) Pflanze Violet II" );
 		addColor(colorValuesVec, 0x1E4FD0, "Pflanze Blau" );
 		addColor(colorValuesVec, 0x218CAC, "Pflanze Sd" );
 		addColor(colorValuesVec, 0x00A64C, "Pflanze Grün" );
 		addColor(colorValuesVec, 0x1EB808, "Pflanze Grün1" );
 		addColor(colorValuesVec, 0x5A6F36, "Pflanze Oliv" );
+		addColor(colorValuesVec, 0x5B6F35, "(E) Pflanze Oliv" );
 		addColor(colorValuesVec, 0x78502D, "Pflanze Braun" );
 		addColor(colorValuesVec, 0xC68C1E, "Pflanze Gelb" );
 		addColor(colorValuesVec, 0xB74418, "Pflanze Rot" );
+		addColor(colorValuesVec, 0xB94318, "(E) Pflanze Rot" );
 		addColor(colorValuesVec, 0x236D4C, "Waffe Impulswerfer" );
 		addColor(colorValuesVec, 0x19BC79, "Waffe Impulswerfer Upgrade" );
 		addColor(colorValuesVec, 0x495746, "Waffe Minenlaser" );
@@ -134,39 +138,48 @@ public class Images {
 		addColor(colorValuesVec, 0x2E999F, "Waffe Plasmawerfer" );
 		addColor(colorValuesVec, 0x7D4665, "Waffe Zyklotron-B. Upgrade" );
 		addColor(colorValuesVec, 0x7E0100, "Rohstoff Cd" );
-		addColor(colorValuesVec, 0xBB3830, "Rohstoff O2" );
+		addColor(colorValuesVec, 0xBB3830, "(E) Rohstoff O2" );
 		addColor(colorValuesVec, 0xD92600, "Rohstoff P" );
 		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
+		addColor(colorValuesVec, 0xF26D15, "(E) Rohstoff Na ..." );
 		addColor(colorValuesVec, 0xE57000, "Rohstoff Py" );
 		addColor(colorValuesVec, 0xE88F00, "Rohstoff Cu" );
 		addColor(colorValuesVec, 0xFFAD00, "Rohstoff U" );
 		addColor(colorValuesVec, 0xA96E06, "Rohstoff Au" );
 		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
+		addColor(colorValuesVec, 0x260000, "(E) Rohstoff Ch" );
 		addColor(colorValuesVec, 0x4D414F, "Rohstoff Pf" );
 		addColor(colorValuesVec, 0x4D3780, "Rohstoff Rn" );
+		addColor(colorValuesVec, 0x4C3780, "(E) Rohstoff Rn" );
 		addColor(colorValuesVec, 0x386118, "Rohstoff Em" );
 		addColor(colorValuesVec, 0x265E39, "Rohstoff Sf" );
+		addColor(colorValuesVec, 0x265E3A, "(E) Rohstoff Sf" );
 		addColor(colorValuesVec, 0x1F8A42, "Rohstoff Cl" );
 		addColor(colorValuesVec, 0x1F8B40, "Rohstoff NaCl" );
 		addColor(colorValuesVec, 0x4F7576, "Rohstoff Pt" );
+		addColor(colorValuesVec, 0x507575, "Rohstoff Pt" );
 		addColor(colorValuesVec, 0x365A7E, "Rohstoff H" );
-		addColor(colorValuesVec, 0x005C83, "Rohstoff Co" );
+		addColor(colorValuesVec, 0x355A7D, "(E) Rohstoff H" );
+		addColor(colorValuesVec, 0x005C83, "(E) Rohstoff Co ..." );
 		addColor(colorValuesVec, 0x013A7F, "Rohstoff In" );
-		addColor(colorValuesVec, 0xDEDCD1, "Rohstoff H3" );
+		addColor(colorValuesVec, 0xDEDCD1, "(E) Rohstoff H3" );
 		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
-		addColor(colorValuesVec, 0xDE921F, "Rohstoff N" );
+		addColor(colorValuesVec, 0x8A7F72, "(E) Rohstoff Fe ..." );
+		addColor(colorValuesVec, 0xDE921F, "(E) Rohstoff N" );
 		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
 		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk (alt)" );
 		addColor(colorValuesVec, 0x007951, "Völker-Geschenk" );
-		addColor(colorValuesVec, 0x4D2957, "Völker-Geschenk (synth)" );
+		addColor(colorValuesVec, 0x4D2957, "(E) Völker-Geschenk (synth)" );
 		addColor(colorValuesVec, 0xF0A92B, "Produkt & Upgrade S" );
+		addColor(colorValuesVec, 0xF3A923, "(E) Produkt" );
 		addColor(colorValuesVec, 0xC11746, "Energie" );
-		addColor(colorValuesVec, 0x2C7C9F, "Tragbares Objekt" );
+		addColor(colorValuesVec, 0xC01746, "(E) Energie" );
+		addColor(colorValuesVec, 0x2C7C9F, "(E) Tragbares Objekt" );
 		addColor(colorValuesVec, 0x085C78, "Tech 1" );
 		addColor(colorValuesVec, 0x0063B6, "Tech 2 & Upgrade B" );
-		addColor(colorValuesVec, 0x095C77, "Tech 1 (Synth)" );
-		addColor(colorValuesVec, 0x2177C8, "Tech 2 (Synth)" );
-		addColor(colorValuesVec, 0x0063B7, "Tech 3 (Synth, old: Tech2)" );
+		addColor(colorValuesVec, 0x095C77, "(E) Tech 1 (Synth)" );
+		addColor(colorValuesVec, 0x2177C8, "(E) Tech 2 (Synth)" );
+		addColor(colorValuesVec, 0x0063B7, "(E) Tech 3 (Synth, old: Tech2)" );
 		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
 		addColor(colorValuesVec, 0x5B9352, "Upgrade C" );
 		addColor(colorValuesVec, 0x682603, "Schlüssel" );
@@ -174,14 +187,25 @@ public class Images {
 		addColor(colorValuesVec, 0x507951, "Gas-Produkt 1" );
 		addColor(colorValuesVec, 0x207951, "Gas-Produkt 2" );
 		addColor(colorValuesVec, 0x153250, "Fundstück (gewöhnlich)" );
+		addColor(colorValuesVec, 0x15334F, "(E) Fundstück (gewöhnlich)" );
 		addColor(colorValuesVec, 0x460C34, "Fundstück (ungewöhnlich)" );
 		addColor(colorValuesVec, 0xDC9401, "Fundstück (selten)" );
+		addColor(colorValuesVec, 0xDC9400, "(E) Fundstück (selten)" );
 		addColor(colorValuesVec, 0x7B0000, "Schaden" );
 		addColor(colorValuesVec, 0xFFFFFF, "Weiß" );
 		addColor(colorValuesVec, 0xCCCCCC, "CCCCCC" );
 		addColor(colorValuesVec, 0x447519, "Larvenkern" );
-		addColor(colorValuesVec, 0x1A2733, "Special Token" );
-		addColor(colorValuesVec, 0x007953, "Köder (Pflanze)" );
+		addColor(colorValuesVec, 0x1A2733, "(E) Special Token" );
+		addColor(colorValuesVec, 0x007953, "(E) Köder (Pflanze)" );
+		addColor(colorValuesVec, 0x8E8377, "QuickSilver" );
+		addColor(colorValuesVec, 0x321A4A, "LivingShipComp" );
+		addColor(colorValuesVec, 0xA1772B, "SUNGOLD" );
+		addColor(colorValuesVec, 0xE59001, "SUNGOLD (exakt)" );
+		addColor(colorValuesVec, 0x706C65, "SOULFRAG" );
+		addColor(colorValuesVec, 0x707070, "707070" );
+		addColor(colorValuesVec, 0x297CCA, "297CCA" );
+		addColor(colorValuesVec, 0xD35300, "D35300" );
+		addColor(colorValuesVec, 0x311A49, "(E) Companion Egg" );
 		
 		loadColorsFromFile(colorValuesVec);
 		
@@ -241,6 +265,13 @@ public class Images {
 		catch (FileNotFoundException e) { e.printStackTrace(); }
 		
 		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+	}
+
+	public String getColorLabel(Integer value) {
+		if (value == null) return null;
+		NamedColor color = colorMap.get(value);
+		if (color!=null) return color.getLabel();
+		return String.format("[%06X]", value);
 	}
 
 	public NamedColor getColor(Integer value) {
@@ -1455,8 +1486,8 @@ public class Images {
 				new ColorUsingIDColumnID("Obs"   ,            String.class,  20,-1, 30, 30, cuid->cuid.id.isObsolete?"#":""),
 				new ColorUsingIDColumnID("ID"    ,            String.class,  20,-1,120,120, cuid->cuid.id.id),
 				new ColorUsingIDColumnID("Symbol",            String.class,  20,-1, 45, 45, cuid->cuid.id.symbol),
-				new ColorUsingIDColumnID("Name"  ,            String.class,  20,-1,300,300, cuid->cuid.id.label),
-				new ColorUsingIDColumnID("Image" ,            String.class,  20,-1,300,300, cuid->cuid.id.imageFileName),
+				new ColorUsingIDColumnID("Name"  ,            String.class,  20,-1,225,225, cuid->cuid.id.label),
+				new ColorUsingIDColumnID("Image" ,            String.class,  20,-1,200,200, cuid->cuid.id.imageFileName),
 			};
 			
 			disabler = new Disabler<>();
@@ -1549,6 +1580,12 @@ public class Images {
 			updateGuiAfterReordering(sortOrderOutput, colorList, sortOrderOutputStr);
 			sortBySimilarityBtn.setEnabled(selected!=null);
 			showUsage(usageView,similarityView);
+			
+			Dimension parentSize = parent.getSize(new Dimension());
+			Dimension dlgSize = getSize(new Dimension());
+			if (dlgSize.width  > parentSize.width ) dlgSize.width  = parentSize.width ;
+			if (dlgSize.height > parentSize.height) dlgSize.height = parentSize.height;
+			setSize(dlgSize);
 		}
 		
 		private void showUsage(TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {

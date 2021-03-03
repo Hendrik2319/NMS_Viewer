@@ -1507,7 +1507,7 @@ public class GameInfos {
 			setImageFileName(aValue==null?null:aValue.toString());
 		}
 		
-		public String getImageBGStr() { if (imageBackground==null) return ""; return String.format("%06X", imageBackground); }
+		public String getImageBGLabel() { return imageBackground==null ? "<no color>" : Images.getInstance().getColorLabel(imageBackground); }
 		public boolean hasImageBG() { return imageBackground!=null; }
 		public Integer getImageBG() { return imageBackground; }
 		public void setImageBG(Integer color) {

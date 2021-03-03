@@ -38,6 +38,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.gui.ValueListOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -65,15 +66,15 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		this.mainwindow = mainwindow;
 		
 		tabbedPane = new JTabbedPane();
-		addTab("Player"          , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech,data.inventories.player.cargo));
+		addTab("Player"    , new InventoryListPanel(mainwindow).addInv(data.inventories.player.standard,data.inventories.player.tech,data.inventories.player.cargo));
 		addTab(data.inventories.grave);
-		addTab("MultiTools"      , new InventoryListPanel(mainwindow).addInv(data.mainMultiTool).addInv(data.altMultiTools));
-		addTab("Freighter"       , new InventoryListPanel(mainwindow).addInv(data.freighter.inventory,data.freighter.inventoryTech));
+		addTab("MultiTools", new InventoryListPanel(mainwindow).addInv(data.mainMultiTool).addInv(data.altMultiTools));
+		addTab("Freighter" , new InventoryListPanel(mainwindow).addInv(data.freighter.inventory,data.freighter.inventoryTech));
 		addTab(data.inventories.ship_old);
 		if (data.spaceShips.vehicles!=null) addTab("SpaceShips", new InventoryListPanel(mainwindow).addInv(data.spaceShips.vehicles));
 		if (data.exocrafts .vehicles!=null) addTab("Exocrafts" , new InventoryListPanel(mainwindow).addInv(data.exocrafts .vehicles));
-		addTab("Containers"      , new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
-		addTab("Magic Chests"    , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.magicChest,data.inventories.magicChest2));
+		addTab("Containers", new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
+		addTab("Other"     , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.baseSalvageCapsule,data.inventories.freighterSalvageCapsule));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override public void stateChanged(ChangeEvent e) {
@@ -340,28 +341,31 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				}
 			} else {
 				Inventory.Slot slot = inventory.slots[inventoryLabel.hoveredSlot.x][inventoryLabel.hoveredSlot.y];
-				textarea.append("Inventory Slot "+inventoryLabel.hoveredSlot.x+","+inventoryLabel.hoveredSlot.y+"\r\n");
+				ValueListOutput out = new ValueListOutput();
+				out.add(0, null, "Inventory Slot %d,%d", inventoryLabel.hoveredSlot.x, inventoryLabel.hoveredSlot.y);
 				if (slot==null) {
-					textarea.append("   is invalid\r\n");
+					out.add(1, null, "%s", "is invalid");
 				} else
 				if (slot.isEmpty) {
-					textarea.append("   is empty\r\n");
+					out.add(1, null, "%s", "is empty");
 				} else {
-					textarea.append("   Label : "+((slot.id!=null && slot.id.hasLabel ())?slot.id.label :"") +"\r\n");
-					textarea.append("   Symbol: "+((slot.id!=null && slot.id.hasSymbol())?slot.id.symbol:"")+"\r\n");
-					textarea.append("   ID    : "+(slot.id==null?("\""+slot.idStr+"\""):("["+slot.id.id+"]"))+"\r\n");
+					out.add(1, "Label" , slot.id!=null && slot.id.hasLabel () ? slot.id.label  : "");
+					out.add(1, "Symbol", slot.id!=null && slot.id.hasSymbol() ? slot.id.symbol : "");
+					if (slot.id!=null) out.add(1, "ID", "[%s]", slot.id.id);
+					else               out.add(1, "ID", slot.idStr);
 					if (slot.id!=null) {
-						if (slot.id.hasImageFileName()) textarea.append("           img: "+slot.id.getImageFileName()+"\r\n");
-						if (slot.id.hasImageBG      ()) textarea.append("           bg : "+slot.id.getImageBGStr()+"\r\n");
+						if (slot.id.hasImageFileName()) out.add(1, "Imgage", "%s", slot.id.getImageFileName());
+						if (slot.id.hasImageBG      ()) out.add(1, "BG"    , "%s", slot.id.getImageBGLabel ());
 					}
-					textarea.append("   Type  : "+(slot.type==null?slot.typeStr:slot.type)+"\r\n");
+					out.add(1, "Type", "%s", slot.type==null ? slot.typeStr : slot.type);
 					if (slot.id!=null && slot.id.type!=null)
-						textarea.append("           "+slot.id.type.label+"\r\n");
-					textarea.append("   Amount: "+slot.amount+"/"+slot.maxAmount+"\r\n");
-					textarea.append("   Damage: "+slot.damageFactor+"\r\n");
+						out.add(1, null, "%s", slot.id.type.label);
+					out.add(1, "Amount", "%d/%d", slot.amount, slot.maxAmount);
+					out.add(1, "Damage", slot.damageFactor);
 					if (slot.specialSlotType!=null)
-						textarea.append("   Special: "+slot.specialSlotType+"\r\n");
+						out.add(1, "Special", "%s", slot.specialSlotType);
 				}
+				textarea.setText(out.generateOutput());
 			}
 		}
 		

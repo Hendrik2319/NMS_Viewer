@@ -1735,17 +1735,17 @@ public class SaveGameData {
 					getObjectValue(data.json_data, "PlayerStateData", "Chest"+(i+1)+"Layout"),
 					"Container "+i, "Chest"+(i+1)+"Inventory"
 				);
-			inventories.magicChest = Inventories.parse(
+			inventories.baseSalvageCapsule = Inventories.parse(
 				data,
 				getObjectValue(data.json_data, "PlayerStateData", "ChestMagicInventory" ),
 				getObjectValue(data.json_data, "PlayerStateData", "ChestMagicLayout" ),
-				"Magic Chest", "ChestMagicInventory"
-			); // TODO: determine real names of Magic Chests
-			inventories.magicChest2 = Inventories.parse(
+				"Base Salvage Capsule", "ChestMagicInventory"
+			);
+			inventories.freighterSalvageCapsule = Inventories.parse(
 				data,
 				getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Inventory"),
 				getObjectValue(data.json_data, "PlayerStateData", "ChestMagic2Layout"),
-				"Magic Chest 2", "ChestMagic2Inventory"
+				"Freighter Salvage Capsule", "ChestMagic2Inventory"
 			);
 			if (hasValue(data.json_data, "PlayerStateData", "IngredientStorageInventory"))
 				inventories.ingredientStorage = Inventories.parse(
@@ -1768,8 +1768,8 @@ public class SaveGameData {
 
 		public Player player;
 		public Inventory[] chests = null;
-		public Inventory magicChest = null;
-		public Inventory magicChest2 = null;
+		public Inventory baseSalvageCapsule = null;
+		public Inventory freighterSalvageCapsule = null;
 		public Inventory ingredientStorage = null;
 		public Inventory ship_old = null;
 		public Inventory grave = null;
