@@ -1661,7 +1661,7 @@ public class GameInfos {
 			Gui.NamedColorListMenu colorListMenu_ImageBG     = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_UpgradeIcon = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_Group       = new Gui.NamedColorListMenu("Background of selected", colors, null, setImageBG);
-			Images.getInstance().addColorListListender(new Images.ColorListListender_() {
+			Images.getInstance().addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded  (NamedColor color) { updateColors(); }
 				@Override public void colorChanged(NamedColor color) { updateColors(); }
 				private void updateColors() {
@@ -1979,7 +1979,7 @@ public class GameInfos {
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
 					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(Images.getInstance().colorValues));
-			Images.getInstance().addColorListListender(new Images.ColorListListender_() {
+			Images.getInstance().addColorListListender(new Images.ColorListListender() {
 				@Override public void colorAdded(NamedColor color) {
 					colorCellEditor.setValues(Images.getInstance().colorValues);
 				}
@@ -2106,7 +2106,7 @@ public class GameInfos {
 				updateIdList();
 				updateNumberOfLabledIDs();
 				
-				Images.getInstance().addColorListListender(new Images.ColorListListender_() {
+				Images.getInstance().addColorListListender(new Images.ColorListListender() {
 					@Override public void colorChanged(NamedColor color) { updateTableColumn(GeneralizedIDColumnID.ImgBG); }
 					@Override public void colorAdded(NamedColor color) {}
 				});
@@ -2298,7 +2298,7 @@ public class GameInfos {
 		private boolean wasIdTemplateAdded;
 		private boolean showAlphaImage;
 	
-		private final Images.ColorListListender_ colorListListender;
+		private final Images.ColorListListender colorListListender;
 		private final ImageListListener imageListListender;
 
 		private final JTextField txtfldLabel;
@@ -2375,7 +2375,7 @@ public class GameInfos {
 				idDataChanged();
 			});
 			
-			colorListListender = new Images.ColorListListender_() {
+			colorListListender = new Images.ColorListListender() {
 				@Override public void colorAdded(Images.NamedColor color) {
 					cmbbxBgColor.addItem(color);
 					cmbbxBgColor.revalidate();

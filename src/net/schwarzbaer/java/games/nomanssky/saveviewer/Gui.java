@@ -46,7 +46,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -866,9 +865,7 @@ public class Gui {
 		}
 
 		public void updateValues(ValueType[] values) {
-			removeAll();
-			listMenuItems.values = values;
-			listMenuItems.addTo(this);
+			listMenuItems.updateValues(values);
 		}
 		public void setValue(ValueType value) {
 			listMenuItems.setValue(value);
@@ -907,28 +904,37 @@ public class Gui {
 			this.parentListMenu = null;
 		}
 		
-		public void addTo(ListMenu<ValueType> parentListMenu) {
-			this.parentListMenu = parentListMenu;
-			addTo((JComponent)parentListMenu);
+		public void updateValues(ValueType[] values) {
+			if (parentListMenu==null) throw new IllegalStateException();
+			this.values = values;
+			parentListMenu.removeAll();
+			createMenuItems();
 		}
 		
-		public void addTo(JComponent parentMenu) {
+		public void addTo(ListMenu<ValueType> parentListMenu) {
+			if (this.parentListMenu!=null)
+				this.parentListMenu.removeAll();
+			this.parentListMenu = parentListMenu;
+			createMenuItems();
+		}
+
+		private void createMenuItems() {
 			buttonGroup = new ButtonGroup();
-			for (ValueType value:values) {
-				
-				JCheckBoxMenuItem menuItem = new ValueMenuItem<ValueType>(value,externFunctionality.isEqual(selectedValue,value));
-				externFunctionality.configureMenuItem(menuItem,value);
-				menuItem.addActionListener(e->{
-					selectedValue = value;
-					externFunctionality.setResult(value);
-					if (parentListMenu!=null && parentListMenu.showSelectedValue) {
-						parentListMenu.showValue(value);
-					}
-				});
-				
-				buttonGroup.add(menuItem);
-				parentMenu.add(menuItem);
-			}
+			if (parentListMenu!=null)
+				for (ValueType value:values) {
+					
+					JCheckBoxMenuItem menuItem = new ValueMenuItem<ValueType>(value,externFunctionality.isEqual(selectedValue,value));
+					externFunctionality.configureMenuItem(menuItem,value);
+					menuItem.addActionListener(e->{
+						selectedValue = value;
+						externFunctionality.setResult(value);
+						if (parentListMenu.showSelectedValue)
+							parentListMenu.showValue(value);
+					});
+					
+					buttonGroup.add(menuItem);
+					parentListMenu.add(menuItem);
+				}
 		}
 		
 		public void clearSelection() {

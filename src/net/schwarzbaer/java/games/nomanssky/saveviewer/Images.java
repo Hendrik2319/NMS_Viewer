@@ -84,7 +84,7 @@ public class Images {
 	
 	public NamedColor[] colorValues;
 	private final HashMap<Integer,NamedColor> colorMap; 
-	private final Vector<ColorListListender_> colorListListenders;
+	private final Vector<ColorListListender> colorListListenders;
 	private boolean wasInitialized;
 	
 	public Images() {
@@ -297,7 +297,7 @@ public class Images {
 		colorMap.put(value, namedColor);
 		colorValues = Arrays.copyOf(colorValues, colorValues.length+1);
 		colorValues[colorValues.length-1] = namedColor;
-		for (ColorListListender_ ccl:colorListListenders)
+		for (ColorListListender ccl:colorListListenders)
 			ccl.colorAdded(namedColor);
 		return true;
 	}
@@ -305,20 +305,20 @@ public class Images {
 	private void setNameOfColor(NamedColor color, String name) {
 		if (color==null) return;
 		color.setName(name);
-		for (ColorListListender_ ccl:colorListListenders)
+		for (ColorListListender ccl:colorListListenders)
 			ccl.colorChanged(color);
 	}
 	
-	public static interface ColorListListender_ {
+	public static interface ColorListListender {
 		public void colorAdded(NamedColor color);
 		public void colorChanged(NamedColor color);
 	}
 	
-	public void addColorListListender(ColorListListender_ cll) {
+	public void addColorListListender(ColorListListender cll) {
 		colorListListenders.add(cll);
 	}
 	
-	public void removeColorListListender(ColorListListender_ cll) {
+	public void removeColorListListender(ColorListListender cll) {
 		colorListListenders.remove(cll);
 	}
 	
