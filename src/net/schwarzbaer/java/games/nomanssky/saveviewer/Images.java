@@ -168,29 +168,75 @@ public class Images {
 			NamedColor color = colorVec.remove(fromIndex);
 			if (color!=null) colorVec.add(toIndex,color);
 			
-			for (ColorListListender ccl:colorListListenders) {
+			for (ColorListListender ccl:colorListListenders)
 				ccl.orderChanged();
-			}
+			
 			return true;
 		}
 
 		public boolean moveColors(int[] fromIndexes, int toIndex) {
 			
-			// TODO Auto-generated method stub
-			return false;
+			Vector<NamedColor> copy = new Vector<>(colorVec);
+			Vector<NamedColor> before   = new Vector<>(copy.size());
+			Vector<NamedColor> after    = new Vector<>(copy.size());
+			Vector<NamedColor> selected = new Vector<>(fromIndexes.length);
+			
+			for (int index:fromIndexes) {
+				if (index<0 || index>=copy.size()) return false;
+				NamedColor color = copy.set(index, null);
+				if (color==null) continue;
+				selected.add(color);
+			}
+			for (int index=0; index<copy.size(); index++) {
+				NamedColor color = copy.set(index, null);
+				if (color==null) continue;
+				if (index<toIndex) before.add(color);
+				else               after .add(color);
+			}
+			
+			colorVec.clear();
+			colorVec.addAll(before);
+			colorVec.addAll(selected);
+			colorVec.addAll(after);
+			
+			for (ColorListListender ccl:colorListListenders)
+				ccl.orderChanged();
+			
+			return true;
+		}
+
+		public boolean deleteColors(int[] indexes) {
+			int[] sorted = Arrays.copyOf(indexes, indexes.length);
+			Arrays.sort(sorted);
+			
+			Vector<NamedColor> removed = new Vector<>(indexes.length);
+			for (int i=sorted.length-1; i>=0; i--) {
+				int index = sorted[i];
+				if (index<0 || index>colorVec.size()) continue;
+				NamedColor removedColor = colorVec.remove(index);
+				if (removedColor!=null) {
+					colorMap.remove(removedColor.value);
+					removed.add(removedColor);
+				}
+			}
+			
+			for (ColorListListender ccl:colorListListenders)
+				ccl.colorsRemoved(removed);
+			
+			return true;
 		}
 
 		public String getColorLabel(Integer value) {
 			if (value == null) return null;
 			NamedColor color = colorMap.get(value);
 			if (color!=null) return color.getLabel();
-			return String.format("[%06X]", value);
+			return String.format("<unknown> %06X", value);
 		}
 
 		public NamedColor getColor(Integer value) {
 			if (value == null) return null;
 			NamedColor color = colorMap.get(value);
-			if (color==null) color = new NamedColor(value,String.format("%06X", value));
+			if (color==null) color = new NamedColor(value,String.format("<unknown> %06X", value));
 			return color;
 		}
 
@@ -213,8 +259,9 @@ public class Images {
 
 		public static interface ColorListListender {
 			public void colorAdded(NamedColor color);
-			public void orderChanged();
 			public void colorChanged(NamedColor color);
+			public void colorsRemoved(Vector<NamedColor> removed);
+			public void orderChanged();
 		}
 
 		public void addColorListListender(ColorListListender cll) {
@@ -1363,13 +1410,20 @@ public class Images {
 
 		private final Disabler<Action> disabler;
 		private final TableView.VerySimpleTable<NamedColor> colorList;
-		private NamedColor selected;
-		private NamedColor similarityBase;
+		private final TableView.VerySimpleTable<ColorUsingID> usageView;
+		private final NamedColorColumnID[] colorListColumns;
+		private final ColorUsingIDColumnID[] usageViewColumns;
 		private final HashMap<Integer, ColorUsage> colorUsage;
 		private final CachedImages<GeneralizedID> cachedImages;
 		private final CachedAlphaImages cachedAlphaImages;
-		private final NamedColorColumnID[] colorListColumns;
-		private final ColorUsingIDColumnID[] usageViewColumns;
+		private final JButton btnMoveUp;
+		private final JButton btnMoveDown;
+		private final JButton btnMoveTo;
+		private final JButton btnDelete;
+		private final JToggleButton sortBySimilarityBtn;
+		
+		private NamedColor selected;
+		private NamedColor similarityBase;
 		private int moveDist;
 		private int selectedRow;
 		private boolean isDefaultOrder;
@@ -1415,7 +1469,6 @@ public class Images {
 			JScrollPane colorListScrollPane = new JScrollPane(colorList);
 			
 			moveDist = 1;
-			JButton btnMoveUp, btnMoveDown, btnMoveTo;
 			JPanel colorListButtonsPanel = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
@@ -1423,6 +1476,7 @@ public class Images {
 			colorListButtonsPanel.add(Gui.createTextField_Integer(Integer.toString(moveDist), 5, null, null, n->n>0 && n<colorList.getRowCount(), n->{moveDist = n;}),c);
 			colorListButtonsPanel.add(btnMoveDown = Gui.createButton("Move DOWN"  , e->move(+1)),c);
 			colorListButtonsPanel.add(btnMoveTo   = Gui.createButton("Move to ...", e->moveTo()),c);
+			colorListButtonsPanel.add(btnDelete   = Gui.createButton("Delete"     , e->delete()),c);
 			c.weightx = 1;
 			colorListButtonsPanel.add(new JLabel(),c);
 			
@@ -1434,7 +1488,7 @@ public class Images {
 			JScrollPane similarityViewScrollPane = new JScrollPane(similarityView);
 			
 //			JTextArea usageView = new JTextArea();
-			TableView.VerySimpleTable<ColorUsingID> usageView = new TableView.VerySimpleTable<ColorUsingID>("ColorListDialog.ColorUsingIDTable", true, true, true);
+			usageView = new TableView.VerySimpleTable<ColorUsingID>("ColorListDialog.ColorUsingIDTable", true, true, true);
 			usageView.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			int usageViewPrefWidth = ColorUsingIDColumnID.getSumOfPrefWidths(usageViewColumns);
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
@@ -1452,7 +1506,6 @@ public class Images {
 			originalImageField.setPreferredSize(new Dimension(256+16,256+26));
 			alphaImageField   .setPreferredSize(new Dimension(256+16,256+26));
 			
-			JToggleButton sortBySimilarityBtn;
 			JLabel sortOrderOutput;
 			
 			ButtonGroup bg = new ButtonGroup();
@@ -1481,7 +1534,7 @@ public class Images {
 			contentPane.add(usageViewScrollPane, BorderLayout.CENTER);
 			contentPane.add(imagePanel, BorderLayout.EAST);
 			
-			colorList.getSelectionModel().addListSelectionListener(e -> colorWasSelected(btnMoveUp, btnMoveDown, btnMoveTo, similarityView, usageView, sortBySimilarityBtn));
+			colorList.getSelectionModel().addListSelectionListener(e -> colorWasSelected(similarityView));
 			
 			usageView.addSelectionListener((cuid,i)->{
 				if (cuid==null) {
@@ -1501,7 +1554,7 @@ public class Images {
 			
 			String sortOrderOutputStr = setDefaultOrder();
 			updateGuiAfterReordering(sortOrderOutput, sortOrderOutputStr);
-			colorWasSelected(btnMoveUp, btnMoveDown, btnMoveTo, similarityView, usageView, sortBySimilarityBtn);
+			colorWasSelected(similarityView);
 			
 			Dimension parentSize = parent.getSize(new Dimension());
 			Dimension dlgSize = getSize(new Dimension());
@@ -1510,23 +1563,52 @@ public class Images {
 			setSize(dlgSize);
 		}
 
-		private void moveTo() {
-			int[] selectedRowsV = colorList.getSelectedRows();
-			int[] selectedRowsM = new int[selectedRowsV.length];
-			for (int i=0; i<selectedRowsM.length; i++)
-				selectedRowsM[i] = selectedRowsV[i]<0 ? -1 : colorList.convertRowIndexToModel(selectedRowsV[i]);
+		private void delete() {
+			int[] selectedRowsM = getSelectedRowsM();
+			Vector<NamedColor> vector = colorList.getValuesAt(selectedRowsM);
+			Iterator<String> it = vector.stream().map(nc->{
+				if (nc==null) return "<null>";
+				ColorUsage usage = colorUsage.get(nc.value);
+				if (usage==null) return nc.getLabel();
+				return String.format("    %s   [%dx used]", nc.getLabel(), usage.total);
+			}).iterator();
 			
-			String str = JOptionPane.showInputDialog(this, "Define row index where selected rows should be moved to:", "Move to ...", JOptionPane.QUESTION_MESSAGE);
+			String message = "Do you really want to delete the following colors:\r\n"+String.join("\r\n", (Iterable<String>)()->it);
+			
+			int result = JOptionPane.showConfirmDialog(this, message, "Are you sure?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+			if (result!=JOptionPane.YES_OPTION) return;
+			
+			Colors colors = Images.getInstance().colors;
+			boolean successful = colors.deleteColors(selectedRowsM);
+			if (successful) {
+				colorList.setData(colors.getArray(),colorListColumns);
+				colors.saveColorsToFile();
+			}
+		}
+
+		private void moveTo() {
+			int[] selectedRowsM = getSelectedRowsM();
+			
+			String str = JOptionPane.showInputDialog(this, "Define row index where selected rows\r\nshould be moved to:", "Move to ...", JOptionPane.QUESTION_MESSAGE);
 			int index;
 			try { index = Integer.parseInt(str); }
 			catch (NumberFormatException e) { return; }
+			index--; // displayed indexes are 1 above the corresponding array index
 			
 			Colors colors = Images.getInstance().colors;
 			boolean successful = colors.moveColors(selectedRowsM, index);
 			if (successful) {
-				colorList.setData(Images.getInstance().colors.getArray(),colorListColumns);
+				colorList.setData(colors.getArray(),colorListColumns);
 				colors.saveColorsToFile();
 			}
+		}
+
+		private int[] getSelectedRowsM() {
+			int[] selectedRowsV = colorList.getSelectedRows();
+			int[] selectedRowsM = new int[selectedRowsV.length];
+			for (int i=0; i<selectedRowsM.length; i++)
+				selectedRowsM[i] = selectedRowsV[i]<0 ? -1 : colorList.convertRowIndexToModel(selectedRowsV[i]);
+			return selectedRowsM;
 		}
 
 		private void move(int direction) {
@@ -1540,7 +1622,7 @@ public class Images {
 			}
 		}
 
-		private void colorWasSelected(JButton btnMoveUp, JButton btnMoveDown, JButton btnMoveTo, JTextArea similarityView, TableView.VerySimpleTable<ColorUsingID> usageView, JToggleButton sortBySimilarityBtn) {
+		private void colorWasSelected(JTextArea similarityView) {
 			if (colorList.getSelectedRowCount()==0) {
 				selected = null;
 				selectedRow = -1;
@@ -1558,19 +1640,20 @@ public class Images {
 			btnMoveUp  .setEnabled(isDefaultOrder && selected!=null && selectedRow>=0 && selectedRow-moveDist>=0);
 			btnMoveDown.setEnabled(isDefaultOrder && selected!=null && selectedRow>=0 && selectedRow+moveDist<colorList.getRowCount());
 			btnMoveTo  .setEnabled(isDefaultOrder && colorList.getSelectedRowCount()>0);
+			btnDelete  .setEnabled(isDefaultOrder && colorList.getSelectedRowCount()>0);
 			
-			updateGuiAfterColorSelection(sortBySimilarityBtn, usageView, similarityView);
+			updateGuiAfterColorSelection(similarityView);
 		}
 
-		private void updateGuiAfterColorSelection(JToggleButton sortBySimilarityBtn, TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {
+		private void updateGuiAfterColorSelection(JTextArea similarityView) {
 			String text = "Sort by Similarity to Color";
 			if (selected!=null) text = String.format("Sort by Similarity to %s", selected.getLabel());
 			sortBySimilarityBtn.setText(text);
 			sortBySimilarityBtn.setEnabled(selected!=null);
-			showUsage(usageView,similarityView);
+			showUsage(similarityView);
 		}
 		
-		private void showUsage(TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {
+		private void showUsage(JTextArea similarityView) {
 			if (selected==null) {
 				usageView.setData(new ColorUsingID[0], usageViewColumns);
 				similarityView.setText("");

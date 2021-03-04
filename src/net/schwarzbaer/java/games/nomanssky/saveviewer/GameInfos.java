@@ -50,7 +50,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.MutableComboBoxModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 import javax.swing.table.TableCellEditor;
 
 import net.schwarzbaer.gui.StandardDialog;
@@ -58,8 +61,8 @@ import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ExtraImageList.ImageListListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.CachedAlphaImages;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ExtraImageList.ImageListListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PolarCoordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue.KnownID;
@@ -1662,9 +1665,10 @@ public class GameInfos {
 			Gui.NamedColorListMenu colorListMenu_UpgradeIcon = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_Group       = new Gui.NamedColorListMenu("Background of selected", colors, null, setImageBG);
 			Images.getInstance().colors.addColorListListender(new Images.Colors.ColorListListender() {
-				@Override public void colorAdded  (NamedColor color) { updateColors(); }
-				@Override public void colorChanged(NamedColor color) { updateColors(); }
-				@Override public void orderChanged()                 { updateColors(); }
+				@Override public void colorAdded   (NamedColor color)           { updateColors(); }
+				@Override public void colorChanged (NamedColor color)           { updateColors(); }
+				@Override public void orderChanged ()                           { updateColors(); }
+				@Override public void colorsRemoved(Vector<NamedColor> removed) { updateColors(); }
 				private void updateColors() {
 					NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colors.getArray());
 					colorListMenu_Std        .updateValues(colors);
@@ -1981,9 +1985,10 @@ public class GameInfos {
 			ComboboxCellEditor<NamedColor> colorCellEditor =
 					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(Images.getInstance().colors.getArray()));
 			Images.getInstance().colors.addColorListListender(new Images.Colors.ColorListListender() {
-				@Override public void colorAdded  (NamedColor color) { resetValues(); }
-				@Override public void colorChanged(NamedColor color) { resetValues(); }
-				@Override public void orderChanged()                 { resetValues(); }
+				@Override public void colorAdded   (NamedColor color)           { resetValues(); }
+				@Override public void colorChanged (NamedColor color)           { resetValues(); }
+				@Override public void orderChanged ()                           { resetValues(); }
+				@Override public void colorsRemoved(Vector<NamedColor> removed) { resetValues(); }
 				private void resetValues() { colorCellEditor.setValues(SaveViewer.addNull(Images.getInstance().colors.getArray())); }
 			});
 			
@@ -2109,6 +2114,7 @@ public class GameInfos {
 					@Override public void colorChanged(NamedColor color) { updateTableColumn(GeneralizedIDColumnID.ImgBG); }
 					@Override public void colorAdded(NamedColor color) {}
 					@Override public void orderChanged() {}
+					@Override public void colorsRemoved(Vector<NamedColor> removed) {  updateTableColumn(GeneralizedIDColumnID.ImgBG);  }
 				});
 			}
 
@@ -2366,7 +2372,8 @@ public class GameInfos {
 				}
 			};
 			
-			cmbbxBgColor = new JComboBox<NamedColor>(new DefaultComboBoxModel<NamedColor>(SaveViewer.addNull(Images.getInstance().colors.getArray())));
+			EditIdDialog.BgColorComboBoxModel cmbbxBgColorModel = new EditIdDialog.BgColorComboBoxModel(SaveViewer.addNull(Images.getInstance().colors.getArray()));
+			cmbbxBgColor = new JComboBox<>(cmbbxBgColorModel);
 			cmbbxBgColor.setRenderer(new TableView.NamedColorRenderer());
 			cmbbxBgColor.setSelectedItem(Images.getInstance().colors.getColor(id.getImageBG()));
 			cmbbxBgColor.addActionListener(e->{
@@ -2376,9 +2383,10 @@ public class GameInfos {
 			});
 			
 			colorListListender = new Images.Colors.ColorListListender() {
-				@Override public void colorAdded(NamedColor color) { cmbbxBgColor.addItem(color); cmbbxBgColor.revalidate(); }
-				@Override public void colorChanged(NamedColor color) { cmbbxBgColor.revalidate(); }
-				@Override public void orderChanged()                 { cmbbxBgColor.revalidate(); }
+				@Override public void colorAdded   (NamedColor color)           { cmbbxBgColor.addItem(color); cmbbxBgColor.revalidate(); }
+				@Override public void colorChanged (NamedColor color)           { cmbbxBgColor.revalidate(); }
+				@Override public void orderChanged ()                           { cmbbxBgColorModel.setData(SaveViewer.addNull(Images.getInstance().colors.getArray())); }
+				@Override public void colorsRemoved(Vector<NamedColor> removed) { cmbbxBgColorModel.setData(SaveViewer.addNull(Images.getInstance().colors.getArray())); }
 			};
 			
 			cmbbxUpgradeClass = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
@@ -2444,6 +2452,75 @@ public class GameInfos {
 			this.createGUI(contentPane);
 		}
 	
+		private static class BgColorComboBoxModel implements MutableComboBoxModel<NamedColor> {
+			
+			private final Vector<ListDataListener> listDataListeners;
+			private final Vector<NamedColor> data;
+			private Object selectedItem;
+
+			public BgColorComboBoxModel(NamedColor[] data) {
+				this.data = new Vector<>();
+				Collections.addAll(this.data, data);
+				listDataListeners = new Vector<>();
+				selectedItem = null;
+			}
+		
+			public void setData(NamedColor[] data) {
+				int size = Math.max(this.data.size(), data.length);
+				this.data.clear();
+				Collections.addAll(this.data, data);
+				fireContentsChangedEvent(0, size);
+			}
+
+			@Override public int getSize() { return data.size(); }
+		
+			@Override public NamedColor getElementAt(int index) {
+				if (index<0 || index>=data.size()) return null;
+				return data.get(index);
+			}
+		
+			@Override public void    addListDataListener(ListDataListener l) { listDataListeners.   add(l); }
+			@Override public void removeListDataListener(ListDataListener l) { listDataListeners.remove(l); }
+		
+			@Override public void setSelectedItem(Object selectedItem) { this.selectedItem = selectedItem; }
+			@Override public Object getSelectedItem() { return selectedItem; }
+
+			@Override public void addElement(NamedColor item) {
+				data.add(item);
+				int index = data.size()-1;
+				fireIntervalAddedEvent(index, index);
+			}
+
+			@Override public void insertElementAt(NamedColor item, int index) {
+				data.insertElementAt(item, index);
+				fireIntervalAddedEvent(index, index);
+			}
+
+			@Override public void removeElementAt(int index) {
+				data.remove(index);
+				fireIntervalRemovedEvent(index, index);
+			}
+
+			@Override public void removeElement(Object obj) {
+				int index = data.indexOf(obj);
+				if (index<0) return;
+				removeElementAt(index);
+			}
+
+			private void fireContentsChangedEvent(int index0, int index1) {
+				ListDataEvent event = new ListDataEvent(this, ListDataEvent.CONTENTS_CHANGED, index0, index1);
+				listDataListeners.forEach(ldl->ldl.contentsChanged(event));
+			}
+			private void fireIntervalRemovedEvent(int index0, int index1) {
+				ListDataEvent event = new ListDataEvent(this, ListDataEvent.INTERVAL_REMOVED, index0, index1);
+				listDataListeners.forEach(ldl->ldl.intervalRemoved(event));
+			}
+			private void fireIntervalAddedEvent(int index0, int index1) {
+				ListDataEvent event = new ListDataEvent(this, ListDataEvent.INTERVAL_ADDED, index0, index1);
+				listDataListeners.forEach(ldl->ldl.intervalAdded(event));
+			}
+		
+		}
 		private void defineTemplate() {
 			if (templateList==null) return;
 			CreateTemplateDialog dlg = new CreateTemplateDialog(this, "Create New Template", id, templateList);

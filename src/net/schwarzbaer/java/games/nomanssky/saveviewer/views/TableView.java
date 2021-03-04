@@ -383,7 +383,15 @@ public class TableView {
 				scrollRectToVisible(getCellRect(rowV, 0, true));
 		}
 		public DataType getValueAt(int rowIndexM) {
+			if (rowIndexM<0 || rowIndexM>=getRowCount()) return null;
 			return tableModel.getValue(rowIndexM);
+		}
+		
+		public Vector<DataType> getValuesAt(int[] rowIndexesM) {
+			Vector<DataType> vec = new Vector<>();
+			for (int rowIndexM:rowIndexesM)
+				vec.add(getValueAt(rowIndexM));
+			return vec;
 		}
 		public void addSelectionListener(BiConsumer<DataType,Integer> selectionChanged) {
 			getSelectionModel().addListSelectionListener(e->{
