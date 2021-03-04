@@ -1806,7 +1806,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			txtfldModule.setEditable(false);
 			txtfldModule.setText(this.tempVD.module.moduleID.getName());
 			
-			JTextField txtfldLabel = Gui.createTextField(this.tempVD.label, (String str)->this.tempVD.label = str);
+			JTextField txtfldLabel = Gui.createTextField(this.tempVD.label, (String str)->{ this.tempVD.label = str; });
 			JTextField txtfldMin   = Gui.createTextField(this.tempVD.min==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.min), (String str)->this.tempVD.min = parseFloat(str));
 			JTextField txtfldMax   = Gui.createTextField(this.tempVD.max==null?"":String.format(Locale.ENGLISH,"%1.3f",this.tempVD.max), (String str)->this.tempVD.max = parseFloat(str));
 			

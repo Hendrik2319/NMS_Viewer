@@ -1507,7 +1507,7 @@ public class GameInfos {
 			setImageFileName(aValue==null?null:aValue.toString());
 		}
 		
-		public String getImageBGLabel() { return imageBackground==null ? "<no color>" : Images.getInstance().getColorLabel(imageBackground); }
+		public String getImageBGLabel() { return imageBackground==null ? "<no color>" : Images.getInstance().colors.getColorLabel(imageBackground); }
 		public boolean hasImageBG() { return imageBackground!=null; }
 		public Integer getImageBG() { return imageBackground; }
 		public void setImageBG(Integer color) {
@@ -1649,7 +1649,7 @@ public class GameInfos {
 			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
 			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Group   = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class of selected", upgradeClasses, null, setUpgradeCat);
 			
-			NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colorValues);
+			NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colors.getArray());
 			Gui.NamedColorListMenu.ExternFunction setImageBG = new Gui.NamedColorListMenu.ExternFunction() {
 				@Override public void setResult(NamedColor value) {
 					updateAfterContextMenuAction(setImageBG(value==null?null:value.value),null);
@@ -1661,11 +1661,12 @@ public class GameInfos {
 			Gui.NamedColorListMenu colorListMenu_ImageBG     = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_UpgradeIcon = new Gui.NamedColorListMenu("Background", colors, null, setImageBG);
 			Gui.NamedColorListMenu colorListMenu_Group       = new Gui.NamedColorListMenu("Background of selected", colors, null, setImageBG);
-			Images.getInstance().addColorListListender(new Images.ColorListListender() {
+			Images.getInstance().colors.addColorListListender(new Images.Colors.ColorListListender() {
 				@Override public void colorAdded  (NamedColor color) { updateColors(); }
 				@Override public void colorChanged(NamedColor color) { updateColors(); }
+				@Override public void orderChanged()                 { updateColors(); }
 				private void updateColors() {
-					NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colorValues);
+					NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colors.getArray());
 					colorListMenu_Std        .updateValues(colors);
 					colorListMenu_Image      .updateValues(colors);
 					colorListMenu_ImageBG    .updateValues(colors);
@@ -1757,7 +1758,7 @@ public class GameInfos {
 							}
 							if (clickedID!=null) {
 								typeListMenu.setValue(clickedID.type);
-								colorListMenu.setValue(Images.getInstance().getColor(clickedID.getImageBG()));
+								colorListMenu.setValue(Images.getInstance().colors.getColor(clickedID.getImageBG()));
 								upgrclsListMenu.setValue(clickedID.upgradeClass);
 							}
 							contextMenu.show(table, e.getX(), e.getY());
@@ -1978,14 +1979,12 @@ public class GameInfos {
 			table.setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
-					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(Images.getInstance().colorValues));
-			Images.getInstance().addColorListListender(new Images.ColorListListender() {
-				@Override public void colorAdded(NamedColor color) {
-					colorCellEditor.setValues(Images.getInstance().colorValues);
-				}
-				@Override public void colorChanged(NamedColor color) {
-					colorCellEditor.setValues(Images.getInstance().colorValues);
-				}
+					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(Images.getInstance().colors.getArray()));
+			Images.getInstance().colors.addColorListListender(new Images.Colors.ColorListListender() {
+				@Override public void colorAdded  (NamedColor color) { resetValues(); }
+				@Override public void colorChanged(NamedColor color) { resetValues(); }
+				@Override public void orderChanged()                 { resetValues(); }
+				private void resetValues() { colorCellEditor.setValues(SaveViewer.addNull(Images.getInstance().colors.getArray())); }
 			});
 			
 			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
@@ -2106,9 +2105,10 @@ public class GameInfos {
 				updateIdList();
 				updateNumberOfLabledIDs();
 				
-				Images.getInstance().addColorListListender(new Images.ColorListListender() {
+				Images.getInstance().colors.addColorListListender(new Images.Colors.ColorListListender() {
 					@Override public void colorChanged(NamedColor color) { updateTableColumn(GeneralizedIDColumnID.ImgBG); }
 					@Override public void colorAdded(NamedColor color) {}
+					@Override public void orderChanged() {}
 				});
 			}
 
@@ -2237,7 +2237,7 @@ public class GameInfos {
 				case Symbol  : return id.symbol;
 				case Label   : return id.label;
 				case Image   : return id.imageFileName;
-				case ImgBG   : return Images.getInstance().getColor( id.getImageBG() );
+				case ImgBG   : return Images.getInstance().colors.getColor( id.getImageBG() );
 				case UpgrCls : return id.upgradeClass;
 				case Usage :
 					GeneralizedID.Usage usage = id.usage.get(usageKeys.get(columnIndex-columns.length).data);
@@ -2298,7 +2298,7 @@ public class GameInfos {
 		private boolean wasIdTemplateAdded;
 		private boolean showAlphaImage;
 	
-		private final Images.ColorListListender colorListListender;
+		private final Images.Colors.ColorListListender colorListListender;
 		private final ImageListListener imageListListender;
 
 		private final JTextField txtfldLabel;
@@ -2306,7 +2306,7 @@ public class GameInfos {
 
 		private final JComboBox<GeneralizedID.Type> cmbbxType;
 		private final JComboBox<String> cmbbxBgImage;
-		private final JComboBox<Images.NamedColor> cmbbxBgColor;
+		private final JComboBox<NamedColor> cmbbxBgColor;
 		private final JComboBox<GeneralizedID.UpgradeClass> cmbbxUpgradeClass;
 
 		private final CachedAlphaImages cachedAlphaImages;
@@ -2366,23 +2366,19 @@ public class GameInfos {
 				}
 			};
 			
-			cmbbxBgColor = new JComboBox<Images.NamedColor>(new DefaultComboBoxModel<Images.NamedColor>(SaveViewer.addNull(Images.getInstance().colorValues)));
+			cmbbxBgColor = new JComboBox<NamedColor>(new DefaultComboBoxModel<NamedColor>(SaveViewer.addNull(Images.getInstance().colors.getArray())));
 			cmbbxBgColor.setRenderer(new TableView.NamedColorRenderer());
-			cmbbxBgColor.setSelectedItem(Images.getInstance().getColor(id.getImageBG()));
+			cmbbxBgColor.setSelectedItem(Images.getInstance().colors.getColor(id.getImageBG()));
 			cmbbxBgColor.addActionListener(e->{
-				NamedColor namedColor = (Images.NamedColor)cmbbxBgColor.getSelectedItem();
+				NamedColor namedColor = (NamedColor)cmbbxBgColor.getSelectedItem();
 				id.setImageBG(namedColor==null?null:namedColor.value);
 				idDataChanged();
 			});
 			
-			colorListListender = new Images.ColorListListender() {
-				@Override public void colorAdded(Images.NamedColor color) {
-					cmbbxBgColor.addItem(color);
-					cmbbxBgColor.revalidate();
-				}
-				@Override public void colorChanged(NamedColor color) {
-					cmbbxBgColor.revalidate();
-				}
+			colorListListender = new Images.Colors.ColorListListender() {
+				@Override public void colorAdded(NamedColor color) { cmbbxBgColor.addItem(color); cmbbxBgColor.revalidate(); }
+				@Override public void colorChanged(NamedColor color) { cmbbxBgColor.revalidate(); }
+				@Override public void orderChanged()                 { cmbbxBgColor.revalidate(); }
 			};
 			
 			cmbbxUpgradeClass = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
@@ -2474,11 +2470,11 @@ public class GameInfos {
 		}
 		
 		@Override public void windowOpened(WindowEvent e) {
-			Images.getInstance().addColorListListender(colorListListender);
+			Images.getInstance().colors.addColorListListender(colorListListender);
 			Images.getInstance().extraImages.addImageListListener(imageListListender);
 		}
 		@Override public void windowClosed(WindowEvent e) {
-			Images.getInstance().removeColorListListender(colorListListender);
+			Images.getInstance().colors.removeColorListListender(colorListListender);
 			Images.getInstance().extraImages.removeImageListListener(imageListListender);
 		}
 	
@@ -2513,7 +2509,7 @@ public class GameInfos {
 						if (id.symbol         ==null) { id.symbol         = template.symbol;           txtfldSymbol.setText( id.getSymbol()); }
 						if (id.type           ==null) { id.type           = template.type  ;           cmbbxType        .setSelectedItem(id.type); }
 						if (id.imageFileName  ==null) { id.setImageFileName(template.imageFileName  ); cmbbxBgImage     .setSelectedItem(id.getImageFileName()); }
-						if (id.imageBackground==null) { id.setImageBG      (template.imageBackground); cmbbxBgColor     .setSelectedItem(Images.getInstance().getColor(id.getImageBG())); }
+						if (id.imageBackground==null) { id.setImageBG      (template.imageBackground); cmbbxBgColor     .setSelectedItem(Images.getInstance().colors.getColor(id.getImageBG())); }
 						if (id.upgradeClass   ==null) { id.upgradeClass   = template.upgradeClass;     cmbbxUpgradeClass.setSelectedItem(id.upgradeClass); }
 						showValues();
 						ignoreIdDataChanges = false;

@@ -50,6 +50,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -81,247 +82,151 @@ public class Images {
 	}
 	
 	public ExtraImageList extraImages;
-	
-	public NamedColor[] colorValues;
-	private final HashMap<Integer,NamedColor> colorMap; 
-	private final Vector<ColorListListender> colorListListenders;
+	public final Colors colors;
 	private boolean wasInitialized;
 	
 	public Images() {
 		wasInitialized = false;
-		colorValues = null;
-		colorMap = new HashMap<>();
-		colorListListenders = new Vector<>();
-		
+		colors = new Colors();
 		extraImages = new ExtraImageList();
 	}
 	
 	public void init() {
-		prepareColors();
+		colors.loadColorsFromFile();
 		extraImages.readImages(null,true);
 		UpgradeCategoryImages.init();
 		wasInitialized = true;
 	}
 	
-	private void prepareColors() {
+	public static class Colors {
+		private final Vector<NamedColor> colorVec; 
+		private final HashMap<Integer,NamedColor> colorMap; 
+		private final Vector<ColorListListender> colorListListenders;
 		
-		colorMap.clear();
-		Vector<NamedColor> colorValuesVec = new Vector<>(); 
-		
-		addColor(colorValuesVec, 0xBB392C, "Isotop" );
-		addColor(colorValuesVec, 0xFFC456, "Oxid" );
-		addColor(colorValuesVec, 0x0249A1, "Silikat" );
-		addColor(colorValuesVec, 0x5DCD93, "Neutral" );
-		addColor(colorValuesVec, 0x701781, "Exotisch" );
-		addColor(colorValuesVec, 0x4B2A57, "Pflanze Violet" );
-		addColor(colorValuesVec, 0x542640, "Pflanze Violet1" );
-		addColor(colorValuesVec, 0x4E2A58, "(E) Pflanze Violet" );
-		addColor(colorValuesVec, 0x512741, "(E) Pflanze Violet II" );
-		addColor(colorValuesVec, 0x1E4FD0, "Pflanze Blau" );
-		addColor(colorValuesVec, 0x218CAC, "Pflanze Sd" );
-		addColor(colorValuesVec, 0x00A64C, "Pflanze Grün" );
-		addColor(colorValuesVec, 0x1EB808, "Pflanze Grün1" );
-		addColor(colorValuesVec, 0x5A6F36, "Pflanze Oliv" );
-		addColor(colorValuesVec, 0x5B6F35, "(E) Pflanze Oliv" );
-		addColor(colorValuesVec, 0x78502D, "Pflanze Braun" );
-		addColor(colorValuesVec, 0xC68C1E, "Pflanze Gelb" );
-		addColor(colorValuesVec, 0xB74418, "Pflanze Rot" );
-		addColor(colorValuesVec, 0xB94318, "(E) Pflanze Rot" );
-		addColor(colorValuesVec, 0x236D4C, "Waffe Impulswerfer" );
-		addColor(colorValuesVec, 0x19BC79, "Waffe Impulswerfer Upgrade" );
-		addColor(colorValuesVec, 0x495746, "Waffe Minenlaser" );
-		addColor(colorValuesVec, 0x0D81A8, "Waffe Blitzwerfer Upgrade" );		
-		addColor(colorValuesVec, 0x903031, "Waffe Glutspeer" );
-		addColor(colorValuesVec, 0xE84E4C, "Waffe Glutspeer Upgrade" );
-		addColor(colorValuesVec, 0x937030, "Waffe Streublaster" );
-		addColor(colorValuesVec, 0xFFBF37, "Waffe Streublaster Upgrade" );
-		addColor(colorValuesVec, 0x2E999F, "Waffe Plasmawerfer" );
-		addColor(colorValuesVec, 0x7D4665, "Waffe Zyklotron-B. Upgrade" );
-		addColor(colorValuesVec, 0x7E0100, "Rohstoff Cd" );
-		addColor(colorValuesVec, 0xBB3830, "(E) Rohstoff O2" );
-		addColor(colorValuesVec, 0xD92600, "Rohstoff P" );
-		addColor(colorValuesVec, 0xF36D16, "Rohstoff Na" );
-		addColor(colorValuesVec, 0xF26D15, "(E) Rohstoff Na ..." );
-		addColor(colorValuesVec, 0xE57000, "Rohstoff Py" );
-		addColor(colorValuesVec, 0xE88F00, "Rohstoff Cu" );
-		addColor(colorValuesVec, 0xFFAD00, "Rohstoff U" );
-		addColor(colorValuesVec, 0xA96E06, "Rohstoff Au" );
-		addColor(colorValuesVec, 0x2D0400, "Rohstoff Ch" );
-		addColor(colorValuesVec, 0x260000, "(E) Rohstoff Ch" );
-		addColor(colorValuesVec, 0x4D414F, "Rohstoff Pf" );
-		addColor(colorValuesVec, 0x4D3780, "Rohstoff Rn" );
-		addColor(colorValuesVec, 0x4C3780, "(E) Rohstoff Rn" );
-		addColor(colorValuesVec, 0x386118, "Rohstoff Em" );
-		addColor(colorValuesVec, 0x265E39, "Rohstoff Sf" );
-		addColor(colorValuesVec, 0x265E3A, "(E) Rohstoff Sf" );
-		addColor(colorValuesVec, 0x1F8A42, "Rohstoff Cl" );
-		addColor(colorValuesVec, 0x1F8B40, "Rohstoff NaCl" );
-		addColor(colorValuesVec, 0x4F7576, "Rohstoff Pt" );
-		addColor(colorValuesVec, 0x507575, "Rohstoff Pt" );
-		addColor(colorValuesVec, 0x365A7E, "Rohstoff H" );
-		addColor(colorValuesVec, 0x355A7D, "(E) Rohstoff H" );
-		addColor(colorValuesVec, 0x005C83, "(E) Rohstoff Co ..." );
-		addColor(colorValuesVec, 0x013A7F, "Rohstoff In" );
-		addColor(colorValuesVec, 0xDEDCD1, "(E) Rohstoff H3" );
-		addColor(colorValuesVec, 0x8B7E75, "Rohstoff Fe" );
-		addColor(colorValuesVec, 0x8A7F72, "(E) Rohstoff Fe ..." );
-		addColor(colorValuesVec, 0xDE921F, "(E) Rohstoff N" );
-		addColor(colorValuesVec, 0x1C364D, "Nanit-Haufen" );
-		addColor(colorValuesVec, 0x10805C, "Völker-Geschenk (alt)" );
-		addColor(colorValuesVec, 0x007951, "Völker-Geschenk" );
-		addColor(colorValuesVec, 0x4D2957, "(E) Völker-Geschenk (synth)" );
-		addColor(colorValuesVec, 0xF0A92B, "Produkt & Upgrade S" );
-		addColor(colorValuesVec, 0xF3A923, "(E) Produkt" );
-		addColor(colorValuesVec, 0xC11746, "Energie" );
-		addColor(colorValuesVec, 0xC01746, "(E) Energie" );
-		addColor(colorValuesVec, 0x2C7C9F, "(E) Tragbares Objekt" );
-		addColor(colorValuesVec, 0x085C78, "Tech 1" );
-		addColor(colorValuesVec, 0x0063B6, "Tech 2 & Upgrade B" );
-		addColor(colorValuesVec, 0x095C77, "(E) Tech 1 (Synth)" );
-		addColor(colorValuesVec, 0x2177C8, "(E) Tech 2 (Synth)" );
-		addColor(colorValuesVec, 0x0063B7, "(E) Tech 3 (Synth, old: Tech2)" );
-		addColor(colorValuesVec, 0x7C4562, "Upgrade A" );
-		addColor(colorValuesVec, 0x5B9352, "Upgrade C" );
-		addColor(colorValuesVec, 0x682603, "Schlüssel" );
-		addColor(colorValuesVec, 0x262626, "Feuerwerk" );
-		addColor(colorValuesVec, 0x507951, "Gas-Produkt 1" );
-		addColor(colorValuesVec, 0x207951, "Gas-Produkt 2" );
-		addColor(colorValuesVec, 0x153250, "Fundstück (gewöhnlich)" );
-		addColor(colorValuesVec, 0x15334F, "(E) Fundstück (gewöhnlich)" );
-		addColor(colorValuesVec, 0x460C34, "Fundstück (ungewöhnlich)" );
-		addColor(colorValuesVec, 0xDC9401, "Fundstück (selten)" );
-		addColor(colorValuesVec, 0xDC9400, "(E) Fundstück (selten)" );
-		addColor(colorValuesVec, 0x7B0000, "Schaden" );
-		addColor(colorValuesVec, 0xFFFFFF, "Weiß" );
-		addColor(colorValuesVec, 0xCCCCCC, "CCCCCC" );
-		addColor(colorValuesVec, 0x447519, "Larvenkern" );
-		addColor(colorValuesVec, 0x1A2733, "(E) Special Token" );
-		addColor(colorValuesVec, 0x007953, "(E) Köder (Pflanze)" );
-		addColor(colorValuesVec, 0x8E8377, "QuickSilver" );
-		addColor(colorValuesVec, 0x321A4A, "LivingShipComp" );
-		addColor(colorValuesVec, 0xA1772B, "SUNGOLD" );
-		addColor(colorValuesVec, 0xE59001, "SUNGOLD (exakt)" );
-		addColor(colorValuesVec, 0x706C65, "SOULFRAG" );
-		addColor(colorValuesVec, 0x707070, "707070" );
-		addColor(colorValuesVec, 0x297CCA, "297CCA" );
-		addColor(colorValuesVec, 0xD35300, "D35300" );
-		addColor(colorValuesVec, 0x311A49, "(E) Companion Egg" );
-		
-		loadColorsFromFile(colorValuesVec);
-		
-		colorValues = colorValuesVec.toArray(new NamedColor[0]);
-	}
+		Colors() {
+			colorVec = new Vector<>();
+			colorMap = new HashMap<>();
+			colorListListenders = new Vector<>();
+			
+		}
 
-	private void loadColorsFromFile(Vector<NamedColor> colorValuesVec) {
-		File file = new File(FileExport.FILE_COLORS);
-		if (!file.isFile()) return;
-		
-		boolean noNewColorAdded = true;
-		long start = System.currentTimeMillis();
-		Gui.log_ln("Read newly defined background colors from file \"%s\"...", file.getPath());
-		String str;
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			while ((str=in.readLine())!=null) {
-				int pos = str.indexOf('=');
-				if (pos<0) continue;
-				
-				String valueStr = str.substring(0, pos);
-				String nameStr = str.substring(pos+1);
-				
-				NamedColor newColor;
-				try { newColor = new NamedColor(Integer.parseInt(valueStr,16),nameStr); }
-				catch (NumberFormatException e) { continue; }
-				
-				NamedColor existingColor = colorMap.get(newColor.value);
-				if (existingColor!=null) {
-					if (!existingColor.name.equals(newColor.name)) {
-						SaveViewer.log_warn_ln("   changed name of %s into \"%s\"", existingColor, newColor.name);
-						existingColor.name = newColor.name;
-					}
-				} else {
-					SaveViewer.log_warn_ln("   added %s", newColor);
-					noNewColorAdded = false;
-					addColor(colorValuesVec,newColor);
+		public NamedColor[] getArray() {
+			return colorVec.toArray(new NamedColor[colorVec.size()]);
+		}
+
+		private void loadColorsFromFile() {
+			colorMap.clear();
+			colorVec.clear();
+			
+			File file = new File(FileExport.FILE_COLORS);
+			if (!file.isFile()) return;
+			
+			long start = System.currentTimeMillis();
+			Gui.log_ln("Read background colors from file \"%s\"...", file.getPath());
+			String str;
+			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+				while ((str=in.readLine())!=null) {
+					int pos = str.indexOf('=');
+					if (pos<0) continue;
+					
+					String valueStr = str.substring(0, pos);
+					String nameStr = str.substring(pos+1);
+					
+					NamedColor newColor;
+					try { newColor = new NamedColor(Integer.parseInt(valueStr,16),nameStr); }
+					catch (NumberFormatException e) { continue; }
+					
+					colorVec.add(newColor);
+					colorMap.put(newColor.value, newColor);
 				}
 			}
+			catch (FileNotFoundException e) { e.printStackTrace(); }
+			catch (IOException e) { e.printStackTrace(); }
+			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		catch (IOException e) { e.printStackTrace(); }
-		
-		if (noNewColorAdded) SaveViewer.log_warn_ln("   All colors from file are already known. File \"%s\" can be deleted.",file.getPath());
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
 
-	private void saveColorsToFile() {
-		long start = System.currentTimeMillis();
-		File file = new File(FileExport.FILE_COLORS);
-		SaveViewer.log_ln("Write background colors to file \""+file.getPath()+"\"...");
-		
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			for (NamedColor color:colorValues)
-				if (color!=null)
-					out.printf("%06X=%s\r\n",color.value,color.name);
+		public void saveColorsToFile() {
+			long start = System.currentTimeMillis();
+			File file = new File(FileExport.FILE_COLORS);
+			SaveViewer.log_ln("Write background colors to file \""+file.getPath()+"\"...");
+			
+			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+				for (NamedColor color:colorVec)
+					if (color!=null)
+						out.printf("%06X=%s\r\n",color.value,color.name);
+			}
+			catch (FileNotFoundException e) { e.printStackTrace(); }
+			
+			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
+
+		public boolean moveColor(int fromIndex, int toIndex) {
+			if (  toIndex<0 ||   toIndex>=colorVec.size()) return false;
+			if (fromIndex<0 || fromIndex>=colorVec.size()) return false;
+			if (fromIndex==toIndex) return false;
+			
+			NamedColor color = colorVec.remove(fromIndex);
+			if (color!=null) colorVec.add(toIndex,color);
+			
+			for (ColorListListender ccl:colorListListenders) {
+				ccl.orderChanged();
+			}
+			return true;
+		}
+
+		public boolean moveColors(int[] fromIndexes, int toIndex) {
+			
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		public String getColorLabel(Integer value) {
+			if (value == null) return null;
+			NamedColor color = colorMap.get(value);
+			if (color!=null) return color.getLabel();
+			return String.format("[%06X]", value);
+		}
+
+		public NamedColor getColor(Integer value) {
+			if (value == null) return null;
+			NamedColor color = colorMap.get(value);
+			if (color==null) color = new NamedColor(value,String.format("%06X", value));
+			return color;
+		}
+
+		private boolean addColor(int value, String name) {
+			if (colorMap.containsKey(value)) return false;
+			NamedColor namedColor = new NamedColor(value,name);
+			colorMap.put(value, namedColor);
+			colorVec.add(namedColor);
+			for (ColorListListender ccl:colorListListenders)
+				ccl.colorAdded(namedColor);
+			return true;
+		}
+
+		private void setNameOfColor(NamedColor color, String name) {
+			if (color==null) return;
+			color.setName(name);
+			for (ColorListListender ccl:colorListListenders)
+				ccl.colorChanged(color);
+		}
+
+		public static interface ColorListListender {
+			public void colorAdded(NamedColor color);
+			public void orderChanged();
+			public void colorChanged(NamedColor color);
+		}
+
+		public void addColorListListender(ColorListListender cll) {
+			colorListListenders.add(cll);
+		}
+
+		public void removeColorListListender(ColorListListender cll) {
+			colorListListenders.remove(cll);
+		}
 		
-		SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 
-	public String getColorLabel(Integer value) {
-		if (value == null) return null;
-		NamedColor color = colorMap.get(value);
-		if (color!=null) return color.getLabel();
-		return String.format("[%06X]", value);
-	}
-
-	public NamedColor getColor(Integer value) {
-		if (value == null) return null;
-		NamedColor color = colorMap.get(value);
-		if (color==null) color = new NamedColor(value,String.format("%06X", value));
-		return color;
-	}
-	
-	private void addColor(Vector<NamedColor> colorValuesVec, int value, String name) {
-		if (name==null || name.isEmpty()) name=String.format("[%d]%06X", colorValuesVec.size()+1, value);
-		addColor(colorValuesVec, new NamedColor(value,name));
-	}
-
-	private void addColor(Vector<NamedColor> colorValuesVec, NamedColor namedColor) {
-		colorMap.put(namedColor.value, namedColor);
-		colorValuesVec.add(namedColor);
-	}
-	
-	private boolean addColor(int value, String name) {
-		if (colorMap.containsKey(value)) return false;
-		NamedColor namedColor = new NamedColor(value,name);
-		colorMap.put(value, namedColor);
-		colorValues = Arrays.copyOf(colorValues, colorValues.length+1);
-		colorValues[colorValues.length-1] = namedColor;
-		for (ColorListListender ccl:colorListListenders)
-			ccl.colorAdded(namedColor);
-		return true;
-	}
-	
-	private void setNameOfColor(NamedColor color, String name) {
-		if (color==null) return;
-		color.setName(name);
-		for (ColorListListender ccl:colorListListenders)
-			ccl.colorChanged(color);
-	}
-	
-	public static interface ColorListListender {
-		public void colorAdded(NamedColor color);
-		public void colorChanged(NamedColor color);
-	}
-	
-	public void addColorListListender(ColorListListender cll) {
-		colorListListenders.add(cll);
-	}
-	
-	public void removeColorListListender(ColorListListender cll) {
-		colorListListenders.remove(cll);
-	}
-	
 	private static BufferedImage generateAlphaImage(BufferedImage image) {
 		if (image==null) return null;
 		
@@ -358,8 +263,12 @@ public class Images {
 		dlg.showDialog();
 		if (dlg.hasResult()) {
 			NamedColor color = dlg.getResult();
-			if (addColor(color.value, color.name))
-				saveColorsToFile();
+			if (colors.addColor(color.value, color.name))
+				colors.saveColorsToFile();
+			else {
+				String label = colors.getColorLabel(color.value);
+				JOptionPane.showMessageDialog(parent, "Color was not added. Another color ("+label+") with same value already exists.", "Color Not Added", JOptionPane.WARNING_MESSAGE);
+			}
 		}
 	}
 	
@@ -1436,10 +1345,10 @@ public class Images {
 		private static final long serialVersionUID = 1195618468891906980L;
 		
 		private static class NamedColorColumnID extends TableView.VerySimpleTable.ColumnID<NamedColor> {
-			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue) {
+			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<NamedColor, Integer, Object> getValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue);
 			}
-			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, Function<NamedColor, Object> getValue, BiConsumer<NamedColor, Object> setValue) {
+			public NamedColorColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth, BiFunction<NamedColor, Integer, Object> getValue, BiConsumer<NamedColor, Object> setValue) {
 				super(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth, getValue, setValue);
 			}
 		}
@@ -1461,25 +1370,30 @@ public class Images {
 		private final CachedAlphaImages cachedAlphaImages;
 		private final NamedColorColumnID[] colorListColumns;
 		private final ColorUsingIDColumnID[] usageViewColumns;
+		private int moveDist;
+		private int selectedRow;
+		private boolean isDefaultOrder;
 		
 		private static void setNameOfColor(NamedColor nc, Object value) {
 			String name = value==null ? null : value.toString();
 			Images images = Images.getInstance();
-			images.setNameOfColor(nc, name);
-			images.saveColorsToFile();
+			images.colors.setNameOfColor(nc, name);
+			images.colors.saveColorsToFile();
 		}
 		
 		public ColorListDialog(Window parent, String title) {
 			super(parent, title);
+			isDefaultOrder = true;
 			
 			cachedImages = new CachedImages<>(id->id.getCachedImage(256, 256));
 			cachedAlphaImages = new CachedAlphaImages();
 			colorUsage = ColorUsage.scanUsage();
 			
 			colorListColumns = new NamedColorColumnID[] {
-				new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, nc->nc),
-				new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, nc->nc.name, ColorListDialog::setNameOfColor),
-				new NamedColorColumnID("Used" , ColorUsage.class,  20,-1,130,130, nc->colorUsage.get(nc.value)),
+				new NamedColorColumnID("#"    ,    Integer.class,  20,-1, 20, 20, (nc,i)->i+1),
+				new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, (nc,i)->nc),
+				new NamedColorColumnID("Name" ,     String.class,  20,-1,160,160, (nc,i)->nc.name, ColorListDialog::setNameOfColor),
+				new NamedColorColumnID("Used" , ColorUsage.class,  20,-1,130,130, (nc,i)->colorUsage.get(nc.value)),
 			};
 			usageViewColumns = new ColorUsingIDColumnID[] {
 				new ColorUsingIDColumnID("Type"  , ColorUsage.IDType.class,  20,-1, 60, 60, cuid->cuid.idType),
@@ -1496,9 +1410,25 @@ public class Images {
 			selected = null;
 			colorList = new TableView.VerySimpleTable<NamedColor>("ColorListDialog.NamedColorTable", true, true, true);
 			colorList.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
-			colorList.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			colorList.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			int colorListPrefWidth = NamedColorColumnID.getSumOfPrefWidths(colorListColumns);
 			JScrollPane colorListScrollPane = new JScrollPane(colorList);
+			
+			moveDist = 1;
+			JButton btnMoveUp, btnMoveDown, btnMoveTo;
+			JPanel colorListButtonsPanel = new JPanel(new GridBagLayout());
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.BOTH;
+			colorListButtonsPanel.add(btnMoveUp   = Gui.createButton("Move UP"    , e->move(-1)),c);
+			colorListButtonsPanel.add(Gui.createTextField_Integer(Integer.toString(moveDist), 5, null, null, n->n>0 && n<colorList.getRowCount(), n->{moveDist = n;}),c);
+			colorListButtonsPanel.add(btnMoveDown = Gui.createButton("Move DOWN"  , e->move(+1)),c);
+			colorListButtonsPanel.add(btnMoveTo   = Gui.createButton("Move to ...", e->moveTo()),c);
+			c.weightx = 1;
+			colorListButtonsPanel.add(new JLabel(),c);
+			
+			JPanel colorListPanel = new JPanel(new BorderLayout());
+			colorListPanel.add(colorListScrollPane, BorderLayout.CENTER);
+			colorListPanel.add(colorListButtonsPanel, BorderLayout.SOUTH);
 			
 			JTextArea similarityView = new JTextArea();
 			JScrollPane similarityViewScrollPane = new JScrollPane(similarityView);
@@ -1509,7 +1439,7 @@ public class Images {
 			int usageViewPrefWidth = ColorUsingIDColumnID.getSumOfPrefWidths(usageViewColumns);
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);
 			
-			colorListScrollPane     .setPreferredSize(new Dimension(colorListPrefWidth+40, 500));
+			colorListPanel          .setPreferredSize(new Dimension(colorListPrefWidth+40, 500));
 			similarityViewScrollPane.setPreferredSize(new Dimension(usageViewPrefWidth+40,  60));
 			usageViewScrollPane     .setPreferredSize(new Dimension(usageViewPrefWidth+40, 500));
 			
@@ -1527,7 +1457,7 @@ public class Images {
 			
 			ButtonGroup bg = new ButtonGroup();
 			JPanel northPanel = new JPanel(new GridBagLayout());
-			GridBagConstraints c = new GridBagConstraints();
+			c = new GridBagConstraints();
 			c.fill = GridBagConstraints.BOTH;
 			
 			c.gridy = 0; c.gridwidth = 1; c.gridheight = 1; c.weighty = 0;  
@@ -1539,26 +1469,19 @@ public class Images {
 			c.gridy = 0;
 			c.gridx = 0; c.weightx = 0; c.gridwidth = 2; c.gridheight = 1; 
 			c.gridy++; northPanel.add(sortBySimilarityBtn = Gui.createToggleButton("Sort by Similarity to Color", bg , disabler, Action.SortBySimilarity, false, true, e->{
-				String str = sortBySimilarity(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
+				isDefaultOrder = false; String str = sortBySimilarity(); updateGuiAfterReordering(sortOrderOutput, str);
 			}),c);
 			c.gridy++; northPanel.add(Gui.createToggleButton("Standard Order", bg , disabler, Action.SetDefaultOrder, true, true, e->{
-				String str = setDefaultOrder(); updateGuiAfterReordering(sortOrderOutput, colorList, str);
+				isDefaultOrder = true; String str = setDefaultOrder(); updateGuiAfterReordering(sortOrderOutput, str);
 			}),c);
 			
 			JPanel contentPane = new JPanel(new BorderLayout());
 			contentPane.add(northPanel, BorderLayout.NORTH);
-			contentPane.add(colorListScrollPane, BorderLayout.WEST);
+			contentPane.add(colorListPanel, BorderLayout.WEST);
 			contentPane.add(usageViewScrollPane, BorderLayout.CENTER);
 			contentPane.add(imagePanel, BorderLayout.EAST);
 			
-			colorList.addSelectionListener((nc,i)->{
-				selected = nc;
-				String text = "Sort by Similarity to Color";
-				if (selected!=null) text = String.format("Sort by Similarity to %s", selected.getLabel());
-				sortBySimilarityBtn.setText(text);
-				sortBySimilarityBtn.setEnabled(selected!=null);
-				showUsage(usageView,similarityView);
-			});
+			colorList.getSelectionModel().addListSelectionListener(e -> colorWasSelected(btnMoveUp, btnMoveDown, btnMoveTo, similarityView, usageView, sortBySimilarityBtn));
 			
 			usageView.addSelectionListener((cuid,i)->{
 				if (cuid==null) {
@@ -1577,15 +1500,74 @@ public class Images {
 			this.createGUI(contentPane, Gui.createButton("Close", e->closeDialog()));
 			
 			String sortOrderOutputStr = setDefaultOrder();
-			updateGuiAfterReordering(sortOrderOutput, colorList, sortOrderOutputStr);
-			sortBySimilarityBtn.setEnabled(selected!=null);
-			showUsage(usageView,similarityView);
+			updateGuiAfterReordering(sortOrderOutput, sortOrderOutputStr);
+			colorWasSelected(btnMoveUp, btnMoveDown, btnMoveTo, similarityView, usageView, sortBySimilarityBtn);
 			
 			Dimension parentSize = parent.getSize(new Dimension());
 			Dimension dlgSize = getSize(new Dimension());
 			if (dlgSize.width  > parentSize.width ) dlgSize.width  = parentSize.width ;
 			if (dlgSize.height > parentSize.height) dlgSize.height = parentSize.height;
 			setSize(dlgSize);
+		}
+
+		private void moveTo() {
+			int[] selectedRowsV = colorList.getSelectedRows();
+			int[] selectedRowsM = new int[selectedRowsV.length];
+			for (int i=0; i<selectedRowsM.length; i++)
+				selectedRowsM[i] = selectedRowsV[i]<0 ? -1 : colorList.convertRowIndexToModel(selectedRowsV[i]);
+			
+			String str = JOptionPane.showInputDialog(this, "Define row index where selected rows should be moved to:", "Move to ...", JOptionPane.QUESTION_MESSAGE);
+			int index;
+			try { index = Integer.parseInt(str); }
+			catch (NumberFormatException e) { return; }
+			
+			Colors colors = Images.getInstance().colors;
+			boolean successful = colors.moveColors(selectedRowsM, index);
+			if (successful) {
+				colorList.setData(Images.getInstance().colors.getArray(),colorListColumns);
+				colors.saveColorsToFile();
+			}
+		}
+
+		private void move(int direction) {
+			NamedColor oldSelected = selected;
+			Colors colors = Images.getInstance().colors;
+			boolean successful = colors.moveColor(selectedRow, selectedRow+direction*moveDist);
+			if (successful) {
+				colorList.setData(Images.getInstance().colors.getArray(),colorListColumns);
+				colorList.setSelectedValue(oldSelected, true);
+				colors.saveColorsToFile();
+			}
+		}
+
+		private void colorWasSelected(JButton btnMoveUp, JButton btnMoveDown, JButton btnMoveTo, JTextArea similarityView, TableView.VerySimpleTable<ColorUsingID> usageView, JToggleButton sortBySimilarityBtn) {
+			if (colorList.getSelectedRowCount()==0) {
+				selected = null;
+				selectedRow = -1;
+				
+			} else if (colorList.getSelectedRowCount()==1) {
+				int rowV = colorList.getSelectedRow();
+				selectedRow = rowV<0 ? -1 : colorList.convertRowIndexToModel(rowV);
+				selected = selectedRow<0 ? null : colorList.getValueAt(selectedRow);
+				
+			} else {
+				selected = null;
+				selectedRow = -1;
+				
+			}
+			btnMoveUp  .setEnabled(isDefaultOrder && selected!=null && selectedRow>=0 && selectedRow-moveDist>=0);
+			btnMoveDown.setEnabled(isDefaultOrder && selected!=null && selectedRow>=0 && selectedRow+moveDist<colorList.getRowCount());
+			btnMoveTo  .setEnabled(isDefaultOrder && colorList.getSelectedRowCount()>0);
+			
+			updateGuiAfterColorSelection(sortBySimilarityBtn, usageView, similarityView);
+		}
+
+		private void updateGuiAfterColorSelection(JToggleButton sortBySimilarityBtn, TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {
+			String text = "Sort by Similarity to Color";
+			if (selected!=null) text = String.format("Sort by Similarity to %s", selected.getLabel());
+			sortBySimilarityBtn.setText(text);
+			sortBySimilarityBtn.setEnabled(selected!=null);
+			showUsage(usageView,similarityView);
 		}
 		
 		private void showUsage(TableView.VerySimpleTable<ColorUsingID> usageView, JTextArea similarityView) {
@@ -1610,7 +1592,7 @@ public class Images {
 		private String setDefaultOrder() {
 			similarityBase = null;
 			NamedColor oldSelected = selected;
-			colorList.setData(Images.getInstance().colorValues,colorListColumns);
+			colorList.setData(Images.getInstance().colors.getArray(),colorListColumns);
 			colorList.setSelectedValue(oldSelected, true);
 			return "Default Order";
 		}
@@ -1618,7 +1600,7 @@ public class Images {
 		private String sortBySimilarity() {
 			if (selected==null) return "";
 			similarityBase = selected;
-			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.getInstance().colorValues));
+			Vector<NamedColor> colors = new Vector<>(Arrays.asList(Images.getInstance().colors.getArray()));
 			colors.sort(Comparator.<NamedColor,Integer>comparing(nc->getDistance(nc,selected)).thenComparing(nc->nc.value));
 			NamedColor oldSelected = selected;
 			colorList.setData(colors.toArray(new NamedColor[colors.size()]),colorListColumns);
@@ -1626,7 +1608,7 @@ public class Images {
 			return String.format("Similarity to %s", selected==null ? "<null>" : selected.getLabel());
 		}
 
-		private void updateGuiAfterReordering(JLabel sortOrderOutput, TableView.VerySimpleTable<NamedColor> colorList, String sortOrderOutputStr) {
+		private void updateGuiAfterReordering(JLabel sortOrderOutput, String sortOrderOutputStr) {
 			sortOrderOutput.setText(sortOrderOutputStr);
 			colorList.setSelectedValue(selected, true);
 		}

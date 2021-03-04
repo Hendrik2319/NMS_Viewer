@@ -750,7 +750,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private final JComboBox<Region> cmbbxBlackHoleTargetRegion;
 		private final JComboBox<SolarSystem> cmbbxBlackHoleTargetSolarSystem;
 
-		private final GenericValueTextField<?,Integer> txtfldPlanets;
+		private final GenericValueTextField<Integer> txtfldPlanets;
 
 		InfoPanel_SolarSystem() {
 			super(UniversePanel.this,true);
@@ -1125,8 +1125,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		
 		private final ResourceSelectDialog resourceSelectDialog;
 
-		private final GenericValueTextField<?,Double> txtfldPortalLat;
-		private final GenericValueTextField<?,Double> txtfldPortalLon;
+		private final GenericValueTextField<Double> txtfldPortalLat;
+		private final GenericValueTextField<Double> txtfldPortalLon;
 		
 		InfoPanel_Planet() {
 			super(UniversePanel.this, true);

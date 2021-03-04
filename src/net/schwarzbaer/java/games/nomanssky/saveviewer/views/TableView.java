@@ -369,9 +369,9 @@ public class TableView {
 			return this;
 		}
 		
-		public ColumnID<DataType> getColumn(int i) {
+		public ColumnID<DataType> getColumn(int columnIndexM) {
 			if (tableModel == null) return null;
-			return tableModel.columns[i];
+			return tableModel.columns[columnIndexM];
 		}
 		
 		public void setSelectedValue(DataType selected, boolean shouldScroll) {
@@ -381,6 +381,9 @@ public class TableView {
 			else setRowSelectionInterval(rowV,rowV);
 			if (shouldScroll)
 				scrollRectToVisible(getCellRect(rowV, 0, true));
+		}
+		public DataType getValueAt(int rowIndexM) {
+			return tableModel.getValue(rowIndexM);
 		}
 		public void addSelectionListener(BiConsumer<DataType,Integer> selectionChanged) {
 			getSelectionModel().addListSelectionListener(e->{

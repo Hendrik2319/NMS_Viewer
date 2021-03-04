@@ -1505,11 +1505,17 @@ public class Gui {
 		return setTextField(new JTextField(txt,columns), listener, disabler, actionCommand);
 	}
 	
-	public static <AC extends Enum<AC>> GenericValueTextField<AC,Double> createTextField_Double(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Double> isOK, Consumer<Double> setValue) {
-		return new GenericValueTextField<AC,Double>(txt, disabler, actionCommand, Double::parseDouble, isOK, setValue);
+	public static <AC extends Enum<AC>> GenericValueTextField<Double> createTextField_Double(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Double> isOK, Consumer<Double> setValue) {
+		return new GenericValueTextField<Double>(txt, disabler, actionCommand, Double::parseDouble, isOK, setValue);
 	}
-	public static <AC extends Enum<AC>> GenericValueTextField<AC,Integer> createTextField_Integer(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Integer> isOK, Consumer<Integer> setValue) {
-		return new GenericValueTextField<AC,Integer>(txt, disabler, actionCommand, Integer::parseInt, isOK, setValue);
+	public static <AC extends Enum<AC>> GenericValueTextField<Integer> createTextField_Integer(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Integer> isOK, Consumer<Integer> setValue) {
+		return new GenericValueTextField<Integer>(txt, disabler, actionCommand, Integer::parseInt, isOK, setValue);
+	}
+	public static <AC extends Enum<AC>> GenericValueTextField<Double> createTextField_Double(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Predicate<Double> isOK, Consumer<Double> setValue) {
+		return new GenericValueTextField<Double>(txt, columns, disabler, actionCommand, Double::parseDouble, isOK, setValue);
+	}
+	public static <AC extends Enum<AC>> GenericValueTextField<Integer> createTextField_Integer(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Predicate<Integer> isOK, Consumer<Integer> setValue) {
+		return new GenericValueTextField<Integer>(txt, columns, disabler, actionCommand, Integer::parseInt, isOK, setValue);
 	}
 
 	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
@@ -1555,14 +1561,17 @@ public class Gui {
 		return comp;
 	}
 	
-	public static class GenericValueTextField<AC extends Enum<AC>,Value> extends JTextField {
+	public static class GenericValueTextField<Value> extends JTextField {
 		private static final long serialVersionUID = 2358150081408182155L;
 		private Color defaultBG;
 		private Function<String, Value> convert;
 		private Predicate<Value> isOK;
 		
-		GenericValueTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,Value> convert, Predicate<Value> isOK, Consumer<Value> setValue) {
-			super(txt);
+		<AC extends Enum<AC>> GenericValueTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,Value> convert, Predicate<Value> isOK, Consumer<Value> setValue) {
+			this(txt, 0, disabler, actionCommand, convert, isOK, setValue);
+		}
+		<AC extends Enum<AC>> GenericValueTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Function<String,Value> convert, Predicate<Value> isOK, Consumer<Value> setValue) {
+			super(txt,columns);
 			this.convert = convert;
 			this.isOK = isOK;
 			defaultBG = getBackground();
