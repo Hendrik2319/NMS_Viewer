@@ -1261,22 +1261,26 @@ public class Gui {
 		}
 	}
 
-	public static void append_ln      ( JTextArea txt, String text                     ) { txt.append(String.format( "%s%n", text                        )); }
-	public static void append         ( JTextArea txt, String text                     ) { txt.append(String.format( "%s"  , text                        )); }
-	public static void append_ln      ( JTextArea txt, String format, Object... values ) { txt.append(String.format( Locale.ENGLISH, format+"%n", values )); }
-	public static void append         ( JTextArea txt, String format, Object... values ) { txt.append(String.format( Locale.ENGLISH, format     , values )); }
-	public static void log_ln      ( String text                     ) { System.out.printf( "%s%n", text                        ); }
-	public static void log         ( String text                     ) { System.out.printf( "%s"  , text                        ); }
-	public static void log_error_ln( String text                     ) { System.err.printf( "%s%n", text                        ); }
-	public static void log_error   ( String text                     ) { System.err.printf( "%s"  , text                        ); }
-	public static void log_warn_ln ( String text                     ) { System.err.printf( "%s%n", text                        ); }
-	public static void log_warn    ( String text                     ) { System.err.printf( "%s"  , text                        ); }
-	public static void log_ln      ( String format, Object... values ) { System.out.printf( Locale.ENGLISH, format+"%n", values ); }
-	public static void log         ( String format, Object... values ) { System.out.printf( Locale.ENGLISH, format     , values ); }
-	public static void log_error_ln( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format+"%n", values ); }
-	public static void log_error   ( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format     , values ); }
-	public static void log_warn_ln ( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format+"%n", values ); }
-	public static void log_warn    ( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format     , values ); }
+	public  static void append_ln   ( JTextArea   txt, String text                     ) { txt.append(String.format( "%s%n", text                        )); }
+	public  static void append      ( JTextArea   txt, String text                     ) { txt.append(String.format( "%s"  , text                        )); }
+	public  static void append_ln   ( JTextArea   txt, String format, Object... values ) { txt.append(String.format( Locale.ENGLISH, format+"%n", values )); }
+	public  static void append      ( JTextArea   txt, String format, Object... values ) { txt.append(String.format( Locale.ENGLISH, format     , values )); }
+	private static void log_ln      ( PrintStream out, String text                     ) { out.printf( "%s%n", text                        ); }
+	private static void log         ( PrintStream out, String text                     ) { out.printf( "%s"  , text                        ); }
+	private static void log_ln      ( PrintStream out, String format, Object... values ) { out.printf( Locale.ENGLISH, format+"%n", values ); }
+	private static void log         ( PrintStream out, String format, Object... values ) { out.printf( Locale.ENGLISH, format     , values ); }
+	public  static void log_ln      ( String text                     ) { log_ln( System.out, text           ); }
+	public  static void log         ( String text                     ) { log   ( System.out, text           ); }
+	public  static void log_error_ln( String text                     ) { log_ln( System.err, text           ); }
+	public  static void log_error   ( String text                     ) { log   ( System.err, text           ); }
+	public  static void log_warn_ln ( String text                     ) { log_ln( System.err, text           ); }
+	public  static void log_warn    ( String text                     ) { log   ( System.err, text           ); }
+	public  static void log_ln      ( String format, Object... values ) { log_ln( System.out, format, values ); }
+	public  static void log         ( String format, Object... values ) { log   ( System.out, format, values ); }
+	public  static void log_error_ln( String format, Object... values ) { log_ln( System.err, format, values ); }
+	public  static void log_error   ( String format, Object... values ) { log   ( System.err, format, values ); }
+	public  static void log_warn_ln ( String format, Object... values ) { log_ln( System.err, format, values ); }
+	public  static void log_warn    ( String format, Object... values ) { log   ( System.err, format, values ); }
 
 	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, boolean enabled, Consumer<ItemType> valueSelected) {
 		comp.setEnabled(enabled);
