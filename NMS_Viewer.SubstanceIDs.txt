@@ -12,7 +12,7 @@
 ^ASTEROID2.type=Resource
 ^ASTEROID2.symbol=Au
 ^ASTEROID2.image=Substance.neutral.uncommon2.NEXT.png
-^ASTEROID2.imageBG=A96E06
+^ASTEROID2.imageBG=AA6E06
 ^ASTEROID3=Platin
 ^ASTEROID3.type=Resource
 ^ASTEROID3.symbol=Pt
