@@ -1443,6 +1443,18 @@ public class Images {
 			cachedAlphaImages = new CachedAlphaImages();
 			colorUsage = ColorUsage.scanUsage();
 			
+			Colors colors = Images.getInstance().colors;
+			HashMap<Integer, ColorUsage> unknownColors = new HashMap<>(colorUsage);
+			for (NamedColor color:colors.colorVec)
+				unknownColors.remove(color.value);
+			
+			if (!unknownColors.isEmpty()) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("Unknown Colors detected:\r\n");
+				unknownColors.forEach((colorValue,usage)->sb.append(String.format("   [%06X] %s%n", colorValue, usage.toString())));
+				JOptionPane.showMessageDialog(parent, sb.toString(), "Unknown Colors detected", JOptionPane.WARNING_MESSAGE);
+			}
+			
 			colorListColumns = new NamedColorColumnID[] {
 				new NamedColorColumnID("#"    ,    Integer.class,  20,-1, 20, 20, (nc,i)->i+1),
 				new NamedColorColumnID("Color", NamedColor.class,  20,-1, 80, 80, (nc,i)->nc),
