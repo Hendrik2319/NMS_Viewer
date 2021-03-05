@@ -197,7 +197,7 @@
 ^PLANT_WATER.type=PlantProduct
 ^PLANT_WATER.symbol=Ke
 ^PLANT_WATER.image=Substance.neutral.rare9.Kelpbeutel.png
-^PLANT_WATER.imageBG=085C78
+^PLANT_WATER.imageBG=005C83
 ^QUICKSILVER=QUECKSILBER
 ^QUICKSILVER.type=Special
 ^QUICKSILVER.symbol=-
@@ -230,7 +230,8 @@
 ^SAND1.imageBG=8A7F72
 ^SOULFRAG=Fragmentierte Qualia
 ^SOULFRAG.type=Special
-^SOULFRAG.image=FragmentedQualiaIcon.jpg
+^SOULFRAG.symbol=?
+^SOULFRAG.image=SUB.SOULFRAG.png
 ^SOULFRAG.imageBG=8A7F72
 ^SPACEGUNK1=Restsubstanz
 ^SPACEGUNK1.type=Resource
