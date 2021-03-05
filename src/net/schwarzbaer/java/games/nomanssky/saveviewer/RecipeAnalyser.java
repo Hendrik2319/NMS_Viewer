@@ -1438,14 +1438,14 @@ class RecipeAnalyser implements ActionListener {
 				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipes!=null) {
 					HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe = getAllProducibleRecipes();
 					
-					//SaveViewer.log_ln("All Producible Recipes:");
+					//Gui.log_ln("All Producible Recipes:");
 					//for (IDType output:allProdRecipe.keySet())
 					//	for (InputValueCombination combi:allProdRecipe.get(output))
-					//		SaveViewer.log_ln("%s <-- %s", getIngredientName(output), combi.toString());
+					//		Gui.log_ln("%s <-- %s", getIngredientName(output), combi.toString());
 					
-					//SaveViewer.log_ln("All Producible Recipes for  %s:",getIngredientName(ingredientsTableModel.clickedIngredient.getID()));
+					//Gui.log_ln("All Producible Recipes for  %s:",getIngredientName(ingredientsTableModel.clickedIngredient.getID()));
 					//for (InputValueCombination combi:allProdRecipe.get(ingredientsTableModel.clickedIngredient.getID()))
-					//	SaveViewer.log_ln("%s <-- %s", getIngredientName(ingredientsTableModel.clickedIngredient.getID()), combi.toString());
+					//	Gui.log_ln("%s <-- %s", getIngredientName(ingredientsTableModel.clickedIngredient.getID()), combi.toString());
 					
 					RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredientsTableModel.clickedIngredient,allProdRecipe);
 					recipeChainFinder.search();

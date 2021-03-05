@@ -1833,7 +1833,7 @@ public class GameInfos {
 				if (rowCount>0) {
 					String message = "Do you really want to delete "+(rowCount==1?"this ID":("these "+rowCount+" IDs"))+"?";
 					if (JOptionPane.YES_OPTION==JOptionPane.showConfirmDialog(mainwindow, message, "Delete IDs", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE)) {
-						//SaveViewer.log_ln("Rows to delete: %s", Arrays.toString(rows));
+						//Gui.log_ln("Rows to delete: %s", Arrays.toString(rows));
 						if (rows.length>1) {
 							table.stopCellEditing();
 							Vector<Integer> rows2Delete = new Vector<>();
@@ -1847,7 +1847,7 @@ public class GameInfos {
 							if (tableModel.deleteValue(clickedCell.y))
 								deletedRows.add(clickedCell.y);
 						}
-						//SaveViewer.log_ln("DeletedRows: %s", deletedRows.toString());
+						//Gui.log_ln("DeletedRows: %s", deletedRows.toString());
 					}
 				}
 			} break;
@@ -2214,7 +2214,7 @@ public class GameInfos {
 				if (rowIndex<EXTRA_ROWS) return false;
 				GeneralizedID id = IDs.remove(rowIndex-EXTRA_ROWS);
 				sourceIdMap.remove(id);
-				//SaveViewer.log_ln("GeneralizedIDTableModel.deleteValue: [%d] -> %s", rowIndex, id==null?"<null>":id.getName());
+				//Gui.log_ln("GeneralizedIDTableModel.deleteValue: [%d] -> %s", rowIndex, id==null?"<null>":id.getName());
 				return true;
 			}
 

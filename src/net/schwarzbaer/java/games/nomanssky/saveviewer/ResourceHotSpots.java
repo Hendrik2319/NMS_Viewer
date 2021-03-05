@@ -328,8 +328,8 @@ public class ResourceHotSpots implements ActionListener {
 		mainwindow = new StandardMainWindow("Resource HotSpots",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
 		mainwindow.startGUI(contentPane,menuBar);
 		
-		//SaveViewer.log_ln("ResourceHotSpots.currentPlanet: %s <initial>", currentPlanet);
-		//SaveViewer.log_ln("ResourceHotSpots.currentRegion: %s <initial>", currentRegion);
+		//Gui.log_ln("ResourceHotSpots.currentPlanet: %s <initial>", currentPlanet);
+		//Gui.log_ln("ResourceHotSpots.currentRegion: %s <initial>", currentRegion);
 		planetComboBox.setSelectedItem(currentPlanet);
 		regionComboBox.setSelectedItem(currentRegion);
 		updateGuiAccess();
@@ -444,7 +444,7 @@ public class ResourceHotSpots implements ActionListener {
 			
 		case SelectPlanet:
 			currentPlanet = (Planet)planetComboBox.getSelectedItem();
-			//SaveViewer.log_ln("ResourceHotSpots.currentPlanet: %s", currentPlanet);
+			//Gui.log_ln("ResourceHotSpots.currentPlanet: %s", currentPlanet);
 			if (currentPlanet==null) {
 				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>());
 				regionComboBox.setSelectedItem(null);
@@ -458,7 +458,7 @@ public class ResourceHotSpots implements ActionListener {
 			
 		case SelectRegion:
 			currentRegion = (Planet.Region)regionComboBox.getSelectedItem();
-			//SaveViewer.log_ln("ResourceHotSpots.currentRegion: %s", currentRegion);
+			//Gui.log_ln("ResourceHotSpots.currentRegion: %s", currentRegion);
 			updateGuiAfterRegionChange();
 			updateGuiAccess();
 			break;
@@ -962,7 +962,7 @@ public class ResourceHotSpots implements ActionListener {
 		}
 
 		public void setRegion(Planet.Region region) {
-			//SaveViewer.log_ln("%s.setRegion( %s )", getClass().getSimpleName(), region);
+			//Gui.log_ln("%s.setRegion( %s )", getClass().getSimpleName(), region);
 			if (table.isEditing()) {
 				TableCellEditor tce = table.getCellEditor();
 				if (tce!=null) tce.stopCellEditing();

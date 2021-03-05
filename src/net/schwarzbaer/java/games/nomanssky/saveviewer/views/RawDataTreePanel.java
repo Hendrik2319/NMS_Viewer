@@ -62,7 +62,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		this.showDeObfuscation = showDeObfuscation;
 		hideProcessedNodes = false;
 		
-		SaveViewer.log("Create tree from file \"%s\" ...",file.getPath());
+		Gui.log("Create tree from file \"%s\" ...",file.getPath());
 		JTree tree = new JTree(treeModel = new DefaultTreeModel(new JsonTreeNode(this.data.json_data,hideProcessedNodes)));
 		tree.addMouseListener(new MouseAdapter() {
 			@Override public void mouseClicked(MouseEvent e) {
@@ -85,7 +85,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		
 		JScrollPane treeScrollPane = new JScrollPane(tree);
 		treeScrollPane.setPreferredSize(new Dimension(600, 500));
-		SaveViewer.log_ln(" done");
+		Gui.log_ln(" done");
 		
 		infoTextArea = new JTextArea();
 		infoTextArea.setEditable(false);
@@ -158,8 +158,8 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			SaveViewer.copyToClipBoard(pathToShortString(contextMenuTarget));
 			break;
 		case ShowPath:
-			SaveViewer.log_ln("Path: "+contextMenuTarget);
-			SaveViewer.log_ln("    = "+pathToShortString(contextMenuTarget));
+			Gui.log_ln("Path: "+contextMenuTarget);
+			Gui.log_ln("    = "+pathToShortString(contextMenuTarget));
 			break;
 		case CopyValueName:
 			if (pathComp instanceof JsonTreeNode)

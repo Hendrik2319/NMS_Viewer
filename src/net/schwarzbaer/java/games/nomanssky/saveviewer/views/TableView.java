@@ -103,7 +103,7 @@ public class TableView {
 					TableColumn column = columnModel.getColumn(i);
 					widths[column.getModelIndex()] = column.getWidth();
 				}
-				SaveViewer.log_ln(Arrays.toString(widths));
+				Gui.log_ln(Arrays.toString(widths));
 			} break;
 			}
 		}
@@ -204,14 +204,14 @@ public class TableView {
 				});
 				setRowSorterListener(()->{
 					if (selectedRowsM!=null && selectedRowsM.length>0) {
-						SaveViewer.log_ln("Selected Rows (Model): %s", Arrays.toString(selectedRowsM));
+						Gui.log_ln("Selected Rows (Model): %s", Arrays.toString(selectedRowsM));
 						
 						int[] rowsV = new int[selectedRowsM.length];
 						for (int i = 0; i < rowsV.length; i++)
 							rowsV[i] = convertRowIndexToView(selectedRowsM[i]);
-						SaveViewer.log_ln("Selected Rows (View) : %s", Arrays.toString(rowsV));
+						Gui.log_ln("Selected Rows (View) : %s", Arrays.toString(rowsV));
 						Arrays.sort(rowsV);
-						SaveViewer.log_ln("Selected Rows (View) : %s (sorted)", Arrays.toString(rowsV));
+						Gui.log_ln("Selected Rows (View) : %s (sorted)", Arrays.toString(rowsV));
 						
 						clearSelection();
 						int firstRow, lastRow;
@@ -224,14 +224,14 @@ public class TableView {
 								} else {
 									i = j-1; // --> lastRow == rowsV[i]
 									addRowSelectionInterval(firstRow, rowsV[i]);
-									SaveViewer.log_ln("addRowSelectionInterval: %d..%d", firstRow, rowsV[i]);
+									Gui.log_ln("addRowSelectionInterval: %d..%d", firstRow, rowsV[i]);
 									endReached = false;
 									break;
 								}
 							}
 							if (endReached) {
 								addRowSelectionInterval(firstRow, rowsV[rowsV.length-1]);
-								SaveViewer.log_ln("addRowSelectionInterval: %d..%d (e)", firstRow, rowsV[rowsV.length-1]);
+								Gui.log_ln("addRowSelectionInterval: %d..%d (e)", firstRow, rowsV[rowsV.length-1]);
 								break;
 							}
 						}

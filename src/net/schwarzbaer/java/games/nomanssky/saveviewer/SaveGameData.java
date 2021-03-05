@@ -425,7 +425,7 @@ public class SaveGameData {
 		}
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found %d not parseable items in %s.", notParsableObjects.size(), sourceLabel);
+			Gui.log_error_ln("Found %d not parseable items in %s.", notParsableObjects.size(), sourceLabel);
 		
 		return dataItems;
 	}
@@ -520,7 +520,7 @@ public class SaveGameData {
 					return new PolarCoordinates(latitude, longitude, radius);
 				} catch (NumberFormatException e) {}
 			
-			SaveViewer.log_error_ln("Can't parse PolarCoordinates from \"%s\".", valueStr);
+			Gui.log_error_ln("Can't parse PolarCoordinates from \"%s\".", valueStr);
 			return null;
 		}
 	}
@@ -817,7 +817,7 @@ public class SaveGameData {
 					//switch (owner.userID) {
 					//case "76561197968127504":
 					//case "76561198030447439":
-					//	SaveViewer.log_ln("[%s] \"%s\"", owner.userID, owner.userName);
+					//	Gui.log_ln("[%s] \"%s\"", owner.userID, owner.userName);
 					//	break;
 					//}
 					SaveViewer.steamIDs.set(owner.userID, owner.userName);
@@ -984,7 +984,7 @@ public class SaveGameData {
 			}
 			
 			if (!notParsableObjects.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
+				Gui.log_error_ln("Found "+notParsableObjects.size()+" not parseable TeleportEndpoints.");
 			
 			return teleportEndpoints;
 		}
@@ -1036,7 +1036,7 @@ public class SaveGameData {
 				}
 				
 				if (!notParsableObjects.isEmpty())
-					SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
+					Gui.log_error_ln("Found "+notParsableObjects.size()+" not parseable PersistentPlayerBases.");
 				
 				return persistentPlayerBases;
 			}
@@ -1061,7 +1061,7 @@ public class SaveGameData {
 			}
 			
 			if (!notParsableObjects.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
+				Gui.log_error_ln("Found "+notParsableObjects.size()+" not parseable Objects in PersistentPlayerBases["+baseIndex+"].");
 			
 			return vector.toArray(new BuildingObject[vector.size()]);
 		}
@@ -1152,7 +1152,7 @@ public class SaveGameData {
 			}
 			
 			if (!notParsableObjects.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
+				Gui.log_error_ln("Found "+notParsableObjects.size()+" not parseable BaseBuildingObjects.");
 			
 			return vector.toArray(new UnboundBuildingObject[0]);
 		}
@@ -1319,7 +1319,7 @@ public class SaveGameData {
 				//GameInfos.GeneralizedID.Usage.Type usageType = GeneralizedID.Usage.Type.Blueprint;
 				GeneralizedID generalizedID = map.get(id,data,usageType);
 				if (generalizedID==null) {
-					SaveViewer.log_error_ln("Can't find ID \"%s\" in %s", id, map.getLabel());
+					Gui.log_error_ln("Can't find ID \"%s\" in %s", id, map.getLabel());
 					return null;
 				}
 				
@@ -1465,7 +1465,7 @@ public class SaveGameData {
 			case "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOSHIP_PROC.SCENE.MBIN": return "LivingShip";
 			
 			default:
-				SaveViewer.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
+				Gui.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
 			}
 			return null;
 		}
@@ -1841,12 +1841,12 @@ public class SaveGameData {
 					Arrays.fill(row, null);
 				
 				if (arrSlots==null) {
-					SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no slots.");
+					Gui.log_error_ln(inventorySourcePath+": Inventory has no slots.");
 					return slots;
 				}
 				
 				if (arrValidSlotIndices==null) {
-					SaveViewer.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
+					Gui.log_error_ln(inventorySourcePath+": Inventory has no valid slot indices.");
 					return slots;
 				}
 				
@@ -1872,9 +1872,9 @@ public class SaveGameData {
 					
 				}
 				if (!wrongSlots.isEmpty())
-					SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
+					Gui.log_error_ln(inventorySourcePath+": Found "+wrongSlots.size()+" wrong slots.");
 				if (redundantIndices>0   )
-					SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
+					Gui.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant slots.");
 				
 				redundantIndices = 0;
 				wrongIndices.clear();
@@ -1893,9 +1893,9 @@ public class SaveGameData {
 						slots[x][y].isValid = true;
 				}
 				if (!wrongIndices.isEmpty())
-					SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
+					Gui.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"ValidSlotIndices\".");
 				if (redundantIndices>0)
-					SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
+					Gui.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"ValidSlotIndices\".");
 				
 				redundantIndices = 0;
 				wrongIndices.clear();
@@ -1913,9 +1913,9 @@ public class SaveGameData {
 					slot.specialSlotType = type;
 				}
 				if (!wrongIndices.isEmpty())
-					SaveViewer.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
+					Gui.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
 				if (redundantIndices>0)
-					SaveViewer.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
+					Gui.log_error_ln(inventorySourcePath+": Found "+redundantIndices+" redundant index(es) in \"SpecialSlots\".");
 				
 				return slots;
 			}
@@ -2513,7 +2513,7 @@ public class SaveGameData {
 				if (!file.isFile()) return;
 				
 				long start = System.currentTimeMillis();
-				SaveViewer.log_ln("Read known Editable Frigate Modifications from file \"%s\" ...", file.getPath());
+				Gui.log_ln("Read known Editable Frigate Modifications from file \"%s\" ...", file.getPath());
 				
 				boolean somethingChanged = false;
 				EditableModification mod = null;
@@ -2534,7 +2534,7 @@ public class SaveGameData {
 							if (mod!=null) mod.value = str.substring("value=".length());
 							
 						} else if (str.isEmpty()) {
-							if (mod!=null) SaveViewer.log_warn_ln("   %-15s(%-30s,%s)", mod.modStr, '"'+mod.label+'"', '"'+mod.value+'"');
+							if (mod!=null) Gui.log_warn_ln("   %-15s(%-30s,%s)", mod.modStr, '"'+mod.label+'"', '"'+mod.value+'"');
 							
 						}
 					}
@@ -2542,14 +2542,14 @@ public class SaveGameData {
 				catch (FileNotFoundException e) { e.printStackTrace(); }
 				catch (IOException e) { e.printStackTrace(); }
 				
-				if (!somethingChanged) SaveViewer.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
-				SaveViewer.log_ln("   done (in %1.3fs)", (System.currentTimeMillis()-start)/1000.0f);
+				if (!somethingChanged) Gui.log_warn_ln("   All values from file are already known. File \"%s\" can be deleted.", file.getPath());
+				Gui.log_ln("   done (in %1.3fs)", (System.currentTimeMillis()-start)/1000.0f);
 			}
 	
 			public static void saveKnownEditableModsToFile() {
 				File file = new File(FileExport.FILE_KNOWN_EDITABLE_MODS);
 				long start = System.currentTimeMillis();
-				SaveViewer.log_ln("Write known Editable Frigate Modifications to file \""+file.getPath()+"\" ...");
+				Gui.log_ln("Write known Editable Frigate Modifications to file \""+file.getPath()+"\" ...");
 				
 				Vector<String> modStrs = new Vector<>(values.keySet());
 				modStrs.sort(null);
@@ -2566,7 +2566,7 @@ public class SaveGameData {
 					e.printStackTrace();
 				}
 				
-				SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+				Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			}
 			
 			private final String modStr;
@@ -2711,7 +2711,7 @@ public class SaveGameData {
 			Frigate.EditableModification.saveKnownEditableModsToFile();
 			
 			if (!notParsableObjects.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
+				Gui.log_error_ln("Found "+notParsableObjects.size()+" not parseable Frigates.");
 			
 			return frigates;
 		}
@@ -2796,7 +2796,7 @@ public class SaveGameData {
 		Frigate.EditableModification.saveKnownEditableModsToFile();
 		
 		if (!notParsableObjects.isEmpty())
-			SaveViewer.log_error_ln("Found "+notParsableObjects.size()+" not parseable RunningFrigateMissions.");
+			Gui.log_error_ln("Found "+notParsableObjects.size()+" not parseable RunningFrigateMissions.");
 	}
 
 	public static class FrigateMission implements AddressdableObject {
@@ -2921,13 +2921,13 @@ public class SaveGameData {
 				nameChange = new NameChange(steamID, newName, oldName);
 			}
 			public void printConflict() {
-				SaveViewer.log_error_ln("KnownSteamIDs:  [ID]%s  [Old]\"%s\" -> [New]\"%s\"", nameChange.steamID,nameChange.oldName,nameChange.newName);
+				Gui.log_error_ln("KnownSteamIDs:  [ID]%s  [Old]\"%s\" -> [New]\"%s\"", nameChange.steamID,nameChange.oldName,nameChange.newName);
 			}
 		}
 		
 		void writeToFile() {
 			long start = System.currentTimeMillis();
-			SaveViewer.log_ln("Write KnownSteamIDs to file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
+			Gui.log_ln("Write KnownSteamIDs to file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_KNOWN_STEAM_ID),StandardCharsets.UTF_8))) {
 				Vector<String> ids = new Vector<String>(data.keySet());
 				ids.sort(null);
@@ -2940,13 +2940,13 @@ public class SaveGameData {
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
 		void readFromFile() {
 			data.clear();
 			long start = System.currentTimeMillis();
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_KNOWN_STEAM_ID),StandardCharsets.UTF_8))) {
-				SaveViewer.log_ln("Read KnownSteamIDs from file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
+				Gui.log_ln("Read KnownSteamIDs from file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
 				String line;
 				while ( (line=in.readLine())!=null ) {
 					int pos = line.indexOf('=');
@@ -2955,7 +2955,7 @@ public class SaveGameData {
 					String steamName = line.substring(pos+1);
 					set(steamID, steamName);
 				}
-				SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+				Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			} catch (FileNotFoundException e) {
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -3035,7 +3035,7 @@ public class SaveGameData {
 			}
 			
 			if (!notParsedAvailableData.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
+				Gui.log_error_ln("Found "+notParsedAvailableData.size()+" not parseable DiscoveryAvailableData.");
 		}
 
 		private void parseStoreArray(JSON_Array<NVExtra,VExtra> arrStore) {
@@ -3087,7 +3087,7 @@ public class SaveGameData {
 			}
 			
 			if (!notParsedStoreData.isEmpty())
-				SaveViewer.log_error_ln("Found "+notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
+				Gui.log_error_ln("Found "+notParsedStoreData.size()+" not parseable DiscoveryStoreData.");
 		}
 
 		private void parseDD(JSON_Object<NVExtra,VExtra> ddObj, DDblock dd) {
@@ -3178,7 +3178,7 @@ public class SaveGameData {
 					case "Interactable": // don't add DiscoveredItem
 						break;
 					default:
-						SaveViewer.log_error_ln("Found unknown discovery type in %s: %s", sourceArray, ddBlock.DT);
+						Gui.log_error_ln("Found unknown discovery type in %s: %s", sourceArray, ddBlock.DT);
 						break;
 					}
 				}
@@ -3887,15 +3887,15 @@ public class SaveGameData {
 		}
 
 		public void writeToConsole() {
-			SaveViewer.log_ln("Universe:");
+			Gui.log_ln("Universe:");
 			for (Galaxy g:galaxies) {
-				SaveViewer.log_ln("\t"+g+":");
+				Gui.log_ln("\t"+g+":");
 				for (Region r:g.regions) {
-					SaveViewer.log_ln("\t\t"+r+":");
+					Gui.log_ln("\t\t"+r+":");
 					for (SolarSystem s:r.solarSystems) {
-						SaveViewer.log_ln("\t\t\t"+s+":");
+						Gui.log_ln("\t\t\t"+s+":");
 						for (Planet p:s.planets)
-							SaveViewer.log_ln("\t\t\t\tPlanet "+p);
+							Gui.log_ln("\t\t\t\tPlanet "+p);
 					}
 				}
 			}
@@ -4671,7 +4671,7 @@ public class SaveGameData {
 		else {
 			array = new KnownWords().parse(arrayValue, wordLabel, racesLabel);
 			if (!array.notParsedKnownWords.isEmpty())
-				SaveViewer.log_error_ln("Found "+array.notParsedKnownWords.size()+" not parseable KnownWords.");
+				Gui.log_error_ln("Found "+array.notParsedKnownWords.size()+" not parseable KnownWords.");
 		}
 		return array; 
 	}
@@ -4747,7 +4747,7 @@ public class SaveGameData {
 		stats = new Stats(this);
 		stats.parse(arrayValue);
 		if (!stats.notParsedStats.isEmpty())
-			SaveViewer.log_error_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
+			Gui.log_error_ln("Found "+stats.notParsedStats.size()+" not parseable Stats.");
 	}
 
 	public final static class Stats {

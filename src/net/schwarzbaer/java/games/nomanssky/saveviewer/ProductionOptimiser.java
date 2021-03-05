@@ -190,10 +190,10 @@ class ProductionOptimiser implements ActionListener {
 		baseInputsTableModel.fireTableUpdate();
 		productsTableModel.fireTableUpdate();
 		if (selectedResult!=null) {
-			SaveViewer.log_ln("Avail: %s", selectedResult.avail);
-			SaveViewer.log_ln("Amounts of Level 1 products at start: %s", selectedResult.level1Amounts);
-			SaveViewer.log_ln("Consumed Base Inputs: %s", selectedResult.consumedBaseInputs);
-			SaveViewer.log_ln("Stored Products: %s", selectedResult.storedProducts);
+			Gui.log_ln("Avail: %s", selectedResult.avail);
+			Gui.log_ln("Amounts of Level 1 products at start: %s", selectedResult.level1Amounts);
+			Gui.log_ln("Consumed Base Inputs: %s", selectedResult.consumedBaseInputs);
+			Gui.log_ln("Stored Products: %s", selectedResult.storedProducts);
 		}
 	}
 
@@ -281,10 +281,10 @@ class ProductionOptimiser implements ActionListener {
 					resultList.setModel(new DefaultComboBoxModel<Result>(results));
 					resultList.setSelectedItem(null);
 					resultList.setEnabled(true);
-					SaveViewer.log_ln("Most Valuable Productions:");
+					Gui.log_ln("Most Valuable Productions:");
 					for (int i=0; i<results.size(); i++) {
 						Result res = results.get(i);
-						SaveViewer.log_ln("   [%02d] %d", i+1, res.avail);
+						Gui.log_ln("   [%02d] %d", i+1, res.avail);
 					}
 				}
 			});
@@ -708,8 +708,8 @@ class ProductionOptimiser implements ActionListener {
 				
 				products.clear();
 				products.addAll(maxAmounts.keySet());
-				SaveViewer.log_ln("Lvl1 Products: %s", products);
-				SaveViewer.log_ln("Max. Amounts: %s", maxAmounts);
+				Gui.log_ln("Lvl1 Products: %s", products);
+				Gui.log_ln("Max. Amounts: %s", maxAmounts);
 				
 				indexMultipliers = new int[products.size()];
 				int numberOfCases = 1;
@@ -718,7 +718,7 @@ class ProductionOptimiser implements ActionListener {
 					indexMultipliers[i] = numberOfCases;
 					numberOfCases *= maxAmounts.get(p);
 				}
-				SaveViewer.log_ln("Number Of Cases: %d", numberOfCases);
+				Gui.log_ln("Number Of Cases: %d", numberOfCases);
 				int numberOfCases2 = (int)numberOfCases;
 				SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(0, numberOfCases2); });
 				

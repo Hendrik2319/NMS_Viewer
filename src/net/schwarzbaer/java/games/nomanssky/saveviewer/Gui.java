@@ -861,7 +861,7 @@ public class Gui {
 			pm.setLayout(new LongMenuLayout(maxHeight));
 //			pm.setLayout(new GridLayout(20,0));
 //			setLayout(new GridLayout(0,2));
-//			SaveViewer.log_ln("ListMenu(\"%s\"): %s", title, pm.getSize());
+//			Gui.log_ln("ListMenu(\"%s\"): %s", title, pm.getSize());
 		}
 
 		public void updateValues(ValueType[] values) {
@@ -1261,14 +1261,22 @@ public class Gui {
 		}
 	}
 
-	public static void append_ln      ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format+"%n",values)); }
-	public static void append         ( JTextArea txt, String format, Object... values ) { txt.append(String.format(Locale.ENGLISH,format     ,values)); }
-	public static void log_ln      ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format+"\r\n",values); }
-	public static void log         ( String format, Object... values ) { System.out.printf(Locale.ENGLISH,format       ,values); }
-	public static void log_error_ln( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
-	public static void log_error   ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
-	public static void log_warn_ln ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format+"\r\n",values); }
-	public static void log_warn    ( String format, Object... values ) { System.err.printf(Locale.ENGLISH,format       ,values); }
+	public static void append_ln      ( JTextArea txt, String text                     ) { txt.append(String.format( "%s%n", text                        )); }
+	public static void append         ( JTextArea txt, String text                     ) { txt.append(String.format( "%s"  , text                        )); }
+	public static void append_ln      ( JTextArea txt, String format, Object... values ) { txt.append(String.format( Locale.ENGLISH, format+"%n", values )); }
+	public static void append         ( JTextArea txt, String format, Object... values ) { txt.append(String.format( Locale.ENGLISH, format     , values )); }
+	public static void log_ln      ( String text                     ) { System.out.printf( "%s%n", text                        ); }
+	public static void log         ( String text                     ) { System.out.printf( "%s"  , text                        ); }
+	public static void log_error_ln( String text                     ) { System.err.printf( "%s%n", text                        ); }
+	public static void log_error   ( String text                     ) { System.err.printf( "%s"  , text                        ); }
+	public static void log_warn_ln ( String text                     ) { System.err.printf( "%s%n", text                        ); }
+	public static void log_warn    ( String text                     ) { System.err.printf( "%s"  , text                        ); }
+	public static void log_ln      ( String format, Object... values ) { System.out.printf( Locale.ENGLISH, format+"%n", values ); }
+	public static void log         ( String format, Object... values ) { System.out.printf( Locale.ENGLISH, format     , values ); }
+	public static void log_error_ln( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format+"%n", values ); }
+	public static void log_error   ( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format     , values ); }
+	public static void log_warn_ln ( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format+"%n", values ); }
+	public static void log_warn    ( String format, Object... values ) { System.err.printf( Locale.ENGLISH, format     , values ); }
 
 	public static <AC extends Enum<AC>, ItemType> void setComp(JComboBox<ItemType> comp, Disabler<AC> disabler, AC actionCommand, boolean enabled, Consumer<ItemType> valueSelected) {
 		comp.setEnabled(enabled);

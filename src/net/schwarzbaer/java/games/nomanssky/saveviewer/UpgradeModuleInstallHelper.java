@@ -161,7 +161,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				knownUpgradeModuleIDs.put(id.id,id);
 		});
 		//knownUpgradeModules.forEach((str,id)->{
-		//	SaveViewer.log_ln("[%s] -> \"%s\"", str, id);
+		//	Gui.log_ln("[%s] -> \"%s\"", str, id);
 		//});
 		//Vector<GeneralizedID> vector = sorted(knownUpgradeModules.values());
 	}
@@ -321,10 +321,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		updateWindowTitle();
 		updateGUIaccess();
 		if (config.windowSize!=null) {
-			//SaveViewer.log_ln("MainWindow.setSize0: %s", config.windowSize);
+			//Gui.log_ln("MainWindow.setSize0: %s", config.windowSize);
 			config.windowSize.width  = Math.max(config.windowSize.width , mainwindow.getWidth ());
 			config.windowSize.height = Math.max(config.windowSize.height, mainwindow.getHeight());
-			//SaveViewer.log_ln("MainWindow.setSize1: %s", config.windowSize);
+			//Gui.log_ln("MainWindow.setSize1: %s", config.windowSize);
 			mainwindow.setSizeCenteredOnScreen(config.windowSize);
 		}
 		
@@ -335,12 +335,12 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			
 			@Override public void componentResized(ComponentEvent e) {
 				config.windowSize=mainwindow.getSize(config.windowSize);
-				//SaveViewer.log_ln("MainWindow.Resized: %s", config.windowSize);
+				//Gui.log_ln("MainWindow.Resized: %s", config.windowSize);
 			}
 		});
 		mainwindow.addWindowListener(new WindowAdapter() {
 			@Override public void windowClosing(WindowEvent e) {
-				//SaveViewer.log_ln("windowClosing");
+				//Gui.log_ln("windowClosing");
 				writeConfig();
 			}
 		});

@@ -2103,7 +2103,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				
 				resIdArrays = createFrom(resArrays);
 				//for (Resources[] arr:allResources2)
-				//	SaveViewer.log_ln("%s", Arrays.toString(arr));
+				//	Gui.log_ln("%s", Arrays.toString(arr));
 				
 				int nRow = computeRowCount(resIdArrays,nColumn);
 				resGrid = createResGrid(resIdArrays,nRow,nColumn);
@@ -2430,7 +2430,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				updateMarkerList();
 				String resultOuput = generateResultOuput(markedPlanets, markedSolarSystems, markedRegions);
 				setStatus(resultOuput);
-				//SaveViewer.log_ln("marked: %d Planets, %d Solar Systems, %d Regions  \"%s\"", markedPlanets, markedSolarSystems, markedRegions, searchStr);
+				//Gui.log_ln("marked: %d Planets, %d Solar Systems, %d Regions  \"%s\"", markedPlanets, markedSolarSystems, markedRegions, searchStr);
 				
 				return fittingNames;
 			}

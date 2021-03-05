@@ -142,13 +142,13 @@ public class Images {
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
 			catch (IOException e) { e.printStackTrace(); }
-			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
 
 		public void saveColorsToFile() {
 			long start = System.currentTimeMillis();
 			File file = new File(FileExport.FILE_COLORS);
-			SaveViewer.log_ln("Write background colors to file \""+file.getPath()+"\"...");
+			Gui.log_ln("Write background colors to file \""+file.getPath()+"\"...");
 			
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
 				for (NamedColor color:colorVec)
@@ -157,7 +157,7 @@ public class Images {
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
 			
-			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
 
 		public boolean moveColor(int fromIndex, int toIndex) {
@@ -477,9 +477,9 @@ public class Images {
 			}
 			long start = System.currentTimeMillis();
 			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
-			SaveViewer.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
+			Gui.log_ln("Read image resources from \""+folder.getPath()+"\" ...");
 			if (!folder.isDirectory()) {
-				SaveViewer.log_error_ln("   ... abort reading. Can't open folder.");
+				Gui.log_error_ln("   ... abort reading. Can't open folder.");
 				return;
 			}
 			
@@ -503,7 +503,7 @@ public class Images {
 				SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle("Sort Image List"));
 			Arrays.sort(names,Comparator.comparing(String::toLowerCase));
 			
-			SaveViewer.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 		}
 		
 		private void readNewImages(ProgressDialog pd, File folder, String[] foundImages) {
@@ -528,7 +528,7 @@ public class Images {
 					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
 				}
 			}
-			SaveViewer.log_ln("   %d image(s) added", newNamesList.size()-names.length);
+			Gui.log_ln("   %d image(s) added", newNamesList.size()-names.length);
 			
 			names = newNamesList.toArray(new String[newNamesList.size()]);
 		}
@@ -557,12 +557,12 @@ public class Images {
 					int n= i*6/names.length;
 					if (listChunkIndex != n) {
 						listChunkIndex = n;
-						SaveViewer.log(" .. %d",imageMap.size());
+						Gui.log(" .. %d",imageMap.size());
 					}
 				}
 			}
 			if (pd==null)
-				SaveViewer.log_ln(" .. %d",imageMap.size());
+				Gui.log_ln(" .. %d",imageMap.size());
 		}
 	
 		private BufferedImage readImage(File folder, String fileName) {
@@ -622,18 +622,18 @@ public class Images {
 	
 		public boolean deleteImage(String imageFileName, Consumer<Integer> taskBeforeUpdatingImageListListeners) {
 			int index = findImage(imageFileName);
-			if (index == -1) { SaveViewer.log_error_ln("Can't delete image: Image \"%s\" was not found in image list.", imageFileName); return false; }
+			if (index == -1) { Gui.log_error_ln("Can't delete image: Image \"%s\" was not found in image list.", imageFileName); return false; }
 			
 			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
-			if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't delete image: Image folder \"%s\" does not exist.", folder); return false; }
+			if (!folder.isDirectory()) { Gui.log_error_ln("Can't delete image: Image folder \"%s\" does not exist.", folder); return false; }
 			
 			File source = new File(folder,imageFileName);
-			if (!source.isFile()) { SaveViewer.log_error_ln("Can't delete image: Image file \"%s\" was not found.", source.getPath()); return false; }
+			if (!source.isFile()) { Gui.log_error_ln("Can't delete image: Image file \"%s\" was not found.", source.getPath()); return false; }
 			
 			try {
 				Files.delete(source.toPath());
 			} catch (IOException ex) {
-				SaveViewer.log_error_ln("Can't delete image: IOException: %s", ex.getMessage());
+				Gui.log_error_ln("Can't delete image: IOException: %s", ex.getMessage());
 				return false;
 			}
 			
@@ -652,18 +652,18 @@ public class Images {
 	
 		public boolean renameImage(String oldName, String newName, ProgressDialog pd, Runnable taskBeforeUpdatingImageListListeners) {
 			int index = findImage(oldName);
-			if (index == -1) { SaveViewer.log_error_ln("Can't rename image: Image \"%s\" was not found in image list.", oldName); return false; }
+			if (index == -1) { Gui.log_error_ln("Can't rename image: Image \"%s\" was not found in image list.", oldName); return false; }
 			
 			int other = findImage(newName);
-			if (other!=-1 && other!=index) { SaveViewer.log_error_ln("Can't rename image: Another image with the new name \"%s\" was found in image list.", newName); return false; }
+			if (other!=-1 && other!=index) { Gui.log_error_ln("Can't rename image: Another image with the new name \"%s\" was found in image list.", newName); return false; }
 			
 			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
-			if (!folder.isDirectory()) { SaveViewer.log_error_ln("Can't rename image: Image folder \"%s\" does not exist.", folder); return false; }
+			if (!folder.isDirectory()) { Gui.log_error_ln("Can't rename image: Image folder \"%s\" does not exist.", folder); return false; }
 			
 			File source = new File(folder,oldName);
 			File target = new File(folder,newName);
-			if (!source.isFile()) { SaveViewer.log_error_ln("Can't rename image: Source image file \"%s\" was not found." , source.getPath()); return false; }
-			if ( target.exists()) { SaveViewer.log_error_ln("Can't rename image: Target image file \"%s\" already exists.", target.getPath()); return false; }
+			if (!source.isFile()) { Gui.log_error_ln("Can't rename image: Source image file \"%s\" was not found." , source.getPath()); return false; }
+			if ( target.exists()) { Gui.log_error_ln("Can't rename image: Target image file \"%s\" already exists.", target.getPath()); return false; }
 			
 			if (oldName.equalsIgnoreCase(newName)) {
 				File temp = new File(folder,oldName+".temp");
@@ -674,7 +674,7 @@ public class Images {
 					Files.move(source.toPath(), temp.toPath(), StandardCopyOption.ATOMIC_MOVE);
 					source = temp;
 				} catch (IOException ex) {
-					SaveViewer.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
+					Gui.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
 					return false;
 				}
 			}
@@ -682,7 +682,7 @@ public class Images {
 			try {
 				Files.move(source.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE);
 			} catch (IOException ex) {
-				SaveViewer.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
+				Gui.log_error_ln("Can't rename image: IOException: %s", ex.getMessage());
 				return false;
 			}
 			
@@ -1271,7 +1271,7 @@ public class Images {
 			showValuesOfSelected();
 		}
 		private void showValuesOfSelected() {
-			//SaveViewer.log_ln("Selected Image: %s", selectedName);
+			//Gui.log_ln("Selected Image: %s", selectedName);
 			
 			output.setText("");
 			if (selectedName==null) return;

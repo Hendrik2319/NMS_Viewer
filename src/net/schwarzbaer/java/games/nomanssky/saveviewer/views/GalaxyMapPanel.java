@@ -218,7 +218,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 //					do {
 //						error = false;
 //						try { pd.showDialog(); }
-//						catch (Exception e) { error=true; SaveViewer.log_error_ln("pd.showDialog() -> error["+(++errorcount)+"]"); }
+//						catch (Exception e) { error=true; Gui.log_error_ln("pd.showDialog() -> error["+(++errorcount)+"]"); }
 //					} while(error);
 //				}
 //			});
