@@ -1,5 +1,6 @@
 [IDs]
 ^AF_METAL=Unreines Metall
+^AF_METAL.type=Special
 ^AF_METAL.symbol=Un
 ^AF_METAL.image=Tainted_metal.png
 ^AF_METAL.imageBG=DEDCD1
@@ -201,8 +202,8 @@
 ^QUICKSILVER=QUECKSILBER
 ^QUICKSILVER.type=Special
 ^QUICKSILVER.symbol=-
-^QUICKSILVER.image=_self.QUICKSILVER.png
-^QUICKSILVER.imageBG=8E8377
+^QUICKSILVER.image=QUICKSILVER.png
+^QUICKSILVER.imageBG=8A7F72
 ^RADIO1=Uran
 ^RADIO1.type=Resource
 ^RADIO1.symbol=U
@@ -274,6 +275,7 @@
 ^SUNGOLD.image=SUB.SUNGOLD.png
 ^SUNGOLD.imageBG=E59001
 ^TECHFRAG=Nanit-Haufen
+^TECHFRAG.type=Special
 ^TECHFRAG.image=NmsMisc_Nanite_Cluster.png
 ^TECHFRAG.imageBG=1C364D
 ^TOXIC1=Ammoniak
