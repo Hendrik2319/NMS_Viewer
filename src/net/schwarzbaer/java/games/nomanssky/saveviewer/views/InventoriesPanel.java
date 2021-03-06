@@ -41,6 +41,7 @@ import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.ValueListOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.EditIdDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
@@ -237,12 +238,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 			switch(ActionCommand.valueOf(e.getActionCommand())) {
 			case EditID: {
 				IDMap map = clickedSlot.getIDMap();
-				GameInfos.EditIdDialog dlg = new GameInfos.EditIdDialog(mainwindow, clickedSlot.id, map==null ? null : map.getTemplateList());
-				dlg.showDialog();
-				if (dlg.hasIdDataChanged() || dlg.wasIdTemplateAdded()) {
-					if (dlg.hasIdDataChanged()) dlg.transferChangesTo(clickedSlot.id);
-					updateAfterChangedIDdata();
-				}
+				boolean wasChanged = EditIdDialog.showDialog(mainwindow, clickedSlot.id, map==null ? null : map.getTemplateList());
+				if (wasChanged) updateAfterChangedIDdata();
 			} break;
 				
 			case SelectImageFile: {

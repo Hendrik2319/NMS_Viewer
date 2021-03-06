@@ -1293,7 +1293,22 @@ public class SaveGameData {
 	}
 
 	public static final class KnownBlueprints {
-
+		
+		public enum BlueprintList {
+			Technologies("Technology" , GameInfos.techIDs   , GeneralizedID.Usage.Type.Blueprint         ),
+			Products    ("Product"    , GameInfos.productIDs, GeneralizedID.Usage.Type.Blueprint         ),
+			Quicksilvers("Quicksilver", GameInfos.productIDs, GeneralizedID.Usage.Type.QuicksilverSpecial),
+			;
+			public final String categoryLabel;
+			public final IDMap idMap;
+			public final GeneralizedID.Usage.Type usageType;
+			BlueprintList(String categoryLabel, IDMap idMap, GeneralizedID.Usage.Type usageType) {
+				this.categoryLabel = categoryLabel;
+				this.idMap = idMap;
+				this.usageType = usageType;
+			}
+		}
+		
 		public Vector<GeneralizedID> technologies = null;
 		public Vector<GeneralizedID> products = null;
 		public Vector<GeneralizedID> quicksilvers = null;
@@ -1301,29 +1316,28 @@ public class SaveGameData {
 		
 		private static KnownBlueprints parse(SaveGameData data) {
 			KnownBlueprints knownBlueprints = new KnownBlueprints();
-			knownBlueprints.technologies   = parseBlueprintArray(data, "Technology" , GameInfos.techIDs   , GeneralizedID.Usage.Type.Blueprint         , "KnownTech"                 , data.json_data, "PlayerStateData","KnownTech"    );
-			knownBlueprints.products       = parseBlueprintArray(data, "Product"    , GameInfos.productIDs, GeneralizedID.Usage.Type.Blueprint         , "KnownProducts"             , data.json_data, "PlayerStateData","KnownProducts");
-			knownBlueprints.quicksilvers   = parseBlueprintArray(data, "Quicksilver", GameInfos.productIDs, GeneralizedID.Usage.Type.QuicksilverSpecial, "[KnownQuicksilverSpecials]", data.json_data, "PlayerStateData","[KnownQuicksilverSpecials]");
+			knownBlueprints.technologies   = parseBlueprintArray(data, BlueprintList.Technologies, "KnownTech"                 , data.json_data, "PlayerStateData","KnownTech"    );
+			knownBlueprints.products       = parseBlueprintArray(data, BlueprintList.Products    , "KnownProducts"             , data.json_data, "PlayerStateData","KnownProducts");
+			knownBlueprints.quicksilvers   = parseBlueprintArray(data, BlueprintList.Quicksilvers, "[KnownQuicksilverSpecials]", data.json_data, "PlayerStateData","[KnownQuicksilverSpecials]");
 			if (hasValue(data.json_data, "PlayerStateData","[KnownRecipes]"))
 				knownBlueprints.recipes = parseStringArray("[KnownRecipes]", data.json_data, "PlayerStateData","[KnownRecipes]");
 			return knownBlueprints;
 		}
 		
-		private static Vector<GeneralizedID> parseBlueprintArray(SaveGameData data, String blueprintCategory, IDMap map, GameInfos.GeneralizedID.Usage.Type usageType, String sourceLabel, JSON_Object<NVExtra,VExtra> jsonObject, Object... path) {
+		private static Vector<GeneralizedID> parseBlueprintArray(SaveGameData data, BlueprintList list, String sourceLabel, JSON_Object<NVExtra,VExtra> jsonObject, Object... path) {
 			if (!hasValue(jsonObject, path)) return null;
 			return parseArray((value,i)->{
 				
 				String id = getString(value);
 				if (id==null) return null;
 				
-				//GameInfos.GeneralizedID.Usage.Type usageType = GeneralizedID.Usage.Type.Blueprint;
-				GeneralizedID generalizedID = map.get(id,data,usageType);
+				GeneralizedID generalizedID = list.idMap.get(id,data,list.usageType);
 				if (generalizedID==null) {
-					Gui.log_error_ln("Can't find ID \"%s\" in %s", id, map.getLabel());
+					Gui.log_error_ln("Can't find ID \"%s\" in %s", id, list.idMap.getLabel());
 					return null;
 				}
 				
-				generalizedID.getUsage(data).addBlueprintUsage(blueprintCategory,i);
+				generalizedID.getUsage(data).addBlueprintUsage(list.categoryLabel,i);
 				return generalizedID;
 				
 			}, sourceLabel, jsonObject, path);

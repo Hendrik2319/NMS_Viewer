@@ -103,7 +103,7 @@ public class SaveGameView extends JPanel {
 //			blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
 //			tabbedPane.addTab("Blueprints",blueprintsPanel);
 			
-			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data));
+			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data,mainWindow));
 			
 			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data,mainWindow,universePanel);
 			if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data,universePanel));

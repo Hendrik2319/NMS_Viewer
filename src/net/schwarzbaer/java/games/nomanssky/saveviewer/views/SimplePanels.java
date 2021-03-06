@@ -1420,7 +1420,7 @@ public class SimplePanels {
 		private final VerySimpleTable<GeneralizedID> quicksilversTable;
 		private final VerySimpleTable<String> recipesTable;
 		
-		public AllBlueprintsPanel(SaveGameData data) {
+		public AllBlueprintsPanel(SaveGameData data, Window mainWindow) {
 			super(data);
 			
 			BlueprintColumnID[] blueprintColumns = new BlueprintColumnID[] {
@@ -1432,10 +1432,10 @@ public class SimplePanels {
 			};
 			
 			JPanel tablePanel = new JPanel(new GridLayout(1,0));
-			techsTable        = addTable(tablePanel, "Known Technologies"        , data.knownBlueprints.technologies, blueprintColumns);
-			productsTable     = addTable(tablePanel, "Known Products"            , data.knownBlueprints.products    , blueprintColumns);
-			quicksilversTable = addTable(tablePanel, "Known Quicksilver Specials", data.knownBlueprints.quicksilvers, blueprintColumns);
-			recipesTable      = addTable(tablePanel, "Known Recipes"             , data.knownBlueprints.recipes     , recipeColumns   );
+			techsTable        = addTable(mainWindow, tablePanel, "Known Technologies"        , data.knownBlueprints.technologies, SaveGameData.KnownBlueprints.BlueprintList.Technologies, blueprintColumns);
+			productsTable     = addTable(mainWindow, tablePanel, "Known Products"            , data.knownBlueprints.products    , SaveGameData.KnownBlueprints.BlueprintList.Products    , blueprintColumns);
+			quicksilversTable = addTable(mainWindow, tablePanel, "Known Quicksilver Specials", data.knownBlueprints.quicksilvers, SaveGameData.KnownBlueprints.BlueprintList.Quicksilvers, blueprintColumns);
+			recipesTable      = addTable(            tablePanel, "Known Recipes"             , data.knownBlueprints.recipes     , recipeColumns);
 			add(tablePanel,BorderLayout.CENTER);
 		}
 		
@@ -1444,8 +1444,8 @@ public class SimplePanels {
 			addTable(tablePanel, label, table);
 			return table;
 		}
-		private VerySimpleTable<GeneralizedID> addTable(JPanel tablePanel, String label, Vector<GeneralizedID> data, BlueprintColumnID[] columns) {
-			VerySimpleTable<GeneralizedID> table = new VerySimpleTable<>(label+" Table",true,SaveViewer.DEBUG,true,data,columns);
+		private VerySimpleTable<GeneralizedID> addTable(Window mainWindow, JPanel tablePanel, String label, Vector<GeneralizedID> data, SaveGameData.KnownBlueprints.BlueprintList listType, BlueprintColumnID[] columns) {
+			IDbasedBlueprintsPanel table = new IDbasedBlueprintsPanel(mainWindow, label+" Table", data, listType, columns);
 			addTable(tablePanel, label, table);
 			return table;
 		}
@@ -1455,6 +1455,40 @@ public class SimplePanels {
 			tablePanel.add(scrollPane);
 		}
 		
+		private static class IDbasedBlueprintsPanel extends VerySimpleTable<GeneralizedID> {
+			private static final long serialVersionUID = 3243669593802056512L;
+			
+			private GeneralizedID clickedID;
+			private int clickedRow;
+		
+			IDbasedBlueprintsPanel(Window mainWindow, String label, Vector<GeneralizedID> data, SaveGameData.KnownBlueprints.BlueprintList listType, BlueprintColumnID[] columns) {
+				super(label,true,SaveViewer.DEBUG,true,data,columns);
+				clickedID = null;
+				clickedRow = -1;
+				
+				JMenuItem miEditID;
+				JPopupMenu contextMenu = getContextMenu();
+				contextMenu.addSeparator();
+				contextMenu.add(miEditID = Gui.createMenuItem("Edit ID", e->{
+					if (clickedID==null || clickedRow<0) return;
+					boolean wasChanged = GameInfos.EditIdDialog.showDialog(mainWindow, clickedID, listType.idMap==null ? null : listType.idMap.getTemplateList());
+					if (wasChanged) {
+						listType.idMap.saveIDsToFile();
+						VerySimpleTableModel<GeneralizedID> model = getModel_VerySimpleTableModel();
+						model.fireTableRowUpdate(clickedRow);
+					}
+				}));
+				
+				addContextMenuInvokeListener((rowV, columnV) -> {
+					clickedRow = rowV<0 ? -1 : convertRowIndexToModel(rowV);
+					clickedID = clickedRow<0 ? null : data.get(clickedRow);
+					miEditID.setEnabled(clickedID!=null);
+					if (clickedID==null) miEditID.setText("Edit ID");
+					else miEditID.setText(String.format("Edit \"%s\"", clickedID.getName()));
+				});
+			}
+		}
+
 		@Override
 		public void updateContent() {
 			techsTable       .getModel_SimplifiedTableModel().fireTableUpdate();

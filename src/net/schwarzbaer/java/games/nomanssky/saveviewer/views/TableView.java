@@ -187,7 +187,7 @@ public class TableView {
 		}
 		
 		public interface ContextMenuInvokeListener {
-			public void contextMenuWillBeInvoked(int row, int column);
+			public void contextMenuWillBeInvoked(int rowV, int columnV);
 		}
 		
 		public void    addContextMenuInvokeListener( ContextMenuInvokeListener listener ) { cmiListeners.   add(listener); } 
@@ -453,6 +453,12 @@ public class TableView {
 				DataType value = getValue(rowIndex);
 				if (value!=null && columnID.setValue!=null) 
 					columnID.setValue.setValue(value, rowIndex, newValue);
+			}
+			public void fireTableColumnUpdate(ColumnID<DataType> columnID) {
+				super.fireTableColumnUpdate(getColumn(columnID));
+			}
+			@Override public void fireTableRowUpdate(int rowIndex) {
+				super.fireTableRowUpdate(rowIndex);
 			}
 			
 		}

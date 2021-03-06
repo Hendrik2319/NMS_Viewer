@@ -898,9 +898,9 @@ public class GameInfos {
 		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 	}
 	
-	public static final IDMap productIDs   = new IDMap("ProductIDs");
-	public static final IDMap techIDs      = new IDMap("TechIDs");
-	public static final IDMap substanceIDs = new IDMap("SubstanceIDs");
+	public static final IDMap productIDs   = new IDMap("ProductIDs"  , "product"   , FileExport.FILE_PRODUCT_ID  );
+	public static final IDMap techIDs      = new IDMap("TechIDs"     , "technology", FileExport.FILE_TECH_ID     );
+	public static final IDMap substanceIDs = new IDMap("SubstanceIDs", "substance" , FileExport.FILE_SUBSTANCE_ID);
 	
 	public static void removeUsages(SaveGameData oldData) {
 		for (GeneralizedID id:productIDs  .getValues()) id.usage.remove(oldData);
@@ -916,265 +916,255 @@ public class GameInfos {
 		return generalizedID;
 	}
 
-	public static class IDMap {
-		private final HashMap<String, GeneralizedID> map;
-		private final String label;
-		private final TemplateList templateList;
-		
-		public IDMap(String label) {
-			this.label = label;
-			map = new HashMap<>();
-			templateList = new TemplateList();
-		}
-		
-		public TemplateList getTemplateList() {
-			return templateList;
-		}
-
-		public String getLabel() {
-			return label;
-		}
-		
-		public void forEach(Consumer<GeneralizedID> action) {
-			map.values().forEach(action);
-		}
-		
-		public Iterable<GeneralizedID> getValues() {
-			return () -> map.values().iterator(); 
-		}
-	
-		public Vector<GeneralizedID> getSortedValues() {
-			Vector<GeneralizedID> vector = new Vector<GeneralizedID>(map.values());
-			vector.sort(Comparator.comparing(id->id.id));
-			return vector;
-		}
-	
-		public Iterable<String> getSortedKeys() {
-			Vector<String> vector = new Vector<String>(map.keySet());
-			vector.sort(null);
-			return () -> vector.iterator(); 
-		}
-	
-//		public void set(String id, GeneralizedID generalizedID) {
-//			map.put(id, generalizedID);
-//		}
-		
-		public GeneralizedID get(String id, SaveGameData source, GeneralizedID.Usage.Type usageType) {
-			GeneralizedID generalizedID = get(id);
-			generalizedID.getUsage(source).addGeneralUsage(usageType);
-			generalizedID.isObsolete = false;
-			return generalizedID;
-		}
-	
-		public GeneralizedID get(String id) {
-			GeneralizedID newID = new GeneralizedID(id);
-			GeneralizedID existingID = map.putIfAbsent(id, newID);
-			return existingID==null ? newID : existingID;
-		}
-		
-		public GeneralizedID getIfContains(String id) {
-			return map.get(id);
-		}
-
-		public void remove(GeneralizedID id) {
-			map.remove(id.id);
-		}
-	}
-
 	public static void loadAllIDsFromFiles() {
-		loadIDsFromFile(FileExport.FILE_PRODUCT_ID  ,productIDs  ,"product"   );
-		loadIDsFromFile(FileExport.FILE_TECH_ID     ,techIDs     ,"technology");
-		loadIDsFromFile(FileExport.FILE_SUBSTANCE_ID,substanceIDs,"substance" );
+		productIDs  .loadIDsFromFile();
+		techIDs     .loadIDsFromFile();
+		substanceIDs.loadIDsFromFile();
 	}
-	
-	private enum IDFileBlock { Templates, IDs }
-	private static void loadIDsFromFile(String filePath, IDMap map, String idLabel) {
-		File file = new File(filePath);
-		if (!file.isFile()) return;
-		
-		long start = System.currentTimeMillis();
-		Gui.log_ln("Read "+idLabel+" IDs from file \""+filePath+"\"...");
-		String line;
-		IDFileBlock currentBlock = IDFileBlock.IDs;
-		GeneralizedIDTemplate template = null;
-		
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
-			while ((line=in.readLine())!=null) {
-				
-				switch (line) {
-				case "[Templates]": currentBlock = IDFileBlock.Templates; break;
-				case "[IDs]"      : currentBlock = IDFileBlock.IDs; break;
-				}
-				
-				switch (currentBlock) {
-				
-				case Templates: {
-					if (line.isEmpty()) {
-						if (template!=null) map.templateList.add(template);
-						template = null;
-					}
-					if (line.startsWith("MinValues=")) {
-						if (template!=null) map.templateList.add(template);
-						String str = line.substring("MinValues=".length());
-						try {
-							int minValues = Integer.parseInt(str);
-							template = new GeneralizedIDTemplate(minValues);
-						} catch (NumberFormatException e) {
-							Gui.log_error_ln("Can't parse Templates.MinValues as integer in \"%s\"", str);
-							template = null;
-						}
-					}
-					if (line.startsWith("Label=") && template!=null) {
-						String str = line.substring("Label=".length());
-						template.label = str;
-					}
-					if (line.startsWith("Symbol=") && template!=null) {
-						String str = line.substring("Symbol=".length());
-						template.symbol = str;
-					}
-					if (line.startsWith("Type=") && template!=null) {
-						String str = line.substring("Type=".length());
-						try { template.type = GeneralizedID.Type.valueOf(str); }
-						catch (Exception e) {
-							Gui.log_error_ln("Can't parse Templates.Type as GeneralizedID.Type in \"%s\"", str);
-							template.type = null;
-						}
-					}
-					if (line.startsWith("UpgradeClass=") && template!=null) {
-						String str = line.substring("UpgradeClass=".length());
-						try { template.upgradeClass = GeneralizedID.UpgradeClass.valueOf(str); }
-						catch (Exception e) {
-							Gui.log_error_ln("Can't parse Templates.UpgradeClass as GeneralizedID.UpgradeClass in \"%s\"", str);
-							template.upgradeClass = null;
-						}
-					}
-					if (line.startsWith("Image=") && template!=null) {
-						String str = line.substring("Image=".length());
-						template.imageFileName = str;
-					}
-					if (line.startsWith("Background=") && template!=null) {
-						String str = line.substring("Background=".length());
-						try { template.imageBackground = Integer.parseInt(str, 16); }
-						catch (NumberFormatException e) {
-							Gui.log_error_ln("Can't parse Templates.Background as hex integer in \"%s\"", str);
-							template.imageBackground = null;
-						}
-					}
-				} break;
-					
-				case IDs: {
-					int pos = line.indexOf('=');
-					if (pos<0) continue;
-					
-					String idStr = line.substring(0, pos);
-					String value = line.substring(pos+1);
-					
-					if (idStr.endsWith(".obsolete")) {
-						idStr = idStr.substring(0, idStr.length()-".obsolete".length());
-						GeneralizedID id = map.get(idStr);
-						id.isObsolete = true;
-					}
-					else if (idStr.endsWith(".type")) {
-						idStr = idStr.substring(0, idStr.length()-".type".length());
-						GeneralizedID id = map.get(idStr);
-						id.type = GeneralizedID.Type.getType(value);
-					}
-					else if (idStr.endsWith(".symbol")) {
-						idStr = idStr.substring(0, idStr.length()-".symbol".length());
-						GeneralizedID id = map.get(idStr);
-						id.setSymbol(value);
-					}
-					else if (idStr.endsWith(".image")) {
-						idStr = idStr.substring(0, idStr.length()-".image".length());
-						GeneralizedID id = map.get(idStr);
-						id.setImageFileName(value);
-					}
-					else if (idStr.endsWith(".imageBG")) {
-						idStr = idStr.substring(0, idStr.length()-".imageBG".length());
-						GeneralizedID id = map.get(idStr);
-						try { id.setImageBG(Integer.parseInt(value,16)); }
-						catch (NumberFormatException e) {}
-					}
-					else if (idStr.endsWith(".upgradeClass")) {
-						idStr = idStr.substring(0, idStr.length()-".upgradeClass".length());
-						GeneralizedID id = map.get(idStr);
-						id.upgradeClass = GeneralizedID.UpgradeClass.parseValue(value);
-					}
-					else if (idStr.indexOf('.')<0) {
-						GeneralizedID id = map.get(idStr);
-						id.setLabel(value);
-					}
-				} break;
-				}
-			}
-		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		catch (IOException e) { e.printStackTrace(); }
-		
-		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-
-//	public static void createFilesWithObsoleteIDs() {
-//		for (GeneralizedID id:productIDs  .getValues()) id.isObsolete=true;
-//		for (GeneralizedID id:techIDs     .getValues()) id.isObsolete=true;
-//		for (GeneralizedID id:substanceIDs.getValues()) id.isObsolete=true;
-//		
-//		saveIDsToFile(FILE_PRODUCT_ID  +".obsolete.txt",productIDs  ,"product"    );
-//		saveIDsToFile(FILE_TECH_ID     +".obsolete.txt",techIDs     ,"technologie");
-//		saveIDsToFile(FILE_SUBSTANCE_ID+".obsolete.txt",substanceIDs,"substance"  );
-//		
-//		for (GeneralizedID id:productIDs  .getValues()) id.isObsolete=false;
-//		for (GeneralizedID id:techIDs     .getValues()) id.isObsolete=false;
-//		for (GeneralizedID id:substanceIDs.getValues()) id.isObsolete=false;
-//	}
-	
+	public static void saveProductIDsToFile  () { productIDs  .saveIDsToFile(); }
+	public static void saveTechIDsToFile     () { techIDs     .saveIDsToFile(); }
+	public static void saveSubstanceIDsToFile() { substanceIDs.saveIDsToFile(); }
 
 	public static void saveAllIDsToFiles() {
 		saveProductIDsToFile  ();
 		saveTechIDsToFile     ();
 		saveSubstanceIDsToFile();
 	}
-	public static void saveProductIDsToFile  () { saveIDsToFile(FileExport.FILE_PRODUCT_ID  ,productIDs  ,"product"    ); }
-	public static void saveTechIDsToFile     () { saveIDsToFile(FileExport.FILE_TECH_ID     ,techIDs     ,"technologie"); }
-	public static void saveSubstanceIDsToFile() { saveIDsToFile(FileExport.FILE_SUBSTANCE_ID,substanceIDs,"substance"  ); }
 
-	public static void saveIDsToFile(String filePath, IDMap map, String idLabel) {
-		long start = System.currentTimeMillis();
-		Gui.log_ln("Write "+idLabel+" IDs to file \""+filePath+"\"...");
-		
-		File file = new File(filePath);
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
-			if (!map.templateList.isEmpty()) {
-				out.println("[Templates]");
-				map.templateList.forEachSorted(template->{
-					out.printf("MinValues=%d%n", template.minValues);
-					if (template.label          !=null) out.printf("Label=%s%n"       , template.label          );
-					if (template.symbol         !=null) out.printf("Symbol=%s%n"      , template.symbol         );
-					if (template.type           !=null) out.printf("Type=%s%n"        , template.type           );
-					if (template.upgradeClass   !=null) out.printf("UpgradeClass=%s%n", template.upgradeClass   );
-					if (template.imageFileName  !=null) out.printf("Image=%s%n"       , template.imageFileName  );
-					if (template.imageBackground!=null) out.printf("Background=%06X%n", template.imageBackground);
-					out.println();
-				});
+	public static class IDMap {
+			private final String mapLabel;
+			private final String filePath;
+			private final String idLabel;
+			private final HashMap<String, GeneralizedID> map;
+			private final TemplateList templateList;
+			
+			public IDMap(String mapLabel, String idLabel, String filePath) {
+				this.mapLabel = mapLabel;
+				this.idLabel = idLabel;
+				this.filePath = filePath;
+				map = new HashMap<>();
+				templateList = new TemplateList();
 			}
 			
-			out.println("[IDs]");
-			for (String idStr:map.getSortedKeys()) {
-				GeneralizedID id = map.get(idStr);
-				out.printf("%s=%s\r\n",idStr,id.getLabel());
-				if (id.isObsolete        ) out.printf("%s.obsolete=\r\n"      ,idStr);
-				if (id.type!=null        ) out.printf("%s.type=%s\r\n"        ,idStr,id.type);
-				if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"      ,idStr,id.symbol);
-				if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"       ,idStr,id.getImageFileName());
-				if (id.hasImageBG      ()) out.printf("%s.imageBG=%06X\r\n"   ,idStr,id.getImageBG());
-				if (id.upgradeClass!=null) out.printf("%s.upgradeClass=%s\r\n",idStr,id.upgradeClass);
+			public TemplateList getTemplateList() {
+				return templateList;
+			}
+	
+			public String getLabel() {
+				return mapLabel+"IDs";
+			}
+			
+			public void forEach(Consumer<GeneralizedID> action) {
+				map.values().forEach(action);
+			}
+			
+			public Iterable<GeneralizedID> getValues() {
+				return () -> map.values().iterator(); 
+			}
+		
+			public Vector<GeneralizedID> getSortedValues() {
+				Vector<GeneralizedID> vector = new Vector<GeneralizedID>(map.values());
+				vector.sort(Comparator.comparing(id->id.id));
+				return vector;
+			}
+		
+			public Iterable<String> getSortedKeys() {
+				Vector<String> vector = new Vector<String>(map.keySet());
+				vector.sort(null);
+				return () -> vector.iterator(); 
+			}
+		
+	//		public void set(String id, GeneralizedID generalizedID) {
+	//			map.put(id, generalizedID);
+	//		}
+			
+			public GeneralizedID get(String id, SaveGameData source, GeneralizedID.Usage.Type usageType) {
+				GeneralizedID generalizedID = get(id);
+				generalizedID.getUsage(source).addGeneralUsage(usageType);
+				generalizedID.isObsolete = false;
+				return generalizedID;
+			}
+		
+			public GeneralizedID get(String id) {
+				GeneralizedID newID = new GeneralizedID(id);
+				GeneralizedID existingID = map.putIfAbsent(id, newID);
+				return existingID==null ? newID : existingID;
+			}
+			
+			public GeneralizedID getIfContains(String id) {
+				return map.get(id);
+			}
+	
+			public void remove(GeneralizedID id) {
+				map.remove(id.id);
+			}
+
+			private enum IDFileBlock { Templates, IDs }
+
+			void loadIDsFromFile() {
+				File file = new File(filePath);
+				if (!file.isFile()) return;
+				
+				long start = System.currentTimeMillis();
+				Gui.log_ln("Read "+idLabel+" IDs from file \""+filePath+"\"...");
+				String line;
+				IDFileBlock currentBlock = IDFileBlock.IDs;
+				GeneralizedIDTemplate template = null;
+				
+				try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file),StandardCharsets.UTF_8))) {
+					while ((line=in.readLine())!=null) {
+						
+						switch (line) {
+						case "[Templates]": currentBlock = IDFileBlock.Templates; break;
+						case "[IDs]"      : currentBlock = IDFileBlock.IDs; break;
+						}
+						
+						switch (currentBlock) {
+						
+						case Templates: {
+							if (line.isEmpty()) {
+								if (template!=null) templateList.add(template);
+								template = null;
+							}
+							if (line.startsWith("MinValues=")) {
+								if (template!=null) templateList.add(template);
+								String str = line.substring("MinValues=".length());
+								try {
+									int minValues = Integer.parseInt(str);
+									template = new GeneralizedIDTemplate(minValues);
+								} catch (NumberFormatException e) {
+									Gui.log_error_ln("Can't parse Templates.MinValues as integer in \"%s\"", str);
+									template = null;
+								}
+							}
+							if (line.startsWith("Label=") && template!=null) {
+								String str = line.substring("Label=".length());
+								template.label = str;
+							}
+							if (line.startsWith("Symbol=") && template!=null) {
+								String str = line.substring("Symbol=".length());
+								template.symbol = str;
+							}
+							if (line.startsWith("Type=") && template!=null) {
+								String str = line.substring("Type=".length());
+								try { template.type = GeneralizedID.Type.valueOf(str); }
+								catch (Exception e) {
+									Gui.log_error_ln("Can't parse Templates.Type as GeneralizedID.Type in \"%s\"", str);
+									template.type = null;
+								}
+							}
+							if (line.startsWith("UpgradeClass=") && template!=null) {
+								String str = line.substring("UpgradeClass=".length());
+								try { template.upgradeClass = GeneralizedID.UpgradeClass.valueOf(str); }
+								catch (Exception e) {
+									Gui.log_error_ln("Can't parse Templates.UpgradeClass as GeneralizedID.UpgradeClass in \"%s\"", str);
+									template.upgradeClass = null;
+								}
+							}
+							if (line.startsWith("Image=") && template!=null) {
+								String str = line.substring("Image=".length());
+								template.imageFileName = str;
+							}
+							if (line.startsWith("Background=") && template!=null) {
+								String str = line.substring("Background=".length());
+								try { template.imageBackground = Integer.parseInt(str, 16); }
+								catch (NumberFormatException e) {
+									Gui.log_error_ln("Can't parse Templates.Background as hex integer in \"%s\"", str);
+									template.imageBackground = null;
+								}
+							}
+						} break;
+							
+						case IDs: {
+							int pos = line.indexOf('=');
+							if (pos<0) continue;
+							
+							String idStr = line.substring(0, pos);
+							String value = line.substring(pos+1);
+							
+							if (idStr.endsWith(".obsolete")) {
+								idStr = idStr.substring(0, idStr.length()-".obsolete".length());
+								GeneralizedID id = get(idStr);
+								id.isObsolete = true;
+							}
+							else if (idStr.endsWith(".type")) {
+								idStr = idStr.substring(0, idStr.length()-".type".length());
+								GeneralizedID id = get(idStr);
+								id.type = GeneralizedID.Type.getType(value);
+							}
+							else if (idStr.endsWith(".symbol")) {
+								idStr = idStr.substring(0, idStr.length()-".symbol".length());
+								GeneralizedID id = get(idStr);
+								id.setSymbol(value);
+							}
+							else if (idStr.endsWith(".image")) {
+								idStr = idStr.substring(0, idStr.length()-".image".length());
+								GeneralizedID id = get(idStr);
+								id.setImageFileName(value);
+							}
+							else if (idStr.endsWith(".imageBG")) {
+								idStr = idStr.substring(0, idStr.length()-".imageBG".length());
+								GeneralizedID id = get(idStr);
+								try { id.setImageBG(Integer.parseInt(value,16)); }
+								catch (NumberFormatException e) {}
+							}
+							else if (idStr.endsWith(".upgradeClass")) {
+								idStr = idStr.substring(0, idStr.length()-".upgradeClass".length());
+								GeneralizedID id = get(idStr);
+								id.upgradeClass = GeneralizedID.UpgradeClass.parseValue(value);
+							}
+							else if (idStr.indexOf('.')<0) {
+								GeneralizedID id = get(idStr);
+								id.setLabel(value);
+							}
+						} break;
+						}
+					}
+				}
+				catch (FileNotFoundException e) { e.printStackTrace(); }
+				catch (IOException e) { e.printStackTrace(); }
+				
+				Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
+			}
+
+			public void saveIDsToFile() {
+				long start = System.currentTimeMillis();
+				Gui.log_ln("Write "+idLabel+" IDs to file \""+filePath+"\"...");
+				
+				File file = new File(filePath);
+				try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8));) {
+					if (!templateList.isEmpty()) {
+						out.println("[Templates]");
+						templateList.forEachSorted(template->{
+							out.printf("MinValues=%d%n", template.minValues);
+							if (template.label          !=null) out.printf("Label=%s%n"       , template.label          );
+							if (template.symbol         !=null) out.printf("Symbol=%s%n"      , template.symbol         );
+							if (template.type           !=null) out.printf("Type=%s%n"        , template.type           );
+							if (template.upgradeClass   !=null) out.printf("UpgradeClass=%s%n", template.upgradeClass   );
+							if (template.imageFileName  !=null) out.printf("Image=%s%n"       , template.imageFileName  );
+							if (template.imageBackground!=null) out.printf("Background=%06X%n", template.imageBackground);
+							out.println();
+						});
+					}
+					
+					out.println("[IDs]");
+					for (String idStr:getSortedKeys()) {
+						GeneralizedID id = get(idStr);
+						out.printf("%s=%s\r\n",idStr,id.getLabel());
+						if (id.isObsolete        ) out.printf("%s.obsolete=\r\n"      ,idStr);
+						if (id.type!=null        ) out.printf("%s.type=%s\r\n"        ,idStr,id.type);
+						if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"      ,idStr,id.symbol);
+						if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"       ,idStr,id.getImageFileName());
+						if (id.hasImageBG      ()) out.printf("%s.imageBG=%06X\r\n"   ,idStr,id.getImageBG());
+						if (id.upgradeClass!=null) out.printf("%s.upgradeClass=%s\r\n",idStr,id.upgradeClass);
+					}
+				}
+				catch (FileNotFoundException e) { e.printStackTrace(); }
+				
+				Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			}
 		}
-		catch (FileNotFoundException e) { e.printStackTrace(); }
-		
-		Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
-	}
-	
+
 	private static class CreateTemplateDialog extends StandardDialog {
 		private static final long serialVersionUID = -3032594452167487654L;
 		
@@ -1819,12 +1809,7 @@ public class GameInfos {
 			switch(actionCommand) {
 			case EditID: {
 				table.stopCellEditing();
-				EditIdDialog dlg = new EditIdDialog(mainwindow, clickedID, tableModel.sourceIdMap.templateList);
-				dlg.showDialog();
-				if (dlg.hasIdDataChanged() || dlg.wasIdTemplateAdded()) {
-					if (dlg.hasIdDataChanged()) dlg.transferChangesTo(clickedID);
-					idChanged = true;
-				}
+				idChanged = EditIdDialog.showDialog(mainwindow, clickedID, tableModel.sourceIdMap.templateList);
 			} break;
 			
 			case DeleteID: {
@@ -2452,6 +2437,16 @@ public class GameInfos {
 			this.createGUI(contentPane);
 		}
 	
+		public static boolean showDialog(Window parent, GeneralizedID id, TemplateList templateList) {
+			EditIdDialog dlg = new EditIdDialog(parent, id, templateList);
+			dlg.showDialog();
+			if (dlg.hasIdDataChanged() || dlg.wasIdTemplateAdded()) {
+				if (dlg.hasIdDataChanged()) dlg.transferChangesTo(id);
+				return true;
+			}
+			return false;
+		}
+
 		private static class BgColorComboBoxModel implements MutableComboBoxModel<NamedColor> {
 			
 			private final Vector<ListDataListener> listDataListeners;
