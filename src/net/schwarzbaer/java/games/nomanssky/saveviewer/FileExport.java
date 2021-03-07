@@ -3693,7 +3693,7 @@ public class FileExport {
 			
 			String objectID = obj.objectID;
 			String label = getLabel(objectID);
-			String extraLine = obj.userData==null ? null : String.format("0x%08X", obj.userData);
+			String extraLine = null; // obj.userData==null ? null : String.format("0x%08X", obj.userData);
 			
 			writeModel(vrml, objectID, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
 		}

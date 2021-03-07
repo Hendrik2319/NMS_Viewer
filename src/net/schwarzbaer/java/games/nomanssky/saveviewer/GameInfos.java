@@ -1137,12 +1137,12 @@ public class GameInfos {
 						out.println("[Templates]");
 						templateList.forEachSorted(template->{
 							out.printf("MinValues=%d%n", template.minValues);
-							if (template.label          !=null) out.printf("Label=%s%n"       , template.label          );
-							if (template.symbol         !=null) out.printf("Symbol=%s%n"      , template.symbol         );
-							if (template.type           !=null) out.printf("Type=%s%n"        , template.type           );
-							if (template.upgradeClass   !=null) out.printf("UpgradeClass=%s%n", template.upgradeClass   );
-							if (template.imageFileName  !=null) out.printf("Image=%s%n"       , template.imageFileName  );
-							if (template.imageBackground!=null) out.printf("Background=%06X%n", template.imageBackground);
+							if (template.label          !=null) out.printf("Label=%s%n"       , template.label              );
+							if (template.symbol         !=null) out.printf("Symbol=%s%n"      , template.symbol             );
+							if (template.type           !=null) out.printf("Type=%s%n"        , template.type.name()        );
+							if (template.upgradeClass   !=null) out.printf("UpgradeClass=%s%n", template.upgradeClass.name());
+							if (template.imageFileName  !=null) out.printf("Image=%s%n"       , template.imageFileName      );
+							if (template.imageBackground!=null) out.printf("Background=%06X%n", template.imageBackground    );
 							out.println();
 						});
 					}
@@ -1152,11 +1152,11 @@ public class GameInfos {
 						GeneralizedID id = get(idStr);
 						out.printf("%s=%s\r\n",idStr,id.getLabel());
 						if (id.isObsolete        ) out.printf("%s.obsolete=\r\n"      ,idStr);
-						if (id.type!=null        ) out.printf("%s.type=%s\r\n"        ,idStr,id.type);
-						if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"      ,idStr,id.symbol);
-						if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"       ,idStr,id.getImageFileName());
-						if (id.hasImageBG      ()) out.printf("%s.imageBG=%06X\r\n"   ,idStr,id.getImageBG());
-						if (id.upgradeClass!=null) out.printf("%s.upgradeClass=%s\r\n",idStr,id.upgradeClass);
+						if (id.type!=null        ) out.printf("%s.type=%s\r\n"        ,idStr,id.type.name()        );
+						if (id.hasSymbol       ()) out.printf("%s.symbol=%s\r\n"      ,idStr,id.symbol             );
+						if (id.hasImageFileName()) out.printf("%s.image=%s\r\n"       ,idStr,id.getImageFileName() );
+						if (id.hasImageBG      ()) out.printf("%s.imageBG=%06X\r\n"   ,idStr,id.getImageBG()       );
+						if (id.upgradeClass!=null) out.printf("%s.upgradeClass=%s\r\n",idStr,id.upgradeClass.name());
 					}
 				}
 				catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -1362,10 +1362,10 @@ public class GameInfos {
 			sb.append("min="+minValues);
 			if (label          !=null) sb.append(", Lab="  ).append(label          );
 			if (symbol         !=null) sb.append(", Sym="  ).append(symbol         );
-			if (type           !=null) sb.append(", Type=" ).append(type           );
-			if (upgradeClass   !=null) sb.append(", Upgr=" ).append(upgradeClass   );
+			if (type           !=null) sb.append(", Type=" ).append(type.name()    );
+			if (upgradeClass   !=null) sb.append(", Upgr=" ).append(upgradeClass.name());
 			if (imageFileName  !=null) sb.append(", Image=").append(imageFileName  );
-			if (imageBackground!=null) sb.append(", BG="   ).append(imageBackground);
+			if (imageBackground!=null) sb.append(", BG="   ).append(String.format("%06X", imageBackground));
 			return "[ "+sb.toString()+" ]";
 		}
 		@Override
@@ -1439,6 +1439,8 @@ public class GameInfos {
 				try { return valueOf(str); }
 				catch (Exception e) { return null; }
 			}
+			
+			// TODO: label -> toString
 		}
 		
 		public enum UpgradeClass {
@@ -1450,6 +1452,7 @@ public class GameInfos {
 			public String getLabel() {
 				return this.toString()+"-Class";
 			}
+			// TODO: getLabel() -> toString
 		}
 		
 		public final String id;

@@ -31,7 +31,7 @@ PROTO MyOrientation [
 	ROUTE script.rotation_changed TO trans.rotation
 }
 
-PROTO AxisCross [
+PROTO Static_AxisCross [
 	field MFString string []
 	field SFVec3f scale 1 1 1
 ] {
@@ -53,6 +53,53 @@ PROTO AxisCross [
 			Transform { translation 0 0 2 children [ Shape { appearance Appearance { material Material { diffuseColor 0 0 1 } } geometry USE sphere } ] }
 		]
 	}
+}
+
+PROTO AxisCross [
+	field MFString string []
+	field SFVec3f scale 1 1 1
+] {
+	DEF proxy ProximitySensor { size 600 600 600 }
+	DEF script Script {
+		eventIn SFBool proxyIsActive
+		eventIn SFVec3f setViewerPos
+		eventOut SFVec3f scale_changed
+		url "javascript:
+			// min:   distance:  10   size: 0.04
+			// max:   distance: 300   size: 1.20
+			function proxyIsActive ( isActive ) {
+				scale_changed = new SFVec3f(1.2,1.2,1.2);
+			}
+			function setViewerPos ( pos ) {
+				var distance = pos.length();
+				size = distance/10*0.05;
+				if (size < 0.04) size = 0.04;
+				if (size > 1.2) size = 1.2;
+				scale_changed = new SFVec3f(size,size,size);
+			}
+		"
+	}
+	DEF trans Transform { scale 1.2 1.2 1.2 #scale IS scale
+		children [
+			Billboard { axisOfRotation 0 0 0
+				children [
+					Transform { translation 0 3 0 scale 3 3 3 children [
+						Shape {
+							appearance Appearance { material Material { diffuseColor 1 1 0 } }
+							geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
+						}
+					]}
+				]
+			}
+			Shape { appearance Appearance { material Material { diffuseColor 1 1 1 } } geometry DEF sphere Sphere { radius 1 } }
+			Transform { translation 2 0 0 children [ Shape { appearance Appearance { material Material { diffuseColor 1 0 0 } } geometry USE sphere } ] }
+			Transform { translation 0 2 0 children [ Shape { appearance Appearance { material Material { diffuseColor 0 1 0 } } geometry USE sphere } ] }
+			Transform { translation 0 0 2 children [ Shape { appearance Appearance { material Material { diffuseColor 0 0 1 } } geometry USE sphere } ] }
+		]
+	}
+	ROUTE proxy.isActive TO script.proxyIsActive
+	ROUTE proxy.position_changed TO script.setViewerPos
+	ROUTE script.scale_changed TO trans.scale
 }
 
 PROTO SingleText [

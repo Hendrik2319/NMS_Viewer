@@ -1254,6 +1254,13 @@ public class SaveGameData {
 			//this.objectID1   = obj.objectID1;
 		}
 
+		public GeneralizedID.Type getIdType() {
+			if (objectID==null) return null;
+			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			if (id==null) return null;
+			return id.type;
+		}
+
 		public String getNameOnly() {
 			if (objectID==null) {
 				if (specialName!=null) return specialName;

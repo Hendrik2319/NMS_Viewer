@@ -2119,16 +2119,17 @@ public class SimplePanels {
 
 			private enum BaseObjectsColumnID implements SimplifiedColumnIDInterface {
 				// [140, 176, 128, 80, 150, 170, 170]
-				Timestamp ("Timestamp" , TimeStamp.class, 70,-1,140,140),
-				Name      ("Name"      ,    String.class, 50,-1,180,180),
-				ObjectID  ("ObjectID"  ,    String.class, 50,-1,130,130),
-				UserData  ("UserData"  ,    String.class, 40,-1, 80, 80),
-				Color     ("Color"     ,    String.class, 40,-1, 80, 80),
-				Appearance("Appearance",    String.class, 40,-1, 80, 80),
-				Position  ("Position"  ,    String.class, 75,-1,150,150),
-				Up        ("Up"        ,    String.class, 85,-1,170,170),
-				At        ("At"        ,    String.class, 85,-1,170,170),
-				Message   ("Message"   ,    String.class, 85,-1,170,170),
+				Timestamp ("Timestamp" ,          TimeStamp.class, 70,-1,140,140),
+				ObjectID  ("ObjectID"  ,             String.class, 50,-1,130,130),
+				Name      ("Name"      ,             String.class, 50,-1,180,180),
+				Type      ("Type"      , GeneralizedID.Type.class, 100,-1,200,200),
+				UserData  ("UserData"  ,             String.class, 40,-1, 80, 80),
+				Color     ("Color"     ,             String.class, 40,-1, 80, 80),
+				Appearance("Appearance",             String.class, 40,-1, 80, 80),
+				Position  ("Position"  ,             String.class, 75,-1,150,150),
+				Up        ("Up"        ,             String.class, 85,-1,170,170),
+				At        ("At"        ,             String.class, 85,-1,170,170),
+				Message   ("Message"   ,             String.class, 85,-1,170,170),
 				;
 				
 				private SimplifiedColumnConfig columnConfig;
@@ -2164,6 +2165,7 @@ public class SimplePanels {
 					switch(columnID) {
 					case Timestamp : return obj.timestamp;
 					case Name      : return obj.getNameOnly();
+					case Type      : return obj.getIdType();
 					case ObjectID  : if (obj.objectID  ==null) return ""; return obj.objectID;
 					case UserData  : if (obj.userData  ==null) return ""; return String.format("0x%08X" , obj.userData  );
 					case Color     : if (obj.color     ==null) return ""; return obj.color.label     ;
