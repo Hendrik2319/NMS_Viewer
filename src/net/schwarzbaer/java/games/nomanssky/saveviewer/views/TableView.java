@@ -39,6 +39,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.UpgradeCategory;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
@@ -310,7 +311,8 @@ public class TableView {
 				(columnClass == TimeStamp                        .class) ||
 				(columnClass == GeneralizedID.Type               .class) ||
 				(columnClass == Images.NamedColor                .class) ||
-				(columnClass == Images.ColorListDialog.ColorUsage.class);
+				(columnClass == Images.ColorListDialog.ColorUsage.class) ||
+				(columnClass == BuildingObject.BaseObjAppearance .class);
 		}
 
 		@Override
@@ -319,6 +321,7 @@ public class TableView {
 			else if (model.getColumnClass(column) == GeneralizedID.Type               .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(GeneralizedID.Type               )model.getValueAt(row,column));
 			else if (model.getColumnClass(column) == Images.NamedColor                .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Images.NamedColor                )model.getValueAt(row,column));
 			else if (model.getColumnClass(column) == Images.ColorListDialog.ColorUsage.class) comparator = addComparator(comparator,sortOrder,(Integer row)->(Images.ColorListDialog.ColorUsage)model.getValueAt(row,column));
+			else if (model.getColumnClass(column) == BuildingObject.BaseObjAppearance .class) comparator = addComparator(comparator,sortOrder,(Integer row)->(BuildingObject.BaseObjAppearance )model.getValueAt(row,column));
 			return comparator;
 		}
 	}

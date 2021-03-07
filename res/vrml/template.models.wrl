@@ -61,21 +61,26 @@ PROTO AxisCross [
 ] {
 	DEF proxy ProximitySensor { size 600 600 600 }
 	DEF script Script {
-		eventIn SFBool proxyIsActive
-		eventIn SFVec3f setViewerPos
-		eventOut SFVec3f scale_changed
+		field MFString string IS string
+		eventIn SFBool proxy_activated
+		eventIn SFVec3f viewerPos_changed
+		eventOut SFVec3f setScale
+		eventOut SFVec3f setTextOffset
 		url "javascript:
 			// min:   distance:  10   size: 0.04
 			// max:   distance: 300   size: 1.20
-			function proxyIsActive ( isActive ) {
-				scale_changed = new SFVec3f(1.2,1.2,1.2);
+			function proxy_activated ( isActive ) {
+				setScale = new SFVec3f(1.2,1.2,1.2);
 			}
-			function setViewerPos ( pos ) {
+			function viewerPos_changed ( pos ) {
 				var distance = pos.length();
 				size = distance/10*0.05;
 				if (size < 0.04) size = 0.04;
 				if (size > 1.2) size = 1.2;
-				scale_changed = new SFVec3f(size,size,size);
+				setScale = new SFVec3f(size,size,size);
+			}
+			function initialize() {
+				setTextOffset = new SFVec3f(0,string.length*3,0);
 			}
 		"
 	}
@@ -83,7 +88,7 @@ PROTO AxisCross [
 		children [
 			Billboard { axisOfRotation 0 0 0
 				children [
-					Transform { translation 0 3 0 scale 3 3 3 children [
+					DEF text_trans Transform { translation 0 3 0 scale 3 3 3 children [
 						Shape {
 							appearance Appearance { material Material { diffuseColor 1 1 0 } }
 							geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
@@ -97,9 +102,10 @@ PROTO AxisCross [
 			Transform { translation 0 0 2 children [ Shape { appearance Appearance { material Material { diffuseColor 0 0 1 } } geometry USE sphere } ] }
 		]
 	}
-	ROUTE proxy.isActive TO script.proxyIsActive
-	ROUTE proxy.position_changed TO script.setViewerPos
-	ROUTE script.scale_changed TO trans.scale
+	ROUTE proxy.isActive TO script.proxy_activated
+	ROUTE proxy.position_changed TO script.viewerPos_changed
+	ROUTE script.setScale TO trans.scale
+	ROUTE script.setTextOffset TO text_trans.translation
 }
 
 PROTO SingleText [

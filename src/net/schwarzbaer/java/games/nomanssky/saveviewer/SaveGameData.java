@@ -1162,9 +1162,12 @@ public class SaveGameData {
 		
 		public enum BaseObjAppearance {
 			New("Neu"), Used("Gebraucht"), HardUsed("Abgenutzt"), Old("Antik");
-			public final String label;
+			private final String label;
 			BaseObjAppearance(String label) {
 				this.label = label;
+			}
+			@Override public String toString() {
+				return label;
 			}
 		}
 		

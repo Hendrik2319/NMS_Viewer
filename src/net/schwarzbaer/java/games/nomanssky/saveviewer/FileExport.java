@@ -3726,8 +3726,12 @@ public class FileExport {
 						switch (objectID) {
 						default:
 							String str;
-							if (extraLine==null) str = String.format("\"%s\"", objectID);
-							else                 str = String.format("[ \"%s\", \"%s\" ]", objectID, extraLine);
+							Vector<String> lines = new Vector<>();
+							if (label!=null && !label.equals(objectID)) lines.add(label.replace("\\", "\\\\").replace("\"", "\\\""));
+							lines.add(objectID);
+							if (extraLine!=null) lines.add(extraLine.replace("\\", "\\\\").replace("\"", "\\\""));
+							if (lines.size()==1) str = String.format("\"%s\"", lines.firstElement());
+							else                 str = String.format("[ \"%s\" ]", String.join("\", \"", lines));
 							vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string %s }", sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, str);
 							break;
 						}
