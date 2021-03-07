@@ -1433,10 +1433,10 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		}
 		
 		private enum ModuleTableColumnID implements SimplifiedColumnIDInterface {
-			ID    ("ID"    ,        String.class, 20,-1,120,120),
-			Type  ("Type"  ,        String.class, 20,-1,200,200),
-			Label ("Name"  , GeneralizedID.class, 20,-1,200,200),
-			Amount("Amount",       Integer.class, 20,-1, 50, 50),
+			ID    ("ID"    ,             String.class, 20,-1,120,120),
+			Type  ("Type"  , GeneralizedID.Type.class, 20,-1,200,200),
+			Label ("Name"  ,      GeneralizedID.class, 20,-1,200,200),
+			Amount("Amount",            Integer.class, 20,-1, 50, 50),
 			;
 			
 			private SimplifiedColumnConfig columnConfig;
@@ -1517,7 +1517,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					
 					switch (columnID) {
 					case ID    : return id.id;
-					case Type  : return id.type==null ? null : id.type.label;
+					case Type  : return id.type;
 					case Label : return id;
 					case Amount: return block.amount;
 					}

@@ -356,7 +356,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					}
 					out.add(1, "Type", "%s", slot.type==null ? slot.typeStr : slot.type);
 					if (slot.id!=null && slot.id.type!=null)
-						out.add(1, null, "%s", slot.id.type.label);
+						out.add(1, null, "%s", slot.id.type);
 					out.add(1, "Amount", "%d/%d", slot.amount, slot.maxAmount);
 					out.add(1, "Damage", slot.damageFactor);
 					if (slot.specialSlotType!=null)
