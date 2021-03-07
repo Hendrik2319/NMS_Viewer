@@ -1212,9 +1212,13 @@ public class SaveGameData {
 //			bbo.position.up = temp;
 			
 			if (bbo.objectID!=null) {
-				GeneralizedID id = GameInfos.productIDs.get(bbo.objectID, source, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
+				GeneralizedID id = getIDMap().get(bbo.objectID, source, GameInfos.GeneralizedID.Usage.Type.BuildingObject);
 				id.getUsage(source).addBBOUsage(label,index);
 			}
+		}
+
+		public static IDMap getIDMap() {
+			return GameInfos.productIDs;
 		}
 
 		//public GeneralizedID objectID1;
@@ -1254,9 +1258,12 @@ public class SaveGameData {
 			//this.objectID1   = obj.objectID1;
 		}
 
+		public GeneralizedID getId() {
+			return getIDMap().get(objectID);
+		}
+
 		public GeneralizedID.Type getIdType() {
-			if (objectID==null) return null;
-			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			GeneralizedID id = getId();
 			if (id==null) return null;
 			return id.type;
 		}
@@ -1266,7 +1273,7 @@ public class SaveGameData {
 				if (specialName!=null) return specialName;
 				return "";
 			}
-			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			GeneralizedID id = getId();
 			if (id==null) return "";
 			return id.getLabel();
 		}
@@ -1276,7 +1283,7 @@ public class SaveGameData {
 				if (specialName!=null) return specialName;
 				return "";
 			}
-			GeneralizedID id = GameInfos.productIDs.get(objectID);
+			GeneralizedID id = getId();
 			if (id==null) return objectID;
 			return id.getName();
 		}

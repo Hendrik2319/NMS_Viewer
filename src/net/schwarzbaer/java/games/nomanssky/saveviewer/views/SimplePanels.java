@@ -1907,13 +1907,16 @@ public class SimplePanels {
 		public static class PlayerBasePanel extends JPanel {
 			private static final long serialVersionUID = 6070388468452658705L;
 			
-			private SaveGameData data;
-			private PersistentPlayerBase playerbase;
+			private final SaveGameData data;
+			private final PersistentPlayerBase playerbase;
+			
+			private final Window mainWindow;
+			private final PersistentPlayerBasesPanel mainPanel;
+			private final JTextArea textArea;
+			
+			private int clickedRow;
 			private BuildingObject clickedBuildingObject;
-			private JTextArea textArea;
 
-			private Window mainWindow;
-			private PersistentPlayerBasesPanel mainPanel;
 
 			public PlayerBasePanel(PersistentPlayerBase playerbase, PersistentPlayerBasesPanel mainPanel) {
 				super(new BorderLayout(3, 3));
@@ -1921,6 +1924,7 @@ public class SimplePanels {
 				this.mainPanel = mainPanel;
 				this.data = mainPanel.data;
 				this.mainWindow = mainPanel.mainWindow;
+				clickedRow = -1;
 				clickedBuildingObject = null;
 				setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
@@ -1935,6 +1939,7 @@ public class SimplePanels {
 				JScrollPane tableScrollPane = new JScrollPane(table);
 				
 				JCheckBoxMenuItem miHighlightObj;
+				JMenuItem miEditID;
 				JPopupMenu contextMenu = table.getContextMenu();
 				contextMenu.addSeparator();
 				contextMenu.add(Gui.createMenuItem("Update ObjectIDs",e->tableModel.initiateColumnUpdate(BaseObjectsColumnID.ObjectID)));
@@ -1947,13 +1952,29 @@ public class SimplePanels {
 					table.repaint();
 					SaveViewer.config.writeToFile();
 				}));
+				contextMenu.add(miEditID = Gui.createMenuItem("[Edit ID]", e->{
+					if (clickedBuildingObject==null || clickedRow<0) return;
+					GeneralizedID id = clickedBuildingObject.getId();
+					IDMap map = BuildingObject.getIDMap();
+					if (id==null || map==null) return;
+					boolean wasChanged = GameInfos.EditIdDialog.showDialog(mainWindow, id, map.getTemplateList());
+					if (wasChanged) {
+						map.saveIDsToFile();
+						tableModel.fireTableColumnUpdate(BaseObjectsColumnID.Type);
+						tableModel.fireTableColumnUpdate(BaseObjectsColumnID.Name);
+					}
+				}));
+				contextMenu.addSeparator();
+				
 				Runnable updateVRMLtasks1 = addVRMLtasks(contextMenu,mainWindow);
 				table.addContextMenuInvokeListener((rowV, columnV) -> {
-					int rowM = table.convertRowIndexToModel(rowV);
-					clickedBuildingObject = tableModel.getBuildingObject(rowM);
+					clickedRow = table.convertRowIndexToModel(rowV);
+					clickedBuildingObject = tableModel.getBuildingObject(clickedRow);
 					miHighlightObj.setText(String.format("Highlight all \"%s\" in bases", clickedBuildingObject==null ? "???" : clickedBuildingObject.objectID ));
 					miHighlightObj.setEnabled(clickedBuildingObject!=null);
 					miHighlightObj.setSelected(clickedBuildingObject!=null && SaveViewer.config.highlightedBuildingObjects.contains(clickedBuildingObject.objectID));
+					miEditID.setEnabled(clickedBuildingObject!=null);
+					miEditID.setText(String.format("Edit ID \"%s\"", clickedBuildingObject==null ? "???" : clickedBuildingObject.objectID ));
 					
 					updateVRMLtasks1.run();
 				});
@@ -2123,9 +2144,9 @@ public class SimplePanels {
 				ObjectID  ("ObjectID"  ,             String.class, 50,-1,130,130),
 				Name      ("Name"      ,             String.class, 50,-1,180,180),
 				Type      ("Type"      , GeneralizedID.Type.class, 100,-1,200,200),
-				UserData  ("UserData"  ,             String.class, 40,-1, 80, 80),
-				Color     ("Color"     ,             String.class, 40,-1, 80, 80),
-				Appearance("Appearance",             String.class, 40,-1, 80, 80),
+				UserData  ("UserData"  ,             String.class, 40,-1,100,100),
+				Color     ("Color"     ,             String.class, 40,-1,110,110),
+				Appearance("Appearance",             String.class, 40,-1, 70, 70),
 				Position  ("Position"  ,             String.class, 75,-1,150,150),
 				Up        ("Up"        ,             String.class, 85,-1,170,170),
 				At        ("At"        ,             String.class, 85,-1,170,170),
@@ -2149,6 +2170,14 @@ public class SimplePanels {
 					this.objects = objects;
 				}
 		
+				public void fireTableColumnUpdate(BaseObjectsColumnID columnID) {
+					super.fireTableColumnUpdate(getColumn(columnID));
+				}
+
+				@Override public void fireTableRowUpdate(int rowM) {
+					super.fireTableRowUpdate(rowM);
+				}
+
 				@Override
 				public int getRowCount() {
 					return objects.length;
@@ -2166,7 +2195,7 @@ public class SimplePanels {
 					case Timestamp : return obj.timestamp;
 					case Name      : return obj.getNameOnly();
 					case Type      : return obj.getIdType();
-					case ObjectID  : if (obj.objectID  ==null) return ""; return obj.objectID;
+					case ObjectID  : return obj.objectID;
 					case UserData  : if (obj.userData  ==null) return ""; return String.format("0x%08X" , obj.userData  );
 					case Color     : if (obj.color     ==null) return ""; return obj.color.label     ;
 					case Appearance: if (obj.appearance==null) return ""; return obj.appearance.label;
