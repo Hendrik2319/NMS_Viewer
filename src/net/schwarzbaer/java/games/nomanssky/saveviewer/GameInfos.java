@@ -59,8 +59,6 @@ import javax.swing.table.TableCellEditor;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
-import net.schwarzbaer.gui.Tables.NonStringRenderer;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.CachedAlphaImages;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ExtraImageList.ImageListListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
@@ -1090,7 +1088,7 @@ public class GameInfos {
 							else if (idStr.endsWith(".type")) {
 								idStr = idStr.substring(0, idStr.length()-".type".length());
 								GeneralizedID id = get(idStr);
-								id.type = GeneralizedID.Type.getType(value);
+								id.type = GeneralizedID.Type.parse(value);
 							}
 							else if (idStr.endsWith(".symbol")) {
 								idStr = idStr.substring(0, idStr.length()-".symbol".length());
@@ -1111,7 +1109,7 @@ public class GameInfos {
 							else if (idStr.endsWith(".upgradeClass")) {
 								idStr = idStr.substring(0, idStr.length()-".upgradeClass".length());
 								GeneralizedID id = get(idStr);
-								id.upgradeClass = GeneralizedID.UpgradeClass.parseValue(value);
+								id.upgradeClass = GeneralizedID.UpgradeClass.parse(value);
 							}
 							else if (idStr.indexOf('.')<0) {
 								GeneralizedID id = get(idStr);
@@ -1289,7 +1287,7 @@ public class GameInfos {
 		protected String imageFileName;
 		protected Integer imageBackground;
 		
-		protected GeneralizedIDProto(String label, String symbol, GeneralizedID.Type type, UpgradeClass upgradeClass, String imageFileName, Integer imageBackground) {
+		protected GeneralizedIDProto(String label, String symbol, GeneralizedID.Type type, GeneralizedID.UpgradeClass upgradeClass, String imageFileName, Integer imageBackground) {
 			this.label = label;
 			this.symbol = symbol;
 			this.type = type;
@@ -1435,7 +1433,7 @@ public class GameInfos {
 			Type(String label) { this(label,false); }
 			Type(String label, boolean isUpgradeModule) { this.label = label; this.isUpgradeModule = isUpgradeModule; }
 			
-			public static Type getType(String str) {
+			public static Type parse(String str) {
 				try { return valueOf(str); }
 				catch (Exception e) { return null; }
 			}
@@ -1446,14 +1444,13 @@ public class GameInfos {
 		
 		public enum UpgradeClass {
 			S,A,B,C;
-			public static UpgradeClass parseValue(String str) {
+			public static UpgradeClass parse(String str) { 
 				try { return valueOf(str); }
 				catch (Exception e) { return null; }
 			}
-			public String getLabel() {
+			@Override public String toString() {
 				return name()+"-Class";
 			}
-			// TODO: getLabel() -> toString
 		}
 		
 		public final String id;
@@ -1638,7 +1635,7 @@ public class GameInfos {
 					updateAfterContextMenuAction(setUpgradeClass(value),null);
 				}
 				@Override public void configureMenuItem(JMenuItem menuItem, GeneralizedID.UpgradeClass value) {
-					menuItem.setText(value==null?"<none>":value.getLabel());
+					menuItem.setText(value==null?"<none>":value.toString());
 				}
 			};
 			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Std     = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
@@ -1946,20 +1943,11 @@ public class GameInfos {
 		private void prepareTable() {
 			ComboboxCellEditor<GeneralizedID.UpgradeClass> upgradeClassCellEditor =
 					new ComboboxCellEditor<GeneralizedID.UpgradeClass>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values()));
-			NonStringRenderer<GeneralizedID.UpgradeClass> upgradeClassRenderer =
-					new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; });
-			upgradeClassCellEditor.setRenderer(upgradeClassRenderer);
 			table.setCellEditor  (GeneralizedIDColumnID.UpgrCls, upgradeClassCellEditor);
-			table.setCellRenderer(GeneralizedIDColumnID.UpgrCls, upgradeClassRenderer);
 			
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
-					new ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values())); // TODO: clean up
-			//NonStringRenderer<GeneralizedID.Type> typeRenderer =
-			//		new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
-			//			return ((GeneralizedID.Type)t).label; return null; });
-			//typeCellEditor.setRenderer(typeRenderer);
+					new ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			table.setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
-			//table.setCellRenderer(GeneralizedIDColumnID.Type, typeRenderer);
 			
 			ComboboxCellEditor<String> imageCellEditor =
 					new ComboboxCellEditor<String>(SaveViewer.addNull(Images.getInstance().extraImages.names));
@@ -2346,9 +2334,7 @@ public class GameInfos {
 			cmbbxType.addActionListener(e->{
 				id.type = (GeneralizedID.Type)cmbbxType.getSelectedItem();
 				idDataChanged();
-			}); // TODO: clean up
-			//cmbbxType.setRenderer(new NonStringRenderer<GeneralizedID.Type>(t->{if (t instanceof GeneralizedID.Type)
-			//	return ((GeneralizedID.Type)t).label; return null; }));
+			});
 			
 			cmbbxBgImage = new JComboBox<String>(SaveViewer.addNull(Images.getInstance().extraImages.names));
 			cmbbxBgImage.setSelectedItem(id.getImageFileName());
@@ -2379,7 +2365,6 @@ public class GameInfos {
 			};
 			
 			cmbbxUpgradeClass = new JComboBox<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values())	);
-			cmbbxUpgradeClass.setRenderer(new NonStringRenderer<GeneralizedID.UpgradeClass>(t->{if (t instanceof GeneralizedID.UpgradeClass) return ((GeneralizedID.UpgradeClass)t).getLabel(); return null; }));
 			cmbbxUpgradeClass.setSelectedItem(id.upgradeClass);
 			cmbbxUpgradeClass.addActionListener(e->{id.upgradeClass=(GeneralizedID.UpgradeClass)cmbbxUpgradeClass.getSelectedItem(); idDataChanged();});
 			
@@ -2601,8 +2586,8 @@ public class GameInfos {
 			valueOutput.append("Label  : "+(id.label ==null?"--------":id.label )+"\r\n");
 			valueOutput.append("Symbol : "+(id.symbol==null?"--------":id.symbol)+"\r\n");
 			valueOutput.append("Type   : "+(id.type  ==null?"--------":id.type  )+"\r\n");
-			valueOutput.append("Image  : "+(id.hasImageFileName  ()?id.getImageFileName():"<none>")+"\r\n");
-			valueOutput.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"<none>")+"\r\n");
+			valueOutput.append("Image  : "+(id.hasImageFileName  ()?id.getImageFileName():"--------")+"\r\n");
+			valueOutput.append("ImageBG: "+(id.hasImageBG()?String.format("%06X",id.getImageBG()):"--------")+"\r\n");
 			
 			showImage();
 		}

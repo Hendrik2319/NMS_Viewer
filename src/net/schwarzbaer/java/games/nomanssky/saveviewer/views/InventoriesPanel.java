@@ -43,7 +43,6 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.EditIdDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID.UpgradeClass;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaOutput;
@@ -762,7 +761,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				}
 	
 				@SuppressWarnings("unused")
-				private static void drawUpgradeClass_old(Graphics2D g2, UpgradeClass upgradeClass, int x1, int y1, final int innerHeight,
+				private static void drawUpgradeClass_old(Graphics2D g2, GeneralizedID.UpgradeClass upgradeClass, int x1, int y1, final int innerHeight,
 						final int innerOffsetX, final int innerOffsetY, int imageBorder, Font stdBoldFont) {
 					UpgrCls upgrCls = UpgrCls.get(upgradeClass);
 					int iconX = x1+innerOffsetX+imageBorder+UPGRCLS_BORDER;
@@ -801,7 +800,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					g2.setFont( stdBoldFont );
 				}
 	
-				private static void drawUpgradeClass(Graphics2D g2, UpgradeClass upgradeClass, int imageX, int imageY, Font stdBoldFont) {
+				private static void drawUpgradeClass(Graphics2D g2, GeneralizedID.UpgradeClass upgradeClass, int imageX, int imageY, Font stdBoldFont) {
 					UpgrCls upgrCls = UpgrCls.get(upgradeClass);
 					int iconX = imageX+UPGRCLS_BORDER;
 					int iconY = imageY+UPGRCLS_BORDER;
