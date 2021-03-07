@@ -1968,9 +1968,11 @@ public class GameInfos {
 				@Override public void colorsRemoved(Vector<NamedColor> removed) { resetValues(); }
 				private void resetValues() { colorCellEditor.setValues(SaveViewer.addNull(Images.getInstance().colors.getArray())); }
 			});
-			
 			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
 			colorCellEditor.setRenderer(colorRenderer);
+			// colorRenderer.setTableColorizers(tableForegroundColorizer, tableBackgroundColorizer);
+			// TODO: define TableColorizers in GeneralizedIDPanel
+			
 			table.setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
 			table.setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
 		}

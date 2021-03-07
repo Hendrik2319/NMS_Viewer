@@ -14,6 +14,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -553,12 +554,21 @@ public class TableView {
 		
 		private HashMap<IconKey,Icon> iconCache;
 		private LabelRendererComponent comp;
+		private TableColorizerWrapper getCustomForeground;
+		private TableColorizerWrapper getCustomBackground;
 		
 		public IconTextRenderer(int prefWidth, int prefHeight) {
+			getCustomForeground = null;
+			getCustomBackground = null;
 			iconCache = new HashMap<>();
 			comp = new LabelRendererComponent();
 			if (prefWidth>0 && prefHeight>0)
 				comp.setPreferredSize(new Dimension(prefWidth,prefHeight));
+		}
+		
+		public void setTableColorizers(TableColorizer tableForegroundColorizer, TableColorizer tableBackgroundColorizer) {
+			getCustomForeground = tableForegroundColorizer==null ? null : new TableColorizerWrapper(tableForegroundColorizer);
+			getCustomBackground = tableBackgroundColorizer==null ? null : new TableColorizerWrapper(tableBackgroundColorizer);
 		}
 		
 		protected abstract ValueType cast(Object obj);
@@ -580,7 +590,11 @@ public class TableView {
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object obj, boolean isSelected, boolean hasFocus, int row, int column) {
 			ValueType value = cast(obj);
-			comp.configureAsTableCellRendererComponent(table, getIcon(value), getLabel(value), isSelected, hasFocus);
+			int rowM = table.convertRowIndexToModel(row);
+			int columnM = table.convertColumnIndexToModel(column);
+			if (getCustomForeground!=null) getCustomForeground.setCell(rowM, columnM);
+			if (getCustomBackground!=null) getCustomBackground.setCell(rowM, columnM);
+			comp.configureAsTableCellRendererComponent(table, getIcon(value), getLabel(value), isSelected, hasFocus, getCustomBackground, getCustomForeground);
 			return comp;
 		}
 
@@ -589,78 +603,27 @@ public class TableView {
 			comp.configureAsListCellRendererComponent(list, getIcon(value), getLabel(value), index, isSelected, hasFocus);
 			return comp;
 		}
+		
+		private static class TableColorizerWrapper implements Supplier<Color> {
+			
+			private final TableColorizer tableColorizer;
+			private int rowM;
+			private int columnM;
+
+			TableColorizerWrapper(TableColorizer tableColorizer) {
+				this.tableColorizer = tableColorizer;
+			}
+			void setCell(int rowM, int columnM) {
+				this.rowM = rowM;
+				this.columnM = columnM;
+			}
+			@Override public Color get() {
+				return tableColorizer.getColor(rowM, columnM);
+			}
+		}
 	}
-
-/*
-	public static class SimpleColorRenderer implements ListCellRenderer<Integer>, TableCellRenderer {
-		
-		private RendererComponent comp;
-		
-		public SimpleColorRenderer() {
-			comp = new RendererComponent();
-			comp.setPreferredSize(new Dimension(50,16));
-		}
-		
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			Integer intValue = null;
-			if (value instanceof Integer) intValue = (Integer)value;
-			comp.set(intValue,isSelected?table.getSelectionBackground():table.getBackground());
-			return comp;
-		}
-
-		@Override
-		public Component getListCellRendererComponent(JList<? extends Integer> list, Integer value, int index, boolean isSelected, boolean cellHasFocus) {
-			comp.set(value,isSelected?list.getSelectionBackground():list.getBackground());
-			return comp;
-		}
-
-		public static class RendererComponent extends Canvas {
-			private static final long serialVersionUID = -3943051255994570512L;
-			
-			private Color valueColor;
-			private Color bgColor;
-			
-			public void set(Integer value, Color bgColor) {
-				this.bgColor = bgColor;
-				if (value==null) valueColor = null;
-				else             valueColor = new Color(value);
-			}
-
-			@Override
-			protected void paintCanvas(Graphics g, int width, int height) {
-				if (valueColor==null) {
-					g.setColor(bgColor);
-					g.fillRect(0, 0, width, height);
-				} else {
-					g.setColor(bgColor);
-					g.drawRect(0, 0, width-1, height-1);
-					//g.drawRect(1, 1, width-3, height-3);
-					g.setColor(valueColor);
-					g.fillRect(1, 1, width-2, height-2);
-					//g.fillRect(2, 2, width-4, height-4);
-				}
-			}
-			
-			@Override public void revalidate() {}
-			@Override public void invalidate() {}
-			@Override public void validate() {}
-			@Override public void repaint(long tm, int x, int y, int width, int height) {}
-			@Override public void repaint(Rectangle r) {}
-			@Override public void repaint() {}
-			@Override public void repaint(long tm) {}
-			@Override public void repaint(int x, int y, int width, int height) {}
 	
-			@Override public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {}
-			@Override public void firePropertyChange(String propertyName, int oldValue, int newValue) {}
-			@Override public void firePropertyChange(String propertyName, char oldValue, char newValue) {}
-			@Override protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {}
-			@Override public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {}
-			@Override public void firePropertyChange(String propertyName, short oldValue, short newValue) {}
-			@Override public void firePropertyChange(String propertyName, long oldValue, long newValue) {}
-			@Override public void firePropertyChange(String propertyName, float oldValue, float newValue) {}
-			@Override public void firePropertyChange(String propertyName, double oldValue, double newValue) {}
-		}
+	public interface TableColorizer {
+		Color getColor(int rowM, int columnM);
 	}
-*/	
 }
