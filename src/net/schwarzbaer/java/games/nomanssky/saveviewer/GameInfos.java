@@ -1427,6 +1427,7 @@ public class GameInfos {
 			Ingredient                ("Zutat"),
 			Treasure                  ("Schatz"),
 			PlanetTrophy              ("Planeten-Trophäe"),
+			Damage                    ("Schaden"),
 			;
 			
 			private final String label;
@@ -1445,7 +1446,7 @@ public class GameInfos {
 		}
 		
 		public enum UpgradeClass {
-			S,A,B,C;
+			X,S,A,B,C;
 			public static UpgradeClass parse(String str) { 
 				try { return valueOf(str); }
 				catch (Exception e) { return null; }

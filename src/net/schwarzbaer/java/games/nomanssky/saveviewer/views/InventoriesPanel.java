@@ -430,6 +430,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				private static final int UPGRCLS_STR_OFFSET_Y = 6;
 	
 				private enum UpgrCls {
+					X("X",new Color(0x707070),-1),
 					S("S",new Color(0xFFA712), 0),
 					A("A",new Color(0xA063D8),-1),
 					B("B",new Color(0x3C8BD6), 0),
@@ -447,6 +448,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					static UpgrCls get(GeneralizedID.UpgradeClass upgradeClass) {
 						if (upgradeClass!=null)
 							switch (upgradeClass) {
+							case X: return X;
 							case S: return S;
 							case A: return A;
 							case B: return B;
