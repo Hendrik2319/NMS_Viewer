@@ -2826,6 +2826,8 @@ public class FileExport {
 //			^M_GFLOOR
 //			^M_RAMP
 //			^M_RAMP_H
+//			^M_TRIFLOOR
+//			^M_TRIFLOOR_Q
 			addModels("__SOLITARY_DOOR",			makeVariations("^%s_DOOR", "W","C","M") ); 
 			addModels("__SOLITARY_DOOR_HALF",		makeVariations("^%s_DOOR_H", "W","C","M") ); 
 			addModels("__SOLITARY_WALL",			makeVariations("^%s_WALL", "W","C","M") );
@@ -2844,11 +2846,11 @@ public class FileExport {
 			addModels("__SOLITARY_GLASSFLOOR",		makeVariations("^%s_GFLOOR", "W","C","M") );
 			addModels("__SOLITARY_RAMP",			makeVariations("^%s_RAMP", "W","C","M") );
 			addModels("__SOLITARY_RAMP_H",			makeVariations("^%s_RAMP_H", "W","C","M") );
+			addModels("__SOLITARY_TRIFLOOR",		makeVariations("^%s_TRIFLOOR", "W","C","M") );
+			addModels("__SOLITARY_TRIFLOOR_Q",		makeVariations("^%s_TRIFLOOR_Q", "W","C","M") );
 //			^M_ARCH
 //			^M_ARCH_H
 //			^M_GDOOR
-//			^M_TRIFLOOR
-//			^M_TRIFLOOR_Q
 			
 //			^M_GDOOR_D
 //			^M_SDOOR
@@ -3262,6 +3264,8 @@ public class FileExport {
 			double border_v       = 0.65;
 			double spacing        = 0.30;
 			
+			// TODO: writeSolitaryWallAndFloorProtos for ^M_ARCH, ^M_ARCH_H, ^M_GDOOR, ^M_TRIFLOOR, ^M_TRIFLOOR_Q
+			
 			// ##########################################################################################################
 			writeProtoToFile(vrml, "__SOLITARY_ROOF", ()->{
 				LineGeometry.PolyLine polyLine;
@@ -3294,6 +3298,18 @@ public class FileExport {
 			// ##########################################################################################################
 			writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q", 12, ()->{
 				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2), "	", null);
+			});
+			vrml.println("");
+			
+			// ##########################################################################################################
+			writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR", 15, ()->{
+				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length,-90), "	", null);
+			});
+			vrml.println("");
+			
+			// ##########################################################################################################
+			writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q", 12, ()->{
+				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90), "	", null);
 			});
 			vrml.println("");
 			
@@ -3651,8 +3667,6 @@ public class FileExport {
 				LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
 			});
 			vrml.println("");
-			
-			// TODO [OLD] VRMLoutput.writeTemplateToFile(): Solitary Walls & Floors 
 		}
 
 		private static File createBaseVrmlFile(String suggestedFileName) {
@@ -3790,57 +3804,43 @@ public class FileExport {
 			
 			label = label.trim();
 			while ( !label.isEmpty() ) {
-				label = label.trim();
 				
 				int splitPos = -1;
-				while (true) {
-					int posSpace = label.indexOf(' ', splitPos+1);
-					int posLine  = label.indexOf('-', splitPos+1);
-					int newSplitPos;
-					if (posSpace>=0) {
-						if (posLine < 0) newSplitPos = posSpace;
-						else newSplitPos = Math.min(posSpace, posLine);
+				if (label.length()>maxChunkLength)
+					while (true) {
+						int posSpace = label.indexOf(' ', splitPos+1);
+						int posLine  = label.indexOf('-', splitPos+1);
+						int newSplitPos;
+						if (posSpace >= 0) {
+							if (posLine < 0) newSplitPos = posSpace;
+							else newSplitPos = Math.min(posSpace, posLine);
+							
+						} else if (posLine >= 0) newSplitPos = posLine;
+						else newSplitPos = -1;
 						
-					} else if (posLine>=0) newSplitPos = posLine;
-					else newSplitPos = -1;
-					
-					if (newSplitPos < 0) // no more split positions from here
-						break;
-					
-					else if (newSplitPos < maxChunkLength) // found a new split position
-						splitPos = newSplitPos;
-					
-					else {
-						if (splitPos < 0) // it's the first run
-							splitPos = newSplitPos; // tradeoff: chunk exceeds maxChunkLength, but there is not earlier split pos
-						break;
+						if (newSplitPos < 0) // no more split positions from here
+							break;
+						
+						else if (newSplitPos < maxChunkLength) // found a new split position
+							splitPos = newSplitPos;
+						
+						else {
+							if (splitPos < 0) // it's the first run
+								splitPos = newSplitPos; // tradeoff: chunk exceeds maxChunkLength, but there is not earlier split pos
+							break;
+						}
 					}
-				}
-				
-				int chpos = splitPos;
-				//int chpos = label.indexOf(' ');
-				//int chposLine = label.indexOf('-');
-				//if (0<=chposLine && (chposLine<chpos || chpos<0))
-				//	chpos = chposLine;
 				
 				String part;
-				if (chpos<0) {
+				if (splitPos < 0) {
 					part = label;
 					label = "";
 				} else {
-					part = label.substring(0,chpos+1); // incl. space or line char
-					label = label.substring(chpos+1);
+					part = label.substring(0,splitPos+1).trim(); // incl. space or line char
+					label = label.substring(splitPos+1).trim();
 				}
 				
-				if (strParts.isEmpty())
-					strParts.add(part);
-				else {
-					String newLastPart = strParts.lastElement()+part;
-					if (newLastPart.length()<maxChunkLength)
-						strParts.set(strParts.size()-1, newLastPart);
-					else
-						strParts.add(part);
-				}
+				strParts.add(part);
 			}
 			return strParts;
 		}
@@ -4093,6 +4093,14 @@ public class FileExport {
 			writeIndexedLineSet_verbose(vrml, indexedLineSet, vrmlIndent, precision, color, null, null);
 		}
 		
+		private static void setPointValue(Point3D p, Axis axis, double value) {
+			switch (axis) {
+			case X: p.x=value; break;
+			case Y: p.y=value; break;
+			case Z: p.z=value; break;
+			}
+		}
+
 		public static abstract class IndexedLineSet {
 			Vector<Point3D> points;
 			Vector<Segment> segments;
@@ -4281,6 +4289,15 @@ public class FileExport {
 				this.child = child;
 				this.transformMatrix = new TransformMatrix();
 			}
+
+			Transform addTranslation(Axis axis, double dist) {
+				switch (axis) {
+				case X: return addTranslation( new Point3D(dist,0,0) );
+				case Y: return addTranslation( new Point3D(0,dist,0) );
+				case Z: return addTranslation( new Point3D(0,0,dist) );
+				}
+				return this;
+			}
 			
 			Transform addTranslation( Point3D translation ) {
 				transformMatrix = new TransformMatrix().setTranslation(translation).mul(transformMatrix);
@@ -4363,6 +4380,45 @@ public class FileExport {
 		static class Circle extends PolyLine {
 			Circle(Axis axis, Point3D center, double radius) {
 				addArc(axis, center, radius, 0, 360, false);
+			}
+		}
+		
+		static class RegularPrism extends Prism {
+			RegularPrism(Axis heightAxis, double height, int nSeg, double edgeLength, double startAngle_deg) {
+				super(heightAxis, height, generatePoints(heightAxis, nSeg, edgeLength, startAngle_deg));
+			}
+			private static Point3D[] generatePoints(Axis axis, int nSeg, double edgeLength, double startAngle_deg) {
+				Point3D[] points = new Point3D[nSeg];
+				double radius = edgeLength/2/Math.sin(Math.PI/nSeg);
+				loopArc(radius, startAngle_deg, startAngle_deg+360, false, nSeg, (i, nSeg_, x, y) -> {
+					if (i<nSeg)
+						switch (axis) {
+						case X: points[i] = new Point3D(0, x, y); break;
+						case Y: points[i] = new Point3D(y, 0, x); break;
+						case Z: points[i] = new Point3D(x, y, 0); break;
+						}
+				});
+				return points;
+			}
+		}
+		
+		static class Prism extends Transform {
+			Prism(Axis heightAxis, double height, Point3D... points) {
+				super(new GroupingNode(
+					new Transform(new PolyLine(points).close()).addTranslation(heightAxis,+height/2),
+					new Transform(new PolyLine(points).close()).addTranslation(heightAxis,-height/2),
+					new GroupingNode(generateHeightLines(heightAxis, height, points))
+				));
+			}
+			private static PolyLine[] generateHeightLines(Axis heightAxis, double height, Point3D[] points) {
+				PolyLine[] lines = new PolyLine[points.length];
+				for (int i=0; i<points.length; i++) {
+					Point3D p = points[i];
+					Point3D p1 = new Point3D(p); setPointValue(p1, heightAxis, +height/2);
+					Point3D p2 = new Point3D(p); setPointValue(p2, heightAxis, -height/2);
+					lines[i] = new PolyLine(p1,p2);
+				}
+				return lines;
 			}
 		}
 		
