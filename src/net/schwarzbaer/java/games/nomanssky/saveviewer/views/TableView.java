@@ -24,6 +24,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListCellRenderer;
 import javax.swing.SortOrder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -625,5 +626,32 @@ public class TableView {
 	
 	public interface TableColorizer {
 		Color getColor(int rowM, int columnM);
+	}
+	
+	public static class TableColorizerRenderer extends DefaultTableCellRenderer {
+		private static final long serialVersionUID = 5382374647641808567L;
+		private final TableColorizer tableForegroundColorizer;
+		private final TableColorizer tableBackgroundColorizer;
+		
+		public TableColorizerRenderer(TableColorizer tableForegroundColorizer, TableColorizer tableBackgroundColorizer) {
+			this.tableForegroundColorizer = tableForegroundColorizer;
+			this.tableBackgroundColorizer = tableBackgroundColorizer;
+		}
+		
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+			if (!isSelected) {
+				int rowM = table.convertRowIndexToModel(row);
+				int colM = table.convertColumnIndexToModel(column);
+				Color textColor = null, bgColor = null;
+				if (tableForegroundColorizer!=null) textColor = tableForegroundColorizer.getColor(rowM, colM);
+				if (tableBackgroundColorizer!=null)   bgColor = tableBackgroundColorizer.getColor(rowM, colM);
+				setForeground(textColor!=null ? textColor : table.getForeground());
+				setBackground(  bgColor!=null ?   bgColor : table.getBackground());
+			}
+			return comp;
+		}
+		
 	}
 }

@@ -959,6 +959,11 @@ public class Images {
 			revalidate();
 		}
 
+		public void hideUsedImages(boolean hideUsedImages) {
+			// TODO: Auto-generated method stub for hideUsedImages
+			
+		}
+
 		public void markUsedImages(boolean markUsedImages) {
 			this.markUsedImages = markUsedImages;
 			HashSet<String> usedImages = new HashSet<String>();
@@ -969,7 +974,7 @@ public class Images {
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.substanceIDs);
 			}
 			for (ImageGridPanel.ImageItem il:imageItems)
-				il.setMarkerIndex( !markUsedImages?0:usedImages.contains(il.ID)?1:usedImagesObsolete.contains(il.ID)?2:0 );
+				il.setMarkerIndex( !markUsedImages ? 0 : usedImages.contains(il.ID) ? 1 : usedImagesObsolete.contains(il.ID) ? 2 : 0 );
 		}
 
 		private void addImageNames(HashSet<String> usedImages, HashSet<String> usedImagesObsolete, IDMap idMap) {
@@ -1316,21 +1321,26 @@ public class Images {
 		public SelectImageDialog(Window parent, String title, String initialValue) {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
 			selected = null;
-			boolean markUsedImagesByDefault = true;
+			boolean markUsedImages_default = true;
+			boolean hideUsedImages_default = false;
 			
 			imageGridPanel = new ImageGridPanel(8,initialValue);
 			imageGridPanel.addSelectionListener(this::setResult);
-			imageGridPanel.markUsedImages(markUsedImagesByDefault);
+			imageGridPanel.markUsedImages(markUsedImages_default);
+			imageGridPanel.hideUsedImages(hideUsedImages_default);
 			imageScrollPane = new JScrollPane(imageGridPanel);
 			imageScrollPane.setPreferredSize(new Dimension(930,600));
 			imageScrollPane.getVerticalScrollBar().setUnitIncrement(10);
 			
-			JCheckBox chkbxMarkUsedImages;
 			JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-			buttonPanel.add(chkbxMarkUsedImages = Gui.createCheckbox("Mark Used Images", null, markUsedImagesByDefault));
+			JCheckBox chkbxMarkUsedImages;
+			buttonPanel.add(chkbxMarkUsedImages = Gui.createCheckbox("Mark Used Images", markUsedImages_default, imageGridPanel::markUsedImages));
+			buttonPanel.add(Gui.createCheckbox("Hide Used Images", hideUsedImages_default, hideUsedImages -> {
+				imageGridPanel.hideUsedImages(hideUsedImages);
+				chkbxMarkUsedImages.setEnabled(!hideUsedImages);
+			}));
 			buttonPanel.add(Gui.createButton("Choose \"No Image\"",e->setResult("")));
 			buttonPanel.add(Gui.createButton("Cancel",e->closeDialog()));
-			chkbxMarkUsedImages.addActionListener(e->imageGridPanel.markUsedImages(chkbxMarkUsedImages.isSelected()));
 			
 			JPanel contentPane = new JPanel(new BorderLayout(3,3));
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));

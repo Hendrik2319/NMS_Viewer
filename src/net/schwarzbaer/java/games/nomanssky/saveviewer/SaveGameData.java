@@ -1790,11 +1790,21 @@ public class SaveGameData {
 		}
 		
 		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, String inventoryLabel, String inventorySourcePath) {
-			return parse(source, inventoryData, null, inventoryLabel, inventorySourcePath);
+			return parse(source, inventoryData, null, false, inventoryLabel, inventorySourcePath);
+		}
+		private static Inventory parseBackInv(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, String inventoryLabel, String inventorySourcePath) {
+			return parse(source, inventoryData, null, true, inventoryLabel, inventorySourcePath);
 		}
 		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, JSON_Object<NVExtra,VExtra> inventoryLayoutData, String inventoryLabel, String inventorySourcePath) {
+			return parse(source, inventoryData, inventoryLayoutData, false, inventoryLabel, inventorySourcePath);
+		}
+		@SuppressWarnings("unused")
+		private static Inventory parseBackInv(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, JSON_Object<NVExtra,VExtra> inventoryLayoutData, String inventoryLabel, String inventorySourcePath) {
+			return parse(source, inventoryData, inventoryLayoutData, true, inventoryLabel, inventorySourcePath);
+		}
+		private static Inventory parse(SaveGameData source, JSON_Object<NVExtra,VExtra> inventoryData, JSON_Object<NVExtra,VExtra> inventoryLayoutData, boolean isBackgroundInv, String inventoryLabel, String inventorySourcePath) {
 			if (inventoryData==null) return null;
-			return new Inventory(source, inventoryData, inventoryLayoutData, inventoryLabel, inventorySourcePath);
+			return new Inventory(source, inventoryData, inventoryLayoutData, isBackgroundInv, inventoryLabel, inventorySourcePath);
 		}
 
 		public Player player;
@@ -1837,7 +1847,7 @@ public class SaveGameData {
 			public final InventoryLayout inventoryLayout;
 			public final Vector<Consumer<TextAreaOutput>> extraInfosOutputs;
 	
-			private Inventory(SaveGameData source, JSON_Object<NVExtra, VExtra> inventoryData, JSON_Object<NVExtra, VExtra> inventoryLayoutData, String inventoryLabel, String inventorySourcePath) {
+			private Inventory(SaveGameData source, JSON_Object<NVExtra, VExtra> inventoryData, JSON_Object<NVExtra, VExtra> inventoryLayoutData, boolean isBackgroundInv, String inventoryLabel, String inventorySourcePath) {
 				this.label = inventoryLabel;
 				extraInfosOutputs = new Vector<>();
 				
@@ -1858,7 +1868,7 @@ public class SaveGameData {
 				JSON_Array<NVExtra,VExtra> arrSpecialSlots     = getArrayValue(inventoryData,"SpecialSlots"    );
 				usedSlots  = arrSlots            == null ? null : arrSlots           .size();
 				validSlots = arrValidSlotIndices == null ? null : arrValidSlotIndices.size();
-				slots = parseSlots(source, arrSlots, arrValidSlotIndices, arrSpecialSlots, inventoryLabel, inventorySourcePath);
+				slots = parseSlots(source, arrSlots, arrValidSlotIndices, arrSpecialSlots, isBackgroundInv, inventoryLabel, inventorySourcePath);
 				
 				baseStatValues = parseBaseStatValues(getArrayValue(inventoryData,"BaseStatValues"));
 				
@@ -1866,7 +1876,7 @@ public class SaveGameData {
 				
 			}
 
-			private Slot[][] parseSlots(SaveGameData source, JSON_Array<NVExtra,VExtra> arrSlots, JSON_Array<NVExtra,VExtra> arrValidSlotIndices, JSON_Array<NVExtra,VExtra> arrSpecialSlots, String inventoryLabel, String inventorySourcePath) {
+			private Slot[][] parseSlots(SaveGameData source, JSON_Array<NVExtra,VExtra> arrSlots, JSON_Array<NVExtra,VExtra> arrValidSlotIndices, JSON_Array<NVExtra,VExtra> arrSpecialSlots, boolean isBackgroundInv, String inventoryLabel, String inventorySourcePath) {
 				Slot[][] slots = new Slot[width][height];
 				for (Slot[] row:slots)
 					Arrays.fill(row, null);
@@ -1889,7 +1899,7 @@ public class SaveGameData {
 					JSON_Object<NVExtra,VExtra> slotObj = getObject(value);
 					if (slotObj==null) { wrongSlots.add(value); continue; }
 					
-					Slot slot = new Slot(slotObj,source);
+					Slot slot = new Slot(slotObj,source,isBackgroundInv);
 					
 					if (slot.indexX==null || slot.indexX<0 || slot.indexX>=width ) { wrongSlots.add(value); continue; }
 					if (slot.indexY==null || slot.indexY<0 || slot.indexY>=height) { wrongSlots.add(value); continue; }
@@ -2004,7 +2014,7 @@ public class SaveGameData {
 					this.unknownBool = null;
 				}
 
-				public Slot(JSON_Object<NVExtra, VExtra> slotObj, SaveGameData source) {
+				public Slot(JSON_Object<NVExtra, VExtra> slotObj, SaveGameData source, boolean isBackgroundInv) {
 					isValid = false;
 					isEmpty = false;
 					specialSlotType = null;
@@ -2029,7 +2039,7 @@ public class SaveGameData {
 					
 					if (type!=null && idStr!=null) {
 						IDMap map = getIDMap();
-						id = map==null ? null : map.get(idStr,source,GeneralizedID.Usage.Type.InventorySlot);
+						id = map==null ? null : map.get(idStr, source, isBackgroundInv ? GeneralizedID.Usage.Type.BackgroundInventorySlot : GeneralizedID.Usage.Type.InventorySlot);
 					} else
 						id = null;
 				}
@@ -3369,7 +3379,7 @@ public class SaveGameData {
 				damageTimers           = parseArray(SaveGameData::getFloat, "ExperimentalData.MaintenanceInteraction.DamageTimers", object, "DamageTimers");
 				flags                  = getIntegerValue(object, "Flags");
 				inventoryContainer_obj = getObjectValue(object, "InventoryContainer");
-				inventoryContainer = inventoryContainer_obj == null ? null : Inventories.parse(source, inventoryContainer_obj, label+"["+index+"] -> InvCont", sourcePath+"["+index+"].InventoryContainer");
+				inventoryContainer = inventoryContainer_obj == null ? null : Inventories.parseBackInv(source, inventoryContainer_obj, label+"["+index+"] -> InvCont", sourcePath+"["+index+"].InventoryContainer");
 			}
 		}
 		

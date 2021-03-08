@@ -1,6 +1,7 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -1533,9 +1534,16 @@ public class GameInfos {
 			return oldUsage==null?newUsage:oldUsage;
 		}
 	
+		public boolean isUsedIn(Usage.Type usageType) {
+			for (SaveGameData data:this.usage.keySet())
+				if (this.usage.get(data).generalUsages.contains(usageType))
+					return true;
+			return false;
+		}
+
 		public static class Usage {
 			public enum Type {
-				BuildingObject("Bo"), Blueprint("Bl"), QuicksilverSpecial("QS"), InventorySlot("In");
+				BuildingObject("BO"), Blueprint("Bp"), QuicksilverSpecial("QS"), InventorySlot("In"), BackgroundInventorySlot("BIn");
 				
 				private final String keyChar;
 				Type(String keyChar) { this.keyChar = keyChar; }
@@ -1583,7 +1591,11 @@ public class GameInfos {
 
 	static class GeneralizedIDPanel extends JPanel implements ActionListener {
 		private static final long serialVersionUID = -4946966056212175920L;
-	
+		private static final Color COLOR_ID_USED_IN_INVENTORY_SLOT      = new Color(0xFFEF90);
+		private static final Color COLOR_ID_USED_IN_BUILDING_OBJECT     = new Color(0xFFDBFF);
+		private static final Color COLOR_ID_USED_IN_BLUEPRINT           = new Color(0xF0F0FF);
+		private static final Color COLOR_ID_USED_IN_QUICKSILVER_SPECIAL = new Color(0xF0FFF0);
+		
 		private Window mainwindow;
 	
 		private SimplifiedTable<GeneralizedIDColumnID> table;
@@ -1771,14 +1783,18 @@ public class GameInfos {
 			textareaScrollPane.getViewport().setPreferredSize(new Dimension(400, 150));
 			
 			imageField = new JLabel();
-			imageField.setBorder(BorderFactory.createEtchedBorder());
-			imageField.setPreferredSize(new Dimension(100,100));
+			imageField.setVerticalAlignment(JLabel.CENTER);
+			imageField.setHorizontalAlignment(JLabel.CENTER);
+			//imageField.setBorder(BorderFactory.createEtchedBorder());
+			//imageField.setPreferredSize(new Dimension(100,100));
+			JScrollPane imageFieldScrollPane = new JScrollPane(imageField);
+			imageFieldScrollPane.setPreferredSize(new Dimension(300,300));
 			
 			Gui.SimpleContextMenu imagePreviewContextMenu = new Gui.SimpleContextMenu(imageField);
 			imagePreviewContextMenu.add(Gui.createMenuItem("Show Alpha View" , e->showImage(selectedID==null ? null : Images.generateAlphaImage(selectedID.imageFileName))));
 			
 			JPanel eastPanel = new JPanel(new BorderLayout(3, 3));
-			eastPanel.add(imageField, BorderLayout.NORTH);
+			eastPanel.add(imageFieldScrollPane, BorderLayout.NORTH);
 			eastPanel.add(textareaScrollPane, BorderLayout.CENTER);
 			
 			add(eastPanel, BorderLayout.EAST);
@@ -1970,11 +1986,34 @@ public class GameInfos {
 			});
 			TableView.NamedColorRenderer colorRenderer = new TableView.NamedColorRenderer();
 			colorCellEditor.setRenderer(colorRenderer);
-			// colorRenderer.setTableColorizers(tableForegroundColorizer, tableBackgroundColorizer);
-			// TODO: define TableColorizers in GeneralizedIDPanel
+			colorRenderer.setTableColorizers(null, (rowM, columnM) -> getBGColor(tableModel.getValue(rowM)));
 			
 			table.setCellEditor  (GeneralizedIDColumnID.ImgBG, colorCellEditor);
 			table.setCellRenderer(GeneralizedIDColumnID.ImgBG, colorRenderer);
+			
+			TableView.TableColorizerRenderer tableColorizerRenderer = new TableView.TableColorizerRenderer(null, (rowM, columnM) -> getBGColor(tableModel.getValue(rowM)));
+			table.setDefaultRenderer(String.class, tableColorizerRenderer);
+			table.setDefaultRenderer(GeneralizedID.Type.class, tableColorizerRenderer);
+			table.setDefaultRenderer(GeneralizedID.UpgradeClass.class, tableColorizerRenderer);
+		}
+
+		private Color getBGColor(GeneralizedID id) {
+			if (id==null)
+				return null;
+			
+			if (id.isUsedIn(GeneralizedID.Usage.Type.InventorySlot))
+				return COLOR_ID_USED_IN_INVENTORY_SLOT;
+			
+			if (id.isUsedIn(GeneralizedID.Usage.Type.BuildingObject))
+				return COLOR_ID_USED_IN_BUILDING_OBJECT;
+			
+			if (id.isUsedIn(GeneralizedID.Usage.Type.Blueprint))
+				return COLOR_ID_USED_IN_BLUEPRINT;
+			
+			if (id.isUsedIn(GeneralizedID.Usage.Type.QuicksilverSpecial))
+				return COLOR_ID_USED_IN_QUICKSILVER_SPECIAL;
+			
+			return null;
 		}
 	
 		private void showID(GeneralizedID id) {
