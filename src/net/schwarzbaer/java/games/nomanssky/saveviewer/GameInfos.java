@@ -1405,6 +1405,7 @@ public class GameInfos {
 			BaseComponent             ("Basis-Komponente"),
 			BaseComponent_FertigTeil  ("Basis-Komponente (Fertigteil)"),
 			BaseDekoration            ("Basis-Dekoration"),
+			BaseDekorationAband       ("Basis-Dekoration (Aufgeg.Fracht.)"),
 			BaseExternal              ("Basis-Auﬂenanlage"),
 			BaseComponentFreighter    ("Basis-Komponente (Frachter)"),
 			BaseDekorationFreighter   ("Basis-Dekoration (Frachter)"),

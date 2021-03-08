@@ -863,16 +863,32 @@ public class Images {
 		private static final long serialVersionUID = -5485402060151977360L;
 		private boolean markUsedImages;
 		private int[] sortedIndexes;
+		private boolean hideUsedImages;
+		private HashSet<String> imagesToHide;
 
 		public ImageGridPanel(int cols, String preselectedImageFileName) {
+			this(cols, preselectedImageFileName, false);
+		}
+		public ImageGridPanel(int cols, String preselectedImageFileName, boolean hideUsedImages) {
 			super(cols, preselectedImageFileName, false, null);
+			this.hideUsedImages = hideUsedImages;
 			markUsedImages = false;
 			sortedIndexes = null;
+			imagesToHide = new HashSet<>();
 			
+			updateImagesToHide();
 			setMarkerColors(new Color[] { Color.LIGHT_GRAY, new Color(0xDCB9F2) });
 			createImageItems(preselectedImageFileName,this,null);
 		}
 		
+		private void updateImagesToHide() {
+			imagesToHide.clear();
+			if (hideUsedImages) {
+				for (GeneralizedID id:GameInfos.techIDs     .getValues()) if (id.hasImageFileName()) imagesToHide.add(id.getImageFileName());
+				for (GeneralizedID id:GameInfos.productIDs  .getValues()) if (id.hasImageFileName()) imagesToHide.add(id.getImageFileName());
+				for (GeneralizedID id:GameInfos.substanceIDs.getValues()) if (id.hasImageFileName()) imagesToHide.add(id.getImageFileName());
+			}
+		}
 		public int[] removeValue(int index, int[] arr) {
 			if (index<0 || index>=arr.length)
 				return arr;
@@ -911,27 +927,27 @@ public class Images {
 		public void setSelectedGridIndex(int selectedIndex) {
 			this.selectedIndex = selectedIndex;
 		}
-
-		private int getIndex(int i) {
-			if (sortedIndexes!=null) return sortedIndexes[i]; 
-			return i;
-		}
-		private int getLength() {
-			if (sortedIndexes!=null) return sortedIndexes.length; 
-			return getInstance().extraImages.names.length;
-		}
 		
 		@Override
 		public Iterator<ImageData> iterator() {
 			return new Iterator<ImageData>() {
 				private int index = 0;
 				@Override public boolean hasNext() {
+					while (index < getLength() && imagesToHide.contains(Images.getInstance().extraImages.names[getIndex(index)])) index++;
 					return index < getLength();
 				}
 				@Override public ImageData next() {
 					String imageName = Images.getInstance().extraImages.names[getIndex(index++)];
 					BufferedImage image = Images.getInstance().extraImages.getImage(imageName,null,64,64);
 					return new ImageData(imageName, imageName, image);
+				}
+				private int getIndex(int i) {
+					if (sortedIndexes!=null) return sortedIndexes[i]; 
+					return i;
+				}
+				private int getLength() {
+					if (sortedIndexes!=null) return sortedIndexes.length; 
+					return Images.getInstance().extraImages.names.length;
 				}
 			};
 		}
@@ -959,9 +975,16 @@ public class Images {
 			revalidate();
 		}
 
-		public void hideUsedImages(boolean hideUsedImages) {
-			// TODO: Auto-generated method stub for hideUsedImages
-			
+		public void hideUsedImages(boolean hideUsedImages, Window window) {
+			this.hideUsedImages = hideUsedImages;
+			SaveViewer.runWithProgressDialog(window, (hideUsedImages ? "Hide" : "Unhide")+" Used Images", pd -> {
+				SaveViewer.runInEventThreadAndWait(()->{
+					pd.setTaskTitle("Update Images to Hide");
+					pd.setIndeterminate(true);
+				});
+				updateImagesToHide();
+				resetImages(pd);
+			});
 		}
 
 		public void markUsedImages(boolean markUsedImages) {
@@ -969,8 +992,8 @@ public class Images {
 			HashSet<String> usedImages = new HashSet<String>();
 			HashSet<String> usedImagesObsolete = new HashSet<String>();
 			if (markUsedImages) {
-				addImageNames(usedImages, usedImagesObsolete, GameInfos.techIDs   );
-				addImageNames(usedImages, usedImagesObsolete, GameInfos.productIDs);
+				addImageNames(usedImages, usedImagesObsolete, GameInfos.techIDs     );
+				addImageNames(usedImages, usedImagesObsolete, GameInfos.productIDs  );
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.substanceIDs);
 			}
 			for (ImageGridPanel.ImageItem il:imageItems)
@@ -1322,12 +1345,11 @@ public class Images {
 			super(parent,title,ModalityType.APPLICATION_MODAL);
 			selected = null;
 			boolean markUsedImages_default = true;
-			boolean hideUsedImages_default = false;
+			boolean hideUsedImages_default = initialValue==null || initialValue.isEmpty();
 			
-			imageGridPanel = new ImageGridPanel(8,initialValue);
+			imageGridPanel = new ImageGridPanel(8,initialValue,hideUsedImages_default);
 			imageGridPanel.addSelectionListener(this::setResult);
 			imageGridPanel.markUsedImages(markUsedImages_default);
-			imageGridPanel.hideUsedImages(hideUsedImages_default);
 			imageScrollPane = new JScrollPane(imageGridPanel);
 			imageScrollPane.setPreferredSize(new Dimension(930,600));
 			imageScrollPane.getVerticalScrollBar().setUnitIncrement(10);
@@ -1336,7 +1358,7 @@ public class Images {
 			JCheckBox chkbxMarkUsedImages;
 			buttonPanel.add(chkbxMarkUsedImages = Gui.createCheckbox("Mark Used Images", markUsedImages_default, imageGridPanel::markUsedImages));
 			buttonPanel.add(Gui.createCheckbox("Hide Used Images", hideUsedImages_default, hideUsedImages -> {
-				imageGridPanel.hideUsedImages(hideUsedImages);
+				imageGridPanel.hideUsedImages(hideUsedImages,parent);
 				chkbxMarkUsedImages.setEnabled(!hideUsedImages);
 			}));
 			buttonPanel.add(Gui.createButton("Choose \"No Image\"",e->setResult("")));
