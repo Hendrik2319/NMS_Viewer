@@ -2808,26 +2808,6 @@ public class FileExport {
 			addModels("CUBEROOM_SPACE",	"^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 			
 			
-//			^M_DOOR
-//			^M_DOOR_H
-//			^M_WALL
-//			^M_WALL_H
-//			^M_WALL_Q
-//			^M_WALL_Q_H
-//			^M_WALLDIAGONAL
-//			^M_ROOF_M
-//			^M_ROOF_C
-//			^M_ROOF_IC
-//			^M_ROOF
-//			^M_FLOOR
-//			^M_FLOOR_Q
-//			^M_DOORWINDOW
-//			^M_WALL_WINDOW
-//			^M_GFLOOR
-//			^M_RAMP
-//			^M_RAMP_H
-//			^M_TRIFLOOR
-//			^M_TRIFLOOR_Q
 			addModels("__SOLITARY_DOOR",			makeVariations("^%s_DOOR", "W","C","M") ); 
 			addModels("__SOLITARY_DOOR_HALF",		makeVariations("^%s_DOOR_H", "W","C","M") ); 
 			addModels("__SOLITARY_WALL",			makeVariations("^%s_WALL", "W","C","M") );
@@ -2848,12 +2828,13 @@ public class FileExport {
 			addModels("__SOLITARY_RAMP_H",			makeVariations("^%s_RAMP_H", "W","C","M") );
 			addModels("__SOLITARY_TRIFLOOR",		makeVariations("^%s_TRIFLOOR", "W","C","M") );
 			addModels("__SOLITARY_TRIFLOOR_Q",		makeVariations("^%s_TRIFLOOR_Q", "W","C","M") );
-//			^M_ARCH
-//			^M_ARCH_H
-//			^M_GDOOR
+			addModels("__SOLITARY_ARCH",			makeVariations("^%s_ARCH", "W","C","M") );
+			addModels("__SOLITARY_ARCH_H",			makeVariations("^%s_ARCH_H", "W","C","M") );
 			
-//			^M_GDOOR_D
-//			^M_SDOOR
+//			addModels("__SOLITARY_GDOOR",			makeVariations("^%s_GDOOR", "W","C","M") ); 
+			
+//			addModels("__SOLITARY_GDOOR_D",			makeVariations("^%s_GDOOR_D", "W","C","M") ); // unknown object
+//			addModels("__SOLITARY_SDOOR",			makeVariations("^%s_SDOOR", "W","C","M") ); // can't be build in game
 			
 			addModels("__SIMPLE_LINE",	"^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE");
 		}
@@ -3264,7 +3245,7 @@ public class FileExport {
 			double border_v       = 0.65;
 			double spacing        = 0.30;
 			
-			// TODO: writeSolitaryWallAndFloorProtos for ^M_ARCH, ^M_ARCH_H, ^M_GDOOR, ^M_TRIFLOOR, ^M_TRIFLOOR_Q
+			// TODO: writeSolitaryWallAndFloorProtos for ^M_ARCH_H, ^M_GDOOR
 			
 			// ##########################################################################################################
 			writeProtoToFile(vrml, "__SOLITARY_ROOF", ()->{
@@ -3286,6 +3267,38 @@ public class FileExport {
 				);
 				
 				LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+			});
+			vrml.println("");
+			
+			// ##########################################################################################################
+			writeProtoToFile(vrml, "__SOLITARY_ARCH", ()->{
+				Vector<Point3D> points = new Vector<>();
+				points.add( new Point3D( wall_height*5/5.0, 0, +wall_length*16/32.0 ) );
+				points.add( new Point3D( 0                , 0, +wall_length*16/32.0 ) );
+				points.add( new Point3D( 0                , 0, +wall_length*13/32.0 ) );
+				points.add( new Point3D( wall_height*4/5.0, 0, +wall_length*11/32.0 ) );
+				points.add( new Point3D( wall_height*4/5.0, 0, -wall_length*11/32.0 ) );
+				points.add( new Point3D( 0                , 0, -wall_length*13/32.0 ) );
+				points.add( new Point3D( 0                , 0, -wall_length*16/32.0 ) );
+				points.add( new Point3D( wall_height*5/5.0, 0, -wall_length*16/32.0 ) );
+				
+				Point3D[] pointArr = points.toArray(new Point3D[points.size()]);
+				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Prism(LineGeometry.Axis.Y, wall_thickness, pointArr), "	", null );
+			});
+			vrml.println("");
+			
+			// ##########################################################################################################
+			writeProtoToFile(vrml, "__SOLITARY_ARCH_H", 12, ()->{
+				Vector<Point3D> points = new Vector<>();
+				points.add( new Point3D( wall_height*4/5.0, 0,  wall_length*8/32.0 ) );
+				points.add( new Point3D( wall_height*4/5.0, 0, -wall_length*3/32.0 ) );
+				points.add( new Point3D( 0                , 0, -wall_length*5/32.0 ) );
+				points.add( new Point3D( 0                , 0, -wall_length*8/32.0 ) );
+				points.add( new Point3D( wall_height*5/5.0, 0, -wall_length*8/32.0 ) );
+				points.add( new Point3D( wall_height*5/5.0, 0,  wall_length*8/32.0 ) );
+				
+				Point3D[] pointArr = points.toArray(new Point3D[points.size()]);
+				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Prism(LineGeometry.Axis.Y, wall_thickness, pointArr), "	", null );
 			});
 			vrml.println("");
 			
