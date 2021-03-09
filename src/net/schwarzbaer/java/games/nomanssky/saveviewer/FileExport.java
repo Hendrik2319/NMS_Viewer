@@ -2808,33 +2808,32 @@ public class FileExport {
 			addModels("CUBEROOM_SPACE",	"^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 			
 			
-			addModels("__SOLITARY_DOOR",			makeVariations("^%s_DOOR", "W","C","M") ); 
-			addModels("__SOLITARY_DOOR_HALF",		makeVariations("^%s_DOOR_H", "W","C","M") ); 
-			addModels("__SOLITARY_WALL",			makeVariations("^%s_WALL", "W","C","M") );
-			addModels("__SOLITARY_WALL_H",			makeVariations("^%s_WALL_H", "W","C","M") );
-			addModels("__SOLITARY_WALL_Q",			makeVariations("^%s_WALL_Q", "W","C","M") );
-			addModels("__SOLITARY_WALL_Q_H",		makeVariations("^%s_WALL_Q_H", "W","C","M") );
-			addModels("__SOLITARY_WALLDIAGONAL",	makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
-			addModels("__SOLITARY_ROOF_M",			makeVariations("^%s_ROOF_M", "W","C","M") );
-			addModels("__SOLITARY_ROOF_C",			makeVariations("^%s_ROOF_C", "W","C","M") );
-			addModels("__SOLITARY_ROOF_IC",			makeVariations("^%s_ROOF_IC", "W","C","M") );
-			addModels("__SOLITARY_ROOF",			makeVariations("^%s_ROOF", "W","C","M") );
-			addModels("__SOLITARY_FLOOR",			makeVariations("^%s_FLOOR", "W","C","M") );
-			addModels("__SOLITARY_FLOOR_Q",			makeVariations("^%s_FLOOR_Q", "W","C","M") );
-			addModels("__SOLITARY_DOORWINDOW",		makeVariations("^%s_DOORWINDOW", "W","C","M") );
-			addModels("__SOLITARY_WALL_WINDOW",		makeVariations("^%s_WALL_WINDOW", "W","C","M") );
-			addModels("__SOLITARY_GLASSFLOOR",		makeVariations("^%s_GFLOOR", "W","C","M") );
-			addModels("__SOLITARY_RAMP",			makeVariations("^%s_RAMP", "W","C","M") );
-			addModels("__SOLITARY_RAMP_H",			makeVariations("^%s_RAMP_H", "W","C","M") );
-			addModels("__SOLITARY_TRIFLOOR",		makeVariations("^%s_TRIFLOOR", "W","C","M") );
-			addModels("__SOLITARY_TRIFLOOR_Q",		makeVariations("^%s_TRIFLOOR_Q", "W","C","M") );
-			addModels("__SOLITARY_ARCH",			makeVariations("^%s_ARCH", "W","C","M") );
-			addModels("__SOLITARY_ARCH_H",			makeVariations("^%s_ARCH_H", "W","C","M") );
+			addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
+			addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
+			addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
+			addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
+			addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
+			addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
+			addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
+			addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
+			addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
+			addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
+			addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
+			addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
+			addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
+			addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
+			addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
+			addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
+			addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
+			addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
+			addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
+			addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
+			addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
+			addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
+			addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
 			
-//			addModels("__SOLITARY_GDOOR",			makeVariations("^%s_GDOOR", "W","C","M") ); 
-			
-//			addModels("__SOLITARY_GDOOR_D",			makeVariations("^%s_GDOOR_D", "W","C","M") ); // unknown object
-//			addModels("__SOLITARY_SDOOR",			makeVariations("^%s_SDOOR", "W","C","M") ); // can't be build in game
+//			addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
+//			addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
 			
 			addModels("__SIMPLE_LINE",	"^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE");
 		}
@@ -3267,6 +3266,31 @@ public class FileExport {
 				);
 				
 				LineGeometry.writeIndexedLineSet(vrml, group, "	", null );
+			});
+			vrml.println("");
+			
+			// ##########################################################################################################
+			writeProtoToFile(vrml, "__SOLITARY_GDOOR", ()->{
+				Vector<Point3D> points = new Vector<>();
+				points.add( new Point3D( wall_height*10/10.0, 0, +wall_length*8/16.0 ) );
+				points.add( new Point3D( 0                  , 0, +wall_length*8/16.0 ) );
+				points.add( new Point3D( 0                  , 0, +wall_length*7/16.0 ) );
+				points.add( new Point3D( wall_height* 9/10.0, 0, +wall_length*7/16.0 ) );
+				points.add( new Point3D( wall_height* 9/10.0, 0, -wall_length*7/16.0 ) );
+				points.add( new Point3D( 0                  , 0, -wall_length*7/16.0 ) );
+				points.add( new Point3D( 0                  , 0, -wall_length*8/16.0 ) );
+				points.add( new Point3D( wall_height*10/10.0, 0, -wall_length*8/16.0 ) );
+				
+				Point3D[] pointArr = points.toArray(new Point3D[points.size()]);
+				LineGeometry.Prism frame = new LineGeometry.Prism(LineGeometry.Axis.Y, wall_thickness, pointArr);
+				
+				LineGeometry.Transform door = new LineGeometry.Transform( new LineGeometry.Box( wall_height*9/10.0, wall_thickness/3, wall_length*14/16.0 ) )
+						.addTranslation(new Point3D(-wall_height*1.5/10,0,0))
+						.addRotation(LineGeometry.Axis.Z, -25)
+						.addTranslation(new Point3D(+wall_height*6.0/10,0,0))
+						;
+				
+				LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.GroupingNode(frame,door), "	", null );
 			});
 			vrml.println("");
 			
