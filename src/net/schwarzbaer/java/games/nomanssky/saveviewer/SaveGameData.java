@@ -457,6 +457,12 @@ public class SaveGameData {
 			position.gps = PolarCoordinates.parse(position.pos);
 			return position;
 		}
+		
+		@Override
+		public String toString() {
+			return String.format("Position [pos=%s, at=%s, up=%s, gps=%s]", pos, at, up, gps);
+		}
+		
 	}
 
 	public static class PolarCoordinates {
@@ -1291,6 +1297,17 @@ public class SaveGameData {
 			return id.getName();
 		}
 
+		public static BuildingObject createDummy(String objectID, Coordinates pos, Coordinates up, Coordinates at) {
+			BuildingObject obj = new BuildingObject((SaveGameData)null);
+			obj.objectID = objectID;
+			obj.position = new Position();
+			obj.position.pos = pos;
+			obj.position.up = up;
+			obj.position.at = at;
+			obj.specialName = "Dummy";
+			return obj;
+		}
+
 		public static BuildingObject createFromBase(PersistentPlayerBase playerbase) {
 			BuildingObject obj = new BuildingObject(playerbase.source);
 			obj.position = new Position();
@@ -1305,7 +1322,7 @@ public class SaveGameData {
 
 		@Override
 		public String toString() {
-			return "BuildingObject("+objectID+")";
+			return String.format("BuildingObject [objectID=%s, position=%s]", objectID, position);
 		}
 	}
 
