@@ -108,6 +108,67 @@ PROTO AxisCross [
 	ROUTE script.setTextOffset TO text_trans.translation
 }
 
+PROTO MessPunkt [
+	field MFString string []
+	field SFVec3f pos 0 0 0
+] {
+	DEF script Script {
+		field SFVec3f pos IS pos
+		field MFString string IS string
+		eventIn SFBool proxy_activated
+		eventIn SFVec3f viewerPos_changed
+		eventOut SFVec3f setScale
+		eventOut SFVec3f setTextOffset
+		eventOut MFString setText
+		url "javascript:
+			// min:   distance:  10   size: 0.04
+			// max:   distance: 300   size: 1.20
+			function proxy_activated ( isActive ) {
+				setScale = new SFVec3f(1.2,1.2,1.2);
+			}
+			function viewerPos_changed ( pos ) {
+				var distance = pos.length();
+				size = distance/10*0.04;
+				if (size < 0.04) size = 0.04;
+				if (size > 1.2) size = 1.2;
+				setScale = new SFVec3f(size,size,size);
+			}
+			function initialize() {
+				setTextOffset = new SFVec3f(0,string.length*3,0);
+				string[string.length] = pos.toString();
+				setText = string;
+			}
+		"
+	}
+	Transform { translation IS pos
+		children [
+			DEF proxy ProximitySensor { size 600 600 600 }
+			DEF trans Transform { scale 1.2 1.2 1.2
+				children [
+					Billboard { axisOfRotation 0 0 0
+						children [
+							DEF text_trans Transform { translation 0 3 0 scale 3 3 3 children [
+								Shape {
+									appearance Appearance { material Material { diffuseColor 1 0 0 } }
+									geometry DEF text_obj Text { fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
+								}
+							]}
+						]
+					}
+					Shape { appearance Appearance { material Material { emissiveColor 1 0 0 } } geometry IndexedLineSet { coord Coordinate { point [ -1  0  0, 1 0 0, 0.5 0.1 0.0 ] } coordIndex [ 0 1 2 ] } }
+					Shape { appearance Appearance { material Material { emissiveColor 0 1 0 } } geometry IndexedLineSet { coord Coordinate { point [  0 -1  0, 0 1 0, 0.0 0.5 0.1 ] } coordIndex [ 0 1 2 ] } }
+					Shape { appearance Appearance { material Material { emissiveColor 0 0 1 } } geometry IndexedLineSet { coord Coordinate { point [  0  0 -1, 0 0 1, 0.1 0.0 0.5 ] } coordIndex [ 0 1 2 ] } }
+				]
+			}
+		]
+	}
+	ROUTE proxy.isActive TO script.proxy_activated
+	ROUTE proxy.position_changed TO script.viewerPos_changed
+	ROUTE script.setScale TO trans.scale
+	ROUTE script.setTextOffset TO text_trans.translation
+	ROUTE script.setText TO text_obj.string
+}
+
 PROTO SingleText [
 	field MFString string []
 	field SFColor textColor 0 0 0.5
@@ -311,45 +372,45 @@ PROTO PLANTERMEGA [
 	}
 }
 
-PROTO CORRIDOR [
-	field MFString string []
-	field SFColor textColor 0 0 0.5
-	field SFColor lineColor 0 0 0
-] {
-	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
-		children Shape {
-			appearance Appearance { material Material { diffuseColor IS textColor } }
-			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-		}
-	}
-	Shape {
-		appearance Appearance { material Material { emissiveColor IS lineColor } }
-		geometry IndexedLineSet {
-			coord Coordinate { point [ 0 1.6 1.9, 0 1.6 -1.9, 0 -1.6 -1.9, 0 -1.6 1.9, 3.3 1.6 1.9, 3.3 1.6 -1.9, 3.3 -1.6 -1.9, 3.3 -1.6 1.9 ] }
-			coordIndex [ 0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7 ]
-		}
-	}
-}
+#PROTO CORRIDOR [
+#	field MFString string []
+#	field SFColor textColor 0 0 0.5
+#	field SFColor lineColor 0 0 0
+#] {
+#	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+#		children Shape {
+#			appearance Appearance { material Material { diffuseColor IS textColor } }
+#			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
+#		}
+#	}
+#	Shape {
+#		appearance Appearance { material Material { emissiveColor IS lineColor } }
+#		geometry IndexedLineSet {
+#			coord Coordinate { point [ 0 1.6 1.9, 0 1.6 -1.9, 0 -1.6 -1.9, 0 -1.6 1.9, 3.3 1.6 1.9, 3.3 1.6 -1.9, 3.3 -1.6 -1.9, 3.3 -1.6 1.9 ] }
+#			coordIndex [ 0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7 ]
+#		}
+#	}
+#}
 
-PROTO CORRIDORX [
-	field MFString string []
-	field SFColor textColor 0 0 0.5
-	field SFColor lineColor 0 0 0
-] {
-	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
-		children Shape {
-			appearance Appearance { material Material { diffuseColor IS textColor } }
-			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-		}
-	}
-	Shape {
-		appearance Appearance { material Material { emissiveColor IS lineColor } }
-		geometry IndexedLineSet {
-			coord Coordinate { point [ 0 1.6 1.9, 0 1.6 1.6, 0 1.9 1.6, 0 1.9 -1.6, 0 1.6 -1.6, 0 1.6 -1.9, 0 -1.6 -1.9, 0 -1.6 -1.6, 0 -1.9 -1.6, 0 -1.9 1.6, 0 -1.6 1.6, 0 -1.6 1.9, 3.3 1.6 1.9, 3.3 1.6 1.6, 3.3 1.9 1.6, 3.3 1.9 -1.6, 3.3 1.6 -1.6, 3.3 1.6 -1.9, 3.3 -1.6 -1.9, 3.3 -1.6 -1.6, 3.3 -1.9 -1.6, 3.3 -1.9 1.6, 3.3 -1.6 1.6, 3.3 -1.6 1.9 ] }
-			coordIndex [ 0 1 2 3 4 5 6 7 8 9 10 11 0 -1 12 13 14 15 16 17 18 19 20 21 22 23 12 -1 0 12 -1 1 13 -1 2 14 -1 3 15 -1 4 16 -1 5 17 -1 6 18 -1 7 19 -1 8 20 -1 9 21 -1 10 22 -1 11 23 -1 ]
-		}
-	}
-}
+#PROTO CORRIDORX [
+#	field MFString string []
+#	field SFColor textColor 0 0 0.5
+#	field SFColor lineColor 0 0 0
+#] {
+#	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
+#		children Shape {
+#			appearance Appearance { material Material { diffuseColor IS textColor } }
+#			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
+#		}
+#	}
+#	Shape {
+#		appearance Appearance { material Material { emissiveColor IS lineColor } }
+#		geometry IndexedLineSet {
+#			coord Coordinate { point [ 0 1.6 1.9, 0 1.6 1.6, 0 1.9 1.6, 0 1.9 -1.6, 0 1.6 -1.6, 0 1.6 -1.9, 0 -1.6 -1.9, 0 -1.6 -1.6, 0 -1.9 -1.6, 0 -1.9 1.6, 0 -1.6 1.6, 0 -1.6 1.9, 3.3 1.6 1.9, 3.3 1.6 1.6, 3.3 1.9 1.6, 3.3 1.9 -1.6, 3.3 1.6 -1.6, 3.3 1.6 -1.9, 3.3 -1.6 -1.9, 3.3 -1.6 -1.6, 3.3 -1.9 -1.6, 3.3 -1.9 1.6, 3.3 -1.6 1.6, 3.3 -1.6 1.9 ] }
+#			coordIndex [ 0 1 2 3 4 5 6 7 8 9 10 11 0 -1 12 13 14 15 16 17 18 19 20 21 22 23 12 -1 0 12 -1 1 13 -1 2 14 -1 3 15 -1 4 16 -1 5 17 -1 6 18 -1 7 19 -1 8 20 -1 9 21 -1 10 22 -1 11 23 -1 ]
+#		}
+#	}
+#}
 
 #PROTO BIOROOM [
 #	field MFString string []
