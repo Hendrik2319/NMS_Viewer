@@ -1898,943 +1898,945 @@ public class FileExport {
 	}
 
 	private static class CubeCombine {
+		
+		private static final double CUBESIZE = 4.0;
+		Stack<BuildingObject> freeObj;
+		Stack<BuildingObject> remainingObj;
+		private Point3D baseAt;
+		private Point3D baseUp;
+		
+		public CubeCombine() {
+			freeObj = new Stack<>();
+			remainingObj = new Stack<>();
+			this.baseAt = null;
+			this.baseUp = null;
 			
-			Stack<BuildingObject> freeObj;
-			Stack<BuildingObject> remainingObj;
-			private Point3D baseAt;
-			private Point3D baseUp;
+			/*
+			Vector<Line> lines = new Vector<>();
+			lines.add(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
+			boolean wasFound = lines.remove(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
+			System.out.println("#########\r\nVector.remove "+(wasFound?"":"DOESN'T ")+"found specified line.\r\n#########");
 			
-			public CubeCombine() {
-				freeObj = new Stack<>();
-				remainingObj = new Stack<>();
-				this.baseAt = null;
-				this.baseUp = null;
-				
-	//			Vector<Line> lines = new Vector<>();
-	//			lines.add(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
-	//			boolean wasFound = lines.remove(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));
-	//			System.out.println("#########\r\nVector.remove "+(wasFound?"":"DOESN'T ")+"found specified line.\r\n#########");
-				
-	//			HashMap<Index3D, Integer> blocks = new HashMap<>();
-	//			Integer prev;
-	//			prev = blocks.put(new Index3D(0,1,2), 3); System.out.println("blocks.put(new Index3D(0,1,2), 3) -> "+prev);
-	//			prev = blocks.put(new Index3D(0,1,2), 4); System.out.println("blocks.put(new Index3D(0,1,2), 4) -> "+prev);
-	//			prev = blocks.get(new Index3D(0,1,2));    System.out.println("blocks.get(new Index3D(0,1,2))    -> "+prev);
-	//			
-	//			System.out.println("new Index3D(0,1,2) == new Index3D(0,1,2)       -> "+( new Index3D(0,1,2) == new Index3D(0,1,2) ));
-	//			System.out.println("new Index3D(0,1,2).equals(new Index3D(0,1,2))  -> "+( new Index3D(0,1,2).equals(new Index3D(0,1,2)) ));
-				
-	//			HashMap<Line, Integer> blocks = new HashMap<>();
-	//			Integer prev;
-	//			prev = blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 3); System.out.println("blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 3) -> "+prev);
-	//			prev = blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 4); System.out.println("blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 4) -> "+prev);
-	//			prev = blocks.put(new Line(new Index3D(1,2,3),new Index3D(4,5,6)), 5); System.out.println("blocks.put(new Line(new Index3D(1,2,3),new Index3D(4,5,6)), 5) -> "+prev);
-	//			prev = blocks.get(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));    System.out.println("blocks.get(new Line(new Index3D(4,5,6),new Index3D(1,2,3)))    -> "+prev);
-			}
+			HashMap<Index3D, Integer> blocks = new HashMap<>();
+			Integer prev;
+			prev = blocks.put(new Index3D(0,1,2), 3); System.out.println("blocks.put(new Index3D(0,1,2), 3) -> "+prev);
+			prev = blocks.put(new Index3D(0,1,2), 4); System.out.println("blocks.put(new Index3D(0,1,2), 4) -> "+prev);
+			prev = blocks.get(new Index3D(0,1,2));    System.out.println("blocks.get(new Index3D(0,1,2))    -> "+prev);
 			
-			public void setBaseOrientation(Point3D at, Point3D up) {
-				this.baseAt = at;
-				this.baseUp = up;
+			System.out.println("new Index3D(0,1,2) == new Index3D(0,1,2)       -> "+( new Index3D(0,1,2) == new Index3D(0,1,2) ));
+			System.out.println("new Index3D(0,1,2).equals(new Index3D(0,1,2))  -> "+( new Index3D(0,1,2).equals(new Index3D(0,1,2)) ));
+			
+			HashMap<Line, Integer> blocks = new HashMap<>();
+			Integer prev;
+			prev = blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 3); System.out.println("blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 3) -> "+prev);
+			prev = blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 4); System.out.println("blocks.put(new Line(new Index3D(4,5,6),new Index3D(1,2,3)), 4) -> "+prev);
+			prev = blocks.put(new Line(new Index3D(1,2,3),new Index3D(4,5,6)), 5); System.out.println("blocks.put(new Line(new Index3D(1,2,3),new Index3D(4,5,6)), 5) -> "+prev);
+			prev = blocks.get(new Line(new Index3D(4,5,6),new Index3D(1,2,3)));    System.out.println("blocks.get(new Line(new Index3D(4,5,6),new Index3D(1,2,3)))    -> "+prev);
+			*/
+		}
+		
+		public void setBaseOrientation(Point3D at, Point3D up) {
+			this.baseAt = at;
+			this.baseUp = up;
+		}
+
+		public boolean add(BuildingObject obj) {
+			if (obj==null) return false;
+			switch (obj.objectID) {
+			case "^CUBEROOM": case "^CUBEGLASS": case "^CUBEROOMCURVED": case "^CURVEDCUBEROOF":
+				obj = fixUpsideDown(obj);
+				freeObj.add(obj);
+				return true;
+			default:
+				return false;
 			}
-	
-			public boolean add(BuildingObject obj) {
-				if (obj==null) return false;
-				switch (obj.objectID) {
-				case "^CUBEROOM": case "^CUBEGLASS": case "^CUBEROOMCURVED": case "^CURVEDCUBEROOF":
-					obj = fixUpsideDown(obj);
-					freeObj.add(obj);
-					return true;
-				default:
-					return false;
-				}
+		}
+
+		public boolean isEmpty() {
+			return freeObj.isEmpty();
+		}
+
+		private BuildingObject fixUpsideDown(BuildingObject obj) {
+			if (baseAt==null || baseUp==null) return obj;
+			if (obj==null) return obj;
+			if (obj.position==null) return obj;
+			if (obj.position.pos==null) return obj;
+			
+			Point3D at = Point3D.normalizeOrNull(obj.position.at);
+			Point3D up = Point3D.normalizeOrNull(obj.position.up);
+			if (at==null || up==null) return obj;
+			
+			double val = baseUp.scalarProd(up);
+			if (Math.abs(val+1)>Neighborhood.ANGLE_TOLERANCE) return obj;
+			
+			BuildingObject newObj = new BuildingObject(obj);
+			newObj.position.pos.set(newObj.position.pos.add(up.mul(CUBESIZE)));
+			newObj.position.up .set(up.mul(-1));
+			
+			if (newObj.objectID.equals("^CUBEROOMCURVED"))
+				newObj.position.at.set(up.mul(-1).crossProd(at));
+			
+			return newObj;
+		}
+
+		private static boolean isCube(Neighbor nb) {
+			if (nb==null) return false;
+			if (nb.type==Neighbor.Type.Cube) return true;
+			if (nb.type==Neighbor.Type.GlassCube) return true;
+			return false;
+		}
+
+		private static boolean isCurvedCube(Neighbor nb, Orientation... allowedOrientations) {
+			if (nb==null) return false;
+			if (nb.type!=Neighbor.Type.CurvedCube) return false;
+			for (Orientation o:allowedOrientations)
+				if (nb.o==o) return true;
+			return false;
+		}
+
+		private static boolean isCurvedRoof(Neighbor nb, Orientation... allowedOrientations) {
+			if (nb==null) return false;
+			if (nb.type!=Neighbor.Type.CurvedRoof) return false;
+			for (Orientation o:allowedOrientations)
+				if (nb.o==o) return true;
+			return false;
+		}
+
+		private static Neighbor get(Neighbor[][][] mat, Index3D i) {
+			return get(mat, i.iX, i.iY, i.iZ);
+		}
+
+		private static Neighbor get(Neighbor[][][] mat, int x, int y, int z) {
+			if (x<0) return null;
+			if (y<0) return null;
+			if (z<0) return null;
+			if (x>=mat.length) return null;
+			if (y>=mat[x].length) return null;
+			if (z>=mat[x][y].length) return null;
+			return mat[x][y][z];
+		}
+
+		public BuildingObject[] getRemainingObjects() {
+			remainingObj.addAll(freeObj);
+			freeObj.clear();
+			return remainingObj.toArray(new BuildingObject[0]);
+		}
+
+		public void writeModel(PrintWriter vrml) {
+			int i=0;
+			while (!freeObj.isEmpty()) {
+				BuildingObject obj = freeObj.pop();
+				Neighborhood neighborhood = new Neighborhood(obj,++i);
+				neighborhood.addNeighbors(freeObj);
+				//if (neighborhood.hasOnlyStartObj())
+				//	remainingObj.push(obj);
+				//else
+					neighborhood.writeModel(vrml);
 			}
-	
-			public boolean isEmpty() {
-				return freeObj.isEmpty();
+		}
+		
+		private static class Neighbor {
+			enum Type { Cube, GlassCube, CurvedCube, CurvedRoof }
+			final Index3D i;
+			final Orientation o;
+			final BuildingObject obj;
+			final Type type;
+		
+			public Neighbor(Index3D i, Orientation o, BuildingObject obj) {
+				this.i = i;
+				this.o = o;
+				this.obj = obj;
+				if (obj==null) type=null;
+				else
+					switch(obj.objectID) {
+					case "^CUBEROOM"      : type=Type.Cube; break;
+					case "^CUBEGLASS"     : type=Type.GlassCube; break;
+					case "^CUBEROOMCURVED": type=Type.CurvedCube; break;
+					case "^CURVEDCUBEROOF": type=Type.CurvedRoof; break;
+					default: type=null;
+					}
 			}
 
-			private BuildingObject fixUpsideDown(BuildingObject obj) {
-				if (baseAt==null || baseUp==null) return obj;
-				if (obj==null) return obj;
-				if (obj.position==null) return obj;
-				if (obj.position.pos==null) return obj;
+			@Override
+			public String toString() {
+				return "Neighbor("+i+","+o+","+type+","+obj+")";
+			}
+		}
+
+		private static class Neighborhood {
+			private static final double ANGLE_TOLERANCE = 0.0001;
+			private static final double POS_TOLERANCE = 0.01;
+			
+			private HashMap<Index3D, Neighbor> blocks;
+			private Point3D anchorPos;
+			private Point3D anchorXup;
+			private Point3D anchorYat;
+			private Point3D anchorZ;
+			private int neighborhoodIndex;
+			
+			public Neighborhood(BuildingObject firstObj, int neighborhoodIndex) {
+				this.neighborhoodIndex = neighborhoodIndex;
+				anchorPos = null;
+				anchorXup = null;
+				anchorYat = null;
+				anchorZ   = null;
+				if (firstObj.position!=null) {
+					anchorPos = firstObj.position.pos;
+					anchorXup = Point3D.normalizeOrNull(firstObj.position.up);
+					anchorYat = Point3D.normalizeOrNull(firstObj.position.at);
+					if (anchorXup!=null && anchorYat!=null) anchorZ = anchorXup.crossProd(anchorYat).normalize();
+				}
+				Index3D origin = new Index3D(0,0,0);
+				blocks = new HashMap<Index3D,Neighbor>();
+				blocks.put(origin, new Neighbor(origin, Orientation.PosY, firstObj));
+			}
+			
+			private Neighbor getNeighborRelation(Position position, BuildingObject obj) {
+				if (position==null) return null;
+				if (position.pos==null) return null;
+				if (position.at==null || position.at.isZero()) return null;
+				if (position.up==null || position.up.isZero()) return null;
 				
-				Point3D at = Point3D.normalizeOrNull(obj.position.at);
-				Point3D up = Point3D.normalizeOrNull(obj.position.up);
-				if (at==null || up==null) return obj;
+				double valUp = anchorXup.scalarProd(position.up.normalize());
+				if (Math.abs(valUp-1.0)>ANGLE_TOLERANCE) return null;
 				
-				double val = baseUp.scalarProd(up);
-				if (Math.abs(val+1)>Neighborhood.ANGLE_TOLERANCE) return obj;
+				Orientation orientation = getOrientation(position);
+				if (orientation==null) return null;
 				
-				BuildingObject newObj = new BuildingObject(obj);
-				newObj.position.pos.set(newObj.position.pos.add(up.mul(Neighborhood.CUBESIZE)));
-				newObj.position.up .set(up.mul(-1));
+				Point3D indexVec = position.pos.add(anchorPos.mul(-1));
+				double iX_d=anchorXup.scalarProd(indexVec)/CUBESIZE; int iX=(int)Math.round(iX_d); double deltaX=Math.abs(iX_d-iX);
+				double iY_d=anchorYat.scalarProd(indexVec)/CUBESIZE; int iY=(int)Math.round(iY_d); double deltaY=Math.abs(iY_d-iY);
+				double iZ_d=anchorZ  .scalarProd(indexVec)/CUBESIZE; int iZ=(int)Math.round(iZ_d); double deltaZ=Math.abs(iZ_d-iZ);
 				
-				if (newObj.objectID.equals("^CUBEROOMCURVED"))
-					newObj.position.at.set(up.mul(-1).crossProd(at));
+				//System.out.printf(Locale.ENGLISH,"Neighborhood %d:   At:%1.8f   Up:%11.8f   iX:%1.8f   iY:%1.8f   iZ:%1.8f\r\n", neighborhoodIndex, valAt, valUp, deltaX, deltaY, deltaZ);
 				
-				return newObj;
+				if (deltaX>POS_TOLERANCE) return null;
+				if (deltaY>POS_TOLERANCE) return null;
+				if (deltaZ>POS_TOLERANCE) return null;
+				
+				return new Neighbor(new Index3D(iX,iY,iZ), orientation, obj);
 			}
-	
-			private static boolean isCube(Neighbor nb) {
-				if (nb==null) return false;
-				if (nb.type==Neighbor.Type.Cube) return true;
-				if (nb.type==Neighbor.Type.GlassCube) return true;
-				return false;
+
+			private Orientation getOrientation(Position position) {
+				Point3D at = position.at.normalize();
+				double valAt = anchorYat.scalarProd(at);
+				if (Math.abs(valAt-1)<ANGLE_TOLERANCE) return Orientation.PosY;
+				if (Math.abs(valAt+1)<ANGLE_TOLERANCE) return Orientation.NegY;
+				
+				if (Math.abs(valAt)>ANGLE_TOLERANCE) return null;
+				
+				if (anchorXup.scalarProd(anchorYat.crossProd(at))>0) return Orientation.PosZ;
+				return Orientation.NegZ;
 			}
-	
-			private static boolean isCurvedCube(Neighbor nb, Orientation... allowedOrientations) {
-				if (nb==null) return false;
-				if (nb.type!=Neighbor.Type.CurvedCube) return false;
-				for (Orientation o:allowedOrientations)
-					if (nb.o==o) return true;
-				return false;
+
+			public void addNeighbors(Stack<BuildingObject> freeObj) {
+				if (anchorPos==null) return;
+				if (anchorXup==null) return;
+				if (anchorYat==null) return;
+				if (anchorZ  ==null) return;
+				
+				for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
+					Neighbor neighbor = getNeighborRelation(obj.position,obj);
+					if (neighbor==null) continue;
+					blocks.put(neighbor.i,neighbor);
+					freeObj.remove(obj);
+				}
 			}
-	
-			private static boolean isCurvedRoof(Neighbor nb, Orientation... allowedOrientations) {
-				if (nb==null) return false;
-				if (nb.type!=Neighbor.Type.CurvedRoof) return false;
-				for (Orientation o:allowedOrientations)
-					if (nb.o==o) return true;
-				return false;
+			
+			public Neighbor[][][] toMatrix(Index3D minCorner, Index3D size) {
+				Index3D min=null;
+				Index3D max=null;
+				for (Index3D index:blocks.keySet()) {
+					if (min==null) min=new Index3D(index); else min.min(index);
+					if (max==null) max=new Index3D(index); else max.max(index);
+				}
+				
+				minCorner.set(min);
+				size.iX = max.iX-min.iX+1;
+				size.iY = max.iY-min.iY+1;
+				size.iZ = max.iZ-min.iZ+1;
+				
+				Neighbor[][][] mat = new Neighbor[size.iX][size.iY][size.iZ];
+				for (int x=0; x<size.iX; ++x)
+					for (int y=0; y<size.iY; ++y)
+						Arrays.fill(mat[x][y],null);
+				
+				for (Index3D index:blocks.keySet())
+					mat[index.iX-min.iX][index.iY-min.iY][index.iZ-min.iZ] = blocks.get(index);
+				
+				return mat;
 			}
-	
-			private static Neighbor get(Neighbor[][][] mat, Index3D i) {
-				return get(mat, i.iX, i.iY, i.iZ);
-			}
-	
-			private static Neighbor get(Neighbor[][][] mat, int x, int y, int z) {
-				if (x<0) return null;
-				if (y<0) return null;
-				if (z<0) return null;
-				if (x>=mat.length) return null;
-				if (y>=mat[x].length) return null;
-				if (z>=mat[x][y].length) return null;
-				return mat[x][y][z];
-			}
-	
-			public BuildingObject[] getRemainingObjects() {
-				remainingObj.addAll(freeObj);
-				freeObj.clear();
-				return remainingObj.toArray(new BuildingObject[0]);
-			}
-	
-			public void writeModel(PrintWriter vrml) {
+
+			@SuppressWarnings("unused")
+			public void writeModel_simple(PrintWriter vrml) {
+				Point3D color = new Point3D(1,0,0);
 				int i=0;
-				while (!freeObj.isEmpty()) {
-					BuildingObject obj = freeObj.pop();
-					Neighborhood neighborhood = new Neighborhood(obj,++i);
-					neighborhood.addNeighbors(freeObj);
-	//				if (neighborhood.hasOnlyStartObj())
-	//					remainingObj.push(obj);
-	//				else
-						neighborhood.writeModel(vrml);
-				}
+				for (Neighbor n:blocks.values())
+					VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), null, n.obj.position.pos, n.obj.position.at, n.obj.position.up, color);
+			}
+
+			public void writeModel(PrintWriter vrml) {
+				Index3D minCorner = new Index3D(0,0,0);
+				Index3D size = new Index3D(0,0,0);
+				Neighbor[][][] mat = toMatrix(minCorner,size);
+				new Geometry(this,minCorner,size,mat).writeModel(vrml);
+			}
+
+			private Point3D computePoint(double iX, double iY, double iZ) {
+				return anchorPos
+						.add(anchorXup.mul((iX    )*CUBESIZE))
+						.add(anchorYat.mul((iY-0.5)*CUBESIZE))
+						.add(anchorZ  .mul((iZ-0.5)*CUBESIZE));
 			}
 			
-			private static class Neighbor {
-				enum Type { Cube, GlassCube, CurvedCube, CurvedRoof }
-				final Index3D i;
-				final Orientation o;
-				final BuildingObject obj;
-				final Type type;
+		}
+
+		private static class Geometry {
 			
-				public Neighbor(Index3D i, Orientation o, BuildingObject obj) {
-					this.i = i;
-					this.o = o;
-					this.obj = obj;
-					if (obj==null) type=null;
-					else
-						switch(obj.objectID) {
-						case "^CUBEROOM"      : type=Type.Cube; break;
-						case "^CUBEGLASS"     : type=Type.GlassCube; break;
-						case "^CUBEROOMCURVED": type=Type.CurvedCube; break;
-						case "^CURVEDCUBEROOF": type=Type.CurvedRoof; break;
-						default: type=null;
-						}
-				}
-	
-				@Override
-				public String toString() {
-					return "Neighbor("+i+","+o+","+type+","+obj+")";
+			private static final Orientation[] OArrAll = Orientation.values();
+			
+			private static final Index3D ind111 = new Index3D(1,1,1);
+			private static final Index3D ind110 = new Index3D(1,1,0);
+			private static final Index3D ind101 = new Index3D(1,0,1);
+			private static final Index3D ind100 = new Index3D(1,0,0);
+			private static final Index3D ind011 = new Index3D(0,1,1);
+			private static final Index3D ind010 = new Index3D(0,1,0);
+			private static final Index3D ind001 = new Index3D(0,0,1);
+			private static final Index3D ind000 = new Index3D(0,0,0);
+			
+			private Neighborhood neighborhood;
+			private Index3D minCorner;
+			private Index3D size;
+			private Neighbor[][][] mat;
+			
+			private HashSet<Line> lines;
+			private Vector<PolyLine> extraLines;
+		
+			private CubeGeometry cubeGeometry;
+			private GlassCubeGeometry glassCubeGeometry;
+			private CurvedCubeGeometry curvedCubeGeometry;
+			private CurvedRoofGeometry curvedRoofGeometry;
+		
+			public Geometry(Neighborhood neighborhood, Index3D minCorner, Index3D size, Neighbor[][][] mat) {
+				this.neighborhood = neighborhood;
+				this.minCorner = minCorner;
+				this.size = size;
+				this.mat = mat;
+				this.lines = new HashSet<>();
+				this.extraLines = new Vector<>();
+				
+				cubeGeometry = new CubeGeometry();
+				glassCubeGeometry = new GlassCubeGeometry();
+				curvedCubeGeometry = new CurvedCubeGeometry();
+				curvedRoofGeometry = new CurvedRoofGeometry();
+			}
+		
+			public void writeModel(PrintWriter vrml) {
+				createLines();
+				optimizeLines();
+				
+				StringBuilder pointsStrBase, indexesStrBase;
+				createBaseModel(pointsStrBase = new StringBuilder(), 0, indexesStrBase = new StringBuilder());
+				if (pointsStrBase.length()>0 || indexesStrBase.length()>0)
+					VRMLoutput.writeIndexedLineSet(vrml, "", pointsStrBase, indexesStrBase, Color.BLACK);
+				
+				StringBuilder pointsStrW, indexesStrW;
+				createWindows(pointsStrW = new StringBuilder(), 0, indexesStrW = new StringBuilder());
+				if (pointsStrW.length()>0 || indexesStrW.length()>0)
+					VRMLoutput.writeIndexedLineSet(vrml, "", pointsStrW, indexesStrW, COLOR_WINDOW);
+			}
+		
+			private void setLine(boolean set, Line line) {
+				if (line!=null) {
+					if (set) lines.add(line);
+					else     lines.remove(line);
 				}
 			}
-	
-			private static class Neighborhood {
-				private static final double ANGLE_TOLERANCE = 0.0001;
-				private static final double CUBESIZE = 4.0;
-				private static final double POS_TOLERANCE = 0.01;
+		
+			private Line popLine() {
+				Line line = getLine();
+				lines.remove(line);
+				return line;
+			}
+		
+			private Line getLine() {
+				Iterator<Line> it = lines.iterator();
+				if (it.hasNext()) return it.next();
+				return null;
+			}
+		
+			private void createLines() {
+				cubeGeometry      .createLines();
+				curvedCubeGeometry.modifyLines();
+				curvedRoofGeometry.modifyLines();
+			}
+		
+			private void optimizeLines() {
+				Vector<Line> optimizedLines = new Vector<>();
 				
-				private HashMap<Index3D, Neighbor> blocks;
-				private Point3D anchorPos;
-				private Point3D anchorXup;
-				private Point3D anchorYat;
-				private Point3D anchorZ;
-				private int neighborhoodIndex;
+				while (!lines.isEmpty()) {
+					Line line = popLine();
+					Index3D vec12 = line.p2.sub(line.p1);
+					while (lines.remove(new Line(line.p2,line.p2.add(vec12)))) line.p2 = line.p2.add(vec12);
+					while (lines.remove(new Line(line.p1,line.p1.sub(vec12)))) line.p1 = line.p1.sub(vec12);
+					optimizedLines.add(line);
+				}
 				
-				public Neighborhood(BuildingObject firstObj, int neighborhoodIndex) {
-					this.neighborhoodIndex = neighborhoodIndex;
-					anchorPos = null;
-					anchorXup = null;
-					anchorYat = null;
-					anchorZ   = null;
-					if (firstObj.position!=null) {
-						anchorPos = firstObj.position.pos;
-						anchorXup = Point3D.normalizeOrNull(firstObj.position.up);
-						anchorYat = Point3D.normalizeOrNull(firstObj.position.at);
-						if (anchorXup!=null && anchorYat!=null) anchorZ = anchorXup.crossProd(anchorYat).normalize();
+				lines.addAll(optimizedLines);
+			}
+		
+			private Point3D computePoint(Index3D i) { return neighborhood.computePoint(i.iX,i.iY,i.iZ); }
+			private Point3D computePoint(Point3D i) { return neighborhood.computePoint(i.x,i.y,i.z); }
+		
+			private int addPoint(StringBuilder pointsStr, int counter, int[][][] indexes, Index3D i) {
+				if (indexes[i.iX][i.iY][i.iZ]==-1) {
+					indexes[i.iX][i.iY][i.iZ] = counter++;
+					Point3D p = computePoint(minCorner.add(i));
+					addPoint(pointsStr, p);
+				}
+				return counter;
+			}
+		
+			private void addPoint(StringBuilder pointsStr, Point3D p) {
+				pointsStr.append((pointsStr.length()==0?"":", ")+p.toString("%1.2f",false));
+			}
+		
+			private int createBaseModel(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
+				int[][][] indexes = new int[size.iX+1][size.iY+1][size.iZ+1];
+				for (int x=0; x<=size.iX; ++x)
+					for (int y=0; y<=size.iY; ++y)
+						Arrays.fill(indexes[x][y],-1);
+				
+				for (Line line:lines) {
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, line.p1);
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, line.p2);
+					int ip1 = indexes[line.p1.iX][line.p1.iY][line.p1.iZ];
+					int ip2 = indexes[line.p2.iX][line.p2.iY][line.p2.iZ];
+					indexesStr.append(ip1+" "+ip2+" -1 ");
+				}
+				
+				for (PolyLine pline:extraLines) {
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, pline.pStart);
+					pointCounter = addPoint(pointsStr, pointCounter, indexes, pline.pEnd);
+					int ipStart = indexes[pline.pStart.iX][pline.pStart.iY][pline.pStart.iZ];
+					int ipEnd   = indexes[pline.pEnd.iX][pline.pEnd.iY][pline.pEnd.iZ];
+					
+					indexesStr.append(ipStart+" ");
+					for (Point3D p:pline.points) {
+						addPoint(pointsStr, computePoint(p.add(minCorner.toPoint3D())));
+						indexesStr.append((pointCounter++)+" ");
 					}
-					Index3D origin = new Index3D(0,0,0);
-					blocks = new HashMap<Index3D,Neighbor>();
-					blocks.put(origin, new Neighbor(origin, Orientation.PosY, firstObj));
+					indexesStr.append(ipEnd+" -1 ");
 				}
 				
-				private Neighbor getNeighborRelation(Position position, BuildingObject obj) {
-					if (position==null) return null;
-					if (position.pos==null) return null;
-					if (position.at==null || position.at.isZero()) return null;
-					if (position.up==null || position.up.isZero()) return null;
-					
-					double valUp = anchorXup.scalarProd(position.up.normalize());
-					if (Math.abs(valUp-1.0)>ANGLE_TOLERANCE) return null;
-					
-					Orientation orientation = getOrientation(position);
-					if (orientation==null) return null;
-					
-					Point3D indexVec = position.pos.add(anchorPos.mul(-1));
-					double iX_d=anchorXup.scalarProd(indexVec)/CUBESIZE; int iX=(int)Math.round(iX_d); double deltaX=Math.abs(iX_d-iX);
-					double iY_d=anchorYat.scalarProd(indexVec)/CUBESIZE; int iY=(int)Math.round(iY_d); double deltaY=Math.abs(iY_d-iY);
-					double iZ_d=anchorZ  .scalarProd(indexVec)/CUBESIZE; int iZ=(int)Math.round(iZ_d); double deltaZ=Math.abs(iZ_d-iZ);
-					
-					//System.out.printf(Locale.ENGLISH,"Neighborhood %d:   At:%1.8f   Up:%11.8f   iX:%1.8f   iY:%1.8f   iZ:%1.8f\r\n", neighborhoodIndex, valAt, valUp, deltaX, deltaY, deltaZ);
-					
-					if (deltaX>POS_TOLERANCE) return null;
-					if (deltaY>POS_TOLERANCE) return null;
-					if (deltaZ>POS_TOLERANCE) return null;
-					
-					return new Neighbor(new Index3D(iX,iY,iZ), orientation, obj);
-				}
-	
-				private Orientation getOrientation(Position position) {
-					Point3D at = position.at.normalize();
-					double valAt = anchorYat.scalarProd(at);
-					if (Math.abs(valAt-1)<ANGLE_TOLERANCE) return Orientation.PosY;
-					if (Math.abs(valAt+1)<ANGLE_TOLERANCE) return Orientation.NegY;
-					
-					if (Math.abs(valAt)>ANGLE_TOLERANCE) return null;
-					
-					if (anchorXup.scalarProd(anchorYat.crossProd(at))>0) return Orientation.PosZ;
-					return Orientation.NegZ;
-				}
-	
-				public void addNeighbors(Stack<BuildingObject> freeObj) {
-					if (anchorPos==null) return;
-					if (anchorXup==null) return;
-					if (anchorYat==null) return;
-					if (anchorZ  ==null) return;
-					
-					for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
-						Neighbor neighbor = getNeighborRelation(obj.position,obj);
-						if (neighbor==null) continue;
-						blocks.put(neighbor.i,neighbor);
-						freeObj.remove(obj);
-					}
-				}
-				
-				public Neighbor[][][] toMatrix(Index3D minCorner, Index3D size) {
-					Index3D min=null;
-					Index3D max=null;
-					for (Index3D index:blocks.keySet()) {
-						if (min==null) min=new Index3D(index); else min.min(index);
-						if (max==null) max=new Index3D(index); else max.max(index);
-					}
-					
-					minCorner.set(min);
-					size.iX = max.iX-min.iX+1;
-					size.iY = max.iY-min.iY+1;
-					size.iZ = max.iZ-min.iZ+1;
-					
-					Neighbor[][][] mat = new Neighbor[size.iX][size.iY][size.iZ];
+				return pointCounter;
+			}
+		
+			private void createWindows(StringBuilder pointsStrW, int pointCounterW, StringBuilder indexesStrW) {
+				pointCounterW = glassCubeGeometry .createWindows(pointsStrW, pointCounterW, indexesStrW);
+				pointCounterW = curvedRoofGeometry.createWindows(pointsStrW, pointCounterW, indexesStrW);
+			}
+		
+			private class CubeGeometry {
+		
+				private void createLines() {
+					Index3D i = new Index3D(0,0,0);
 					for (int x=0; x<size.iX; ++x)
 						for (int y=0; y<size.iY; ++y)
-							Arrays.fill(mat[x][y],null);
-					
-					for (Index3D index:blocks.keySet())
-						mat[index.iX-min.iX][index.iY-min.iY][index.iZ-min.iZ] = blocks.get(index);
-					
-					return mat;
-				}
-	
-				@SuppressWarnings("unused")
-				public void writeModel_simple(PrintWriter vrml) {
-					Point3D color = new Point3D(1,0,0);
-					int i=0;
-					for (Neighbor n:blocks.values())
-						VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), null, n.obj.position.pos, n.obj.position.at, n.obj.position.up, color);
-				}
-	
-				public void writeModel(PrintWriter vrml) {
-					Index3D minCorner = new Index3D(0,0,0);
-					Index3D size = new Index3D(0,0,0);
-					Neighbor[][][] mat = toMatrix(minCorner,size);
-					new Geometry(this,minCorner,size,mat).writeModel(vrml);
-				}
-	
-				private Point3D computePoint(double iX, double iY, double iZ) {
-					return anchorPos
-							.add(anchorXup.mul((iX    )*CUBESIZE))
-							.add(anchorYat.mul((iY-0.5)*CUBESIZE))
-							.add(anchorZ  .mul((iZ-0.5)*CUBESIZE));
+							for (int z=0; z<size.iZ; ++z)
+								if (isCube(get(mat,x,y,z))) {
+									i.set(x,y,z);
+									if (!isCube(get(mat,x+1,y,z))) lines.add(new Line(i.add(ind111), i.add(ind110)));
+									if (!isCube(get(mat,x,y+1,z))) lines.add(new Line(i.add(ind011), i.add(ind010)));
+									if (!isCube(get(mat,x-1,y,z))) lines.add(new Line(i.add(ind001), i.add(ind000)));
+									if (!isCube(get(mat,x,y-1,z))) lines.add(new Line(i.add(ind101), i.add(ind100)));
+									
+									if (!isCube(get(mat,x+1,y,z))) lines.add(new Line(i.add(ind110), i.add(ind100)));
+									if (!isCube(get(mat,x,y,z+1))) lines.add(new Line(i.add(ind111), i.add(ind101)));
+									if (!isCube(get(mat,x-1,y,z))) lines.add(new Line(i.add(ind011), i.add(ind001)));
+									if (!isCube(get(mat,x,y,z-1))) lines.add(new Line(i.add(ind010), i.add(ind000)));
+									
+									if (!isCube(get(mat,x,y+1,z))) lines.add(new Line(i.add(ind111), i.add(ind011)));
+									if (!isCube(get(mat,x,y,z+1))) lines.add(new Line(i.add(ind101), i.add(ind001)));
+									if (!isCube(get(mat,x,y-1,z))) lines.add(new Line(i.add(ind100), i.add(ind000)));
+									if (!isCube(get(mat,x,y,z-1))) lines.add(new Line(i.add(ind110), i.add(ind010)));
+									
+									Neighbor nb = get(mat,x-1,y,z);
+									if (!isCube(nb) && !isCurvedCube(nb,OArrAll) && !isCurvedRoof(nb)) {
+										lines.add(new Line(i.add(ind001), i.add(ind010)));
+										lines.add(new Line(i.add(ind000), i.add(ind011)));
+									}
+								}
 				}
 				
 			}
-	
-			private static class Geometry {
-				
-				private static final Orientation[] OArrAll = Orientation.values();
-				
-				private static final Index3D ind111 = new Index3D(1,1,1);
-				private static final Index3D ind110 = new Index3D(1,1,0);
-				private static final Index3D ind101 = new Index3D(1,0,1);
-				private static final Index3D ind100 = new Index3D(1,0,0);
-				private static final Index3D ind011 = new Index3D(0,1,1);
-				private static final Index3D ind010 = new Index3D(0,1,0);
-				private static final Index3D ind001 = new Index3D(0,0,1);
-				private static final Index3D ind000 = new Index3D(0,0,0);
-				
-				private Neighborhood neighborhood;
-				private Index3D minCorner;
-				private Index3D size;
-				private Neighbor[][][] mat;
-				
-				private HashSet<Line> lines;
-				private Vector<PolyLine> extraLines;
 			
-				private CubeGeometry cubeGeometry;
-				private GlassCubeGeometry glassCubeGeometry;
-				private CurvedCubeGeometry curvedCubeGeometry;
-				private CurvedRoofGeometry curvedRoofGeometry;
+			private class GlassCubeGeometry {
 			
-				public Geometry(Neighborhood neighborhood, Index3D minCorner, Index3D size, Neighbor[][][] mat) {
-					this.neighborhood = neighborhood;
-					this.minCorner = minCorner;
-					this.size = size;
-					this.mat = mat;
-					this.lines = new HashSet<>();
-					this.extraLines = new Vector<>();
-					
-					cubeGeometry = new CubeGeometry();
-					glassCubeGeometry = new GlassCubeGeometry();
-					curvedCubeGeometry = new CurvedCubeGeometry();
-					curvedRoofGeometry = new CurvedRoofGeometry();
-				}
-			
-				public void writeModel(PrintWriter vrml) {
-					createLines();
-					optimizeLines();
-					
-					StringBuilder pointsStrBase, indexesStrBase;
-					createBaseModel(pointsStrBase = new StringBuilder(), 0, indexesStrBase = new StringBuilder());
-					if (pointsStrBase.length()>0 || indexesStrBase.length()>0)
-						VRMLoutput.writeIndexedLineSet(vrml, "", pointsStrBase, indexesStrBase, Color.BLACK);
-					
-					StringBuilder pointsStrW, indexesStrW;
-					createWindows(pointsStrW = new StringBuilder(), 0, indexesStrW = new StringBuilder());
-					if (pointsStrW.length()>0 || indexesStrW.length()>0)
-						VRMLoutput.writeIndexedLineSet(vrml, "", pointsStrW, indexesStrW, COLOR_WINDOW);
-				}
-			
-				private void setLine(boolean set, Line line) {
-					if (line!=null) {
-						if (set) lines.add(line);
-						else     lines.remove(line);
-					}
-				}
-			
-				private Line popLine() {
-					Line line = getLine();
-					lines.remove(line);
-					return line;
-				}
-			
-				private Line getLine() {
-					Iterator<Line> it = lines.iterator();
-					if (it.hasNext()) return it.next();
-					return null;
-				}
-			
-				private void createLines() {
-					cubeGeometry      .createLines();
-					curvedCubeGeometry.modifyLines();
-					curvedRoofGeometry.modifyLines();
-				}
-			
-				private void optimizeLines() {
-					Vector<Line> optimizedLines = new Vector<>();
-					
-					while (!lines.isEmpty()) {
-						Line line = popLine();
-						Index3D vec12 = line.p2.sub(line.p1);
-						while (lines.remove(new Line(line.p2,line.p2.add(vec12)))) line.p2 = line.p2.add(vec12);
-						while (lines.remove(new Line(line.p1,line.p1.sub(vec12)))) line.p1 = line.p1.sub(vec12);
-						optimizedLines.add(line);
-					}
-					
-					lines.addAll(optimizedLines);
-				}
-			
-				private Point3D computePoint(Index3D i) { return neighborhood.computePoint(i.iX,i.iY,i.iZ); }
-				private Point3D computePoint(Point3D i) { return neighborhood.computePoint(i.x,i.y,i.z); }
-			
-				private int addPoint(StringBuilder pointsStr, int counter, int[][][] indexes, Index3D i) {
-					if (indexes[i.iX][i.iY][i.iZ]==-1) {
-						indexes[i.iX][i.iY][i.iZ] = counter++;
-						Point3D p = computePoint(minCorner.add(i));
-						addPoint(pointsStr, p);
-					}
-					return counter;
-				}
-			
-				private void addPoint(StringBuilder pointsStr, Point3D p) {
-					pointsStr.append((pointsStr.length()==0?"":", ")+p.toString("%1.2f",false));
-				}
-			
-				private int createBaseModel(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
-					int[][][] indexes = new int[size.iX+1][size.iY+1][size.iZ+1];
-					for (int x=0; x<=size.iX; ++x)
-						for (int y=0; y<=size.iY; ++y)
-							Arrays.fill(indexes[x][y],-1);
-					
-					for (Line line:lines) {
-						pointCounter = addPoint(pointsStr, pointCounter, indexes, line.p1);
-						pointCounter = addPoint(pointsStr, pointCounter, indexes, line.p2);
-						int ip1 = indexes[line.p1.iX][line.p1.iY][line.p1.iZ];
-						int ip2 = indexes[line.p2.iX][line.p2.iY][line.p2.iZ];
-						indexesStr.append(ip1+" "+ip2+" -1 ");
-					}
-					
-					for (PolyLine pline:extraLines) {
-						pointCounter = addPoint(pointsStr, pointCounter, indexes, pline.pStart);
-						pointCounter = addPoint(pointsStr, pointCounter, indexes, pline.pEnd);
-						int ipStart = indexes[pline.pStart.iX][pline.pStart.iY][pline.pStart.iZ];
-						int ipEnd   = indexes[pline.pEnd.iX][pline.pEnd.iY][pline.pEnd.iZ];
-						
-						indexesStr.append(ipStart+" ");
-						for (Point3D p:pline.points) {
-							addPoint(pointsStr, computePoint(p.add(minCorner.toPoint3D())));
-							indexesStr.append((pointCounter++)+" ");
-						}
-						indexesStr.append(ipEnd+" -1 ");
-					}
-					
+				private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
+					Index3D i = new Index3D(0,0,0);
+					for (int x=0; x<size.iX; ++x)
+						for (int y=0; y<size.iY; ++y)
+							for (int z=0; z<size.iZ; ++z) {
+								Neighbor nb = get(mat,x,y,z);
+								if (nb==null) continue;
+								if (nb.type!=Neighbor.Type.GlassCube) continue;
+								i.set(x,y,z);
+								i.set(minCorner.add(i));
+								Neighbor nb1;
+								nb1 = get(mat,x+1,y,z); if (!isCube(nb1) && !isCurvedCube(nb1, OArrAll                          ) && !isCurvedRoof(nb1, OArrAll                                             ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
+								nb1 = get(mat,x,y+1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegY,Orientation.NegZ) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
+								nb1 = get(mat,x,y,z+1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegZ,Orientation.PosY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegY) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
+								nb1 = get(mat,x,y-1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosY,Orientation.PosZ) && !isCurvedRoof(nb1, Orientation.PosZ, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
+								nb1 = get(mat,x,y,z-1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosZ,Orientation.NegY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind110, ind100, ind000, ind010);
+							}
 					return pointCounter;
 				}
 			
-				private void createWindows(StringBuilder pointsStrW, int pointCounterW, StringBuilder indexesStrW) {
-					pointCounterW = glassCubeGeometry .createWindows(pointsStrW, pointCounterW, indexesStrW);
-					pointCounterW = curvedRoofGeometry.createWindows(pointsStrW, pointCounterW, indexesStrW);
-				}
-			
-				private class CubeGeometry {
-			
-					private void createLines() {
-						Index3D i = new Index3D(0,0,0);
-						for (int x=0; x<size.iX; ++x)
-							for (int y=0; y<size.iY; ++y)
-								for (int z=0; z<size.iZ; ++z)
-									if (isCube(get(mat,x,y,z))) {
-										i.set(x,y,z);
-										if (!isCube(get(mat,x+1,y,z))) lines.add(new Line(i.add(ind111), i.add(ind110)));
-										if (!isCube(get(mat,x,y+1,z))) lines.add(new Line(i.add(ind011), i.add(ind010)));
-										if (!isCube(get(mat,x-1,y,z))) lines.add(new Line(i.add(ind001), i.add(ind000)));
-										if (!isCube(get(mat,x,y-1,z))) lines.add(new Line(i.add(ind101), i.add(ind100)));
-										
-										if (!isCube(get(mat,x+1,y,z))) lines.add(new Line(i.add(ind110), i.add(ind100)));
-										if (!isCube(get(mat,x,y,z+1))) lines.add(new Line(i.add(ind111), i.add(ind101)));
-										if (!isCube(get(mat,x-1,y,z))) lines.add(new Line(i.add(ind011), i.add(ind001)));
-										if (!isCube(get(mat,x,y,z-1))) lines.add(new Line(i.add(ind010), i.add(ind000)));
-										
-										if (!isCube(get(mat,x,y+1,z))) lines.add(new Line(i.add(ind111), i.add(ind011)));
-										if (!isCube(get(mat,x,y,z+1))) lines.add(new Line(i.add(ind101), i.add(ind001)));
-										if (!isCube(get(mat,x,y-1,z))) lines.add(new Line(i.add(ind100), i.add(ind000)));
-										if (!isCube(get(mat,x,y,z-1))) lines.add(new Line(i.add(ind110), i.add(ind010)));
-										
-										Neighbor nb = get(mat,x-1,y,z);
-										if (!isCube(nb) && !isCurvedCube(nb,OArrAll) && !isCurvedRoof(nb)) {
-											lines.add(new Line(i.add(ind001), i.add(ind010)));
-											lines.add(new Line(i.add(ind000), i.add(ind011)));
-										}
-									}
-					}
+				private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D iXYZ, Index3D i1, Index3D i2, Index3D i3, Index3D i4) {
+					Point3D i1_p = iXYZ.toPoint3D().add(i1.toPoint3D());
+					Point3D i2_p = iXYZ.toPoint3D().add(i2.toPoint3D());
+					Point3D i3_p = iXYZ.toPoint3D().add(i3.toPoint3D());
+					Point3D i4_p = iXYZ.toPoint3D().add(i4.toPoint3D());
 					
+					addPoint(pointsStr, computePoint( i1_p.mul(0.96).add(i3_p.mul(0.04)) )); int iw1=counter++;
+					addPoint(pointsStr, computePoint( i2_p.mul(0.96).add(i4_p.mul(0.04)) )); int iw2=counter++;
+					addPoint(pointsStr, computePoint( i3_p.mul(0.96).add(i1_p.mul(0.04)) )); int iw3=counter++;
+					addPoint(pointsStr, computePoint( i4_p.mul(0.96).add(i2_p.mul(0.04)) )); int iw4=counter++;
+					
+					indexesStr.append(iw1+" "+iw2+" "+iw3+" "+iw4+" "+iw1+" -1 ");
+					
+					return counter;
 				}
 				
-				private class GlassCubeGeometry {
-				
-					private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
-						Index3D i = new Index3D(0,0,0);
-						for (int x=0; x<size.iX; ++x)
-							for (int y=0; y<size.iY; ++y)
-								for (int z=0; z<size.iZ; ++z) {
-									Neighbor nb = get(mat,x,y,z);
-									if (nb==null) continue;
-									if (nb.type!=Neighbor.Type.GlassCube) continue;
-									i.set(x,y,z);
-									i.set(minCorner.add(i));
-									Neighbor nb1;
-									nb1 = get(mat,x+1,y,z); if (!isCube(nb1) && !isCurvedCube(nb1, OArrAll                          ) && !isCurvedRoof(nb1, OArrAll                                             ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind100, ind101);
-									nb1 = get(mat,x,y+1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegY,Orientation.NegZ) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind110, ind010, ind011);
-									nb1 = get(mat,x,y,z+1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.NegZ,Orientation.PosY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.PosZ, Orientation.NegY) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind111, ind101, ind001, ind011);
-									nb1 = get(mat,x,y-1,z); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosY,Orientation.PosZ) && !isCurvedRoof(nb1, Orientation.PosZ, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind101, ind100, ind000, ind001);
-									nb1 = get(mat,x,y,z-1); if (!isCube(nb1) && !isCurvedCube(nb1, Orientation.PosZ,Orientation.NegY) && !isCurvedRoof(nb1, Orientation.PosY, Orientation.NegY, Orientation.NegZ) ) pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, ind110, ind100, ind000, ind010);
-								}
-						return pointCounter;
-					}
-				
-					private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D iXYZ, Index3D i1, Index3D i2, Index3D i3, Index3D i4) {
-						Point3D i1_p = iXYZ.toPoint3D().add(i1.toPoint3D());
-						Point3D i2_p = iXYZ.toPoint3D().add(i2.toPoint3D());
-						Point3D i3_p = iXYZ.toPoint3D().add(i3.toPoint3D());
-						Point3D i4_p = iXYZ.toPoint3D().add(i4.toPoint3D());
-						
-						addPoint(pointsStr, computePoint( i1_p.mul(0.9).add(i3_p.mul(0.1)) )); int iw1=counter++;
-						addPoint(pointsStr, computePoint( i2_p.mul(0.9).add(i4_p.mul(0.1)) )); int iw2=counter++;
-						addPoint(pointsStr, computePoint( i3_p.mul(0.9).add(i1_p.mul(0.1)) )); int iw3=counter++;
-						addPoint(pointsStr, computePoint( i4_p.mul(0.9).add(i2_p.mul(0.1)) )); int iw4=counter++;
-						
-						indexesStr.append(iw1+" "+iw2+" "+iw3+" "+iw4+" "+iw1+" -1 ");
-						
-						return counter;
-					}
-					
+			}
+		
+			private class CurvedRoofGeometry {
+				private void modifyLines() {
+					Index3D i = new Index3D(0,0,0);
+					for (int x=0; x<size.iX; ++x)
+						for (int y=0; y<size.iY; ++y)
+							for (int z=0; z<size.iZ; ++z) {
+								Neighbor nb = get(mat,x,y,z);
+								if (nb==null) continue;
+								if (nb.type!=Neighbor.Type.CurvedRoof) continue;
+								i.set(x,y,z);
+								setVertSideLines(nb.o,i);
+								setBottomLines  (nb.o,i);
+								setTopLine      (nb.o,i);
+								
+								extraLines.add(createRightCurvedRoofEdge(i,nb.o));
+								Index3D iLeft = nb.o.pos().addTo(i);
+								Neighbor nbLeft = get(mat,iLeft);
+								if (nbLeft==null || nbLeft.type!=Neighbor.Type.CurvedRoof || nbLeft.o!=nb.o)
+									extraLines.add(createRightCurvedRoofEdge(iLeft,nb.o));
+							}
 				}
-			
-				private class CurvedRoofGeometry {
-					private void modifyLines() {
-						Index3D i = new Index3D(0,0,0);
-						for (int x=0; x<size.iX; ++x)
-							for (int y=0; y<size.iY; ++y)
-								for (int z=0; z<size.iZ; ++z) {
-									Neighbor nb = get(mat,x,y,z);
-									if (nb==null) continue;
-									if (nb.type!=Neighbor.Type.CurvedRoof) continue;
-									i.set(x,y,z);
-									setVertSideLines(nb.o,i);
-									setBottomLines  (nb.o,i);
-									setTopLine      (nb.o,i);
-									
-									extraLines.add(createRightCurvedRoofEdge(i,nb.o));
-									Index3D iLeft = nb.o.pos().addTo(i);
-									Neighbor nbLeft = get(mat,iLeft);
-									if (nbLeft==null || nbLeft.type!=Neighbor.Type.CurvedRoof || nbLeft.o!=nb.o)
-										extraLines.add(createRightCurvedRoofEdge(iLeft,nb.o));
-								}
+		
+				private void setTopLine(Orientation baseO, Index3D i) {
+					switch(baseO) {
+					case PosY: lines.add(new Line(i.add(ind101), i.add(ind100))); break;
+					case PosZ: lines.add(new Line(i.add(ind100), i.add(ind110))); break;
+					case NegY: lines.add(new Line(i.add(ind110), i.add(ind111))); break;
+					case NegZ: lines.add(new Line(i.add(ind111), i.add(ind101))); break;
 					}
-			
-					private void setTopLine(Orientation baseO, Index3D i) {
-						switch(baseO) {
-						case PosY: lines.add(new Line(i.add(ind101), i.add(ind100))); break;
-						case PosZ: lines.add(new Line(i.add(ind100), i.add(ind110))); break;
-						case NegY: lines.add(new Line(i.add(ind110), i.add(ind111))); break;
-						case NegZ: lines.add(new Line(i.add(ind111), i.add(ind101))); break;
-						}
+				}
+		
+				private void setBottomLines(Orientation baseO, Index3D i) {
+					boolean base = true, neg = false, pos = false, opp = false, bottom = false;
+					Neighbor nb;
+					Index3D iBot = i.add(-1, 0, 0);
+					nb = get(mat, iBot);
+					if (!isCube(nb) && !isCurvedRoof(nb)) {
+						neg=!isCurvedCube(nb,baseO      ,baseO.neg());
+						opp=!isCurvedCube(nb,baseO.neg(),baseO.opp());
+						pos=!isCurvedCube(nb,baseO.opp(),baseO.pos());
+						bottom=!isCurvedCube(nb, OArrAll);
 					}
-			
-					private void setBottomLines(Orientation baseO, Index3D i) {
-						boolean base = true, neg = false, pos = false, opp = false, bottom = false;
-						Neighbor nb;
-						Index3D iBot = i.add(-1, 0, 0);
-						nb = get(mat, iBot);
-						if (!isCube(nb) && !isCurvedRoof(nb)) {
-							neg=!isCurvedCube(nb,baseO      ,baseO.neg());
-							opp=!isCurvedCube(nb,baseO.neg(),baseO.opp());
-							pos=!isCurvedCube(nb,baseO.opp(),baseO.pos());
-							bottom=!isCurvedCube(nb, OArrAll);
-						}
-						nb = get(mat, iBot.add(baseO.neg())); if (!neg && !isCube(nb) && !isCurvedCube(nb, baseO.pos(), baseO.opp()) && !isCurvedRoof(nb)) neg=true;
-						nb = get(mat, i   .add(baseO.neg())); if (!neg && !isCube(nb) && !isCurvedCube(nb, baseO.pos(), baseO.opp()) && !isCurvedRoof(nb, baseO, baseO.neg(), baseO.opp())) neg=true;
-						nb = get(mat, iBot.add(baseO.opp())); if (!opp && !isCube(nb) && !isCurvedCube(nb, baseO      , baseO.pos()) && !isCurvedRoof(nb)) opp=true;
-						nb = get(mat, i   .add(baseO.opp())); if (!opp && !isCube(nb) && !isCurvedCube(nb, baseO      , baseO.pos()) && !isCurvedRoof(nb, baseO.neg(), baseO.opp(), baseO.pos())) opp=true;
-						nb = get(mat, iBot.add(baseO.pos())); if (!pos && !isCube(nb) && !isCurvedCube(nb, baseO.neg(), baseO      ) && !isCurvedRoof(nb)) pos=true;
-						nb = get(mat, i   .add(baseO.pos())); if (!pos && !isCube(nb) && !isCurvedCube(nb, baseO.neg(), baseO      ) && !isCurvedRoof(nb, baseO.opp(), baseO.pos(), baseO)) pos=true;
-						
-						Line baseLine = null;
-						Line posLine = null;
-						Line oppLine = null;
-						Line negLine = null;
-						switch(baseO) {
-						case PosY: baseLine = new Line(i.add(ind010), i.add(ind011)); posLine = new Line(i.add(ind011), i.add(ind001)); break;
-						case PosZ: baseLine = new Line(i.add(ind011), i.add(ind001)); posLine = new Line(i.add(ind001), i.add(ind000)); break;
-						case NegY: baseLine = new Line(i.add(ind001), i.add(ind000)); posLine = new Line(i.add(ind000), i.add(ind010)); break;
-						case NegZ: baseLine = new Line(i.add(ind000), i.add(ind010)); posLine = new Line(i.add(ind010), i.add(ind011)); break;
-						}
-						switch(baseO) {
-						case PosY: oppLine = new Line(i.add(ind001), i.add(ind000)); negLine = new Line(i.add(ind000), i.add(ind010)); break;
-						case PosZ: oppLine = new Line(i.add(ind000), i.add(ind010)); negLine = new Line(i.add(ind010), i.add(ind011)); break;
-						case NegY: oppLine = new Line(i.add(ind010), i.add(ind011)); negLine = new Line(i.add(ind011), i.add(ind001)); break;
-						case NegZ: oppLine = new Line(i.add(ind011), i.add(ind001)); negLine = new Line(i.add(ind001), i.add(ind000)); break;
-						}
-						
-						if (bottom) {
-							lines.add(new Line(i.add(ind011), i.add(ind000)));
-							lines.add(new Line(i.add(ind001), i.add(ind010)));
-						}
-						setLine(base, baseLine);
-						setLine(pos, posLine);
-						setLine(opp, oppLine);
-						setLine(neg, negLine);
-					}
-			
-					private void setVertSideLines(Orientation baseO, Index3D i) {
-						boolean oppNeg = false, oppPos = false;
-						Neighbor nb;
-						Index3D iOpp = i.add(baseO.opp());
-						nb = get(mat, iOpp);
-						if (!isCube(nb) && !isCurvedCube(nb, baseO, baseO.pos())) {
-							oppNeg=!isCurvedRoof(nb, baseO.pos(), baseO.opp());
-							oppPos=!isCurvedRoof(nb, baseO.neg(), baseO.opp());
-						}
-						nb = get(mat, iOpp.add(baseO.neg())); if (!oppNeg && !isCube(nb) && !isCurvedCube(nb, baseO.pos()) && !isCurvedRoof(nb, baseO.opp(), baseO.neg())) oppNeg=true;
-						nb = get(mat, i   .add(baseO.neg())); if (!oppNeg && !isCube(nb) && !isCurvedCube(nb, baseO.opp()) && !isCurvedRoof(nb, baseO.neg(), baseO      )) oppNeg=true;
-						nb = get(mat, iOpp.add(baseO.pos())); if (!oppPos && !isCube(nb) && !isCurvedCube(nb, baseO      ) && !isCurvedRoof(nb, baseO.opp(), baseO.pos())) oppPos=true;
-						nb = get(mat, i   .add(baseO.pos())); if (!oppPos && !isCube(nb) && !isCurvedCube(nb, baseO.neg()) && !isCurvedRoof(nb, baseO.pos(), baseO      )) oppPos=true;
+					nb = get(mat, iBot.add(baseO.neg())); if (!neg && !isCube(nb) && !isCurvedCube(nb, baseO.pos(), baseO.opp()) && !isCurvedRoof(nb)) neg=true;
+					nb = get(mat, i   .add(baseO.neg())); if (!neg && !isCube(nb) && !isCurvedCube(nb, baseO.pos(), baseO.opp()) && !isCurvedRoof(nb, baseO, baseO.neg(), baseO.opp())) neg=true;
+					nb = get(mat, iBot.add(baseO.opp())); if (!opp && !isCube(nb) && !isCurvedCube(nb, baseO      , baseO.pos()) && !isCurvedRoof(nb)) opp=true;
+					nb = get(mat, i   .add(baseO.opp())); if (!opp && !isCube(nb) && !isCurvedCube(nb, baseO      , baseO.pos()) && !isCurvedRoof(nb, baseO.neg(), baseO.opp(), baseO.pos())) opp=true;
+					nb = get(mat, iBot.add(baseO.pos())); if (!pos && !isCube(nb) && !isCurvedCube(nb, baseO.neg(), baseO      ) && !isCurvedRoof(nb)) pos=true;
+					nb = get(mat, i   .add(baseO.pos())); if (!pos && !isCube(nb) && !isCurvedCube(nb, baseO.neg(), baseO      ) && !isCurvedRoof(nb, baseO.opp(), baseO.pos(), baseO)) pos=true;
 					
-						Line oppNegLine = null;
-						Line oppPosLine = null;
-						switch(baseO) {
-						case PosY: oppNegLine = new Line(i.add(ind100), i.add(ind000)); oppPosLine = new Line(i.add(ind101), i.add(ind001)); break;
-						case PosZ: oppNegLine = new Line(i.add(ind110), i.add(ind010)); oppPosLine = new Line(i.add(ind100), i.add(ind000)); break;
-						case NegY: oppNegLine = new Line(i.add(ind111), i.add(ind011)); oppPosLine = new Line(i.add(ind110), i.add(ind010)); break;
-						case NegZ: oppNegLine = new Line(i.add(ind101), i.add(ind001)); oppPosLine = new Line(i.add(ind111), i.add(ind011)); break;
-						}
-						
-						setLine(oppNeg, oppNegLine);
-						setLine(oppPos, oppPosLine);
+					Line baseLine = null;
+					Line posLine = null;
+					Line oppLine = null;
+					Line negLine = null;
+					switch(baseO) {
+					case PosY: baseLine = new Line(i.add(ind010), i.add(ind011)); posLine = new Line(i.add(ind011), i.add(ind001)); break;
+					case PosZ: baseLine = new Line(i.add(ind011), i.add(ind001)); posLine = new Line(i.add(ind001), i.add(ind000)); break;
+					case NegY: baseLine = new Line(i.add(ind001), i.add(ind000)); posLine = new Line(i.add(ind000), i.add(ind010)); break;
+					case NegZ: baseLine = new Line(i.add(ind000), i.add(ind010)); posLine = new Line(i.add(ind010), i.add(ind011)); break;
 					}
-			
-					private PolyLine createRightCurvedRoofEdge(Index3D i, Orientation o) {
-						PolyLine pline = null;
+					switch(baseO) {
+					case PosY: oppLine = new Line(i.add(ind001), i.add(ind000)); negLine = new Line(i.add(ind000), i.add(ind010)); break;
+					case PosZ: oppLine = new Line(i.add(ind000), i.add(ind010)); negLine = new Line(i.add(ind010), i.add(ind011)); break;
+					case NegY: oppLine = new Line(i.add(ind010), i.add(ind011)); negLine = new Line(i.add(ind011), i.add(ind001)); break;
+					case NegZ: oppLine = new Line(i.add(ind011), i.add(ind001)); negLine = new Line(i.add(ind001), i.add(ind000)); break;
+					}
+					
+					if (bottom) {
+						lines.add(new Line(i.add(ind011), i.add(ind000)));
+						lines.add(new Line(i.add(ind001), i.add(ind010)));
+					}
+					setLine(base, baseLine);
+					setLine(pos, posLine);
+					setLine(opp, oppLine);
+					setLine(neg, negLine);
+				}
+		
+				private void setVertSideLines(Orientation baseO, Index3D i) {
+					boolean oppNeg = false, oppPos = false;
+					Neighbor nb;
+					Index3D iOpp = i.add(baseO.opp());
+					nb = get(mat, iOpp);
+					if (!isCube(nb) && !isCurvedCube(nb, baseO, baseO.pos())) {
+						oppNeg=!isCurvedRoof(nb, baseO.pos(), baseO.opp());
+						oppPos=!isCurvedRoof(nb, baseO.neg(), baseO.opp());
+					}
+					nb = get(mat, iOpp.add(baseO.neg())); if (!oppNeg && !isCube(nb) && !isCurvedCube(nb, baseO.pos()) && !isCurvedRoof(nb, baseO.opp(), baseO.neg())) oppNeg=true;
+					nb = get(mat, i   .add(baseO.neg())); if (!oppNeg && !isCube(nb) && !isCurvedCube(nb, baseO.opp()) && !isCurvedRoof(nb, baseO.neg(), baseO      )) oppNeg=true;
+					nb = get(mat, iOpp.add(baseO.pos())); if (!oppPos && !isCube(nb) && !isCurvedCube(nb, baseO      ) && !isCurvedRoof(nb, baseO.opp(), baseO.pos())) oppPos=true;
+					nb = get(mat, i   .add(baseO.pos())); if (!oppPos && !isCube(nb) && !isCurvedCube(nb, baseO.neg()) && !isCurvedRoof(nb, baseO.pos(), baseO      )) oppPos=true;
+				
+					Line oppNegLine = null;
+					Line oppPosLine = null;
+					switch(baseO) {
+					case PosY: oppNegLine = new Line(i.add(ind100), i.add(ind000)); oppPosLine = new Line(i.add(ind101), i.add(ind001)); break;
+					case PosZ: oppNegLine = new Line(i.add(ind110), i.add(ind010)); oppPosLine = new Line(i.add(ind100), i.add(ind000)); break;
+					case NegY: oppNegLine = new Line(i.add(ind111), i.add(ind011)); oppPosLine = new Line(i.add(ind110), i.add(ind010)); break;
+					case NegZ: oppNegLine = new Line(i.add(ind101), i.add(ind001)); oppPosLine = new Line(i.add(ind111), i.add(ind011)); break;
+					}
+					
+					setLine(oppNeg, oppNegLine);
+					setLine(oppPos, oppPosLine);
+				}
+		
+				private PolyLine createRightCurvedRoofEdge(Index3D i, Orientation o) {
+					PolyLine pline = null;
+					switch (o) {
+					case PosY: pline = new PolyLine(i.add(ind100), i.add(ind010)); break;
+					case PosZ: pline = new PolyLine(i.add(ind110), i.add(ind011)); break;
+					case NegY: pline = new PolyLine(i.add(ind111), i.add(ind001)); break;
+					case NegZ: pline = new PolyLine(i.add(ind101), i.add(ind000)); break;
+					}
+					
+					int seg = 4;
+					for (int wi=1; wi<seg; ++wi) {
+						double w = wi*Math.PI/2/seg;
+						double x=0,y=0,z=0;
 						switch (o) {
-						case PosY: pline = new PolyLine(i.add(ind100), i.add(ind010)); break;
-						case PosZ: pline = new PolyLine(i.add(ind110), i.add(ind011)); break;
-						case NegY: pline = new PolyLine(i.add(ind111), i.add(ind001)); break;
-						case NegZ: pline = new PolyLine(i.add(ind101), i.add(ind000)); break;
+						case PosY: z=0; x=Math.cos(w); y=  Math.sin(w); break;
+						case PosZ: y=1; x=Math.cos(w); z=  Math.sin(w); break;
+						case NegY: z=1; x=Math.cos(w); y=1-Math.sin(w); break;
+						case NegZ: y=0; x=Math.cos(w); z=1-Math.sin(w); break;
 						}
-						
-						int seg = 4;
-						for (int wi=1; wi<seg; ++wi) {
-							double w = wi*Math.PI/2/seg;
-							double x=0,y=0,z=0;
-							switch (o) {
-							case PosY: z=0; x=Math.cos(w); y=  Math.sin(w); break;
-							case PosZ: y=1; x=Math.cos(w); z=  Math.sin(w); break;
-							case NegY: z=1; x=Math.cos(w); y=1-Math.sin(w); break;
-							case NegZ: y=0; x=Math.cos(w); z=1-Math.sin(w); break;
-							}
-							pline.points.add(new Point3D(i.iX+x,i.iY+y,i.iZ+z));
-						}
-						
-						return pline;
-					}
-			
-					private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
-						Index3D i = new Index3D(0,0,0);
-						for (int x=0; x<size.iX; ++x)
-							for (int y=0; y<size.iY; ++y)
-								for (int z=0; z<size.iZ; ++z) {
-									Neighbor nb = get(mat,x,y,z);
-									if (nb==null) continue;
-									if (nb.type!=Neighbor.Type.CurvedRoof) continue;
-									i.set(x,y,z);
-									i.set(minCorner.add(i));
-									pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, nb.o);
-								}
-						return pointCounter;
+						pline.points.add(new Point3D(i.iX+x,i.iY+y,i.iZ+z));
 					}
 					
-					private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D i, Orientation o) {
-						double wStart = Math.atan(0.1);
-						double wEnd = Math.PI/2-wStart;
-						String strLeft = "";
-						String strRight = "";
-						int seg = 4;
-						for (int wi=0; wi<=seg; ++wi) {
-							double w = wi*(wEnd-wStart)/seg + wStart;
-							double x=0,y=0,z=0,dy=0,dz=0;
-							switch (o) {
-							case PosY: z=0.5; dz= 0.4; x=Math.cos(w); y=  Math.sin(w); break;
-							case PosZ: y=0.5; dy= 0.4; x=Math.cos(w); z=  Math.sin(w); break;
-							case NegY: z=0.5; dz=-0.4; x=Math.cos(w); y=1-Math.sin(w); break;
-							case NegZ: y=0.5; dy=-0.4; x=Math.cos(w); z=1-Math.sin(w); break;
+					return pline;
+				}
+		
+				private int createWindows(StringBuilder pointsStr, int pointCounter, StringBuilder indexesStr) {
+					Index3D i = new Index3D(0,0,0);
+					for (int x=0; x<size.iX; ++x)
+						for (int y=0; y<size.iY; ++y)
+							for (int z=0; z<size.iZ; ++z) {
+								Neighbor nb = get(mat,x,y,z);
+								if (nb==null) continue;
+								if (nb.type!=Neighbor.Type.CurvedRoof) continue;
+								i.set(x,y,z);
+								i.set(minCorner.add(i));
+								pointCounter = addWindow(pointsStr, pointCounter, indexesStr, i, nb.o);
 							}
-							addPoint(pointsStr, computePoint( new Point3D(i.iX+x,i.iY+y-dy,i.iZ+z-dz) ));
-							addPoint(pointsStr, computePoint( new Point3D(i.iX+x,i.iY+y+dy,i.iZ+z+dz) ));
-							strRight = strRight+(counter+2*wi)+" ";
-							strLeft  = (counter+2*wi+1)+" "+strLeft;
+					return pointCounter;
+				}
+				
+				private int addWindow(StringBuilder pointsStr, int counter, StringBuilder indexesStr, Index3D i, Orientation o) {
+					double wStart = Math.atan(0.1);
+					double wEnd = Math.PI/2-wStart;
+					String strLeft = "";
+					String strRight = "";
+					int seg = 4;
+					for (int wi=0; wi<=seg; ++wi) {
+						double w = wi*(wEnd-wStart)/seg + wStart;
+						double x=0,y=0,z=0,dy=0,dz=0;
+						switch (o) {
+						case PosY: z=0.5; dz= 0.4; x=Math.cos(w); y=  Math.sin(w); break;
+						case PosZ: y=0.5; dy= 0.4; x=Math.cos(w); z=  Math.sin(w); break;
+						case NegY: z=0.5; dz=-0.4; x=Math.cos(w); y=1-Math.sin(w); break;
+						case NegZ: y=0.5; dy=-0.4; x=Math.cos(w); z=1-Math.sin(w); break;
 						}
-						indexesStr.append(strRight+" "+strLeft+" "+counter+" -1 ");
-						
-						counter += 2*seg+2;
-						return counter;
+						addPoint(pointsStr, computePoint( new Point3D(i.iX+x,i.iY+y-dy,i.iZ+z-dz) ));
+						addPoint(pointsStr, computePoint( new Point3D(i.iX+x,i.iY+y+dy,i.iZ+z+dz) ));
+						strRight = strRight+(counter+2*wi)+" ";
+						strLeft  = (counter+2*wi+1)+" "+strLeft;
+					}
+					indexesStr.append(strRight+" "+strLeft+" "+counter+" -1 ");
+					
+					counter += 2*seg+2;
+					return counter;
+				}
+			}
+		
+			private class CurvedCubeGeometry {
+		
+				private void modifyLines() {
+					Index3D i = new Index3D(0,0,0);
+					for (int x=0; x<size.iX; ++x)
+						for (int y=0; y<size.iY; ++y)
+							for (int z=0; z<size.iZ; ++z) {
+								Neighbor nb = get(mat,x,y,z);
+								if (nb==null) continue;
+								if (nb.type!=Neighbor.Type.CurvedCube) continue;
+								i.set(x,y,z);
+								setVertCenterLine(nb.o      ,i);
+								setVertSideLines (nb.o      ,i);
+								setHorizLines    (nb.o      ,i);
+								setHorizLines    (nb.o.neg(),i);
+								
+								extraLines.add(createCurvedCubeEdge(i,nb.o));
+								Neighbor nbBelow = get(mat,x-1,y,z);
+								if (nbBelow==null || nbBelow.type!=Neighbor.Type.CurvedCube || nbBelow.o!=nb.o)
+									extraLines.add(createCurvedCubeEdge(i.add(-1,0,0),nb.o));
+								
+								if (!isCube(nbBelow) && !isCurvedCube(nbBelow,OArrAll) && !isCurvedRoof(nbBelow)) {
+									setBottom(nb.o, i);
+								}
+							}
+				}
+		
+				private void setBottom(Orientation baseO, Index3D i) {
+					switch(baseO) {
+					case NegY: 
+					case PosY: lines.add(new Line(i.add(ind011), i.add(ind000))); break;
+					case NegZ:
+					case PosZ: lines.add(new Line(i.add(ind001), i.add(ind010))); break;
 					}
 				}
-			
-				private class CurvedCubeGeometry {
-			
-					private void modifyLines() {
-						Index3D i = new Index3D(0,0,0);
-						for (int x=0; x<size.iX; ++x)
-							for (int y=0; y<size.iY; ++y)
-								for (int z=0; z<size.iZ; ++z) {
-									Neighbor nb = get(mat,x,y,z);
-									if (nb==null) continue;
-									if (nb.type!=Neighbor.Type.CurvedCube) continue;
-									i.set(x,y,z);
-									setVertCenterLine(nb.o      ,i);
-									setVertSideLines (nb.o      ,i);
-									setHorizLines    (nb.o      ,i);
-									setHorizLines    (nb.o.neg(),i);
-									
-									extraLines.add(createCurvedCubeEdge(i,nb.o));
-									Neighbor nbBelow = get(mat,x-1,y,z);
-									if (nbBelow==null || nbBelow.type!=Neighbor.Type.CurvedCube || nbBelow.o!=nb.o)
-										extraLines.add(createCurvedCubeEdge(i.add(-1,0,0),nb.o));
-									
-									if (!isCube(nbBelow) && !isCurvedCube(nbBelow,OArrAll) && !isCurvedRoof(nbBelow)) {
-										setBottom(nb.o, i);
-									}
-								}
+		
+				private PolyLine createCurvedCubeEdge(Index3D i, Orientation o) {
+					PolyLine pline = null;
+					switch (o) {
+					case PosY: pline = new PolyLine(i.add(ind111), i.add(ind100)); break;
+					case PosZ: pline = new PolyLine(i.add(ind101), i.add(ind110)); break;
+					case NegY: pline = new PolyLine(i.add(ind100), i.add(ind111)); break;
+					case NegZ: pline = new PolyLine(i.add(ind110), i.add(ind101)); break;
 					}
-			
-					private void setBottom(Orientation baseO, Index3D i) {
-						switch(baseO) {
-						case NegY: 
-						case PosY: lines.add(new Line(i.add(ind011), i.add(ind000))); break;
-						case NegZ:
-						case PosZ: lines.add(new Line(i.add(ind001), i.add(ind010))); break;
-						}
-					}
-			
-					private PolyLine createCurvedCubeEdge(Index3D i, Orientation o) {
-						PolyLine pline = null;
+					
+					int seg = 4;
+					for (int wi=1; wi<seg; ++wi) {
+						double w = wi*Math.PI/2/seg;
+						double x=0,y=0,z=0;
 						switch (o) {
-						case PosY: pline = new PolyLine(i.add(ind111), i.add(ind100)); break;
-						case PosZ: pline = new PolyLine(i.add(ind101), i.add(ind110)); break;
-						case NegY: pline = new PolyLine(i.add(ind100), i.add(ind111)); break;
-						case NegZ: pline = new PolyLine(i.add(ind110), i.add(ind101)); break;
+						case PosY: x=1; y=1-Math.sin(w); z=  Math.cos(w); break;
+						case PosZ: x=1; y=1-Math.cos(w); z=1-Math.sin(w); break;
+						case NegY: x=1; y=  Math.sin(w); z=1-Math.cos(w); break;
+						case NegZ: x=1; y=  Math.cos(w); z=  Math.sin(w); break;
 						}
-						
-						int seg = 4;
-						for (int wi=1; wi<seg; ++wi) {
-							double w = wi*Math.PI/2/seg;
-							double x=0,y=0,z=0;
-							switch (o) {
-							case PosY: x=1; y=1-Math.sin(w); z=  Math.cos(w); break;
-							case PosZ: x=1; y=1-Math.cos(w); z=1-Math.sin(w); break;
-							case NegY: x=1; y=  Math.sin(w); z=1-Math.cos(w); break;
-							case NegZ: x=1; y=  Math.cos(w); z=  Math.sin(w); break;
-							}
-							pline.points.add(new Point3D(i.iX+x,i.iY+y,i.iZ+z));
-						}
-						
-						return pline;
+						pline.points.add(new Point3D(i.iX+x,i.iY+y,i.iZ+z));
 					}
-			
-					private void setHorizLines(Orientation baseO, Index3D i) {
-						Index3D iNb = i.add(baseO);
-						boolean upper = false, lower = false;
-						Neighbor nb;
-						nb = get(mat, iNb);
-						if (!isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg())) {
-							lower = !isCurvedRoof(nb,baseO,baseO.pos(),baseO.neg());
-							upper = true;
-						}
-						nb = get(mat, iNb.add( 1,0,0)); if (!upper && !isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg()) && !isCurvedRoof(nb,baseO,baseO.pos(),baseO.neg()      )) upper = true;
-						nb = get(mat, iNb.add(-1,0,0)); if (!lower && !isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg()) && !isCurvedRoof(nb                                    )) lower = true;
-						nb = get(mat, i  .add( 1,0,0)); if (!upper && !isCube(nb) && !isCurvedCube(nb,baseO.pos(),baseO      ) && !isCurvedRoof(nb,baseO.opp(),baseO.pos(),baseO.neg())) upper = true;
-						nb = get(mat, i  .add(-1,0,0)); if (!lower && !isCube(nb) && !isCurvedCube(nb,baseO.pos(),baseO      ) && !isCurvedRoof(nb,OArrAll                            )) lower = true;
-						
-						Line lowerLine=null;
-						Line upperLine=null;
-						switch(baseO) {
-						case PosY: lowerLine=new Line(i.add(ind011), i.add(ind010)); upperLine=new Line(i.add(ind111), i.add(ind110)); break;
-						case PosZ: lowerLine=new Line(i.add(ind001), i.add(ind011)); upperLine=new Line(i.add(ind101), i.add(ind111)); break;
-						case NegY: lowerLine=new Line(i.add(ind000), i.add(ind001)); upperLine=new Line(i.add(ind100), i.add(ind101)); break;
-						case NegZ: lowerLine=new Line(i.add(ind010), i.add(ind000)); upperLine=new Line(i.add(ind110), i.add(ind100)); break;
-						}
-						
-						setLine(lower, lowerLine);
-						setLine(upper, upperLine);
+					
+					return pline;
+				}
+		
+				private void setHorizLines(Orientation baseO, Index3D i) {
+					Index3D iNb = i.add(baseO);
+					boolean upper = false, lower = false;
+					Neighbor nb;
+					nb = get(mat, iNb);
+					if (!isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg())) {
+						lower = !isCurvedRoof(nb,baseO,baseO.pos(),baseO.neg());
+						upper = true;
 					}
-			
-					private void setVertSideLines(Orientation baseO, Index3D i) {
-						switch(baseO) {
-						case NegY:
-						case PosY:
-							lines.add(new Line(i.add(ind111), i.add(ind011)));
-							lines.add(new Line(i.add(ind100), i.add(ind000)));
-							break;
-						case NegZ:
-						case PosZ:
-							lines.add(new Line(i.add(ind110), i.add(ind010)));
-							lines.add(new Line(i.add(ind101), i.add(ind001)));
+					nb = get(mat, iNb.add( 1,0,0)); if (!upper && !isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg()) && !isCurvedRoof(nb,baseO,baseO.pos(),baseO.neg()      )) upper = true;
+					nb = get(mat, iNb.add(-1,0,0)); if (!lower && !isCube(nb) && !isCurvedCube(nb,baseO.opp(),baseO.neg()) && !isCurvedRoof(nb                                    )) lower = true;
+					nb = get(mat, i  .add( 1,0,0)); if (!upper && !isCube(nb) && !isCurvedCube(nb,baseO.pos(),baseO      ) && !isCurvedRoof(nb,baseO.opp(),baseO.pos(),baseO.neg())) upper = true;
+					nb = get(mat, i  .add(-1,0,0)); if (!lower && !isCube(nb) && !isCurvedCube(nb,baseO.pos(),baseO      ) && !isCurvedRoof(nb,OArrAll                            )) lower = true;
+					
+					Line lowerLine=null;
+					Line upperLine=null;
+					switch(baseO) {
+					case PosY: lowerLine=new Line(i.add(ind011), i.add(ind010)); upperLine=new Line(i.add(ind111), i.add(ind110)); break;
+					case PosZ: lowerLine=new Line(i.add(ind001), i.add(ind011)); upperLine=new Line(i.add(ind101), i.add(ind111)); break;
+					case NegY: lowerLine=new Line(i.add(ind000), i.add(ind001)); upperLine=new Line(i.add(ind100), i.add(ind101)); break;
+					case NegZ: lowerLine=new Line(i.add(ind010), i.add(ind000)); upperLine=new Line(i.add(ind110), i.add(ind100)); break;
+					}
+					
+					setLine(lower, lowerLine);
+					setLine(upper, upperLine);
+				}
+		
+				private void setVertSideLines(Orientation baseO, Index3D i) {
+					switch(baseO) {
+					case NegY:
+					case PosY:
+						lines.add(new Line(i.add(ind111), i.add(ind011)));
+						lines.add(new Line(i.add(ind100), i.add(ind000)));
+						break;
+					case NegZ:
+					case PosZ:
+						lines.add(new Line(i.add(ind110), i.add(ind010)));
+						lines.add(new Line(i.add(ind101), i.add(ind001)));
+						break;
+					}
+				}
+		
+				private void setVertCenterLine(Orientation baseO, Index3D i) {
+					Index3D i1;
+					Orientation nextO;
+					
+					boolean setCenterLine = false;
+					for (i1=i.add(baseO), nextO=baseO.neg(); nextO!=baseO; i1=i1.add(nextO), nextO=nextO.neg()) {
+						Neighbor nb1 = get(mat,i1);
+						if (!isCube(nb1) && !isCurvedCube(nb1, nextO) && !isCurvedRoof(nb1, nextO.pos(),nextO.opp()) ) {
+							setCenterLine = true;
 							break;
 						}
 					}
-			
-					private void setVertCenterLine(Orientation baseO, Index3D i) {
-						Index3D i1;
-						Orientation nextO;
-						
-						boolean setCenterLine = false;
-						for (i1=i.add(baseO), nextO=baseO.neg(); nextO!=baseO; i1=i1.add(nextO), nextO=nextO.neg()) {
-							Neighbor nb1 = get(mat,i1);
-							if (!isCube(nb1) && !isCurvedCube(nb1, nextO) && !isCurvedRoof(nb1, nextO.pos(),nextO.opp()) ) {
-								setCenterLine = true;
-								break;
-							}
-						}
-						
-						Line centerLine=null;
-						switch(baseO) {
-						case PosY: centerLine=new Line(i.add(ind110), i.add(ind010)); break;
-						case PosZ: centerLine=new Line(i.add(ind111), i.add(ind011)); break;
-						case NegY: centerLine=new Line(i.add(ind101), i.add(ind001)); break;
-						case NegZ: centerLine=new Line(i.add(ind100), i.add(ind000)); break;
-						}
-						setLine(setCenterLine, centerLine);
-					}
 					
-				}
-			}
-	
-			private static class PolyLine {
-				Index3D pStart,pEnd;
-				Vector<Point3D> points;
-				PolyLine(Index3D pStart,Index3D pEnd) {
-					this.pStart = pStart;
-					this.pEnd = pEnd;
-					points = new Vector<>();
-				}
-				@Override
-				public String toString() {
-					return "PolyLine("+pStart+","+points+"," +pEnd+ ")";
-				}
-			}
-			
-			private static class Line {
-				Index3D p1,p2;
-				Line(Index3D p1,Index3D p2) {
-					this.p1 = p1;
-					this.p2 = p2;
-				}
-				@Override
-				public boolean equals(Object obj) {
-					if (!(obj instanceof Line)) return false;
-					Line line = (Line)obj;
-					if (line.p1.equals(p1) && line.p2.equals(p2)) return true;
-					if (line.p2.equals(p1) && line.p1.equals(p2)) return true;
-					return false;
-				}
-				@Override
-				public int hashCode() {
-					return p1.hashCode() ^ p2.hashCode();
-				}
-				@Override
-				public String toString() {
-					return "Line("+p1+","+p2+")";
-				}
-			}
-			
-			private enum Orientation {
-				PosY, PosZ, NegY, NegZ;
-	
-				private static Orientation get(int i) {
-					switch(i) {
-					case 0: return Orientation.PosY;
-					case 1: return Orientation.PosZ;
-					case 2: return Orientation.NegY;
-					case 3: return Orientation.NegZ;
+					Line centerLine=null;
+					switch(baseO) {
+					case PosY: centerLine=new Line(i.add(ind110), i.add(ind010)); break;
+					case PosZ: centerLine=new Line(i.add(ind111), i.add(ind011)); break;
+					case NegY: centerLine=new Line(i.add(ind101), i.add(ind001)); break;
+					case NegZ: centerLine=new Line(i.add(ind100), i.add(ind000)); break;
 					}
-					return null;
+					setLine(setCenterLine, centerLine);
 				}
-	
-				public Index3D addTo(Index3D i) {
-					switch(this) {
-					case NegY: return i.add(0,-1,0);
-					case NegZ: return i.add(0,0,-1);
-					case PosY: return i.add(0, 1,0);
-					case PosZ: return i.add(0,0, 1);
-					}
-					return null;
-				}
-	
-				public Orientation pos() {
-					return get((ordinal()+1)%4);
-				}
-	
-				public Orientation opp() {
-					return get((ordinal()+2)%4);
-				}
-	
-				public Orientation neg() {
-					return get((ordinal()+3)%4);
-				}
-			}
-			
-			private static class Index3D {
-				int iX,iY,iZ;
 				
-				public Index3D (int iX, int iY, int iZ) { this.iX = iX; this.iY = iY; this.iZ = iZ; }
-				public void set(int iX, int iY, int iZ) { this.iX = iX; this.iY = iY; this.iZ = iZ; }
-	
-				public Index3D (Index3D i) { this(i.iX,i.iY,i.iZ); }
-				public void set(Index3D i) { set (i.iX,i.iY,i.iZ); }
-				
-				public Point3D toPoint3D() { return new Point3D(iX,iY,iZ); }
-	
-				public Index3D add(Index3D i) { return new Index3D(iX+i.iX, iY+i.iY, iZ+i.iZ); }
-				public Index3D add(int iX, int iY, int iZ) { return new Index3D(iX+this.iX, iY+this.iY, iZ+this.iZ); }
-				public Index3D sub(Index3D i) { return new Index3D(iX-i.iX, iY-i.iY, iZ-i.iZ); }
-				public Index3D add(Orientation o) {
-					switch(o) {
-					case PosY: return add(0, 1, 0);
-					case PosZ: return add(0, 0, 1);
-					case NegY: return add(0,-1, 0);
-					case NegZ: return add(0, 0,-1);
-					}
-					return null;
-				}
-	
-				public void min(Index3D index) {
-					iX = Math.min(iX, index.iX);
-					iY = Math.min(iY, index.iY);
-					iZ = Math.min(iZ, index.iZ);
-				}
-	
-				public void max(Index3D index) {
-					iX = Math.max(iX, index.iX);
-					iY = Math.max(iY, index.iY);
-					iZ = Math.max(iZ, index.iZ);
-				}
-	
-				@Override
-				public int hashCode() {
-					return (iX&0xFFF)<<(5*4) | (iY&0xFF)<<(3*4) | (iZ&0xFFF)<<(0*4);
-				}
-	
-				@Override
-				public boolean equals(Object obj) {
-					if (!(obj instanceof Index3D)) return false;
-					Index3D other = (Index3D)obj;
-					return iX==other.iX && iY==other.iY && iZ==other.iZ;
-				}
-				@Override
-				public String toString() {
-					return "Index3D("+iX+","+iY+","+iZ+")";
-				}
 			}
 		}
+
+		private static class PolyLine {
+			Index3D pStart,pEnd;
+			Vector<Point3D> points;
+			PolyLine(Index3D pStart,Index3D pEnd) {
+				this.pStart = pStart;
+				this.pEnd = pEnd;
+				points = new Vector<>();
+			}
+			@Override
+			public String toString() {
+				return "PolyLine("+pStart+","+points+"," +pEnd+ ")";
+			}
+		}
+		
+		private static class Line {
+			Index3D p1,p2;
+			Line(Index3D p1,Index3D p2) {
+				this.p1 = p1;
+				this.p2 = p2;
+			}
+			@Override
+			public boolean equals(Object obj) {
+				if (!(obj instanceof Line)) return false;
+				Line line = (Line)obj;
+				if (line.p1.equals(p1) && line.p2.equals(p2)) return true;
+				if (line.p2.equals(p1) && line.p1.equals(p2)) return true;
+				return false;
+			}
+			@Override
+			public int hashCode() {
+				return p1.hashCode() ^ p2.hashCode();
+			}
+			@Override
+			public String toString() {
+				return "Line("+p1+","+p2+")";
+			}
+		}
+		
+		private enum Orientation {
+			PosY, PosZ, NegY, NegZ;
+
+			private static Orientation get(int i) {
+				switch(i) {
+				case 0: return Orientation.PosY;
+				case 1: return Orientation.PosZ;
+				case 2: return Orientation.NegY;
+				case 3: return Orientation.NegZ;
+				}
+				return null;
+			}
+
+			public Index3D addTo(Index3D i) {
+				switch(this) {
+				case NegY: return i.add(0,-1,0);
+				case NegZ: return i.add(0,0,-1);
+				case PosY: return i.add(0, 1,0);
+				case PosZ: return i.add(0,0, 1);
+				}
+				return null;
+			}
+
+			public Orientation pos() {
+				return get((ordinal()+1)%4);
+			}
+
+			public Orientation opp() {
+				return get((ordinal()+2)%4);
+			}
+
+			public Orientation neg() {
+				return get((ordinal()+3)%4);
+			}
+		}
+		
+		private static class Index3D {
+			int iX,iY,iZ;
+			
+			public Index3D (int iX, int iY, int iZ) { this.iX = iX; this.iY = iY; this.iZ = iZ; }
+			public void set(int iX, int iY, int iZ) { this.iX = iX; this.iY = iY; this.iZ = iZ; }
+
+			public Index3D (Index3D i) { this(i.iX,i.iY,i.iZ); }
+			public void set(Index3D i) { set (i.iX,i.iY,i.iZ); }
+			
+			public Point3D toPoint3D() { return new Point3D(iX,iY,iZ); }
+
+			public Index3D add(Index3D i) { return new Index3D(iX+i.iX, iY+i.iY, iZ+i.iZ); }
+			public Index3D add(int iX, int iY, int iZ) { return new Index3D(iX+this.iX, iY+this.iY, iZ+this.iZ); }
+			public Index3D sub(Index3D i) { return new Index3D(iX-i.iX, iY-i.iY, iZ-i.iZ); }
+			public Index3D add(Orientation o) {
+				switch(o) {
+				case PosY: return add(0, 1, 0);
+				case PosZ: return add(0, 0, 1);
+				case NegY: return add(0,-1, 0);
+				case NegZ: return add(0, 0,-1);
+				}
+				return null;
+			}
+
+			public void min(Index3D index) {
+				iX = Math.min(iX, index.iX);
+				iY = Math.min(iY, index.iY);
+				iZ = Math.min(iZ, index.iZ);
+			}
+
+			public void max(Index3D index) {
+				iX = Math.max(iX, index.iX);
+				iY = Math.max(iY, index.iY);
+				iZ = Math.max(iZ, index.iZ);
+			}
+
+			@Override
+			public int hashCode() {
+				return (iX&0xFFF)<<(5*4) | (iY&0xFF)<<(3*4) | (iZ&0xFFF)<<(0*4);
+			}
+
+			@Override
+			public boolean equals(Object obj) {
+				if (!(obj instanceof Index3D)) return false;
+				Index3D other = (Index3D)obj;
+				return iX==other.iX && iY==other.iY && iZ==other.iZ;
+			}
+			@Override
+			public String toString() {
+				return "Index3D("+iX+","+iY+","+iZ+")";
+			}
+		}
+	}
 
 	private static class VRMLoutput {
 
@@ -2895,15 +2897,19 @@ public class FileExport {
 		private static class HardCodedModels {
 			
 			private static void addModelsToModelMap() {
+				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 				addModels("BIOROOM",        "^BIOROOM");
-				addModels("CUBEFLOOR",      "^CUBEFLOOR");
 				addModels("SMALLLIGHT",     "^SMALLLIGHT");
 				addModels("WALLLIGHT",      makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
 				addModels("BUILDLANDINGPAD","^BUILDLANDINGPAD");
-				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 				addModels("BUILDSIMPLEDESK","^BUILDSIMPLEDESK");
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
+				
+				addModels("CUBEFLOOR"      , "^CUBEFLOOR"      );
+				addModels("CUBEWINDOW"     , "^CUBEWINDOW"     );
+				addModels("CUBEWINDOWOVAL" , "^CUBEWINDOWOVAL" );
+				addModels("CUBEWINDOWSMALL", "^CUBEWINDOWSMALL");
 				
 				SolitaryWallsAndFloors.addModelsToModelMap();
 				Corridors.addModelsToModelMap();
@@ -2918,15 +2924,19 @@ public class FileExport {
 				
 				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^U_BATTERY_S, ^U_SOLAR_S, ^U_GENERATOR_S, ^BASE_FLAG
 				
-				writeProtoToFile(vrml, "BIOROOM"                , ()->create_BIOROOM        ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "CUBEFLOOR"              , ()->create_CUBEFLOOR      ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "SMALLLIGHT", 0.2,  0    , ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
-				writeProtoToFile(vrml, "WALLLIGHT", 0.15, 90    , ()->create_WALLLIGHT      ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDLANDINGPAD"        , ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
-				writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.5, 0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDCHAIR", 0.5, 0     , ()->create_BUILDCHAIR     ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDBED", 0.5, 0       , ()->create_BUILDBED       ().write(vrml,"\t"));
+				//writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BIOROOM",                  ()->create_BIOROOM        ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "SMALLLIGHT",     0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
+				writeProtoToFile(vrml, "WALLLIGHT",      0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDLANDINGPAD",          ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.5,  0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDCHAIR",      0.5,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDBED",        0.5,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
+				
+				writeProtoToFile(vrml, "CUBEFLOOR",               15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "CUBEWINDOW",      0.6, 0, 25, ()->create_CUBEWINDOW     ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "CUBEWINDOWOVAL",  0.6, 0, 25, ()->create_CUBEWINDOWOVAL ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
 				
 				SolitaryWallsAndFloors.writeProtos(vrml);
 				Corridors.writeProtos(vrml);
@@ -2999,6 +3009,46 @@ public class FileExport {
 				VRMLoutput.writeModel(vrml, "^BIOROOM", "Test ^BIOROOM", new Point3D(12,0,0), new Point3D(0,1,0), new Point3D(0,0,1), sizeOfAxisCrosses, null);
 				vrml.println("");
 				*/
+			}
+
+			private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.MultipleIndexedLineSets create_CUBEWINDOW() {
+				double cubesize = 4;
+				LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+						.add(COLOR_WINDOW, new LineGeometry.PolyLine()
+								.add(cubesize*0.1, 0, cubesize*0.4)
+								.add(cubesize*0.1, 0,-cubesize*0.4)
+								.add(cubesize*0.9, 0,-cubesize*0.4)
+								.add(cubesize*0.9, 0, cubesize*0.4)
+								.close()
+						);
+				return multi;
+			}
+
+			private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOWOVAL() {
+				double cubesize = 4;
+				double radius = 1;
+				LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+						.add(COLOR_WINDOW, new LineGeometry.PolyLine()
+								.addArc(LineGeometry.Axis.Y, new Point3D(cubesize/2,0,0), radius, 0, 360, false)
+						);
+				return multi;
+			}
+
+			private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOWSMALL() {
+				double cubesize = 4;
+				// height: 170 : 40 -> 0.95
+				// width : 155 : 56 -> 1.45
+				double heightW = 0.95;
+				double widthW  = 1.45;
+				LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+						.add(COLOR_WINDOW, new LineGeometry.PolyLine()
+								.add(cubesize/2+heightW/2, 0, widthW/2)
+								.add(cubesize/2+heightW/2, 0,-widthW/2)
+								.add(cubesize/2-heightW/2, 0,-widthW/2)
+								.add(cubesize/2-heightW/2, 0, widthW/2)
+								.close()
+						);
+				return multi;
 			}
 
 			private static LineGeometry.IndexedLineSet create_BUILDBED() {
@@ -3263,6 +3313,7 @@ public class FileExport {
 				return group;
 			}
 
+			@SuppressWarnings("unused")
 			private static LineGeometry.GroupingNode create_CUBEROOM_SPACE() {
 				//LineGeometry.Box box = new LineGeometry.Box(3.8,8,8);
 				//box.addTranslation(new Point3D(1.9,0,0));
@@ -3381,7 +3432,6 @@ public class FileExport {
 				return group1;
 			}
 			
-			@SuppressWarnings("unused")
 			private static class Corridors {
 				
 				private static final double raster = 4.0; // YZ
@@ -3392,7 +3442,6 @@ public class FileExport {
 				private static final double spacing = 0.05;
 				
 				private static void writeProtos(PrintWriter vrml) {
-					// TODO: HardCodedModels.Corridors: GLASSCORRIDOR
 					
 					writeProtoToFile(vrml, "CORRIDOR",           15, ()->create_CORRIDOR     ().write(vrml,"\t"));
 					writeProtoToFile(vrml, "CORRIDORL",          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
