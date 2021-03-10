@@ -1395,7 +1395,8 @@ public class FileExport {
 				// TODO: NPCFRIGTERM: add big screen 
 				LineGeometry.GroupingNode objExitOnXneg = new LineGeometry.GroupingNode(
 					super.createGeometry(),
-					desk, chair, bed
+					desk, chair, bed,
+					new LineGeometry.PolyLine().add(-4, 0,-1.4).add(-4, 0,+1.4)
 				);
 				
 				switch (dirOfExit) {
@@ -2851,7 +2852,6 @@ public class FileExport {
 			addModels("MAINROOMCUBE",   "^MAINROOMCUBE");
 			
 			addModels("CUBESTAIRS",     "^CUBESTAIRS");
-			addModels("BUILDDOOR",      "^BUILDDOOR");
 			
 			addModels("CONTAINER",      "^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
 			                            "^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
@@ -3387,58 +3387,248 @@ public class FileExport {
 				private static final double raster = 4.0; // YZ
 				private static final double height = 3.3; // X
 				private static final double width  = 3.2; // Y
-				private static final double length = 3.8; // Z
+				private static final double width2 = 2.0; // Y
 				private static final double spacing = 0.2;
 				
 				private static void writeProtos(PrintWriter vrml) {
+					// TODO: HardCodedModels.Corridors: CORRIDORC, GLASSCORRIDOR, DOOR2, BUILDDOOR
 					
-					//writeProtoToFile(vrml, "CORRIDOR",      ()->create_CORRIDOR     ().write(vrml,"\t"));
-					//writeProtoToFile(vrml, "CORRIDORX",     ()->create_CORRIDORX    ().write(vrml,"\t"));
-					//writeProtoToFile(vrml, "CORRIDORL",     ()->create_CORRIDORL    ().write(vrml,"\t"));
-					//writeProtoToFile(vrml, "CORRIDORT",     ()->create_CORRIDORT    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDOR", 15,  ()->create_CORRIDOR     ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORL", 15, ()->create_CORRIDORL    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORX", 15, ()->create_CORRIDORX    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORT", 15, ()->create_CORRIDORT    ().write(vrml,"\t"));
+					
 					//writeProtoToFile(vrml, "CORRIDORC",     ()->create_CORRIDORC    ().write(vrml,"\t"));
-					//writeProtoToFile(vrml, "GLASSCORRIDOR", ()->create_GLASSCORRIDOR().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "GLASSCORRIDOR", 15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
+					
+					//writeProtoToFile(vrml, "DOOR2",         ()->create_DOOR2    ().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "BUILDDOOR",     ()->create_BUILDDOOR().write(vrml,"\t"));
 				}
 
 				private static void addModelsToModelMap() {
-					//addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR");
-					//addModels("CORRIDORX",      "^CORRIDORX");
-					
+					addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR"); 
 					//addModels("CORRIDOR",       "^CORRIDOR");
-					//addModels("CORRIDORX",      "^CORRIDORX");
-					//addModels("CORRIDORC",      "^CORRIDORC");
-					//addModels("CORRIDORL",      "^CORRIDORL");
-					//addModels("CORRIDORT",      "^CORRIDORT");
 					//addModels("GLASSCORRIDOR",  "^GLASSCORRIDOR");
+					
+					addModels("CORRIDORL",      "^CORRIDORL");
+					addModels("CORRIDORX",      "^CORRIDORX");
+					addModels("CORRIDORT",      "^CORRIDORT");
+					
+					//addModels("CORRIDORC",      "^CORRIDORC");
+					
+					//addModels("DOOR2",      "^DOOR2");  // Holo-Tür
+					addModels("BUILDDOOR",      "^BUILDDOOR"); // replace template PROTO with hardcoded version 
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDOR() {
-					// TODO Auto-generated method stub
-					return null;
-				}
-
-				private static LineGeometry.IndexedLineSet create_CORRIDORX() {
-					// TODO Auto-generated method stub
-					return null;
-				}
-
-				private static LineGeometry.IndexedLineSet create_CORRIDORC() {
-					// TODO Auto-generated method stub
-					return null;
+					return new LineGeometry.Prism(LineGeometry.Axis.Z, raster-spacing,
+							new Point3D(                      0,  width2/2, 0),
+							new Point3D(       (width-width2)/2,  width /2, 0),
+							new Point3D(height-(width-width2)/2,  width /2, 0),
+							new Point3D(height                 ,  width2/2, 0),
+							new Point3D(height                 , -width2/2, 0),
+							new Point3D(height-(width-width2)/2, -width /2, 0),
+							new Point3D(       (width-width2)/2, -width /2, 0),
+							new Point3D(                      0, -width2/2, 0)
+					);
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDORL() {
-					// TODO Auto-generated method stub
-					return null;
+					
+					Point3D[] profile1 = new Point3D[8];
+					Point3D[] profile2 = new Point3D[8];
+					Point3D[] profile3 = new Point3D[8];
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									profile1[0] = new Point3D(                      0,  width2/2, -(raster-spacing)/2),
+									profile1[1] = new Point3D(       (width-width2)/2,  width /2, -(raster-spacing)/2),
+									profile1[2] = new Point3D(height-(width-width2)/2,  width /2, -(raster-spacing)/2),
+									profile1[3] = new Point3D(height                 ,  width2/2, -(raster-spacing)/2),
+									profile1[4] = new Point3D(height                 , -width2/2, -(raster-spacing)/2),
+									profile1[5] = new Point3D(height-(width-width2)/2, -width /2, -(raster-spacing)/2),
+									profile1[6] = new Point3D(       (width-width2)/2, -width /2, -(raster-spacing)/2),
+									profile1[7] = new Point3D(                      0, -width2/2, -(raster-spacing)/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profile2[0] = new Point3D(                      0,  width2/2,  width2/2),
+									profile2[1] = new Point3D(       (width-width2)/2,  width /2,  width /2),
+									profile2[2] = new Point3D(height-(width-width2)/2,  width /2,  width /2),
+									profile2[3] = new Point3D(height                 ,  width2/2,  width2/2),
+									profile2[4] = new Point3D(height                 , -width2/2, -width2/2),
+									profile2[5] = new Point3D(height-(width-width2)/2, -width /2, -width /2),
+									profile2[6] = new Point3D(       (width-width2)/2, -width /2, -width /2),
+									profile2[7] = new Point3D(                      0, -width2/2, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profile3[0] = new Point3D(                      0, -(raster-spacing)/2,  width2/2),
+									profile3[1] = new Point3D(       (width-width2)/2, -(raster-spacing)/2,  width /2),
+									profile3[2] = new Point3D(height-(width-width2)/2, -(raster-spacing)/2,  width /2),
+									profile3[3] = new Point3D(height                 , -(raster-spacing)/2,  width2/2),
+									profile3[4] = new Point3D(height                 , -(raster-spacing)/2, -width2/2),
+									profile3[5] = new Point3D(height-(width-width2)/2, -(raster-spacing)/2, -width /2),
+									profile3[6] = new Point3D(       (width-width2)/2, -(raster-spacing)/2, -width /2),
+									profile3[7] = new Point3D(                      0, -(raster-spacing)/2, -width2/2)
+							).close());
+					for (int i=0; i<8; i++)
+						group.add(new LineGeometry.PolyLine(profile1[i],profile2[i],profile3[i]));
+					
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_CORRIDORX() {
+					Point3D[] profileYNZN = new Point3D[4];
+					Point3D[] profileYNZP = new Point3D[4];
+					Point3D[] profileYPZN = new Point3D[4];
+					Point3D[] profileYPZP = new Point3D[4];
+					Point3D[] profileZNYN = new Point3D[4];
+					Point3D[] profileZNYP = new Point3D[4];
+					Point3D[] profileZPYN = new Point3D[4];
+					Point3D[] profileZPYP = new Point3D[4];
+					Point3D[] profileNN = new Point3D[4];
+					Point3D[] profileNP = new Point3D[4];
+					Point3D[] profilePN = new Point3D[4];
+					Point3D[] profilePP = new Point3D[4];
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									profileZNYP[0] = new Point3D(                      0,  width2/2, -(raster-spacing)/2),
+									profileZNYP[1] = new Point3D(       (width-width2)/2,  width /2, -(raster-spacing)/2),
+									profileZNYP[2] = new Point3D(height-(width-width2)/2,  width /2, -(raster-spacing)/2),
+									profileZNYP[3] = new Point3D(height                 ,  width2/2, -(raster-spacing)/2),
+									profileZNYN[3] = new Point3D(height                 , -width2/2, -(raster-spacing)/2),
+									profileZNYN[2] = new Point3D(height-(width-width2)/2, -width /2, -(raster-spacing)/2),
+									profileZNYN[1] = new Point3D(       (width-width2)/2, -width /2, -(raster-spacing)/2),
+									profileZNYN[0] = new Point3D(                      0, -width2/2, -(raster-spacing)/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profileYNZP[0] = new Point3D(                      0, -(raster-spacing)/2,  width2/2),
+									profileYNZP[1] = new Point3D(       (width-width2)/2, -(raster-spacing)/2,  width /2),
+									profileYNZP[2] = new Point3D(height-(width-width2)/2, -(raster-spacing)/2,  width /2),
+									profileYNZP[3] = new Point3D(height                 , -(raster-spacing)/2,  width2/2),
+									profileYNZN[3] = new Point3D(height                 , -(raster-spacing)/2, -width2/2),
+									profileYNZN[2] = new Point3D(height-(width-width2)/2, -(raster-spacing)/2, -width /2),
+									profileYNZN[1] = new Point3D(       (width-width2)/2, -(raster-spacing)/2, -width /2),
+									profileYNZN[0] = new Point3D(                      0, -(raster-spacing)/2, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profileZPYP[0] = new Point3D(                      0,  width2/2,  (raster-spacing)/2),
+									profileZPYP[1] = new Point3D(       (width-width2)/2,  width /2,  (raster-spacing)/2),
+									profileZPYP[2] = new Point3D(height-(width-width2)/2,  width /2,  (raster-spacing)/2),
+									profileZPYP[3] = new Point3D(height                 ,  width2/2,  (raster-spacing)/2),
+									profileZPYN[3] = new Point3D(height                 , -width2/2,  (raster-spacing)/2),
+									profileZPYN[2] = new Point3D(height-(width-width2)/2, -width /2,  (raster-spacing)/2),
+									profileZPYN[1] = new Point3D(       (width-width2)/2, -width /2,  (raster-spacing)/2),
+									profileZPYN[0] = new Point3D(                      0, -width2/2,  (raster-spacing)/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profileYPZP[0] = new Point3D(                      0,  (raster-spacing)/2,  width2/2),
+									profileYPZP[1] = new Point3D(       (width-width2)/2,  (raster-spacing)/2,  width /2),
+									profileYPZP[2] = new Point3D(height-(width-width2)/2,  (raster-spacing)/2,  width /2),
+									profileYPZP[3] = new Point3D(height                 ,  (raster-spacing)/2,  width2/2),
+									profileYPZN[3] = new Point3D(height                 ,  (raster-spacing)/2, -width2/2),
+									profileYPZN[2] = new Point3D(height-(width-width2)/2,  (raster-spacing)/2, -width /2),
+									profileYPZN[1] = new Point3D(       (width-width2)/2,  (raster-spacing)/2, -width /2),
+									profileYPZN[0] = new Point3D(                      0,  (raster-spacing)/2, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profilePP[0] = new Point3D(                      0,  width2/2,  width2/2),
+									profilePP[1] = new Point3D(       (width-width2)/2,  width /2,  width /2),
+									profilePP[2] = new Point3D(height-(width-width2)/2,  width /2,  width /2),
+									profilePP[3] = new Point3D(height                 ,  width2/2,  width2/2)
+							))
+							.add(new LineGeometry.PolyLine(
+									profilePN[0] = new Point3D(                      0,  width2/2, -width2/2),
+									profilePN[1] = new Point3D(       (width-width2)/2,  width /2, -width /2),
+									profilePN[2] = new Point3D(height-(width-width2)/2,  width /2, -width /2),
+									profilePN[3] = new Point3D(height                 ,  width2/2, -width2/2)
+							))
+							.add(new LineGeometry.PolyLine(
+									profileNP[0] = new Point3D(                      0, -width2/2,  width2/2),
+									profileNP[1] = new Point3D(       (width-width2)/2, -width /2,  width /2),
+									profileNP[2] = new Point3D(height-(width-width2)/2, -width /2,  width /2),
+									profileNP[3] = new Point3D(height                 , -width2/2,  width2/2)
+							))
+							.add(new LineGeometry.PolyLine(
+									profileNN[0] = new Point3D(                      0, -width2/2, -width2/2),
+									profileNN[1] = new Point3D(       (width-width2)/2, -width /2, -width /2),
+									profileNN[2] = new Point3D(height-(width-width2)/2, -width /2, -width /2),
+									profileNN[3] = new Point3D(height                 , -width2/2, -width2/2)
+							));
+					for (int i=0; i<4; i++) {
+						group.add(new LineGeometry.PolyLine(profileYNZN[i],profileNN[i],profileZNYN[i]));
+						group.add(new LineGeometry.PolyLine(profileYPZN[i],profilePN[i],profileZNYP[i]));
+						group.add(new LineGeometry.PolyLine(profileYNZP[i],profileNP[i],profileZPYN[i]));
+						group.add(new LineGeometry.PolyLine(profileYPZP[i],profilePP[i],profileZPYP[i]));
+					}
+					
+					return group;
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDORT() {
-					// TODO Auto-generated method stub
+					Point3D[] profileYNZN = new Point3D[4];
+					Point3D[] profileYNZP = new Point3D[4];
+					Point3D[] profileYPZN = new Point3D[4];
+					Point3D[] profileYPZP = new Point3D[4];
+					Point3D[] profileZNYN = new Point3D[4];
+					Point3D[] profileZNYP = new Point3D[4];
+					Point3D[] profileNN = new Point3D[4];
+					Point3D[] profilePN = new Point3D[4];
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									profileZNYP[0] = new Point3D(                      0,  width2/2, -(raster-spacing)/2),
+									profileZNYP[1] = new Point3D(       (width-width2)/2,  width /2, -(raster-spacing)/2),
+									profileZNYP[2] = new Point3D(height-(width-width2)/2,  width /2, -(raster-spacing)/2),
+									profileZNYP[3] = new Point3D(height                 ,  width2/2, -(raster-spacing)/2),
+									profileZNYN[3] = new Point3D(height                 , -width2/2, -(raster-spacing)/2),
+									profileZNYN[2] = new Point3D(height-(width-width2)/2, -width /2, -(raster-spacing)/2),
+									profileZNYN[1] = new Point3D(       (width-width2)/2, -width /2, -(raster-spacing)/2),
+									profileZNYN[0] = new Point3D(                      0, -width2/2, -(raster-spacing)/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profileYNZP[0] = new Point3D(                      0, -(raster-spacing)/2,  width2/2),
+									profileYNZP[1] = new Point3D(       (width-width2)/2, -(raster-spacing)/2,  width /2),
+									profileYNZP[2] = new Point3D(height-(width-width2)/2, -(raster-spacing)/2,  width /2),
+									profileYNZP[3] = new Point3D(height                 , -(raster-spacing)/2,  width2/2),
+									profileYNZN[3] = new Point3D(height                 , -(raster-spacing)/2, -width2/2),
+									profileYNZN[2] = new Point3D(height-(width-width2)/2, -(raster-spacing)/2, -width /2),
+									profileYNZN[1] = new Point3D(       (width-width2)/2, -(raster-spacing)/2, -width /2),
+									profileYNZN[0] = new Point3D(                      0, -(raster-spacing)/2, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profileYPZP[0] = new Point3D(                      0,  (raster-spacing)/2,  width2/2),
+									profileYPZP[1] = new Point3D(       (width-width2)/2,  (raster-spacing)/2,  width /2),
+									profileYPZP[2] = new Point3D(height-(width-width2)/2,  (raster-spacing)/2,  width /2),
+									profileYPZP[3] = new Point3D(height                 ,  (raster-spacing)/2,  width2/2),
+									profileYPZN[3] = new Point3D(height                 ,  (raster-spacing)/2, -width2/2),
+									profileYPZN[2] = new Point3D(height-(width-width2)/2,  (raster-spacing)/2, -width /2),
+									profileYPZN[1] = new Point3D(       (width-width2)/2,  (raster-spacing)/2, -width /2),
+									profileYPZN[0] = new Point3D(                      0,  (raster-spacing)/2, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profilePN[0] = new Point3D(                      0,  width2/2, -width2/2),
+									profilePN[1] = new Point3D(       (width-width2)/2,  width /2, -width /2),
+									profilePN[2] = new Point3D(height-(width-width2)/2,  width /2, -width /2),
+									profilePN[3] = new Point3D(height                 ,  width2/2, -width2/2)
+							))
+							.add(new LineGeometry.PolyLine(
+									profileNN[0] = new Point3D(                      0, -width2/2, -width2/2),
+									profileNN[1] = new Point3D(       (width-width2)/2, -width /2, -width /2),
+									profileNN[2] = new Point3D(height-(width-width2)/2, -width /2, -width /2),
+									profileNN[3] = new Point3D(height                 , -width2/2, -width2/2)
+							));
+					for (int i=0; i<4; i++) {
+						group.add(new LineGeometry.PolyLine(profileYNZN[i],profileNN[i],profileZNYN[i]));
+						group.add(new LineGeometry.PolyLine(profileYPZN[i],profilePN[i],profileZNYP[i]));
+						group.add(new LineGeometry.PolyLine(profileYNZP[i],profileYPZP[i]));
+					}
+					
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_CORRIDORC() {
 					return null;
 				}
 
 				private static LineGeometry.IndexedLineSet create_GLASSCORRIDOR() {
-					// TODO Auto-generated method stub
 					return null;
 				}
 			}
