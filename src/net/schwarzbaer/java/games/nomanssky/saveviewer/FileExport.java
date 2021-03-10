@@ -2851,7 +2851,6 @@ public class FileExport {
 			mapObjectID2Model.clear();
 			mapModel2TextLength.clear();
 			
-			addModels("BIOROOM",        "^BIOROOM");
 			addModels("MAINROOM",       "^MAINROOM");
 			addModels("MAINROOMCUBE",   "^MAINROOMCUBE");
 			
@@ -2863,10 +2862,6 @@ public class FileExport {
 			
 			addModels("CUBEROOM",       "^CUBEROOM","^CUBEGLASS");
 			
-			addModels("CUBEFLOOR",      "^CUBEFLOOR");
-			
-			addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR");
-			addModels("CORRIDORX",      "^CORRIDORX");
 			
 			addModels("PLANT",          "^BARRENPLANT","^CREATUREPLANT","^GRAVPLANT","^LUSHPLANT","^NIPPLANT","^PEARLPLANT","^POOPPLANT",
 			                            "^RADIOPLANT","^SACVENOMPLANT","^SCORCHEDPLANT","^SNOWPLANT","^TOXICPLANT");
@@ -2875,52 +2870,15 @@ public class FileExport {
 			addModels("PLANTERMEGA",    "^PLANTERMEGA");
 			addModels("CARBONPLANTER",  "^CARBONPLANTER");
 			
-			addModels("SMALLLIGHT",     "^SMALLLIGHT");
-			addModels("WALLLIGHT",      makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
-			
-			addModels("BUILDLANDINGPAD","^BUILDLANDINGPAD");
-			
 			addModels("GARAGE_L",       "^GARAGE_L");
 			addModels("GARAGE_M",       "^GARAGE_M", "^GARAGE_MECH");
 			addModels("GARAGE_S",       "^GARAGE_S", "^GARAGE_B", "^GARAGE_SUB");
 			
 			addModels("NPCTERMINAL",    "^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 			
-			//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
-			
-			addModels("BUILDSIMPLEDESK","^BUILDSIMPLEDESK");
-			addModels("BUILDCHAIR",     "^BUILDCHAIR");
-			addModels("BUILDBED",       "^BUILDBED");
-			
 			addModels("__SIMPLE_LINE",  "^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE","^U_BYTEBEATLINE");
 			
-			
-			addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
-			addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
-			addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
-			addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
-			addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
-			addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
-			addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
-			addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
-			addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
-			addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
-			addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
-			addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
-			addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
-			addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
-			addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
-			addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
-			addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
-			addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
-			addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
-			addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
-			addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
-			addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
-			addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
-			
-//			addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
-//			addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
+			HardCodedModels.addModelsToModelMap();
 			
 		}
 		
@@ -2940,6 +2898,21 @@ public class FileExport {
 		
 		private static class HardCodedModels {
 			
+			private static void addModelsToModelMap() {
+				addModels("BIOROOM",        "^BIOROOM");
+				addModels("CUBEFLOOR",      "^CUBEFLOOR");
+				addModels("SMALLLIGHT",     "^SMALLLIGHT");
+				addModels("WALLLIGHT",      makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
+				addModels("BUILDLANDINGPAD","^BUILDLANDINGPAD");
+				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
+				addModels("BUILDSIMPLEDESK","^BUILDSIMPLEDESK");
+				addModels("BUILDCHAIR",     "^BUILDCHAIR");
+				addModels("BUILDBED",       "^BUILDBED");
+				
+				SolitaryWallsAndFloors.addModelsToModelMap();
+				Corridors.addModelsToModelMap();
+			}
+			
 			private static void writeProtos(PrintWriter vrml) {
 				
 				vrml.println("# PROTOs of hardcoded models");
@@ -2948,7 +2921,6 @@ public class FileExport {
 				writeSimpleLineProtoToFile(vrml);
 				
 				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^U_BATTERY_S, ^U_SOLAR_S, ^U_GENERATOR_S, ^BASE_FLAG
-				// TODO: HardCodedModels: Must have: ^CORRIDORT
 				
 				writeProtoToFile(vrml, "BIOROOM"                , ()->LineGeometry.writeIndexedLineSet(vrml, create_BIOROOM        (), "\t", null));
 				writeProtoToFile(vrml, "CUBEFLOOR"              , ()->LineGeometry.writeIndexedLineSet(vrml, create_CUBEFLOOR      (), "\t", null));
@@ -2961,6 +2933,7 @@ public class FileExport {
 				writeProtoToFile(vrml, "BUILDBED", 0.5, 0       , ()->LineGeometry.writeIndexedLineSet(vrml, create_BUILDBED       (), "\t", null));
 				
 				SolitaryWallsAndFloors.writeProtos(vrml);
+				Corridors.writeProtos(vrml);
 				
 				/*			
 				vrml.println("# ############################");
@@ -3412,6 +3385,68 @@ public class FileExport {
 				return group1;
 			}
 			
+			private static class Corridors {
+				
+				private static final double raster = 4.0; // YZ
+				private static final double height = 3.3; // X
+				private static final double width  = 3.2; // Y
+				private static final double length = 3.8; // Z
+				private static final double spacing = 0.2;
+				
+				private static void writeProtos(PrintWriter vrml) {
+					
+					writeProtoToFile(vrml, "CORRIDOR",      ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDOR     (), "\t", null ));
+					writeProtoToFile(vrml, "CORRIDORX",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORX    (), "\t", null ));
+					writeProtoToFile(vrml, "CORRIDORL",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORL    (), "\t", null ));
+					writeProtoToFile(vrml, "CORRIDORT",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORT    (), "\t", null ));
+					
+					writeProtoToFile(vrml, "CORRIDORC",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORC    (), "\t", null ));
+					writeProtoToFile(vrml, "GLASSCORRIDOR", ()->LineGeometry.writeIndexedLineSet(vrml, create_GLASSCORRIDOR(), "\t", null ));
+				}
+
+				private static void addModelsToModelMap() {
+					//addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR");
+					//addModels("CORRIDORX",      "^CORRIDORX");
+					
+					//addModels("CORRIDOR",       "^CORRIDOR");
+					//addModels("CORRIDORX",      "^CORRIDORX");
+					//addModels("CORRIDORC",      "^CORRIDORC");
+					//addModels("CORRIDORL",      "^CORRIDORL");
+					//addModels("CORRIDORT",      "^CORRIDORT");
+					//addModels("GLASSCORRIDOR",  "^GLASSCORRIDOR");
+				}
+
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDOR() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORX() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORC() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORL() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORT() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_GLASSCORRIDOR() {
+					// TODO Auto-generated method stub
+					return null;
+				}
+			}
+			
 			private static class SolitaryWallsAndFloors {
 				private static final double wall_thickness = 0.3;
 				private static final double wall_length    = 16.0/3.0;
@@ -3422,7 +3457,36 @@ public class FileExport {
 				private static final double border_v       = 0.65;
 				private static final double spacing        = 0.30;
 
-				private static void writeProtos(PrintWriter vrml) {
+				static void addModelsToModelMap() {
+					addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
+					addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
+					addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
+					addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
+					addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
+					addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
+					addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
+					addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
+					addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
+					addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
+					addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
+					addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
+					addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
+					addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
+					addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
+					addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
+					addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
+					addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
+					addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
+					addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
+					addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
+					addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
+					addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
+					
+//					addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
+//					addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
+				}
+
+				static void writeProtos(PrintWriter vrml) {
 					
 					writeProtoToFile(vrml, "__SOLITARY_ARCH"         , ()->LineGeometry.writeIndexedLineSet(vrml, create_ARCH        (), "\t", null ));
 					writeProtoToFile(vrml, "__SOLITARY_ARCH_H", 12   , ()->LineGeometry.writeIndexedLineSet(vrml, create_ARCH_H      (), "\t", null ));
@@ -4280,6 +4344,47 @@ public class FileExport {
 			}
 		}
 
+		public static class MultipleIndexedLineSets {
+			private final Vector<StoredIndexedLineSet> indexedLineSets;
+
+			MultipleIndexedLineSets() {
+				indexedLineSets = new Vector<StoredIndexedLineSet>();
+			}
+
+			void write(PrintWriter vrml, String vrmlIndent) {
+				for (StoredIndexedLineSet storedILS:indexedLineSets)
+					writeIndexedLineSet(vrml, storedILS.indexedLineSet, vrmlIndent, storedILS.color);
+			}
+
+			void write(PrintWriter vrml, String vrmlIndent, int precision) {
+				for (StoredIndexedLineSet storedILS:indexedLineSets)
+					writeIndexedLineSet(vrml, storedILS.indexedLineSet, vrmlIndent, precision, storedILS.color);
+			}
+			
+			MultipleIndexedLineSets add(MultipleIndexedLineSets other) {
+				if (other!=null)
+					indexedLineSets.addAll(other.indexedLineSets);
+				return this;
+			}
+			MultipleIndexedLineSets add(IndexedLineSet indexedLineSet) {
+				return add(null,indexedLineSet);
+			}
+			MultipleIndexedLineSets add(Color color, IndexedLineSet indexedLineSet) {
+				if (indexedLineSet!=null)
+					indexedLineSets.add(new StoredIndexedLineSet(color,indexedLineSet));
+				return this;
+			}
+			
+			static class StoredIndexedLineSet {
+				private final Color color;
+				private final IndexedLineSet indexedLineSet;
+				StoredIndexedLineSet(Color color, IndexedLineSet indexedLineSet) {
+					this.color = color;
+					this.indexedLineSet = indexedLineSet;
+				}
+			}
+		}
+
 		public static abstract class IndexedLineSet {
 			Vector<Point3D> points;
 			Vector<Segment> segments;
@@ -4339,7 +4444,11 @@ public class FileExport {
 				}
 				// TODO [OLD] LineGeometry.IndexedLineSet.optimizeSegments()
 			}
-			
+
+			void write(PrintWriter vrml, String vrmlIndent                            ) { writeIndexedLineSet(vrml, this, vrmlIndent,             null); }
+			void write(PrintWriter vrml, String vrmlIndent, int precision             ) { writeIndexedLineSet(vrml, this, vrmlIndent, precision,  null); }
+			void write(PrintWriter vrml, String vrmlIndent,                Color color) { writeIndexedLineSet(vrml, this, vrmlIndent,            color); }
+			void write(PrintWriter vrml, String vrmlIndent, int precision, Color color) { writeIndexedLineSet(vrml, this, vrmlIndent, precision, color); }
 		}
 		
 		static class OptimizeNode extends GroupingNode {
