@@ -3391,14 +3391,14 @@ public class FileExport {
 				private static final double spacing = 0.05;
 				
 				private static void writeProtos(PrintWriter vrml) {
-					// TODO: HardCodedModels.Corridors: CORRIDORC, GLASSCORRIDOR, DOOR2, BUILDDOOR
+					// TODO: HardCodedModels.Corridors: GLASSCORRIDOR
 					
 					writeProtoToFile(vrml, "CORRIDOR", 15,  ()->create_CORRIDOR     ().write(vrml,"\t"));
 					writeProtoToFile(vrml, "CORRIDORL", 15, ()->create_CORRIDORL    ().write(vrml,"\t"));
 					writeProtoToFile(vrml, "CORRIDORX", 15, ()->create_CORRIDORX    ().write(vrml,"\t"));
 					writeProtoToFile(vrml, "CORRIDORT", 15, ()->create_CORRIDORT    ().write(vrml,"\t"));
 					
-					//writeProtoToFile(vrml, "CORRIDORC",     ()->create_CORRIDORC    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORC", 1, 45, ()->create_CORRIDORC    ().write(vrml,"\t"));
 					//writeProtoToFile(vrml, "GLASSCORRIDOR", 15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
 					
 					writeProtoToFile(vrml, "DOOR2", 15,     ()->create_DOOR2    ().write(vrml,"\t"));
@@ -3414,8 +3414,7 @@ public class FileExport {
 					addModels("CORRIDORL",      "^CORRIDORL");
 					addModels("CORRIDORX",      "^CORRIDORX");
 					addModels("CORRIDORT",      "^CORRIDORT");
-					
-					//addModels("CORRIDORC",      "^CORRIDORC");
+					addModels("CORRIDORC",      "^CORRIDORC");
 					
 					addModels("DOOR2",          "^DOOR2");  // Holo-Tür
 					addModels("BUILDDOOR",      "^BUILDDOOR");
@@ -3626,6 +3625,67 @@ public class FileExport {
 					return group;
 				}
 
+				private static LineGeometry.MultipleIndexedLineSets create_CORRIDORC() {
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									new Point3D(                      0, raster-spacing/2, +width2/2-raster/2),
+									new Point3D(       (width-width2)/2, raster-spacing/2, +width /2-raster/2),
+									new Point3D(height-(width-width2)/2, raster-spacing/2, +width /2-raster/2),
+									new Point3D(height                 , raster-spacing/2, +width2/2-raster/2),
+									new Point3D(height                 , raster-spacing/2, -width2/2-raster/2),
+									new Point3D(height-(width-width2)/2, raster-spacing/2, -width /2-raster/2),
+									new Point3D(       (width-width2)/2, raster-spacing/2, -width /2-raster/2),
+									new Point3D(                      0, raster-spacing/2, -width2/2-raster/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									new Point3D(                      0, +width2/2-raster/2, raster-spacing/2),
+									new Point3D(       (width-width2)/2, +width /2-raster/2, raster-spacing/2),
+									new Point3D(height-(width-width2)/2, +width /2-raster/2, raster-spacing/2),
+									new Point3D(height                 , +width2/2-raster/2, raster-spacing/2),
+									new Point3D(height                 , -width2/2-raster/2, raster-spacing/2),
+									new Point3D(height-(width-width2)/2, -width /2-raster/2, raster-spacing/2),
+									new Point3D(       (width-width2)/2, -width /2-raster/2, raster-spacing/2),
+									new Point3D(                      0, -width2/2-raster/2, raster-spacing/2)
+							).close())
+							.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(                      0, raster-spacing/2, raster-spacing/2), +width2/2 + raster*1.5-spacing/2, 180, 270, false, 18))
+							.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(       (width-width2)/2, raster-spacing/2, raster-spacing/2), +width /2 + raster*1.5-spacing/2, 180, 270, false, 18))
+					//		.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height-(width-width2)/2, raster-spacing/2, raster-spacing/2), +width /2 + raster*1.5-spacing/2, 180, 270, false, 18))
+					//		.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height                 , raster-spacing/2, raster-spacing/2), +width2/2 + raster*1.5-spacing/2, 180, 270, false, 18))
+							.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height                 , raster-spacing/2, raster-spacing/2), -width2/2 + raster*1.5-spacing/2, 180, 270, false, 18))
+							.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height-(width-width2)/2, raster-spacing/2, raster-spacing/2), -width /2 + raster*1.5-spacing/2, 180, 270, false, 18))
+							.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(       (width-width2)/2, raster-spacing/2, raster-spacing/2), -width /2 + raster*1.5-spacing/2, 180, 270, false, 18))
+							.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(                      0, raster-spacing/2, raster-spacing/2), -width2/2 + raster*1.5-spacing/2, 180, 270, false, 18))
+							;
+					int nSeg = 6;
+					double segAngle_deg = 90/nSeg;
+					double startAngle_deg = 180 + 0.5;
+					double endAngle_deg   = 180 + segAngle_deg-0.5;
+					double hW = (height-(width-width2))/3;
+					double wW = width2/6;
+					
+					LineGeometry.PolyLine pl1,pl2,pl3,pl4;
+					LineGeometry.GroupingNode window = new LineGeometry.GroupingNode()
+							.add(pl1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(hW+    (width-width2)/2, 0, 0),   +width /2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
+							.add(pl2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height-(width-width2)/2, 0, 0),   +width /2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
+							.add(pl3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height                 , 0, 0),   +width2/2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
+							.add(pl4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height                 , 0, 0), wW-width2/2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
+							.add(new LineGeometry.PolyLine( pl1.getFirst(), pl2.getFirst(), pl3.getFirst(), pl4.getFirst() ))
+							.add(new LineGeometry.PolyLine( pl1.getLast (), pl2.getLast (), pl3.getLast (), pl4.getLast () ))
+							;
+					
+					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+							.add(group)
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window)                                                 .addTranslation(0, raster-spacing/2, raster-spacing/2))
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*1).addTranslation(0, raster-spacing/2, raster-spacing/2))
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*2).addTranslation(0, raster-spacing/2, raster-spacing/2))
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*3).addTranslation(0, raster-spacing/2, raster-spacing/2))
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*4).addTranslation(0, raster-spacing/2, raster-spacing/2))
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*5).addTranslation(0, raster-spacing/2, raster-spacing/2))
+							;
+					
+					return multi;
+				}
+
 				private static LineGeometry.IndexedLineSet create_BUILDDOOR() {
 					double plateThickness = 0.3;
 					LineGeometry.Prism bigPlate = new LineGeometry.Prism(LineGeometry.Axis.Y, plateThickness,
@@ -3738,10 +3798,6 @@ public class FileExport {
 							;
 					
 					return group;
-				}
-
-				private static LineGeometry.IndexedLineSet create_CORRIDORC() {
-					return null;
 				}
 
 				private static LineGeometry.IndexedLineSet create_GLASSCORRIDOR() {
@@ -4922,6 +4978,12 @@ public class FileExport {
 			@Override
 			protected void prepareForOutput() {}
 			
+			public Point3D getLast() {
+				return points.lastElement();
+			}
+			public Point3D getFirst() {
+				return points.firstElement();
+			}
 			public PolyLine addAll(Point3D... points) {
 				for (Point3D p:points) add(p);
 				return this;
