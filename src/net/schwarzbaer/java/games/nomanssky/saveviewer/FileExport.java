@@ -3504,12 +3504,14 @@ public class FileExport {
 									profile2[0] = new Point3D(                      0,  width2/2,  width2/2),
 									profile2[1] = new Point3D(       (width-width2)/2,  width /2,  width /2),
 									profile2[2] = new Point3D(height-(width-width2)/2,  width /2,  width /2),
-									profile2[3] = new Point3D(height                 ,  width2/2,  width2/2),
+									profile2[3] = new Point3D(height                 ,  width2/2,  width2/2)
+							))
+							.add(new LineGeometry.PolyLine(
 									profile2[4] = new Point3D(height                 , -width2/2, -width2/2),
 									profile2[5] = new Point3D(height-(width-width2)/2, -width /2, -width /2),
 									profile2[6] = new Point3D(       (width-width2)/2, -width /2, -width /2),
 									profile2[7] = new Point3D(                      0, -width2/2, -width2/2)
-							).close())
+							))
 							.add(new LineGeometry.PolyLine(
 									profile3[0] = new Point3D(                      0, -(raster-spacing)/2,  width2/2),
 									profile3[1] = new Point3D(       (width-width2)/2, -(raster-spacing)/2,  width /2),
