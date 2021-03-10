@@ -3388,7 +3388,7 @@ public class FileExport {
 				private static final double height = 3.3; // X
 				private static final double width  = 3.2; // Y
 				private static final double width2 = 2.0; // Y
-				private static final double spacing = 0.2;
+				private static final double spacing = 0.0;
 				
 				private static void writeProtos(PrintWriter vrml) {
 					// TODO: HardCodedModels.Corridors: CORRIDORC, GLASSCORRIDOR, DOOR2, BUILDDOOR
@@ -3402,7 +3402,7 @@ public class FileExport {
 					//writeProtoToFile(vrml, "GLASSCORRIDOR", 15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
 					
 					//writeProtoToFile(vrml, "DOOR2",         ()->create_DOOR2    ().write(vrml,"\t"));
-					//writeProtoToFile(vrml, "BUILDDOOR",     ()->create_BUILDDOOR().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BUILDDOOR",     ()->create_BUILDDOOR().write(vrml,"\t"));
 				}
 
 				private static void addModelsToModelMap() {
@@ -3417,7 +3417,7 @@ public class FileExport {
 					//addModels("CORRIDORC",      "^CORRIDORC");
 					
 					//addModels("DOOR2",      "^DOOR2");  // Holo-Tür
-					//addModels("BUILDDOOR",      "^BUILDDOOR"); // replace template PROTO with hardcoded version 
+					addModels("BUILDDOOR",      "^BUILDDOOR");
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDOR() {
@@ -3622,6 +3622,39 @@ public class FileExport {
 					}
 					
 					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_BUILDDOOR() {
+					double plateThickness = 0.3;
+					LineGeometry.Prism bigPlate = new LineGeometry.Prism(LineGeometry.Axis.Y, plateThickness,
+							new Point3D(                      0, 0,  width2/2),
+							new Point3D(       (width-width2)/2, 0,  width /2),
+							new Point3D(height-(width-width2)/2, 0,  width /2),
+							new Point3D(height                 , 0,  width2/2),
+							new Point3D(height                 , 0, -width2/2),
+							new Point3D(height-(width-width2)/2, 0, -width /2),
+							new Point3D(       (width-width2)/2, 0, -width /2),
+							new Point3D(                      0, 0, -width2/2)
+					);
+					double widthD2 = 0.75;
+					double widthD  = 1.30;
+					double heightD = 2.25;
+					LineGeometry.Prism door = new LineGeometry.Prism(LineGeometry.Axis.Y, plateThickness,
+							new Point3D(                         0 + 0.25, 0,  widthD2/2),
+							new Point3D(        (widthD-widthD2)/2 + 0.25, 0,  widthD /2),
+							new Point3D(heightD-(widthD-widthD2)/2 + 0.25, 0,  widthD /2),
+							new Point3D(heightD                    + 0.25, 0,  widthD2/2),
+							new Point3D(heightD                    + 0.25, 0, -widthD2/2),
+							new Point3D(heightD-(widthD-widthD2)/2 + 0.25, 0, -widthD /2),
+							new Point3D(        (widthD-widthD2)/2 + 0.25, 0, -widthD /2),
+							new Point3D(                         0 + 0.25, 0, -widthD2/2)
+					);
+					return new LineGeometry.Transform(new LineGeometry.GroupingNode(bigPlate,door)).addTranslation(0,plateThickness/2,0);
+				}
+
+				private static LineGeometry.IndexedLineSet create_DOOR2() {
+					// TODO Auto-generated method stub
+					return null;
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDORC() {
@@ -4868,13 +4901,13 @@ public class FileExport {
 			}
 		}
 		
-		static class Prism extends Transform {
+		static class Prism extends GroupingNode {
 			Prism(Axis heightAxis, double height, Point3D... points) {
-				super(new GroupingNode(
+				super(
 					new Transform(new PolyLine(points).close()).addTranslation(heightAxis,+height/2),
 					new Transform(new PolyLine(points).close()).addTranslation(heightAxis,-height/2),
 					new GroupingNode(generateHeightLines(heightAxis, height, points))
-				));
+				);
 			}
 			private static PolyLine[] generateHeightLines(Axis heightAxis, double height, Point3D[] points) {
 				PolyLine[] lines = new PolyLine[points.length];
