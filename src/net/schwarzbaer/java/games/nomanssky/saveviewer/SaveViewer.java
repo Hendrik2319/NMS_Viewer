@@ -834,6 +834,7 @@ public class SaveViewer implements ActionListener {
 		public String vrmlViewer = null;
 		
 		public HashSet<String> highlightedBuildingObjects = new HashSet<>();
+		public boolean useSmallLightsAsMeasurePoints = false;;
 		
 		Config() {
 		}
@@ -886,6 +887,7 @@ public class SaveViewer implements ActionListener {
 					if (str.startsWith("VrmlViewer="                )) config.vrmlViewer           = str.substring("VrmlViewer=".length());
 					if (str.startsWith("HighlightedBuildingObjects=")) splitStringSet(str.substring("HighlightedBuildingObjects=".length()), ",", config.highlightedBuildingObjects);
 					if (str.equals("OpenNewlyWrittenVrmlFileInViewer")) config.openNewlyWrittenVrmlFileInViewer = true;
+					if (str.equals("UseSmallLightsAsMeasurePoints"   )) config.useSmallLightsAsMeasurePoints    = true;
 				}
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -903,6 +905,7 @@ public class SaveViewer implements ActionListener {
 				if ( savegameSubFolder   !=null) out.printf("SavegameSubFolder"   +"=%s%n",savegameSubFolder   );
 				if ( savegameBackupFolder!=null) out.printf("SavegameBackupFolder"+"=%s%n",savegameBackupFolder);
 				if ( vrmlViewer          !=null) out.printf("VrmlViewer"          +"=%s%n",vrmlViewer);
+				if ( useSmallLightsAsMeasurePoints       ) out.printf("UseSmallLightsAsMeasurePoints%n");
 				if ( openNewlyWrittenVrmlFileInViewer    ) out.printf("OpenNewlyWrittenVrmlFileInViewer%n");
 				if (!highlightedBuildingObjects.isEmpty()) out.printf("HighlightedBuildingObjects=%s%n", joinStringSet(",",highlightedBuildingObjects));
 				
@@ -1172,6 +1175,11 @@ public class SaveViewer implements ActionListener {
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Clear Unknown Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearUnknownValues,true));
 			extraMenu.add(createMenuItem("Show Unknown Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowUnknownValues ,true));
+			extraMenu.addSeparator();
+			extraMenu.add(Gui.createCheckBoxMenuItem("Use SMALL LIGHTs as Measure Points", config.useSmallLightsAsMeasurePoints, (Consumer<Boolean>)b->{
+				config.useSmallLightsAsMeasurePoints = b;
+				config.writeToFile();
+			}));
 
 			toolBar.addSeparator();
 			toolBar.add(createButton("Tools", toolsMenu, true));

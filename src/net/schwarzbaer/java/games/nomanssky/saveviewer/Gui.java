@@ -1381,39 +1381,38 @@ public class Gui {
 	public static JMenuItem createMenuItem(String title, ActionListener l, boolean enabled) {
 		return createMenuItem(title, l, null, null, enabled, null);
 	}
-
 	public static JMenuItem createMenuItem(String title, ActionListener l) {
 		return createMenuItem(title, l, null, null, true, null);
 	}
-
 	public static JMenuItem createMenuItem(String title, ActionListener l, ToolbarIcons icon) {
 		return createMenuItem(title, l, null, null, true, icon);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand) {
 		return createMenuItem(title, l, null, actionCommand, true, null);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, AC actionCommand, ToolbarIcons icon) {
 		return createMenuItem(title, l, null, actionCommand, true, icon);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand) {
 		return createMenuItem(title, l, disabler, actionCommand, true, null);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, ToolbarIcons icon) {
 		return createMenuItem(title, l, disabler, actionCommand, true, icon);
 	}
-
 	public static <AC extends Enum<AC>> JMenuItem createMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, ToolbarIcons icon) {
-		JMenuItem menuItem = new JMenuItem(title);
-		setComp(menuItem, null, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getCachedIcon(icon) : null);
-		return menuItem;
+		return setComp(new JMenuItem(title), null, l, disabler, actionCommand, enabled, icon!=null ? toolbarIS.getCachedIcon(icon) : null);
 	}
 
+	public static JCheckBoxMenuItem createCheckBoxMenuItem(String title, boolean selected, Consumer<Boolean> setValue) {
+		JCheckBoxMenuItem comp = new JCheckBoxMenuItem(title, selected);
+		setComp(comp, null, setValue==null ? null : e->setValue.accept(comp.isSelected()), null, null, true, null);
+		return comp;
+	}
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l) {
 		return createCheckBoxMenuItem(title, l, null, null, true, true);
+	}
+	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, boolean selected) {
+		return createCheckBoxMenuItem(title, null, null, null, true, selected);
 	}
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, boolean selected, ActionListener l) {
 		return createCheckBoxMenuItem(title, l, null, null, true, selected);
@@ -1428,39 +1427,28 @@ public class Gui {
 		return createCheckBoxMenuItem(title, l, disabler, actionCommand, enabled, true);
 	}
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean enabled, boolean selected) {
-		JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(title);
-		menuItem.setSelected(selected);
-		menuItem.setEnabled(enabled);
-		setComp(menuItem, null, l, disabler, actionCommand, true, null);
-		return menuItem;
+		return setComp(new JCheckBoxMenuItem(title, selected), null, l, disabler, actionCommand, enabled, null);
 	}
 
 	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected) {
 		return createCheckbox(title, l, isSelected, true);
 	}
-
 	public static JCheckBox createCheckbox(String title, ActionListener l, boolean isSelected, boolean enabled) {
 		return createCheckbox(title, l, null, null, isSelected, enabled);
 	}
-
 	public static JCheckBox createCheckbox(String title, boolean isSelected, Consumer<Boolean> selectionChanged) {
 		return createCheckbox(title, isSelected, true, selectionChanged);
 	}
-
 	public static JCheckBox createCheckbox(String title, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
 		return createCheckbox(title, null, null, isSelected, enabled, selectionChanged);
 	}
-
 	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled, Consumer<Boolean> selectionChanged) {
 		JCheckBox button = new JCheckBox(title,isSelected);
-		setComp(button, null, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled, null);
-		return button;
+		return setComp(button, null, selectionChanged==null?null:e->selectionChanged.accept(button.isSelected()), disabler, actionCommand, enabled, null);
 	}
 
 	public static <AC extends Enum<AC>> JCheckBox createCheckbox(String title, ActionListener l, Disabler<AC> disabler, AC actionCommand, boolean isSelected, boolean enabled) {
-		JCheckBox button = new JCheckBox(title,isSelected);
-		setComp(button, null, l, disabler, actionCommand, enabled, null);
-		return button;
+		return setComp(new JCheckBox(title,isSelected), null, l, disabler, actionCommand, enabled, null);
 	}
 
 	public static TristateCheckBox createTristateCheckBox(String title, ActionListener l, TristateCheckBox.State state) {
@@ -1472,47 +1460,36 @@ public class Gui {
 	public static JTextField createTextField(String txt, Consumer<String> setInput) {
 		return setTextField(new JTextField(txt), null, null, setInput);
 	}
-
 	public static JTextField createTextField(String txt, int columns, Consumer<String> setInput) {
 		return setTextField(new JTextField(txt,columns), null, null, setInput);
 	}
-
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
 		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
 	}
-
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Consumer<String> setInput) {
 		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
 	}
-
 	public static JTextField createTextField(String txt, Function<String,String> setInput) {
 		return setTextField(new JTextField(txt), null, null, setInput);
 	}
-
 	public static JTextField createTextField(String txt, int columns, Function<String,String> setInput) {
 		return setTextField(new JTextField(txt,columns), null, null, setInput);
 	}
-
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
 		return setTextField(new JTextField(txt), disabler, actionCommand, setInput);
 	}
-
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {
 		return setTextField(new JTextField(txt,columns), disabler, actionCommand, setInput);
 	}
-
 	public static JTextField createTextField(String txt, ActionListener l) {
 		return setTextField(new JTextField(txt), l, null, null);
 	}
-
 	public static JTextField createTextField(String txt, int columns, ActionListener l) {
 		return setTextField(new JTextField(txt,columns), l, null, null);
 	}
-
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
 		return setTextField(new JTextField(txt), listener, disabler, actionCommand);
 	}
-
 	public static <AC extends Enum<AC>> JTextField createTextField(String txt, int columns, ActionListener listener, Disabler<AC> disabler, AC actionCommand) {
 		return setTextField(new JTextField(txt,columns), listener, disabler, actionCommand);
 	}

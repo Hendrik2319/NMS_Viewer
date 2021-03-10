@@ -1753,7 +1753,7 @@ public class SimplePanels {
 			}
 			//System.out.println("objects.size(): "+objects.size());
 			
-			String suggestedFileName = String.format("BBO_%s.wrl", data.index>=0?(""+(data.index+1)):"#");
+			String suggestedFileName = String.format("BBO_%s_%016X.wrl", data.index>=0?(""+(data.index+1)):"#", selectedAddress);
 			FileExport.writePosToVRML_simple(suggestedFileName,objects.toArray(new BuildingObject[0]), radius, mainWindow,"BuildingObjects",null);
 		}
 	}
@@ -2054,7 +2054,7 @@ public class SimplePanels {
 					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet",FileExport::openFileInVrmlViewer);
 				}, Gui.ToolbarIcons.SaveAs));
 				
-				JCheckBoxMenuItem openNewFileChckBx = Gui.createCheckBoxMenuItem("Open newly written file in viewer", SaveViewer.config.openNewlyWrittenVrmlFileInViewer, null);
+				JCheckBoxMenuItem openNewFileChckBx = Gui.createCheckBoxMenuItem("Open newly written file in viewer", SaveViewer.config.openNewlyWrittenVrmlFileInViewer);
 				openNewFileChckBx.addActionListener(e->{
 					SaveViewer.config.openNewlyWrittenVrmlFileInViewer = openNewFileChckBx.isSelected();
 					if (SaveViewer.config.openNewlyWrittenVrmlFileInViewer) {

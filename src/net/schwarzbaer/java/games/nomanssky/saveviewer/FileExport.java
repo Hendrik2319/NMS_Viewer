@@ -329,10 +329,6 @@ public class FileExport {
 				if (min==null) min = new Point3D(pos); else min.min(pos);
 				if (max==null) max = new Point3D(pos); else max.max(pos);
 			}
-			double sizeOfAxisCrosses = 0;
-			if (max!=null && min!=null)
-				sizeOfAxisCrosses = Math.max(Math.max(max.x-min.x,max.y-min.y),max.z-min.z)/200;
-			sizeOfAxisCrosses = Math.max(sizeOfAxisCrosses, 0.25);
 			
 			try (PrintWriter vrml = new PrintWriter(new BufferedWriter( new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8)))) {
 				
@@ -378,7 +374,7 @@ public class FileExport {
 				for (int i=0; i<bObjs.length; i++) {
 					BuildingObject obj = bObjs[i];
 					if (!cubeCombine.add(obj) && !freightCombine.add(obj))
-						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+						VRMLoutput.writeModel(vrml, obj);
 					int value = i+1;
 					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
 				}
@@ -407,7 +403,7 @@ public class FileExport {
 					startTime = startTask(pd, "   ", "Write unprocessed objects of CubeCombine to file");
 					vrml.println("# CubeCombine: remaining objects");
 					for (BuildingObject obj:remainingObjects)
-						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+						VRMLoutput.writeModel(vrml, obj);
 					endTask(startTime);
 				}
 				
@@ -416,7 +412,7 @@ public class FileExport {
 					startTime = startTask(pd, "   ", "Write unprocessed objects of FreighterRoomCombine to file");
 					vrml.println("# FreighterRoomCombine: remaining objects");
 					for (BuildingObject obj:remainingObjects)
-						VRMLoutput.writeModel(vrml, obj, sizeOfAxisCrosses);
+						VRMLoutput.writeModel(vrml, obj);
 					endTask(startTime);
 				}
 				
@@ -2173,7 +2169,7 @@ public class FileExport {
 					Point3D color = new Point3D(1,0,0);
 					int i=0;
 					for (Neighbor n:blocks.values())
-						VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), null, n.obj.position.pos, n.obj.position.at, n.obj.position.up, 0.5, color);
+						VRMLoutput.writeModel(vrml, n.obj.objectID, String.format("N%d Obj%d", neighborhoodIndex, ++i), null, n.obj.position.pos, n.obj.position.at, n.obj.position.up, color);
 				}
 	
 				public void writeModel(PrintWriter vrml) {
@@ -3942,7 +3938,7 @@ public class FileExport {
 			}
 		}
 
-		private static void writeModel(PrintWriter vrml, BuildingObject obj, double sizeOfAxisCrosses) {
+		private static void writeModel(PrintWriter vrml, BuildingObject obj) {
 			if (obj.position==null) return;
 			if (obj.position.pos==null) return;
 			if (obj.position.up==null) return;
@@ -3952,7 +3948,7 @@ public class FileExport {
 			String label = getLabel(objectID);
 			String extraLine = null; // obj.userData==null ? null : String.format("0x%08X", obj.userData);
 			
-			writeModel(vrml, objectID, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, sizeOfAxisCrosses, null);
+			writeModel(vrml, objectID, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
 		}
 		
 		private static String getLabel(String objectID) {
@@ -3968,12 +3964,16 @@ public class FileExport {
 			});
 		}
 
-		private static void writeModel(PrintWriter vrml, String objectID, String label, String extraLine, Point3D pos, Point3D at, Point3D up, double sizeOfAxisCrosses, Point3D lineColor) {
+		private static void writeModel(PrintWriter vrml, String objectID, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
 			String modelName = mapObjectID2Model.get(objectID);
 			Integer maxTextLength = mapModel2TextLength.get(modelName);
 			
 			if ("__SIMPLE_LINE".equals(modelName)) {
 				writeSimpleLine(vrml, pos, at, up, objectID);
+				
+			} else if ("^SMALLLIGHT".equals(objectID) && SaveViewer.config.useSmallLightsAsMeasurePoints) {
+				writeMeasurePoint(vrml, pos);
+				
 			} else
 				writeMyOrientation(vrml, pos, at, up, ()->{
 					if (modelName!=null) {
@@ -3990,7 +3990,7 @@ public class FileExport {
 							if (extraLine!=null) lines.add(extraLine.replace("\\", "\\\\").replace("\"", "\\\""));
 							if (lines.size()==1) str = String.format("\"%s\"", lines.firstElement());
 							else                 str = String.format("[ \"%s\" ]", String.join("\", \"", lines));
-							vrml.printf(Locale.ENGLISH," AxisCross { scale %1.3f %1.3f %1.3f string %s }", sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, sizeOfAxisCrosses/2, str);
+							vrml.printf(Locale.ENGLISH," AxisCross { string %s }", str);
 							break;
 						}
 				});
@@ -4088,6 +4088,10 @@ public class FileExport {
 			writeShape.run();
 			vrml.println("}");
 			vrml.println();
+		}
+
+		private static void writeMeasurePoint(PrintWriter vrml, Point3D pos) {
+			vrml.printf(Locale.ENGLISH, "MessPunkt { pos %1.4f %1.4f %1.4f addPosToStrings FALSE string \"%1$1.3f | %2$1.3f | %3$1.3f\" }%n", pos.x, pos.y, pos.z);
 		}
 
 		private static void writeSimpleLineProtoToFile(PrintWriter vrml) {

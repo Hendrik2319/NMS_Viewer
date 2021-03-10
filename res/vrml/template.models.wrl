@@ -58,6 +58,7 @@ PROTO Static_AxisCross [
 PROTO AxisCross [
 	field MFString string []
 	field SFVec3f scale 1 1 1
+	field SFColor textColor 1 1 0
 ] {
 	DEF proxy ProximitySensor { size 600 600 600 }
 	DEF script Script {
@@ -90,7 +91,7 @@ PROTO AxisCross [
 				children [
 					DEF text_trans Transform { translation 0 3 0 scale 3 3 3 children [
 						Shape {
-							appearance Appearance { material Material { diffuseColor 1 1 0 } }
+							appearance Appearance { material Material { diffuseColor IS textColor } }
 							geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 						}
 					]}
@@ -111,9 +112,12 @@ PROTO AxisCross [
 PROTO MessPunkt [
 	field MFString string []
 	field SFVec3f pos 0 0 0
+	field SFBool addPosToStrings TRUE
+	field SFColor textColor 1 1 1
 ] {
 	DEF script Script {
 		field SFVec3f pos IS pos
+		field SFBool addPosToStrings IS addPosToStrings
 		field MFString string IS string
 		eventIn SFBool proxy_activated
 		eventIn SFVec3f viewerPos_changed
@@ -135,7 +139,8 @@ PROTO MessPunkt [
 			}
 			function initialize() {
 				setTextOffset = new SFVec3f(0,string.length*3,0);
-				string[string.length] = pos.toString();
+				if (addPosToStrings)
+					string[string.length] = pos.toString();
 				setText = string;
 			}
 		"
@@ -149,15 +154,19 @@ PROTO MessPunkt [
 						children [
 							DEF text_trans Transform { translation 0 3 0 scale 3 3 3 children [
 								Shape {
-									appearance Appearance { material Material { diffuseColor 1 0 0 } }
+									appearance Appearance { material Material { diffuseColor IS textColor } }
 									geometry DEF text_obj Text { fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
 								}
 							]}
 						]
 					}
-					Shape { appearance Appearance { material Material { emissiveColor 1 0 0 } } geometry IndexedLineSet { coord Coordinate { point [ -1  0  0, 1 0 0, 0.5 0.1 0.0 ] } coordIndex [ 0 1 2 ] } }
-					Shape { appearance Appearance { material Material { emissiveColor 0 1 0 } } geometry IndexedLineSet { coord Coordinate { point [  0 -1  0, 0 1 0, 0.0 0.5 0.1 ] } coordIndex [ 0 1 2 ] } }
-					Shape { appearance Appearance { material Material { emissiveColor 0 0 1 } } geometry IndexedLineSet { coord Coordinate { point [  0  0 -1, 0 0 1, 0.1 0.0 0.5 ] } coordIndex [ 0 1 2 ] } }
+					Transform { scale 3 3 3
+						children [
+							Shape { appearance Appearance { material Material { emissiveColor 1 0 0 } } geometry IndexedLineSet { coord Coordinate { point [ -1  0  0, 1 0 0, 0.5 0.1 0.0, 0.5 0.0 0.1, 1 0 0 ] } coordIndex [ 0 1 2 3 4 ] } }
+							Shape { appearance Appearance { material Material { emissiveColor 0 1 0 } } geometry IndexedLineSet { coord Coordinate { point [  0 -1  0, 0 1 0, 0.0 0.5 0.1, 0.1 0.5 0.0, 0 1 0 ] } coordIndex [ 0 1 2 3 4 ] } }
+							Shape { appearance Appearance { material Material { emissiveColor 0 0 1 } } geometry IndexedLineSet { coord Coordinate { point [  0  0 -1, 0 0 1, 0.1 0.0 0.5, 0.0 0.1 0.5, 0 0 1 ] } coordIndex [ 0 1 2 3 4 ] } }
+						]
+					}
 				]
 			}
 		]
