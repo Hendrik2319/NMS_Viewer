@@ -2906,13 +2906,10 @@ public class FileExport {
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
 				
-				addModels("CUBEFLOOR"      , "^CUBEFLOOR"      );
-				addModels("CUBEWINDOW"     , "^CUBEWINDOW"     );
-				addModels("CUBEWINDOWOVAL" , "^CUBEWINDOWOVAL" );
-				addModels("CUBEWINDOWSMALL", "^CUBEWINDOWSMALL");
-				
+				CubeRoomObjects.addModelsToModelMap();
 				SolitaryWallsAndFloors.addModelsToModelMap();
 				Corridors.addModelsToModelMap();
+				PoweredDevices.addModelsToModelMap();
 			}
 			
 			private static void writeProtos(PrintWriter vrml) {
@@ -2933,13 +2930,10 @@ public class FileExport {
 				writeProtoToFile(vrml, "BUILDCHAIR",      0.5,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
 				writeProtoToFile(vrml, "BUILDBED",        0.5,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
 				
-				writeProtoToFile(vrml, "CUBEFLOOR",               15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "CUBEWINDOW",      0.6, 0, 25, ()->create_CUBEWINDOW     ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "CUBEWINDOWOVAL",  0.6, 0, 25, ()->create_CUBEWINDOWOVAL ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
-				
+				CubeRoomObjects.writeProtos(vrml);
 				SolitaryWallsAndFloors.writeProtos(vrml);
 				Corridors.writeProtos(vrml);
+				PoweredDevices.writeProtos(vrml);
 				
 				/*			
 				vrml.println("# ############################");
@@ -3010,47 +3004,7 @@ public class FileExport {
 				vrml.println("");
 				*/
 			}
-
-			private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.MultipleIndexedLineSets create_CUBEWINDOW() {
-				double cubesize = 4;
-				LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
-						.add(COLOR_WINDOW, new LineGeometry.PolyLine()
-								.add(cubesize*0.1, 0, cubesize*0.4)
-								.add(cubesize*0.1, 0,-cubesize*0.4)
-								.add(cubesize*0.9, 0,-cubesize*0.4)
-								.add(cubesize*0.9, 0, cubesize*0.4)
-								.close()
-						);
-				return multi;
-			}
-
-			private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOWOVAL() {
-				double cubesize = 4;
-				double radius = 1;
-				LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
-						.add(COLOR_WINDOW, new LineGeometry.PolyLine()
-								.addArc(LineGeometry.Axis.Y, new Point3D(cubesize/2,0,0), radius, 0, 360, false)
-						);
-				return multi;
-			}
-
-			private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOWSMALL() {
-				double cubesize = 4;
-				// height: 170 : 40 -> 0.95
-				// width : 155 : 56 -> 1.45
-				double heightW = 0.95;
-				double widthW  = 1.45;
-				LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
-						.add(COLOR_WINDOW, new LineGeometry.PolyLine()
-								.add(cubesize/2+heightW/2, 0, widthW/2)
-								.add(cubesize/2+heightW/2, 0,-widthW/2)
-								.add(cubesize/2-heightW/2, 0,-widthW/2)
-								.add(cubesize/2-heightW/2, 0, widthW/2)
-								.close()
-						);
-				return multi;
-			}
-
+			
 			private static LineGeometry.IndexedLineSet create_BUILDBED() {
 				double height_bed  = 0.65; // X
 				double height_matt = 0.10; // X
@@ -3151,10 +3105,6 @@ public class FileExport {
 				);
 				
 				return group;
-			}
-
-			private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.Box create_CUBEFLOOR() {
-				return new LineGeometry.Box(0.1,3.9,3.9);
 			}
 
 			private static LineGeometry.GroupingNode create_SMALLLIGHT() {
@@ -3432,6 +3382,148 @@ public class FileExport {
 				return group1;
 			}
 			
+			private static class PoweredDevices {
+				
+				private static void addModelsToModelMap() {
+					addModels("SOLARPANEL"      , "^U_SOLAR_S"      );
+				}
+				
+				private static void writeProtos(PrintWriter vrml) {
+					writeProtoToFile(vrml, "SOLARPANEL", 0.5, 0, ()->create_SOLARPANEL().write(vrml,"\t"));
+				}
+
+				private static LineGeometry.MultipleIndexedLineSets create_SOLARPANEL() {
+					double height = 1.8; // X
+					double plugDist = 1.35; // Y|Z
+					double plugHeight = 0.1455; // X
+					double panelMinHeight = height/3;
+					double panelMaxHeight = height;
+					double panelMidHeight = panelMaxHeight/2+panelMinHeight/2;
+					double panelWidth     = height;  // real (diagonal) panel width:  sqrt( panelWidth^2 + panelWidth^2 )
+					// Panel:
+					// Corners: +Y,+Z  &  -Y,-Z
+					
+					
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine() // Center Stick
+									.add(   0.4,    0,     0     )
+									.add( panelMidHeight, 0, 0 )
+							)
+							.add(new LineGeometry.PolyLine() // Plugs A & C
+									.add(plugHeight,0,-plugDist/2)
+									.add(plugHeight,0,-plugDist/4)
+									.add(   0.4    ,0,     0     )
+									.add(plugHeight,0,+plugDist/4)
+									.add(plugHeight,0,+plugDist/2)
+							)
+							.add(new LineGeometry.PolyLine() // Plugs B & D
+									.add(plugHeight,-plugDist/2,0)
+									.add(plugHeight,-plugDist/4,0)
+									.add(   0.4    ,     0     ,0)
+									.add(plugHeight,+plugDist/4,0)
+									.add(plugHeight,+plugDist/2,0)
+							)
+							.add(new LineGeometry.PolyLine() // Feet NN & PP
+									.add( 0 ,-plugDist/2,-plugDist/2)
+									.add(0.7,     0     ,     0     )
+									.add( 0 ,+plugDist/2,+plugDist/2)
+							)
+							.add(new LineGeometry.PolyLine() // Feet PN & NP
+									.add( 0 ,+plugDist/2,-plugDist/2)
+									.add(0.7,     0     ,     0     )
+									.add( 0 ,-plugDist/2,+plugDist/2)
+							)
+							.add(new LineGeometry.PolyLine() // Panel
+									.add( panelMidHeight, +panelWidth/2, +panelWidth/2)
+									.add( panelMinHeight,       0      , +panelWidth/2)
+									.add( panelMinHeight, -panelWidth/2,       0      )
+									.add( panelMidHeight, -panelWidth/2, -panelWidth/2)
+									.add( panelMaxHeight,       0      , -panelWidth/2)
+									.add( panelMaxHeight, +panelWidth/2,       0      )
+									.close()
+									)
+							.add(new LineGeometry.PolyLine()
+									.add( panelMidHeight, +panelWidth/2, +panelWidth/2)
+									.add( panelMidHeight, -panelWidth/2, -panelWidth/2)
+							)
+							.add(new LineGeometry.PolyLine()
+									.add( panelMaxHeight, +panelWidth/2,       0      )
+									.add( panelMinHeight, -panelWidth/2,       0      )
+							)
+							.add(new LineGeometry.PolyLine()
+									.add( panelMinHeight,       0      , +panelWidth/2)
+									.add( panelMaxHeight,       0      , -panelWidth/2)
+							)
+							;
+					
+					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+							.add(body)
+							;
+					// TODO Auto-generated method stub
+					return multi;
+				}
+			}
+			
+			private static class CubeRoomObjects {
+				private static final double cubesize = 4;
+				
+				private static void addModelsToModelMap() {
+					addModels("CUBEFLOOR"      , "^CUBEFLOOR"      );
+					addModels("CUBEWINDOW"     , "^CUBEWINDOW"     );
+					addModels("CUBEWINDOWOVAL" , "^CUBEWINDOWOVAL" );
+					addModels("CUBEWINDOWSMALL", "^CUBEWINDOWSMALL");
+				}
+				
+				private static void writeProtos(PrintWriter vrml) {
+					writeProtoToFile(vrml, "CUBEFLOOR",               15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CUBEWINDOW",      0.6, 0, 25, ()->create_CUBEWINDOW     ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CUBEWINDOWOVAL",  0.6, 0, 25, ()->create_CUBEWINDOWOVAL ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
+				}
+			
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.Box create_CUBEFLOOR() {
+					return new LineGeometry.Box(0.1,3.9,3.9);
+				}
+			
+				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.MultipleIndexedLineSets create_CUBEWINDOW() {
+					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+							.add(COLOR_WINDOW, new LineGeometry.PolyLine()
+									.add(cubesize*0.1, 0, cubesize*0.4)
+									.add(cubesize*0.1, 0,-cubesize*0.4)
+									.add(cubesize*0.9, 0,-cubesize*0.4)
+									.add(cubesize*0.9, 0, cubesize*0.4)
+									.close()
+							);
+					return multi;
+				}
+			
+				private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOWOVAL() {
+					double radius = 1;
+					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+							.add(COLOR_WINDOW, new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(cubesize/2,0,0), radius, 0, 360, false)
+							);
+					return multi;
+				}
+			
+				private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOWSMALL() {
+					// height: 170 : 40 -> 0.95
+					// width : 155 : 56 -> 1.45
+					double heightW = 0.95;
+					double widthW  = 1.45;
+					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+							.add(COLOR_WINDOW, new LineGeometry.PolyLine()
+									.add(cubesize/2+heightW/2, 0, widthW/2)
+									.add(cubesize/2+heightW/2, 0,-widthW/2)
+									.add(cubesize/2-heightW/2, 0,-widthW/2)
+									.add(cubesize/2-heightW/2, 0, widthW/2)
+									.close()
+							);
+					return multi;
+				}
+				
+			}
+
 			private static class Corridors {
 				
 				private static final double raster = 4.0; // YZ
