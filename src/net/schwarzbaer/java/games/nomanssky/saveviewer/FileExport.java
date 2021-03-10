@@ -3386,9 +3386,9 @@ public class FileExport {
 				
 				private static final double raster = 4.0; // YZ
 				private static final double height = 3.3; // X
-				private static final double width  = 3.2; // Y
-				private static final double width2 = 2.0; // Y
-				private static final double spacing = 0.0;
+				private static final double width  = 3.05; // Y
+				private static final double width2 = 1.95; // Y
+				private static final double spacing = 0.05;
 				
 				private static void writeProtos(PrintWriter vrml) {
 					// TODO: HardCodedModels.Corridors: CORRIDORC, GLASSCORRIDOR, DOOR2, BUILDDOOR
@@ -3401,8 +3401,9 @@ public class FileExport {
 					//writeProtoToFile(vrml, "CORRIDORC",     ()->create_CORRIDORC    ().write(vrml,"\t"));
 					//writeProtoToFile(vrml, "GLASSCORRIDOR", 15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
 					
-					//writeProtoToFile(vrml, "DOOR2",         ()->create_DOOR2    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BUILDDOOR",     ()->create_BUILDDOOR().write(vrml,"\t"));
+					writeProtoToFile(vrml, "DOOR2", 15,     ()->create_DOOR2    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BUILDDOOR", 15, ()->create_BUILDDOOR().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BUILDRAMP", 0.5, 90, 15, ()->create_BUILDRAMP().write(vrml,"\t"));
 				}
 
 				private static void addModelsToModelMap() {
@@ -3416,8 +3417,9 @@ public class FileExport {
 					
 					//addModels("CORRIDORC",      "^CORRIDORC");
 					
-					//addModels("DOOR2",      "^DOOR2");  // Holo-Tür
+					addModels("DOOR2",          "^DOOR2");  // Holo-Tür
 					addModels("BUILDDOOR",      "^BUILDDOOR");
+					addModels("BUILDRAMP",      "^BUILDRAMP");
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDOR() {
@@ -3653,8 +3655,89 @@ public class FileExport {
 				}
 
 				private static LineGeometry.IndexedLineSet create_DOOR2() {
-					// TODO Auto-generated method stub
-					return null;
+					double plateThickness = 0.3;
+					double widthD2 = width2-0.35;
+					double widthD  = width -0.7;
+					double heightD = height-0.7;
+					double depthD  = 0.6;
+					double xOffsetD = height/2 - heightD/2;
+					Point3D[] profile1 = new Point3D[8];
+					Point3D[] profile2 = new Point3D[8];
+					Point3D[] profile3 = new Point3D[8];
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									profile1[0] = new Point3D(                      0, 0,  width2/2),
+									profile1[1] = new Point3D(       (width-width2)/2, 0,  width /2),
+									profile1[2] = new Point3D(height-(width-width2)/2, 0,  width /2),
+									profile1[3] = new Point3D(height                 , 0,  width2/2),
+									profile1[4] = new Point3D(height                 , 0, -width2/2),
+									profile1[5] = new Point3D(height-(width-width2)/2, 0, -width /2),
+									profile1[6] = new Point3D(       (width-width2)/2, 0, -width /2),
+									profile1[7] = new Point3D(                      0, 0, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profile2[0] = new Point3D(                      0, plateThickness,  width2/2),
+									profile2[1] = new Point3D(       (width-width2)/2, plateThickness,  width /2),
+									profile2[2] = new Point3D(height-(width-width2)/2, plateThickness,  width /2),
+									profile2[3] = new Point3D(height                 , plateThickness,  width2/2),
+									profile2[4] = new Point3D(height                 , plateThickness, -width2/2),
+									profile2[5] = new Point3D(height-(width-width2)/2, plateThickness, -width /2),
+									profile2[6] = new Point3D(       (width-width2)/2, plateThickness, -width /2),
+									profile2[7] = new Point3D(                      0, plateThickness, -width2/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profile3[0] = new Point3D(                         0 + xOffsetD, plateThickness + depthD,  widthD2/2),
+									profile3[1] = new Point3D(        (widthD-widthD2)/2 + xOffsetD, plateThickness + depthD,  widthD /2),
+									profile3[2] = new Point3D(heightD-(widthD-widthD2)/2 + xOffsetD, plateThickness + depthD,  widthD /2),
+									profile3[3] = new Point3D(heightD                    + xOffsetD, plateThickness + depthD,  widthD2/2),
+									profile3[4] = new Point3D(heightD                    + xOffsetD, plateThickness + depthD, -widthD2/2),
+									profile3[5] = new Point3D(heightD-(widthD-widthD2)/2 + xOffsetD, plateThickness + depthD, -widthD /2),
+									profile3[6] = new Point3D(        (widthD-widthD2)/2 + xOffsetD, plateThickness + depthD, -widthD /2),
+									profile3[7] = new Point3D(                         0 + xOffsetD, plateThickness + depthD, -widthD2/2)
+							).close());
+					for (int i=0; i<8; i++)
+						group.add(new LineGeometry.PolyLine(profile1[i],profile2[i],profile3[i]));
+					
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_BUILDRAMP() {
+					double length = 2; // Y   400
+					double width = 1.3; // Z  | Door Width
+					// railing
+					// total length : 400 == 2
+					// length       : 381 -> 1.9
+					// height       : 196 -> 0.95
+					// round corner : 30  -> 0.15
+					// max X        : 165 -> 0.8
+					double railLength =  1.9; // Y   400
+					double railMaxX   =  0.8; // X
+					double railMinX   = -0.15; // X
+					double railCRad   =  0.15;
+					double railZPos   = width/2-0.05;
+					
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine()
+									.add(0, length/2, width/2)
+									.add(0,-length/2, width/2)
+									.add(0,-length/2,-width/2)
+									.add(0, length/2,-width/2)
+									.close())
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMinX+railCRad,  railLength/2-railCRad, railZPos), railCRad,  90, 180, false)
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMinX+railCRad, -railLength/2+railCRad, railZPos), railCRad, 180, 270, false)
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMaxX-railCRad, -railLength/2+railCRad, railZPos), railCRad, 270, 360, false)
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMaxX-railCRad,  railLength/2-railCRad, railZPos), railCRad,   0,  90, false)
+									.close())
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMinX+railCRad,  railLength/2-railCRad, -railZPos), railCRad,  90, 180, false)
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMinX+railCRad, -railLength/2+railCRad, -railZPos), railCRad, 180, 270, false)
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMaxX-railCRad, -railLength/2+railCRad, -railZPos), railCRad, 270, 360, false)
+									.addArc(LineGeometry.Axis.Z, new Point3D( railMaxX-railCRad,  railLength/2-railCRad, -railZPos), railCRad,   0,  90, false)
+									.close())
+							;
+					
+					return group;
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDORC() {

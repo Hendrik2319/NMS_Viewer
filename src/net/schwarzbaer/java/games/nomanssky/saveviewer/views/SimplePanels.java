@@ -2158,6 +2158,8 @@ public class SimplePanels {
 				Position   ("Position"   ,                           String.class, 20,-1,150,150),
 				Up         ("Up"         ,                           String.class, 20,-1,170,170),
 				At         ("At"         ,                           String.class, 20,-1,170,170),
+				Up_Length  ("[Up]"       ,                           Double.class, 20,-1, 50, 50),
+				At_Length  ("[At]"       ,                           Double.class, 20,-1, 50, 50),
 				Message    ("Message"    ,                           String.class, 20,-1,170,170),
 				;
 				
@@ -2211,6 +2213,8 @@ public class SimplePanels {
 					case Position   : if (obj.position  ==null || obj.position.pos==null) return ""; else return obj.position.pos.toString(" %1.2f ");
 					case Up         : if (obj.position  ==null || obj.position.up ==null) return ""; else return obj.position.up .toString(" %1.4f ");
 					case At         : if (obj.position  ==null || obj.position.at ==null) return ""; else return obj.position.at .toString(" %1.4f ");
+					case Up_Length  : if (obj.position  ==null || obj.position.up ==null) return ""; else return String.format(Locale.ENGLISH, "%1.4f", obj.position.up.length());
+					case At_Length  : if (obj.position  ==null || obj.position.at ==null) return ""; else return String.format(Locale.ENGLISH, "%1.4f", obj.position.at.length());
 					case Message    : return obj.message;
 					}
 					return null;
