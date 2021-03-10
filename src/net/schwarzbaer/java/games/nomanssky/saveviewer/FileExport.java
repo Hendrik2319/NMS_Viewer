@@ -3417,7 +3417,7 @@ public class FileExport {
 					//addModels("CORRIDORC",      "^CORRIDORC");
 					
 					//addModels("DOOR2",      "^DOOR2");  // Holo-Tür
-					addModels("BUILDDOOR",      "^BUILDDOOR"); // replace template PROTO with hardcoded version 
+					//addModels("BUILDDOOR",      "^BUILDDOOR"); // replace template PROTO with hardcoded version 
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDOR() {

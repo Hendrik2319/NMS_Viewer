@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
@@ -2054,9 +2055,11 @@ public class SimplePanels {
 					FileExport.writePosToVRML_simple(suggestFileName(Type.Planet),nearObj.toArray(new BuildingObject[0]),radius,mainWindow,"Whole Planet",FileExport::openFileInVrmlViewer);
 				}, Gui.ToolbarIcons.SaveAs));
 				
-				JCheckBoxMenuItem openNewFileChckBx = Gui.createCheckBoxMenuItem("Open newly written file in viewer", SaveViewer.config.openNewlyWrittenVrmlFileInViewer);
-				openNewFileChckBx.addActionListener(e->{
-					SaveViewer.config.openNewlyWrittenVrmlFileInViewer = openNewFileChckBx.isSelected();
+				contextMenu.addSeparator();
+				
+				JCheckBoxMenuItem miOpenNewFileChckBx, miUseSmallLightsAsMeasurePoints;
+				contextMenu.add(miOpenNewFileChckBx = Gui.createCheckBoxMenuItem("Open newly written file in viewer", SaveViewer.config.openNewlyWrittenVrmlFileInViewer, (Consumer<Boolean>)isSelected->{
+					SaveViewer.config.openNewlyWrittenVrmlFileInViewer = isSelected;
 					if (SaveViewer.config.openNewlyWrittenVrmlFileInViewer) {
 						if (!SaveViewer.config.isVrmlViewerConfigured()) {
 							String path = JOptionPane.showInputDialog(window, "Set path to VRML viewer:");
@@ -2066,11 +2069,15 @@ public class SimplePanels {
 						}
 					}
 					SaveViewer.config.writeToFile();
-				});
-				contextMenu.add(openNewFileChckBx);
+				}));
+				contextMenu.add(miUseSmallLightsAsMeasurePoints = Gui.createCheckBoxMenuItem("Use SMALL LIGHTs as Measure Points", SaveViewer.config.useSmallLightsAsMeasurePoints, (Consumer<Boolean>)b->{
+					SaveViewer.config.useSmallLightsAsMeasurePoints = b;
+					SaveViewer.config.writeToFile();
+				}));
 				
 				return ()->{
-					openNewFileChckBx.setSelected(SaveViewer.config.openNewlyWrittenVrmlFileInViewer);
+					miOpenNewFileChckBx.setSelected(SaveViewer.config.openNewlyWrittenVrmlFileInViewer);
+					miUseSmallLightsAsMeasurePoints.setSelected(SaveViewer.config.useSmallLightsAsMeasurePoints);
 				};
 			}
 

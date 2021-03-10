@@ -1175,11 +1175,6 @@ public class SaveViewer implements ActionListener {
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Clear Unknown Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearUnknownValues,true));
 			extraMenu.add(createMenuItem("Show Unknown Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowUnknownValues ,true));
-			extraMenu.addSeparator();
-			extraMenu.add(Gui.createCheckBoxMenuItem("Use SMALL LIGHTs as Measure Points", config.useSmallLightsAsMeasurePoints, (Consumer<Boolean>)b->{
-				config.useSmallLightsAsMeasurePoints = b;
-				config.writeToFile();
-			}));
 
 			toolBar.addSeparator();
 			toolBar.add(createButton("Tools", toolsMenu, true));
