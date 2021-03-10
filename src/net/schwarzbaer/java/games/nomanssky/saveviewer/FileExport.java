@@ -2922,15 +2922,15 @@ public class FileExport {
 				
 				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^U_BATTERY_S, ^U_SOLAR_S, ^U_GENERATOR_S, ^BASE_FLAG
 				
-				writeProtoToFile(vrml, "BIOROOM"                , ()->LineGeometry.writeIndexedLineSet(vrml, create_BIOROOM        (), "\t", null));
-				writeProtoToFile(vrml, "CUBEFLOOR"              , ()->LineGeometry.writeIndexedLineSet(vrml, create_CUBEFLOOR      (), "\t", null));
-				writeProtoToFile(vrml, "SMALLLIGHT", 0.2,  0    , ()->LineGeometry.writeIndexedLineSet(vrml, create_SMALLLIGHT     (), "\t", 4, null));
-				writeProtoToFile(vrml, "WALLLIGHT", 0.15, 90    , ()->LineGeometry.writeIndexedLineSet(vrml, create_WALLLIGHT      (), "\t", null));
-				writeProtoToFile(vrml, "BUILDLANDINGPAD"        , ()->LineGeometry.writeIndexedLineSet(vrml, create_BUILDLANDINGPAD(), "\t", null));
-				writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->LineGeometry.writeIndexedLineSet(vrml, create_CUBEROOM_SPACE (), "\t", null));
-				writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.5, 0, ()->LineGeometry.writeIndexedLineSet(vrml, create_BUILDSIMPLEDESK(), "\t", null));
-				writeProtoToFile(vrml, "BUILDCHAIR", 0.5, 0     , ()->LineGeometry.writeIndexedLineSet(vrml, create_BUILDCHAIR     (), "\t", null));
-				writeProtoToFile(vrml, "BUILDBED", 0.5, 0       , ()->LineGeometry.writeIndexedLineSet(vrml, create_BUILDBED       (), "\t", null));
+				writeProtoToFile(vrml, "BIOROOM"                , ()->create_BIOROOM        ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "CUBEFLOOR"              , ()->create_CUBEFLOOR      ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "SMALLLIGHT", 0.2,  0    , ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
+				writeProtoToFile(vrml, "WALLLIGHT", 0.15, 90    , ()->create_WALLLIGHT      ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDLANDINGPAD"        , ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
+				writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.5, 0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDCHAIR", 0.5, 0     , ()->create_BUILDCHAIR     ().write(vrml,"\t"));
+				writeProtoToFile(vrml, "BUILDBED", 0.5, 0       , ()->create_BUILDBED       ().write(vrml,"\t"));
 				
 				SolitaryWallsAndFloors.writeProtos(vrml);
 				Corridors.writeProtos(vrml);
@@ -3385,6 +3385,7 @@ public class FileExport {
 				return group1;
 			}
 			
+			@SuppressWarnings("unused")
 			private static class Corridors {
 				
 				private static final double raster = 4.0; // YZ
@@ -3395,13 +3396,12 @@ public class FileExport {
 				
 				private static void writeProtos(PrintWriter vrml) {
 					
-					writeProtoToFile(vrml, "CORRIDOR",      ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDOR     (), "\t", null ));
-					writeProtoToFile(vrml, "CORRIDORX",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORX    (), "\t", null ));
-					writeProtoToFile(vrml, "CORRIDORL",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORL    (), "\t", null ));
-					writeProtoToFile(vrml, "CORRIDORT",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORT    (), "\t", null ));
-					
-					writeProtoToFile(vrml, "CORRIDORC",     ()->LineGeometry.writeIndexedLineSet(vrml, create_CORRIDORC    (), "\t", null ));
-					writeProtoToFile(vrml, "GLASSCORRIDOR", ()->LineGeometry.writeIndexedLineSet(vrml, create_GLASSCORRIDOR(), "\t", null ));
+					//writeProtoToFile(vrml, "CORRIDOR",      ()->create_CORRIDOR     ().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "CORRIDORX",     ()->create_CORRIDORX    ().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "CORRIDORL",     ()->create_CORRIDORL    ().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "CORRIDORT",     ()->create_CORRIDORT    ().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "CORRIDORC",     ()->create_CORRIDORC    ().write(vrml,"\t"));
+					//writeProtoToFile(vrml, "GLASSCORRIDOR", ()->create_GLASSCORRIDOR().write(vrml,"\t"));
 				}
 
 				private static void addModelsToModelMap() {
@@ -3416,32 +3416,32 @@ public class FileExport {
 					//addModels("GLASSCORRIDOR",  "^GLASSCORRIDOR");
 				}
 
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDOR() {
+				private static LineGeometry.IndexedLineSet create_CORRIDOR() {
 					// TODO Auto-generated method stub
 					return null;
 				}
 
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORX() {
+				private static LineGeometry.IndexedLineSet create_CORRIDORX() {
 					// TODO Auto-generated method stub
 					return null;
 				}
 
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORC() {
+				private static LineGeometry.IndexedLineSet create_CORRIDORC() {
 					// TODO Auto-generated method stub
 					return null;
 				}
 
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORL() {
+				private static LineGeometry.IndexedLineSet create_CORRIDORL() {
 					// TODO Auto-generated method stub
 					return null;
 				}
 
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_CORRIDORT() {
+				private static LineGeometry.IndexedLineSet create_CORRIDORT() {
 					// TODO Auto-generated method stub
 					return null;
 				}
 
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.IndexedLineSet create_GLASSCORRIDOR() {
+				private static LineGeometry.IndexedLineSet create_GLASSCORRIDOR() {
 					// TODO Auto-generated method stub
 					return null;
 				}
@@ -3485,110 +3485,83 @@ public class FileExport {
 //					addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
 //					addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
 				}
-
+				
 				static void writeProtos(PrintWriter vrml) {
 					
-					writeProtoToFile(vrml, "__SOLITARY_ARCH"         , ()->LineGeometry.writeIndexedLineSet(vrml, create_ARCH        (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_ARCH_H", 12   , ()->LineGeometry.writeIndexedLineSet(vrml, create_ARCH_H      (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF"         , ()->LineGeometry.writeIndexedLineSet(vrml, create_ROOF        (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF_M"       , ()->LineGeometry.writeIndexedLineSet(vrml, create_ROOF_M      (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF_C"       , ()->LineGeometry.writeIndexedLineSet(vrml, create_ROOF_C      (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF_IC"      , ()->LineGeometry.writeIndexedLineSet(vrml, create_ROOF_IC     (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_WALLDIAGONAL" , ()->LineGeometry.writeIndexedLineSet(vrml, create_WALLDIAGONAL(), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_DOOR"         , ()->LineGeometry.writeIndexedLineSet(vrml, create_DOOR        (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_DOOR_HALF", 12, ()->LineGeometry.writeIndexedLineSet(vrml, create_DOOR_HALF   (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_GDOOR"        , ()->LineGeometry.writeIndexedLineSet(vrml, create_GDOOR       (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_RAMP"         , ()->LineGeometry.writeIndexedLineSet(vrml, create_RAMP        (), "\t", null ));
-					writeProtoToFile(vrml, "__SOLITARY_RAMP_H", 12   , ()->LineGeometry.writeIndexedLineSet(vrml, create_RAMP_H      (), "\t", null ));
+					writeProtoToFile(vrml, "__SOLITARY_ARCH"          , ()->create_ARCH        ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_ARCH_H", 12    , ()->create_ARCH_H      ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_ROOF"          , ()->create_ROOF        ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_ROOF_M"        , ()->create_ROOF_M      ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_ROOF_C"        , ()->create_ROOF_C      ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_ROOF_IC"       , ()->create_ROOF_IC     ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_WALLDIAGONAL"  , ()->create_WALLDIAGONAL().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_DOOR"          , ()->create_DOOR        ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_DOOR_HALF", 12 , ()->create_DOOR_HALF   ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_DOORWINDOW"    , ()->create_DOORWINDOW  ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_GDOOR"         , ()->create_GDOOR       ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_RAMP"          , ()->create_RAMP        ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_RAMP_H", 12    , ()->create_RAMP_H      ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_WALL_WINDOW"   , ()->create_WALL_WINDOW ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_GLASSFLOOR"    , ()->create_GLASSFLOOR  ().write(vrml,"\t"));
 					
-					writeProtoToFile(vrml, "__SOLITARY_FLOOR"         , ()->LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length,wall_length), "\t", null));
-					writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q", 12   , ()->LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2), "\t", null));
-					writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR", 15  , ()->LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length,-90), "\t", null));
-					writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q", 12, ()->LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90), "\t", null));
+					writeProtoToFile(vrml, "__SOLITARY_FLOOR"         , ()->new LineGeometry.Box(wall_thickness,wall_length  ,wall_length  ).write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q", 12   , ()->new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2).write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR", 15  , ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length  ,-90).write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q", 12, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90).write(vrml,"\t"));
 					
-					writeProtoToFile(vrml, "__SOLITARY_WALL", ()->{
-						LineGeometry.writeIndexedLineSet(vrml,
-							new LineGeometry.Transform( new LineGeometry.Box(wall_height,wall_thickness,wall_length) )
-								.addTranslation(new Point3D(wall_height/2,0,0)),
-							"\t", null);
-					});
-					writeProtoToFile(vrml, "__SOLITARY_WALL_H", 12, ()->{
-						LineGeometry.writeIndexedLineSet(vrml,
-							new LineGeometry.Transform( new LineGeometry.Box(wall_height,wall_thickness,wall_length/2) )
-								.addTranslation(new Point3D(wall_height/2,0,0)),
-							"\t", null
-						);
-					});
-					writeProtoToFile(vrml, "__SOLITARY_WALL_Q", ()->{
-						LineGeometry.writeIndexedLineSet(vrml,
-							new LineGeometry.Transform( new LineGeometry.Box(wall_height/4,wall_thickness,wall_length) )
-								.addTranslation(new Point3D(wall_height/8,0,0)),
-							"\t", null
-						);
-					});
-					writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H", 12, ()->{
-						LineGeometry.writeIndexedLineSet(vrml,
-							new LineGeometry.Transform( new LineGeometry.Box(wall_height/4,wall_thickness,wall_length/2) )
-								.addTranslation(new Point3D(wall_height/8,0,0)),
-							"\t", null
-						);
-					});
+					writeProtoToFile(vrml, "__SOLITARY_WALL"          , ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length  ).write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_WALL_H", 12    , ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length/2).write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_WALL_Q"        , ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length  ).write(vrml,"\t"));
+					writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H", 12  , ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length/2).write(vrml,"\t"));
+				}
+
+				private static LineGeometry.Transform createXFloorBasedBox(double sizeX, double sizeY, double sizeZ) {
+					return new LineGeometry.Transform( new LineGeometry.Box(sizeX,sizeY,sizeZ) )
+							.addTranslation(new Point3D(sizeX/2,0,0));
+				}
+
+				private static LineGeometry.MultipleIndexedLineSets create_GLASSFLOOR() {
+					double window_width = wall_length - 2*border_h;
+					LineGeometry.MultipleIndexedLineSets lineSets = new LineGeometry.MultipleIndexedLineSets()
+						.add(              new LineGeometry.Box(wall_thickness, wall_length, wall_length))
+						.add(COLOR_WINDOW, new LineGeometry.Box(wall_thickness,window_width,window_width));
+					return lineSets;
+				}
+
+				private static LineGeometry.MultipleIndexedLineSets create_WALL_WINDOW() {
+					double window_width   = wall_length - 2*border_h;
+					double window_height  = wall_height - 2*border_v;
 					
-					// ##########################################################################################################
-					writeProtoToFile(vrml, "__SOLITARY_DOORWINDOW", ()->{
-						double window_width   = wall_length - border_h - spacing - door_width - border_h;
-						double window_height  = wall_height - 2*border_v;
-						double window_zOffset = wall_length/2 - border_h - window_width/2;
-						double door_zOffset   = wall_length/2 - border_h - door_width/2;
+					LineGeometry.MultipleIndexedLineSets lineSets = new LineGeometry.MultipleIndexedLineSets()
+						.add(new LineGeometry.Transform( new LineGeometry.Box( wall_height, wall_thickness, wall_length ) )
+								.addTranslation(new Point3D( wall_height/2,0,0 )))
+						.add(COLOR_WINDOW, new LineGeometry.Transform( new LineGeometry.Box( window_height, wall_thickness, window_width ) )
+								.addTranslation(new Point3D( window_height/2 + border_v, 0, 0)))
+						;
+					return lineSets;
+				}
+
+				private static LineGeometry.MultipleIndexedLineSets create_DOORWINDOW() {
+					double window_width   = wall_length - border_h - spacing - door_width - border_h;
+					double window_height  = wall_height - 2*border_v;
+					double window_zOffset = wall_length/2 - border_h - window_width/2;
+					double door_zOffset   = wall_length/2 - border_h - door_width/2;
+					
+					LineGeometry.GroupingNode group;
+					group = new LineGeometry.GroupingNode();
+					group.add(
+						new LineGeometry.Transform( new LineGeometry.Box( wall_height, wall_thickness, wall_length ))
+							.addTranslation(new Point3D( wall_height/2,0,0 )),
 						
-						LineGeometry.GroupingNode group;
-						group = new LineGeometry.GroupingNode();
-						group.add(
-							new LineGeometry.Transform( new LineGeometry.Box( wall_height, wall_thickness, wall_length ))
-								.addTranslation(new Point3D( wall_height/2,0,0 )),
-							
-							new LineGeometry.Transform( new LineGeometry.Box( door_height, wall_thickness, door_width ) )
-								.addTranslation(new Point3D( door_height/2 + wall_thickness/2, 0, -door_zOffset))
-						);
-						
-						LineGeometry.writeIndexedLineSet(vrml, group, "\t", null );
-						LineGeometry.writeIndexedLineSet(vrml,
-							new LineGeometry.Transform( new LineGeometry.Box( window_height, wall_thickness, window_width ) )
-								.addTranslation(new Point3D( window_height/2 + border_v, 0, window_zOffset)),
-							"\t", COLOR_WINDOW
-						);
-					});
+						new LineGeometry.Transform( new LineGeometry.Box( door_height, wall_thickness, door_width ) )
+							.addTranslation(new Point3D( door_height/2 + wall_thickness/2, 0, -door_zOffset))
+					);
 					
-					// ##########################################################################################################
-					writeProtoToFile(vrml, "__SOLITARY_WALL_WINDOW", ()->{
-						double window_width   = wall_length - 2*border_h;
-						double window_height  = wall_height - 2*border_v;
-						
-						LineGeometry.writeIndexedLineSet(
-							vrml,
-							new LineGeometry.Transform(
-								new LineGeometry.Box( wall_height, wall_thickness, wall_length )
-							).addTranslation(new Point3D( wall_height/2,0,0 )),
-							"\t",
-							null
-						);
-						
-						LineGeometry.writeIndexedLineSet(
-							vrml,
-							new LineGeometry.Transform(
-								new LineGeometry.Box( window_height, wall_thickness, window_width )
-							).addTranslation(new Point3D( window_height/2 + border_v, 0, 0)),
-							"\t",
-							COLOR_WINDOW
-						);
-					});
-					
-					// ##########################################################################################################
-					writeProtoToFile(vrml, "__SOLITARY_GLASSFLOOR", ()->{
-						double window_width = wall_length - 2*border_h;
-						LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,wall_length,wall_length), "\t", null);
-						LineGeometry.writeIndexedLineSet(vrml, new LineGeometry.Box(wall_thickness,window_width,window_width), "\t", COLOR_WINDOW);
-					});
+					LineGeometry.MultipleIndexedLineSets lineSets = new LineGeometry.MultipleIndexedLineSets()
+						.add(group)
+						.add(COLOR_WINDOW, new LineGeometry.Transform( new LineGeometry.Box( window_height, wall_thickness, window_width ) )
+								.addTranslation(new Point3D( window_height/2 + border_v, 0, window_zOffset)));
+					return lineSets;
 				}
 
 				private static LineGeometry.Prism create_ARCH() {
@@ -4353,14 +4326,16 @@ public class FileExport {
 
 			void write(PrintWriter vrml, String vrmlIndent) {
 				for (StoredIndexedLineSet storedILS:indexedLineSets)
-					writeIndexedLineSet(vrml, storedILS.indexedLineSet, vrmlIndent, storedILS.color);
+					storedILS.indexedLineSet.write(vrml, vrmlIndent, storedILS.color);
 			}
 
+			@SuppressWarnings("unused")
 			void write(PrintWriter vrml, String vrmlIndent, int precision) {
 				for (StoredIndexedLineSet storedILS:indexedLineSets)
-					writeIndexedLineSet(vrml, storedILS.indexedLineSet, vrmlIndent, precision, storedILS.color);
+					storedILS.indexedLineSet.write(vrml, vrmlIndent, precision, storedILS.color);
 			}
 			
+			@SuppressWarnings("unused")
 			MultipleIndexedLineSets add(MultipleIndexedLineSets other) {
 				if (other!=null)
 					indexedLineSets.addAll(other.indexedLineSets);
