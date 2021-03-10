@@ -3388,28 +3388,29 @@ public class FileExport {
 				private static final double height = 3.3; // X
 				private static final double width  = 3.05; // Y
 				private static final double width2 = 1.95; // Y
+				private static final double heightW = (height-(width-width2))/3 + (width-width2)/2; // Unterkante der Fensterscheibe
 				private static final double spacing = 0.05;
 				
 				private static void writeProtos(PrintWriter vrml) {
 					// TODO: HardCodedModels.Corridors: GLASSCORRIDOR
 					
-					writeProtoToFile(vrml, "CORRIDOR", 15,  ()->create_CORRIDOR     ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CORRIDORL", 15, ()->create_CORRIDORL    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CORRIDORX", 15, ()->create_CORRIDORX    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CORRIDORT", 15, ()->create_CORRIDORT    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDOR",           15, ()->create_CORRIDOR     ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORL",          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORX",          15, ()->create_CORRIDORX    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORT",          15, ()->create_CORRIDORT    ().write(vrml,"\t"));
 					
-					writeProtoToFile(vrml, "CORRIDORC", 1, 45, ()->create_CORRIDORC    ().write(vrml,"\t"));
-					//writeProtoToFile(vrml, "GLASSCORRIDOR", 15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
+					writeProtoToFile(vrml, "CORRIDORC", 1, 45,       ()->create_CORRIDORC    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "GLASSCORRIDOR",      15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
 					
-					writeProtoToFile(vrml, "DOOR2", 15,     ()->create_DOOR2    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BUILDDOOR", 15, ()->create_BUILDDOOR().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BUILDRAMP", 0.5, 90, 15, ()->create_BUILDRAMP().write(vrml,"\t"));
+					writeProtoToFile(vrml, "DOOR2",              15, ()->create_DOOR2        ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BUILDDOOR",          15, ()->create_BUILDDOOR    ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BUILDRAMP", 0.5, 90, 15, ()->create_BUILDRAMP    ().write(vrml,"\t"));
 				}
 
 				private static void addModelsToModelMap() {
-					addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR"); 
-					//addModels("CORRIDOR",       "^CORRIDOR");
-					//addModels("GLASSCORRIDOR",  "^GLASSCORRIDOR");
+					//addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR"); 
+					addModels("CORRIDOR",       "^CORRIDOR");
+					addModels("GLASSCORRIDOR",  "^GLASSCORRIDOR");
 					
 					addModels("CORRIDORL",      "^CORRIDORL");
 					addModels("CORRIDORX",      "^CORRIDORX");
@@ -3626,7 +3627,7 @@ public class FileExport {
 				}
 
 				private static LineGeometry.MultipleIndexedLineSets create_CORRIDORC() {
-					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
 							.add(new LineGeometry.PolyLine(
 									new Point3D(                      0, raster-spacing/2, +width2/2-raster/2),
 									new Point3D(       (width-width2)/2, raster-spacing/2, +width /2-raster/2),
@@ -3660,12 +3661,11 @@ public class FileExport {
 					double segAngle_deg = 90/nSeg;
 					double startAngle_deg = 180 + 0.5;
 					double endAngle_deg   = 180 + segAngle_deg-0.5;
-					double hW = (height-(width-width2))/3;
 					double wW = width2/6;
 					
 					LineGeometry.PolyLine pl1,pl2,pl3,pl4;
 					LineGeometry.GroupingNode window = new LineGeometry.GroupingNode()
-							.add(pl1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(hW+    (width-width2)/2, 0, 0),   +width /2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
+							.add(pl1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(heightW                , 0, 0),   +width /2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
 							.add(pl2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height-(width-width2)/2, 0, 0),   +width /2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
 							.add(pl3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height                 , 0, 0),   +width2/2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
 							.add(pl4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height                 , 0, 0), wW-width2/2 + raster*1.5-spacing/2, startAngle_deg, endAngle_deg, false, 3))
@@ -3674,7 +3674,7 @@ public class FileExport {
 							;
 					
 					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
-							.add(group)
+							.add(body)
 							.add(COLOR_WINDOW, new LineGeometry.Transform(window)                                                 .addTranslation(0, raster-spacing/2, raster-spacing/2))
 							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*1).addTranslation(0, raster-spacing/2, raster-spacing/2))
 							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*2).addTranslation(0, raster-spacing/2, raster-spacing/2))
@@ -3683,6 +3683,79 @@ public class FileExport {
 							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addRotation(LineGeometry.Axis.X, segAngle_deg*5).addTranslation(0, raster-spacing/2, raster-spacing/2))
 							;
 					
+					return multi;
+				}
+
+				private static LineGeometry.MultipleIndexedLineSets create_GLASSCORRIDOR() {
+					Point3D[] profile1 = new Point3D[8];
+					Point3D[] profile2 = new Point3D[8];
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									profile1[0] = new Point3D(                      0,  width2/2, -(raster-spacing)/2),
+									profile1[1] = new Point3D(       (width-width2)/2,  width /2, -(raster-spacing)/2),
+									profile1[2] = new Point3D(height-(width-width2)/2,  width /2, -(raster-spacing)/2),
+									profile1[3] = new Point3D(height                 ,  width2/2, -(raster-spacing)/2),
+									profile1[4] = new Point3D(height                 , -width2/2, -(raster-spacing)/2),
+									profile1[5] = new Point3D(height-(width-width2)/2, -width /2, -(raster-spacing)/2),
+									profile1[6] = new Point3D(       (width-width2)/2, -width /2, -(raster-spacing)/2),
+									profile1[7] = new Point3D(                      0, -width2/2, -(raster-spacing)/2)
+							).close())
+							.add(new LineGeometry.PolyLine(
+									profile2[0] = new Point3D(                      0,  width2/2,  (raster-spacing)/2),
+									profile2[1] = new Point3D(       (width-width2)/2,  width /2,  (raster-spacing)/2),
+									profile2[2] = new Point3D(height-(width-width2)/2,  width /2,  (raster-spacing)/2),
+									profile2[3] = new Point3D(height                 ,  width2/2,  (raster-spacing)/2),
+									profile2[4] = new Point3D(height                 , -width2/2,  (raster-spacing)/2),
+									profile2[5] = new Point3D(height-(width-width2)/2, -width /2,  (raster-spacing)/2),
+									profile2[6] = new Point3D(       (width-width2)/2, -width /2,  (raster-spacing)/2),
+									profile2[7] = new Point3D(                      0, -width2/2,  (raster-spacing)/2)
+							).close())
+							.add(new LineGeometry.PolyLine(profile1[0],profile2[0]))
+							.add(new LineGeometry.PolyLine(profile1[1],profile2[1]))
+					//		.add(new LineGeometry.PolyLine(profile1[2],profile2[2]))
+					//		.add(new LineGeometry.PolyLine(profile1[3],profile2[3]))
+					//		.add(new LineGeometry.PolyLine(profile1[4],profile2[4]))
+					//		.add(new LineGeometry.PolyLine(profile1[5],profile2[5]))
+							.add(new LineGeometry.PolyLine(profile1[6],profile2[6]))
+							.add(new LineGeometry.PolyLine(profile1[7],profile2[7]))
+							;
+					
+					double spacingW = 0.05;
+					double zPos1 = spacingW;
+					double zPos2 = (raster-spacing)/2-spacingW;
+					
+					LineGeometry.GroupingNode window = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine(
+									profile1[1] = new Point3D(heightW                ,  width /2, zPos1),
+									profile1[2] = new Point3D(height-(width-width2)/2,  width /2, zPos1),
+									profile1[3] = new Point3D(height                 ,  width2/2, zPos1),
+									profile1[4] = new Point3D(height                 , -width2/2, zPos1),
+									profile1[5] = new Point3D(height-(width-width2)/2, -width /2, zPos1),
+									profile1[6] = new Point3D(heightW                , -width /2, zPos1)
+							))
+							.add(new LineGeometry.PolyLine(
+									profile2[1] = new Point3D(heightW                ,  width /2, zPos2),
+									profile2[2] = new Point3D(height-(width-width2)/2,  width /2, zPos2),
+									profile2[3] = new Point3D(height                 ,  width2/2, zPos2),
+									profile2[4] = new Point3D(height                 , -width2/2, zPos2),
+									profile2[5] = new Point3D(height-(width-width2)/2, -width /2, zPos2),
+									profile2[6] = new Point3D(heightW                , -width /2, zPos2)
+							))
+					//		.add(new LineGeometry.PolyLine(profile1[0],profile2[0]))
+							.add(new LineGeometry.PolyLine(profile1[1],profile2[1]))
+							.add(new LineGeometry.PolyLine(profile1[2],profile2[2]))
+							.add(new LineGeometry.PolyLine(profile1[3],profile2[3]))
+							.add(new LineGeometry.PolyLine(profile1[4],profile2[4]))
+							.add(new LineGeometry.PolyLine(profile1[5],profile2[5]))
+							.add(new LineGeometry.PolyLine(profile1[6],profile2[6]))
+					//		.add(new LineGeometry.PolyLine(profile1[7],profile2[7]))
+							;
+					
+					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
+							.add(body)
+							.add(COLOR_WINDOW, window)
+							.add(COLOR_WINDOW, new LineGeometry.Transform(window).addTranslation(0,0,-(raster-spacing)/2))
+							;
 					return multi;
 				}
 
@@ -3798,10 +3871,6 @@ public class FileExport {
 							;
 					
 					return group;
-				}
-
-				private static LineGeometry.IndexedLineSet create_GLASSCORRIDOR() {
-					return null;
 				}
 			}
 			
