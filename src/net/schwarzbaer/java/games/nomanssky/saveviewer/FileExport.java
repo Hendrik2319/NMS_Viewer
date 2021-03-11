@@ -2918,7 +2918,7 @@ public class FileExport {
 		}
 		
 		private static String getRoofModelName(String modelName) {
-			return SoftwareBuildModels.getRoofModelName(modelName);
+			return SoftwareBuildModels.MAINROOMmodels.getRoofModelName(modelName);
 		}
 
 		private static String[] makeVariations(String format, String... strs) {
@@ -2937,9 +2937,8 @@ public class FileExport {
 		
 		private static class SoftwareBuildModels {
 			
-			private static void addModelsToModelMap() {
+			static void addModelsToModelMap() {
 				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
-				addModels("BIOROOM",        "^BIOROOM");
 				addModels("SMALLLIGHT",     "^SMALLLIGHT");
 				addModels("WALLLIGHT",      makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
 				addModels("BUILDLANDINGPAD","^BUILDLANDINGPAD");
@@ -2947,24 +2946,14 @@ public class FileExport {
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
 				
-				addModels("MAINROOM",       "^MAINROOM", "^MAINROOM_WATER");
-				addModels("MAINROOMCUBE",   "^MAINROOMCUBE", "^MAINROOMCUBE_W");
-				
+				MAINROOMmodels.addModelsToModelMap();
 				CubeRoomObjects.addModelsToModelMap();
 				SolitaryWallsAndFloors.addModelsToModelMap();
 				Corridors.addModelsToModelMap();
 				PoweredDevices.addModelsToModelMap();
 			}
 			
-			public static String getRoofModelName(String modelName) {
-				switch (modelName) {
-				case "MAINROOM"    : return "MAINROOM_ROOF"    ;
-//				case "MAINROOMCUBE": return "MAINROOMCUBE_ROOF";
-				}
-				return null;
-			}
-
-			private static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+			static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 				
 				vrml.println("# PROTOs of software build models");
 				vrml.println("");
@@ -2973,12 +2962,6 @@ public class FileExport {
 				
 				// TODO: SoftwareBuildModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
 				
-				if (usedModels.contains("BIOROOM"        )) writeProtoToFile(vrml, "BIOROOM"          , ()->create_BIOROOM          ().write(vrml,"\t"));
-				if (usedModels.contains("MAINROOM"       )) writeProtoToFile(vrml, "MAINROOM"         , ()->create_MAINROOM         ().write(vrml,"\t"));
-				if (usedModels.contains("MAINROOMCUBE"   )) writeProtoToFile(vrml, "MAINROOMCUBE"     , ()->create_MAINROOMCUBE     ().write(vrml,"\t"));
-				if (usedModels.contains("MAINROOM"       )) writeProtoToFile(vrml, "MAINROOM_ROOF"    , ()->create_MAINROOM_ROOF    ().write(vrml,"\t"));
-//				if (usedModels.contains("MAINROOMCUBE"   )) writeProtoToFile(vrml, "MAINROOMCUBE_ROOF", ()->create_MAINROOMCUBE_ROOF().write(vrml,"\t"));
-				
 				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
 				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
 				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",           ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
@@ -2986,101 +2969,11 @@ public class FileExport {
 				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
 				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
 				
+				MAINROOMmodels.writeProtos(vrml,usedModels);
 				CubeRoomObjects.writeProtos(vrml,usedModels);
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
-			}
-			
-			private static LineGeometry.IndexedLineSet create_MAINROOM() {
-				double radius = 6; // Y|Z
-				double height = 4-0.05; // X
-				
-				LineGeometry.PolyLine c0,c1;
-				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
-						.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(  0   ,0,0), radius, 0, 360, false, 32))
-						.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height,0,0), radius, 0, 360, false, 32))
-						.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(c1.get( 2)))
-						.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(c1.get( 6)))
-						.add(new LineGeometry.PolyLine().add(c0.get(10)).add(c1.get(10)))
-						.add(new LineGeometry.PolyLine().add(c0.get(14)).add(c1.get(14)))
-						.add(new LineGeometry.PolyLine().add(c0.get(18)).add(c1.get(18)))
-						.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)))
-						.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)))
-						.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)))
-						;
-				return group;
-			}
-			
-			private static LineGeometry.IndexedLineSet create_MAINROOM_ROOF() {
-				double radius = 6; // Y|Z
-				double baseHeight = 4; // X
-				double peakHeight = 6.28;
-				double ring1H = 5.63, ring1R = 4.5;
-				double ring3H = 5.96, ring3R = 2.40;
-				double ring2H = ring1H*0.4+ring3H*0.6, ring2R = (ring1R+ring3R)/2;
-				double plattformR = 2.2;
-				
-				LineGeometry.PolyLine c0,c1,c2,c3,c4;
-				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
-						.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(baseHeight,0,0),     radius, 0, 360, false, 32))
-						.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring1H    ,0,0),     ring1R, 0, 360, false, 32))
-						.add(c2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring2H    ,0,0),     ring2R, 0, 360, false, 16))
-						.add(c3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring3H    ,0,0),     ring3R, 0, 360, false, 16))
-						.add(c4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(peakHeight,0,0), plattformR, 0, 360, false,  8))
-						.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(c1.get( 2)).add(c2.get( 1)).add(c3.get( 1)))
-						.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(c1.get( 6)).add(c2.get( 3)).add(c3.get( 3)))
-						.add(new LineGeometry.PolyLine().add(c0.get(10)).add(c1.get(10)).add(c2.get( 5)).add(c3.get( 5)))
-						.add(new LineGeometry.PolyLine().add(c0.get(14)).add(c1.get(14)).add(c2.get( 7)).add(c3.get( 7)))
-						.add(new LineGeometry.PolyLine().add(c0.get(18)).add(c1.get(18)).add(c2.get( 9)).add(c3.get( 9)))
-						.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)).add(c2.get(11)).add(c3.get(11)))
-						.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)).add(c2.get(13)).add(c3.get(13)))
-						.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)).add(c2.get(15)).add(c3.get(15)))
-						.add(new LineGeometry.PolyLine().add(c1.get( 0)).add(c2.get( 0)).add(c3.get( 0)))
-						.add(new LineGeometry.PolyLine().add(c1.get( 4)).add(c2.get( 2)).add(c3.get( 2)))
-						.add(new LineGeometry.PolyLine().add(c1.get( 8)).add(c2.get( 4)).add(c3.get( 4)))
-						.add(new LineGeometry.PolyLine().add(c1.get(12)).add(c2.get( 6)).add(c3.get( 6)))
-						.add(new LineGeometry.PolyLine().add(c1.get(16)).add(c2.get( 8)).add(c3.get( 8)))
-						.add(new LineGeometry.PolyLine().add(c1.get(20)).add(c2.get(10)).add(c3.get(10)))
-						.add(new LineGeometry.PolyLine().add(c1.get(24)).add(c2.get(12)).add(c3.get(12)))
-						.add(new LineGeometry.PolyLine().add(c1.get(28)).add(c2.get(14)).add(c3.get(14)))
-						.add(new LineGeometry.PolyLine().add(c4.get(0)).add(c4.get(4)))
-						.add(new LineGeometry.PolyLine().add(c4.get(2)).add(c4.get(6)))
-						;
-				return group;
-			}
-			
-			private static LineGeometry.IndexedLineSet create_MAINROOMCUBE() {
-				double radius = 6; // Y|Z
-				double height = 4-0.05; // X
-				double cubesize = 4;
-				double cornerR = 2;
-				
-				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
-						.add(new LineGeometry.PolyLine()
-								.addArc(LineGeometry.Axis.X, new Point3D(0, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
-								.addArc(LineGeometry.Axis.X, new Point3D(0,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
-								.addArc(LineGeometry.Axis.X, new Point3D(0,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
-								.addArc(LineGeometry.Axis.X, new Point3D(0, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
-								.close()
-						)
-						.add(new LineGeometry.PolyLine()
-								.addArc(LineGeometry.Axis.X, new Point3D(height, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
-								.addArc(LineGeometry.Axis.X, new Point3D(height,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
-								.addArc(LineGeometry.Axis.X, new Point3D(height,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
-								.addArc(LineGeometry.Axis.X, new Point3D(height, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
-								.close()
-						)
-						.add(new LineGeometry.PolyLine().add(0, cubesize/2, radius).add(height, cubesize/2, radius))
-						.add(new LineGeometry.PolyLine().add(0,-cubesize/2, radius).add(height,-cubesize/2, radius))
-						.add(new LineGeometry.PolyLine().add(0, cubesize/2,-radius).add(height, cubesize/2,-radius))
-						.add(new LineGeometry.PolyLine().add(0,-cubesize/2,-radius).add(height,-cubesize/2,-radius))
-						.add(new LineGeometry.PolyLine().add(0, radius, cubesize/2).add(height, radius, cubesize/2))
-						.add(new LineGeometry.PolyLine().add(0, radius,-cubesize/2).add(height, radius,-cubesize/2))
-						.add(new LineGeometry.PolyLine().add(0,-radius, cubesize/2).add(height,-radius, cubesize/2))
-						.add(new LineGeometry.PolyLine().add(0,-radius,-cubesize/2).add(height,-radius,-cubesize/2))
-						;
-				return group;
 			}
 			
 			private static LineGeometry.IndexedLineSet create_BUILDBED() {
@@ -3447,22 +3340,197 @@ public class FileExport {
 				return group;
 			}
 
-			private static LineGeometry.GroupingNode create_BIOROOM() {
-				LineGeometry.PolyLine polyLine = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,0), 6, 0, 70, false);
-				LineGeometry.GroupingNode group1 = new LineGeometry.GroupingNode();
-				for (int i=0; i<16; i++) {
-					LineGeometry.Transform transform = new LineGeometry.Transform(polyLine);
-					transform.addRotation(LineGeometry.Axis.X, 360.0/16*i);
-					group1.add(transform);
-				}
-				LineGeometry.loopArc(6, 0, 70, false, 4, (i, nSeg, x, y) -> group1.add(new LineGeometry.Circle(LineGeometry.Axis.X, new Point3D(y,0,0), x)));
-				
-				return group1;
-			}
-			
 			private static LineGeometry.Transform createXFloorBasedBox(double sizeX, double sizeY, double sizeZ) {
 				return new LineGeometry.Transform( new LineGeometry.Box(sizeX,sizeY,sizeZ) )
 						.addTranslation(new Point3D(sizeX/2,0,0));
+			}
+
+			private static class MAINROOMmodels {
+
+				public static void addModelsToModelMap() {
+					addModels("BIOROOM",      "^BIOROOM");
+					addModels("MAINROOM",     "^MAINROOM", "^MAINROOM_WATER");
+					addModels("MAINROOMCUBE", "^MAINROOMCUBE", "^MAINROOMCUBE_W");
+				}
+
+				public static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					if (usedModels.contains("BIOROOM"     )) writeProtoToFile(vrml, "BIOROOM"          , ()->create_BIOROOM          ().write(vrml,"\t"));
+					if (usedModels.contains("MAINROOM"    )) writeProtoToFile(vrml, "MAINROOM"         , ()->create_MAINROOM         ().write(vrml,"\t"));
+					if (usedModels.contains("MAINROOM"    )) writeProtoToFile(vrml, "MAINROOM_ROOF"    , ()->create_MAINROOM_ROOF    ().write(vrml,"\t"));
+					if (usedModels.contains("MAINROOMCUBE")) writeProtoToFile(vrml, "MAINROOMCUBE"     , ()->create_MAINROOMCUBE     ().write(vrml,"\t"));
+					if (usedModels.contains("MAINROOMCUBE")) writeProtoToFile(vrml, "MAINROOMCUBE_ROOF", ()->create_MAINROOMCUBE_ROOF().write(vrml,"\t"));
+				}
+
+				public static String getRoofModelName(String modelName) {
+					switch (modelName) {
+					case "MAINROOM"    : return "MAINROOM_ROOF"    ;
+					case "MAINROOMCUBE": return "MAINROOMCUBE_ROOF";
+					}
+					return null;
+				}
+
+				private final static double radius = 6; // Y|Z
+				private final static double roomHeight = 4-0.05; // X
+				private final static double cubesize = 4;
+				
+				private final static double roofBaseHeight = 4; // X
+				private final static double roofPeakHeight = 6.28;
+				private final static double roofRing1H = 5.63, roofRing1R = 4.5;
+				private final static double roofRing3H = 5.96, roofRing3R = 2.40;
+				private final static double roofRing2H = roofRing1H*0.4+roofRing3H*0.6, roofRing2R = (roofRing1R+roofRing3R)/2;
+				private final static double roofPlattformR = 2.2;
+				
+				private final static double cornerR = 2;
+				private final static double roofRing1CornerR = 1.0;
+				private final static double roofRing2CornerR = 0.5;
+				private final static double roofRing3CornerR = 0.2;
+				private final static double roofPlattformCornerR = 0.1;
+				
+				private static LineGeometry.GroupingNode create_BIOROOM() {
+					LineGeometry.PolyLine polyLine = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(0,0,0), 6, 0, 70, false);
+					LineGeometry.GroupingNode group1 = new LineGeometry.GroupingNode();
+					for (int i=0; i<16; i++) {
+						LineGeometry.Transform transform = new LineGeometry.Transform(polyLine);
+						transform.addRotation(LineGeometry.Axis.X, 360.0/16*i);
+						group1.add(transform);
+					}
+					LineGeometry.loopArc(6, 0, 70, false, 4, (i, nSeg, x, y) -> group1.add(new LineGeometry.Circle(LineGeometry.Axis.X, new Point3D(y,0,0), x)));
+					
+					return group1;
+				}
+
+				private static LineGeometry.IndexedLineSet create_MAINROOM() {
+					LineGeometry.PolyLine c0,c1;
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(  0   ,0,0), radius, 0, 360, false, 32))
+							.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(roomHeight,0,0), radius, 0, 360, false, 32))
+							.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(c1.get( 2)))
+							.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(c1.get( 6)))
+							.add(new LineGeometry.PolyLine().add(c0.get(10)).add(c1.get(10)))
+							.add(new LineGeometry.PolyLine().add(c0.get(14)).add(c1.get(14)))
+							.add(new LineGeometry.PolyLine().add(c0.get(18)).add(c1.get(18)))
+							.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)))
+							.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)))
+							.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)))
+							;
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_MAINROOM_ROOF() {
+					LineGeometry.PolyLine c0,c1,c2,c3,c4;
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(roofBaseHeight,0,0),     radius, 0, 360, false, 32))
+							.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(roofRing1H    ,0,0),     roofRing1R, 0, 360, false, 32))
+							.add(c2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(roofRing2H    ,0,0),     roofRing2R, 0, 360, false, 16))
+							.add(c3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(roofRing3H    ,0,0),     roofRing3R, 0, 360, false, 16))
+							.add(c4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(roofPeakHeight,0,0), roofPlattformR, 0, 360, false,  8))
+							.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(c1.get( 2)).add(c2.get( 1)).add(c3.get( 1)))
+							.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(c1.get( 6)).add(c2.get( 3)).add(c3.get( 3)))
+							.add(new LineGeometry.PolyLine().add(c0.get(10)).add(c1.get(10)).add(c2.get( 5)).add(c3.get( 5)))
+							.add(new LineGeometry.PolyLine().add(c0.get(14)).add(c1.get(14)).add(c2.get( 7)).add(c3.get( 7)))
+							.add(new LineGeometry.PolyLine().add(c0.get(18)).add(c1.get(18)).add(c2.get( 9)).add(c3.get( 9)))
+							.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)).add(c2.get(11)).add(c3.get(11)))
+							.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)).add(c2.get(13)).add(c3.get(13)))
+							.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)).add(c2.get(15)).add(c3.get(15)))
+							.add(new LineGeometry.PolyLine().add(c1.get( 0)).add(c2.get( 0)).add(c3.get( 0)))
+							.add(new LineGeometry.PolyLine().add(c1.get( 4)).add(c2.get( 2)).add(c3.get( 2)))
+							.add(new LineGeometry.PolyLine().add(c1.get( 8)).add(c2.get( 4)).add(c3.get( 4)))
+							.add(new LineGeometry.PolyLine().add(c1.get(12)).add(c2.get( 6)).add(c3.get( 6)))
+							.add(new LineGeometry.PolyLine().add(c1.get(16)).add(c2.get( 8)).add(c3.get( 8)))
+							.add(new LineGeometry.PolyLine().add(c1.get(20)).add(c2.get(10)).add(c3.get(10)))
+							.add(new LineGeometry.PolyLine().add(c1.get(24)).add(c2.get(12)).add(c3.get(12)))
+							.add(new LineGeometry.PolyLine().add(c1.get(28)).add(c2.get(14)).add(c3.get(14)))
+							.add(new LineGeometry.PolyLine().add(c4.get(0)).add(c4.get(4)))
+							.add(new LineGeometry.PolyLine().add(c4.get(2)).add(c4.get(6)))
+							;
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_MAINROOMCUBE() {
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(0, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(0,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(0,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(0, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(roomHeight, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roomHeight,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roomHeight,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roomHeight, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine().add(0, cubesize/2, radius).add(roomHeight, cubesize/2, radius))
+							.add(new LineGeometry.PolyLine().add(0,-cubesize/2, radius).add(roomHeight,-cubesize/2, radius))
+							.add(new LineGeometry.PolyLine().add(0, cubesize/2,-radius).add(roomHeight, cubesize/2,-radius))
+							.add(new LineGeometry.PolyLine().add(0,-cubesize/2,-radius).add(roomHeight,-cubesize/2,-radius))
+							.add(new LineGeometry.PolyLine().add(0, radius, cubesize/2).add(roomHeight, radius, cubesize/2))
+							.add(new LineGeometry.PolyLine().add(0, radius,-cubesize/2).add(roomHeight, radius,-cubesize/2))
+							.add(new LineGeometry.PolyLine().add(0,-radius, cubesize/2).add(roomHeight,-radius, cubesize/2))
+							.add(new LineGeometry.PolyLine().add(0,-radius,-cubesize/2).add(roomHeight,-radius,-cubesize/2))
+							;
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_MAINROOMCUBE_ROOF() {
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(roofBaseHeight, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofBaseHeight,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofBaseHeight,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofBaseHeight, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing1H, roofRing1R-roofRing1CornerR, roofRing1R-roofRing1CornerR), roofRing1CornerR,   0,  90, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing1H,-roofRing1R+roofRing1CornerR, roofRing1R-roofRing1CornerR), roofRing1CornerR,  90, 180, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing1H,-roofRing1R+roofRing1CornerR,-roofRing1R+roofRing1CornerR), roofRing1CornerR, 180, 270, false, 6)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing1H, roofRing1R-roofRing1CornerR,-roofRing1R+roofRing1CornerR), roofRing1CornerR, 270, 360, false, 6)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing2H, roofRing2R-roofRing2CornerR, roofRing2R-roofRing2CornerR), roofRing2CornerR,   0,  90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing2H,-roofRing2R+roofRing2CornerR, roofRing2R-roofRing2CornerR), roofRing2CornerR,  90, 180, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing2H,-roofRing2R+roofRing2CornerR,-roofRing2R+roofRing2CornerR), roofRing2CornerR, 180, 270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing2H, roofRing2R-roofRing2CornerR,-roofRing2R+roofRing2CornerR), roofRing2CornerR, 270, 360, false, 4)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing3H, roofRing3R-roofRing3CornerR, roofRing3R-roofRing3CornerR), roofRing3CornerR,   0,  90, false, 3)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing3H,-roofRing3R+roofRing3CornerR, roofRing3R-roofRing3CornerR), roofRing3CornerR,  90, 180, false, 3)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing3H,-roofRing3R+roofRing3CornerR,-roofRing3R+roofRing3CornerR), roofRing3CornerR, 180, 270, false, 3)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofRing3H, roofRing3R-roofRing3CornerR,-roofRing3R+roofRing3CornerR), roofRing3CornerR, 270, 360, false, 3)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(roofPeakHeight, roofPlattformR-roofPlattformCornerR, roofPlattformR-roofPlattformCornerR), roofPlattformCornerR,   0,  90, false, 3)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofPeakHeight,-roofPlattformR+roofPlattformCornerR, roofPlattformR-roofPlattformCornerR), roofPlattformCornerR,  90, 180, false, 3)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofPeakHeight,-roofPlattformR+roofPlattformCornerR,-roofPlattformR+roofPlattformCornerR), roofPlattformCornerR, 180, 270, false, 3)
+									.addArc(LineGeometry.Axis.X, new Point3D(roofPeakHeight, roofPlattformR-roofPlattformCornerR,-roofPlattformR+roofPlattformCornerR), roofPlattformCornerR, 270, 360, false, 3)
+									.close()
+							)
+							
+							.add(new LineGeometry.PolyLine().add(roofPeakHeight, 0, roofPlattformR).add(roofPeakHeight, 0, -roofPlattformR))
+							.add(new LineGeometry.PolyLine().add(roofPeakHeight, roofPlattformR, 0).add(roofPeakHeight, -roofPlattformR, 0))
+							
+							.add(new LineGeometry.PolyLine().add(roofRing1H, 0, roofRing1R).add(roofRing2H, 0, roofRing2R).add(roofRing3H, 0, roofRing3R))
+							.add(new LineGeometry.PolyLine().add(roofRing1H, 0,-roofRing1R).add(roofRing2H, 0,-roofRing2R).add(roofRing3H, 0,-roofRing3R))
+							.add(new LineGeometry.PolyLine().add(roofRing1H, roofRing1R, 0).add(roofRing2H, roofRing2R, 0).add(roofRing3H, roofRing3R, 0))
+							.add(new LineGeometry.PolyLine().add(roofRing1H,-roofRing1R, 0).add(roofRing2H,-roofRing2R, 0).add(roofRing3H,-roofRing3R, 0))
+							
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight, cubesize/2, radius).add(roofRing1H, cubesize/2, roofRing1R).add(roofRing2H, cubesize/2, roofRing2R).add(roofRing3H, cubesize/2, roofRing3R))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight,-cubesize/2, radius).add(roofRing1H,-cubesize/2, roofRing1R).add(roofRing2H,-cubesize/2, roofRing2R).add(roofRing3H,-cubesize/2, roofRing3R))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight, cubesize/2,-radius).add(roofRing1H, cubesize/2,-roofRing1R).add(roofRing2H, cubesize/2,-roofRing2R).add(roofRing3H, cubesize/2,-roofRing3R))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight,-cubesize/2,-radius).add(roofRing1H,-cubesize/2,-roofRing1R).add(roofRing2H,-cubesize/2,-roofRing2R).add(roofRing3H,-cubesize/2,-roofRing3R))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight, radius, cubesize/2).add(roofRing1H, roofRing1R, cubesize/2).add(roofRing2H, roofRing2R, cubesize/2).add(roofRing3H, roofRing3R, cubesize/2))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight, radius,-cubesize/2).add(roofRing1H, roofRing1R,-cubesize/2).add(roofRing2H, roofRing2R,-cubesize/2).add(roofRing3H, roofRing3R,-cubesize/2))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight,-radius, cubesize/2).add(roofRing1H,-roofRing1R, cubesize/2).add(roofRing2H,-roofRing2R, cubesize/2).add(roofRing3H,-roofRing3R, cubesize/2))
+							.add(new LineGeometry.PolyLine().add(roofBaseHeight,-radius,-cubesize/2).add(roofRing1H,-roofRing1R,-cubesize/2).add(roofRing2H,-roofRing2R,-cubesize/2).add(roofRing3H,-roofRing3R,-cubesize/2))
+							;
+					return group;
+				}
 			}
 
 			private static class PoweredDevices {
