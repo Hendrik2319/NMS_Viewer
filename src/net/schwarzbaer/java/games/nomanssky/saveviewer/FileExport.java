@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -294,6 +295,32 @@ public class FileExport {
 		SaveViewer.executeShellCommand(new String[] {SaveViewer.config.vrmlViewer,file.getAbsolutePath()});
 	}
 
+	private static boolean isObjectAboveMAINROOM(BuildingObject obj, BuildingObject[] bObjs, Vector<String> objectIDs) {
+		if (bObjs==null) return false;
+		if (obj==null) return false;
+		if (obj.position==null) return false;
+		if (obj.position.pos==null) return false;
+		if (obj.position.up ==null) return false;
+		if (obj.position.at ==null) return false;
+		
+		Point3D targetPos = obj.position.pos.add(obj.position.up.normalize().mul(4));
+		for (BuildingObject other:bObjs) {
+			if (other==null) continue;
+			if (other.objectID==null) continue;
+			if (other.position==null) continue;
+			if (other.position.pos==null) continue;
+			if (other.position.up ==null) continue;
+			if (other.position.at ==null) continue;
+			
+			if (!objectIDs.contains(other.objectID)) continue;
+			if (targetPos.distTo(other.position.pos)>0.1) continue;
+			
+			if (other.position.up.normalize().crossProd(obj.position.up.normalize()).length()<0.01)
+				return true;
+		}
+		return false;
+	}
+
 	public static void writePosToVRML_models(String suggestedFileName, BuildingObject[] objects, SaveGameData.PersistentPlayerBase playerbase, Window parent, String label, boolean dontAsk, Consumer<File> openFileInViewer) {
 		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
 			BuildingObject[] bObjs = objects;
@@ -330,11 +357,22 @@ public class FileExport {
 				if (max==null) max = new Point3D(pos); else max.max(pos);
 			}
 
-			HashSet<String> usedModels = new HashSet<>(); 
-			for (BuildingObject obj:bObjs) {
+			Vector<String> antiRoofObjects = new Vector<>(); // TODO
+			Collections.addAll(antiRoofObjects, "^MAINROOM", "^MAINROOM_WATER", "^MAINROOMCUBE", "^MAINROOMCUBE_W");
+			
+			HashSet<String> usedModels = new HashSet<>();
+			boolean[] isMAINROOMwithRoof = new boolean[bObjs.length];
+			for (int i=0; i<bObjs.length; i++) {
+				BuildingObject obj = bObjs[i];
+				
 				String model = VRMLoutput.mapObjectID2Model.get(obj.objectID);
 				if (model!=null)
 					usedModels.add(model);
+				
+				if (model!=null && (model.equals("MAINROOM") || model.equals("MAINROOMCUBE")))
+					isMAINROOMwithRoof[i] = !isObjectAboveMAINROOM(obj,bObjs,antiRoofObjects);
+				else
+					isMAINROOMwithRoof[i] = false;
 			}
 
 			try (PrintWriter vrml = new PrintWriter(new BufferedWriter( new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8)))) {
@@ -381,7 +419,7 @@ public class FileExport {
 				for (int i=0; i<bObjs.length; i++) {
 					BuildingObject obj = bObjs[i];
 					if (!cubeCombine.add(obj) && !freightCombine.add(obj))
-						VRMLoutput.writeModel(vrml, obj);
+						VRMLoutput.writeModel(vrml, obj, isMAINROOMwithRoof[i]);
 					int value = i+1;
 					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
 				}
@@ -2879,6 +2917,10 @@ public class FileExport {
 			
 		}
 		
+		private static String getRoofModelName(String modelName) {
+			return SoftwareBuildModels.getRoofModelName(modelName);
+		}
+
 		private static String[] makeVariations(String format, String... strs) {
 			String[] variations = new String[strs.length];
 			for (int i = 0; i < strs.length; i++) {
@@ -2914,6 +2956,14 @@ public class FileExport {
 				PoweredDevices.addModelsToModelMap();
 			}
 			
+			public static String getRoofModelName(String modelName) {
+				switch (modelName) {
+				case "MAINROOM"    : return "MAINROOM_ROOF"    ;
+//				case "MAINROOMCUBE": return "MAINROOMCUBE_ROOF";
+				}
+				return null;
+			}
+
 			private static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 				
 				vrml.println("# PROTOs of software build models");
@@ -2923,9 +2973,11 @@ public class FileExport {
 				
 				// TODO: SoftwareBuildModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
 				
-				if (usedModels.contains("BIOROOM"        )) writeProtoToFile(vrml, "BIOROOM"        ,           ()->create_BIOROOM        ().write(vrml,"\t"));
-				if (usedModels.contains("MAINROOM"       )) writeProtoToFile(vrml, "MAINROOM"       ,           ()->create_MAINROOM       ().write(vrml,"\t"));
-				if (usedModels.contains("MAINROOMCUBE"   )) writeProtoToFile(vrml, "MAINROOMCUBE"   ,           ()->create_MAINROOMCUBE   ().write(vrml,"\t"));
+				if (usedModels.contains("BIOROOM"        )) writeProtoToFile(vrml, "BIOROOM"          , ()->create_BIOROOM          ().write(vrml,"\t"));
+				if (usedModels.contains("MAINROOM"       )) writeProtoToFile(vrml, "MAINROOM"         , ()->create_MAINROOM         ().write(vrml,"\t"));
+				if (usedModels.contains("MAINROOMCUBE"   )) writeProtoToFile(vrml, "MAINROOMCUBE"     , ()->create_MAINROOMCUBE     ().write(vrml,"\t"));
+				if (usedModels.contains("MAINROOM"       )) writeProtoToFile(vrml, "MAINROOM_ROOF"    , ()->create_MAINROOM_ROOF    ().write(vrml,"\t"));
+//				if (usedModels.contains("MAINROOMCUBE"   )) writeProtoToFile(vrml, "MAINROOMCUBE_ROOF", ()->create_MAINROOMCUBE_ROOF().write(vrml,"\t"));
 				
 				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
 				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
@@ -2956,6 +3008,44 @@ public class FileExport {
 						.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)))
 						.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)))
 						.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)))
+						;
+				return group;
+			}
+			
+			private static LineGeometry.IndexedLineSet create_MAINROOM_ROOF() {
+				double radius = 6; // Y|Z
+				double baseHeight = 4; // X
+				double peakHeight = 6.28;
+				double ring1H = 5.63, ring1R = 4.5;
+				double ring3H = 5.96, ring3R = 2.40;
+				double ring2H = ring1H*0.4+ring3H*0.6, ring2R = (ring1R+ring3R)/2;
+				double plattformR = 2.2;
+				
+				LineGeometry.PolyLine c0,c1,c2,c3,c4;
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(baseHeight,0,0),     radius, 0, 360, false, 32))
+						.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring1H    ,0,0),     ring1R, 0, 360, false, 32))
+						.add(c2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring2H    ,0,0),     ring2R, 0, 360, false, 16))
+						.add(c3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring3H    ,0,0),     ring3R, 0, 360, false, 16))
+						.add(c4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(peakHeight,0,0), plattformR, 0, 360, false,  8))
+						.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(c1.get( 2)).add(c2.get( 1)).add(c3.get( 1)))
+						.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(c1.get( 6)).add(c2.get( 3)).add(c3.get( 3)))
+						.add(new LineGeometry.PolyLine().add(c0.get(10)).add(c1.get(10)).add(c2.get( 5)).add(c3.get( 5)))
+						.add(new LineGeometry.PolyLine().add(c0.get(14)).add(c1.get(14)).add(c2.get( 7)).add(c3.get( 7)))
+						.add(new LineGeometry.PolyLine().add(c0.get(18)).add(c1.get(18)).add(c2.get( 9)).add(c3.get( 9)))
+						.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)).add(c2.get(11)).add(c3.get(11)))
+						.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)).add(c2.get(13)).add(c3.get(13)))
+						.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)).add(c2.get(15)).add(c3.get(15)))
+						.add(new LineGeometry.PolyLine().add(c1.get( 0)).add(c2.get( 0)).add(c3.get( 0)))
+						.add(new LineGeometry.PolyLine().add(c1.get( 4)).add(c2.get( 2)).add(c3.get( 2)))
+						.add(new LineGeometry.PolyLine().add(c1.get( 8)).add(c2.get( 4)).add(c3.get( 4)))
+						.add(new LineGeometry.PolyLine().add(c1.get(12)).add(c2.get( 6)).add(c3.get( 6)))
+						.add(new LineGeometry.PolyLine().add(c1.get(16)).add(c2.get( 8)).add(c3.get( 8)))
+						.add(new LineGeometry.PolyLine().add(c1.get(20)).add(c2.get(10)).add(c3.get(10)))
+						.add(new LineGeometry.PolyLine().add(c1.get(24)).add(c2.get(12)).add(c3.get(12)))
+						.add(new LineGeometry.PolyLine().add(c1.get(28)).add(c2.get(14)).add(c3.get(14)))
+						.add(new LineGeometry.PolyLine().add(c4.get(0)).add(c4.get(4)))
+						.add(new LineGeometry.PolyLine().add(c4.get(2)).add(c4.get(6)))
 						;
 				return group;
 			}
@@ -4906,6 +4996,9 @@ public class FileExport {
 		}
 
 		private static void writeModel(PrintWriter vrml, BuildingObject obj) {
+			writeModel(vrml, obj, false);
+		}
+		private static void writeModel(PrintWriter vrml, BuildingObject obj, boolean isMAINROOMwithRoof) {
 			if (obj.position==null) return;
 			if (obj.position.pos==null) return;
 			if (obj.position.up==null) return;
@@ -4915,7 +5008,7 @@ public class FileExport {
 			String label = getLabel(objectID);
 			String extraLine = null; // obj.userData==null ? null : String.format("0x%08X", obj.userData);
 			
-			writeModel(vrml, objectID, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
+			writeModel(vrml, objectID, isMAINROOMwithRoof, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
 		}
 		
 		private static String getLabel(String objectID) {
@@ -4932,6 +5025,9 @@ public class FileExport {
 		}
 
 		private static void writeModel(PrintWriter vrml, String objectID, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
+			writeModel(vrml, objectID, false, label, extraLine, pos, at, up, lineColor);
+		}
+		private static void writeModel(PrintWriter vrml, String objectID, boolean isMAINROOMwithRoof, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
 			String modelName = mapObjectID2Model.get(objectID);
 			Integer maxTextLength = mapModel2TextLength.get(modelName);
 			
@@ -4946,7 +5042,15 @@ public class FileExport {
 					if (modelName!=null) {
 						String lineColorStr = lineColor==null?"":(" lineColor "+lineColor.toString("%1.2f",false));
 						String labelStr = createLabelStrs(extraLine==null ? label : label+" "+extraLine, maxTextLength==null ? 20 : maxTextLength.intValue());
-						vrml.printf(" %s { string %s%s }", modelName, labelStr, lineColorStr);
+						String normalModel = String.format(" %s { string %s%s }", modelName, labelStr, lineColorStr);
+						if (isMAINROOMwithRoof) {
+							String roofModelName = getRoofModelName(modelName);
+							if (roofModelName!=null)
+								vrml.printf(" [ %s %s{} ]", normalModel, roofModelName);
+							else
+								vrml.print(normalModel);
+						} else
+							vrml.print(normalModel);
 					} else
 						switch (objectID) {
 						default:
