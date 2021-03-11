@@ -329,11 +329,18 @@ public class FileExport {
 				if (min==null) min = new Point3D(pos); else min.min(pos);
 				if (max==null) max = new Point3D(pos); else max.max(pos);
 			}
-			
+
+			HashSet<String> usedModels = new HashSet<>(); 
+			for (BuildingObject obj:bObjs) {
+				String model = VRMLoutput.mapObjectID2Model.get(obj.objectID);
+				if (model!=null)
+					usedModels.add(model);
+			}
+
 			try (PrintWriter vrml = new PrintWriter(new BufferedWriter( new OutputStreamWriter(new FileOutputStream(file),StandardCharsets.UTF_8)))) {
 				
 				startTime = startTask(pd, "   ", "Write templates");
-				VRMLoutput.writeTemplateToFile(vrml);
+				VRMLoutput.writeTemplateToFile(vrml,usedModels);
 				endTask(startTime);
 				
 				//writeBioroomCoords(vrml);
@@ -2853,8 +2860,6 @@ public class FileExport {
 			addModels("MAINROOM",       "^MAINROOM", "^MAINROOM_WATER"); // move from template to HardCodedModels (->Doors)
 			addModels("MAINROOMCUBE",   "^MAINROOMCUBE", "^MAINROOMCUBE_W");
 			
-			addModels("CUBESTAIRS",     "^CUBESTAIRS");
-			
 			addModels("CONTAINER",      "^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
 			                            "^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
 			
@@ -2912,7 +2917,7 @@ public class FileExport {
 				PoweredDevices.addModelsToModelMap();
 			}
 			
-			private static void writeProtos(PrintWriter vrml) {
+			private static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 				
 				vrml.println("# PROTOs of hardcoded models");
 				vrml.println("");
@@ -2922,18 +2927,18 @@ public class FileExport {
 				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
 				
 				//writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BIOROOM",                  ()->create_BIOROOM        ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "SMALLLIGHT",     0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
-				writeProtoToFile(vrml, "WALLLIGHT",      0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDLANDINGPAD",          ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.5,  0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDCHAIR",      0.5,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
-				writeProtoToFile(vrml, "BUILDBED",        0.5,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
+				if (usedModels.contains("BIOROOM"        )) writeProtoToFile(vrml, "BIOROOM"        ,           ()->create_BIOROOM        ().write(vrml,"\t"));
+				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
+				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
+				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",           ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
+				if (usedModels.contains("BUILDSIMPLEDESK")) writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.50,  0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
+				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
+				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
 				
-				CubeRoomObjects.writeProtos(vrml);
-				SolitaryWallsAndFloors.writeProtos(vrml);
-				Corridors.writeProtos(vrml);
-				PoweredDevices.writeProtos(vrml);
+				CubeRoomObjects.writeProtos(vrml,usedModels);
+				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
+				Corridors.writeProtos(vrml,usedModels);
+				PoweredDevices.writeProtos(vrml,usedModels);
 				
 				/*			
 				vrml.println("# ############################");
@@ -3382,20 +3387,25 @@ public class FileExport {
 				return group1;
 			}
 			
+			private static LineGeometry.Transform createXFloorBasedBox(double sizeX, double sizeY, double sizeZ) {
+				return new LineGeometry.Transform( new LineGeometry.Box(sizeX,sizeY,sizeZ) )
+						.addTranslation(new Point3D(sizeX/2,0,0));
+			}
+
 			private static class PoweredDevices {
 				
-				private static void addModelsToModelMap() {
+				static void addModelsToModelMap() {
 					addModels("SOLARPANEL"   , "^U_SOLAR_S"     );
 					addModels("BATTERY"      , "^U_BATTERY_S"   );
 					addModels("BIO_GENERATOR", "^U_BIOGENERATOR");
 //					addModels("EM_GENERATOR" , "^U_GENERATOR_S" );
 				}
 				
-				private static void writeProtos(PrintWriter vrml) {
-					writeProtoToFile(vrml, "SOLARPANEL",    0.5, 0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BATTERY",       0.5, 0, ()->create_BATTERY      ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BIO_GENERATOR", 0.5, 0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
-//					writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
+				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					if (usedModels.contains("SOLARPANEL"   )) writeProtoToFile(vrml, "SOLARPANEL"   , 0.5, 0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
+					if (usedModels.contains("BATTERY"      )) writeProtoToFile(vrml, "BATTERY"      , 0.5, 0, ()->create_BATTERY      ().write(vrml,"\t"));
+					if (usedModels.contains("BIO_GENERATOR")) writeProtoToFile(vrml, "BIO_GENERATOR", 0.5, 0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
+//					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
 					// TODO: HardCodedModels.PoweredDevices: add PROTO for EM_GENERATOR
 				}
 
@@ -3692,24 +3702,153 @@ public class FileExport {
 			
 			private static class CubeRoomObjects {
 				private static final double cubesize = 4;
+				private static final double wallspacing = 0.05;
+				private static final double wallthickness = 0.1;
 				
-				private static void addModelsToModelMap() {
-					// TODO: HardCodedModels.CubeRoomObjects: add ^CUBEFRAME
-					addModels("CUBEFLOOR"      , "^CUBEFLOOR"      );
-					addModels("CUBEWINDOW"     , "^CUBEWINDOW"     );
-					addModels("CUBEWINDOWOVAL" , "^CUBEWINDOWOVAL" );
+				static void addModelsToModelMap() {
+					addModels("CUBESTAIRS",     "^CUBESTAIRS"      );
+					addModels("CUBEFLOOR",       "^CUBEFLOOR"      );
+					addModels("CUBEWALL",        "^CUBEWALL"       );
+					addModels("CUBEINNERDOOR",   "^CUBEINNERDOOR"  );
+					addModels("CUBEWINDOW",      "^CUBEWINDOW"     );
+					addModels("CUBEWINDOWOVAL",  "^CUBEWINDOWOVAL" );
 					addModels("CUBEWINDOWSMALL", "^CUBEWINDOWSMALL");
+					addModels("CUBEFRAME",       "^CUBEFRAME"      );
+					
 				}
 				
-				private static void writeProtos(PrintWriter vrml) {
-					writeProtoToFile(vrml, "CUBEFLOOR",               15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CUBEWINDOW",      0.6, 0, 25, ()->create_CUBEWINDOW     ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CUBEWINDOWOVAL",  0.6, 0, 25, ()->create_CUBEWINDOWOVAL ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
+				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					if (usedModels.contains("CUBEFLOOR"      )) writeProtoToFile(vrml, "CUBEFLOOR"      ,         15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
+					if (usedModels.contains("CUBEWALL"       )) writeProtoToFile(vrml, "CUBEWALL"       , 0.6, 0, 25, ()->create_CUBEWALL       ().write(vrml,"\t"));
+					if (usedModels.contains("CUBEINNERDOOR"  )) writeProtoToFile(vrml, "CUBEINNERDOOR"  , 0.6, 0, 25, ()->create_CUBEINNERDOOR  ().write(vrml,"\t"));
+					if (usedModels.contains("CUBEWINDOW"     )) writeProtoToFile(vrml, "CUBEWINDOW"     , 0.6, 0, 25, ()->create_CUBEWINDOW     ().write(vrml,"\t"));
+					if (usedModels.contains("CUBEWINDOWOVAL" )) writeProtoToFile(vrml, "CUBEWINDOWOVAL" , 0.6, 0, 25, ()->create_CUBEWINDOWOVAL ().write(vrml,"\t"));
+					if (usedModels.contains("CUBEWINDOWSMALL")) writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
+					if (usedModels.contains("CUBESTAIRS"     )) writeProtoToFile(vrml, "CUBESTAIRS"     ,         15, ()->create_CUBESTAIRS     ().write(vrml,"\t"));
+					if (usedModels.contains("CUBEFRAME"      )) writeProtoToFile(vrml, "CUBEFRAME"      ,         15, ()->create_CUBEFRAME      ().write(vrml,"\t"));
+					
 				}
 			
 				private static LineGeometry.Box create_CUBEFLOOR() {
-					return new LineGeometry.Box(0.1,3.9,3.9);
+					return new LineGeometry.Box( wallthickness, cubesize-wallspacing, cubesize-wallspacing );
+				}
+				
+				private static LineGeometry.Transform create_CUBEWALL() {
+					return createXFloorBasedBox( cubesize-wallspacing, wallthickness, cubesize-wallspacing );
+				}
+				
+				private static LineGeometry.GroupingNode create_CUBEFRAME() {
+					double h = cubesize-wallspacing;
+					double v = (cubesize-wallspacing)/2;
+					Point3D p000 = new Point3D( 0, -v, -v ); Point3D p100 = new Point3D( h, -v, -v );
+					Point3D p001 = new Point3D( 0, -v,  v ); Point3D p101 = new Point3D( h, -v,  v );
+					Point3D p011 = new Point3D( 0,  v,  v ); Point3D p111 = new Point3D( h,  v,  v );
+					Point3D p010 = new Point3D( 0,  v, -v ); Point3D p110 = new Point3D( h,  v, -v );
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine().add(p000).add(p100).add(p111).add(p011).close())
+							.add(new LineGeometry.PolyLine().add(p001).add(p101).add(p110).add(p010).close())
+							
+							.add(new LineGeometry.PolyLine().add(p001).add(p011).add(p110).add(p100).close())
+							.add(new LineGeometry.PolyLine().add(p010).add(p000).add(p101).add(p111).close())
+							
+							.add(new LineGeometry.PolyLine().add(p000).add(p001).add(p111).add(p110).close())
+							.add(new LineGeometry.PolyLine().add(p011).add(p010).add(p100).add(p101).close())
+							;
+					return group;
+				}
+				
+				private static LineGeometry.GroupingNode create_CUBESTAIRS() {
+					// X: Height
+					// Y: Depth
+					// Z: Width==Height
+					double width = 3.2;
+					double stairThickH = 0.8;
+				
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.Prism(LineGeometry.Axis.Z, width,
+									new Point3D(cubesize-wallspacing            , -(cubesize-wallspacing)/2            , 0),
+									new Point3D(cubesize-wallspacing-stairThickH, -(cubesize-wallspacing)/2            , 0),
+									new Point3D(              0                 ,  (cubesize-wallspacing)/2-stairThickH, 0),
+									new Point3D(              0                 ,  (cubesize-wallspacing)/2            , 0)
+									));
+					
+					int stepCount = 11;
+					double stepDepth = 0.5; // Y
+					double stepWidth = 3.0; // Z
+					
+					for (int i=0; i<stepCount-1; i++) {
+						double x = (i+1)*(cubesize-wallspacing)/stepCount;
+						double y = (cubesize-wallspacing)/2 - x;
+						group.add(new LineGeometry.PolyLine()
+								.add(x, y+stepDepth/2,  stepWidth/2)
+								.add(x, y+stepDepth/2, -stepWidth/2)
+								.add(x, y-stepDepth/2, -stepWidth/2)
+								.add(x, y-stepDepth/2,  stepWidth/2)
+								.close()
+						);
+					}
+					
+					return group;
+				}
+				
+				private static LineGeometry.GroupingNode create_CUBEINNERDOOR() {
+					// X: Height
+					// Y: Thickness
+					// Z: Width==Height
+					
+					// r*sin(a/2) = sp/2
+					// tan(a/2) = sp/2 / h
+					
+					double doorRadius = cubesize*0.8/2;
+					double doorFloorSpacing = cubesize/4;
+					
+					double doorFloorAngle_deg = Math.asin( doorFloorSpacing/2/doorRadius )*2 * 180/Math.PI;
+					double doorCenterHeight = doorFloorSpacing/2 / Math.tan(doorFloorAngle_deg/2 *Math.PI/180);
+					
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(new LineGeometry.PolyLine()
+								.add( cubesize-wallspacing,  wallthickness/2,  (cubesize-wallspacing)/2 )
+								.add(         0           ,  wallthickness/2,  (cubesize-wallspacing)/2 )
+								.addArc(LineGeometry.Axis.Y, new Point3D(doorCenterHeight,  wallthickness/2, 0), doorRadius, -90+doorFloorAngle_deg/2, 270-doorFloorAngle_deg/2, false)
+								.add(         0           ,  wallthickness/2, -(cubesize-wallspacing)/2 )
+								.add( cubesize-wallspacing,  wallthickness/2, -(cubesize-wallspacing)/2 )
+								.close()
+						)
+						.add(new LineGeometry.PolyLine()
+								.add( cubesize-wallspacing, -wallthickness/2,  (cubesize-wallspacing)/2 )
+								.add(         0           , -wallthickness/2,  (cubesize-wallspacing)/2 )
+								.addArc(LineGeometry.Axis.Y, new Point3D(doorCenterHeight, -wallthickness/2, 0), doorRadius, -90+doorFloorAngle_deg/2, 270-doorFloorAngle_deg/2, false)
+								.add(         0           , -wallthickness/2, -(cubesize-wallspacing)/2 )
+								.add( cubesize-wallspacing, -wallthickness/2, -(cubesize-wallspacing)/2 )
+								.close()
+						)
+						.add(new LineGeometry.PolyLine()
+								.add( cubesize-wallspacing,  wallthickness/2,  (cubesize-wallspacing)/2 )
+								.add( cubesize-wallspacing, -wallthickness/2,  (cubesize-wallspacing)/2 )
+						)
+						.add(new LineGeometry.PolyLine()
+								.add(         0           ,  wallthickness/2,  (cubesize-wallspacing)/2 )
+								.add(         0           , -wallthickness/2,  (cubesize-wallspacing)/2 )
+						)
+						.add(new LineGeometry.PolyLine()
+								.add(         0           ,  wallthickness/2,  (doorFloorSpacing)/2 )
+								.add(         0           , -wallthickness/2,  (doorFloorSpacing)/2 )
+						)
+						.add(new LineGeometry.PolyLine()
+								.add(         0           ,  wallthickness/2, -(doorFloorSpacing)/2 )
+								.add(         0           , -wallthickness/2, -(doorFloorSpacing)/2 )
+						)
+						.add(new LineGeometry.PolyLine()
+								.add(         0           ,  wallthickness/2, -(cubesize-wallspacing)/2 )
+								.add(         0           , -wallthickness/2, -(cubesize-wallspacing)/2 )
+						)
+						.add(new LineGeometry.PolyLine()
+								.add( cubesize-wallspacing,  wallthickness/2, -(cubesize-wallspacing)/2 )
+								.add( cubesize-wallspacing, -wallthickness/2, -(cubesize-wallspacing)/2 )
+						)
+						;
+					
+					return group;
 				}
 			
 				private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOW() {
@@ -3760,22 +3899,7 @@ public class FileExport {
 				private static final double heightW = (height-(width-width2))/3 + (width-width2)/2; // Unterkante der Fensterscheibe
 				private static final double spacing = 0.05;
 				
-				private static void writeProtos(PrintWriter vrml) {
-					
-					writeProtoToFile(vrml, "CORRIDOR",           15, ()->create_CORRIDOR     ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CORRIDORL",          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CORRIDORX",          15, ()->create_CORRIDORX    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "CORRIDORT",          15, ()->create_CORRIDORT    ().write(vrml,"\t"));
-					
-					writeProtoToFile(vrml, "CORRIDORC", 1, 45,       ()->create_CORRIDORC    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "GLASSCORRIDOR",      15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
-					
-					writeProtoToFile(vrml, "DOOR2",              15, ()->create_DOOR2        ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BUILDDOOR",          15, ()->create_BUILDDOOR    ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "BUILDRAMP", 0.5, 90, 15, ()->create_BUILDRAMP    ().write(vrml,"\t"));
-				}
-
-				private static void addModelsToModelMap() {
+				static void addModelsToModelMap() {
 					//addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR"); 
 					addModels("CORRIDOR",       "^CORRIDOR");
 					addModels("GLASSCORRIDOR",  "^GLASSCORRIDOR");
@@ -3788,6 +3912,21 @@ public class FileExport {
 					addModels("DOOR2",          "^DOOR2");  // Holo-Tür
 					addModels("BUILDDOOR",      "^BUILDDOOR");
 					addModels("BUILDRAMP",      "^BUILDRAMP");
+				}
+
+				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					
+					if (usedModels.contains("CORRIDOR"     )) writeProtoToFile(vrml, "CORRIDOR"     ,          15, ()->create_CORRIDOR     ().write(vrml,"\t"));
+					if (usedModels.contains("CORRIDORL"    )) writeProtoToFile(vrml, "CORRIDORL"    ,          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
+					if (usedModels.contains("CORRIDORX"    )) writeProtoToFile(vrml, "CORRIDORX"    ,          15, ()->create_CORRIDORX    ().write(vrml,"\t"));
+					if (usedModels.contains("CORRIDORT"    )) writeProtoToFile(vrml, "CORRIDORT"    ,          15, ()->create_CORRIDORT    ().write(vrml,"\t"));
+					
+					if (usedModels.contains("CORRIDORC"    )) writeProtoToFile(vrml, "CORRIDORC"    ,   1, 45,     ()->create_CORRIDORC    ().write(vrml,"\t"));
+					if (usedModels.contains("GLASSCORRIDOR")) writeProtoToFile(vrml, "GLASSCORRIDOR",          15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
+					
+					if (usedModels.contains("DOOR2"        )) writeProtoToFile(vrml, "DOOR2"        ,          15, ()->create_DOOR2        ().write(vrml,"\t"));
+					if (usedModels.contains("BUILDDOOR"    )) writeProtoToFile(vrml, "BUILDDOOR"    ,          15, ()->create_BUILDDOOR    ().write(vrml,"\t"));
+					if (usedModels.contains("BUILDRAMP"    )) writeProtoToFile(vrml, "BUILDRAMP"    , 0.5, 90, 15, ()->create_BUILDRAMP    ().write(vrml,"\t"));
 				}
 
 				private static LineGeometry.IndexedLineSet create_CORRIDOR() {
@@ -4283,38 +4422,33 @@ public class FileExport {
 //					addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
 				}
 				
-				static void writeProtos(PrintWriter vrml) {
+				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					
-					writeProtoToFile(vrml, "__SOLITARY_ARCH"          , ()->create_ARCH        ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_ARCH_H", 12    , ()->create_ARCH_H      ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF"          , ()->create_ROOF        ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF_M"        , ()->create_ROOF_M      ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF_C"        , ()->create_ROOF_C      ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_ROOF_IC"       , ()->create_ROOF_IC     ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_WALLDIAGONAL"  , ()->create_WALLDIAGONAL().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_DOOR"          , ()->create_DOOR        ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_DOOR_HALF", 12 , ()->create_DOOR_HALF   ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_DOORWINDOW"    , ()->create_DOORWINDOW  ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_GDOOR"         , ()->create_GDOOR       ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_RAMP"          , ()->create_RAMP        ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_RAMP_H", 12    , ()->create_RAMP_H      ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_WALL_WINDOW"   , ()->create_WALL_WINDOW ().write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_GLASSFLOOR"    , ()->create_GLASSFLOOR  ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_ARCH"        )) writeProtoToFile(vrml, "__SOLITARY_ARCH"        ,     ()->create_ARCH        ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_ARCH_H"      )) writeProtoToFile(vrml, "__SOLITARY_ARCH_H"      , 12, ()->create_ARCH_H      ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_ROOF"        )) writeProtoToFile(vrml, "__SOLITARY_ROOF"        ,     ()->create_ROOF        ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_ROOF_M"      )) writeProtoToFile(vrml, "__SOLITARY_ROOF_M"      ,     ()->create_ROOF_M      ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_ROOF_C"      )) writeProtoToFile(vrml, "__SOLITARY_ROOF_C"      ,     ()->create_ROOF_C      ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_ROOF_IC"     )) writeProtoToFile(vrml, "__SOLITARY_ROOF_IC"     ,     ()->create_ROOF_IC     ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_WALLDIAGONAL")) writeProtoToFile(vrml, "__SOLITARY_WALLDIAGONAL",     ()->create_WALLDIAGONAL().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_DOOR"        )) writeProtoToFile(vrml, "__SOLITARY_DOOR"        ,     ()->create_DOOR        ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_DOOR_HALF"   )) writeProtoToFile(vrml, "__SOLITARY_DOOR_HALF"   , 12, ()->create_DOOR_HALF   ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_DOORWINDOW"  )) writeProtoToFile(vrml, "__SOLITARY_DOORWINDOW"  ,     ()->create_DOORWINDOW  ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_GDOOR"       )) writeProtoToFile(vrml, "__SOLITARY_GDOOR"       ,     ()->create_GDOOR       ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_RAMP"        )) writeProtoToFile(vrml, "__SOLITARY_RAMP"        ,     ()->create_RAMP        ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_RAMP_H"      )) writeProtoToFile(vrml, "__SOLITARY_RAMP_H"      , 12, ()->create_RAMP_H      ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_WALL_WINDOW" )) writeProtoToFile(vrml, "__SOLITARY_WALL_WINDOW" ,     ()->create_WALL_WINDOW ().write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_GLASSFLOOR"  )) writeProtoToFile(vrml, "__SOLITARY_GLASSFLOOR"  ,     ()->create_GLASSFLOOR  ().write(vrml,"\t"));
 					
-					writeProtoToFile(vrml, "__SOLITARY_FLOOR"         , ()->new LineGeometry.Box(wall_thickness,wall_length  ,wall_length  ).write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q", 12   , ()->new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2).write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR", 15  , ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length  ,-90).write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q", 12, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_FLOOR"       )) writeProtoToFile(vrml, "__SOLITARY_FLOOR"       ,     ()->new LineGeometry.Box(wall_thickness,wall_length  ,wall_length  ).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_FLOOR_Q"     )) writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q"     , 12, ()->new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_TRIFLOOR"    )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR"    , 15, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length  ,-90).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_TRIFLOOR_Q"  )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q"  , 12, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90).write(vrml,"\t"));
 					
-					writeProtoToFile(vrml, "__SOLITARY_WALL"          , ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length  ).write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_WALL_H", 12    , ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length/2).write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_WALL_Q"        , ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length  ).write(vrml,"\t"));
-					writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H", 12  , ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length/2).write(vrml,"\t"));
-				}
-
-				private static LineGeometry.Transform createXFloorBasedBox(double sizeX, double sizeY, double sizeZ) {
-					return new LineGeometry.Transform( new LineGeometry.Box(sizeX,sizeY,sizeZ) )
-							.addTranslation(new Point3D(sizeX/2,0,0));
+					if (usedModels.contains("__SOLITARY_WALL"        )) writeProtoToFile(vrml, "__SOLITARY_WALL"        ,     ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length  ).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_WALL_H"      )) writeProtoToFile(vrml, "__SOLITARY_WALL_H"      , 12, ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length/2).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_WALL_Q"      )) writeProtoToFile(vrml, "__SOLITARY_WALL_Q"      ,     ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length  ).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_WALL_Q_H"    )) writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H"    , 12, ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length/2).write(vrml,"\t"));
 				}
 
 				private static LineGeometry.MultipleIndexedLineSets create_GLASSFLOOR() {
@@ -4663,7 +4797,7 @@ public class FileExport {
 			
 		}
 
-		private static void writeTemplateToFile(PrintWriter vrml) {
+		private static void writeTemplateToFile(PrintWriter vrml, HashSet<String> usedModels) {
 			
 			StringBuilder templateSB = new StringBuilder();
 			InputStream is = templateSB.getClass().getResourceAsStream(VRMLoutput.VRML_TEMPLATE_MODELS_WRL);
@@ -4676,7 +4810,7 @@ public class FileExport {
 			vrml.println(templateSB.toString());
 			vrml.println("");
 			
-			HardCodedModels.writeProtos(vrml);			
+			HardCodedModels.writeProtos(vrml, usedModels);
 		}
 
 		private static File createBaseVrmlFile(String suggestedFileName) {

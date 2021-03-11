@@ -219,29 +219,6 @@ PROTO CARBONPLANTER [
 	}
 }
 
-PROTO CUBESTAIRS [
-	field MFString string []
-	field SFColor textColor 0 0 0.5
-	field SFColor lineColor 0 0 0
-] {
-	Transform { scale 0.5 0.5 0.5 rotation 0 1 0 1.5707963
-		children Shape {
-			appearance Appearance { material Material { diffuseColor IS textColor } }
-			geometry Text { string IS string fontStyle FontStyle { justify [ "MIDDLE" "END" ] family "SANSSERIF"} }
-		}
-	}
-	Shape {
-		appearance Appearance { material Material { emissiveColor IS lineColor } }
-		geometry IndexedLineSet {
-			coord Coordinate { point [
-				0.05 1.9  1.6, 0.05 1.9 -1.6, 0.05 1.1 -1.6, 0.05 1.1  1.6,
-				3.8 -1.85  1.6, 3.8 -1.85 -1.6, 3.0 -1.85 -1.6, 3.0 -1.85  1.6
-			] }
-			coordIndex [ 0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7 ]
-		}
-	}
-}
-
 PROTO CUBEROOM [
 	field MFString string []
 	field SFColor textColor 0 0 0.5
