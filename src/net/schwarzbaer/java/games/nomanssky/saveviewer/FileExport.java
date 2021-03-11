@@ -2850,15 +2850,15 @@ public class FileExport {
 			mapObjectID2Model.clear();
 			mapModel2TextLength.clear();
 			
-			addModels("MAINROOM",       "^MAINROOM");
-			addModels("MAINROOMCUBE",   "^MAINROOMCUBE");
+			addModels("MAINROOM",       "^MAINROOM", "^MAINROOM_WATER"); // move from template to HardCodedModels (->Doors)
+			addModels("MAINROOMCUBE",   "^MAINROOMCUBE", "^MAINROOMCUBE_W");
 			
 			addModels("CUBESTAIRS",     "^CUBESTAIRS");
 			
 			addModels("CONTAINER",      "^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
 			                            "^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
 			
-			addModels("CUBEROOM",       "^CUBEROOM","^CUBEGLASS");
+			//addModels("CUBEROOM",       "^CUBEROOM","^CUBEGLASS");
 			
 			
 			addModels("PLANT",          "^BARRENPLANT","^CREATUREPLANT","^GRAVPLANT","^LUSHPLANT","^NIPPLANT","^PEARLPLANT","^POOPPLANT",
@@ -2919,7 +2919,7 @@ public class FileExport {
 				
 				writeSimpleLineProtoToFile(vrml);
 				
-				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG
+				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
 				
 				//writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
 				writeProtoToFile(vrml, "BIOROOM",                  ()->create_BIOROOM        ().write(vrml,"\t"));
@@ -3396,6 +3396,7 @@ public class FileExport {
 					writeProtoToFile(vrml, "BATTERY",       0.5, 0, ()->create_BATTERY      ().write(vrml,"\t"));
 					writeProtoToFile(vrml, "BIO_GENERATOR", 0.5, 0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
 //					writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
+					// TODO: HardCodedModels.PoweredDevices: add PROTO for EM_GENERATOR
 				}
 
 				@SuppressWarnings("unused")
@@ -3693,6 +3694,7 @@ public class FileExport {
 				private static final double cubesize = 4;
 				
 				private static void addModelsToModelMap() {
+					// TODO: HardCodedModels.CubeRoomObjects: add ^CUBEFRAME
 					addModels("CUBEFLOOR"      , "^CUBEFLOOR"      );
 					addModels("CUBEWINDOW"     , "^CUBEWINDOW"     );
 					addModels("CUBEWINDOWOVAL" , "^CUBEWINDOWOVAL" );
