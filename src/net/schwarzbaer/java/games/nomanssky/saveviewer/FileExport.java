@@ -1384,17 +1384,17 @@ public class FileExport {
 			}
 
 			@Override public LineGeometry.IndexedLineSet createGeometry() {
-				LineGeometry.Transform desk = new LineGeometry.Transform(VRMLoutput.HardCodedModels.create_BUILDSIMPLEDESK())
+				LineGeometry.Transform desk = new LineGeometry.Transform(VRMLoutput.SoftwareBuildModels.create_BUILDSIMPLEDESK())
 					.addRotation(LineGeometry.Axis.Z, 90)
 					.addRotation(LineGeometry.Axis.Y,-90)
 					.addTranslation(LineGeometry.Axis.Z, 2.09);
 				
-				LineGeometry.Transform chair = new LineGeometry.Transform(VRMLoutput.HardCodedModels.create_BUILDCHAIR())
+				LineGeometry.Transform chair = new LineGeometry.Transform(VRMLoutput.SoftwareBuildModels.create_BUILDCHAIR())
 					.addRotation(LineGeometry.Axis.Z, 90)
 					.addRotation(LineGeometry.Axis.Y,-90)
 					.addTranslation(0.5,0,1.25);
 				
-				LineGeometry.Transform bed = new LineGeometry.Transform(VRMLoutput.HardCodedModels.create_BUILDBED())
+				LineGeometry.Transform bed = new LineGeometry.Transform(VRMLoutput.SoftwareBuildModels.create_BUILDBED())
 					.addRotation(LineGeometry.Axis.Z, 90)
 					.addRotation(LineGeometry.Axis.Y,-180)
 					.addTranslation(1.0,0,-1.9);
@@ -2857,14 +2857,8 @@ public class FileExport {
 			mapObjectID2Model.clear();
 			mapModel2TextLength.clear();
 			
-			addModels("MAINROOM",       "^MAINROOM", "^MAINROOM_WATER"); // move from template to HardCodedModels (->Doors)
-			addModels("MAINROOMCUBE",   "^MAINROOMCUBE", "^MAINROOMCUBE_W");
-			
 			addModels("CONTAINER",      "^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
 			                            "^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
-			
-			//addModels("CUBEROOM",       "^CUBEROOM","^CUBEGLASS");
-			
 			
 			addModels("PLANT",          "^BARRENPLANT","^CREATUREPLANT","^GRAVPLANT","^LUSHPLANT","^NIPPLANT","^PEARLPLANT","^POOPPLANT",
 			                            "^RADIOPLANT","^SACVENOMPLANT","^SCORCHEDPLANT","^SNOWPLANT","^TOXICPLANT");
@@ -2881,7 +2875,7 @@ public class FileExport {
 			
 			addModels("__SIMPLE_LINE",  "^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE","^U_BYTEBEATLINE");
 			
-			HardCodedModels.addModelsToModelMap();
+			SoftwareBuildModels.addModelsToModelMap();
 			
 		}
 		
@@ -2899,7 +2893,7 @@ public class FileExport {
 				mapObjectID2Model.put(id, modelName);
 		}
 		
-		private static class HardCodedModels {
+		private static class SoftwareBuildModels {
 			
 			private static void addModelsToModelMap() {
 				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
@@ -2911,6 +2905,9 @@ public class FileExport {
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
 				
+				addModels("MAINROOM",       "^MAINROOM", "^MAINROOM_WATER");
+				addModels("MAINROOMCUBE",   "^MAINROOMCUBE", "^MAINROOMCUBE_W");
+				
 				CubeRoomObjects.addModelsToModelMap();
 				SolitaryWallsAndFloors.addModelsToModelMap();
 				Corridors.addModelsToModelMap();
@@ -2919,15 +2916,17 @@ public class FileExport {
 			
 			private static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 				
-				vrml.println("# PROTOs of hardcoded models");
+				vrml.println("# PROTOs of software build models");
 				vrml.println("");
 				
 				writeSimpleLineProtoToFile(vrml);
 				
-				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
+				// TODO: SoftwareBuildModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
 				
-				//writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
 				if (usedModels.contains("BIOROOM"        )) writeProtoToFile(vrml, "BIOROOM"        ,           ()->create_BIOROOM        ().write(vrml,"\t"));
+				if (usedModels.contains("MAINROOM"       )) writeProtoToFile(vrml, "MAINROOM"       ,           ()->create_MAINROOM       ().write(vrml,"\t"));
+				if (usedModels.contains("MAINROOMCUBE"   )) writeProtoToFile(vrml, "MAINROOMCUBE"   ,           ()->create_MAINROOMCUBE   ().write(vrml,"\t"));
+				
 				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
 				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
 				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",           ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
@@ -2939,75 +2938,59 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+			
+			private static LineGeometry.IndexedLineSet create_MAINROOM() {
+				double radius = 6; // Y|Z
+				double height = 4-0.05; // X
 				
-				/*			
-				vrml.println("# ############################");
-				vrml.println("# VRMLconstruction2");
-				vrml.println("# ############################");
+				LineGeometry.PolyLine c0,c1;
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(  0   ,0,0), radius, 0, 360, false, 32))
+						.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height,0,0), radius, 0, 360, false, 32))
+						.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(c1.get( 2)))
+						.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(c1.get( 6)))
+						.add(new LineGeometry.PolyLine().add(c0.get(10)).add(c1.get(10)))
+						.add(new LineGeometry.PolyLine().add(c0.get(14)).add(c1.get(14)))
+						.add(new LineGeometry.PolyLine().add(c0.get(18)).add(c1.get(18)))
+						.add(new LineGeometry.PolyLine().add(c0.get(22)).add(c1.get(22)))
+						.add(new LineGeometry.PolyLine().add(c0.get(26)).add(c1.get(26)))
+						.add(new LineGeometry.PolyLine().add(c0.get(30)).add(c1.get(30)))
+						;
+				return group;
+			}
+			
+			private static LineGeometry.IndexedLineSet create_MAINROOMCUBE() {
+				double radius = 6; // Y|Z
+				double height = 4-0.05; // X
+				double cubesize = 4;
+				double cornerR = 2;
 				
-				VRMLconstruction2.PolyLine polyLine;
-				VRMLconstruction2.GroupingNode group;
-				
-				vrml.println("");
-				vrml.println("# Merge Test");
-				group = new VRMLconstruction2.GroupingNode();
-				
-				polyLine = new VRMLconstruction2.PolyLine();
-				polyLine.addArc(VRMLconstruction2.Axis.X, new Point3D(0, 1, 1), 1,   0,  90, false);
-				polyLine.addArc(VRMLconstruction2.Axis.X, new Point3D(0,-1, 1), 1,  90, 180, false);
-				polyLine.addArc(VRMLconstruction2.Axis.X, new Point3D(0,-1,-1), 1, 180, 270, false);
-				//polyLine.write(vrml, Color.RED);
-				group.add(polyLine);
-				
-				polyLine = new VRMLconstruction2.PolyLine();
-				polyLine.addArc(VRMLconstruction2.Axis.X, new Point3D(1, 1, 1), 1,   0,  90, false);
-				polyLine.addArc(VRMLconstruction2.Axis.X, new Point3D(1,-1, 1), 1,  90, 180, true);
-				polyLine.addArc(VRMLconstruction2.Axis.X, new Point3D(1,-1,-1), 1, 180, 270, false);
-				//polyLine.write(vrml, Color.GREEN);
-				group.add(polyLine);
-				group.write(vrml, Color.RED);
-				
-				vrml.println("");
-				vrml.println("# Merge & Optimize Test");
-				group = new VRMLconstruction2.GroupingNode();
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,0,0),new Point3D(1,0,0)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,0,0),new Point3D(0,1,0)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,0,0),new Point3D(0,0,1)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(1,1,1),new Point3D(0,1,1)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(1,1,1),new Point3D(1,0,1)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(1,1,1),new Point3D(1,1,0)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(1,0,0),new Point3D(1,1,0)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(1,0,0),new Point3D(1,0,1)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,1,0),new Point3D(1,1,0)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,1,0),new Point3D(0,1,1)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,0,1),new Point3D(0,1,1)));
-				group.add(new VRMLconstruction2.PolyLine(new Point3D(0,0,1),new Point3D(1,0,1)));
-				group.write(vrml, Color.BLACK);
-				
-				vrml.println("");
-				vrml.println("# Axis Cross");
-				new VRMLconstruction2.PolyLine(new Point3D(0,0,0),new Point3D(1,0,0)).write(vrml, Color.RED);
-				new VRMLconstruction2.PolyLine(new Point3D(0,0,0),new Point3D(0,1,0)).write(vrml, Color.GREEN);
-				new VRMLconstruction2.PolyLine(new Point3D(0,0,0),new Point3D(0,0,1)).write(vrml, Color.BLUE);
-				
-				vrml.println("");
-				vrml.println("# New BIOROOM");
-				polyLine = new VRMLconstruction2.PolyLine().addArc(VRMLconstruction2.Axis.Y, new Point3D(0,0,0), 6, 0, 70, false);
-				final VRMLconstruction2.GroupingNode group1 = new VRMLconstruction2.GroupingNode();
-				for (int i=0; i<16; i++) {
-					VRMLconstruction2.Transform transform = new VRMLconstruction2.Transform(polyLine);
-					transform.addRotation(VRMLconstruction2.Axis.X, 360.0/16*i);
-					group1.add(transform);
-				}
-				VRMLconstruction2.loopArc(6, 0, 70, false, 4, (i, nSeg, x, y) -> group1.add(new VRMLconstruction2.Circle(VRMLconstruction2.Axis.X, new Point3D(y,0,0), x)));
-				VRMLoutput.writeMyOrientation_AtUpBug(vrml, new Point3D(0,0,0), new Point3D(0,1,0), new Point3D(0,0,1), ()->{
-					vrml.println("");
-					group1.write(vrml, Color.BLACK);
-				});
-				
-				VRMLoutput.writeModel(vrml, "^BIOROOM", "Test ^BIOROOM", new Point3D(12,0,0), new Point3D(0,1,0), new Point3D(0,0,1), sizeOfAxisCrosses, null);
-				vrml.println("");
-				*/
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(new LineGeometry.PolyLine()
+								.addArc(LineGeometry.Axis.X, new Point3D(0, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
+								.addArc(LineGeometry.Axis.X, new Point3D(0,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
+								.addArc(LineGeometry.Axis.X, new Point3D(0,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
+								.addArc(LineGeometry.Axis.X, new Point3D(0, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
+								.close()
+						)
+						.add(new LineGeometry.PolyLine()
+								.addArc(LineGeometry.Axis.X, new Point3D(height, radius-cornerR, radius-cornerR), cornerR,   0,  90, false, 6)
+								.addArc(LineGeometry.Axis.X, new Point3D(height,-radius+cornerR, radius-cornerR), cornerR,  90, 180, false, 6)
+								.addArc(LineGeometry.Axis.X, new Point3D(height,-radius+cornerR,-radius+cornerR), cornerR, 180, 270, false, 6)
+								.addArc(LineGeometry.Axis.X, new Point3D(height, radius-cornerR,-radius+cornerR), cornerR, 270, 360, false, 6)
+								.close()
+						)
+						.add(new LineGeometry.PolyLine().add(0, cubesize/2, radius).add(height, cubesize/2, radius))
+						.add(new LineGeometry.PolyLine().add(0,-cubesize/2, radius).add(height,-cubesize/2, radius))
+						.add(new LineGeometry.PolyLine().add(0, cubesize/2,-radius).add(height, cubesize/2,-radius))
+						.add(new LineGeometry.PolyLine().add(0,-cubesize/2,-radius).add(height,-cubesize/2,-radius))
+						.add(new LineGeometry.PolyLine().add(0, radius, cubesize/2).add(height, radius, cubesize/2))
+						.add(new LineGeometry.PolyLine().add(0, radius,-cubesize/2).add(height, radius,-cubesize/2))
+						.add(new LineGeometry.PolyLine().add(0,-radius, cubesize/2).add(height,-radius, cubesize/2))
+						.add(new LineGeometry.PolyLine().add(0,-radius,-cubesize/2).add(height,-radius,-cubesize/2))
+						;
+				return group;
 			}
 			
 			private static LineGeometry.IndexedLineSet create_BUILDBED() {
@@ -3458,10 +3441,6 @@ public class FileExport {
 							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X,135))
 							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X,225))
 							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X,315))
-//							.add(new LineGeometry.PolyLine().add(0, feetDist/2, feetDist/2).add(c0.get( 2).add(c1.get( 2)).mul(0.5)))
-//							.add(new LineGeometry.PolyLine().add(0,-feetDist/2, feetDist/2).add(c0.get( 6).add(c1.get( 6)).mul(0.5)))
-//							.add(new LineGeometry.PolyLine().add(0,-feetDist/2,-feetDist/2).add(c0.get(10).add(c1.get(10)).mul(0.5)))
-//							.add(new LineGeometry.PolyLine().add(0, feetDist/2,-feetDist/2).add(c0.get(14).add(c1.get(14)).mul(0.5)))
 							;
 					
 					return body;
@@ -4863,7 +4842,7 @@ public class FileExport {
 			vrml.println(templateSB.toString());
 			vrml.println("");
 			
-			HardCodedModels.writeProtos(vrml, usedModels);
+			SoftwareBuildModels.writeProtos(vrml, usedModels);
 		}
 
 		private static File createBaseVrmlFile(String suggestedFileName) {
