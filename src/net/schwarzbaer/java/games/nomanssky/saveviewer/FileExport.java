@@ -2919,7 +2919,7 @@ public class FileExport {
 				
 				writeSimpleLineProtoToFile(vrml);
 				
-				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^U_BATTERY_S, ^U_SOLAR_S, ^U_GENERATOR_S, ^BASE_FLAG
+				// TODO: HardCodedModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG
 				
 				//writeProtoToFile(vrml, "CUBEROOM_SPACE"         , ()->create_CUBEROOM_SPACE ().write(vrml,"\t"));
 				writeProtoToFile(vrml, "BIOROOM",                  ()->create_BIOROOM        ().write(vrml,"\t"));
@@ -3385,11 +3385,237 @@ public class FileExport {
 			private static class PoweredDevices {
 				
 				private static void addModelsToModelMap() {
-					addModels("SOLARPANEL"      , "^U_SOLAR_S"      );
+					addModels("SOLARPANEL"   , "^U_SOLAR_S"     );
+					addModels("BATTERY"      , "^U_BATTERY_S"   );
+					addModels("BIO_GENERATOR", "^U_BIOGENERATOR");
+//					addModels("EM_GENERATOR" , "^U_GENERATOR_S" );
 				}
 				
 				private static void writeProtos(PrintWriter vrml) {
-					writeProtoToFile(vrml, "SOLARPANEL", 0.5, 0, ()->create_SOLARPANEL().write(vrml,"\t"));
+					writeProtoToFile(vrml, "SOLARPANEL",    0.5, 0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BATTERY",       0.5, 0, ()->create_BATTERY      ().write(vrml,"\t"));
+					writeProtoToFile(vrml, "BIO_GENERATOR", 0.5, 0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
+//					writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
+				}
+
+				@SuppressWarnings("unused")
+				private static LineGeometry.MultipleIndexedLineSets create_EM_GENERATOR() {
+					return null;
+				}
+
+				private static LineGeometry.GroupingNode create_BIO_GENERATOR() {
+					double height = 1.3; // X
+					double plugDist = 1.58; // Y|Z
+					double plugHeight = 0.33; // X
+					double bodyBottom = 0.15;
+					//double barrelAxisLength = 1.18;
+					double barrelDiam = 1;
+					double barrelCentH = height-barrelDiam/2;
+					double barrelRad0 = barrelDiam/2   ; double barrelPos0 = 0; 
+					double barrelRad1 = barrelRad0-0.04; double barrelPos1 = 0.18;
+					double barrelRad2 = barrelRad0-0.14; double barrelPos2 = 0.30;
+					double barrelRad3 = barrelRad0-0.16; double barrelPos3 = 0.36;
+					double barrelRad4 = barrelRad0-0.27; double barrelPos4 = 0.38;
+					double barrelRad5 = barrelRad0-0.29; double barrelPos5 = 0.44;
+					double barrelRad6 = barrelRad0-0.40; double barrelPos6 = 0.46;
+					double barrelRad7 = barrelRad0-0.40; double barrelPos7 = 0.52;
+					
+					// plugs: +Y/-Y
+					// barrel along Z
+					
+					LineGeometry.PolyLine c0;
+					LineGeometry.PolyLine c1P,c2P,c3P,c4P,c5P,c6P,c7P;
+					LineGeometry.PolyLine c1N,c2N,c3N,c4N,c5N,c6N,c7N;
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine() // Plugs A
+									.add(plugHeight,-plugDist  /2,0)
+									.add(plugHeight,-barrelDiam/2,0)
+							)
+							.add(new LineGeometry.PolyLine() // Plugs B
+									.add(plugHeight,+plugDist  /2,0)
+									.add(plugHeight,+barrelDiam/2,0)
+							)
+							.add(c7P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos7), barrelRad7, -90, 270, false, 24))
+							.add(c6P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos6), barrelRad6, -90, 270, false, 24))
+							.add(c5P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos5), barrelRad5, -90, 270, false, 24))
+							.add(c4P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos4), barrelRad4, -90, 270, false, 24))
+							.add(c3P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos3), barrelRad3, -90, 270, false, 24))
+							.add(c2P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos2), barrelRad2, -90, 270, false, 24))
+							.add(c1P = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos1), barrelRad1, -90,  90, false, 12))
+							.add(c0  = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0,  barrelPos0), barrelRad0, -90,  90, false, 12))
+							.add(c1N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos1), barrelRad1, -90,  90, false, 12))
+							.add(c2N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos2), barrelRad2, -90, 270, false, 24))
+							.add(c3N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos3), barrelRad3, -90, 270, false, 24))
+							.add(c4N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos4), barrelRad4, -90, 270, false, 24))
+							.add(c5N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos5), barrelRad5, -90, 270, false, 24))
+							.add(c6N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos6), barrelRad6, -90, 270, false, 24))
+							.add(c7N = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Z, new Point3D(barrelCentH, 0, -barrelPos7), barrelRad7, -90, 270, false, 24))
+							.add(new LineGeometry.PolyLine().add(bodyBottom, barrelRad2, barrelPos2).add(barrelCentH, barrelRad2, barrelPos2))
+							.add(new LineGeometry.PolyLine().add(bodyBottom, barrelRad1, barrelPos1).add(barrelCentH, barrelRad1, barrelPos1))
+							.add(new LineGeometry.PolyLine().add(bodyBottom, barrelRad0, barrelPos0).add(barrelCentH, barrelRad0, barrelPos0))
+							.add(new LineGeometry.PolyLine().add(bodyBottom, barrelRad1,-barrelPos1).add(barrelCentH, barrelRad1,-barrelPos1))
+							.add(new LineGeometry.PolyLine().add(bodyBottom, barrelRad2,-barrelPos2).add(barrelCentH, barrelRad2,-barrelPos2))
+							.add(new LineGeometry.PolyLine().add(bodyBottom,-barrelRad2, barrelPos2).add(barrelCentH,-barrelRad2, barrelPos2))
+							.add(new LineGeometry.PolyLine().add(bodyBottom,-barrelRad1, barrelPos1).add(barrelCentH,-barrelRad1, barrelPos1))
+							.add(new LineGeometry.PolyLine().add(bodyBottom,-barrelRad0, barrelPos0).add(barrelCentH,-barrelRad0, barrelPos0))
+							.add(new LineGeometry.PolyLine().add(bodyBottom,-barrelRad1,-barrelPos1).add(barrelCentH,-barrelRad1,-barrelPos1))
+							.add(new LineGeometry.PolyLine().add(bodyBottom,-barrelRad2,-barrelPos2).add(barrelCentH,-barrelRad2,-barrelPos2))
+							
+							.add(new LineGeometry.PolyLine()
+									.add(bodyBottom, barrelRad2, barrelPos2)
+									.add(bodyBottom, barrelRad1, barrelPos1)
+									.add(bodyBottom, barrelRad0, barrelPos0)
+									.add(bodyBottom, barrelRad1,-barrelPos1)
+									.add(bodyBottom, barrelRad2,-barrelPos2)
+									.add(bodyBottom,-barrelRad2,-barrelPos2)
+									.add(bodyBottom,-barrelRad1,-barrelPos1)
+									.add(bodyBottom,-barrelRad0, barrelPos0)
+									.add(bodyBottom,-barrelRad1, barrelPos1)
+									.add(bodyBottom,-barrelRad2, barrelPos2)
+									.close()
+							)
+							
+							.add(new LineGeometry.PolyLine().add(0,-barrelDiam/2,-barrelDiam/2).add(bodyBottom,-barrelRad2,-barrelPos2)) // Foot NN
+							.add(new LineGeometry.PolyLine().add(0,+barrelDiam/2,+barrelDiam/2).add(bodyBottom, barrelRad2, barrelPos2)) // Foot PP
+							.add(new LineGeometry.PolyLine().add(0,+barrelDiam/2,-barrelDiam/2).add(bodyBottom, barrelRad2,-barrelPos2)) // Foot PN
+							.add(new LineGeometry.PolyLine().add(0,-barrelDiam/2,+barrelDiam/2).add(bodyBottom,-barrelRad2, barrelPos2)) // Foot NP
+							;
+					for (int i=0; i<7; i++)
+						body.add(
+							new LineGeometry.PolyLine(
+								c7P.get(i*2),
+								c6P.get(i*2),
+								c5P.get(i*2),
+								c4P.get(i*2),
+								c3P.get(i*2),
+								c2P.get(i*2),
+								c1P.get(i*2),
+								c0 .get(i*2),
+								c1N.get(i*2),
+								c2N.get(i*2),
+								c3N.get(i*2),
+								c4N.get(i*2),
+								c5N.get(i*2),
+								c6N.get(i*2),
+								c7N.get(i*2)
+							)
+						);
+					for (int i=7; i<12; i++) {
+						body.add(
+							new LineGeometry.PolyLine(
+								c7P.get(i*2),
+								c6P.get(i*2),
+								c5P.get(i*2),
+								c4P.get(i*2),
+								c3P.get(i*2),
+								c2P.get(i*2)
+							)
+						);
+						body.add(
+							new LineGeometry.PolyLine(
+								c2N.get(i*2),
+								c3N.get(i*2),
+								c4N.get(i*2),
+								c5N.get(i*2),
+								c6N.get(i*2),
+								c7N.get(i*2)
+							)
+						);
+					}
+					
+					return body;
+				}
+
+				private static LineGeometry.GroupingNode create_BATTERY() {
+					double height = 1.75; // X
+					double plugDist = 1.55; // Y|Z
+					double plugHeight = 0.25; // X
+					double barrelDiam = 1.3;
+					double barrelHoleDiam = 0.8;
+					//double barrelCoreDiam = 0.4;
+					double barrelCoreRadius = 0.2;
+					double barrelMinH = height-barrelDiam;
+					double barrelThick= barrelDiam/2;
+					double barrelCentH= barrelDiam/2+barrelMinH;
+					
+					// battery barrel along Y axis
+					
+					LineGeometry.PolyLine c0,c1,c2,c3,c4,c5;
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine()
+									.add(barrelMinH,  barrelThick/2-0.1, 0)
+									.add(barrelMinH, -barrelThick/2+0.1, 0)
+							)
+							.add(new LineGeometry.PolyLine() // Plugs A & C
+									.add(plugHeight,0,-plugDist/2)
+									.add(plugHeight,0,-plugDist/4)
+									.add(barrelMinH,0,     0     )
+									.add(plugHeight,0,+plugDist/4)
+									.add(plugHeight,0,+plugDist/2)
+							)
+							.add(new LineGeometry.PolyLine() // Plugs B & D
+									.add(plugHeight,-plugDist/2,0)
+									.add(plugHeight,-plugDist/4,0)
+									.add(barrelMinH,     0     ,0)
+									.add(plugHeight,+plugDist/4,0)
+									.add(plugHeight,+plugDist/2,0)
+							)
+							.add(new LineGeometry.PolyLine() // Feet NN & PP
+									.add(    0     ,-plugDist/2,-plugDist/2)
+									.add(barrelMinH,     0     ,     0     )
+									.add(    0     ,+plugDist/2,+plugDist/2)
+							)
+							.add(new LineGeometry.PolyLine() // Feet PN & NP
+									.add(    0     ,+plugDist/2,-plugDist/2)
+									.add(barrelMinH,     0     ,     0     )
+									.add(    0     ,-plugDist/2,+plugDist/2)
+							)
+							.add(c0 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH,  barrelThick/2-0.05, 0), barrelHoleDiam/2, 0, 360, false, 16)
+							)
+							.add(c1 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH,  barrelThick/2, 0), barrelDiam/2-0.03, 0, 360, false, 16)
+							)
+							.add(c2 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH,  barrelThick/2-0.1, 0), barrelDiam/2, 0, 360, false, 16)
+							)
+							.add(c3 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH, -barrelThick/2+0.1, 0), barrelDiam/2, 0, 360, false, 16)
+							)
+							.add(c4 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH, -barrelThick/2, 0), barrelDiam/2-0.03, 0, 360, false, 16)
+							)
+							.add(c5 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH, -barrelThick/2+0.05, 0), barrelHoleDiam/2, 0, 360, false, 16)
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH,  barrelThick/2, 0), barrelCoreRadius, 0, 360, false, 16)
+							)
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.Y, new Point3D(barrelCentH, -barrelThick/2, 0), barrelCoreRadius, 0, 360, false, 16)
+							)
+							.add(new LineGeometry.PolyLine()
+									.add(barrelCentH + barrelCoreRadius,  barrelThick/2, 0)
+									.add(barrelCentH + barrelCoreRadius, -barrelThick/2, 0)
+							)
+							.add(new LineGeometry.PolyLine()
+									.add(barrelCentH - barrelCoreRadius,  barrelThick/2, 0)
+									.add(barrelCentH - barrelCoreRadius, -barrelThick/2, 0)
+							)
+							.add(new LineGeometry.PolyLine()
+									.add(barrelCentH,  barrelThick/2, +barrelCoreRadius)
+									.add(barrelCentH, -barrelThick/2, +barrelCoreRadius)
+							)
+							.add(new LineGeometry.PolyLine()
+									.add(barrelCentH,  barrelThick/2, -barrelCoreRadius)
+									.add(barrelCentH, -barrelThick/2, -barrelCoreRadius)
+							)
+							;
+					for (int i=0; i<8; i++)
+						body.add(new LineGeometry.PolyLine(c0.get(i*2+1), c1.get(i*2+1), c2.get(i*2+1), c3.get(i*2+1), c4.get(i*2+1), c5.get(i*2+1)).close());
+					
+					
+					return body;
 				}
 
 				private static LineGeometry.MultipleIndexedLineSets create_SOLARPANEL() {
@@ -3459,7 +3685,6 @@ public class FileExport {
 					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
 							.add(body)
 							;
-					// TODO Auto-generated method stub
 					return multi;
 				}
 			}
@@ -3481,11 +3706,11 @@ public class FileExport {
 					writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
 				}
 			
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.Box create_CUBEFLOOR() {
+				private static LineGeometry.Box create_CUBEFLOOR() {
 					return new LineGeometry.Box(0.1,3.9,3.9);
 				}
 			
-				private static net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport.LineGeometry.MultipleIndexedLineSets create_CUBEWINDOW() {
+				private static LineGeometry.MultipleIndexedLineSets create_CUBEWINDOW() {
 					LineGeometry.MultipleIndexedLineSets multi = new LineGeometry.MultipleIndexedLineSets()
 							.add(COLOR_WINDOW, new LineGeometry.PolyLine()
 									.add(cubesize*0.1, 0, cubesize*0.4)
@@ -5196,6 +5421,10 @@ public class FileExport {
 			public Point3D getFirst() {
 				return points.firstElement();
 			}
+			public Point3D get(int i) {
+				return points.get(i);
+			}
+			
 			public PolyLine addAll(Point3D... points) {
 				for (Point3D p:points) add(p);
 				return this;
