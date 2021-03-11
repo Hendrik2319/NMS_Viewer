@@ -3398,20 +3398,73 @@ public class FileExport {
 					addModels("SOLARPANEL"   , "^U_SOLAR_S"     );
 					addModels("BATTERY"      , "^U_BATTERY_S"   );
 					addModels("BIO_GENERATOR", "^U_BIOGENERATOR");
-//					addModels("EM_GENERATOR" , "^U_GENERATOR_S" );
+					addModels("EM_GENERATOR" , "^U_GENERATOR_S" );
 				}
 				
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					if (usedModels.contains("SOLARPANEL"   )) writeProtoToFile(vrml, "SOLARPANEL"   , 0.5, 0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
 					if (usedModels.contains("BATTERY"      )) writeProtoToFile(vrml, "BATTERY"      , 0.5, 0, ()->create_BATTERY      ().write(vrml,"\t"));
 					if (usedModels.contains("BIO_GENERATOR")) writeProtoToFile(vrml, "BIO_GENERATOR", 0.5, 0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
-//					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
-					// TODO: HardCodedModels.PoweredDevices: add PROTO for EM_GENERATOR
+					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
 				}
 
-				@SuppressWarnings("unused")
-				private static LineGeometry.MultipleIndexedLineSets create_EM_GENERATOR() {
-					return null;
+				private static LineGeometry.GroupingNode create_EM_GENERATOR() {
+					double height = 7; // X
+					double plugDist = 2.35; // Y|Z
+					double plugHeight = 0.32; // X
+					double feetDist   = 2.6;
+					double bodyBottom = 0.15;
+					double ring0Radius = 1.00; double ring0H = bodyBottom;
+					double ring1Radius = 0.95; double ring1H = plugHeight*2.5;
+					double plugHeightA = plugHeight-0.05;
+					double plugHeightB = plugHeight+0.05;
+					double plugRadiusA = (plugHeightA-ring0H)/(ring1H-ring0H)*(ring1Radius-ring0Radius)+ring0Radius;
+					double plugRadiusB = (plugHeightB-ring0H)/(ring1H-ring0H)*(ring1Radius-ring0Radius)+ring0Radius;
+					
+					LineGeometry.PolyLine poly = new LineGeometry.PolyLine()
+							.add(ring1H     ,ring1Radius     ,0)
+							.add(ring1H+0.80,ring1Radius+0.80,0)
+							.add(ring1H+0.80,ring1Radius+0.60,0)
+							.add(ring1H+0.95,ring1Radius+0.60,0)
+							.add(ring1H+1.08,ring1Radius+0.53,0)
+							.add(ring1H+1.15,ring1Radius+0.40,0)
+							.add(ring1H+1.15,ring1Radius+0.10,0)
+							.add(2.80,0.60,0)
+							.add(3.50,0.60,0)
+							.add(3.70,0.80,0)
+							.add(4.00,0.50,0)
+							.add(height-0.15,0.50,0)
+							.add(height     ,0.20,0)
+							.add(2.60,0.20,0)
+							.add(2.00,0.50,0)
+							.add(1.30,0.50,0)
+							.add(1.10,0.30,0)
+							.add(ring0H,0.30,0)
+							;
+					
+					LineGeometry.PolyLine c0,c1;
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(c0 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring0H,0,0), ring0Radius, 0, 360, false, 16))
+							.add(c1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(ring1H,0,0), ring1Radius, 0, 360, false, 16))
+							.add(new LineGeometry.PolyLine().add(c0.get( 0)).add(plugHeightA, plugRadiusA,0).add(plugHeight, plugDist/2,0).add(plugHeightB, plugRadiusB,0).add(c1.get( 0)))
+							.add(new LineGeometry.PolyLine().add(c0.get( 4)).add(plugHeightA,0, plugRadiusA).add(plugHeight,0, plugDist/2).add(plugHeightB,0, plugRadiusB).add(c1.get( 4)))
+							.add(new LineGeometry.PolyLine().add(c0.get( 8)).add(plugHeightA,-plugRadiusA,0).add(plugHeight,-plugDist/2,0).add(plugHeightB,-plugRadiusB,0).add(c1.get( 8)))
+							.add(new LineGeometry.PolyLine().add(c0.get(12)).add(plugHeightA,0,-plugRadiusA).add(plugHeight,0,-plugDist/2).add(plugHeightB,0,-plugRadiusB).add(c1.get(12)))
+							.add(new LineGeometry.PolyLine().add(c0.get( 2)).add(0, feetDist/2, feetDist/2).add(c1.get( 2)).close())
+							.add(new LineGeometry.PolyLine().add(c0.get( 6)).add(0,-feetDist/2, feetDist/2).add(c1.get( 6)).close())
+							.add(new LineGeometry.PolyLine().add(c0.get(10)).add(0,-feetDist/2,-feetDist/2).add(c1.get(10)).close())
+							.add(new LineGeometry.PolyLine().add(c0.get(14)).add(0, feetDist/2,-feetDist/2).add(c1.get(14)).close())
+							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X, 45))
+							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X,135))
+							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X,225))
+							.add(new LineGeometry.Transform(poly).addRotation(LineGeometry.Axis.X,315))
+//							.add(new LineGeometry.PolyLine().add(0, feetDist/2, feetDist/2).add(c0.get( 2).add(c1.get( 2)).mul(0.5)))
+//							.add(new LineGeometry.PolyLine().add(0,-feetDist/2, feetDist/2).add(c0.get( 6).add(c1.get( 6)).mul(0.5)))
+//							.add(new LineGeometry.PolyLine().add(0,-feetDist/2,-feetDist/2).add(c0.get(10).add(c1.get(10)).mul(0.5)))
+//							.add(new LineGeometry.PolyLine().add(0, feetDist/2,-feetDist/2).add(c0.get(14).add(c1.get(14)).mul(0.5)))
+							;
+					
+					return body;
 				}
 
 				private static LineGeometry.GroupingNode create_BIO_GENERATOR() {
