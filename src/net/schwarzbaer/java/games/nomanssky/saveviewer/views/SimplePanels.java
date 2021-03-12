@@ -2057,7 +2057,7 @@ public class SimplePanels {
 				
 				contextMenu.addSeparator();
 				
-				JCheckBoxMenuItem miOpenNewFileChckBx, miUseSmallLightsAsMeasurePoints;
+				JCheckBoxMenuItem miOpenNewFileChckBx;
 				contextMenu.add(miOpenNewFileChckBx = Gui.createCheckBoxMenuItem("Open newly written file in viewer", SaveViewer.config.openNewlyWrittenVrmlFileInViewer, (Consumer<Boolean>)isSelected->{
 					SaveViewer.config.openNewlyWrittenVrmlFileInViewer = isSelected;
 					if (SaveViewer.config.openNewlyWrittenVrmlFileInViewer) {
@@ -2070,14 +2070,23 @@ public class SimplePanels {
 					}
 					SaveViewer.config.writeToFile();
 				}));
+				
+				JCheckBoxMenuItem miUseSmallLightsAsMeasurePoints;
 				contextMenu.add(miUseSmallLightsAsMeasurePoints = Gui.createCheckBoxMenuItem("Use SMALL LIGHTs as Measure Points", SaveViewer.config.useSmallLightsAsMeasurePoints, (Consumer<Boolean>)b->{
 					SaveViewer.config.useSmallLightsAsMeasurePoints = b;
+					SaveViewer.config.writeToFile();
+				}));
+				
+				JCheckBoxMenuItem miAddNumberToObjectIDInAxisCross;
+				contextMenu.add(miAddNumberToObjectIDInAxisCross = Gui.createCheckBoxMenuItem("Add Number to ObjectID in AxisCross", SaveViewer.config.addNumberToObjectIDInAxisCross, (Consumer<Boolean>)b->{
+					SaveViewer.config.addNumberToObjectIDInAxisCross = b;
 					SaveViewer.config.writeToFile();
 				}));
 				
 				return ()->{
 					miOpenNewFileChckBx.setSelected(SaveViewer.config.openNewlyWrittenVrmlFileInViewer);
 					miUseSmallLightsAsMeasurePoints.setSelected(SaveViewer.config.useSmallLightsAsMeasurePoints);
+					miAddNumberToObjectIDInAxisCross.setSelected(SaveViewer.config.addNumberToObjectIDInAxisCross);
 				};
 			}
 

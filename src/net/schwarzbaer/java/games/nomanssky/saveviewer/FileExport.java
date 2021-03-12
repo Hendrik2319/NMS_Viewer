@@ -415,11 +415,16 @@ public class FileExport {
 					}
 				}
 				
+				HashMap<String, Integer> objectIDNumbers = null;
+				if (SaveViewer.config.addNumberToObjectIDInAxisCross)
+					objectIDNumbers = new HashMap<>();
+				
 				startTime = startTask(pd, "   ", "Write standard objects to file", bObjs.length);
 				for (int i=0; i<bObjs.length; i++) {
 					BuildingObject obj = bObjs[i];
-					if (!cubeCombine.add(obj) && !freightCombine.add(obj))
-						VRMLoutput.writeModel(vrml, obj, isMAINROOMwithRoof[i]);
+					if (!cubeCombine.add(obj) && !freightCombine.add(obj)) {
+						VRMLoutput.writeModel(vrml, obj, isMAINROOMwithRoof[i], objectIDNumbers);
+					}
 					int value = i+1;
 					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
 				}
@@ -1992,9 +1997,8 @@ public class FileExport {
 				obj = fixUpsideDown(obj);
 				freeObj.add(obj);
 				return true;
-			default:
-				return false;
 			}
+			return false;
 		}
 
 		public boolean isEmpty() {
@@ -2941,6 +2945,8 @@ public class FileExport {
 				addModels("BUILDSIMPLEDESK","^BUILDSIMPLEDESK");
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
+				addModels("BASE_FLAG",      "^BASE_FLAG");
+				addModels("PARAGON",        "^U_PARAGON");
 				
 				Garages.addModelsToModelMap();
 				MAINROOMmodels.addModelsToModelMap();
@@ -2957,14 +2963,16 @@ public class FileExport {
 				
 				writeSimpleLineProtoToFile(vrml);
 				
-				// TODO: SoftwareBuildModels: Nice to have: ^BUILDSAVE, ^BASE_FLAG, ^U_PARAGON
+				// TODO: SoftwareBuildModels: Nice to have: ^BUILDSAVE
 				
-				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,  0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
-				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15, 90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
-				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",           ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
-				if (usedModels.contains("BUILDSIMPLEDESK")) writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.50,  0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
-				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
-				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
+				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,   0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
+				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15,  90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
+				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",            ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
+				if (usedModels.contains("BUILDSIMPLEDESK")) writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.50,   0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
+				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,   0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
+				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,   0, ()->create_BUILDBED       ().write(vrml,"\t"));
+				if (usedModels.contains("BASE_FLAG"      )) writeProtoToFile(vrml, "BASE_FLAG"      , 0.50, 135, ()->create_BASE_FLAG      ().write(vrml,"\t"));
+				if (usedModels.contains("PARAGON"        )) writeProtoToFile(vrml, "PARAGON", 0.50, 135, new Point3D(1.4,0,0), ()->create_PARAGON().write(vrml,"\t"));
 				
 				Garages.writeProtos(vrml,usedModels);
 				MAINROOMmodels.writeProtos(vrml,usedModels);
@@ -2972,6 +2980,52 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+			
+			private static LineGeometry.PolyLine create_PARAGON() {
+				double top    = 2.5;
+				double bottom = 1.5;
+				double width  = 0.5;
+				double midSpace = 0.2;
+				double offset = 0.1;
+				
+				LineGeometry.PolyLine sign = new LineGeometry.PolyLine()
+						.add(bottom,0,-offset)
+						.add(top/2+bottom/2+midSpace/2,0, width/2)
+						.add(top/2+bottom/2+midSpace/2,0, 0)
+						.add(top,0,offset)
+						.add(top/2+bottom/2-midSpace/2,0,-width/2)
+						.add(top/2+bottom/2-midSpace/2,0, 0)
+						.close()
+						;
+				return sign;
+			}
+			
+			private static LineGeometry.IndexedLineSet create_BASE_FLAG() {
+				// display: -Z,+Y
+				double footDist = 0.7; // along Z|Y
+				double height = 1.2; // 370(1.6):280
+				double bodyTop    = 0.70; // 370(1.6):160
+				double bodyBottom = 0.15;
+				double bodyWidth  = 0.50;
+				
+				LineGeometry.PolyLine foot;
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(new LineGeometry.Box(bodyTop-bodyBottom, bodyWidth, bodyWidth).addTranslation((bodyTop+bodyBottom)/2,0,0))
+						.add(foot = new LineGeometry.PolyLine().add(0,footDist,0).add((bodyTop+bodyBottom)/2,footDist/3+bodyWidth/3,0).add(bodyBottom, bodyWidth/2, 0))
+						.add(new LineGeometry.Transform(foot).addRotation(LineGeometry.Axis.X, 90))
+						.add(new LineGeometry.Transform(foot).addRotation(LineGeometry.Axis.X,180))
+						.add(new LineGeometry.Transform(foot).addRotation(LineGeometry.Axis.X,270))
+						.add(new LineGeometry.Transform(new LineGeometry.Prism(LineGeometry.Axis.Z,bodyWidth,
+								new Point3D(bodyTop    ,  bodyWidth/2    , 0),
+								new Point3D(bodyTop+0.2,  bodyWidth/2    , 0),
+								new Point3D(height     ,  bodyWidth/2-0.2, 0),
+								new Point3D(height     , -bodyWidth/2    , 0),
+								new Point3D(bodyTop    , -bodyWidth/2    , 0)
+						)).addRotation(LineGeometry.Axis.X,-45)
+						)
+						;
+				return group;
 			}
 			
 			private static LineGeometry.IndexedLineSet create_BUILDBED() {
@@ -3339,7 +3393,7 @@ public class FileExport {
 			}
 
 			private static LineGeometry.Transform createXFloorBasedBox(double sizeX, double sizeY, double sizeZ) {
-				return new LineGeometry.Transform( new LineGeometry.Box(sizeX,sizeY,sizeZ) )
+				return new LineGeometry.Box(sizeX,sizeY,sizeZ)
 						.addTranslation(new Point3D(sizeX/2,0,0));
 			}
 
@@ -3983,7 +4037,8 @@ public class FileExport {
 
 			private static class CubeRoomObjects {
 				static void addModelsToModelMap() {
-					addModels("CUBESTAIRS",     "^CUBESTAIRS"      );
+					addModels("WALLFLOORLADDER", "^WALLFLOORLADDER");
+					addModels("CUBESTAIRS",      "^CUBESTAIRS"     );
 					addModels("CUBEFLOOR",       "^CUBEFLOOR"      );
 					addModels("CUBEWALL",        "^CUBEWALL"       );
 					addModels("CUBEINNERDOOR",   "^CUBEINNERDOOR"  );
@@ -3995,6 +4050,7 @@ public class FileExport {
 				}
 			
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					if (usedModels.contains("WALLFLOORLADDER")) writeProtoToFile(vrml, "WALLFLOORLADDER", 0.6, 0, 15, ()->create_WALLFLOORLADDER().write(vrml,"\t"));
 					if (usedModels.contains("CUBEFLOOR"      )) writeProtoToFile(vrml, "CUBEFLOOR"      ,         15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
 					if (usedModels.contains("CUBEWALL"       )) writeProtoToFile(vrml, "CUBEWALL"       , 0.6, 0, 25, ()->create_CUBEWALL       ().write(vrml,"\t"));
 					if (usedModels.contains("CUBEINNERDOOR"  )) writeProtoToFile(vrml, "CUBEINNERDOOR"  , 0.6, 0, 25, ()->create_CUBEINNERDOOR  ().write(vrml,"\t"));
@@ -4016,6 +4072,36 @@ public class FileExport {
 				
 				private static LineGeometry.Transform create_CUBEWALL() {
 					return createXFloorBasedBox( cubesize-wallspacing, wallthickness, cubesize-wallspacing );
+				}
+				
+				private static LineGeometry.GroupingNode create_WALLFLOORLADDER() {
+					// 3.28562
+					double posY = -1.28;
+					double widthZ = cubesize/6;
+					double distToWall = widthZ/2;
+					int nSteps = 8;
+					
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(new LineGeometry.PolyLine().add(0,posY+distToWall, widthZ/2).add(cubesize-wallspacing,posY+distToWall, widthZ/2))
+							.add(new LineGeometry.PolyLine().add(0,posY+distToWall,-widthZ/2).add(cubesize-wallspacing,posY+distToWall,-widthZ/2))
+							;
+					
+					for (int i=0; i<nSteps; i++) {
+						double h = (i+0.5)*cubesize/nSteps;
+						LineGeometry.PolyLine step = new LineGeometry.PolyLine();
+						
+						if      (i==0       ) step.add(   0    ,posY,-widthZ/2);
+						else if (i==nSteps-1) step.add(cubesize,posY,-widthZ/2);
+						
+						step.add(h,posY+distToWall,-widthZ/2).add(h,posY+distToWall,widthZ/2);
+						
+						if      (i==0       ) step.add(   0    ,posY, widthZ/2);
+						else if (i==nSteps-1) step.add(cubesize,posY, widthZ/2);
+						
+						group.add(step);
+					}
+					
+					return group;
 				}
 				
 				private static LineGeometry.GroupingNode create_CUBEFRAME() {
@@ -4195,7 +4281,7 @@ public class FileExport {
 					if (usedModels.contains("CORRIDORX"    )) writeProtoToFile(vrml, "CORRIDORX"    ,          15, ()->create_CORRIDORX    ().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORT"    )) writeProtoToFile(vrml, "CORRIDORT"    ,          15, ()->create_CORRIDORT    ().write(vrml,"\t"));
 					
-					if (usedModels.contains("CORRIDORC"    )) writeProtoToFile(vrml, "CORRIDORC"    ,   1, 45,     ()->create_CORRIDORC    ().write(vrml,"\t"));
+					if (usedModels.contains("CORRIDORC"    )) writeProtoToFile(vrml, "CORRIDORC"    , 1.0, 45,     ()->create_CORRIDORC    ().write(vrml,"\t"));
 					if (usedModels.contains("GLASSCORRIDOR")) writeProtoToFile(vrml, "GLASSCORRIDOR",          15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
 					
 					if (usedModels.contains("DOOR2"        )) writeProtoToFile(vrml, "DOOR2"        ,          15, ()->create_DOOR2        ().write(vrml,"\t"));
@@ -5155,9 +5241,9 @@ public class FileExport {
 		}
 
 		private static void writeModel(PrintWriter vrml, BuildingObject obj) {
-			writeModel(vrml, obj, false);
+			writeModel(vrml, obj, false, null);
 		}
-		private static void writeModel(PrintWriter vrml, BuildingObject obj, boolean isMAINROOMwithRoof) {
+		private static void writeModel(PrintWriter vrml, BuildingObject obj, boolean isMAINROOMwithRoof, HashMap<String,Integer> objectIDNumbers) {
 			if (obj.position==null) return;
 			if (obj.position.pos==null) return;
 			if (obj.position.up==null) return;
@@ -5167,7 +5253,7 @@ public class FileExport {
 			String label = getLabel(objectID);
 			String extraLine = null; // obj.userData==null ? null : String.format("0x%08X", obj.userData);
 			
-			writeModel(vrml, objectID, isMAINROOMwithRoof, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
+			writeModel(vrml, objectID, isMAINROOMwithRoof, objectIDNumbers, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
 		}
 		
 		private static String getLabel(String objectID) {
@@ -5184,9 +5270,9 @@ public class FileExport {
 		}
 
 		private static void writeModel(PrintWriter vrml, String objectID, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
-			writeModel(vrml, objectID, false, label, extraLine, pos, at, up, lineColor);
+			writeModel(vrml, objectID, false, null, label, extraLine, pos, at, up, lineColor);
 		}
-		private static void writeModel(PrintWriter vrml, String objectID, boolean isMAINROOMwithRoof, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
+		private static void writeModel(PrintWriter vrml, String objectID, boolean isMAINROOMwithRoof, HashMap<String,Integer> objectIDNumbers, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
 			String modelName = mapObjectID2Model.get(objectID);
 			Integer maxTextLength = mapModel2TextLength.get(modelName);
 			
@@ -5216,7 +5302,13 @@ public class FileExport {
 							String str;
 							Vector<String> lines = new Vector<>();
 							if (label!=null && !label.equals(objectID)) lines.add(label.replace("\\", "\\\\").replace("\"", "\\\""));
-							lines.add(objectID);
+							if (objectIDNumbers!=null) {
+								Integer n = objectIDNumbers.get(objectID);
+								if (n==null) n=0;
+								objectIDNumbers.put(objectID,n+1);
+								lines.add(String.format("%s [%02d]", objectID, n));
+							} else
+								lines.add(objectID);
 							if (extraLine!=null) lines.add(extraLine.replace("\\", "\\\\").replace("\"", "\\\""));
 							if (lines.size()==1) str = String.format("\"%s\"", lines.firstElement());
 							else                 str = String.format("[ \"%s\" ]", String.join("\", \"", lines));
@@ -5289,15 +5381,25 @@ public class FileExport {
 		}
 
 		private static void writeProtoToFile(PrintWriter vrml, String protoName, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, 1.0, 0.0, writeShape);
+			writeProtoToFile(vrml, protoName, 1.0, null, null, null, writeShape);
 		}
 		private static void writeProtoToFile(PrintWriter vrml, String protoName, int maxTextLength, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, 1.0, 0.0, maxTextLength, writeShape);
+			writeProtoToFile(vrml, protoName, 1.0, null, null, maxTextLength, writeShape);
 		}
 		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, null, writeShape);
+			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, null, null, writeShape);
 		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, Integer maxTextLength, Runnable writeShape) {
+		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, int maxTextLength, Runnable writeShape) {
+			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, null, maxTextLength, writeShape);
+		}
+		@SuppressWarnings("unused")
+		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Point3D labelTranslation, Runnable writeShape) {
+			writeProtoToFile(vrml, protoName, labelScale, null, labelTranslation, null, writeShape);
+		}
+		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, Point3D labelTranslation, Runnable writeShape) {
+			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, null, writeShape);
+		}
+		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Runnable writeShape) {
 			if (maxTextLength!=null)
 				mapModel2TextLength.put(protoName, maxTextLength);
 				
@@ -5307,14 +5409,20 @@ public class FileExport {
 			vrml.println("	field SFColor lineColor 0 0 0");
 			vrml.println("] {");
 			Point3D scale = new Point3D(0.5, 0.5, 0.5).mul(labelScale);
-			if (labelXRotation_deg!=0.0) vrml.printf(Locale.ENGLISH,"	Transform { rotation 1 0 0 %1.6f children%n", labelXRotation_deg/180*Math.PI);
+			if (labelXRotation_deg!=null || labelTranslation!=null) {
+				vrml.print  ("	Transform {");
+				if (labelXRotation_deg!=null) vrml.printf (Locale.ENGLISH," rotation 1 0 0 %1.6f", labelXRotation_deg/180*Math.PI);
+				if (labelTranslation  !=null) vrml.printf (Locale.ENGLISH," translation %1.6f %1.6f %1.6f", labelTranslation.x, labelTranslation.y, labelTranslation.z);
+				vrml.println(" children");
+			}
 			vrml.printf(Locale.ENGLISH,"	Transform { scale %1.3f %1.3f %1.3f rotation 0 1 0 1.5707963%n", scale.x, scale.y, scale.z);
 			vrml.println("		children Shape {");
 			vrml.println("			appearance Appearance { material Material { diffuseColor IS textColor } }");
 			vrml.println("			geometry Text { string IS string fontStyle FontStyle { justify [ \"MIDDLE\" \"END\" ] family \"SANSSERIF\"} }");
 			vrml.println("		}");
 			vrml.println("	}");
-			if (labelXRotation_deg!=0.0) vrml.println("	}");
+			if (labelXRotation_deg!=null || labelTranslation!=null)
+				vrml.println("	}");
 			writeShape.run();
 			vrml.println("}");
 			vrml.println();

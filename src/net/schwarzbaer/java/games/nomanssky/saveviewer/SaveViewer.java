@@ -834,7 +834,8 @@ public class SaveViewer implements ActionListener {
 		public String vrmlViewer = null;
 		
 		public HashSet<String> highlightedBuildingObjects = new HashSet<>();
-		public boolean useSmallLightsAsMeasurePoints = false;;
+		public boolean useSmallLightsAsMeasurePoints = false;
+		public boolean addNumberToObjectIDInAxisCross = false;
 		
 		Config() {
 		}
@@ -888,6 +889,7 @@ public class SaveViewer implements ActionListener {
 					if (str.startsWith("HighlightedBuildingObjects=")) splitStringSet(str.substring("HighlightedBuildingObjects=".length()), ",", config.highlightedBuildingObjects);
 					if (str.equals("OpenNewlyWrittenVrmlFileInViewer")) config.openNewlyWrittenVrmlFileInViewer = true;
 					if (str.equals("UseSmallLightsAsMeasurePoints"   )) config.useSmallLightsAsMeasurePoints    = true;
+					if (str.equals("AddNumberToObjectIDInAxisCross"  )) config.addNumberToObjectIDInAxisCross   = true;
 				}
 			}
 			catch (FileNotFoundException e) { e.printStackTrace(); }
@@ -905,6 +907,7 @@ public class SaveViewer implements ActionListener {
 				if ( savegameSubFolder   !=null) out.printf("SavegameSubFolder"   +"=%s%n",savegameSubFolder   );
 				if ( savegameBackupFolder!=null) out.printf("SavegameBackupFolder"+"=%s%n",savegameBackupFolder);
 				if ( vrmlViewer          !=null) out.printf("VrmlViewer"          +"=%s%n",vrmlViewer);
+				if ( addNumberToObjectIDInAxisCross      ) out.printf("AddNumberToObjectIDInAxisCross%n");
 				if ( useSmallLightsAsMeasurePoints       ) out.printf("UseSmallLightsAsMeasurePoints%n");
 				if ( openNewlyWrittenVrmlFileInViewer    ) out.printf("OpenNewlyWrittenVrmlFileInViewer%n");
 				if (!highlightedBuildingObjects.isEmpty()) out.printf("HighlightedBuildingObjects=%s%n", joinStringSet(",",highlightedBuildingObjects));
