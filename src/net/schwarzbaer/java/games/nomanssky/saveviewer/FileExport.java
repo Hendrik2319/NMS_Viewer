@@ -357,8 +357,8 @@ public class FileExport {
 				if (max==null) max = new Point3D(pos); else max.max(pos);
 			}
 
-			Vector<String> antiRoofObjects = new Vector<>(); // TODO
-			Collections.addAll(antiRoofObjects, "^MAINROOM", "^MAINROOM_WATER", "^MAINROOMCUBE", "^MAINROOMCUBE_W");
+			Vector<String> antiRoofObjects = new Vector<>(); // TODO: antiRoofObjects
+			Collections.addAll(antiRoofObjects, "^MAINROOM", "^MAINROOM_WATER", "^MAINROOMCUBE", "^MAINROOMCUBE_W", "^BIOROOM");
 			
 			HashSet<String> usedModels = new HashSet<>();
 			boolean[] isMAINROOMwithRoof = new boolean[bObjs.length];
@@ -2905,10 +2905,6 @@ public class FileExport {
 			addModels("PLANTERMEGA",    "^PLANTERMEGA");
 			addModels("CARBONPLANTER",  "^CARBONPLANTER");
 			
-			addModels("GARAGE_L",       "^GARAGE_L");
-			addModels("GARAGE_M",       "^GARAGE_M", "^GARAGE_MECH");
-			addModels("GARAGE_S",       "^GARAGE_S", "^GARAGE_B", "^GARAGE_SUB");
-			
 			addModels("NPCTERMINAL",    "^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 			
 			addModels("__SIMPLE_LINE",  "^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE","^U_BYTEBEATLINE");
@@ -2946,6 +2942,7 @@ public class FileExport {
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
 				
+				Garages.addModelsToModelMap();
 				MAINROOMmodels.addModelsToModelMap();
 				CubeRoomObjects.addModelsToModelMap();
 				SolitaryWallsAndFloors.addModelsToModelMap();
@@ -2969,6 +2966,7 @@ public class FileExport {
 				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,  0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
 				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,  0, ()->create_BUILDBED       ().write(vrml,"\t"));
 				
+				Garages.writeProtos(vrml,usedModels);
 				MAINROOMmodels.writeProtos(vrml,usedModels);
 				CubeRoomObjects.writeProtos(vrml,usedModels);
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
@@ -3343,6 +3341,99 @@ public class FileExport {
 			private static LineGeometry.Transform createXFloorBasedBox(double sizeX, double sizeY, double sizeZ) {
 				return new LineGeometry.Transform( new LineGeometry.Box(sizeX,sizeY,sizeZ) )
 						.addTranslation(new Point3D(sizeX/2,0,0));
+			}
+
+			private static class Garages {
+				
+				static void addModelsToModelMap() {
+					addModels("GARAGE_L", "^GARAGE_L");
+					addModels("GARAGE_M", "^GARAGE_M", "^GARAGE_B", "^GARAGE_MECH");
+					addModels("GARAGE_S", "^GARAGE_S", "^GARAGE_SUB");
+					addModels("SUMMON_GARAGE", "^SUMMON_GARAGE");
+				}
+				
+				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					if (usedModels.contains("GARAGE_L"     )) writeProtoToFile(vrml, "GARAGE_L"     , ()->create_GARAGE_L     ().write(vrml,"\t"));
+					if (usedModels.contains("GARAGE_M"     )) writeProtoToFile(vrml, "GARAGE_M"     , ()->create_GARAGE_M     ().write(vrml,"\t"));
+					if (usedModels.contains("GARAGE_S"     )) writeProtoToFile(vrml, "GARAGE_S"     , ()->create_GARAGE_S     ().write(vrml,"\t"));
+					if (usedModels.contains("SUMMON_GARAGE")) writeProtoToFile(vrml, "SUMMON_GARAGE", ()->create_SUMMON_GARAGE().write(vrml,"\t"));
+				}
+				
+				private final static double height = 1;
+				private final static double ring1Width = 1.75;
+				private final static double ring2Width = 0.75;
+				
+				private interface AddOn {
+					void add(LineGeometry.GroupingNode group, LineGeometry.PolyLine c1, LineGeometry.PolyLine c2, LineGeometry.PolyLine c3, LineGeometry.PolyLine c4);
+				}
+				
+				private static LineGeometry.GroupingNode createGarage(double radius, AddOn addOn) {
+					double radius2 = radius -ring1Width;
+					double radius3 = radius2-ring2Width;
+					double radius4 = radius3*2.0/5.0;
+					LineGeometry.PolyLine c1,c2,c3,c4;
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(c1=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(  0   ,0,0), radius , 0, 360, false, 24))
+							.add(c2=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height,0,0), radius2, 0, 360, false, 24))
+							.add(c3=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height,0,0), radius3, 0, 360, false, 18))
+							.add(c4=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height,0,0), radius4, 0, 360, false, 12))
+							.add(new LineGeometry.PolyLine().add(c1.get( 2)).add(c2.get( 2)))
+							.add(new LineGeometry.PolyLine().add(c1.get( 6)).add(c2.get( 6)))
+							.add(new LineGeometry.PolyLine().add(c1.get(10)).add(c2.get(10)))
+							.add(new LineGeometry.PolyLine().add(c1.get(14)).add(c2.get(14)))
+							.add(new LineGeometry.PolyLine().add(c1.get(18)).add(c2.get(18)))
+							.add(new LineGeometry.PolyLine().add(c1.get(22)).add(c2.get(22)))
+							.add(new LineGeometry.PolyLine().add(c3.get( 0)).add(c4.get( 0)))
+							.add(new LineGeometry.PolyLine().add(c3.get( 3)).add(c4.get( 2)))
+							.add(new LineGeometry.PolyLine().add(c3.get( 6)).add(c4.get( 4)))
+							.add(new LineGeometry.PolyLine().add(c3.get( 9)).add(c4.get( 6)))
+							.add(new LineGeometry.PolyLine().add(c3.get(12)).add(c4.get( 8)))
+							.add(new LineGeometry.PolyLine().add(c3.get(15)).add(c4.get(10)))
+							;
+					if (addOn!=null)
+						addOn.add(group,c1,c2,c3,c4);
+					return group;
+				}
+				
+				private static LineGeometry.IndexedLineSet create_GARAGE_L() {
+					return createGarage(7.0,null); // 0.00 0.00 7.00, 1.00 0.00 5.00
+				}
+				private static LineGeometry.IndexedLineSet create_GARAGE_M() {
+					return createGarage(5.25,null);// 0.00 0.00 5.25, 1.00 0.00 3.50
+				}
+				private static LineGeometry.IndexedLineSet create_GARAGE_S() {
+					return createGarage(4.75,null);// 0.00 0.00 4.75, 1.00 0.00 3.00
+				}
+				private static LineGeometry.IndexedLineSet create_SUMMON_GARAGE() {
+					double midHeight = 2;
+					double radarHeight = 2.5;
+					double radarRadius = 6;
+					double radarAngle  = 45;
+					
+					return createGarage(5.25,(g,c12,c2,c3,c4)->{
+						LineGeometry.PolyLine p;
+						g
+						.add(new LineGeometry.PolyLine().add(c4.get(0)).add(midHeight,0,0).add(c4.get(6)))
+						.add(new LineGeometry.PolyLine().add(c4.get(3)).add(midHeight,0,0).add(c4.get(9)))
+						.add(
+								new LineGeometry.Transform(
+										new LineGeometry.GroupingNode()
+												.add(p = new LineGeometry.PolyLine()
+														.addArc(LineGeometry.Axis.X, new Point3D(0, -radarRadius, 0), radarRadius, -radarAngle/2, radarAngle/2, false, 4)
+														.addArc(LineGeometry.Axis.X, new Point3D(radarHeight, -radarRadius, 0), radarRadius, radarAngle/2, -radarAngle/2, true, 4)
+														.close()
+												)
+												.add(new LineGeometry.PolyLine().add(p.get(1)).add(p.get(8)))
+												.add(new LineGeometry.PolyLine().add(p.get(2)).add(p.get(7)))
+												.add(new LineGeometry.PolyLine().add(p.get(3)).add(p.get(6)))
+								)
+								.addRotation(LineGeometry.Axis.Z, 20)
+								.addTranslation(LineGeometry.Axis.X, midHeight)
+								.addRotation(LineGeometry.Axis.X, 100)
+						)
+						;
+					});
+				}
 			}
 
 			private static class MAINROOMmodels {
@@ -3891,10 +3982,6 @@ public class FileExport {
 			}
 			
 			private static class CubeRoomObjects {
-				private static final double cubesize = 4;
-				private static final double wallspacing = 0.05;
-				private static final double wallthickness = 0.1;
-				
 				static void addModelsToModelMap() {
 					addModels("CUBESTAIRS",     "^CUBESTAIRS"      );
 					addModels("CUBEFLOOR",       "^CUBEFLOOR"      );
@@ -3906,7 +3993,7 @@ public class FileExport {
 					addModels("CUBEFRAME",       "^CUBEFRAME"      );
 					
 				}
-				
+
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					if (usedModels.contains("CUBEFLOOR"      )) writeProtoToFile(vrml, "CUBEFLOOR"      ,         15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
 					if (usedModels.contains("CUBEWALL"       )) writeProtoToFile(vrml, "CUBEWALL"       , 0.6, 0, 25, ()->create_CUBEWALL       ().write(vrml,"\t"));
@@ -3918,7 +4005,11 @@ public class FileExport {
 					if (usedModels.contains("CUBEFRAME"      )) writeProtoToFile(vrml, "CUBEFRAME"      ,         15, ()->create_CUBEFRAME      ().write(vrml,"\t"));
 					
 				}
-			
+
+				private static final double cubesize = 4;
+				private static final double wallspacing = 0.05;
+				private static final double wallthickness = 0.1;
+				
 				private static LineGeometry.Box create_CUBEFLOOR() {
 					return new LineGeometry.Box( wallthickness, cubesize-wallspacing, cubesize-wallspacing );
 				}
@@ -4082,13 +4173,6 @@ public class FileExport {
 
 			private static class Corridors {
 				
-				private static final double raster = 4.0; // YZ
-				private static final double height = 3.3; // X
-				private static final double width  = 3.05; // Y
-				private static final double width2 = 1.95; // Y
-				private static final double heightW = (height-(width-width2))/3 + (width-width2)/2; // Unterkante der Fensterscheibe
-				private static final double spacing = 0.05;
-				
 				static void addModelsToModelMap() {
 					//addModels("CORRIDOR",       "^CORRIDOR","^GLASSCORRIDOR"); 
 					addModels("CORRIDOR",       "^CORRIDOR");
@@ -4119,6 +4203,13 @@ public class FileExport {
 					if (usedModels.contains("BUILDRAMP"    )) writeProtoToFile(vrml, "BUILDRAMP"    , 0.5, 90, 15, ()->create_BUILDRAMP    ().write(vrml,"\t"));
 				}
 
+				private static final double raster = 4.0; // YZ
+				private static final double height = 3.3; // X
+				private static final double width  = 3.05; // Y
+				private static final double width2 = 1.95; // Y
+				private static final double heightW = (height-(width-width2))/3 + (width-width2)/2; // Unterkante der Fensterscheibe
+				private static final double spacing = 0.05;
+				
 				private static LineGeometry.IndexedLineSet create_CORRIDOR() {
 					return new LineGeometry.Prism(LineGeometry.Axis.Z, raster-spacing,
 							new Point3D(                      0,  width2/2, 0),
@@ -4574,44 +4665,35 @@ public class FileExport {
 			}
 			
 			private static class SolitaryWallsAndFloors {
-				private static final double wall_thickness = 0.3;
-				private static final double wall_length    = 16.0/3.0;
-				private static final double wall_height    = 10.0/3.0;
-				private static final double door_width     = wall_length*0.3;
-				private static final double door_height    = wall_height*3.0/4;
-				private static final double border_h       = 0.75;
-				private static final double border_v       = 0.65;
-				private static final double spacing        = 0.30;
-
 				static void addModelsToModelMap() {
-					addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
-					addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
-					addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
-					addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
-					addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
-					addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
-					addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
-					addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
-					addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
-					addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
-					addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
-					addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
-					addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
-					addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
-					addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
-					addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
-					addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
-					addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
-					addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
-					addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
-					addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
-					addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
-					addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
-					
-//					addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
-//					addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
-				}
-				
+									addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
+									addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
+									addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
+									addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
+									addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
+									addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
+									addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
+									addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
+									addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
+									addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
+									addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
+									addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
+									addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
+									addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
+									addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
+									addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
+									addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
+									addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
+									addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
+									addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
+									addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
+									addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
+									addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
+									
+				//					addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
+				//					addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
+								}
+
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					
 					if (usedModels.contains("__SOLITARY_ARCH"        )) writeProtoToFile(vrml, "__SOLITARY_ARCH"        ,     ()->create_ARCH        ().write(vrml,"\t"));
@@ -4640,6 +4722,15 @@ public class FileExport {
 					if (usedModels.contains("__SOLITARY_WALL_Q"      )) writeProtoToFile(vrml, "__SOLITARY_WALL_Q"      ,     ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length  ).write(vrml,"\t"));
 					if (usedModels.contains("__SOLITARY_WALL_Q_H"    )) writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H"    , 12, ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length/2).write(vrml,"\t"));
 				}
+
+				private static final double wall_thickness = 0.3;
+				private static final double wall_length    = 16.0/3.0;
+				private static final double wall_height    = 10.0/3.0;
+				private static final double door_width     = wall_length*0.3;
+				private static final double door_height    = wall_height*3.0/4;
+				private static final double border_h       = 0.75;
+				private static final double border_v       = 0.65;
+				private static final double spacing        = 0.30;
 
 				private static LineGeometry.MultipleIndexedLineSets create_GLASSFLOOR() {
 					double window_width = wall_length - 2*border_h;
