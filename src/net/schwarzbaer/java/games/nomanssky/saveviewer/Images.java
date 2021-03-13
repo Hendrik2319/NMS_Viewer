@@ -467,6 +467,11 @@ public class Images {
 			readImages(pd,false);
 			updateImageListListeners(pd);
 		}
+		
+		public static File getImageFile(String filename) {
+			File folder = new File(FileExport.EXTRA_IMAGES_PATH);
+			return new File(folder, filename);
+		}
 	
 		private void readImages(ProgressDialog pd, boolean readAll) {
 			if (pd!=null) {

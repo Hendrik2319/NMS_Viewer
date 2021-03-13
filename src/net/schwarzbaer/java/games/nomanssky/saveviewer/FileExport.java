@@ -31,6 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import net.schwarzbaer.gui.ProgressDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
@@ -3009,6 +3010,7 @@ public class FileExport {
 				if (usedModels.contains("PARAGON"        )) writeProtoToFile(vrml, "PARAGON", 0.50, 135, new Point3D(1.4,0,0), ()->create_PARAGON().write(vrml,"\t"));
 				if (usedModels.contains("BUILDSAVE"      )) writeProtoToFile(vrml, "BUILDSAVE"      , 0.50,   0, ()->create_BUILDSAVE      ().write(vrml,"\t"));
 				if (usedModels.contains("GENERAL_DECAL"  )) writeProtoToFile(vrml, "GENERAL_DECAL"  , 0.50, 180, 12, ()->create_GENERAL_DECAL  ().write(vrml,"\t"));
+				if (usedModels.contains("GENERAL_DECAL"  )) write_IMAGE_DECAL_Proto(vrml);
 				
 				Garages.writeProtos(vrml,usedModels);
 				MAINROOMmodels.writeProtos(vrml,usedModels);
@@ -3016,6 +3018,26 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+
+			private static void write_IMAGE_DECAL_Proto(PrintWriter vrml) {
+				vrml.println("PROTO IMAGE_DECAL [");
+				vrml.println("	field MFString url []");
+				vrml.println("] {");
+				vrml.println("	Shape {");
+				vrml.println("		appearance Appearance {");
+				vrml.println("			material Material { diffuseColor 1 1 1 }");
+				vrml.println("			texture ImageTexture { url IS url }");
+				vrml.println("		}");
+				vrml.println("		geometry IndexedFaceSet {");
+				vrml.println("			solid FALSE");
+				vrml.println("			coord Coordinate { point [ 0 1 -1, 0 1 1, 0 -1 1, 0 -1 -1 ] }");
+				vrml.println("			texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }");
+				vrml.println("			coordIndex [ 0 1 2 3 ]");
+				vrml.println("		}");
+				vrml.println("	}");
+				vrml.println("}");
+				vrml.println();
 			}
 			
 			private static LineGeometry.PolyLine create_GENERAL_DECAL() {
@@ -5322,11 +5344,12 @@ public class FileExport {
 			if (obj.position.up==null) return;
 			if (obj.position.at==null) return;
 			
+			GeneralizedID id = obj.getId();
 			String objectID = obj.objectID;
 			String label = getLabel(objectID);
 			String extraLine = null; // obj.userData==null ? null : String.format("0x%08X", obj.userData);
 			
-			writeModel(vrml, objectID, isMAINROOMwithRoof, objectIDNumbers, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
+			writeModel(vrml, id, objectID, isMAINROOMwithRoof, objectIDNumbers, label, extraLine, obj.position.pos, obj.position.at, obj.position.up, null);
 		}
 		
 		private static String getLabel(String objectID) {
@@ -5343,9 +5366,9 @@ public class FileExport {
 		}
 
 		private static void writeModel(PrintWriter vrml, String objectID, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
-			writeModel(vrml, objectID, false, null, label, extraLine, pos, at, up, lineColor);
+			writeModel(vrml, null, objectID, false, null, label, extraLine, pos, at, up, lineColor);
 		}
-		private static void writeModel(PrintWriter vrml, String objectID, boolean isMAINROOMwithRoof, HashMap<String,Integer> objectIDNumbers, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
+		private static void writeModel(PrintWriter vrml, GeneralizedID id, String objectID, boolean isMAINROOMwithRoof, HashMap<String,Integer> objectIDNumbers, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
 			String modelName = mapObjectID2Model.get(objectID);
 			Integer maxTextLength = mapModel2TextLength.get(modelName);
 			
@@ -5355,8 +5378,15 @@ public class FileExport {
 			} else if ("^SMALLLIGHT".equals(objectID) && SaveViewer.config.useSmallLightsAsMeasurePoints) {
 				writeMeasurePoint(vrml, pos);
 				
-			} else
+			} else {
 				writeMyOrientation(vrml, pos, at, up, ()->{
+					if ("GENERAL_DECAL".equals(modelName) && id!=null && id.hasImageFileName()) {
+						File imageFile = Images.ExtraImageList.getImageFile(id.getImageFileName());
+						if (imageFile.isFile()) {
+							vrml.printf(" IMAGE_DECAL { url [ \"%s\" ] }", imageFile.getAbsolutePath().replace('\\', '/'));
+							return;
+						}
+					}
 					if (modelName!=null) {
 						String lineColorStr = lineColor==null?"":(" lineColor "+lineColor.toString("%1.2f",false));
 						String labelStr = createLabelStrs(extraLine==null ? label : label+" "+extraLine, maxTextLength==null ? 20 : maxTextLength.intValue());
@@ -5369,26 +5399,25 @@ public class FileExport {
 								vrml.print(normalModel);
 						} else
 							vrml.print(normalModel);
-					} else
-						switch (objectID) {
-						default:
-							String str;
-							Vector<String> lines = new Vector<>();
-							if (label!=null && !label.equals(objectID)) lines.add(label.replace("\\", "\\\\").replace("\"", "\\\""));
-							if (objectIDNumbers!=null) {
-								Integer n = objectIDNumbers.get(objectID);
-								if (n==null) n=0;
-								objectIDNumbers.put(objectID,n+1);
-								lines.add(String.format("%s [%02d]", objectID, n));
-							} else
-								lines.add(objectID);
-							if (extraLine!=null) lines.add(extraLine.replace("\\", "\\\\").replace("\"", "\\\""));
-							if (lines.size()==1) str = String.format("\"%s\"", lines.firstElement());
-							else                 str = String.format("[ \"%s\" ]", String.join("\", \"", lines));
-							vrml.printf(Locale.ENGLISH," AxisCross { string %s }", str);
-							break;
-						}
+						
+					} else {
+						String str;
+						Vector<String> lines = new Vector<>();
+						if (label!=null && !label.equals(objectID)) lines.add(label.replace("\\", "\\\\").replace("\"", "\\\""));
+						if (objectIDNumbers!=null) {
+							Integer n = objectIDNumbers.get(objectID);
+							if (n==null) n=0;
+							objectIDNumbers.put(objectID,n+1);
+							lines.add(String.format("%s [%02d]", objectID, n));
+						} else
+							lines.add(objectID);
+						if (extraLine!=null) lines.add(extraLine.replace("\\", "\\\\").replace("\"", "\\\""));
+						if (lines.size()==1) str = String.format("\"%s\"", lines.firstElement());
+						else                 str = String.format("[ \"%s\" ]", String.join("\", \"", lines));
+						vrml.printf(Locale.ENGLISH," AxisCross { string %s }", str);
+					}
 				});
+			}
 			
 		}
 		private static String createLabelStrs(String label, int maxChunkLength) {
