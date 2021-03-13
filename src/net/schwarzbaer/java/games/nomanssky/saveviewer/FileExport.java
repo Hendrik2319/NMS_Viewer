@@ -1442,12 +1442,42 @@ public class FileExport {
 					.addRotation(LineGeometry.Axis.Y,-180)
 					.addTranslation(1.0,0,-1.9);
 				
-				// TODO: NPCFRIGTERM: add big screen 
-				LineGeometry.GroupingNode objExitOnXneg = new LineGeometry.GroupingNode(
-					super.createGeometry(),
-					desk, chair, bed,
-					new LineGeometry.PolyLine().add(-4, 0,-1.4).add(-4, 0,+1.4)
+				double screenHeight1  = 1.4;
+				double screenHeight2  = 2.5;
+				double screenXBackPos = 2.9;
+				double screenWidth    = (screenHeight2-screenHeight1)/232.0*405.0; // 405(1.1) : 232
+				double screenAngle    = 45;
+				double screenRadius   = screenWidth/2/Math.sin(screenAngle/2/180*Math.PI); // r.sin(a/2) = w/2;
+				LineGeometry.PolyLine frame;
+				LineGeometry.GroupingNode screen = new LineGeometry.GroupingNode()
+						.add(frame=new LineGeometry.PolyLine()
+								.addArc(LineGeometry.Axis.Y, new Point3D(screenXBackPos-screenRadius, screenHeight1, 0), screenRadius, 90+screenAngle/2, 90-screenAngle/2,  true, 6)
+								.addArc(LineGeometry.Axis.Y, new Point3D(screenXBackPos-screenRadius, screenHeight2, 0), screenRadius, 90-screenAngle/2, 90+screenAngle/2, false, 6)
+								.close())
+						.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(screenXBackPos-screenRadius, screenHeight1*2.0/3.0+screenHeight2/3, 0), screenRadius, 90+screenAngle/2, 90-screenAngle/2,  true, 6))
+						.add(new LineGeometry.PolyLine().addArc(LineGeometry.Axis.Y, new Point3D(screenXBackPos-screenRadius, screenHeight2*2.0/3.0+screenHeight1/3, 0), screenRadius, 90+screenAngle/2, 90-screenAngle/2,  true, 6))
+						.add(new LineGeometry.PolyLine().add(frame.get(1)).add(frame.get(12)))
+						.add(new LineGeometry.PolyLine().add(frame.get(2)).add(frame.get(11)))
+						.add(new LineGeometry.PolyLine().add(frame.get(3)).add(frame.get(10)))
+						.add(new LineGeometry.PolyLine().add(frame.get(4)).add(frame.get( 9)))
+						.add(new LineGeometry.PolyLine().add(frame.get(5)).add(frame.get( 8)))
+						;
+				
+				LineGeometry.Prism console = new LineGeometry.Prism(LineGeometry.Axis.Z, screenWidth*0.8,
+						new Point3D(screenXBackPos    , screenHeight1     , 0),
+						new Point3D(screenXBackPos-0.5, screenHeight1-0.50, 0),
+						new Point3D(screenXBackPos-0.8, screenHeight1-0.50, 0),
+						new Point3D(screenXBackPos-0.8, screenHeight1-0.55, 0),
+						new Point3D(screenXBackPos-0.3, screenHeight1-1.00, 0),
+						new Point3D(screenXBackPos    , screenHeight1-1.00, 0)
 				);
+				
+				
+				LineGeometry.GroupingNode objExitOnXneg = new LineGeometry.GroupingNode()
+					.add(super.createGeometry())
+					.add(new LineGeometry.PolyLine().add(-4, 0,-1.4).add(-4, 0,+1.4))
+					.add(desk).add(chair).add(bed).add(screen).add(console)
+					;
 				
 				switch (dirOfExit) {
 				case Xneg: return objExitOnXneg;
@@ -2947,6 +2977,12 @@ public class FileExport {
 				addModels("BUILDBED",       "^BUILDBED");
 				addModels("BASE_FLAG",      "^BASE_FLAG");
 				addModels("PARAGON",        "^U_PARAGON");
+				addModels("BUILDSAVE",      "^BUILDSAVE");
+				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALVIS%s", "1","2","3","4","5"));
+				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALSIMP%s", "1","2","3","4"));
+				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALNUM%s", "1","2","3","4","5","6","7","8","9","0"));
+				addModels("GENERAL_DECAL",  "^DECAL_HAZARD", "^DECAL_HORROR", "^DECAL_JELLY", "^DECAL_SKULL");
+				addModels("GENERAL_DECAL",  "^BUILDDECAL", "^BUILDDECAL2", "^BUILDDECALHELLO", "^BUILDDECALNMS");
 				
 				Garages.addModelsToModelMap();
 				MAINROOMmodels.addModelsToModelMap();
@@ -2963,8 +2999,6 @@ public class FileExport {
 				
 				writeSimpleLineProtoToFile(vrml);
 				
-				// TODO: SoftwareBuildModels: Nice to have: ^BUILDSAVE
-				
 				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,   0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
 				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15,  90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
 				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",            ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
@@ -2973,6 +3007,8 @@ public class FileExport {
 				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,   0, ()->create_BUILDBED       ().write(vrml,"\t"));
 				if (usedModels.contains("BASE_FLAG"      )) writeProtoToFile(vrml, "BASE_FLAG"      , 0.50, 135, ()->create_BASE_FLAG      ().write(vrml,"\t"));
 				if (usedModels.contains("PARAGON"        )) writeProtoToFile(vrml, "PARAGON", 0.50, 135, new Point3D(1.4,0,0), ()->create_PARAGON().write(vrml,"\t"));
+				if (usedModels.contains("BUILDSAVE"      )) writeProtoToFile(vrml, "BUILDSAVE"      , 0.50,   0, ()->create_BUILDSAVE      ().write(vrml,"\t"));
+				if (usedModels.contains("GENERAL_DECAL"  )) writeProtoToFile(vrml, "GENERAL_DECAL"  , 0.50, 180, 12, ()->create_GENERAL_DECAL  ().write(vrml,"\t"));
 				
 				Garages.writeProtos(vrml,usedModels);
 				MAINROOMmodels.writeProtos(vrml,usedModels);
@@ -2980,6 +3016,43 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+			
+			private static LineGeometry.PolyLine create_GENERAL_DECAL() {
+				// |Up| -> 3.00x   H:4.94  W:4.0     Ratio: 1,235   
+				// |Up| -> 1.00x   H:1.64  W:1.32914 Ratio: 1,234
+				// |Up| -> 0.25x   H:0.41  W:0.34015 Ratio: 1,2053505806261943260326326620609
+				LineGeometry.PolyLine group = new LineGeometry.PolyLine()
+						.addArc(LineGeometry.Axis.X, new Point3D(0,0,0), 0.75, 0, 360, false, 16)
+						;
+				return group;
+			}
+			
+			private static LineGeometry.GroupingNode create_BUILDSAVE() {
+				// radius: Abstand zum Messpunkt: 0.85
+				// 185(0,85) : 137  0,62945945945945945945945945945946 -> Max.Radius
+				// 185(0,85) : 114  0,52378378378378378378378378378378 -> TopRadius1==BottomRadius
+				// 185(0,85) : 101  0,46405405405405405405405405405405 -> TopRadius2
+				// 185(0,85) : 172  0,79027027027027027027027027027027 -> height4Top
+				// 185(0,85) : 163  0,74891891891891891891891891891892 -> height3Top
+				// 185(0,85) :  51  0,23432432432432432432432432432432 -> height2Max
+				double radius1Bottom = 0.52;
+				double radius2Max    = 0.63, height2Max = 0.23;
+				double radius3Top    = 0.52, height3Top = 0.75;
+				double radius4Top    = 0.46, height4Top = 0.79;
+				
+				LineGeometry.PolyLine c1,c2,c3,c4;
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(c1=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(    0     , 0, 0), radius1Bottom, 0, 360, false, 32))
+						.add(c2=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height2Max, 0, 0), radius2Max   , 0, 360, false, 32))
+						.add(c3=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height3Top, 0, 0), radius3Top   , 0, 360, false, 32))
+						.add(c4=new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(height4Top, 0, 0), radius4Top   , 0, 360, false, 32))
+						.add(new LineGeometry.PolyLine().add(c1.get( 1)).add(c2.get( 1)).add(c3.get( 1)).add(c4.get( 1)).add(c4.get(15)).add(c3.get(15)).add(c2.get(15)).add(c1.get(15)))
+						.add(new LineGeometry.PolyLine().add(c1.get(31)).add(c2.get(31)).add(c3.get(31)).add(c4.get(31)).add(c4.get(17)).add(c3.get(17)).add(c2.get(17)).add(c1.get(17)))
+						.add(new LineGeometry.PolyLine().add(c1.get( 7)).add(c2.get( 7)).add(c3.get( 7)).add(c4.get( 7)).add(c4.get(25)).add(c3.get(25)).add(c2.get(25)).add(c1.get(25)))
+						.add(new LineGeometry.PolyLine().add(c1.get( 9)).add(c2.get( 9)).add(c3.get( 9)).add(c4.get( 9)).add(c4.get(23)).add(c3.get(23)).add(c2.get(23)).add(c1.get(23)))
+						;
+				return group;
 			}
 			
 			private static LineGeometry.PolyLine create_PARAGON() {
@@ -5464,10 +5537,20 @@ public class FileExport {
 		}
 
 		private static void writeMyOrientation(PrintWriter vrml, Point3D pos, Point3D at, Point3D up, Runnable writeChildren) {
+			double scale = 1;
+			if (up!=null) {
+				scale = up.length();
+				if (scale!=0) up = up.normalize();
+				else scale = 1;
+			}
+			if (at!=null && !at.isZero())
+				at = at.normalize();
+			
 			vrml.print("MyOrientation {");
 			vrml.printf(Locale.ENGLISH," pos %1.2f %1.2f %1.2f", pos.x, pos.y, pos.z);
 			if (at!=null) vrml.printf(Locale.ENGLISH," at %1.4f %1.4f %1.4f", at.x, at.y, at.z);
 			if (up!=null) vrml.printf(Locale.ENGLISH," up %1.4f %1.4f %1.4f", up.x, up.y, up.z);
+			if (scale!=1) vrml.printf(Locale.ENGLISH," scale %1$1.4f %1$1.4f %1$1.4f", scale);
 			
 			vrml.print (" children");
 			writeChildren.run();

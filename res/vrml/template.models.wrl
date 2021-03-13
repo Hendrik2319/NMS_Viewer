@@ -6,9 +6,11 @@ PROTO MyOrientation [
 	field SFVec3f pos 0 0 0
 	field SFVec3f up  1 0 0
 	field SFVec3f at  0 1 0
+	field SFVec3f scale  1 1 1
 	exposedField MFNode children []
 ] {
 	DEF trans Transform {
+		scale IS scale
 		translation IS pos
 		children IS children
 	}
