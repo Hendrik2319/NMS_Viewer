@@ -4376,7 +4376,7 @@ public class FileExport {
 					
 					addModels("CORRIDOR_WATER",  "^CORRIDOR_WATER");
 					addModels("CORRIDORL_WATER", "^CORRIDORL_WATER");
-//					addModels("CORRIDORX_WATER", "^CORRIDORX_WATER");
+					addModels("CORRIDORX_WATER", "^CORRIDORX_WATER");
 //					addModels("CORRIDORT_WATER", "^CORRIDORT_WATER");
 					addModels("CORRIDORV_WATER", "^CORRIDORV_WATER");
 //					addModels("BUILDDOOR_WATER", "^BUILDDOOR_WATER");
@@ -4386,7 +4386,7 @@ public class FileExport {
 					
 					if (usedModels.contains("CORRIDOR_WATER" )) writeProtoToFile(vrml, "CORRIDOR_WATER" ,      15, ()->create_CORRIDOR_WATER ().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORL_WATER")) writeProtoToFile(vrml, "CORRIDORL_WATER",      15, ()->create_CORRIDORL_WATER().write(vrml,"\t"));
-//					if (usedModels.contains("CORRIDORX_WATER")) writeProtoToFile(vrml, "CORRIDORX_WATER",      15, ()->create_CORRIDORX_WATER().write(vrml,"\t"));
+					if (usedModels.contains("CORRIDORX_WATER")) writeProtoToFile(vrml, "CORRIDORX_WATER",      15, ()->create_CORRIDORX_WATER().write(vrml,"\t"));
 //					if (usedModels.contains("CORRIDORT_WATER")) writeProtoToFile(vrml, "CORRIDORT_WATER",      15, ()->create_CORRIDORT_WATER().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORV_WATER")) writeProtoToFile(vrml, "CORRIDORV_WATER",      15, ()->create_CORRIDORV_WATER().write(vrml,"\t"));
 //					if (usedModels.contains("BUILDDOOR_WATER")) writeProtoToFile(vrml, "BUILDDOOR_WATER",      15, ()->create_BUILDDOOR_WATER().write(vrml,"\t"));
@@ -4416,99 +4416,129 @@ public class FileExport {
 				private static final double flange = 0.3;
 				
 				private static LineGeometry.IndexedLineSet create_CORRIDORV_WATER() {
-					LineGeometry.PolyLine p1,p2,p3,p4;
+					LineGeometry.PolyLine pZN,pZNF,pZPF,pZP;
 					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
-							.add(p1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(               0     , 0, 0), radius, 0, 360, false, 24))
-							.add(p2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(               flange, 0, 0), radius, 0, 360, false, 24))
-							.add(p3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(raster-spacing-flange, 0, 0), radius, 0, 360, false, 24))
-							.add(p4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(raster-spacing       , 0, 0), radius, 0, 360, false, 24))
-							.add(new LineGeometry.PolyLine().add(p1.get( 0)).add(p2.get( 0)).add(p3.get( 0)).add(p4.get( 0)))
-							.add(new LineGeometry.PolyLine().add(p1.get( 6)).add(p2.get( 6)).add(p3.get( 6)).add(p4.get( 6)))
-							.add(new LineGeometry.PolyLine().add(p1.get(12)).add(p2.get(12)).add(p3.get(12)).add(p4.get(12)))
-							.add(new LineGeometry.PolyLine().add(p1.get(18)).add(p2.get(18)).add(p3.get(18)).add(p4.get(18)))
+							.add(pZN  = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(0,0,0), radius, 0, 360, false, 24))
+							.add(pZNF = pZN.getCopy(               flange,0,0))
+							.add(pZPF = pZN.getCopy(raster-spacing-flange,0,0))
+							.add(pZP  = pZN.getCopy(raster-spacing       ,0,0))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 0)).add(pZNF.get( 0)).add(pZPF.get( 0)).add(pZP.get( 0)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 6)).add(pZNF.get( 6)).add(pZPF.get( 6)).add(pZP.get( 6)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(12)).add(pZNF.get(12)).add(pZPF.get(12)).add(pZP.get(12)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(18)).add(pZNF.get(18)).add(pZPF.get(18)).add(pZP.get(18)))
 							;
 					return group;
 				}
+				
 				private static LineGeometry.IndexedLineSet create_CORRIDOR_WATER() {
-					LineGeometry.PolyLine p1,p2,p3,p4;
+					LineGeometry.PolyLine pZN,pZNF,pZPF,pZP;
 					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
-							.add(p1 = new LineGeometry.PolyLine()
+							.add(pZN = new LineGeometry.PolyLine()
 									.add(0, -width2/2, -(raster-spacing)/2)
 									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, -(raster-spacing)/2       ), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
 									.add(0, +width2/2, -(raster-spacing)/2)
 									.close()
 							)
-							.add(p2 = new LineGeometry.PolyLine()
-									.add(0, -width2/2, -(raster-spacing)/2+flange)
-									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, -(raster-spacing)/2+flange), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
-									.add(0, +width2/2, -(raster-spacing)/2+flange)
-									.close()
-							)
-							.add(p3 = new LineGeometry.PolyLine()
-									.add(0, -width2/2, +(raster-spacing)/2-flange)
-									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, +(raster-spacing)/2-flange), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
-									.add(0, +width2/2, +(raster-spacing)/2-flange)
-									.close()
-							)
-							.add(p4 = new LineGeometry.PolyLine()
-									.add(0, -width2/2, +(raster-spacing)/2)
-									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, +(raster-spacing)/2       ), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
-									.add(0, +width2/2, +(raster-spacing)/2)
-									.close()
-							)
-							.add(new LineGeometry.PolyLine().add(p1.get( 0)).add(p2.get( 0)).add(p3.get( 0)).add(p4.get( 0)))
-							.add(new LineGeometry.PolyLine().add(p1.get( 1)).add(p2.get( 1)).add(p3.get( 1)).add(p4.get( 1)))
-							.add(new LineGeometry.PolyLine().add(p1.get( 5)).add(p2.get( 5)).add(p3.get( 5)).add(p4.get( 5)))
-							.add(new LineGeometry.PolyLine().add(p1.get(11)).add(p2.get(11)).add(p3.get(11)).add(p4.get(11)))
-							.add(new LineGeometry.PolyLine().add(p1.get(17)).add(p2.get(17)).add(p3.get(17)).add(p4.get(17)))
-							.add(new LineGeometry.PolyLine().add(p1.get(21)).add(p2.get(21)).add(p3.get(21)).add(p4.get(21)))
-							.add(new LineGeometry.PolyLine().add(p1.get(22)).add(p2.get(22)).add(p3.get(22)).add(p4.get(22)))
+							.add(pZNF = pZN.getCopy(0, 0, flange))
+							.add(pZP  = pZN.getCopy(0, 0, raster-spacing))
+							.add(pZPF = pZP.getCopy(0, 0,-flange))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 0)).add(pZNF.get( 0)).add(pZPF.get( 0)).add(pZP.get( 0)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 1)).add(pZNF.get( 1)).add(pZPF.get( 1)).add(pZP.get( 1)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 5)).add(pZNF.get( 5)).add(pZPF.get( 5)).add(pZP.get( 5)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(11)).add(pZNF.get(11)).add(pZPF.get(11)).add(pZP.get(11)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(17)).add(pZNF.get(17)).add(pZPF.get(17)).add(pZP.get(17)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(21)).add(pZNF.get(21)).add(pZPF.get(21)).add(pZP.get(21)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(22)).add(pZNF.get(22)).add(pZPF.get(22)).add(pZP.get(22)))
 							;
 					return group;
 				}
 				
 				private static LineGeometry.IndexedLineSet create_CORRIDORL_WATER() {
-					LineGeometry.PolyLine p1,p2,p3,p4,p5;
+					LineGeometry.PolyLine pZN,pZNF,p3,pYNF,pYN;
 					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
-							.add(p1 = new LineGeometry.PolyLine()
+							.add(pZN = new LineGeometry.PolyLine()
 									.add(0, -width2/2, -(raster-spacing)/2)
-									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, -(raster-spacing)/2       ), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
+									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, -(raster-spacing)/2), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
 									.add(0, +width2/2, -(raster-spacing)/2)
 									.close()
 							)
-							.add(p2 = new LineGeometry.PolyLine()
-									.add(0, -width2/2, -(raster-spacing)/2+flange)
-									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, -(raster-spacing)/2+flange), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
-									.add(0, +width2/2, -(raster-spacing)/2+flange)
-									.close()
-							)
-							.add(p4 = new LineGeometry.PolyLine()
-									.add(0, -(raster-spacing)/2+flange, -width2/2)
-									.addArc(LineGeometry.Axis.Y, new Point3D(height-radius, -(raster-spacing)/2+flange, 0), radius, 270-bottomAngle/2, 270+bottomAngle/2, true, 20)
-									.add(0, -(raster-spacing)/2+flange, +width2/2)
-									.close()
-							)
-							.add(p5 = new LineGeometry.PolyLine()
+							.add(pYN = new LineGeometry.PolyLine()
 									.add(0, -(raster-spacing)/2, -width2/2)
-									.addArc(LineGeometry.Axis.Y, new Point3D(height-radius, -(raster-spacing)/2       , 0), radius, 270-bottomAngle/2, 270+bottomAngle/2, true, 20)
+									.addArc(LineGeometry.Axis.Y, new Point3D(height-radius, -(raster-spacing)/2, 0), radius, 270-bottomAngle/2, 270+bottomAngle/2, true, 20)
 									.add(0, -(raster-spacing)/2, +width2/2)
 									.close()
 							)
+							.add(pZNF = pZN.getCopy(0,0,flange))
+							.add(pYNF = pYN.getCopy(0,flange,0))
 							;
 					
 					p3 = new LineGeometry.PolyLine();
-					p2.forEachPointXYZ((x,y,z)->p3.add(x,y,y));
+					pZNF.forEachPointXYZ((x,y,z)->p3.add(x,y,y));
 					//p3.close();
 					group.add(p3);
 					
 					group
-							.add(new LineGeometry.PolyLine().add(p1.get( 0)).add(p2.get( 0)).add(p3.get( 0)).add(p4.get( 0)).add(p5.get( 0)))
-							.add(new LineGeometry.PolyLine().add(p1.get( 1)).add(p2.get( 1)).add(p3.get( 1)).add(p4.get( 1)).add(p5.get( 1)))
-							.add(new LineGeometry.PolyLine().add(p1.get( 5)).add(p2.get( 5)).add(p3.get( 5)).add(p4.get( 5)).add(p5.get( 5)))
-							.add(new LineGeometry.PolyLine().add(p1.get(11)).add(p2.get(11)).add(p3.get(11)).add(p4.get(11)).add(p5.get(11)))
-							.add(new LineGeometry.PolyLine().add(p1.get(17)).add(p2.get(17)).add(p3.get(17)).add(p4.get(17)).add(p5.get(17)))
-							.add(new LineGeometry.PolyLine().add(p1.get(21)).add(p2.get(21)).add(p3.get(21)).add(p4.get(21)).add(p5.get(21)))
-							.add(new LineGeometry.PolyLine().add(p1.get(22)).add(p2.get(22)).add(p3.get(22)).add(p4.get(22)).add(p5.get(22)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 0)).add(pZNF.get( 0)).add(p3.get( 0)).add(pYNF.get( 0)).add(pYN.get( 0)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 1)).add(pZNF.get( 1)).add(p3.get( 1)).add(pYNF.get( 1)).add(pYN.get( 1)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 5)).add(pZNF.get( 5)).add(p3.get( 5)).add(pYNF.get( 5)).add(pYN.get( 5)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(11)).add(pZNF.get(11)).add(p3.get(11)).add(pYNF.get(11)).add(pYN.get(11)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(17)).add(pZNF.get(17)).add(p3.get(17)).add(pYNF.get(17)).add(pYN.get(17)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(21)).add(pZNF.get(21)).add(p3.get(21)).add(pYNF.get(21)).add(pYN.get(21)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(22)).add(pZNF.get(22)).add(p3.get(22)).add(pYNF.get(22)).add(pYN.get(22)))
+							;
+					return group;
+				}
+
+				private static LineGeometry.IndexedLineSet create_CORRIDORX_WATER() {
+					LineGeometry.PolyLine pZN,pZNF,pZP,pZPF,pYN,pYNF,pYP,pYPF;
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(pZN = new LineGeometry.PolyLine()
+									.add(0, -width2/2, -(raster-spacing)/2)
+									.addArc(LineGeometry.Axis.Z, new Point3D(height-radius, 0, -(raster-spacing)/2), radius, 180+bottomAngle/2, 180-bottomAngle/2, false, 20)
+									.add(0, +width2/2, -(raster-spacing)/2)
+									.close()
+							)
+							.add(pYN = new LineGeometry.PolyLine()
+									.add(0, -(raster-spacing)/2, -width2/2)
+									.addArc(LineGeometry.Axis.Y, new Point3D(height-radius, -(raster-spacing)/2, 0), radius, 270-bottomAngle/2, 270+bottomAngle/2, true, 20)
+									.add(0, -(raster-spacing)/2, +width2/2)
+									.close()
+							)
+							.add(pZP  = pZN.getCopy(0, 0, raster-spacing))
+							.add(pYP  = pYN.getCopy(0, raster-spacing, 0))
+							.add(pZNF = pZN.getCopy(0,0, flange))
+							.add(pZPF = pZP.getCopy(0,0,-flange))
+							.add(pYNF = pYN.getCopy(0, flange,0))
+							.add(pYPF = pYP.getCopy(0,-flange,0))
+							;
+					
+					LineGeometry.PolyLine pD1,pD2;
+					pD1 = new LineGeometry.PolyLine();
+					pD2 = new LineGeometry.PolyLine();
+					pZNF.forEachPointXYZ((x,y,z)->pD1.add(x,y, y));
+					pZNF.forEachPointXYZ((x,y,z)->pD2.add(x,y,-y));
+					group.add(pD1);
+					group.add(pD2);
+					
+					group
+							.add(new LineGeometry.PolyLine().add(pZN.get(11)).add(pZNF.get(11)).add(pD1.get(11)).add(pZPF.get(11)).add(pZP.get(11)))
+							.add(new LineGeometry.PolyLine().add(pYN.get(11)).add(pYNF.get(11)).add(pD2.get(11)).add(pYPF.get(11)).add(pYP.get(11)))
+							
+							.add(new LineGeometry.PolyLine().add(pZN.get( 0)).add(pZNF.get( 0)).add(pD1.get( 0)).add(pYNF.get( 0)).add(pYN.get( 0)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 1)).add(pZNF.get( 1)).add(pD1.get( 1)).add(pYNF.get( 1)).add(pYN.get( 1)))
+							.add(new LineGeometry.PolyLine().add(pZN.get( 5)).add(pZNF.get( 5)).add(pD1.get( 5)).add(pYNF.get( 5)).add(pYN.get( 5)))
+							
+							.add(new LineGeometry.PolyLine().add(pZP.get(17)).add(pZPF.get(17)).add(pD1.get(17)).add(pYPF.get(17)).add(pYP.get(17)))
+							.add(new LineGeometry.PolyLine().add(pZP.get(21)).add(pZPF.get(21)).add(pD1.get(21)).add(pYPF.get(21)).add(pYP.get(21)))
+							.add(new LineGeometry.PolyLine().add(pZP.get(22)).add(pZPF.get(22)).add(pD1.get(22)).add(pYPF.get(22)).add(pYP.get(22)))
+							
+							.add(new LineGeometry.PolyLine().add(pZN.get(17)).add(pZNF.get(17)).add(pD2.get(17)).add(pYPF.get( 5)).add(pYP.get( 5)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(21)).add(pZNF.get(21)).add(pD2.get(21)).add(pYPF.get( 1)).add(pYP.get( 1)))
+							.add(new LineGeometry.PolyLine().add(pZN.get(22)).add(pZNF.get(22)).add(pD2.get(22)).add(pYPF.get( 0)).add(pYP.get( 0)))
+							
+							.add(new LineGeometry.PolyLine().add(pZP.get( 5)).add(pZPF.get( 5)).add(pD2.get( 5)).add(pYNF.get(17)).add(pYN.get(17)))
+							.add(new LineGeometry.PolyLine().add(pZP.get( 1)).add(pZPF.get( 1)).add(pD2.get( 1)).add(pYNF.get(21)).add(pYN.get(21)))
+							.add(new LineGeometry.PolyLine().add(pZP.get( 0)).add(pZPF.get( 0)).add(pD2.get( 0)).add(pYNF.get(22)).add(pYN.get(22)))
 							;
 					return group;
 				}
@@ -6175,14 +6205,23 @@ public class FileExport {
 		static class PolyLine extends IndexedLineSet {
 			
 			private Segment segment;
+			private boolean isClosed;
 			
 			PolyLine() {
+				isClosed = false;
 				segment = new Segment();
 				segments.add(segment);
 			}
 			PolyLine(Point3D... points) {
 				this();
 				addAll(points);
+			}
+			
+			public PolyLine getCopy(double dx, double dy, double dz) {
+				PolyLine p = new PolyLine();
+				forEachPointXYZ((x,y,z) -> p.add(x+dx,y+dy,z+dz));
+				if (isClosed) p.close();
+				return p;
 			}
 			
 			@Override
@@ -6224,6 +6263,7 @@ public class FileExport {
 			}
 			
 			public PolyLine close() {
+				isClosed = true;
 				if (!segment.indexes.isEmpty())
 					segment.add(segment.indexes.firstElement());
 				return this;
