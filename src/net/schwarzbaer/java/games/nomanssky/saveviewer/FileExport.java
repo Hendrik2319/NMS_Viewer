@@ -2954,10 +2954,15 @@ public class FileExport {
 
 		private static String[] makeVariations(String format, String... strs) {
 			String[] variations = new String[strs.length];
-			for (int i = 0; i < strs.length; i++) {
-				String str = strs[i];
-				variations[i] = String.format(format, str);
-			}
+			for (int i = 0; i < strs.length; i++)
+				variations[i] = String.format(format, strs[i]);
+			return variations;
+		}
+
+		private static String[] makeVariations(String format, Integer... numbers) {
+			String[] variations = new String[numbers.length];
+			for (int i = 0; i < numbers.length; i++)
+				variations[i] = String.format(format, numbers[i]);
 			return variations;
 		}
 		
@@ -2979,9 +2984,10 @@ public class FileExport {
 				addModels("BASE_FLAG",      "^BASE_FLAG");
 				addModels("PARAGON",        "^U_PARAGON");
 				addModels("BUILDSAVE",      "^BUILDSAVE");
-				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALVIS%s", "1","2","3","4","5"));
-				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALSIMP%s", "1","2","3","4"));
-				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALNUM%s", "1","2","3","4","5","6","7","8","9","0"));
+				addModels("GENERAL_DECAL",  makeVariations("^SPEC_DECAL%02d", 1,2,3,4,5,6,7,8));
+				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALVIS%d", 1,2,3,4,5));
+				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALSIMP%d", 1,2,3,4));
+				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALNUM%d", 1,2,3,4,5,6,7,8,9,0));
 				addModels("GENERAL_DECAL",  "^DECAL_HAZARD", "^DECAL_HORROR", "^DECAL_JELLY", "^DECAL_SKULL");
 				addModels("GENERAL_DECAL",  "^BUILDDECAL", "^BUILDDECAL2", "^BUILDDECALHELLO", "^BUILDDECALNMS");
 				
@@ -3001,8 +3007,8 @@ public class FileExport {
 				writeSimpleLineProtoToFile(vrml);
 				
 				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,   0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
-				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.15,  90, ()->create_WALLLIGHT      ().write(vrml,"\t"));
-				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD",            ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
+				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.20,  90, 12, ()->create_WALLLIGHT  ().write(vrml,"\t"));
+				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD", 3.00,   0, ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
 				if (usedModels.contains("BUILDSIMPLEDESK")) writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.50,   0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
 				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,   0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
 				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,   0, ()->create_BUILDBED       ().write(vrml,"\t"));
@@ -4371,6 +4377,7 @@ public class FileExport {
 
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					
+					// TODO: ^CORRIDOR_WATER, ^CORRIDORX_WATER, ^BUILDDOOR_WATER, ...
 					if (usedModels.contains("CORRIDOR"     )) writeProtoToFile(vrml, "CORRIDOR"     ,          15, ()->create_CORRIDOR     ().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORL"    )) writeProtoToFile(vrml, "CORRIDORL"    ,          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORX"    )) writeProtoToFile(vrml, "CORRIDORX"    ,          15, ()->create_CORRIDORX    ().write(vrml,"\t"));
@@ -4896,7 +4903,7 @@ public class FileExport {
 					if (usedModels.contains("__SOLITARY_FLOOR"       )) writeProtoToFile(vrml, "__SOLITARY_FLOOR"       ,     ()->new LineGeometry.Box(wall_thickness,wall_length  ,wall_length  ).write(vrml,"\t"));
 					if (usedModels.contains("__SOLITARY_FLOOR_Q"     )) writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q"     , 12, ()->new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2).write(vrml,"\t"));
 					if (usedModels.contains("__SOLITARY_TRIFLOOR"    )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR"    , 15, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length  ,-90).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_TRIFLOOR_Q"  )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q"  , 12, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90).write(vrml,"\t"));
+					if (usedModels.contains("__SOLITARY_TRIFLOOR_Q"  )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q"  , 0.5, 0, 17, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90).write(vrml,"\t"));
 					
 					if (usedModels.contains("__SOLITARY_WALL"        )) writeProtoToFile(vrml, "__SOLITARY_WALL"        ,     ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length  ).write(vrml,"\t"));
 					if (usedModels.contains("__SOLITARY_WALL_H"      )) writeProtoToFile(vrml, "__SOLITARY_WALL_H"      , 12, ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length/2).write(vrml,"\t"));
