@@ -4379,7 +4379,7 @@ public class FileExport {
 					addModels("CORRIDORX_WATER", "^CORRIDORX_WATER");
 					addModels("CORRIDORT_WATER", "^CORRIDORT_WATER");
 					addModels("CORRIDORV_WATER", "^CORRIDORV_WATER");
-//					addModels("BUILDDOOR_WATER", "^BUILDDOOR_WATER");
+					addModels("BUILDDOOR_WATER", "^BUILDDOOR_WATER");
 				}
 
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
@@ -4389,7 +4389,7 @@ public class FileExport {
 					if (usedModels.contains("CORRIDORX_WATER")) writeProtoToFile(vrml, "CORRIDORX_WATER",      15, ()->create_CORRIDORX_WATER().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORT_WATER")) writeProtoToFile(vrml, "CORRIDORT_WATER", 1,90,15, ()->create_CORRIDORT_WATER().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORV_WATER")) writeProtoToFile(vrml, "CORRIDORV_WATER",      15, ()->create_CORRIDORV_WATER().write(vrml,"\t"));
-//					if (usedModels.contains("BUILDDOOR_WATER")) writeProtoToFile(vrml, "BUILDDOOR_WATER",      15, ()->create_BUILDDOOR_WATER().write(vrml,"\t"));
+					if (usedModels.contains("BUILDDOOR_WATER")) writeProtoToFile(vrml, "BUILDDOOR_WATER",      15, ()->create_BUILDDOOR_WATER().write(vrml,"\t"));
 					
 					if (usedModels.contains("CORRIDOR"     )) writeProtoToFile(vrml, "CORRIDOR"     ,          15, ()->create_CORRIDOR     ().write(vrml,"\t"));
 					if (usedModels.contains("CORRIDORL"    )) writeProtoToFile(vrml, "CORRIDORL"    ,          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
@@ -4430,6 +4430,43 @@ public class FileExport {
 					return group;
 				}
 				
+				private static LineGeometry.IndexedLineSet create_BUILDDOOR_WATER() {
+					LineGeometry.PolyLine pY,pYF;
+					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+							.add(pY = new LineGeometry.PolyLine()
+									.add(0, spacing/2, -width2/2)
+									.addArc(LineGeometry.Axis.Y, new Point3D(height-radius, spacing/2, 0), radius, 270-bottomAngle/2, 270+bottomAngle/2, true, 20)
+									.add(0, spacing/2, +width2/2)
+									.close()
+							)
+							.add(pYF = pY.getCopy(0,flange,0))
+							.add(new LineGeometry.PolyLine().add(pY.get( 0)).add(pYF.get( 0)))
+							.add(new LineGeometry.PolyLine().add(pY.get( 1)).add(pYF.get( 1)))
+							.add(new LineGeometry.PolyLine().add(pY.get( 5)).add(pYF.get( 5)))
+							.add(new LineGeometry.PolyLine().add(pY.get(11)).add(pYF.get(11)))
+							.add(new LineGeometry.PolyLine().add(pY.get(17)).add(pYF.get(17)))
+							.add(new LineGeometry.PolyLine().add(pY.get(21)).add(pYF.get(21)))
+							.add(new LineGeometry.PolyLine().add(pY.get(22)).add(pYF.get(22)))
+							;
+					
+					LineGeometry.PolyLine pY1,pY2,pY3,pY4;
+					pY1 = pYF.getCopy(0,0.3,0);
+					pY2 = pY1.getCopy(0,0.3,0);
+					pY3 = pY2.getCopy(0,0.3,0);
+					pY4 = pY3.getCopy(0,0.3,0);
+					group
+						.add(new LineGeometry.PolyLine().add(pYF.get( 1)).add(pY1.get( 1)))
+						.add(new LineGeometry.PolyLine().add(pYF.get( 4)).add(pY4.get( 4)))
+						.add(new LineGeometry.PolyLine().add(pYF.get( 6)).add(pY2.get( 6)))
+						.add(new LineGeometry.PolyLine().add(pYF.get(10)).add(pY3.get(10)))
+						.add(new LineGeometry.PolyLine().add(pYF.get(13)).add(pY4.get(13)))
+						.add(new LineGeometry.PolyLine().add(pYF.get(15)).add(pY2.get(15)))
+						.add(new LineGeometry.PolyLine().add(pYF.get(19)).add(pY1.get(19)))
+						.add(new LineGeometry.PolyLine().add(pYF.get(21)).add(pY3.get(21)))
+						;
+					return group;
+				}
+				
 				private static LineGeometry.IndexedLineSet create_CORRIDOR_WATER() {
 					LineGeometry.PolyLine pZN,pZNF,pZPF,pZP;
 					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
@@ -4452,7 +4489,7 @@ public class FileExport {
 							;
 					return group;
 				}
-				
+
 				private static LineGeometry.IndexedLineSet create_CORRIDORL_WATER() {
 					LineGeometry.PolyLine pZN,pZNF,pD,pYNF,pYN;
 					LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
