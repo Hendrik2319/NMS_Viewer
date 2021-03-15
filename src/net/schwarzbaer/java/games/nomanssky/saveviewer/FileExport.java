@@ -358,8 +358,10 @@ public class FileExport {
 				if (max==null) max = new Point3D(pos); else max.max(pos);
 			}
 
-			Vector<String> antiRoofObjects = new Vector<>(); // TODO: antiRoofObjects
-			Collections.addAll(antiRoofObjects, "^MAINROOM", "^MAINROOM_WATER", "^MAINROOMCUBE", "^MAINROOMCUBE_W", "^BIOROOM");
+			Vector<String> antiRoofObjects = new Vector<>();
+			Collections.addAll(antiRoofObjects, "^MAINROOM", "^MAINROOM_WATER", "^MAINROOMCUBE", "^MAINROOMCUBE_W", "^BIOROOM", "^MAINROOMFRAME");
+			Collections.addAll(antiRoofObjects, "^CORRIDORV_WATER", "^CUBEROOM", "^CUBEGLASS", "^CUBEROOMCURVED", "^CURVEDCUBEROOF", "^CUBESOLID", "^CUBEFRAME");
+
 			
 			HashSet<String> usedModels = new HashSet<>();
 			boolean[] isMAINROOMwithRoof = new boolean[bObjs.length];
@@ -2984,12 +2986,16 @@ public class FileExport {
 				addModels("BASE_FLAG",      "^BASE_FLAG");
 				addModels("PARAGON",        "^U_PARAGON");
 				addModels("BUILDSAVE",      "^BUILDSAVE");
+				addModels("MINIPORTAL",     "^U_MINIPORTAL");
+				
+				
 				addModels("GENERAL_DECAL",  makeVariations("^SPEC_DECAL%02d", 1,2,3,4,5,6,7,8));
 				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALVIS%d", 1,2,3,4,5));
 				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALSIMP%d", 1,2,3,4));
 				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALNUM%d", 1,2,3,4,5,6,7,8,9,0));
 				addModels("GENERAL_DECAL",  "^DECAL_HAZARD", "^DECAL_HORROR", "^DECAL_JELLY", "^DECAL_SKULL");
 				addModels("GENERAL_DECAL",  "^BUILDDECAL", "^BUILDDECAL2", "^BUILDDECALHELLO", "^BUILDDECALNMS");
+				
 				
 				Garages.addModelsToModelMap();
 				MAINROOMmodels.addModelsToModelMap();
@@ -3015,6 +3021,7 @@ public class FileExport {
 				if (usedModels.contains("BASE_FLAG"      )) writeProtoToFile(vrml, "BASE_FLAG"      , 0.50, 135, ()->create_BASE_FLAG      ().write(vrml,"\t"));
 				if (usedModels.contains("PARAGON"        )) writeProtoToFile(vrml, "PARAGON", 0.50, 135, new Point3D(1.4,0,0), ()->create_PARAGON().write(vrml,"\t"));
 				if (usedModels.contains("BUILDSAVE"      )) writeProtoToFile(vrml, "BUILDSAVE"      , 0.50,   0, ()->create_BUILDSAVE      ().write(vrml,"\t"));
+				if (usedModels.contains("MINIPORTAL"     )) writeProtoToFile(vrml, "MINIPORTAL"     , 0.50,   0, ()->create_MINIPORTAL     ().write(vrml,"\t"));
 				if (usedModels.contains("GENERAL_DECAL"  )) writeProtoToFile(vrml, "GENERAL_DECAL"  , 0.50, 180, 12, ()->create_GENERAL_DECAL  ().write(vrml,"\t"));
 				if (usedModels.contains("GENERAL_DECAL"  )) write_IMAGE_DECAL_Proto(vrml);
 				
@@ -3024,6 +3031,59 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+
+			private static LineGeometry.GroupingNode create_MINIPORTAL() {
+				double width = 2.5; // "small width" of hexagon
+				double radius = width/2/Math.cos(Math.PI/6); // r*cos(30°) = width/2
+				double radius2 = 0.6;
+
+				double plugPDist = 1.61102; // Y|Z
+				double plugPHeight = 0.6; // X
+				double plugPPosY = Math.sqrt(plugPDist*plugPDist-plugPHeight*plugPHeight);
+				double plugTDist = 1.82683; // Y|Z
+				double plugTHeight = 1.6; // X
+				double plugTPosY = Math.sqrt(plugTDist*plugTDist-plugTHeight*plugTHeight);
+				
+				
+				LineGeometry.PolyLine p1,p2,p3,p4,p5,p6;
+				LineGeometry.GroupingNode group = new LineGeometry.GroupingNode()
+						.add(p1 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D( 0  ,0,0), radius , 0, 360, false, 6))
+						.add(p2 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(0.35,0,0), radius2, 0, 360, false, 12))
+						.add(new LineGeometry.PolyLine()
+								.add(p2.get(11)).add(p1.get(5))
+								.add(p2.get( 9)).add(p1.get(4))
+								.add(p2.get( 7)).add(p1.get(3))
+								.add(p2.get( 5)).add(p1.get(2))
+								.add(p2.get( 3)).add(p1.get(1))
+								.add(p2.get( 1)).add(p1.get(0))
+								.close())
+						
+						
+						.add(p3 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(4.00,0,0), 0.50, 0, 360, false, 24))
+						.add(p4 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(3.80,0,0), 0.95, 0, 360, false, 24))
+						.add(p5 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(3.70,0,0), 0.95, 0, 360, false, 24))
+						.add(p6 = new LineGeometry.PolyLine().addArc(LineGeometry.Axis.X, new Point3D(3.65,0,0), 1.00, 0, 360, false, 24))
+						.add(new LineGeometry.PolyLine().add(p3.get( 0)).add(p4.get( 0)))
+						.add(new LineGeometry.PolyLine().add(p3.get( 3)).add(p4.get( 3)))
+						.add(new LineGeometry.PolyLine().add(p3.get( 6)).add(p4.get( 6)))
+						.add(new LineGeometry.PolyLine().add(p3.get( 9)).add(p4.get( 9)))
+						.add(new LineGeometry.PolyLine().add(p3.get(12)).add(p4.get(12)))
+						.add(new LineGeometry.PolyLine().add(p3.get(15)).add(p4.get(15)))
+						.add(new LineGeometry.PolyLine().add(p3.get(18)).add(p4.get(18)))
+						.add(new LineGeometry.PolyLine().add(p3.get(21)).add(p4.get(21)))
+						.add(new LineGeometry.PolyLine().add(p5.get( 0)).add(p6.get( 0)))
+						.add(new LineGeometry.PolyLine().add(p5.get( 3)).add(p6.get( 3)))
+						.add(new LineGeometry.PolyLine().add(p5.get( 6)).add(p6.get( 6)))
+						.add(new LineGeometry.PolyLine().add(p5.get( 9)).add(p6.get( 9)))
+						.add(new LineGeometry.PolyLine().add(p5.get(12)).add(p6.get(12)))
+						.add(new LineGeometry.PolyLine().add(p5.get(15)).add(p6.get(15)))
+						.add(new LineGeometry.PolyLine().add(p5.get(18)).add(p6.get(18)))
+						.add(new LineGeometry.PolyLine().add(p5.get(21)).add(p6.get(21)))
+						
+						.add(new LineGeometry.PolyLine().add(0,-radius,0).add(plugPHeight,-plugPPosY,0).add(plugTHeight,-plugTPosY,0))
+						;
+				return group;
 			}
 
 			private static void write_IMAGE_DECAL_Proto(PrintWriter vrml) {
