@@ -2942,8 +2942,6 @@ public class FileExport {
 			addModels("PLANTERMEGA",    "^PLANTERMEGA");
 			addModels("CARBONPLANTER",  "^CARBONPLANTER");
 			
-			addModels("NPCTERMINAL",    "^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
-			
 			addModels("__SIMPLE_LINE",  "^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE","^U_BYTEBEATLINE");
 			
 			SoftwareBuildModels.addModelsToModelMap();
@@ -2987,6 +2985,7 @@ public class FileExport {
 				addModels("PARAGON",        "^U_PARAGON");
 				addModels("BUILDSAVE",      "^BUILDSAVE");
 				addModels("MINIPORTAL",     "^U_MINIPORTAL");
+				addModels("NPCTERMINAL",    "^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 				
 				
 				addModels("GENERAL_DECAL",  makeVariations("^SPEC_DECAL%02d", 1,2,3,4,5,6,7,8));
@@ -3022,6 +3021,7 @@ public class FileExport {
 				if (usedModels.contains("PARAGON"        )) writeProtoToFile(vrml, "PARAGON", 0.50, 135, new Point3D(1.4,0,0), ()->create_PARAGON().write(vrml,"\t"));
 				if (usedModels.contains("BUILDSAVE"      )) writeProtoToFile(vrml, "BUILDSAVE"      , 0.50,   0, ()->create_BUILDSAVE      ().write(vrml,"\t"));
 				if (usedModels.contains("MINIPORTAL"     )) writeProtoToFile(vrml, "MINIPORTAL"     , 0.50,   0, ()->create_MINIPORTAL     ().write(vrml,"\t"));
+				if (usedModels.contains("NPCTERMINAL"    )) writeProtoToFile(vrml, "NPCTERMINAL"    , 0.50, 180, new Point3D(1.2,1.6,0), ()->create_NPCTERMINAL    ().write(vrml,"\t"));
 				if (usedModels.contains("GENERAL_DECAL"  )) writeProtoToFile(vrml, "GENERAL_DECAL"  , 0.50, 180, 12, ()->create_GENERAL_DECAL  ().write(vrml,"\t"));
 				if (usedModels.contains("GENERAL_DECAL"  )) write_IMAGE_DECAL_Proto(vrml);
 				
@@ -3031,6 +3031,85 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+
+			private static LineGeometry.IndexedLineSet create_NPCTERMINAL() {
+				StringBuilder coords = new StringBuilder();
+				StringBuilder indexes = new StringBuilder();
+				
+				coords.append("0    0.8  1.0,");
+				coords.append("0    1.8  1.0,");
+				coords.append("1.0  1.9  1.2,");
+				coords.append("1.2  2.0  1.4,");
+				coords.append("1.2  0.8  1.4,");
+				coords.append("1.2  1.2  1.0,");
+				coords.append("1.2  1.2 -1.0,");
+				coords.append("1.2  0.8 -1.4,");
+				coords.append("1.2  2.0 -1.4,");
+				coords.append("1.0  1.9 -1.2,");
+				coords.append("0    1.8 -1.0,");
+				coords.append("0    0.8 -1.0,");
+				
+				coords.append("0.8  0.30  0.25,");
+				coords.append("0.8  0.45  0.40,");
+				coords.append("0.8  0.65  0.40,");
+				coords.append("0.8  0.80  0.25,");
+				coords.append("0.8  0.80 -0.25,");
+				coords.append("0.8  0.65 -0.40,");
+				coords.append("0.8  0.45 -0.40,");
+				coords.append("0.8  0.30 -0.25,");
+				
+				coords.append("1.1  0.25  0.1,");
+				coords.append("0.8  0.3   0.1,");
+				coords.append("0.0  0.8   0.1,");
+				coords.append("0.0  0.8   0.3,");
+				coords.append("0.0  0.3   0.3,");
+				coords.append("0.0  0.3  -0.3,");
+				coords.append("0.0  0.8  -0.3,");
+				coords.append("0.0  0.8  -0.1,");
+				coords.append("0.8  0.3  -0.1,");
+				coords.append("1.1  0.25 -0.1,");
+				
+				coords.append("1.1  0.25  0.3,");
+				coords.append("1.3  0.25  0.3,");
+				coords.append("1.3  0.25 -0.3,");
+				coords.append("1.1  0.25 -0.3,");
+				
+				// beine
+				coords.append("0.0   1.2   0.4,");
+				coords.append("0.65  1.45  0.4,");
+				coords.append("0.85  0.75  0.0,");
+				coords.append("0.65  1.45 -0.4,");
+				coords.append("0.0   1.2  -0.4,");
+				
+				// arme
+				coords.append("1.2   1.5   0.3,");
+				coords.append("1.25  1.1   0.4,");
+				coords.append("1.5   0.8   0.0,");
+				coords.append("1.6   1.1  -0.4,");
+				coords.append("1.9   1.4  -0.4,");
+				
+				coords.append("1.55  0.8   0.00,");
+				coords.append("1.61  0.8   0.14,");
+				coords.append("1.75  0.8   0.20,");
+				coords.append("1.89  0.8   0.14,");
+				coords.append("1.95  0.8   0.00,");
+				coords.append("1.89  0.8  -0.14,");
+				coords.append("1.75  0.8  -0.20,");
+				coords.append("1.61  0.8  -0.14 ");
+				
+				indexes.append(" 0 1 2 3 4 5 6 7 8 9 10 11 -1");
+				indexes.append(" 3 8 -1 1 10 -1 4 2 9 7 -1");
+				indexes.append(" 12 13 14 15 16 17 18 19 12 -1");
+				indexes.append(" 20 21 22 23 24 25 26 27 28 29 -1");
+				indexes.append(" 30 31 32 33 30 -1");
+				indexes.append(" 34 35 36 37 38 -1");
+				indexes.append(" 39 40 41 42 43 -1");
+				indexes.append(" 36 41 44 45 46 47 48 49 50 51 44 -1");
+			
+				LineGeometry.IndexedLineSet lineSet = LineGeometry.IndexedLineSet.parse(coords.toString(),indexes.toString(), "NPCTERMINAL");
+				if (lineSet==null) lineSet = new LineGeometry.PolyLine();
+				return lineSet;
 			}
 
 			private static LineGeometry.GroupingNode create_MINIPORTAL() {
@@ -5955,6 +6034,9 @@ public class FileExport {
 				this();
 				indexes.addAll(seg.indexes);
 			}
+			public boolean isEmpty() {
+				return indexes.isEmpty();
+			}
 			public Segment addIndexOffset(int indexOffset) {
 				for (int i=0; i<indexes.size(); i++)
 					indexes.set(i,indexes.get(i)+indexOffset);
@@ -6115,6 +6197,72 @@ public class FileExport {
 				segments = new Vector<>();
 			}
 			
+			public static IndexedLineSet parse(String coords, String indexes, String debugOutputLabel) {
+				IndexedLineSet lines = new IndexedLineSet() { @Override protected void prepareForOutput() {} };
+				
+				coords = cleanStr(coords);
+				indexes = cleanStr(indexes);
+				
+				String[] points = coords.split(",");
+				for (int i=0; i<points.length; i++) {
+					String pointStr = points[i].trim();
+					String[] valueStrs = pointStr.split(" ");
+					if (valueStrs.length!=3) {
+						Gui.log_error_ln("[%s] Can't parse coords. Point %d has %s than 3 values: \"%s\"", debugOutputLabel, i, valueStrs.length<3 ? "less" : "more", pointStr);
+						return null;
+					}
+					String str = "?";
+					try {
+						str="X"; double x = Double.parseDouble(valueStrs[0]);
+						str="Y"; double y = Double.parseDouble(valueStrs[1]);
+						str="Z"; double z = Double.parseDouble(valueStrs[2]);
+						lines.points.add(new Point3D(x, y, z));
+					} catch (NumberFormatException e) {
+						Gui.log_error_ln("[%s] Can't parse coords. %s value in point %d isn't a number: \"%s\"", debugOutputLabel, str, i, pointStr);
+						return null;
+					}
+				}
+				
+				Segment segment = new Segment();
+				String[] indexStrs = indexes.split(" ");
+				for (int i=0; i<indexStrs.length; i++) {
+					String indexStr = indexStrs[i];
+					int index;
+					try {
+						index = Integer.parseInt(indexStr);
+					} catch (NumberFormatException e) {
+						Gui.log_error_ln("[%s] Can't parse indexes. Value %d of index list isn't an integer number: \"%s\"", debugOutputLabel, i, indexStr);
+						return null;
+					}
+					if (index<0) {
+						if (!segment.isEmpty())
+							lines.segments.add(segment);
+						segment = new Segment();
+					} else {
+						segment.add(index);
+					}
+				}
+				if (!segment.isEmpty())
+					lines.segments.add(segment);
+				
+				return lines;
+			}
+
+			private static String cleanStr(String str) {
+				str = str.replace("\r"," ").replace("\n"," ").replace("\t"," ");
+				
+				int length = str.length();
+				str = str.replace("  "," ");
+				while(length != str.length()) {
+					length = str.length();
+					str = str.replace("  "," ");
+				}
+				
+				str = str.trim();
+				
+				return str;
+			}
+
 			protected abstract void prepareForOutput();
 
 			void optimizePoints() {
