@@ -2930,17 +2930,9 @@ public class FileExport {
 		
 		private static void createModelMap() {
 			mapObjectID2Model.clear();
-			mapModel2TextLength.clear();
 			
 			addModels("CONTAINER",      "^CONTAINER0","^CONTAINER1","^CONTAINER2","^CONTAINER3","^CONTAINER4",
 			                            "^CONTAINER5","^CONTAINER6","^CONTAINER7","^CONTAINER8","^CONTAINER9");
-			
-			addModels("PLANT",          "^BARRENPLANT","^CREATUREPLANT","^GRAVPLANT","^LUSHPLANT","^NIPPLANT","^PEARLPLANT","^POOPPLANT",
-			                            "^RADIOPLANT","^SACVENOMPLANT","^SCORCHEDPLANT","^SNOWPLANT","^TOXICPLANT");
-			
-			addModels("PLANTER",        "^PLANTER");
-			addModels("PLANTERMEGA",    "^PLANTERMEGA");
-			addModels("CARBONPLANTER",  "^CARBONPLANTER");
 			
 			addModels("__SIMPLE_LINE",  "^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE","^U_BYTEBEATLINE");
 			
@@ -2977,16 +2969,22 @@ public class FileExport {
 				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 				addModels("SMALLLIGHT",     "^SMALLLIGHT");
 				addModels("WALLLIGHT",      makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
+				
 				addModels("BUILDLANDINGPAD","^BUILDLANDINGPAD");
+				
 				addModels("BUILDSIMPLEDESK","^BUILDSIMPLEDESK");
 				addModels("BUILDCHAIR",     "^BUILDCHAIR");
 				addModels("BUILDBED",       "^BUILDBED");
+				
 				addModels("BASE_FLAG",      "^BASE_FLAG");
 				addModels("PARAGON",        "^U_PARAGON");
 				addModels("BUILDSAVE",      "^BUILDSAVE");
 				addModels("MINIPORTAL",     "^U_MINIPORTAL");
+				
 				addModels("NPCTERMINAL",    "^NPCVEHICLETERM","^NPCWEAPONTERM","^NPCSCIENCETERM","^NPCFARMTERM","^NPCBUILDERTERM");
 				
+				addModels("PLANT",          "^BARRENPLANT","^CREATUREPLANT","^GRAVPLANT","^LUSHPLANT","^NIPPLANT","^PEARLPLANT","^POOPPLANT",
+				                            "^RADIOPLANT","^SACVENOMPLANT","^SCORCHEDPLANT","^SNOWPLANT","^TOXICPLANT");
 				
 				addModels("GENERAL_DECAL",  makeVariations("^SPEC_DECAL%02d", 1,2,3,4,5,6,7,8));
 				addModels("GENERAL_DECAL",  makeVariations("^BUILDDECALVIS%d", 1,2,3,4,5));
@@ -3022,6 +3020,8 @@ public class FileExport {
 				if (usedModels.contains("BUILDSAVE"      )) writeProtoToFile(vrml, "BUILDSAVE"      , 0.50,   0, ()->create_BUILDSAVE      ().write(vrml,"\t"));
 				if (usedModels.contains("MINIPORTAL"     )) writeProtoToFile(vrml, "MINIPORTAL"     , 0.50,   0, ()->create_MINIPORTAL     ().write(vrml,"\t"));
 				if (usedModels.contains("NPCTERMINAL"    )) writeProtoToFile(vrml, "NPCTERMINAL"    , 0.50, 180, new Point3D(1.2,1.6,0), ()->create_NPCTERMINAL    ().write(vrml,"\t"));
+				if (usedModels.contains("PLANT"          )) writeProtoToFile(vrml, "PLANT"          , 0.50, null, null, null, new Color(0.3f,0.6f,0.3f), new Color(0.3f,0.6f,0.3f), ()->create_PLANT().write(vrml,"\t"));
+				
 				if (usedModels.contains("GENERAL_DECAL"  )) writeProtoToFile(vrml, "GENERAL_DECAL"  , 0.50, 180, 12, ()->create_GENERAL_DECAL  ().write(vrml,"\t"));
 				if (usedModels.contains("GENERAL_DECAL"  )) write_IMAGE_DECAL_Proto(vrml);
 				
@@ -3031,6 +3031,14 @@ public class FileExport {
 				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
 				Corridors.writeProtos(vrml,usedModels);
 				PoweredDevices.writeProtos(vrml,usedModels);
+			}
+
+			private static LineGeometry.IndexedLineSet create_PLANT() {
+				String coords  = "0 0 0, 0.2 0.05 0, 0.4 0.2 0, 0.3 -0.1 0, 0.6 -0.25 0, 0.4 0 0.04, 0.7 0 0.1";
+				String indexes = "0 1 2 -1 0 3 4 -1 0 5 6";
+				LineGeometry.IndexedLineSet lineSet = LineGeometry.IndexedLineSet.parse(coords,indexes, "PLANT");
+				if (lineSet==null) lineSet = new LineGeometry.PolyLine();
+				return lineSet;
 			}
 
 			private static LineGeometry.IndexedLineSet create_NPCTERMINAL() {
@@ -3644,13 +3652,186 @@ public class FileExport {
 					addModels("BATTERY"      , "^U_BATTERY_S"   );
 					addModels("BIO_GENERATOR", "^U_BIOGENERATOR");
 					addModels("EM_GENERATOR" , "^U_GENERATOR_S" );
+					
+					addModels("PLANTER"      , "^PLANTER"      );
+					addModels("PLANTERMEGA"  , "^PLANTERMEGA"  );
+					addModels("CARBONPLANTER", "^CARBONPLANTER");
 				}
 				
 				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
-					if (usedModels.contains("SOLARPANEL"   )) writeProtoToFile(vrml, "SOLARPANEL"   , 0.5, 0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
-					if (usedModels.contains("BATTERY"      )) writeProtoToFile(vrml, "BATTERY"      , 0.5, 0, ()->create_BATTERY      ().write(vrml,"\t"));
-					if (usedModels.contains("BIO_GENERATOR")) writeProtoToFile(vrml, "BIO_GENERATOR", 0.5, 0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
-					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5, 0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
+					if (usedModels.contains("SOLARPANEL"   )) writeProtoToFile(vrml, "SOLARPANEL"   , 0.5,  0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
+					if (usedModels.contains("BATTERY"      )) writeProtoToFile(vrml, "BATTERY"      , 0.5,  0, ()->create_BATTERY      ().write(vrml,"\t"));
+					if (usedModels.contains("BIO_GENERATOR")) writeProtoToFile(vrml, "BIO_GENERATOR", 0.5,  0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
+					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5,  0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
+					
+					if (usedModels.contains("PLANTER"      )) writeProtoToFile(vrml, "PLANTER"      , 0.5, 45,     ()->create_PLANTER      ().write(vrml,"\t"));
+					if (usedModels.contains("PLANTERMEGA"  )) writeProtoToFile(vrml, "PLANTERMEGA"  , 0.5, 45, 25, ()->create_PLANTERMEGA  ().write(vrml,"\t"));
+//					if (usedModels.contains("CARBONPLANTER")) writeProtoToFile(vrml, "CARBONPLANTER", 0.5,  0,     ()->create_CARBONPLANTER().write(vrml,"\t"));
+				}
+				
+				private static LineGeometry.GroupingNode create_PLANTER() {
+					double raster = 2;
+					double spacing = 0.05;
+					double width = raster-spacing;
+					double height = 2.5; // X
+					double height1 = 0.6; // X
+					double cornerR = 0.1;
+					
+					double border = 0.1;
+					double borderR = 0.05;
+					
+					double plugDist = 2.53; // Y|Z
+					double plugHeight = 0.32; // X
+					
+					// Backside: -Y
+					
+					LineGeometry.PolyLine p0,p1;
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(p0 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(0, width/2-cornerR, width/2-cornerR), cornerR,   0,  90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(0,-width/2+cornerR, width/2-cornerR), cornerR,  90, 180, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(0,-width/2+cornerR,-width/2+cornerR), cornerR, 180, 270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(0, width/2-cornerR,-width/2+cornerR), cornerR, 270, 360, false, 4)
+									.close()
+							)
+							.add(p1 = p0.getCopy(height1, 0, 0))
+							
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(height1, width/2-border-borderR, width/2-border-borderR), borderR,   0,  90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height1,-width/2+border+borderR, width/2-border-borderR), borderR,  90, 180, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height1,-width/2+border+borderR,-width/2+border+borderR), borderR, 180, 270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height1, width/2-border-borderR,-width/2+border+borderR), borderR, 270, 360, false, 4)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.add(height,-width/2+0.5   ,-0.1)
+									.add(height,-width/2+border,-0.1)
+									.addArc(LineGeometry.Axis.X, new Point3D(height,-width/2+border+borderR,-width/2+border+borderR), borderR, 180, 270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height, width/2-border-borderR,-width/2+border+borderR), borderR, 270, 360, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height, width/2-border-borderR, width/2-border-borderR), borderR,   0,  90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height,-width/2+border+borderR, width/2-border-borderR), borderR,  90, 180, false, 4)
+									.add(height,-width/2+border, 0.1)
+									.add(height,-width/2+0.5   , 0.1)
+									.close()
+							)
+							
+							.add(new LineGeometry.PolyLine()
+									.add(height1    ,-width/2    ,0)
+									.add(height1+0.3,-width/2+0.1,0)
+									.add(height -0.2,-width/2+0.1,0)
+									.add(height     ,-width/2+0.3,0)
+									.add(height     ,-width/2+0.5,0)
+							)
+							
+							.add(new LineGeometry.PolyLine().add(p0.get( 0)).add(p1.get( 0)))
+							.add(new LineGeometry.PolyLine().add(p0.get( 4)).add(p1.get( 4)))
+							.add(new LineGeometry.PolyLine().add(p0.get( 5)).add(p1.get( 5)))
+							.add(new LineGeometry.PolyLine().add(p0.get( 9)).add(p1.get( 9)))
+							.add(new LineGeometry.PolyLine().add(p0.get(10)).add(p1.get(10)))
+							.add(new LineGeometry.PolyLine().add(p0.get(14)).add(p1.get(14)))
+							.add(new LineGeometry.PolyLine().add(p0.get(15)).add(p1.get(15)))
+							.add(new LineGeometry.PolyLine().add(p0.get(19)).add(p1.get(19)))
+							
+							.add(new LineGeometry.PolyLine().add(0,0, width/2).add(plugHeight,0, plugDist/2))
+							.add(new LineGeometry.PolyLine().add(0,0,-width/2).add(plugHeight,0,-plugDist/2))
+							.add(new LineGeometry.PolyLine().add(0, width/2,0).add(plugHeight, plugDist/2,0))
+							.add(new LineGeometry.PolyLine().add(0,-width/2,0).add(plugHeight,-plugDist/2,0))
+							;
+					return body;
+				}
+				
+				private static LineGeometry.GroupingNode create_PLANTERMEGA() {
+					double raster = 4;
+					double spacing = 0.05;
+					double width = raster-spacing;
+					double height = 2.5; // X
+					double height1 = 0.6; // X
+					double cornerR = 0.1;
+					
+					double border = 0.1;
+					double borderR = 0.05;
+					
+					double plugDist = 4.54; // Y|Z
+					double plugHeight = 0.32; // X
+					
+					LineGeometry.PolyLine p3 = new LineGeometry.PolyLine()
+							.add(height1    ,border    ,0)
+							.add(height1+0.3,border+0.1,0)
+							.add(height -0.2,border+0.1,0)
+							.add(height     ,border+0.3,0)
+							.add(height     ,border+0.5,0)
+							;
+					double p3Ydiag = (border+0.5)/Math.sqrt(2);
+					
+					LineGeometry.PolyLine p0,p1,p2;
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(p0 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(0, width/2-cornerR, width/2-cornerR), cornerR,  0, 90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(0,-width/2+cornerR, width/2-cornerR), cornerR, 90,180, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(0,-width/2+cornerR,-width/2+cornerR), cornerR,180,270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(0, width/2-cornerR,-width/2+cornerR), cornerR,270,360, false, 4)
+									.close()
+							)
+							.add(p1 = p0.getCopy(height1, 0, 0))
+							
+							.add(p2 = new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(height1, width/2-border-borderR, width/2-border-borderR), borderR,   0,  90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height1,         border+borderR, width/2-border-borderR), borderR,  90, 180, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height1,         border+borderR,         border+borderR), borderR, 180, 270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height1, width/2-border-borderR,         border+borderR), borderR, 270, 360, false, 4)
+									.close()
+							)
+							.add(p2.getCopy(0, -width/2,     0   ))
+							.add(p2.getCopy(0, -width/2, -width/2))
+							.add(p2.getCopy(0,     0   , -width/2))
+							
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(height1, 0, 0), border, 0, 360, false, 16)
+							)
+							.add(new LineGeometry.Transform(p3).addRotation(LineGeometry.Axis.X,  45))
+							.add(new LineGeometry.Transform(p3).addRotation(LineGeometry.Axis.X, 135))
+							.add(new LineGeometry.Transform(p3).addRotation(LineGeometry.Axis.X, 225))
+							.add(new LineGeometry.Transform(p3).addRotation(LineGeometry.Axis.X, 315))
+							
+							.add(new LineGeometry.PolyLine()
+									.addArc(LineGeometry.Axis.X, new Point3D(height, width/2-border-borderR, width/2-border-borderR), borderR,   0,  90, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height,-width/2+border+borderR, width/2-border-borderR), borderR,  90, 180, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height,-width/2+border+borderR,-width/2+border+borderR), borderR, 180, 270, false, 4)
+									.addArc(LineGeometry.Axis.X, new Point3D(height, width/2-border-borderR,-width/2+border+borderR), borderR, 270, 360, false, 4)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine()
+									.add(height, p3Ydiag, p3Ydiag)
+									.add(height,-p3Ydiag, p3Ydiag)
+									.add(height,-p3Ydiag,-p3Ydiag)
+									.add(height, p3Ydiag,-p3Ydiag)
+									.close()
+							)
+							.add(new LineGeometry.PolyLine().add(height, width/2-border, 0).add(height, -width/2+border, 0))
+							.add(new LineGeometry.PolyLine().add(height, 0, width/2-border).add(height, 0, -width/2+border))
+							
+							.add(new LineGeometry.PolyLine().add(p0.get( 0)).add(p1.get( 0)))
+							.add(new LineGeometry.PolyLine().add(p0.get( 4)).add(p1.get( 4)))
+							.add(new LineGeometry.PolyLine().add(p0.get( 5)).add(p1.get( 5)))
+							.add(new LineGeometry.PolyLine().add(p0.get( 9)).add(p1.get( 9)))
+							.add(new LineGeometry.PolyLine().add(p0.get(10)).add(p1.get(10)))
+							.add(new LineGeometry.PolyLine().add(p0.get(14)).add(p1.get(14)))
+							.add(new LineGeometry.PolyLine().add(p0.get(15)).add(p1.get(15)))
+							.add(new LineGeometry.PolyLine().add(p0.get(19)).add(p1.get(19)))
+							
+							.add(new LineGeometry.PolyLine().add(height1,0, width/2).add(0,0, width/2).add(plugHeight,0, plugDist/2))
+							.add(new LineGeometry.PolyLine().add(height1,0,-width/2).add(0,0,-width/2).add(plugHeight,0,-plugDist/2))
+							.add(new LineGeometry.PolyLine().add(height1, width/2,0).add(0, width/2,0).add(plugHeight, plugDist/2,0))
+							.add(new LineGeometry.PolyLine().add(height1,-width/2,0).add(0,-width/2,0).add(plugHeight,-plugDist/2,0))
+							;
+					return body;
+				}
+				
+				@SuppressWarnings("unused")
+				private static LineGeometry.GroupingNode create_CARBONPLANTER() {
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							;
+					return body;
 				}
 			
 				private static LineGeometry.GroupingNode create_EM_GENERATOR() {
@@ -4089,13 +4270,13 @@ public class FileExport {
 
 			private static class MAINROOMmodels {
 
-				public static void addModelsToModelMap() {
+				static void addModelsToModelMap() {
 					addModels("BIOROOM",      "^BIOROOM");
 					addModels("MAINROOM",     "^MAINROOM", "^MAINROOM_WATER");
 					addModels("MAINROOMCUBE", "^MAINROOMCUBE", "^MAINROOMCUBE_W");
 				}
 
-				public static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					if (usedModels.contains("BIOROOM"     )) writeProtoToFile(vrml, "BIOROOM"          , ()->create_BIOROOM          ().write(vrml,"\t"));
 					if (usedModels.contains("MAINROOM"    )) writeProtoToFile(vrml, "MAINROOM"         , ()->create_MAINROOM         ().write(vrml,"\t"));
 					if (usedModels.contains("MAINROOM"    )) writeProtoToFile(vrml, "MAINROOM_ROOF"    , ()->create_MAINROOM_ROOF    ().write(vrml,"\t"));
@@ -4103,7 +4284,7 @@ public class FileExport {
 					if (usedModels.contains("MAINROOMCUBE")) writeProtoToFile(vrml, "MAINROOMCUBE_ROOF", ()->create_MAINROOMCUBE_ROOF().write(vrml,"\t"));
 				}
 
-				public static String getRoofModelName(String modelName) {
+				static String getRoofModelName(String modelName) {
 					switch (modelName) {
 					case "MAINROOM"    : return "MAINROOM_ROOF"    ;
 					case "MAINROOMCUBE": return "MAINROOMCUBE_ROOF";
@@ -5644,6 +5825,7 @@ public class FileExport {
 			vrml.println(templateSB.toString());
 			vrml.println("");
 			
+			mapModel2TextLength.clear();
 			SoftwareBuildModels.writeProtos(vrml, usedModels);
 		}
 
@@ -5874,13 +6056,19 @@ public class FileExport {
 			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, null, writeShape);
 		}
 		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Runnable writeShape) {
+			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, null, null, writeShape);
+		}
+		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, Runnable writeShape) {
 			if (maxTextLength!=null)
 				mapModel2TextLength.put(protoName, maxTextLength);
-				
+			
+			if (defaultTextColor==null) defaultTextColor = new Color(0,0,0.5f);
+			if (defaultLineColor==null) defaultLineColor = new Color(0,0,0);
+			
 			vrml.println("PROTO "+protoName+" [");
 			vrml.println("	field MFString string []");
-			vrml.println("	field SFColor textColor 0 0 0.5");
-			vrml.println("	field SFColor lineColor 0 0 0");
+			vrml.printf ("	field SFColor textColor %s%n", toString(defaultTextColor,"%1.2f"));
+			vrml.printf ("	field SFColor lineColor %s%n", toString(defaultLineColor,"%1.2f"));
 			vrml.println("] {");
 			Point3D scale = new Point3D(0.5, 0.5, 0.5).mul(labelScale);
 			if (labelXRotation_deg!=null || labelTranslation!=null) {
@@ -5900,6 +6088,10 @@ public class FileExport {
 			writeShape.run();
 			vrml.println("}");
 			vrml.println();
+		}
+
+		private static String toString(Color color, String format) {
+			return String.format(Locale.ENGLISH, format+" "+format+" "+format, color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f);
 		}
 
 		private static void writeMeasurePoint(PrintWriter vrml, Point3D pos) {

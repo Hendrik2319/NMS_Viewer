@@ -3210,6 +3210,7 @@ Background=460C34
 ^U_PIPELINE.image=UTILITY.PIPELINE.png
 ^U_PORTALLINE=Teleport-Verbindung
 ^U_PORTALLINE.type=BaseComponent
+^U_PORTALLINE.image=_self.U_PORTALLINE.png
 ^U_POWERLINE=Elektrische Verkabelung
 ^U_POWERLINE.type=BaseComponent
 ^U_POWERLINE.image=UTILITY.POWERLINE.png
