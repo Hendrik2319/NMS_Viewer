@@ -3661,9 +3661,9 @@ public class FileExport {
 					if (usedModels.contains("BIO_GENERATOR")) writeProtoToFile(vrml, "BIO_GENERATOR", 0.5,  0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
 					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5,  0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
 					
-					if (usedModels.contains("PLANTER"      )) writeProtoToFile(vrml, "PLANTER"      , 0.5, 45,     ()->create_PLANTER      ().write(vrml,"\t"));
-					if (usedModels.contains("PLANTERMEGA"  )) writeProtoToFile(vrml, "PLANTERMEGA"  , 0.5, 45, 25, ()->create_PLANTERMEGA  ().write(vrml,"\t"));
-					if (usedModels.contains("CARBONPLANTER")) writeProtoToFile(vrml, "CARBONPLANTER", 0.5,  0,     ()->create_CARBONPLANTER().write(vrml,"\t"));
+					if (usedModels.contains("PLANTER"      )) writeProtoToFile(vrml, "PLANTER"      , 0.5,  45,     ()->create_PLANTER      ().write(vrml,"\t"));
+					if (usedModels.contains("PLANTERMEGA"  )) writeProtoToFile(vrml, "PLANTERMEGA"  , 0.5,  45, 25, ()->create_PLANTERMEGA  ().write(vrml,"\t"));
+					if (usedModels.contains("CARBONPLANTER")) writeProtoToFile(vrml, "CARBONPLANTER", 0.5, 180, new Point3D(0,-0.73,0), ()->create_CARBONPLANTER().write(vrml,"\t"));
 				}
 				
 				private static LineGeometry.GroupingNode create_PLANTER() {
@@ -3825,22 +3825,74 @@ public class FileExport {
 				}
 				
 				private static LineGeometry.IndexedLineSet create_CARBONPLANTER() {
-					// TODO: create_CARBONPLANTER
-					StringBuilder coords = new StringBuilder();
-					coords.append("0   -0.2  0.9,");
-					coords.append("0   -0.2 -0.9,");
-					coords.append("0   -1.0 -0.9,");
-					coords.append("0   -1.0  0.9,");
-					coords.append("2.8 -0.8  0.9,");
-					coords.append("2.8 -0.8 -0.9,");
-					coords.append("2.8 -1.0 -0.9,");
-					coords.append("2.8 -1.0  0.9");
+					// backside: -Y
+					// height: X
+					double height = 2.6; // old: 2.8;
+					double width = 1.8; // Z
+					double backplanePosY = -1;
+					double frontPosY  = backplanePosY + height/717.0*233.0;
+					double frontPosX  = height        - height/717.0*634.0;
+					double bottomPosY = backplanePosY + height/717.0*173.0;
+					double topPosY    = backplanePosY + height/717.0* 58.0;
+					double frontPosY1  = backplanePosY + height/717.0*205.0;
+					double frontPosX1  = frontPosX;
+					double bottomPosY1 = backplanePosY + height/717.0*161.0;
+					double topPosY1    = backplanePosY + height/717.0* 39.0;
+					double height1     =                 height/717.0*673.0;
+					double offsetX1    = height/2-height1/2;
+					double borderZ     = width/400.0*12;
 					
-					String indexes = "0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7";
+					double plugDistXY = 0.2274; // sqrt(y²+x²)
+					double plugHeight = 0.226-0.01; // X
+					double plugPosY = Math.sqrt(plugDistXY*plugDistXY - plugHeight*plugHeight); // Y
 					
-					LineGeometry.IndexedLineSet lineSet = LineGeometry.IndexedLineSet.parse(coords.toString(),indexes, "CARBONPLANTER");
-					if (lineSet==null) lineSet = new LineGeometry.PolyLine();
-					return lineSet;
+					LineGeometry.PolyLine pN,pP,pN1,pP1;
+					LineGeometry.GroupingNode body = new LineGeometry.GroupingNode()
+							.add(pN = new LineGeometry.PolyLine()
+									.add(     0   ,backplanePosY,-width/2+borderZ)
+									.add(   height,backplanePosY,-width/2+borderZ)
+									.add(   height,      topPosY,-width/2+borderZ)
+									.add(frontPosX,    frontPosY,-width/2+borderZ)
+									.add(     0   ,   bottomPosY,-width/2+borderZ)
+									.close()
+							)
+							.add(pP = pN.getCopy(0, 0, width-2*borderZ))
+							
+							.add(pN1 = new LineGeometry.PolyLine()
+									.add(offsetX1        ,backplanePosY ,-width/2)
+									.add(offsetX1+height1,backplanePosY ,-width/2)
+									.add(offsetX1+height1,      topPosY1,-width/2)
+									.add(frontPosX1      ,    frontPosY1,-width/2)
+									.add(offsetX1        ,   bottomPosY1,-width/2)
+									.close()
+							)
+							.add(pP1 = pN1.getCopy(0, 0, width))
+							
+							.add(new LineGeometry.PolyLine().add(pN1.get(0)).add(pN.get(0)).add(pP.get(0)).add(pP1.get(0)))
+							.add(new LineGeometry.PolyLine().add(pN1.get(1)).add(pN.get(1)).add(pP.get(1)).add(pP1.get(1)))
+							.add(new LineGeometry.PolyLine().add(pN1.get(2)).add(pN.get(2)).add(pP.get(2)).add(pP1.get(2)))
+							.add(new LineGeometry.PolyLine().add(pN1.get(3)).add(pN.get(3)).add(pP.get(3)).add(pP1.get(3)))
+							.add(new LineGeometry.PolyLine().add(pN1.get(4)).add(pN.get(4)).add(pP.get(4)).add(pP1.get(4)))
+							
+							.add(new LineGeometry.PolyLine().add(frontPosX,frontPosY,0).add(plugHeight,plugPosY,0).add(0,bottomPosY,0))
+							;
+					return body;
+					
+					//StringBuilder coords = new StringBuilder();
+					//coords.append("0   -0.2  0.9,");
+					//coords.append("0   -0.2 -0.9,");
+					//coords.append("0   -1.0 -0.9,");
+					//coords.append("0   -1.0  0.9,");
+					//coords.append("2.8 -0.8  0.9,");
+					//coords.append("2.8 -0.8 -0.9,");
+					//coords.append("2.8 -1.0 -0.9,");
+					//coords.append("2.8 -1.0  0.9");
+					//
+					//String indexes = "0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7";
+					//
+					//LineGeometry.IndexedLineSet lineSet = LineGeometry.IndexedLineSet.parse(coords.toString(),indexes, "CARBONPLANTER");
+					//if (lineSet==null) lineSet = new LineGeometry.PolyLine();
+					//return lineSet;
 				}
 			
 				private static LineGeometry.GroupingNode create_EM_GENERATOR() {
@@ -4687,7 +4739,7 @@ public class FileExport {
 				}
 
 				private static LineGeometry.IndexedLineSet create_CONTAINER() {
-					// TODO: create_CONTAINER
+					// TO-DO: create_CONTAINER
 					String coords  = "0.050 -1.950 -1.950, 3.950 -1.950 -1.950, 3.950 -1.950 1.950, 0.050 -1.950 1.950, 0.050 1.950 -1.950, 3.950 1.950 -1.950, 3.950 1.950 1.950, 0.050 1.950 1.950, 3.000 1.950 0.000, 2.951 1.950 0.309, 2.809 1.950 0.588, 2.588 1.950 0.809, 2.309 1.950 0.951, 2.000 1.950 1.000, 1.691 1.950 0.951, 1.412 1.950 0.809, 1.191 1.950 0.588, 1.049 1.950 0.309, 1.000 1.950 0.000, 1.049 1.950 -0.309, 1.191 1.950 -0.588, 1.412 1.950 -0.809, 1.691 1.950 -0.951, 2.000 1.950 -1.000, 2.309 1.950 -0.951, 2.588 1.950 -0.809, 2.809 1.950 -0.588, 2.951 1.950 -0.309, 2.800 1.462 0.000, 2.761 1.462 0.247, 2.647 1.462 0.470, 2.470 1.462 0.647, 2.247 1.462 0.761, 2.000 1.462 0.800, 1.753 1.462 0.761, 1.530 1.462 0.647, 1.353 1.462 0.470, 1.239 1.462 0.247, 1.200 1.462 0.000, 1.239 1.462 -0.247, 1.353 1.462 -0.470, 1.530 1.462 -0.647, 1.753 1.462 -0.761, 2.000 1.462 -0.800, 2.247 1.462 -0.761, 2.470 1.462 -0.647, 2.647 1.462 -0.470, 2.761 1.462 -0.247, 2.551 1.761 0.000, 2.509 1.761 0.211, 2.390 1.761 0.390, 2.211 1.761 0.509, 2.000 1.761 0.551, 1.789 1.761 0.509, 1.610 1.761 0.390, 1.491 1.761 0.211, 1.449 1.761 0.000, 1.491 1.761 -0.211, 1.610 1.761 -0.390, 1.789 1.761 -0.509, 2.000 1.761 -0.551, 2.211 1.761 -0.509, 2.390 1.761 -0.390, 2.509 1.761 -0.211, 2.200 1.927 0.000, 2.173 1.927 0.100, 2.100 1.927 0.173, 2.000 1.927 0.200, 1.900 1.927 0.173, 1.827 1.927 0.100, 1.800 1.927 0.000, 1.827 1.927 -0.100, 1.900 1.927 -0.173, 2.000 1.927 -0.200, 2.100 1.927 -0.173, 2.173 1.927 -0.100, 2.180 1.900 0.000, 2.156 1.900 0.090, 2.090 1.900 0.156, 2.000 1.900 0.180, 1.910 1.900 0.156, 1.844 1.900 0.090, 1.820 1.900 0.000, 1.844 1.900 -0.090, 1.910 1.900 -0.156, 2.000 1.900 -0.180, 2.090 1.900 -0.156, 2.156 1.900 -0.090, 2.000 1.462 0.800, 2.000 1.595 0.716, 2.000 1.711 0.611, 2.000 1.807 0.488, 2.000 1.880 0.349, 2.000 1.927 0.200, 2.000 1.462 -0.800, 2.000 1.595 -0.716, 2.000 1.711 -0.611, 2.000 1.807 -0.488, 2.000 1.880 -0.349, 2.000 1.927 -0.200, 2.800 1.462 0.000, 2.716 1.595 0.000, 2.611 1.711 0.000, 2.488 1.807 0.000, 2.349 1.880 0.000, 2.200 1.927 0.000, 1.200 1.462 0.000, 1.284 1.595 0.000, 1.389 1.711 0.000, 1.512 1.807 0.000, 1.651 1.880 0.000, 1.800 1.927 0.000";
 					String indexes = "0 1 2 3 0 4 5 6 7 4 -1 1 5 -1 2 6 -1 3 7 -1 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 8 -1 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 28 -1 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 48 -1 64 65 66 67 68 69 70 71 72 73 74 75 64 -1 76 77 78 79 80 81 82 83 84 85 86 87 76 -1 88 89 90 91 92 93 -1 94 95 96 97 98 99 -1 100 101 102 103 104 105 -1 106 107 108 109 110 111 -1";
 					LineGeometry.IndexedLineSet lineSet = LineGeometry.IndexedLineSet.parse(coords,indexes, "CONTAINER");
