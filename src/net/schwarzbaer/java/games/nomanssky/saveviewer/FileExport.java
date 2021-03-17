@@ -3827,13 +3827,13 @@ public class FileExport {
 				private static LineGeometry.IndexedLineSet create_CARBONPLANTER() {
 					// TODO: create_CARBONPLANTER
 					StringBuilder coords = new StringBuilder();
-					coords.append("0   -0.2  0.9");
-					coords.append("0   -0.2 -0.9");
-					coords.append("0   -1.0 -0.9");
-					coords.append("0   -1.0  0.9");
-					coords.append("2.8 -0.8  0.9");
-					coords.append("2.8 -0.8 -0.9");
-					coords.append("2.8 -1.0 -0.9");
+					coords.append("0   -0.2  0.9,");
+					coords.append("0   -0.2 -0.9,");
+					coords.append("0   -1.0 -0.9,");
+					coords.append("0   -1.0  0.9,");
+					coords.append("2.8 -0.8  0.9,");
+					coords.append("2.8 -0.8 -0.9,");
+					coords.append("2.8 -1.0 -0.9,");
 					coords.append("2.8 -1.0  0.9");
 					
 					String indexes = "0 1 2 3 0 -1 0 4 7 3 -1 1 5 6 2 -1 4 5 -1 6 7";
