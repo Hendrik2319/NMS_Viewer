@@ -6106,6 +6106,55 @@ public class FileExport {
 			}
 			return strParts;
 		}
+		
+		@SuppressWarnings("unused")
+		static class Proto {
+			final String protoName;
+			final double labelScale;
+			final Double labelXRotation_deg;
+			final Point3D labelTranslation;
+			final Integer maxTextLength;
+			final Color defaultTextColor;
+			final Color defaultLineColor;
+			final LineGeometry.IndexedLineSet geometry;
+			
+			Proto(String protoName, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, 1.0, null, null, null, geometry);
+			}
+			Proto(String protoName, int maxTextLength, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, 1.0, null, null, maxTextLength, geometry);
+			}
+			Proto(String protoName, double labelScale, double labelXRotation_deg, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, labelScale, labelXRotation_deg, null, null, geometry);
+			}
+			Proto(String protoName, double labelScale, double labelXRotation_deg, int maxTextLength, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, labelScale, labelXRotation_deg, null, maxTextLength, geometry);
+			}
+			Proto(String protoName, double labelScale, Point3D labelTranslation, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, labelScale, null, labelTranslation, null, geometry);
+			}
+			Proto(String protoName, double labelScale, double labelXRotation_deg, Point3D labelTranslation, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, labelScale, labelXRotation_deg, labelTranslation, null, geometry);
+			}
+			Proto(String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, LineGeometry.IndexedLineSet geometry) {
+				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, null, null, geometry);
+			}
+			Proto(String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, LineGeometry.IndexedLineSet geometry) {
+				this.protoName = protoName;
+				this.labelScale = labelScale;
+				this.labelXRotation_deg = labelXRotation_deg;
+				this.labelTranslation = labelTranslation;
+				this.maxTextLength = maxTextLength;
+				this.defaultTextColor = defaultTextColor;
+				this.defaultLineColor = defaultLineColor;
+				this.geometry = geometry;
+				// TODO
+			}
+			
+			void writeProtoToFile(PrintWriter vrml) {
+				VRMLoutput.writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, ()->geometry.write(vrml,"\t"));
+			}
+		}
 
 		private static void writeProtoToFile(PrintWriter vrml, String protoName, Runnable writeShape) {
 			writeProtoToFile(vrml, protoName, 1.0, null, null, null, writeShape);
