@@ -2925,16 +2925,29 @@ public class FileExport {
 		private static final String VRML_TEMPLATE_MODELS_WRL = "/vrml/template.models.wrl";
 		private static final HashMap<String, String> mapObjectID2Model = new HashMap<>();
 		private static final HashMap<String, Integer> mapModel2TextLength = new HashMap<>();
+		private static final HashMap<String, Proto> mapModel2Proto = new HashMap<>();
 		private static JFileChooser vrmlFileChooser;
 		private static FileNameExtensionFilter vrmlFileFilter;
 		
 		private static void createModelMap() {
 			mapObjectID2Model.clear();
+			mapModel2Proto.clear();
 			
 			addModels("__SIMPLE_LINE",  "^U_PIPELINE","^U_PORTALLINE","^U_POWERLINE","^U_BYTEBEATLINE");
 			
 			SoftwareBuildModels.addModelsToModelMap();
 			
+		}
+		private static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+			
+			writeSimpleLineProtoToFile(vrml);
+			
+			mapModel2Proto.forEach((model,proto)->{
+				if (usedModels.contains(model)) proto.writeProtoToFile(vrml);
+				if (proto.requiredProto!=null && usedModels.contains(proto.requiredProto)) proto.writeProtoToFile(vrml);
+			});
+			
+			if (usedModels.contains("GENERAL_DECAL")) SoftwareBuildModels.write_IMAGE_DECAL_Proto(vrml);
 		}
 		
 		private static String getRoofModelName(String modelName) {
@@ -2960,9 +2973,17 @@ public class FileExport {
 				mapObjectID2Model.put(id, modelName);
 		}
 		
+		private static void addProto(Proto proto) {
+			if (mapModel2Proto.containsKey(proto.protoName))
+				throw new IllegalStateException(String.format("Can't add proto \"%s\" to list. A proto with the same name already exists.", proto.protoName));
+			
+			mapModel2Proto.put(proto.protoName, proto); 
+		}
+		
 		private static class SoftwareBuildModels {
 			
 			static void addModelsToModelMap() {
+				
 				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
 				addModels("SMALLLIGHT",     "^SMALLLIGHT");
 				addModels("WALLLIGHT",      makeVariations("^WALLLIGHT%s", "BLUE","GREEN","PINK","RED","WHITE","YELLOW"));
@@ -2990,6 +3011,19 @@ public class FileExport {
 				addModels("GENERAL_DECAL",  "^DECAL_HAZARD", "^DECAL_HORROR", "^DECAL_JELLY", "^DECAL_SKULL");
 				addModels("GENERAL_DECAL",  "^BUILDDECAL", "^BUILDDECAL2", "^BUILDDECALHELLO", "^BUILDDECALNMS");
 				
+				addProto( new Proto("SMALLLIGHT"     , 0.20,   0,     create_SMALLLIGHT     ()) );
+				addProto( new Proto("WALLLIGHT"      , 0.20,  90, 12, create_WALLLIGHT      ()) );
+				addProto( new Proto("BUILDLANDINGPAD", 3.00,   0,     create_BUILDLANDINGPAD()) );
+				addProto( new Proto("BUILDSIMPLEDESK", 0.50,   0,     create_BUILDSIMPLEDESK()) );
+				addProto( new Proto("BUILDCHAIR"     , 0.50,   0,     create_BUILDCHAIR     ()) );
+				addProto( new Proto("BUILDBED"       , 0.50,   0,     create_BUILDBED       ()) );
+				addProto( new Proto("BASE_FLAG"      , 0.50, 135,     create_BASE_FLAG      ()) );
+				addProto( new Proto("PARAGON"        , 0.50, 135, new Point3D(1.4,0,0), create_PARAGON()));
+				addProto( new Proto("BUILDSAVE"      , 0.50,   0,     create_BUILDSAVE      ()) );
+				addProto( new Proto("MINIPORTAL"     , 0.50,   0,     create_MINIPORTAL     ()) );
+				addProto( new Proto("NPCTERMINAL"    , 0.50, 180, new Point3D(1.2,1.6,0), create_NPCTERMINAL()));
+				addProto( new Proto("PLANT"          , 0.50, null, null, null, new Color(0.3f,0.6f,0.3f), new Color(0.3f,0.6f,0.3f), create_PLANT()));
+				addProto( new Proto("GENERAL_DECAL"  , 0.50, 180, 12, create_GENERAL_DECAL  ()) );
 				
 				Garages.addModelsToModelMap();
 				MAINROOMmodels.addModelsToModelMap();
@@ -2997,37 +3031,6 @@ public class FileExport {
 				SolitaryWallsAndFloors.addModelsToModelMap();
 				Corridors.addModelsToModelMap();
 				PoweredDevices.addModelsToModelMap();
-			}
-			
-			static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
-				
-				vrml.println("# PROTOs of software build models");
-				vrml.println("");
-				
-				writeSimpleLineProtoToFile(vrml);
-				
-				if (usedModels.contains("SMALLLIGHT"     )) writeProtoToFile(vrml, "SMALLLIGHT"     , 0.20,   0, ()->create_SMALLLIGHT     ().write(vrml,"\t", 4));
-				if (usedModels.contains("WALLLIGHT"      )) writeProtoToFile(vrml, "WALLLIGHT"      , 0.20,  90, 12, ()->create_WALLLIGHT  ().write(vrml,"\t"));
-				if (usedModels.contains("BUILDLANDINGPAD")) writeProtoToFile(vrml, "BUILDLANDINGPAD", 3.00,   0, ()->create_BUILDLANDINGPAD().write(vrml,"\t"));
-				if (usedModels.contains("BUILDSIMPLEDESK")) writeProtoToFile(vrml, "BUILDSIMPLEDESK", 0.50,   0, ()->create_BUILDSIMPLEDESK().write(vrml,"\t"));
-				if (usedModels.contains("BUILDCHAIR"     )) writeProtoToFile(vrml, "BUILDCHAIR"     , 0.50,   0, ()->create_BUILDCHAIR     ().write(vrml,"\t"));
-				if (usedModels.contains("BUILDBED"       )) writeProtoToFile(vrml, "BUILDBED"       , 0.50,   0, ()->create_BUILDBED       ().write(vrml,"\t"));
-				if (usedModels.contains("BASE_FLAG"      )) writeProtoToFile(vrml, "BASE_FLAG"      , 0.50, 135, ()->create_BASE_FLAG      ().write(vrml,"\t"));
-				if (usedModels.contains("PARAGON"        )) writeProtoToFile(vrml, "PARAGON", 0.50, 135, new Point3D(1.4,0,0), ()->create_PARAGON().write(vrml,"\t"));
-				if (usedModels.contains("BUILDSAVE"      )) writeProtoToFile(vrml, "BUILDSAVE"      , 0.50,   0, ()->create_BUILDSAVE      ().write(vrml,"\t"));
-				if (usedModels.contains("MINIPORTAL"     )) writeProtoToFile(vrml, "MINIPORTAL"     , 0.50,   0, ()->create_MINIPORTAL     ().write(vrml,"\t"));
-				if (usedModels.contains("NPCTERMINAL"    )) writeProtoToFile(vrml, "NPCTERMINAL"    , 0.50, 180, new Point3D(1.2,1.6,0), ()->create_NPCTERMINAL    ().write(vrml,"\t"));
-				if (usedModels.contains("PLANT"          )) writeProtoToFile(vrml, "PLANT"          , 0.50, null, null, null, new Color(0.3f,0.6f,0.3f), new Color(0.3f,0.6f,0.3f), ()->create_PLANT().write(vrml,"\t"));
-				
-				if (usedModels.contains("GENERAL_DECAL"  )) writeProtoToFile(vrml, "GENERAL_DECAL"  , 0.50, 180, 12, ()->create_GENERAL_DECAL  ().write(vrml,"\t"));
-				if (usedModels.contains("GENERAL_DECAL"  )) write_IMAGE_DECAL_Proto(vrml);
-				
-				Garages.writeProtos(vrml,usedModels);
-				MAINROOMmodels.writeProtos(vrml,usedModels);
-				CubeRoomObjects.writeProtos(vrml,usedModels);
-				SolitaryWallsAndFloors.writeProtos(vrml,usedModels);
-				Corridors.writeProtos(vrml,usedModels);
-				PoweredDevices.writeProtos(vrml,usedModels);
 			}
 
 			private static LineGeometry.IndexedLineSet create_PLANT() {
@@ -3653,17 +3656,15 @@ public class FileExport {
 					addModels("PLANTER"      , "^PLANTER"      );
 					addModels("PLANTERMEGA"  , "^PLANTERMEGA"  );
 					addModels("CARBONPLANTER", "^CARBONPLANTER");
-				}
-				
-				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
-					if (usedModels.contains("SOLARPANEL"   )) writeProtoToFile(vrml, "SOLARPANEL"   , 0.5,  0, ()->create_SOLARPANEL   ().write(vrml,"\t"));
-					if (usedModels.contains("BATTERY"      )) writeProtoToFile(vrml, "BATTERY"      , 0.5,  0, ()->create_BATTERY      ().write(vrml,"\t"));
-					if (usedModels.contains("BIO_GENERATOR")) writeProtoToFile(vrml, "BIO_GENERATOR", 0.5,  0, ()->create_BIO_GENERATOR().write(vrml,"\t"));
-					if (usedModels.contains("EM_GENERATOR" )) writeProtoToFile(vrml, "EM_GENERATOR" , 0.5,  0, ()->create_EM_GENERATOR ().write(vrml,"\t"));
 					
-					if (usedModels.contains("PLANTER"      )) writeProtoToFile(vrml, "PLANTER"      , 0.5,  45,     ()->create_PLANTER      ().write(vrml,"\t"));
-					if (usedModels.contains("PLANTERMEGA"  )) writeProtoToFile(vrml, "PLANTERMEGA"  , 0.5,  45, 25, ()->create_PLANTERMEGA  ().write(vrml,"\t"));
-					if (usedModels.contains("CARBONPLANTER")) writeProtoToFile(vrml, "CARBONPLANTER", 0.5, 180, new Point3D(0,-0.73,0), ()->create_CARBONPLANTER().write(vrml,"\t"));
+					addProto( new Proto("SOLARPANEL"   , 0.5,   0, create_SOLARPANEL   ()) );
+					addProto( new Proto("BATTERY"      , 0.5,   0, create_BATTERY      ()) );
+					addProto( new Proto("BIO_GENERATOR", 0.5,   0, create_BIO_GENERATOR()) );
+					addProto( new Proto("EM_GENERATOR" , 0.5,   0, create_EM_GENERATOR ()) );
+					
+					addProto( new Proto("PLANTER"      , 0.5,  45,     create_PLANTER    ()) );
+					addProto( new Proto("PLANTERMEGA"  , 0.5,  45, 25, create_PLANTERMEGA()) );
+					addProto( new Proto("CARBONPLANTER", 0.5, 180, new Point3D(0,-0.73,0), create_CARBONPLANTER()) );
 				}
 				
 				private static LineGeometry.GroupingNode create_PLANTER() {
@@ -4243,13 +4244,11 @@ public class FileExport {
 					addModels("GARAGE_M", "^GARAGE_M", "^GARAGE_B", "^GARAGE_MECH");
 					addModels("GARAGE_S", "^GARAGE_S", "^GARAGE_SUB");
 					addModels("SUMMON_GARAGE", "^SUMMON_GARAGE");
-				}
-				
-				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
-					if (usedModels.contains("GARAGE_L"     )) writeProtoToFile(vrml, "GARAGE_L"     , ()->create_GARAGE_L     ().write(vrml,"\t"));
-					if (usedModels.contains("GARAGE_M"     )) writeProtoToFile(vrml, "GARAGE_M"     , ()->create_GARAGE_M     ().write(vrml,"\t"));
-					if (usedModels.contains("GARAGE_S"     )) writeProtoToFile(vrml, "GARAGE_S"     , ()->create_GARAGE_S     ().write(vrml,"\t"));
-					if (usedModels.contains("SUMMON_GARAGE")) writeProtoToFile(vrml, "SUMMON_GARAGE", ()->create_SUMMON_GARAGE().write(vrml,"\t"));
+					
+					addProto( new Proto("GARAGE_L"     , create_GARAGE_L     ()) );
+					addProto( new Proto("GARAGE_M"     , create_GARAGE_M     ()) );
+					addProto( new Proto("GARAGE_S"     , create_GARAGE_S     ()) );
+					addProto( new Proto("SUMMON_GARAGE", create_SUMMON_GARAGE()) );
 				}
 				
 				private final static double height = 1;
@@ -4335,14 +4334,12 @@ public class FileExport {
 					addModels("BIOROOM",      "^BIOROOM");
 					addModels("MAINROOM",     "^MAINROOM", "^MAINROOM_WATER");
 					addModels("MAINROOMCUBE", "^MAINROOMCUBE", "^MAINROOMCUBE_W");
-				}
-
-				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
-					if (usedModels.contains("BIOROOM"     )) writeProtoToFile(vrml, "BIOROOM"          , ()->create_BIOROOM          ().write(vrml,"\t"));
-					if (usedModels.contains("MAINROOM"    )) writeProtoToFile(vrml, "MAINROOM"         , ()->create_MAINROOM         ().write(vrml,"\t"));
-					if (usedModels.contains("MAINROOM"    )) writeProtoToFile(vrml, "MAINROOM_ROOF"    , ()->create_MAINROOM_ROOF    ().write(vrml,"\t"));
-					if (usedModels.contains("MAINROOMCUBE")) writeProtoToFile(vrml, "MAINROOMCUBE"     , ()->create_MAINROOMCUBE     ().write(vrml,"\t"));
-					if (usedModels.contains("MAINROOMCUBE")) writeProtoToFile(vrml, "MAINROOMCUBE_ROOF", ()->create_MAINROOMCUBE_ROOF().write(vrml,"\t"));
+					
+					addProto( new Proto("BIOROOM"          , create_BIOROOM          ()) );
+					addProto( new Proto("MAINROOM"         , create_MAINROOM         ()) );
+					addProto( new Proto("MAINROOM_ROOF"    , create_MAINROOM_ROOF    (), "MAINROOM") );
+					addProto( new Proto("MAINROOMCUBE"     , create_MAINROOMCUBE     ()) );
+					addProto( new Proto("MAINROOMCUBE_ROOF", create_MAINROOMCUBE_ROOF(), "MAINROOMCUBE") );
 				}
 
 				static String getRoofModelName(String modelName) {
@@ -4530,19 +4527,17 @@ public class FileExport {
 					addModels("CUBEFRAME",       "^CUBEFRAME"      );
 					
 					addModels("CONTAINER",  makeVariations("^CONTAINER%d", 0,1,2,3,4,5,6,7,8,9));
-				}
-			
-				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
-					if (usedModels.contains("WALLFLOORLADDER")) writeProtoToFile(vrml, "WALLFLOORLADDER", 0.6, 0, 15, ()->create_WALLFLOORLADDER().write(vrml,"\t"));
-					if (usedModels.contains("CUBEFLOOR"      )) writeProtoToFile(vrml, "CUBEFLOOR"      ,         15, ()->create_CUBEFLOOR      ().write(vrml,"\t"));
-					if (usedModels.contains("CUBEWALL"       )) writeProtoToFile(vrml, "CUBEWALL"       , 0.6, 0, 25, ()->create_CUBEWALL       ().write(vrml,"\t"));
-					if (usedModels.contains("CUBEINNERDOOR"  )) writeProtoToFile(vrml, "CUBEINNERDOOR"  , 0.6, 0, 25, ()->create_CUBEINNERDOOR  ().write(vrml,"\t"));
-					if (usedModels.contains("CUBEWINDOW"     )) writeProtoToFile(vrml, "CUBEWINDOW"     , 0.6, 0, 25, ()->create_CUBEWINDOW     ().write(vrml,"\t"));
-					if (usedModels.contains("CUBEWINDOWOVAL" )) writeProtoToFile(vrml, "CUBEWINDOWOVAL" , 0.6, 0, 25, ()->create_CUBEWINDOWOVAL ().write(vrml,"\t"));
-					if (usedModels.contains("CUBEWINDOWSMALL")) writeProtoToFile(vrml, "CUBEWINDOWSMALL", 0.6, 0, 25, ()->create_CUBEWINDOWSMALL().write(vrml,"\t"));
-					if (usedModels.contains("CUBESTAIRS"     )) writeProtoToFile(vrml, "CUBESTAIRS"     ,         15, ()->create_CUBESTAIRS     ().write(vrml,"\t"));
-					if (usedModels.contains("CUBEFRAME"      )) writeProtoToFile(vrml, "CUBEFRAME"      ,         15, ()->create_CUBEFRAME      ().write(vrml,"\t"));
-					if (usedModels.contains("CONTAINER"      )) writeProtoToFile(vrml, "CONTAINER"      ,         15, ()->create_CONTAINER      ().write(vrml,"\t"));
+					
+					addProto( new Proto("WALLFLOORLADDER", 0.6, 0, 15, create_WALLFLOORLADDER()) );
+					addProto( new Proto("CUBEFLOOR"      ,         15, create_CUBEFLOOR      ()) );
+					addProto( new Proto("CUBEWALL"       , 0.6, 0, 25, create_CUBEWALL       ()) );
+					addProto( new Proto("CUBEINNERDOOR"  , 0.6, 0, 25, create_CUBEINNERDOOR  ()) );
+					addProto( new Proto("CUBEWINDOW"     , 0.6, 0, 25, create_CUBEWINDOW     ()) );
+					addProto( new Proto("CUBEWINDOWOVAL" , 0.6, 0, 25, create_CUBEWINDOWOVAL ()) );
+					addProto( new Proto("CUBEWINDOWSMALL", 0.6, 0, 25, create_CUBEWINDOWSMALL()) );
+					addProto( new Proto("CUBESTAIRS"     ,         15, create_CUBESTAIRS     ()) );
+					addProto( new Proto("CUBEFRAME"      ,         15, create_CUBEFRAME      ()) );
+					addProto( new Proto("CONTAINER"      ,         15, create_CONTAINER      ()) );
 				}
 			
 				private static final double cubesize = 4;
@@ -4771,28 +4766,25 @@ public class FileExport {
 					addModels("CORRIDORT_WATER", "^CORRIDORT_WATER");
 					addModels("CORRIDORV_WATER", "^CORRIDORV_WATER");
 					addModels("BUILDDOOR_WATER", "^BUILDDOOR_WATER");
-				}
-
-				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
 					
-					if (usedModels.contains("CORRIDOR_WATER" )) writeProtoToFile(vrml, "CORRIDOR_WATER" ,      15, ()->create_CORRIDOR_WATER ().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORL_WATER")) writeProtoToFile(vrml, "CORRIDORL_WATER",      15, ()->create_CORRIDORL_WATER().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORX_WATER")) writeProtoToFile(vrml, "CORRIDORX_WATER",      15, ()->create_CORRIDORX_WATER().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORT_WATER")) writeProtoToFile(vrml, "CORRIDORT_WATER", 1,90,15, ()->create_CORRIDORT_WATER().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORV_WATER")) writeProtoToFile(vrml, "CORRIDORV_WATER",      15, ()->create_CORRIDORV_WATER().write(vrml,"\t"));
-					if (usedModels.contains("BUILDDOOR_WATER")) writeProtoToFile(vrml, "BUILDDOOR_WATER",      15, ()->create_BUILDDOOR_WATER().write(vrml,"\t"));
+					addProto( new Proto("CORRIDOR_WATER" ,          15, create_CORRIDOR_WATER ()) );
+					addProto( new Proto("CORRIDORL_WATER",          15, create_CORRIDORL_WATER()) );
+					addProto( new Proto("CORRIDORX_WATER",          15, create_CORRIDORX_WATER()) );
+					addProto( new Proto("CORRIDORT_WATER", 1.0, 90, 15, create_CORRIDORT_WATER()) );
+					addProto( new Proto("CORRIDORV_WATER",          15, create_CORRIDORV_WATER()) );
+					addProto( new Proto("BUILDDOOR_WATER",          15, create_BUILDDOOR_WATER()) );
 					
-					if (usedModels.contains("CORRIDOR"     )) writeProtoToFile(vrml, "CORRIDOR"     ,          15, ()->create_CORRIDOR     ().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORL"    )) writeProtoToFile(vrml, "CORRIDORL"    ,          15, ()->create_CORRIDORL    ().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORX"    )) writeProtoToFile(vrml, "CORRIDORX"    ,          15, ()->create_CORRIDORX    ().write(vrml,"\t"));
-					if (usedModels.contains("CORRIDORT"    )) writeProtoToFile(vrml, "CORRIDORT"    ,          15, ()->create_CORRIDORT    ().write(vrml,"\t"));
+					addProto( new Proto("CORRIDOR"       ,          15, create_CORRIDOR       ()) );
+					addProto( new Proto("CORRIDORL"      ,          15, create_CORRIDORL      ()) );
+					addProto( new Proto("CORRIDORX"      ,          15, create_CORRIDORX      ()) );
+					addProto( new Proto("CORRIDORT"      ,          15, create_CORRIDORT      ()) );
 					
-					if (usedModels.contains("CORRIDORC"    )) writeProtoToFile(vrml, "CORRIDORC"    , 1.0, 45,     ()->create_CORRIDORC    ().write(vrml,"\t"));
-					if (usedModels.contains("GLASSCORRIDOR")) writeProtoToFile(vrml, "GLASSCORRIDOR",          15, ()->create_GLASSCORRIDOR().write(vrml,"\t"));
+					addProto( new Proto("CORRIDORC"      , 1.0, 45,     create_CORRIDORC      ()) );
+					addProto( new Proto("GLASSCORRIDOR"  ,          15, create_GLASSCORRIDOR  ()) );
 					
-					if (usedModels.contains("DOOR2"        )) writeProtoToFile(vrml, "DOOR2"        ,          15, ()->create_DOOR2        ().write(vrml,"\t"));
-					if (usedModels.contains("BUILDDOOR"    )) writeProtoToFile(vrml, "BUILDDOOR"    ,          15, ()->create_BUILDDOOR    ().write(vrml,"\t"));
-					if (usedModels.contains("BUILDRAMP"    )) writeProtoToFile(vrml, "BUILDRAMP"    , 0.5, 90, 15, ()->create_BUILDRAMP    ().write(vrml,"\t"));
+					addProto( new Proto("DOOR2"          ,          15, create_DOOR2          ()) );
+					addProto( new Proto("BUILDDOOR"      ,          15, create_BUILDDOOR      ()) );
+					addProto( new Proto("BUILDRAMP"      , 0.5, 90, 15, create_BUILDRAMP      ()) );
 				}
 
 				private static final double raster = 4.0; // YZ
@@ -5470,62 +5462,60 @@ public class FileExport {
 			}
 			
 			private static class SolitaryWallsAndFloors {
+				
 				static void addModelsToModelMap() {
-									addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
-									addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
-									addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
-									addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
-									addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
-									addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
-									addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
-									addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
-									addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
-									addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
-									addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
-									addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
-									addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
-									addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
-									addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
-									addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
-									addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
-									addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
-									addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
-									addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
-									addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
-									addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
-									addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
-									
-				//					addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
-				//					addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
-								}
-
-				static void writeProtos(PrintWriter vrml, HashSet<String> usedModels) {
+					addModels("__SOLITARY_DOOR",         makeVariations("^%s_DOOR"        , "W","C","M") ); 
+					addModels("__SOLITARY_DOOR_HALF",    makeVariations("^%s_DOOR_H"      , "W","C","M") ); 
+					addModels("__SOLITARY_WALL",         makeVariations("^%s_WALL"        , "W","C","M") );
+					addModels("__SOLITARY_WALL_H",       makeVariations("^%s_WALL_H"      , "W","C","M") );
+					addModels("__SOLITARY_WALL_Q",       makeVariations("^%s_WALL_Q"      , "W","C","M") );
+					addModels("__SOLITARY_WALL_Q_H",     makeVariations("^%s_WALL_Q_H"    , "W","C","M") );
+					addModels("__SOLITARY_WALLDIAGONAL", makeVariations("^%s_WALLDIAGONAL", "W","C","M") );
+					addModels("__SOLITARY_ROOF_M",       makeVariations("^%s_ROOF_M"      , "W","C","M") );
+					addModels("__SOLITARY_ROOF_C",       makeVariations("^%s_ROOF_C"      , "W","C","M") );
+					addModels("__SOLITARY_ROOF_IC",      makeVariations("^%s_ROOF_IC"     , "W","C","M") );
+					addModels("__SOLITARY_ROOF",         makeVariations("^%s_ROOF"        , "W","C","M") );
+					addModels("__SOLITARY_FLOOR",        makeVariations("^%s_FLOOR"       , "W","C","M") );
+					addModels("__SOLITARY_FLOOR_Q",      makeVariations("^%s_FLOOR_Q"     , "W","C","M") );
+					addModels("__SOLITARY_DOORWINDOW",   makeVariations("^%s_DOORWINDOW"  , "W","C","M") );
+					addModels("__SOLITARY_WALL_WINDOW",  makeVariations("^%s_WALL_WINDOW" , "W","C","M") );
+					addModels("__SOLITARY_GLASSFLOOR",   makeVariations("^%s_GFLOOR"      , "W","C","M") );
+					addModels("__SOLITARY_RAMP",         makeVariations("^%s_RAMP"        , "W","C","M") );
+					addModels("__SOLITARY_RAMP_H",       makeVariations("^%s_RAMP_H"      , "W","C","M") );
+					addModels("__SOLITARY_TRIFLOOR",     makeVariations("^%s_TRIFLOOR"    , "W","C","M") );
+					addModels("__SOLITARY_TRIFLOOR_Q",   makeVariations("^%s_TRIFLOOR_Q"  , "W","C","M") );
+					addModels("__SOLITARY_ARCH",         makeVariations("^%s_ARCH"        , "W","C","M") );
+					addModels("__SOLITARY_ARCH_H",       makeVariations("^%s_ARCH_H"      , "W","C","M") );
+					addModels("__SOLITARY_GDOOR",        makeVariations("^%s_GDOOR"       , "W","C","M") ); 
 					
-					if (usedModels.contains("__SOLITARY_ARCH"        )) writeProtoToFile(vrml, "__SOLITARY_ARCH"        ,     ()->create_ARCH        ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_ARCH_H"      )) writeProtoToFile(vrml, "__SOLITARY_ARCH_H"      , 12, ()->create_ARCH_H      ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_ROOF"        )) writeProtoToFile(vrml, "__SOLITARY_ROOF"        ,     ()->create_ROOF        ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_ROOF_M"      )) writeProtoToFile(vrml, "__SOLITARY_ROOF_M"      ,     ()->create_ROOF_M      ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_ROOF_C"      )) writeProtoToFile(vrml, "__SOLITARY_ROOF_C"      ,     ()->create_ROOF_C      ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_ROOF_IC"     )) writeProtoToFile(vrml, "__SOLITARY_ROOF_IC"     ,     ()->create_ROOF_IC     ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_WALLDIAGONAL")) writeProtoToFile(vrml, "__SOLITARY_WALLDIAGONAL",     ()->create_WALLDIAGONAL().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_DOOR"        )) writeProtoToFile(vrml, "__SOLITARY_DOOR"        ,     ()->create_DOOR        ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_DOOR_HALF"   )) writeProtoToFile(vrml, "__SOLITARY_DOOR_HALF"   , 12, ()->create_DOOR_HALF   ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_DOORWINDOW"  )) writeProtoToFile(vrml, "__SOLITARY_DOORWINDOW"  ,     ()->create_DOORWINDOW  ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_GDOOR"       )) writeProtoToFile(vrml, "__SOLITARY_GDOOR"       ,     ()->create_GDOOR       ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_RAMP"        )) writeProtoToFile(vrml, "__SOLITARY_RAMP"        ,     ()->create_RAMP        ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_RAMP_H"      )) writeProtoToFile(vrml, "__SOLITARY_RAMP_H"      , 12, ()->create_RAMP_H      ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_WALL_WINDOW" )) writeProtoToFile(vrml, "__SOLITARY_WALL_WINDOW" ,     ()->create_WALL_WINDOW ().write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_GLASSFLOOR"  )) writeProtoToFile(vrml, "__SOLITARY_GLASSFLOOR"  ,     ()->create_GLASSFLOOR  ().write(vrml,"\t"));
+					//addModels("__SOLITARY_GDOOR_D",      makeVariations("^%s_GDOOR_D"     , "W","C","M") ); // unknown object
+					//addModels("__SOLITARY_SDOOR",        makeVariations("^%s_SDOOR"       , "W","C","M") ); // can't be build in game
 					
-					if (usedModels.contains("__SOLITARY_FLOOR"       )) writeProtoToFile(vrml, "__SOLITARY_FLOOR"       ,     ()->new LineGeometry.Box(wall_thickness,wall_length  ,wall_length  ).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_FLOOR_Q"     )) writeProtoToFile(vrml, "__SOLITARY_FLOOR_Q"     , 12, ()->new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_TRIFLOOR"    )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR"    , 15, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length  ,-90).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_TRIFLOOR_Q"  )) writeProtoToFile(vrml, "__SOLITARY_TRIFLOOR_Q"  , 0.5, 0, 17, ()->new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90).write(vrml,"\t"));
+					addProto( new Proto("__SOLITARY_ARCH"        ,     create_ARCH        ()) );
+					addProto( new Proto("__SOLITARY_ARCH_H"      , 12, create_ARCH_H      ()) );
+					addProto( new Proto("__SOLITARY_ROOF"        ,     create_ROOF        ()) );
+					addProto( new Proto("__SOLITARY_ROOF_M"      ,     create_ROOF_M      ()) );
+					addProto( new Proto("__SOLITARY_ROOF_C"      ,     create_ROOF_C      ()) );
+					addProto( new Proto("__SOLITARY_ROOF_IC"     ,     create_ROOF_IC     ()) );
+					addProto( new Proto("__SOLITARY_WALLDIAGONAL",     create_WALLDIAGONAL()) );
+					addProto( new Proto("__SOLITARY_DOOR"        ,     create_DOOR        ()) );
+					addProto( new Proto("__SOLITARY_DOOR_HALF"   , 12, create_DOOR_HALF   ()) );
+					addProto( new Proto("__SOLITARY_DOORWINDOW"  ,     create_DOORWINDOW  ()) );
+					addProto( new Proto("__SOLITARY_GDOOR"       ,     create_GDOOR       ()) );
+					addProto( new Proto("__SOLITARY_RAMP"        ,     create_RAMP        ()) );
+					addProto( new Proto("__SOLITARY_RAMP_H"      , 12, create_RAMP_H      ()) );
+					addProto( new Proto("__SOLITARY_WALL_WINDOW" ,     create_WALL_WINDOW ()) );
+					addProto( new Proto("__SOLITARY_GLASSFLOOR"  ,     create_GLASSFLOOR  ()) );
 					
-					if (usedModels.contains("__SOLITARY_WALL"        )) writeProtoToFile(vrml, "__SOLITARY_WALL"        ,     ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length  ).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_WALL_H"      )) writeProtoToFile(vrml, "__SOLITARY_WALL_H"      , 12, ()->createXFloorBasedBox(wall_height  ,wall_thickness,wall_length/2).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_WALL_Q"      )) writeProtoToFile(vrml, "__SOLITARY_WALL_Q"      ,     ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length  ).write(vrml,"\t"));
-					if (usedModels.contains("__SOLITARY_WALL_Q_H"    )) writeProtoToFile(vrml, "__SOLITARY_WALL_Q_H"    , 12, ()->createXFloorBasedBox(wall_height/4,wall_thickness,wall_length/2).write(vrml,"\t"));
+					addProto( new Proto("__SOLITARY_FLOOR"       ,     new LineGeometry.Box(wall_thickness,wall_length  ,wall_length  )) );
+					addProto( new Proto("__SOLITARY_FLOOR_Q"     , 12, new LineGeometry.Box(wall_thickness,wall_length/2,wall_length/2)) );
+					addProto( new Proto("__SOLITARY_TRIFLOOR"    , 15, new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length  ,-90)) );
+					addProto( new Proto("__SOLITARY_TRIFLOOR_Q"  , 0.5, 0, 17, new LineGeometry.RegularPrism(LineGeometry.Axis.X,wall_thickness,3,wall_length/2,-90)) );
+					
+					addProto( new Proto("__SOLITARY_WALL"        ,     createXFloorBasedBox(wall_height  ,wall_thickness,wall_length  )) );
+					addProto( new Proto("__SOLITARY_WALL_H"      , 12, createXFloorBasedBox(wall_height  ,wall_thickness,wall_length/2)) );
+					addProto( new Proto("__SOLITARY_WALL_Q"      ,     createXFloorBasedBox(wall_height/4,wall_thickness,wall_length  )) );
+					addProto( new Proto("__SOLITARY_WALL_Q_H"    , 12, createXFloorBasedBox(wall_height/4,wall_thickness,wall_length/2)) );
 				}
 
 				private static final double wall_thickness = 0.3;
@@ -5897,7 +5887,7 @@ public class FileExport {
 			vrml.println("");
 			
 			mapModel2TextLength.clear();
-			SoftwareBuildModels.writeProtos(vrml, usedModels);
+			writeProtos(vrml, usedModels);
 		}
 
 		private static File createBaseVrmlFile(String suggestedFileName) {
@@ -6110,108 +6100,106 @@ public class FileExport {
 		@SuppressWarnings("unused")
 		static class Proto {
 			final String protoName;
+			final String requiredProto;
 			final double labelScale;
 			final Double labelXRotation_deg;
 			final Point3D labelTranslation;
 			final Integer maxTextLength;
 			final Color defaultTextColor;
 			final Color defaultLineColor;
-			final LineGeometry.IndexedLineSet geometry;
+			final ProtoGeometry geometry;
+			final int precision;
 			
-			Proto(String protoName, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, 1.0, null, null, null, geometry);
+			Proto(String protoName, ProtoGeometry geometry) {
+				this(protoName, null, null, null, null, null, null, geometry, null, null);
 			}
-			Proto(String protoName, int maxTextLength, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, 1.0, null, null, maxTextLength, geometry);
+			Proto(String protoName, ProtoGeometry geometry, String requiredProto) {
+				this(protoName, null, null, null, null, null, null, geometry, null, requiredProto);
 			}
-			Proto(String protoName, double labelScale, double labelXRotation_deg, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, labelScale, labelXRotation_deg, null, null, geometry);
+			Proto(String protoName, int maxTextLength, ProtoGeometry geometry) {
+				this(protoName, null, null, null, maxTextLength, null, null, geometry, null, null);
 			}
-			Proto(String protoName, double labelScale, double labelXRotation_deg, int maxTextLength, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, labelScale, labelXRotation_deg, null, maxTextLength, geometry);
+			Proto(String protoName, Double labelScale, double labelXRotation_deg, ProtoGeometry geometry) {
+				this(protoName, labelScale, labelXRotation_deg, null, null, null, null, geometry, null, null);
 			}
-			Proto(String protoName, double labelScale, Point3D labelTranslation, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, labelScale, null, labelTranslation, null, geometry);
+			Proto(String protoName, Double labelScale, double labelXRotation_deg, ProtoGeometry geometry, int precision) {
+				this(protoName, labelScale, labelXRotation_deg, null, null, null, null, geometry, precision, null);
 			}
-			Proto(String protoName, double labelScale, double labelXRotation_deg, Point3D labelTranslation, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, labelScale, labelXRotation_deg, labelTranslation, null, geometry);
+			Proto(String protoName, Double labelScale, double labelXRotation_deg, int maxTextLength, ProtoGeometry geometry) {
+				this(protoName, labelScale, labelXRotation_deg, null, maxTextLength, null, null, geometry, null, null);
 			}
-			Proto(String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, LineGeometry.IndexedLineSet geometry) {
-				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, null, null, geometry);
+			Proto(String protoName, Double labelScale, Point3D labelTranslation, ProtoGeometry geometry) {
+				this(protoName, labelScale, null, labelTranslation, null, null, null, geometry, null, null);
 			}
-			Proto(String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, LineGeometry.IndexedLineSet geometry) {
+			Proto(String protoName, Double labelScale, double labelXRotation_deg, Point3D labelTranslation, ProtoGeometry geometry) {
+				this(protoName, labelScale, labelXRotation_deg, labelTranslation, null, null, null, geometry, null, null);
+			}
+			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, ProtoGeometry geometry) {
+				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, null, null, geometry, null, null);
+			}
+			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry) {
+				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, geometry, null, null);
+			}
+			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry, Integer precision) {
+				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, geometry, precision, null);
+			}
+			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry, Integer precision, String requiredProto) {
+				if (protoName==null || protoName.isEmpty()) throw new IllegalArgumentException();
 				this.protoName = protoName;
-				this.labelScale = labelScale;
+				this.requiredProto = requiredProto;
+				this.labelScale = labelScale==null ? 1.0 : labelScale;
 				this.labelXRotation_deg = labelXRotation_deg;
 				this.labelTranslation = labelTranslation;
 				this.maxTextLength = maxTextLength;
 				this.defaultTextColor = defaultTextColor;
 				this.defaultLineColor = defaultLineColor;
 				this.geometry = geometry;
-				// TODO
+				this.precision = precision==null ? 2 : precision;
 			}
 			
 			void writeProtoToFile(PrintWriter vrml) {
-				VRMLoutput.writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, ()->geometry.write(vrml,"\t"));
+				writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, ()->geometry.write(vrml,"\t", precision));
 			}
-		}
-
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, 1.0, null, null, null, writeShape);
-		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, int maxTextLength, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, 1.0, null, null, maxTextLength, writeShape);
-		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, null, null, writeShape);
-		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, int maxTextLength, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, null, maxTextLength, writeShape);
-		}
-		@SuppressWarnings("unused")
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Point3D labelTranslation, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, labelScale, null, labelTranslation, null, writeShape);
-		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, double labelXRotation_deg, Point3D labelTranslation, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, null, writeShape);
-		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Runnable writeShape) {
-			writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, null, null, writeShape);
-		}
-		private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, Runnable writeShape) {
-			if (maxTextLength!=null)
-				mapModel2TextLength.put(protoName, maxTextLength);
 			
-			if (defaultTextColor==null) defaultTextColor = new Color(0,0,0.5f);
-			if (defaultLineColor==null) defaultLineColor = new Color(0,0,0);
-			
-			vrml.println("PROTO "+protoName+" [");
-			vrml.println("	field MFString string []");
-			vrml.printf ("	field SFColor textColor %s%n", toString(defaultTextColor,"%1.2f"));
-			vrml.printf ("	field SFColor lineColor %s%n", toString(defaultLineColor,"%1.2f"));
-			vrml.println("] {");
-			Point3D scale = new Point3D(0.5, 0.5, 0.5).mul(labelScale);
-			if (labelXRotation_deg!=null || labelTranslation!=null) {
-				vrml.print  ("	Transform {");
-				if (labelXRotation_deg!=null) vrml.printf (Locale.ENGLISH," rotation 1 0 0 %1.6f", labelXRotation_deg/180*Math.PI);
-				if (labelTranslation  !=null) vrml.printf (Locale.ENGLISH," translation %1.6f %1.6f %1.6f", labelTranslation.x, labelTranslation.y, labelTranslation.z);
-				vrml.println(" children");
-			}
-			vrml.printf(Locale.ENGLISH,"	Transform { scale %1.3f %1.3f %1.3f rotation 0 1 0 1.5707963%n", scale.x, scale.y, scale.z);
-			vrml.println("		children Shape {");
-			vrml.println("			appearance Appearance { material Material { diffuseColor IS textColor } }");
-			vrml.println("			geometry Text { string IS string fontStyle FontStyle { justify [ \"MIDDLE\" \"END\" ] family \"SANSSERIF\"} }");
-			vrml.println("		}");
-			vrml.println("	}");
-			if (labelXRotation_deg!=null || labelTranslation!=null)
+			private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, Runnable writeShape) {
+				if (maxTextLength!=null)
+					mapModel2TextLength.put(protoName, maxTextLength);
+				
+				if (defaultTextColor==null) defaultTextColor = new Color(0,0,0.5f);
+				if (defaultLineColor==null) defaultLineColor = new Color(0,0,0);
+				
+				vrml.println("PROTO "+protoName+" [");
+				vrml.println("	field MFString string []");
+				vrml.printf ("	field SFColor textColor %s%n", toString(defaultTextColor,"%1.2f"));
+				vrml.printf ("	field SFColor lineColor %s%n", toString(defaultLineColor,"%1.2f"));
+				vrml.println("] {");
+				Point3D scale = new Point3D(0.5, 0.5, 0.5).mul(labelScale);
+				if (labelXRotation_deg!=null || labelTranslation!=null) {
+					vrml.print  ("	Transform {");
+					if (labelXRotation_deg!=null) vrml.printf (Locale.ENGLISH," rotation 1 0 0 %1.6f", labelXRotation_deg/180*Math.PI);
+					if (labelTranslation  !=null) vrml.printf (Locale.ENGLISH," translation %1.6f %1.6f %1.6f", labelTranslation.x, labelTranslation.y, labelTranslation.z);
+					vrml.println(" children");
+				}
+				vrml.printf(Locale.ENGLISH,"	Transform { scale %1.3f %1.3f %1.3f rotation 0 1 0 1.5707963%n", scale.x, scale.y, scale.z);
+				vrml.println("		children Shape {");
+				vrml.println("			appearance Appearance { material Material { diffuseColor IS textColor } }");
+				vrml.println("			geometry Text { string IS string fontStyle FontStyle { justify [ \"MIDDLE\" \"END\" ] family \"SANSSERIF\"} }");
+				vrml.println("		}");
 				vrml.println("	}");
-			writeShape.run();
-			vrml.println("}");
-			vrml.println();
-		}
+				if (labelXRotation_deg!=null || labelTranslation!=null)
+					vrml.println("	}");
+				writeShape.run();
+				vrml.println("}");
+				vrml.println();
+			}
+			
+			private static String toString(Color color, String format) {
+				return String.format(Locale.ENGLISH, format+" "+format+" "+format, color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f);
+			}
 
-		private static String toString(Color color, String format) {
-			return String.format(Locale.ENGLISH, format+" "+format+" "+format, color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f);
+			interface ProtoGeometry {
+				void write(PrintWriter vrml, String vrmlIndent, int precision);
+			}
 		}
 
 		private static void writeMeasurePoint(PrintWriter vrml, Point3D pos) {
@@ -6270,6 +6258,7 @@ public class FileExport {
 			
 			vrml.println(" }");
 		}
+		
 		private static void writeIndexedLineSet(PrintWriter vrml, String indent, StringBuilder pointsStr, StringBuilder indexesStr, Color color) {
 			vrml.println(indent+"Shape {");
 			vrml.print  (indent+"	appearance Appearance { material Material { ");
@@ -6400,7 +6389,8 @@ public class FileExport {
 			if (verbose) startTime = startTask(pd, logIndent, "Prepare Geometry for output");
 			indexedLineSet.prepareForOutput();
 			if (verbose) endTask(startTime);
-/*			
+			
+			/*			
 			int n0, n1;
 			
 			if (verbose) startTime = startTask(pd, logIndent, "Optimize points");
@@ -6414,7 +6404,8 @@ public class FileExport {
 			indexedLineSet.optimizeSegments();
 			n1 = indexedLineSet.segments.size();
 			if (verbose) endTask(startTime, String.format(Locale.ENGLISH, "  -> %d of %d segments removed (%1.1f%%)", n0-n1, n0, (n0-n1)*100.0/n0) );
-*/			
+			 */
+			
 			Vector<Point3D> points = indexedLineSet.points;
 			if (verbose) startTime = startTask(pd, logIndent, "Build point array", points.size());
 			for (int i=0; i<points.size(); i++) {
@@ -6442,10 +6433,6 @@ public class FileExport {
 			if (verbose) endTask(startTime);
 		}
 
-		static void writeIndexedLineSet(PrintWriter vrml, IndexedLineSet indexedLineSet, String vrmlIndent, Color color) {
-			writeIndexedLineSet_verbose(vrml, indexedLineSet, vrmlIndent, color, null, null);
-		}
-
 		static void writeIndexedLineSet(PrintWriter vrml, IndexedLineSet indexedLineSet, String vrmlIndent, int precision, Color color) {
 			writeIndexedLineSet_verbose(vrml, indexedLineSet, vrmlIndent, precision, color, null, null);
 		}
@@ -6457,21 +6444,15 @@ public class FileExport {
 			case Z: p.z=value; break;
 			}
 		}
-
-		public static class MultipleIndexedLineSets {
+		
+		public static class MultipleIndexedLineSets implements VRMLoutput.Proto.ProtoGeometry {
 			private final Vector<StoredIndexedLineSet> indexedLineSets;
 
 			MultipleIndexedLineSets() {
 				indexedLineSets = new Vector<StoredIndexedLineSet>();
 			}
 
-			void write(PrintWriter vrml, String vrmlIndent) {
-				for (StoredIndexedLineSet storedILS:indexedLineSets)
-					storedILS.indexedLineSet.write(vrml, vrmlIndent, storedILS.color);
-			}
-
-			@SuppressWarnings("unused")
-			void write(PrintWriter vrml, String vrmlIndent, int precision) {
+			@Override public void write(PrintWriter vrml, String vrmlIndent, int precision) {
 				for (StoredIndexedLineSet storedILS:indexedLineSets)
 					storedILS.indexedLineSet.write(vrml, vrmlIndent, precision, storedILS.color);
 			}
@@ -6501,7 +6482,7 @@ public class FileExport {
 			}
 		}
 
-		public static abstract class IndexedLineSet {
+		public static abstract class IndexedLineSet implements VRMLoutput.Proto.ProtoGeometry {
 			Vector<Point3D> points;
 			Vector<Segment> segments;
 			IndexedLineSet() {
@@ -6627,10 +6608,8 @@ public class FileExport {
 				// TODO [OLD] LineGeometry.IndexedLineSet.optimizeSegments()
 			}
 
-			void write(PrintWriter vrml, String vrmlIndent                            ) { writeIndexedLineSet(vrml, this, vrmlIndent,             null); }
-			void write(PrintWriter vrml, String vrmlIndent, int precision             ) { writeIndexedLineSet(vrml, this, vrmlIndent, precision,  null); }
-			void write(PrintWriter vrml, String vrmlIndent,                Color color) { writeIndexedLineSet(vrml, this, vrmlIndent,            color); }
-			void write(PrintWriter vrml, String vrmlIndent, int precision, Color color) { writeIndexedLineSet(vrml, this, vrmlIndent, precision, color); }
+			@Override public void write(PrintWriter vrml, String vrmlIndent, int precision             ) { writeIndexedLineSet(vrml, this, vrmlIndent, precision,  null); }
+			void                  write(PrintWriter vrml, String vrmlIndent, int precision, Color color) { writeIndexedLineSet(vrml, this, vrmlIndent, precision, color); }
 		}
 		
 		static class OptimizeNode extends GroupingNode {
