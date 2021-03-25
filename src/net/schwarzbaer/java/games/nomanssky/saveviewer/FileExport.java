@@ -384,28 +384,6 @@ public class FileExport {
 				VRMLoutput.writeTemplateToFile(vrml,usedModels);
 				endTask(startTime);
 				
-				//writeBioroomCoords(vrml);
-				//writeMainroomCoords(vrml);
-				
-				//vrml.println("# race initiator"); writeExocraftPodCoords(vrml, 8,6,16,4, 4,1,16,4, Math.PI/4);
-				//vrml.println("# Koloss"); writeExocraftPodCoords(vrml, 7.00,5.0,18,3, 3.5,1.5,18,3, Math.PI/2);
-				//vrml.println("# Roamer"); writeExocraftPodCoords(vrml, 5.25,3.5,18,3, 2.5,1.0,18,3, Math.PI/2);
-				//vrml.println("# Nomad" ); writeExocraftPodCoords(vrml, 4.75,3.0,18,3, 2.0,1.0,18,3, Math.PI/2);
-				
-				//vrml.println("# Container" );
-				//writeContainer(vrml);
-				
-				/*if (playerbase!=null && !playerbase.isFreighterBase___) {
-					String name = playerbase.name;
-					if (name==null || name.isEmpty()) name = "PlayerBase";
-					if (playerbase.position!=null && playerbase.forward!=null) {
-						Point3D pos = new Point3D(0,0,0);
-						Point3D at = playerbase.position.isZero()?null:playerbase.position.normalize();
-						Point3D up = playerbase.forward .isZero()?null:playerbase.forward .normalize();
-						writeModel(vrml, "^MAINROOM", name, pos, at, up, size, null);
-					}
-				}*/
-				
 				CubeCombine cubeCombine = /*new CubeCombine_Dummy();*/ new CubeCombine();
 				FreighterRoomCombine freightCombine = new FreighterRoomCombine();
 				
@@ -2924,7 +2902,6 @@ public class FileExport {
 
 		private static final String VRML_TEMPLATE_MODELS_WRL = "/vrml/template.models.wrl";
 		private static final HashMap<String, String> mapObjectID2Model = new HashMap<>();
-		private static final HashMap<String, Integer> mapModel2TextLength = new HashMap<>();
 		private static final HashMap<String, Proto> mapModel2Proto = new HashMap<>();
 		private static JFileChooser vrmlFileChooser;
 		private static FileNameExtensionFilter vrmlFileFilter;
@@ -2982,6 +2959,8 @@ public class FileExport {
 		
 		private static class SoftwareBuildModels {
 			
+			private static final Color PLANT_COLOR = new Color(0.3f,0.6f,0.3f);
+
 			static void addModelsToModelMap() {
 				
 				//addModels("CUBEROOM_SPACE", "^CUBEROOM_SPACE","^CUBEROOMB_SPACE","^CUBEROOMC_SPACE","^FREIGHTER_CORE");
@@ -3011,7 +2990,7 @@ public class FileExport {
 				addModels("GENERAL_DECAL",  "^DECAL_HAZARD", "^DECAL_HORROR", "^DECAL_JELLY", "^DECAL_SKULL");
 				addModels("GENERAL_DECAL",  "^BUILDDECAL", "^BUILDDECAL2", "^BUILDDECALHELLO", "^BUILDDECALNMS");
 				
-				addProto( new Proto("SMALLLIGHT"     , 0.20,   0,     create_SMALLLIGHT     ()) );
+				addProto( new Proto("SMALLLIGHT"     , 0.20,   0,     create_SMALLLIGHT     (), 4) );
 				addProto( new Proto("WALLLIGHT"      , 0.20,  90, 12, create_WALLLIGHT      ()) );
 				addProto( new Proto("BUILDLANDINGPAD", 3.00,   0,     create_BUILDLANDINGPAD()) );
 				addProto( new Proto("BUILDSIMPLEDESK", 0.50,   0,     create_BUILDSIMPLEDESK()) );
@@ -3022,7 +3001,7 @@ public class FileExport {
 				addProto( new Proto("BUILDSAVE"      , 0.50,   0,     create_BUILDSAVE      ()) );
 				addProto( new Proto("MINIPORTAL"     , 0.50,   0,     create_MINIPORTAL     ()) );
 				addProto( new Proto("NPCTERMINAL"    , 0.50, 180, new Point3D(1.2,1.6,0), create_NPCTERMINAL()));
-				addProto( new Proto("PLANT"          , 0.50, null, null, null, new Color(0.3f,0.6f,0.3f), new Color(0.3f,0.6f,0.3f), create_PLANT()));
+				addProto( new Proto("PLANT"          , 0.50, PLANT_COLOR, PLANT_COLOR, create_PLANT()));
 				addProto( new Proto("GENERAL_DECAL"  , 0.50, 180, 12, create_GENERAL_DECAL  ()) );
 				
 				Garages.addModelsToModelMap();
@@ -5886,7 +5865,6 @@ public class FileExport {
 			vrml.println(templateSB.toString());
 			vrml.println("");
 			
-			mapModel2TextLength.clear();
 			writeProtos(vrml, usedModels);
 		}
 
@@ -5985,7 +5963,6 @@ public class FileExport {
 		}
 		private static void writeModel(PrintWriter vrml, GeneralizedID id, String objectID, boolean isMAINROOMwithRoof, HashMap<String,Integer> objectIDNumbers, String label, String extraLine, Point3D pos, Point3D at, Point3D up, Point3D lineColor) {
 			String modelName = mapObjectID2Model.get(objectID);
-			Integer maxTextLength = mapModel2TextLength.get(modelName);
 			
 			if ("__SIMPLE_LINE".equals(modelName)) {
 				writeSimpleLine(vrml, pos, at, up, objectID);
@@ -6003,9 +5980,13 @@ public class FileExport {
 						}
 					}
 					if (modelName!=null) {
+						Proto proto = mapModel2Proto.get(modelName);
+						int maxTextLength = proto==null || proto.maxTextLength==null ? 20 : proto.maxTextLength.intValue();
+						
 						String lineColorStr = lineColor==null?"":(" lineColor "+lineColor.toString("%1.2f",false));
-						String labelStr = createLabelStrs(extraLine==null ? label : label+" "+extraLine, maxTextLength==null ? 20 : maxTextLength.intValue());
+						String labelStr = createLabelStrs(extraLine==null ? label : label+" "+extraLine, maxTextLength);
 						String normalModel = String.format(" %s { string %s%s }", modelName, labelStr, lineColorStr);
+						
 						if (isMAINROOMwithRoof) {
 							String roofModelName = getRoofModelName(modelName);
 							if (roofModelName!=null)
@@ -6097,7 +6078,6 @@ public class FileExport {
 			return strParts;
 		}
 		
-		@SuppressWarnings("unused")
 		static class Proto {
 			final String protoName;
 			final String requiredProto;
@@ -6128,20 +6108,11 @@ public class FileExport {
 			Proto(String protoName, Double labelScale, double labelXRotation_deg, int maxTextLength, ProtoGeometry geometry) {
 				this(protoName, labelScale, labelXRotation_deg, null, maxTextLength, null, null, geometry, null, null);
 			}
-			Proto(String protoName, Double labelScale, Point3D labelTranslation, ProtoGeometry geometry) {
-				this(protoName, labelScale, null, labelTranslation, null, null, null, geometry, null, null);
-			}
 			Proto(String protoName, Double labelScale, double labelXRotation_deg, Point3D labelTranslation, ProtoGeometry geometry) {
 				this(protoName, labelScale, labelXRotation_deg, labelTranslation, null, null, null, geometry, null, null);
 			}
-			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, ProtoGeometry geometry) {
-				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, null, null, geometry, null, null);
-			}
-			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry) {
-				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, geometry, null, null);
-			}
-			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry, Integer precision) {
-				this(protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, geometry, precision, null);
+			Proto(String protoName, Double labelScale, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry) {
+				this(protoName, labelScale, null, null, null, defaultTextColor, defaultLineColor, geometry, null, null);
 			}
 			Proto(String protoName, Double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, ProtoGeometry geometry, Integer precision, String requiredProto) {
 				if (protoName==null || protoName.isEmpty()) throw new IllegalArgumentException();
@@ -6151,29 +6122,20 @@ public class FileExport {
 				this.labelXRotation_deg = labelXRotation_deg;
 				this.labelTranslation = labelTranslation;
 				this.maxTextLength = maxTextLength;
-				this.defaultTextColor = defaultTextColor;
-				this.defaultLineColor = defaultLineColor;
+				this.defaultTextColor = defaultTextColor==null ? new Color(0,0,0.5f) : defaultTextColor;
+				this.defaultLineColor = defaultLineColor==null ? new Color(0,0,0)    : defaultLineColor;
 				this.geometry = geometry;
 				this.precision = precision==null ? 2 : precision;
 			}
 			
 			void writeProtoToFile(PrintWriter vrml) {
-				writeProtoToFile(vrml, protoName, labelScale, labelXRotation_deg, labelTranslation, maxTextLength, defaultTextColor, defaultLineColor, ()->geometry.write(vrml,"\t", precision));
-			}
-			
-			private static void writeProtoToFile(PrintWriter vrml, String protoName, double labelScale, Double labelXRotation_deg, Point3D labelTranslation, Integer maxTextLength, Color defaultTextColor, Color defaultLineColor, Runnable writeShape) {
-				if (maxTextLength!=null)
-					mapModel2TextLength.put(protoName, maxTextLength);
-				
-				if (defaultTextColor==null) defaultTextColor = new Color(0,0,0.5f);
-				if (defaultLineColor==null) defaultLineColor = new Color(0,0,0);
 				
 				vrml.println("PROTO "+protoName+" [");
 				vrml.println("	field MFString string []");
 				vrml.printf ("	field SFColor textColor %s%n", toString(defaultTextColor,"%1.2f"));
 				vrml.printf ("	field SFColor lineColor %s%n", toString(defaultLineColor,"%1.2f"));
 				vrml.println("] {");
-				Point3D scale = new Point3D(0.5, 0.5, 0.5).mul(labelScale);
+				Point3D scale = new Point3D(1,1,1).mul(labelScale/2);
 				if (labelXRotation_deg!=null || labelTranslation!=null) {
 					vrml.print  ("	Transform {");
 					if (labelXRotation_deg!=null) vrml.printf (Locale.ENGLISH," rotation 1 0 0 %1.6f", labelXRotation_deg/180*Math.PI);
@@ -6188,7 +6150,7 @@ public class FileExport {
 				vrml.println("	}");
 				if (labelXRotation_deg!=null || labelTranslation!=null)
 					vrml.println("	}");
-				writeShape.run();
+				geometry.write(vrml,"\t", precision);
 				vrml.println("}");
 				vrml.println();
 			}
@@ -6954,256 +6916,6 @@ public class FileExport {
 				double y = radius * Math.sin( (i*segAngle_deg+startAngle_deg)/180*Math.PI );
 				receiver.setValue(i,nSeg,x,y);
 			}
-		}
-		
-	}
-	
-	@SuppressWarnings("unused")
-	private static class VRMLconstruction {
-	
-		private enum AxisPlain { XY, XZ, YZ }
-	
-		private static void writeContainer(PrintWriter vrml) {
-			StringBuilder pointsStr = new StringBuilder();
-			StringBuilder indexesStr = new StringBuilder();
-			int pointsCounter = 0;
-			
-			double cubeSize = 3.9;
-			Point3D cubeCenter = new Point3D(2,0,0);
-			pointsCounter = writeCube(pointsStr, pointsCounter, indexesStr, cubeCenter, new Point3D(cubeSize,cubeSize,cubeSize) );
-			
-			double rT = 0.9;
-			
-			double r1 = 1;
-			double r2 = 0.8;
-			double r4 = 0.2;
-			double r5 = 0.18;
-			double w2 = Math.acos(r2/rT);
-			double w4 = Math.acos(r4/rT);
-			double w3 = (w2+w4)/2;
-			double r3 = Math.cos(w3)*rT;
-			
-			double y1 = cubeSize/2;
-			double y2 = cubeSize/2-(1-Math.sin(w2))*rT;
-			double y3 = cubeSize/2-(1-Math.sin(w3))*rT;
-			double y4 = cubeSize/2-(1-Math.sin(w4))*rT;
-			double y5 = cubeSize/2-0.05;
-			
-			
-			pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 20, r1, cubeCenter.add(0.0,y1,0.0), AxisPlain.XZ);
-			pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 20, r2, cubeCenter.add(0.0,y2,0.0), AxisPlain.XZ);
-			pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 16, r3, cubeCenter.add(0.0,y3,0.0), AxisPlain.XZ);
-			pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 12, r4, cubeCenter.add(0.0,y4,0.0), AxisPlain.XZ);
-			pointsCounter = writeCircle(pointsStr, pointsCounter, indexesStr, 12, r5, cubeCenter.add(0.0,y5,0.0), AxisPlain.XZ);
-			
-			pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), Math.PI/2-w2, Math.PI/2-w4, AxisPlain.YZ);
-			pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), w2-Math.PI/2, w4-Math.PI/2, AxisPlain.YZ);
-			pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), w2, w4, AxisPlain.XY);
-			pointsCounter = writeArc(pointsStr, pointsCounter, indexesStr, 5, rT, cubeCenter.add(0.0,cubeSize/2-rT,0.0), Math.PI-w2, Math.PI-w4, AxisPlain.XY);
-			
-			
-			VRMLoutput.writeIndexedLineSet(vrml, "", pointsStr, indexesStr, Color.BLUE);
-		}
-	
-		private static int writeCube(StringBuilder pointsStr, int pointsCounter, StringBuilder indexesStr, Point3D center, Point3D size ) {
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y-size.y/2,center.z-size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y-size.y/2,center.z-size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y-size.y/2,center.z+size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y-size.y/2,center.z+size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y+size.y/2,center.z-size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y+size.y/2,center.z-size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x+size.x/2,center.y+size.y/2,center.z+size.z/2));
-			pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", center.x-size.x/2,center.y+size.y/2,center.z+size.z/2));
-			int p = pointsCounter;
-			indexesStr.append((p+0)+" "+(p+1)+" "+(p+2)+" "+(p+3)+" "+(p+0)+" "+(p+4)+" "+(p+5)+" "+(p+6)+" "+(p+7)+" "+(p+4)+" "+"-1 ");
-			indexesStr.append((p+1)+" "+(p+5)+" -1 "+(p+2)+" "+(p+6)+" -1 "+(p+3)+" "+(p+7)+" -1 ");
-			
-			pointsCounter+=8;
-			return pointsCounter;
-		}
-	
-		private static int writeCircle(StringBuilder pointsStr, int pointsCounter, StringBuilder indexesStr, int segI, double radius, Point3D center, AxisPlain axisPlain) {
-			double x,y,z;
-			for (int i=0; i<segI; ++i) {
-				double wI = i*Math.PI*2/segI;
-				switch (axisPlain) {
-				case XY:
-					x = center.x + radius*Math.cos(wI);
-					y = center.y + radius*Math.sin(wI);
-					z = center.z;
-					break;
-				case XZ:
-					x = center.x + radius*Math.cos(wI);
-					y = center.y;
-					z = center.z + radius*Math.sin(wI);
-					break;
-				case YZ:
-					x = center.x;
-					y = center.y + radius*Math.cos(wI);
-					z = center.z + radius*Math.sin(wI);
-					break;
-				default:
-					x = center.x;
-					y = center.y;
-					z = center.z;
-				}
-				pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", x,y,z));
-				indexesStr.append((pointsCounter+i)+" ");
-			}
-			indexesStr.append(pointsCounter+" -1 ");
-			pointsCounter += segI;
-			return pointsCounter;
-		}
-	
-		private static int writeArc(StringBuilder pointsStr, int pointsCounter, StringBuilder indexesStr, int segI, double radius, Point3D center, double w1, double w2, AxisPlain axisPlain) {
-			double x,y,z;
-			for (int i=0; i<=segI; ++i) {
-				double wI = i*(w2-w1)/segI;
-				switch (axisPlain) {
-				case XY:
-					x = center.x + radius*Math.cos(wI+w1);
-					y = center.y + radius*Math.sin(wI+w1);
-					z = center.z;
-					break;
-				case XZ:
-					x = center.x + radius*Math.cos(wI+w1);
-					y = center.y;
-					z = center.z + radius*Math.sin(wI+w1);
-					break;
-				case YZ:
-					x = center.x;
-					y = center.y + radius*Math.cos(wI+w1);
-					z = center.z + radius*Math.sin(wI+w1);
-					break;
-				default:
-					x = center.x;
-					y = center.y;
-					z = center.z;
-				}
-				pointsStr.append(String.format(Locale.ENGLISH,"%1.3f %1.3f %1.3f, ", x,y,z));
-				indexesStr.append((pointsCounter+i)+" ");
-			}
-			indexesStr.append("-1 ");
-			pointsCounter += segI+1;
-			return pointsCounter;
-		}
-	
-		private static void writeExocraftPodCoords(PrintWriter vrml, double baseRadius, double topRadius, int segI, int modI, double outerRadius, double innerRadius, int segD, int modD, double wDelta) {
-			double height = 1;
-			
-			vrml.print("# coord Coordinate { point [ ");
-			
-			for (int i=0; i<segI; ++i) {
-				double wI = i*Math.PI*2/segI;
-				double xBase = 0;
-				double yBase = baseRadius*Math.sin(wI);
-				double zBase = baseRadius*Math.cos(wI);
-				double xTop = height;
-				double yTop = topRadius*Math.sin(wI);
-				double zTop = topRadius*Math.cos(wI);
-				vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xBase,yBase,zBase);
-				vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xTop,yTop,zTop);
-			}
-			
-			for (int i=0; i<segD; ++i) {
-				double wI = i*Math.PI*2/segD + wDelta;
-				double xOuter = height;
-				double yOuter = outerRadius*Math.sin(wI);
-				double zOuter = outerRadius*Math.cos(wI);
-				double xInner = height;
-				double yInner = innerRadius*Math.sin(wI);
-				double zInner = innerRadius*Math.cos(wI);
-				vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xOuter,yOuter,zOuter);
-				vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", xInner,yInner,zInner);
-			}
-			
-			vrml.println(" ] }");
-			
-			String strRing1, strRing2;
-			vrml.print("# coordIndex [ ");
-			
-			strRing1 = ""; strRing2 = "";
-			for (int i=0; i<segI; ++i) {
-				if ((i%modI)==0) vrml.printf("%d %d -1 ", i*2, i*2+1);
-				strRing1 += (i*2  )+" ";
-				strRing2 += (i*2+1)+" ";
-			}
-			strRing1 += "0 -1 ";
-			strRing2 += "1 -1 ";
-			vrml.print(strRing1+strRing2);
-			
-			strRing1 = ""; strRing2 = "";
-			for (int i=0; i<segD; ++i) {
-				if ((i%modD)==0) vrml.printf("%d %d -1 ", i*2+2*segI, i*2+1+2*segI);
-				strRing1 += (i*2  +2*segI)+" ";
-				strRing2 += (i*2+1+2*segI)+" ";
-			}
-			strRing1 += (0+2*segI)+" -1 ";
-			strRing2 += (1+2*segI)+" -1 ";
-			vrml.print(strRing1+strRing2);
-			
-			vrml.println("]\r\n");
-		}
-	
-		private static void writeMainroomCoords(PrintWriter vrml) {
-			int segI=16;
-			double radius = 1.5*4;
-			double height = 4;
-			
-			vrml.println("# cylinder");
-			vrml.print("# coord Coordinate { point [ ");
-			for (int i=0; i<segI; ++i) {
-				double wI = i*Math.PI*2/segI;
-				double y = radius*Math.sin(wI);
-				double z = radius*Math.cos(wI);
-				vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", 0.0,y,z);
-				vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", height,y,z);
-			}
-			vrml.println(" ] }");
-			
-			vrml.print("# coordIndex [ ");
-			String str1 = "", str2 = "";
-			for (int i=0; i<segI; ++i) {
-				vrml.printf("%d %d -1 ", i*2, i*2+1);
-				str1 += (i*2  )+" ";
-				str2 += (i*2+1)+" ";
-			}
-			str1 += "0 -1 ";
-			str2 += "1 -1 ";
-			vrml.println(str1+str2+"]");
-		}
-	
-		private static void writeBioroomCoords(PrintWriter vrml) {
-			int segI=16, segJ=4;
-			double radius = 1.5*4;
-			
-			vrml.println("# hemisphere");
-			vrml.print("# coord Coordinate { point [ ");
-			for (int j=0; j<segJ; ++j) {
-				double wJ = j*Math.PI/2/segJ;
-				double x = radius*Math.sin(wJ);
-				double r2 = radius*Math.cos(wJ);
-				for (int i=0; i<segI; ++i) {
-					double wI = i*Math.PI*2/segI;
-					double y = r2*Math.sin(wI);
-					double z = r2*Math.cos(wI);
-					vrml.printf(Locale.ENGLISH,"%1.2f %1.2f %1.2f, ", x,y,z);
-				}
-			}
-			vrml.println(" ] }");
-			
-			vrml.print("# coordIndex [ ");
-			for (int j=0; j<segJ; ++j) {
-				for (int i=0; i<segI; ++i)
-					vrml.printf("%d ", j*segI+i);
-				vrml.printf("%d -1 ", j*segI);
-			}
-			for (int i=0; i<segI; ++i) {
-				for (int j=0; j<segJ; ++j)
-					vrml.printf("%d ", j*segI+i);
-				vrml.print("-1 ");
-			}
-			vrml.println("]");
 		}
 		
 	}
