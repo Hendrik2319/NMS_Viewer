@@ -50,6 +50,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.SelectImageDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory.SlotType;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownBlueprints;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Vehicle;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
@@ -360,6 +361,21 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					out.add(1, "Damage", slot.damageFactor);
 					if (slot.specialSlotType!=null)
 						out.add(1, "Special", "%s", slot.specialSlotType);
+					if (inventory.source!=null && inventory.source.knownBlueprints!=null) {
+						Vector<KnownBlueprints.BlueprintList> lists = new Vector<>();
+						for (KnownBlueprints.BlueprintList listID:KnownBlueprints.BlueprintList.values())
+							if (inventory.source.knownBlueprints.containsID(slot.id, listID))
+								lists.add(listID);
+						if (lists.isEmpty()) {
+							out.add(1, "Blueprint", "%s", "unknown");
+						} else {
+							out.add(1, "Blueprint", "%s", lists.firstElement().categoryLabel);
+							for (int i=1; i<lists.size(); i++) {
+								KnownBlueprints.BlueprintList listID = lists.get(i);
+								out.add(1, null, "%s", listID.categoryLabel);
+							}
+						}
+					}
 				}
 				textarea.setText(out.generateOutput());
 			}

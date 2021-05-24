@@ -1329,17 +1329,19 @@ public class SaveGameData {
 	public static final class KnownBlueprints {
 		
 		public enum BlueprintList {
-			Technologies("Technology" , GameInfos.techIDs   , GeneralizedID.Usage.Type.Blueprint         ),
-			Products    ("Product"    , GameInfos.productIDs, GeneralizedID.Usage.Type.Blueprint         ),
-			Quicksilvers("Quicksilver", GameInfos.productIDs, GeneralizedID.Usage.Type.QuicksilverSpecial),
+			Technologies("Technology" , GameInfos.techIDs   , GeneralizedID.Usage.Type.Blueprint         , knownBlueprints->knownBlueprints.technologies),
+			Products    ("Product"    , GameInfos.productIDs, GeneralizedID.Usage.Type.Blueprint         , knownBlueprints->knownBlueprints.products    ),
+			Quicksilvers("Quicksilver", GameInfos.productIDs, GeneralizedID.Usage.Type.QuicksilverSpecial, knownBlueprints->knownBlueprints.quicksilvers),
 			;
 			public final String categoryLabel;
 			public final IDMap idMap;
 			public final GeneralizedID.Usage.Type usageType;
-			BlueprintList(String categoryLabel, IDMap idMap, GeneralizedID.Usage.Type usageType) {
+			public final Function<KnownBlueprints, Vector<GeneralizedID>> getList;
+			BlueprintList(String categoryLabel, IDMap idMap, GeneralizedID.Usage.Type usageType, Function<KnownBlueprints,Vector<GeneralizedID>> getList) {
 				this.categoryLabel = categoryLabel;
 				this.idMap = idMap;
 				this.usageType = usageType;
+				this.getList = getList;
 			}
 		}
 		
@@ -1375,6 +1377,16 @@ public class SaveGameData {
 				return generalizedID;
 				
 			}, sourceLabel, jsonObject, path);
+		}
+		
+		public boolean containsID(GeneralizedID id, BlueprintList listID) {
+			if (id==null) return false;
+			if (listID==null) return false;
+			Vector<GeneralizedID> list = listID.getList.apply(this);
+			for (GeneralizedID knownID:list)
+				if (knownID.id.equals(id.id))
+					return true;
+			return false;
 		}
 	}
 
@@ -1863,8 +1875,10 @@ public class SaveGameData {
 			public final BaseStatValue[] baseStatValues;
 			public final InventoryLayout inventoryLayout;
 			public final Vector<Consumer<TextAreaOutput>> extraInfosOutputs;
+			public final SaveGameData source;
 	
 			private Inventory(SaveGameData source, JSON_Object<NVExtra, VExtra> inventoryData, JSON_Object<NVExtra, VExtra> inventoryLayoutData, boolean isBackgroundInv, String inventoryLabel, String inventorySourcePath) {
+				this.source = source;
 				this.label = inventoryLabel;
 				extraInfosOutputs = new Vector<>();
 				

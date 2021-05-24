@@ -80,6 +80,9 @@ import net.schwarzbaer.system.ClipboardTools;
 
 public class SaveViewer implements ActionListener {
 
+	private static final Color COLOR_Creative_SaveGame = Color.BLUE;
+	private static final Color COLOR_Expedition_SaveGame = new Color(0x008000);
+	private static final Color COLOR_PreNext_SaveGame = Color.RED;
 	public static final boolean DEBUG = true;
 	private StandardMainWindow mainWindow;
 
@@ -587,10 +590,13 @@ public class SaveViewer implements ActionListener {
 							comp.setToolTipText(savefile.isFile() ? "Can't parse SaveGame" : "SaveGame not exists");
 						} else if (data.isPreNEXT) {
 							comp.setToolTipText("PreNext SaveGame (will not be parsed)");
-							comp.setForeground(Color.RED);
+							comp.setForeground(COLOR_PreNext_SaveGame);
+						} else if (data.version!=null && data.version>100000) {
+							comp.setToolTipText(String.format("Expedition ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
+							comp.setForeground(COLOR_Expedition_SaveGame);
 						} else if (data.version!=null && data.version>5000) {
 							comp.setToolTipText(String.format("Creative ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-							comp.setForeground(Color.BLUE);
+							comp.setForeground(COLOR_Creative_SaveGame);
 						} else {
 							comp.setToolTipText(String.format("Normal ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
 							comp.setForeground(DEFAULT_BUTTON_FOREGROUND_COLOR);
