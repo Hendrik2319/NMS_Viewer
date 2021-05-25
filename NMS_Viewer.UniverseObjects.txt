@@ -6683,7 +6683,25 @@ portal=54.5000,-11.3400
 
 [Pln50E400069A72AD]
 
+[Reg000000029852B1]
+
+[Sys021B00029852B1]
+atlasinterface=false
+blackhole=false
+
 [Reg000000029842B2]
+
+[Sys001000029842B2]
+atlasinterface=false
+blackhole=false
+
+[Sys013400029842B2]
+atlasinterface=false
+blackhole=false
+
+[Sys019000029842B2]
+atlasinterface=false
+blackhole=false
 
 [Sys019100029842B2]
 atlasinterface=false
@@ -6698,7 +6716,111 @@ blackhole=false
 [Reg000000029852B2]
 name=Nabrigan-Grenze
 
+[Sys001200029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys001800029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys002000029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys002800029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys002F00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys003300029852B2]
+name=Uheidod VIII
+race=Vykeen
+economy=2
+economy_label=nachhaltig
+conflict=1
+conflict_label=nicht bedrohlich
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=4
+
+[Pln103300029852B2]
+
+[Pln203300029852B2]
+
+[Sys004800029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys004A00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys006500029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys006800029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys007100029852B2]
+name=Sofornal II
+race=Korvax
+economy=2
+economy_label=komfortabel
+conflict=3
+conflict_label=hoch
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Pln207100029852B2]
+
+[Pln307100029852B2]
+
+[Pln407100029852B2]
+
+[Pln607100029852B2]
+
+[Sys007900029852B2]
+name=Kuttine-Yoo
+race=Gek
+economy=1
+economy_label=Geringe Versorgung
+conflict=3
+conflict_label=zerstörerisch
+atlasinterface=false
+blackhole=true
+class=Yellow
+
+[Pln207900029852B2]
+name=Pasakkur III
+biome=AnomShells
+resources=Cu,Au,Fe__
+
 [Sys011C00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys012800029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys013400029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys013E00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys015500029852B2]
 atlasinterface=false
 blackhole=false
 
@@ -6706,19 +6828,69 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
-[Sys019700029852B2]
+[Sys018900029852B2]
+name=Miskagi-Attle
+race=Korvax
+economy=2
+economy_label=angemessen
+conflict=1
+conflict_label=mild
 atlasinterface=false
 blackhole=false
+class=Yellow
+planets=3
+
+[Pln118900029852B2]
+
+[Pln218900029852B2]
+name=Egregory XII
+biome=Frozen
+resources=Cu,CO2,Na
+
+[Pln318900029852B2]
+
+[Sys018B00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys019700029852B2]
+name=Ibogbi-Mukaf
+race=Korvax
+economy=2
+economy_label=ausgeglichen
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Pln119700029852B2]
+name=Yipsonnu
+biome=Lush
+resources=Cu,Pf,Ag
+
+[Pln219700029852B2]
+
+[Pln319700029852B2]
+
+[Pln419700029852B2]
+
+[Pln519700029852B2]
+
+[Pln619700029852B2]
 
 [Sys019A00029852B2]
 name=Pujarmu
 race=Gek
+economy=1
 abandoned
 atlasinterface=false
 blackhole=false
 class=Blue
-short=
-info=Expedition 1: Start
+planets=3
+short=Expedition 2
+info=Start
 
 [Pln119A00029852B2]
 name=Timiurgh XIV
@@ -6738,14 +6910,53 @@ biome=Airless
 resources=In,Co,Sr_Rost
 
 [Sys019B00029852B2]
+name=Dopperi VII
+race=Gek
+economy=3
+economy_label=fortgeschritten
+conflict=3
+conflict_label=gesetzlos
 atlasinterface=false
 blackhole=false
+class=Yellow
+short=Expedition 2
+info=Histographische Echoquelle
+
+[Pln119B00029852B2]
+
+[Pln219B00029852B2]
+
+[Pln319B00029852B2]
+
+[Pln419B00029852B2]
+
+[Pln519B00029852B2]
 
 [Sys019C00029852B2]
 atlasinterface=false
 blackhole=false
 
+[Sys01A400029852B2]
+atlasinterface=false
+blackhole=false
+
 [Sys01AC00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys01AF00029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys01B000029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys01B100029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys01BC00029852B2]
 atlasinterface=false
 blackhole=false
 
@@ -6758,6 +6969,47 @@ atlasinterface=false
 blackhole=false
 
 [Sys020200029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys020300029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys020500029852B2]
+name=Uridig-Bexha IV
+race=Vykeen
+economy=2
+economy_label=erfolgversprechend
+conflict=2
+conflict_label=sporadisch
+atlasinterface=false
+blackhole=false
+class=Yellow
+
+[Sys020700029852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys022400029852B2]
+atlasinterface=false
+blackhole=false
+
+[Reg000000049852B2]
+
+[Sys006F00049852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys016000049852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys01EB00049852B2]
+atlasinterface=false
+blackhole=false
+
+[Sys021500049852B2]
 atlasinterface=false
 blackhole=false
 
@@ -6790,7 +7042,19 @@ blackhole=false
 [Reg000000049842B3]
 name=Yebaei-Grenze
 
+[Sys00FE00049842B3]
+atlasinterface=false
+blackhole=false
+
+[Sys010E00049842B3]
+atlasinterface=false
+blackhole=false
+
 [Sys012000049842B3]
+atlasinterface=false
+blackhole=false
+
+[Sys012A00049842B3]
 atlasinterface=false
 blackhole=false
 
@@ -6860,6 +7124,12 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Reg000000019852B3]
+
+[Sys00C000019852B3]
+atlasinterface=false
+blackhole=false
+
 [Reg000000029852B3]
 name=Yawalgh-Masse
 
@@ -6872,6 +7142,10 @@ atlasinterface=false
 blackhole=false
 
 [Sys008800029852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys009A00029852B3]
 atlasinterface=false
 blackhole=false
 
@@ -6891,7 +7165,19 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys00CA00029852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys00DC00029852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys00DE00029852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys00E900029852B3]
 atlasinterface=false
 blackhole=false
 
@@ -6909,8 +7195,8 @@ conflict_label=niedrig
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=
-info=Expedition1: Treff 1
+short=Expedition 2
+info=Treff 1
 
 [Pln10F200029852B3]
 
@@ -6943,8 +7229,8 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=5
-short=
-info=Expedition1: Zwischenstopp zu Treff 1
+short=Expedition 2
+info=Zwischenstopp zu Treff 1
 
 [Pln10F300029852B3]
 name=Groll
@@ -6962,6 +7248,10 @@ resources=Cu,U,NaCl
 name=Blue Paradise
 biome=Lush
 resources=Cu,Pf,Co
+
+[Sys010000029852B3]
+atlasinterface=false
+blackhole=false
 
 [Sys014400029852B3]
 atlasinterface=false
@@ -6999,6 +7289,10 @@ resources=Cu,Py,Co
 
 [Pln507A00039852B3]
 
+[Sys008500039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys00AA00039852B3]
 atlasinterface=false
 blackhole=false
@@ -7017,8 +7311,8 @@ conflict_label=entspannt
 atlasinterface=false
 blackhole=false
 class=Yellow
-short=
-info=Expedition1: Treff 2
+short=Expedition 2
+info=Treff 2
 
 [Pln10C800039852B3]
 
@@ -7042,6 +7336,10 @@ atlasinterface=false
 blackhole=false
 
 [Sys00E300039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys00F000039852B3]
 atlasinterface=false
 blackhole=false
 
@@ -7140,6 +7438,10 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys013600039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys013800039852B3]
 atlasinterface=false
 blackhole=false
@@ -7149,6 +7451,10 @@ atlasinterface=false
 blackhole=false
 
 [Sys014400039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys014B00039852B3]
 atlasinterface=false
 blackhole=false
 
@@ -7266,14 +7572,81 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys022900039852B3]
+atlasinterface=false
+blackhole=false
+
 [Reg000000049852B3]
 name=Uewasi
+
+[Sys000900049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys000A00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys000E00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys003700049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys003800049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys003D00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys007900049852B3]
+name=Zentanami
+race=Vykeen
+economy=2
+economy_label=zufriedenstellend
+conflict=1
+conflict_label=ungestört
+atlasinterface=false
+blackhole=true
+planets=6
+
+[Pln107900049852B3]
+
+[Pln207900049852B3]
+
+[Pln307900049852B3]
+
+[Pln407900049852B3]
+
+[Pln507900049852B3]
+
+[Pln607900049852B3]
+
+[Sys00B600049852B3]
+atlasinterface=false
+blackhole=false
 
 [Sys00B700049852B3]
 atlasinterface=false
 blackhole=false
 
+[Sys00CC00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys00F000049852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys010300049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys010600049852B3]
 atlasinterface=false
 blackhole=false
 
@@ -7305,6 +7678,34 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys013A00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys015E00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys017C00049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys018600049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys019400049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01B100049852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01D100049852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys01D300049852B3]
 name=Kawarab
 race=Gek
@@ -7325,9 +7726,156 @@ resources=Cu,NaCl
 short=
 info=Biom: Sumpf,  Rohstoff: Faecium
 
+[Sys01DC00049852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys01FE00049852B3]
 atlasinterface=false
 blackhole=false
+
+[Reg000000059852B3]
+name=Meer von Bibalagio
+
+[Sys003C00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys004300059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys004A00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys005900059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys006A00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys007200059852B3]
+name=Miryusin Rex
+race=Gek
+economy=2
+economy_label=ausgeglichen
+conflict=1
+conflict_label=ruhig
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=5
+
+[Sys010100059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys011C00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys013500059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys013600059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys016800059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys016B00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys018500059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01A700059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01AF00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01C200059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01D400059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01D500059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01D900059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01EB00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01EE00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys020700059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys022200059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys023900059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys023B00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys023C00059852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys023D00059852B3]
+name=Kinovosamav
+race=Korvax
+economy=2
+economy_label=In Entwicklung
+conflict=2
+conflict_label=reizbar
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Pln123D00059852B3]
+
+[Pln223D00059852B3]
+name=Rionian Gamma
+biome=Toxic
+with water
+resources=Cu,NH3,Ag
+
+[Pln323D00059852B3]
+
+[Pln423D00059852B3]
+
+[Pln523D00059852B3]
+
+[Pln623D00059852B3]
 
 [Reg000000049842B4]
 
