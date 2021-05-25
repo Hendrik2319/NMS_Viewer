@@ -2700,6 +2700,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			private TristateCheckBox chkbxPlayerBase;
 			private TristateCheckBox chkbxOtherPlayerBase;
 			private TristateCheckBox chkbxTeleporter;
+			private TristateCheckBox chkbxPortal;
 
 			private ResourceSelectDialog resourceSelectDialog;
 			private EnumSet<Resources> resources;
@@ -2779,6 +2780,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				chkbxPlayerBase      = Gui.createTristateCheckBox("has Base"                  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxOtherPlayerBase = Gui.createTristateCheckBox("has Base of another Player", e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				chkbxTeleporter      = Gui.createTristateCheckBox("is reachable by Teleport"  , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
+				chkbxPortal          = Gui.createTristateCheckBox("has known Portal"          , e->updateMarkers(), TristateCheckBox.State.UNDEFINED);
 				
 				c.fill = GridBagConstraints.BOTH;
 				
@@ -2825,6 +2827,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				right.add( chkbxTeleporter, c );
 				
+				//c.gridwidth = 1;
+				//right.add( new JLabel(AdditionalIcons.getCachedIcon(AdditionalTreeIcons.Teleporter)), c );
+				c.gridwidth = GridBagConstraints.REMAINDER;
+				right.add( chkbxPortal, c );
+				
 				c.gridwidth = GridBagConstraints.REMAINDER;
 				c.weighty = 1;
 				left.add(new JLabel(),c);
@@ -2867,6 +2874,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				if (!chkbxPlayerBase     .isUndefined() && p.additionalInfos.playerBases.isEmpty()       == chkbxPlayerBase     .isSelected()) return false;
 				if (!chkbxOtherPlayerBase.isUndefined() && p.additionalInfos.hasOtherPlayersBase()       != chkbxOtherPlayerBase.isSelected()) return false;
 				if (!chkbxTeleporter     .isUndefined() && p.additionalInfos.teleportEndpoints.isEmpty() == chkbxTeleporter     .isSelected()) return false;
+				if (!chkbxPortal         .isUndefined() && p.hasKnownPortal()                            != chkbxPortal         .isSelected()) return false;
 				
 				return true;
 			}
@@ -2885,7 +2893,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					chkbxVehicleSummoner.isUndefined() &&
 					chkbxPlayerBase     .isUndefined() &&
 					chkbxOtherPlayerBase.isUndefined() &&
-					chkbxTeleporter     .isUndefined();
+					chkbxTeleporter     .isUndefined() &&
+					chkbxPortal         .isUndefined();
 			}
 
 			@Override
@@ -2904,6 +2913,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				chkbxPlayerBase     .setUndefined();
 				chkbxOtherPlayerBase.setUndefined();
 				chkbxTeleporter     .setUndefined();
+				chkbxPortal         .setUndefined();
 			}
 			
 		}

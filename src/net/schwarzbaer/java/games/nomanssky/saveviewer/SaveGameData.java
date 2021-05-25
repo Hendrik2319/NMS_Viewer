@@ -4731,6 +4731,10 @@ public class SaveGameData {
 				if (ua==null) return null;
 				return new UniverseAddress(ua,planetIndex);
 			}
+			
+			public boolean hasKnownPortal() {
+				return portalPos!=null && portalPos.isValueOk();
+			}
 		}
 	}
 
