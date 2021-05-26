@@ -6526,6 +6526,122 @@ blackholetarget=006F000420EF33
 class=Yellow
 planets=4
 
+[Reg00000020643245]
+name=Alcyoida
+
+[Sys012B0020643245]
+name=Beherno
+race=Gek
+economy=3
+economy_label=gedeihend
+conflict=1
+conflict_label=niedrig
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Sys012C0020643245]
+name=Idsorione
+race=Vykeen
+economy=2
+economy_label=In Entwicklung
+conflict=3
+conflict_label=riskant
+atlasinterface=false
+blackhole=false
+class=Blue
+planets=3
+
+[Sys012F0020643245]
+name=Uxbrigo-Namare
+race=Gek
+economy=2
+economy_label=Mittlere Versorgung
+conflict=2
+conflict_label=unbändig
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Sys01530020643245]
+name=Rilanko
+race=Korvax
+economy_label=angemessen
+conflict=2
+conflict_label=gewalttätig
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+
+[Pln41530020643245]
+name=Sodus Gamma
+biome=Frozen
+resources=Cu,CO2,Co
+portal=41.2900,165.2900
+
+[Sys01680020643245]
+name=Runetic XV
+race=Gek
+economy=1
+economy_label=aussichtslos
+conflict=3
+conflict_label=im Krieg
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=4
+
+[Sys01830020643245]
+name=Ereighb
+race=Vykeen
+economy=2
+economy_label=nachhaltig
+conflict=2
+conflict_label=streitlustig
+atlasinterface=false
+blackhole=false
+class=Blue
+planets=6
+
+[Sys01850020643245]
+name=Yeptimi-Arett XIII
+race=Gek
+economy=2
+economy_label=komfortabel
+conflict=2
+conflict_label=unregelmäßig
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=2
+
+[Sys01980020643245]
+name=Anthib
+race=Gek
+economy=1
+economy_label=mittellos
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=5
+
+[Sys01AE0020643245]
+name=Tulocest II
+race=Korvax
+economy=2
+economy_label=nachhaltig
+conflict=3
+conflict_label=gewaltig
+atlasinterface=false
+blackhole=false
+class=Green
+planets=6
+
 [Reg00000002FAF24F]
 name=Sudiazz
 
@@ -7195,6 +7311,7 @@ conflict_label=niedrig
 atlasinterface=false
 blackhole=false
 class=Yellow
+planets=6
 short=Expedition 2
 info=Treff 1
 
