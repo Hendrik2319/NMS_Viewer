@@ -225,21 +225,21 @@ public class GameInfos {
 	}
 	
 	public static void updateConflictLevelLabels() {
-		conflictLevelLabels = updateLevelLabels(system->system.conflictLevelLabel, system->system.conflictLevel);
+		conflictLevelLabels = updateLevelLabels(system->system.conflictLevelLabel, system->system.conflictLevel, -1);
 	}
 	public static void updateEconomyLevelLabels() {
-		economyLevelLabels = updateLevelLabels(system->system.economyLevelLabel, system->system.economyLevel);
+		economyLevelLabels = updateLevelLabels(system->system.economyLevelLabel, system->system.economyLevel, -1);
 	}
-	private static HashMap<Integer,HashSet<String>> updateLevelLabels(Function<UOD_SolarSystem,String> getLabel, Function<UOD_SolarSystem,Integer> getLevel) {
+	private static HashMap<Integer,HashSet<String>> updateLevelLabels(Function<UOD_SolarSystem,String> getLabel, Function<UOD_SolarSystem,Integer> getLevel, int undefinedLevel) {
 		HashMap<Integer,HashSet<String>> levelLabels = new HashMap<>();
 		for (UniverseObjectData uoData:universeObjectDataArr.values()) {
 			if (!(uoData instanceof UOD_SolarSystem)) continue;
 			UOD_SolarSystem system = (UOD_SolarSystem)uoData;
 			String levelLabel = getLabel.apply(system);
-			//int level = getLevel.apply(system); // TODO
-			//if (levelLabel!=null && level!=undefinedLevel) { // parameter undefinedLevel = -1
-			if (levelLabel!=null) {
-				int level = getLevel.apply(system);
+			int level = getLevel.apply(system);
+			if (levelLabel!=null && level!=undefinedLevel) {
+			//if (levelLabel!=null) {
+			//	int level = getLevel.apply(system);
 				HashSet<String> labels = levelLabels.get(level);
 				if (labels==null) levelLabels.put(level, labels = new HashSet<>());
 				labels.add(levelLabel);
@@ -277,7 +277,9 @@ public class GameInfos {
 		return getLabeledLevel(label, economyLevelLabels);
 	}
 	private static int getLabeledLevel(String label, HashMap<Integer,HashSet<String>> levelLabels) {
-		for (Integer level:levelLabels.keySet()) {
+		Vector<Integer> levels = new Vector<>(levelLabels.keySet());
+		levels.sort(null);
+		for (Integer level:levels) {
 			HashSet<String> labels = levelLabels.get(level);
 			if (labels.contains(label)) return level;
 		}

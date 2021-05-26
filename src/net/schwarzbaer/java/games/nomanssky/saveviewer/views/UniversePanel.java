@@ -995,7 +995,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		
-		private abstract class LabeledLevelsBlock {
+		private abstract class LabeledLevelsBlock { // TODO: auf Event-Schleifen untersuchen
 			private Gui.IconComboBox<Integer> cmbbxLevel;
 			private JComboBox<String> cmbbxLevelLabels;
 			private JButton btnAddLevelLabel;
@@ -1041,7 +1041,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (isSettingContent) return;
 					
 					Integer val = cmbbxLevel.getSelected();
-					setLevelInNode( val==null ? undefinedValue : val );
+					int newLevel = val==null ? undefinedValue : val;
+					int oldLevel = getLevelFromNode();
+					
+					if (newLevel==oldLevel) return;
+					
+					setLevelInNode( newLevel );
 					updateTreeNode(node, false);
 					
 					updateLevelLabelsGameInfos();
@@ -1053,12 +1058,17 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					if (isSettingContent) return;
 					
 					int index = cmbbxLevelLabels.getSelectedIndex();
-					String levelLabel = index<0?null:cmbbxLevelLabels.getItemAt(index);
-					setLevelLabelInNode(levelLabel);
+					String newLevelLabel = index<0?null:cmbbxLevelLabels.getItemAt(index);
+					String oldLevelLabel = getLevelLabelFromNode();
+					
+					if (newLevelLabel==null && oldLevelLabel==null) return;
+					if (newLevelLabel!=null && oldLevelLabel!=null && newLevelLabel.equals(oldLevelLabel)) return;
+					
+					setLevelLabelInNode(newLevelLabel);
 					updateTreeNode(node, false);
 					
 					if (!isInRange(getLevelFromNode())) {
-						int level = getLevelByLabel(levelLabel);
+						int level = getLevelByLabel(newLevelLabel);
 						SwingUtilities.invokeLater(()->setLevel(level));
 					}
 				});
@@ -1097,7 +1107,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				String[] labels = getLevelLabels(level);
 				cmbbxLevelLabels.setModel(new DefaultComboBoxModel<>(labels));
 				cmbbxLevelLabels.setSelectedItem(label);
-				btnAddLevelLabel.setEnabled(level>=1);
+				btnAddLevelLabel.setEnabled(isInRange(level));
 			}
 			
 		}
