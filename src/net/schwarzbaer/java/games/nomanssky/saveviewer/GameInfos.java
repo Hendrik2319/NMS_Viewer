@@ -236,6 +236,8 @@ public class GameInfos {
 			if (!(uoData instanceof UOD_SolarSystem)) continue;
 			UOD_SolarSystem system = (UOD_SolarSystem)uoData;
 			String levelLabel = getLabel.apply(system);
+			//int level = getLevel.apply(system); // TODO
+			//if (levelLabel!=null && level!=undefinedLevel) { // parameter undefinedLevel = -1
 			if (levelLabel!=null) {
 				int level = getLevel.apply(system);
 				HashSet<String> labels = levelLabels.get(level);

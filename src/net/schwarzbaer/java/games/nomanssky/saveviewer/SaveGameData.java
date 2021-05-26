@@ -2475,6 +2475,7 @@ public class SaveGameData {
 			EXPLORE_TER_5 ("Holographische Anzeigen"     ,"Erkundung: +2"),
 			EXPLORE_TER_6 ("Langstreckensensoren"        ,"Erkundung: +3"),
 			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
+			EXPLORE_BAD_3 ("Nicht kalibrierter Warpantrieb","Erkundung: -6"),
 			
 			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
 			MINING_SEC_1  ("Laserbohranordnung"           ,"Industrie: +2"),
@@ -2490,6 +2491,7 @@ public class SaveGameData {
 			MINING_TER_5  ("Metalldetektor"               ,"Industrie: +2"),
 			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
 			MINING_BAD_2  ("Kleine Behälter"              ,"Industrie: -4"),
+			MINING_BAD_3  ("Ungeschickter Bohrarbeiter"   ,"Industrie: -6"),
 			MINING_BAD_5  ("Defekte Drohnen"              ,"Industrie: -2"),
 			
 			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
@@ -2508,6 +2510,7 @@ public class SaveGameData {
 			COMBAT_BAD_1  ("Feige Schützen"                ,"Kampf: -2"),
 			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
 			COMBAT_BAD_3  ("Defekte Torpedos"              ,"Kampf: -6"),
+			COMBAT_BAD_4  ("Zerbrechlicher Rumpf"          ,"Kampf: -2"),
 			
 			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
 			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
@@ -2521,6 +2524,7 @@ public class SaveGameData {
 			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),
 			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
 			TRADING_BAD_2 ("Kleiner Frachtraum"          ,"Handel: -4"),
+			TRADING_BAD_4 ("Dieb an Bord"                ,"Handel: -4"),
 			
 			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
 			SPEED_TER_2   ("Masseantrieb"                 ,"-1% Expeditionsdauer"),
@@ -2543,7 +2547,9 @@ public class SaveGameData {
 			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
 			FUEL_TER_7    ("Effizienter Warpantrieb"     ,"Treibstoffkosten der Expedition: -4"),
 			FUEL_BAD_1    ("Durstige Crew"               ,"Kosten pro Warp: +1"),
+			FUEL_BAD_2    ("Ineffizienter Antrieb"       ,"Kosten pro Warp: +2"),
 			FUEL_BAD_3    ("Undichte Treibstoffrohre"    ,"Kosten pro Warp: +4"),
+			FUEL_BAD_5    ("Ölbrenner"                   ,"Kosten pro Warp: +1"),
 			
 			INVULN_TER_1  ("Sich selbst reparierender Rumpf" ,"Schadensreduzierung"),
 			INVULN_TER_2  ("Fortgeschrittene Wartungsdrohnen","Schadensreduzierung"),

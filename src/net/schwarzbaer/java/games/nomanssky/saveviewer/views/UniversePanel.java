@@ -1820,9 +1820,13 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void updateTreeNode(GenericTreeNode<?> node, boolean updateParent) {
+		updateTreeNode(node, updateParent, true);
+	}
+	
+	private void updateTreeNode(GenericTreeNode<?> node, boolean updateParent, boolean saveDataToFile) {
 		treeModel.nodeChanged(node);
 		if (updateParent) treeModel.nodeChanged(node.parent);
-		GameInfos.saveUniverseObjectDataToFile(data.universe);
+		if (saveDataToFile) GameInfos.saveUniverseObjectDataToFile(data.universe);
 	}
 
 	private void updateTreeNodeAndInfoPanel(GenericTreeNode<?> node, boolean updateParent) {
@@ -1830,9 +1834,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	}
 
 	private void updateTreeNodeAndInfoPanel(GenericTreeNode<?> node, boolean updateParent, boolean saveDataToFile) {
-		treeModel.nodeChanged(node);
-		if (updateParent) treeModel.nodeChanged(node.parent);
-		if (saveDataToFile) GameInfos.saveUniverseObjectDataToFile(data.universe);
+		updateTreeNode(node, updateParent, saveDataToFile);
 		if (selectedNode==node) updateInfoPanel();
 	}
 
