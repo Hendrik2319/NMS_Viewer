@@ -7381,6 +7381,18 @@ name=Aaihoj
 atlasinterface=false
 blackhole=false
 
+[Sys000800039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys002200039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys005200039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys007A00039852B3]
 name=Ihinsun-Ied
 race=Vykeen
@@ -7411,6 +7423,14 @@ atlasinterface=false
 blackhole=false
 
 [Sys00AA00039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys00AC00039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys00AE00039852B3]
 atlasinterface=false
 blackhole=false
 
@@ -7447,6 +7467,10 @@ resources=Cu,Pf,NaCl
 portal=19.1500,-161.5500
 
 [Pln50C800039852B3]
+
+[Sys00CD00039852B3]
+atlasinterface=false
+blackhole=false
 
 [Sys00D600039852B3]
 atlasinterface=false
@@ -7547,6 +7571,14 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys012400039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys012500039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys012700039852B3]
 atlasinterface=false
 blackhole=false
@@ -7607,11 +7639,19 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys016500039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys017200039852B3]
 atlasinterface=false
 blackhole=false
 
 [Sys017400039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys017900039852B3]
 atlasinterface=false
 blackhole=false
 
@@ -7653,6 +7693,14 @@ resources=Em,NH3,Fe__
 short=
 info=Athmosphere: schwarz-rot
 
+[Sys018000039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys018500039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys018F00039852B3]
 atlasinterface=false
 blackhole=false
@@ -7665,6 +7713,10 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys01A600039852B3]
+atlasinterface=false
+blackhole=false
+
 [Sys01A800039852B3]
 atlasinterface=false
 blackhole=false
@@ -7674,6 +7726,10 @@ atlasinterface=false
 blackhole=false
 
 [Sys01C200039852B3]
+atlasinterface=false
+blackhole=false
+
+[Sys01EB00039852B3]
 atlasinterface=false
 blackhole=false
 
@@ -8001,8 +8057,165 @@ atlasinterface=false
 blackhole=false
 
 [Reg000000039852B4]
+name=Rackhas-Untiefe
+
+[Sys001100039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys002000039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys002A00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys003300039852B4]
+name=Haykan-Hij
+race=Vykeen
+economy=3
+economy_label=florierend
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
+short=Expedition 2
+info=Treff 3
+
+[Pln103300039852B4]
+
+[Pln203300039852B4]
+
+[Pln303300039852B4]
+
+[Pln403300039852B4]
+
+[Pln503300039852B4]
+name=Neu: Hette
+biome=Barren
+aggrSentinels
+gravitino balls
+resources=Cu,Py,Co
+portal=-79.7300,-159.5500
+
+[Pln603300039852B4]
+
+[Sys004F00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys007D00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys007E00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys007F00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys008000039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys008100039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys008200039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys009D00039852B4]
+name=Ozhexam-Anask II
+race=Vykeen
+economy=2
+economy_label=ausgeglichen
+conflict=2
+conflict_label=sporadisch
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=3
+short=Expedition 2
+info=Zwischenstopp zu Treff 3
+
+[Pln109D00039852B4]
+
+[Pln209D00039852B4]
+
+[Pln309D00039852B4]
+
+[Sys009E00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys00A200039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys00B700039852B4]
+atlasinterface=false
+blackhole=false
 
 [Sys00D300039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys00EA00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys00ED00039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys010500039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys014400039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys015800039852B4]
+name=Lunankhan XV
+race=Korvax
+economy=2
+economy_label=ausgeglichen
+conflict=2
+conflict_label=mittel
+atlasinterface=false
+blackhole=false
+class=Green
+planets=4
+short=Expedition 2
+info=Zwischenstopp zu Treff 3
+
+[Pln115800039852B4]
+
+[Pln215800039852B4]
+
+[Pln315800039852B4]
+
+[Pln415800039852B4]
+
+[Sys01C100039852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys01C600039852B4]
+atlasinterface=false
+blackhole=false
+
+[Reg000000039862B4]
+
+[Sys01D000039862B4]
 atlasinterface=false
 blackhole=false
 
