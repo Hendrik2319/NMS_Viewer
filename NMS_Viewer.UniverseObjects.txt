@@ -8115,6 +8115,10 @@ portal=-79.7300,-159.5500
 
 [Pln603300039852B4]
 
+[Sys003D00039852B4]
+atlasinterface=false
+blackhole=false
+
 [Sys004F00039852B4]
 atlasinterface=false
 blackhole=false
@@ -8272,11 +8276,27 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys007F00049852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys009B00049852B4]
+atlasinterface=false
+blackhole=false
+
 [Sys009D00049852B4]
 atlasinterface=false
 blackhole=false
 
 [Sys015400049852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys015500049852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys015800049852B4]
 atlasinterface=false
 blackhole=false
 
@@ -8292,6 +8312,14 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys016E00049852B4]
+atlasinterface=false
+blackhole=false
+
+[Sys018900049852B4]
+atlasinterface=false
+blackhole=false
+
 [Sys019300049852B4]
 atlasinterface=false
 blackhole=false
@@ -8301,7 +8329,7 @@ atlasinterface=false
 blackhole=false
 
 [Sys01A800049852B4]
-name=Feydistopia
+name=Dodtal
 race=Gek
 economy=3
 economy_label=fortgeschritten
@@ -8431,7 +8459,19 @@ info=Zwischenstopp zu Treff 5
 atlasinterface=false
 blackhole=false
 
+[Sys00D800049852B5]
+atlasinterface=false
+blackhole=false
+
+[Sys00DC00049852B5]
+atlasinterface=false
+blackhole=false
+
 [Sys00E000049852B5]
+atlasinterface=false
+blackhole=false
+
+[Sys00F200049852B5]
 atlasinterface=false
 blackhole=false
 
@@ -8443,6 +8483,10 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys014D00049852B5]
+atlasinterface=false
+blackhole=false
+
 [Sys016700049852B5]
 atlasinterface=false
 blackhole=false
@@ -8451,8 +8495,12 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys01D900049852B5]
+atlasinterface=false
+blackhole=false
+
 [Sys01DC00049852B5]
-name=JHI Memodit-Ori
+name=Memodit-Ori
 race=Korvax
 economy=2
 economy_label=erfolgversprechend
@@ -8462,6 +8510,8 @@ atlasinterface=false
 blackhole=false
 class=Yellow
 planets=6
+short=Expedition 2
+info=Zwischenstopp zu Treff 5
 
 [Pln11DC00049852B5]
 
@@ -8494,8 +8544,67 @@ atlasinterface=false
 blackhole=false
 
 [Reg000000049852B6]
+name=Raxixossi-Weite
 
 [Sys005B00049852B6]
+name=Gauraz-Caeru
+race=Gek
+economy=2
+economy_label=Mittlere Versorgung
+conflict=2
+conflict_label=ungestüm
+atlasinterface=false
+blackhole=false
+class=Yellow
+short=Expedition 2
+info=Treff 5
+
+[Pln105B00049852B6]
+
+[Pln205B00049852B6]
+name=Iopek
+biome=Scorched
+resources=Cu,P,Co
+
+[Pln305B00049852B6]
+name=Puhene VI
+biome=AnomHexagons
+resources=Cu,Au,Co
+portal=-9.2700,25.8000
+
+[Pln405B00049852B6]
+
+[Pln505B00049852B6]
+
+[Sys006400049852B6]
+atlasinterface=false
+blackhole=false
+
+[Sys00B300049852B6]
+name=Sayasu-Ukabe
+unexplored
+atlasinterface=false
+blackhole=false
+class=Blue
+planets=3
+short=Expedition 2
+info=Zwischenstopp zu Treff 5
+
+[Pln10B300049852B6]
+
+[Pln20B300049852B6]
+
+[Pln30B300049852B6]
+
+[Sys00D400049852B6]
+atlasinterface=false
+blackhole=false
+
+[Sys011500049852B6]
+atlasinterface=false
+blackhole=false
+
+[Sys014E00049852B6]
 atlasinterface=false
 blackhole=false
 
