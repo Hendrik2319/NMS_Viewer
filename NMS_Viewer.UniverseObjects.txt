@@ -6594,6 +6594,18 @@ blackhole=false
 class=Yellow
 planets=4
 
+[Sys01820020643245]
+name=Sawbrie IV
+race=Vykeen
+economy=2
+economy_label=erfolgversprechend
+conflict=2
+conflict_label=instabil
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=4
+
 [Sys01830020643245]
 name=Ereighb
 race=Vykeen
@@ -7043,6 +7055,9 @@ info=Histographische Echoquelle
 [Pln219B00029852B2]
 
 [Pln319B00029852B2]
+name=Nessie Q8
+biome=AnomMushrooms
+resources=Cu,Au,Fe__
 
 [Pln419B00029852B2]
 
@@ -8427,6 +8442,10 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys009000049852B5]
+atlasinterface=false
+blackhole=false
+
 [Sys009A00049852B5]
 atlasinterface=false
 blackhole=false
@@ -8604,7 +8623,41 @@ blackhole=false
 atlasinterface=false
 blackhole=false
 
+[Sys014600049852B6]
+name=Izawaji
+race=Gek
+economy=2
+economy_label=ausgeglichen
+conflict=2
+conflict_label=sporadisch
+atlasinterface=false
+blackhole=false
+class=Green
+planets=6
+
+[Pln114600049852B6]
+
+[Pln214600049852B6]
+
+[Pln314600049852B6]
+
+[Pln414600049852B6]
+
+[Pln514600049852B6]
+
+[Pln614600049852B6]
+
 [Sys014E00049852B6]
+atlasinterface=false
+blackhole=false
+
+[Reg000000059862B6]
+
+[Sys011E00059862B6]
+atlasinterface=false
+blackhole=false
+
+[Sys018800059862B6]
 atlasinterface=false
 blackhole=false
 
