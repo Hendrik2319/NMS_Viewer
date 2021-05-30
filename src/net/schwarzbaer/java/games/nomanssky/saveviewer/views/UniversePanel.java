@@ -13,6 +13,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -80,6 +81,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggesti
 import net.schwarzbaer.java.games.nomanssky.saveviewer.ResourceHotSpots;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.AddressdableObject;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.StoredInteraction;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.ExperimentalData.StoredInteraction.Interaction;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PersistentPlayerBase;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.PolarCoordinates;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TeleportEndpoints;
@@ -435,9 +438,9 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		contextMenu_Planet      = new Contextmenu_Planet();
 		contextMenu_Region      = new Contextmenu_Region();
 		
-		infoPanel_Other       = new InfoPanel_Other();
-		infoPanel_SolarSystem = new InfoPanel_SolarSystem();
-		infoPanel_Planet      = new InfoPanel_Planet();
+		infoPanel_Other       = new InfoPanel_Other(data);
+		infoPanel_SolarSystem = new InfoPanel_SolarSystem(data);
+		infoPanel_Planet      = new InfoPanel_Planet(data);
 		
 		searchBar = new SearchBar();
 		
@@ -467,25 +470,28 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 	private static abstract class AbstractInfoPanel extends JPanel {
 		private static final long serialVersionUID = 1055278730261206951L;
 		
-		private JTextArea textArea;
+		protected final SaveGameData data;
+		private   final JTextArea textArea;
 		protected boolean isSettingContent;
 		
-		AbstractInfoPanel() {
+		AbstractInfoPanel(SaveGameData data) {
 			super(new BorderLayout(3,3));
+			this.data = data;
 			setPreferredSize(new Dimension(650,500));
 			isSettingContent = false;
 			
 			textArea = new JTextArea();
 			textArea.setEditable(false);
 			
-			JScrollPane scrollPane = new JScrollPane(textArea);
-			scrollPane.setBorder(BorderFactory.createEtchedBorder());
+			JScrollPane textAreaScrollPane = new JScrollPane(textArea);
+			textAreaScrollPane.setBorder(BorderFactory.createEtchedBorder());
 			
-			add(scrollPane,BorderLayout.CENTER);
+			add(textAreaScrollPane,BorderLayout.CENTER);
 		}
 		public void setContent(GenericTreeNode<?> node) {
 			isSettingContent = true;
 			setContent_intern(node);
+			SwingUtilities.invokeLater(()->textArea.scrollRectToVisible(new Rectangle(0,0,10,10)));
 			isSettingContent = false;
 		}
 		protected abstract void setContent_intern(GenericTreeNode<?> node);
@@ -497,6 +503,22 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		protected void appendln(                                               ) { append(               "\r\n"         ); }
 		protected void appendln(               String format, Object...objects ) { append(        format+"\r\n", objects); }
 		protected void appendln(Locale locale, String format, Object...objects ) { append(locale, format+"\r\n", objects); }
+		
+		protected void appendStoredInteractions(UniverseAddress ua) {
+			if (data.experimentalData.storedInteractions==null) return;
+			boolean isFirst = true;
+			for (StoredInteraction stInt : data.experimentalData.storedInteractions) {
+				for (Interaction interaction : stInt.interactions) {
+					if (interaction.galacticAddress.equals(ua)) {
+						if (isFirst) { appendln("\r\nStoredInteractions:"); isFirst = false; }
+						String where = "";
+						if      (interaction.gpsCoords!=null) where = interaction.gpsCoords.toString();
+						else if (interaction.position !=null) where = interaction.position .toString(" %1.2f ");
+						appendln("   [%02d,%04d]  %d  @  %s", stInt.index, interaction.index, interaction.value, where );
+					}
+				}
+			}
+		}
 
 		protected void showObjectWithSource(ObjectWithSource obj) {
 			appendln();
@@ -519,8 +541,12 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		}
 	}
 	
-	private class InfoPanel_Other extends AbstractInfoPanel {
+	private static class InfoPanel_Other extends AbstractInfoPanel {
 		private static final long serialVersionUID = 4133259332387200850L;
+
+		InfoPanel_Other(SaveGameData data) {
+			super(data);
+		}
 
 		@Override
 		protected void setContent_intern(GenericTreeNode<?> selectedNode) {
@@ -556,6 +582,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					appendln(Locale.ENGLISH,"    computed: infinite");
 				else
 					appendln(Locale.ENGLISH,"    computed: %1.2f Regions = %1.1f ly", distance_currPos, distance_currPos*400);
+				appendStoredInteractions(ua);
 				break;
 				
 			case Galaxy:
@@ -584,7 +611,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private JPanel rightValuePanel;
 		private GridBagConstraints c;
 		
-		InfoPanel_DiscoverableObject(UniversePanel universePanel, boolean useValuePanel) {
+		InfoPanel_DiscoverableObject(SaveGameData data, UniversePanel universePanel, boolean useValuePanel) {
+			super(data);
 			this.universePanel = universePanel;
 			extraInfoTable = new SimplifiedTable<>("ExtraInfoTable",true,SaveViewer.DEBUG,true);
 			JScrollPane extraInfoTableScrollPane = new JScrollPane(extraInfoTable);
@@ -752,8 +780,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 
 		private final GenericValueTextField<Integer> txtfldPlanets;
 
-		InfoPanel_SolarSystem() {
-			super(UniversePanel.this,true);
+		InfoPanel_SolarSystem(SaveGameData data) {
+			super(data,UniversePanel.this,true);
 			this.node = null;
 			
 			cmbbxRace = new Gui.IconComboBox<Race>(Race.values()) {
@@ -993,6 +1021,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 						appendln("        \"%s\"", tel.name);
 				}
 			}
+			
+			appendStoredInteractions(ua);
 		}
 		
 		private abstract class LabeledLevelsBlock { // TODO: auf Event-Schleifen untersuchen
@@ -1138,8 +1168,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		private final GenericValueTextField<Double> txtfldPortalLat;
 		private final GenericValueTextField<Double> txtfldPortalLon;
 		
-		InfoPanel_Planet() {
-			super(UniversePanel.this, true);
+		InfoPanel_Planet(SaveGameData data) {
+			super(data, UniversePanel.this, true);
 			this.node = null;
 			
 			resourceSelectDialog = new ResourceSelectDialog(mainWindow, "Select Planetary Resources");
@@ -1325,6 +1355,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					}
 				}
 			}
+			
+			appendStoredInteractions(ua);
 		}
 
 		private void updateTxtfldResources() {

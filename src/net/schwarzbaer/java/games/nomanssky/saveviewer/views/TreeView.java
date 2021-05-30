@@ -2,11 +2,13 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer.views;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Vector;
 
+import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
@@ -213,18 +215,33 @@ public class TreeView {
 			private static final Color FIRST   = new Color(0xFF0000);
 			private static final Color SECOND  = new Color(0x009F00);
 			private static final Color UNEQUAL = new Color(0x9F009F);
+
+			private final Font defaultFont;
+			private final Font boldFont;
+			
+			public CellRenderer () {
+				defaultFont = new JLabel().getFont();
+				boldFont = defaultFont.deriveFont(Font.BOLD);
+			}
 			
 			@Override
 			public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 				Component component = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 				if (value instanceof CompareTreeNode) {
 					CompareTreeNode node = (CompareTreeNode)value;
+					Color textColor = null; 
 					switch (node.source) {
-					case First : component.setForeground(FIRST); break;
-					case Second: component.setForeground(SECOND); break;
+					case First : textColor = FIRST; break;
+					case Second: textColor = SECOND; break;
 					case Both:
-						if (!node.allChildrenAreEqual()) component.setForeground(UNEQUAL);
+						if (!node.allChildrenAreEqual()) textColor = UNEQUAL;
 						break;
+					}
+					if (textColor != null) {
+						setForeground(textColor);
+						setFont(boldFont);
+					} else {
+						setFont(defaultFont);
 					}
 				}
 				return component;

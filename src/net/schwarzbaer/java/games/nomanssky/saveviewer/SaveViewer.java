@@ -1248,7 +1248,7 @@ public class SaveViewer implements ActionListener {
 			selector1.updateUI();
 			selector2.revalidate();
 			selector2.updateUI();
-			updateTree();
+			//updateTree();
 		}
 
 		private void updateTree() {
