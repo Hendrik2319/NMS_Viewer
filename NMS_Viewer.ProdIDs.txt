@@ -1321,6 +1321,7 @@ Background=460C34
 ^FOOD_S_VEG.type=Ingredient
 ^FOOD_S_VEG.image=PRODUCT.SAUCE.png
 ^FOOD_S_VEG.imageBG=007953
+^FOOD_VEG_STEW=
 ^FOOD_V_BLOB=Klebriger "Honig"
 ^FOOD_V_BLOB.type=Ingredient
 ^FOOD_V_BLOB.image=PRODUCT.REFINED.HONEY.png

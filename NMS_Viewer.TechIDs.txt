@@ -1090,6 +1090,7 @@ Background=2177C8
 ^UP_JET4#81246.image=RENDER.JETPACKMOD.NEXT.png
 ^UP_JET4#81246.imageBG=2177C8
 ^UP_JET4#81246.upgradeClass=S
+^UP_JETX#46883=
 ^UP_LASER1#52959=Minenlaser-Upgrade (C)
 ^UP_LASER1#52959.type=MultitoolWeaponUpgrade
 ^UP_LASER1#52959.image=Render.laser1mod.MinenlaserUpgrade.png

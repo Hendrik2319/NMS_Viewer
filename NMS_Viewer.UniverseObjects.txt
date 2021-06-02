@@ -44,6 +44,132 @@ name=Aturin
 biome=Irradiated
 resources=Cu,U,Fe_
 
+[Reg00000000FFF801]
+name=Meer von Rowls
+
+[Sys00060000FFF801]
+atlasinterface=false
+blackhole=false
+
+[Sys00270000FFF801]
+atlasinterface=false
+blackhole=false
+
+[Sys00400000FFF801]
+atlasinterface=false
+blackhole=false
+
+[Sys00790000FFF801]
+name=Bobron-Nuki
+race=Vykeen
+economy=3
+economy_label=reich
+conflict=1
+conflict_label=entspannt
+atlasinterface=false
+blackhole=true
+planets=4
+
+[Pln10790000FFF801]
+
+[Pln30790000FFF801]
+
+[Sys00810000FFF801]
+atlasinterface=false
+blackhole=false
+
+[Sys00830000FFF801]
+atlasinterface=false
+blackhole=false
+
+[Sys00CD0000FFF801]
+atlasinterface=false
+blackhole=false
+
+[Reg00000000000801]
+name=Meer von Ledindu
+
+[Sys00010000000801]
+name=Blapida-Ekhov
+race=Gek
+economy=2
+economy_label=In Entwicklung
+conflict=2
+conflict_label=reizbar
+atlasinterface=false
+blackhole=false
+class=Yellow
+
+[Pln10010000000801]
+name=Zephyrus Prime
+biome=Irradiated
+resources=Cu,U,NaCl
+portal=-10.2300,158.5300
+
+[Pln20010000000801]
+
+[Pln30010000000801]
+
+[Pln40010000000801]
+
+[Pln50010000000801]
+
+[Sys00460000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys006A0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys00780000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys008B0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys00910000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys009C0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys009E0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys00CF0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys00E20000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys00EE0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys01040000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys01050000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys011B0000000801]
+atlasinterface=false
+blackhole=false
+
+[Sys01880000000801]
+atlasinterface=false
+blackhole=false
+
 [Reg000000231C1823]
 
 [Sys00B800231C1823]
@@ -61,6 +187,21 @@ short=DunkelRot
 info=Monochrome und Rot
 short=Grav??
 info=
+
+[Reg0000000335D8CF]
+name=Sicutiiq
+
+[Sys0030000335D8CF]
+name=Injukuse
+race=Gek
+economy=1
+economy_label=abnehmend
+conflict=2
+conflict_label=reizbar
+atlasinterface=false
+blackhole=false
+class=Yellow
+planets=6
 
 [Reg0000003538C8F7]
 
@@ -3221,6 +3362,16 @@ blackholetarget=0015000352B2EB
 class=Yellow
 planets=4
 
+[Reg0000003B992E03]
+
+[Sys00B8003B992E03]
+atlasinterface=false
+blackhole=false
+
+[Pln10B8003B992E03]
+
+[Pln20B8003B992E03]
+
 [Reg000000006A5E0D]
 name=Hajeljan-Untiefe
 
@@ -4518,6 +4669,32 @@ resources=In,Pf,Fe__
 atlasinterface=false
 blackhole=false
 
+[Reg00000081000000]
+name=Pehylodeni
+
+[Sys00010081000000]
+name=Kutsukel (Yomi)
+unexplored
+atlasinterface=false
+blackhole=false
+class=Green
+planets=5
+
+[Pln10010081000000]
+name=Izanami
+resources=Em,NaCl
+portal=-70.2200,88.4800
+short=
+info=Biom: Vulkanisch, --> Res: Basalt
+
+[Pln20010081000000]
+
+[Pln30010081000000]
+
+[Pln40010081000000]
+
+[Pln50010081000000]
+
 [Reg00000000000000]
 
 [Reg00000010000000]
@@ -4896,6 +5073,10 @@ resources=Cu,P,Ag
 
 [Pln509400FE007004]
 
+[Sys009700FE007004]
+atlasinterface=false
+blackhole=false
+
 [Sys009800FE007004]
 atlasinterface=false
 blackhole=false
@@ -5033,6 +5214,10 @@ gravitino balls
 resources=Cu_,Py,Fe__
 
 [Sys00AB00FE007004]
+atlasinterface=false
+blackhole=false
+
+[Sys00AC00FE007004]
 atlasinterface=false
 blackhole=false
 
@@ -5208,6 +5393,10 @@ with water
 resources=Cd_,P,Ag
 short=Atmosphere
 info=Blau-Rot
+
+[Sys010A00FE007004]
+atlasinterface=false
+blackhole=false
 
 [Sys011F00FE007004]
 atlasinterface=false
@@ -11543,6 +11732,81 @@ resources=Cu,P,NaCl
 [Pln4061000E3057EE]
 
 [Pln5061000E3057EE]
+
+[Reg00000000FFF7FF]
+
+[Sys01E30000FFF7FF]
+atlasinterface=false
+blackhole=false
+
+[Sys01F70000FFF7FF]
+atlasinterface=false
+blackhole=false
+
+[Reg000000000007FF]
+name=Legoanzen
+
+[Sys000100000007FF]
+name=Istash Dilesc (Eurus)
+race=Gek
+economy=2
+economy_label=komfortabel
+conflict=3
+conflict_label=hoch
+atlasinterface=false
+blackhole=false
+class=Yellow
+
+[Pln100100000007FF]
+name=Bile
+biome=Lush
+resources=Cu,Pf,Ag
+portal=-13.7200,11.1900
+
+[Pln200100000007FF]
+
+[Pln300100000007FF]
+
+[Pln400100000007FF]
+
+[Pln500100000007FF]
+
+[Pln600100000007FF]
+
+[Sys005100000007FF]
+atlasinterface=false
+blackhole=false
+
+[Sys007900000007FF]
+name=Beninski (Sonoj [Black Hole])
+race=Gek
+economy=2
+economy_label=Mittlere Versorgung
+conflict=2
+conflict_label=unbändig
+atlasinterface=false
+blackhole=true
+blackholetarget=0030000335D8CF
+class=Yellow
+planets=3
+
+[Pln107900000007FF]
+
+[Pln207900000007FF]
+
+[Pln307900000007FF]
+
+[Sys01B300000007FF]
+atlasinterface=false
+blackhole=false
+
+[Sys01D700000007FF]
+atlasinterface=false
+blackhole=false
+
+[Sys01F100000007FF]
+atlasinterface=false
+blackhole=false
 
 [Reg000006006A5E0D]
 name=Mawurdoyl-Nebel
