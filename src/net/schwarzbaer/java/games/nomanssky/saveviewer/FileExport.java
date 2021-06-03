@@ -25,6 +25,7 @@ import java.util.Stack;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -37,6 +38,10 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Position;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;
@@ -456,10 +461,7 @@ public class FileExport {
 				openFileInViewer.accept(file);
 		};
 		
-		if (parent==null)
-			task.accept(null);
-		else
-			SaveViewer.runWithProgressDialog(parent, "Write "+label+" to VRML", task);
+		runProgressDialogTask(parent, label, task);
 	}
 
 	public static void writePosToVRML_simple(String suggestedFileName, BuildingObject[] objects, Double planetRadius, Window parent, String label, Consumer<File> openFileInViewer) {
@@ -573,6 +575,214 @@ public class FileExport {
 			if (openFileInViewer!=null)
 				openFileInViewer.accept(file);
 		};
+		runProgressDialogTask(parent, label, task);
+	}
+
+	public static void writeGalaxyToVRML(File file, Galaxy galaxy, Function<Region,Color> getcolor, Color colorBlackholeConnection, Window parent) {
+		if (file  ==null) return;
+		if (galaxy==null) return;
+		
+		Consumer<ProgressDialog> task = (ProgressDialog pd)->{
+			long startTime, startTime_total;
+			
+			startTime_total = startTask(pd, "", "Write Galaxy Map to VRML");
+			try (PrintWriter vrml = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+				
+				startTime = startTask(pd, "   ", "Write Header");
+				vrml.println("#VRML V2.0 utf8");
+				vrml.println("");
+				vrml.println("Background { skyColor 0 0 0 }");
+				vrml.println("");
+				endTask(startTime);
+				
+				startTime = startTask(pd, "   ", "Create Outline");
+				LineGeometry.OptimizeNode outlineAndZeroAxes = new LineGeometry.OptimizeNode(
+//						new LineGeometry.PolyLine().add(-2047.5, 0.5, 0.5).add(+2047.5, 0.5, 0.5),
+//						new LineGeometry.PolyLine().add(-2047.5,-0.5, 0.5).add(+2047.5,-0.5, 0.5),
+//						new LineGeometry.PolyLine().add(-2047.5,-0.5,-0.5).add(+2047.5,-0.5,-0.5),
+//						new LineGeometry.PolyLine().add(-2047.5, 0.5,-0.5).add(+2047.5, 0.5,-0.5),
+//						
+//						new LineGeometry.PolyLine().add( 0.5,-127.5, 0.5).add( 0.5,+127.5, 0.5),
+//						new LineGeometry.PolyLine().add(-0.5,-127.5, 0.5).add(-0.5,+127.5, 0.5),
+//						new LineGeometry.PolyLine().add(-0.5,-127.5,-0.5).add(-0.5,+127.5,-0.5),
+//						new LineGeometry.PolyLine().add( 0.5,-127.5,-0.5).add( 0.5,+127.5,-0.5),
+//						
+//						new LineGeometry.PolyLine().add( 0.5, 0.5,-2047.5).add( 0.5, 0.5,+2047.5),
+//						new LineGeometry.PolyLine().add(-0.5, 0.5,-2047.5).add(-0.5, 0.5,+2047.5),
+//						new LineGeometry.PolyLine().add(-0.5,-0.5,-2047.5).add(-0.5,-0.5,+2047.5),
+//						new LineGeometry.PolyLine().add( 0.5,-0.5,-2047.5).add( 0.5,-0.5,+2047.5),
+						
+						new LineGeometry.PolyLine()
+							.add(-2047.5,-127.5,-2047.5)
+							.add( 2047.5,-127.5,-2047.5)
+							.add( 2047.5,-127.5, 2047.5)
+							.add(-2047.5,-127.5, 2047.5)
+							.close(),
+						
+						new LineGeometry.PolyLine()
+							.add(-2047.5, 127.5,-2047.5)
+							.add( 2047.5, 127.5,-2047.5)
+							.add( 2047.5, 127.5, 2047.5)
+							.add(-2047.5, 127.5, 2047.5)
+							.close(),
+						
+						new LineGeometry.PolyLine().add(-2047.5,-127.5,-2047.5).add(-2047.5, 127.5,-2047.5),
+						new LineGeometry.PolyLine().add( 2047.5,-127.5,-2047.5).add( 2047.5, 127.5,-2047.5),
+						new LineGeometry.PolyLine().add( 2047.5,-127.5, 2047.5).add( 2047.5, 127.5, 2047.5),
+						new LineGeometry.PolyLine().add(-2047.5,-127.5, 2047.5).add(-2047.5, 127.5, 2047.5)
+				);
+				endTask(startTime);
+				
+				LineGeometry.DirectWriteGroupingNode zeroAxes = new LineGeometry.DirectWriteGroupingNode();
+				LineGeometry.DirectWriteGroupingNode grid1 = new LineGeometry.DirectWriteGroupingNode();
+				LineGeometry.DirectWriteGroupingNode grid2 = new LineGeometry.DirectWriteGroupingNode();
+				Predicate<Integer> isGrid2 = i->(i & 0xFF)==0;
+				int inc = 64;
+				
+				startTime = startTask(pd, "   ", "Create Horizontal Grid Lines", 127);
+				LineGeometry.PolyLine lineXPYP, lineXNYP, lineZPYP, lineZNYP, lineXPYN, lineXNYN, lineZPYN, lineZNYN;
+				for (int y=0; y<128; y+=inc) {
+					final int finalY = y;
+					float y_ = y+0.5f;
+					for (int xz=0; xz<2048; xz+=inc) {
+						float xz_ = xz+0.5f;
+						lineXPYP = new LineGeometry.PolyLine().add( xz_,y_,-2047.5).add( xz_,y_, 2047.5);
+						lineXNYP = new LineGeometry.PolyLine().add(-xz_,y_,-2047.5).add(-xz_,y_, 2047.5);
+						lineZPYP = new LineGeometry.PolyLine().add(-2047.5,y_, xz_).add( 2047.5,y_, xz_);
+						lineZNYP = new LineGeometry.PolyLine().add(-2047.5,y_,-xz_).add( 2047.5,y_,-xz_);
+						lineXPYN = new LineGeometry.PolyLine().add( xz_,-y_,-2047.5).add( xz_,-y_, 2047.5);
+						lineXNYN = new LineGeometry.PolyLine().add(-xz_,-y_,-2047.5).add(-xz_,-y_, 2047.5);
+						lineZPYN = new LineGeometry.PolyLine().add(-2047.5,-y_, xz_).add( 2047.5,-y_, xz_);
+						lineZNYN = new LineGeometry.PolyLine().add(-2047.5,-y_,-xz_).add( 2047.5,-y_,-xz_);
+						LineGeometry.DirectWriteGroupingNode grid = y==0 && xz==0 ? zeroAxes : isGrid2.test(y) && isGrid2.test(xz) ? grid2 : grid1;
+						grid.add(lineXPYP, lineXNYP, lineZPYP, lineZNYP, lineXPYN, lineXNYN, lineZPYN, lineZNYN);
+					}
+					SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(finalY); });
+				}
+				endTask(startTime);
+				
+				startTime = startTask(pd, "   ", "Create Vertical Grid Lines", 2047);
+				LineGeometry.PolyLine lineXPZP, lineXNZP, lineXPZN, lineXNZN;
+				for (int x=0; x<2048; x+=inc) {
+					final int finalX = x;
+					float x_ = x+0.5f;
+					for (int z=0; z<2048; z+=inc) {
+						float z_ = z+0.5f;
+						lineXPZP = new LineGeometry.PolyLine().add( x_,-127.5, z_).add( x_, 127.5, z_);
+						lineXNZP = new LineGeometry.PolyLine().add( x_,-127.5,-z_).add( x_, 127.5,-z_);
+						lineXPZN = new LineGeometry.PolyLine().add(-x_,-127.5,-z_).add(-x_, 127.5,-z_);
+						lineXNZN = new LineGeometry.PolyLine().add(-x_,-127.5, z_).add(-x_, 127.5, z_);
+						LineGeometry.DirectWriteGroupingNode grid = x==0 && z==0 ? zeroAxes : isGrid2.test(x) && isGrid2.test(z) ? grid2 : grid1;
+						grid.add(lineXPZP, lineXNZP, lineXPZN, lineXNZN);
+					}
+					SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(finalX); });
+				}
+				endTask(startTime);
+				
+				startTime = startTask(pd, "   ", "Write Grid & Outline");
+				
+				vrml.println();
+				vrml.printf("# Outline%n");
+				outlineAndZeroAxes.write(vrml, "", 2, new Color(0x80FFFFFF,true));
+				vrml.println();
+				
+				vrml.printf("# ZeroAxes%n");
+				zeroAxes.write(vrml, "", 2, new Color(0x80FFFFFF,true));
+				vrml.println();
+				
+				vrml.printf("# Grid 2%n");
+				grid2.write(vrml, "", 2, new Color(0x80A0A0A0,true));
+				vrml.println();
+				
+				vrml.printf("# Grid 1%n");
+				grid1.write(vrml, "", 2, new Color(0x80808080,true));
+				vrml.println();
+				
+				endTask(startTime);
+				
+				LineGeometry.DirectWriteGroupingNode blackHoleJumps = new LineGeometry.DirectWriteGroupingNode();
+				startTime = startTask(pd, "   ", "Create BlackHole Jumps");
+				for (Region region: galaxy.regions) {
+					for (SolarSystem sys:region.solarSystems)
+						if (sys.hasBlackHole && sys.blackHoleTarget!=null)
+							blackHoleJumps.add(createBlackHoleJump(sys.getUniverseAddress(),sys.blackHoleTarget));
+				}
+				endTask(startTime);
+				
+				startTime = startTask(pd, "   ", "Write BlackHole Jumps");
+				vrml.printf("# BlackHole Jumps%n");
+				blackHoleJumps.write(vrml, "", 2, colorBlackholeConnection);
+				vrml.println();
+				endTask(startTime);
+				
+				startTime = startTask(pd, "   ", "Write Regions");
+				for (Region region: galaxy.regions) {
+					Color color = getcolor==null ? null : getcolor.apply(region);
+					if (color==null) color = Color.YELLOW;
+					writeCube(vrml,region.voxelX,region.voxelY,region.voxelZ,"%1.1f",1,"%1.1f",color, 0xA0);
+				}
+				endTask(startTime);
+			}
+			catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			endTask(startTime_total);
+			
+		};
+		runProgressDialogTask(parent, String.format("Map of %s", galaxy.toString()), task);
+	}
+
+	private static LineGeometry.PolyLine createBlackHoleJump(UniverseAddress p1, UniverseAddress p2) {
+		int p1X = p1.voxelX; int p2X = p2.voxelX;
+		int p1Y = p1.voxelY; int p2Y = p2.voxelY;
+		int p1Z = p1.voxelZ; int p2Z = p2.voxelZ;
+		
+		double p1Radius = Math.sqrt(p1X*p1X+p1Z*p1Z);
+		double p2Radius = Math.sqrt(p2X*p2X+p2Z*p2Z);
+		double p1Angle = Math.atan2(p1Z,p1X);
+		double p2Angle = Math.atan2(p2Z,p2X);
+		if (p2Angle<p1Angle) p2Angle += 2*Math.PI;
+		
+		double deltaAngle = p2Angle-p1Angle;
+		if (deltaAngle>Math.PI) deltaAngle -= 2*Math.PI;
+		long nSeg = Math.round(Math.ceil( Math.abs(deltaAngle) / (Math.PI/50) ));
+		
+		double segAngle  = deltaAngle/nSeg;
+		double segY      = (p2Y-p1Y)/(double)nSeg;
+		double segRadius = (p2Radius-p1Radius)/nSeg;
+		
+		LineGeometry.PolyLine line = new LineGeometry.PolyLine();
+		line.add(p1X,p1Y,p1Z);
+		for (int i=1; i<nSeg; i++) {
+			double y = p1Y      + i*segY;
+			double r = p1Radius + i*segRadius;
+			double a = p1Angle  + i*segAngle;
+			double x = r*Math.cos(a);
+			double z = r*Math.sin(a);
+			line.add(x,y,z);
+		}
+		line.add(p2X,p2Y,p2Z);
+		
+		return line;
+	}
+
+	@SuppressWarnings("unused")
+	private static void writeCube(PrintWriter vrml, float x, float y, float z, String coordFormat, float size, String sizeFormat, Color color) {
+		writeCube(vrml, x, y, z, coordFormat, size, sizeFormat, color, color.getAlpha());
+	}
+
+	private static void writeCube(PrintWriter vrml, float x, float y, float z, String coordFormat, float size, String sizeFormat, Color color, int alpha) {
+		vrml.printf(Locale.ENGLISH, "Transform { translation "+coordFormat+" "+coordFormat+" "+coordFormat+" children ", x,y,z);
+		vrml.printf("Shape {");
+		vrml.printf(" appearance Appearance { material Material {");
+		vrml.printf(Locale.ENGLISH, " diffuseColor %1.5f %1.5f %1.5f", color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f);
+		if (alpha<255) vrml.printf(Locale.ENGLISH, " transparency %1.5f", (255-alpha)/255f);
+		vrml.printf(" } }");
+		vrml.printf(Locale.ENGLISH, " geometry Box { size "+sizeFormat+" "+sizeFormat+" "+sizeFormat+" }", size, size, size);
+		vrml.printf(" } }%n");
+	}
+
+	private static void runProgressDialogTask(Window parent, String label, Consumer<ProgressDialog> task) {
 		if (parent==null)
 			task.accept(null);
 		else
@@ -6226,8 +6436,11 @@ public class FileExport {
 			vrml.print  (indent+"	appearance Appearance { material Material { ");
 			if (color==null) // for PROTO
 				vrml.printf ("emissiveColor IS lineColor");
-			else
+			else {
 				vrml.printf (Locale.ENGLISH, "emissiveColor %1.3f %1.3f %1.3f", color.getRed()/255.0f, color.getGreen()/255.0f, color.getBlue()/255.0f);
+				int alpha = color.getAlpha();
+				if (alpha<255) vrml.printf(Locale.ENGLISH, " transparency %1.3f", (255-alpha)/255f);
+			}
 			vrml.println(indent+" } }");
 			vrml.println(indent+"	geometry IndexedLineSet {");
 			vrml.printf (indent+"		coord Coordinate { point [ %s ] }\r\n",pointsStr.toString());
@@ -6614,6 +6827,25 @@ public class FileExport {
 					points.addAll(subNode.points);
 				}
 			}
+		}
+		
+		static class DirectWriteGroupingNode extends IndexedLineSet {
+			
+			DirectWriteGroupingNode(IndexedLineSet... objs) {
+				add(objs);
+			}
+			DirectWriteGroupingNode add(IndexedLineSet... objs) {
+				for (IndexedLineSet subNode:objs) {
+					subNode.prepareForOutput();
+					for (Segment seg:subNode.segments)
+						segments.add(new Segment(seg).addIndexOffset(points.size()));
+					points.addAll(subNode.points);
+				}
+				return this;
+			}
+			@Override
+			protected void prepareForOutput() {}
+			
 		}
 		
 		static class Transform extends IndexedLineSet {

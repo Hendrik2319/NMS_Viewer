@@ -3727,10 +3727,10 @@ public class SaveGameData {
 
 		public final int galaxyIndex;
 		public final int voxelX;
-		final int voxelY;
+		public final int voxelY;
 		public final int voxelZ;
-		final int solarSystemIndex;
-		final int planetIndex;
+		public final int solarSystemIndex;
+		public final int planetIndex;
 		private final long address;
 		
 		public UniverseAddress(long address) {
@@ -3818,17 +3818,14 @@ public class SaveGameData {
 			return 0;
 		}
 
-		public boolean isPlanet() {
-			return planetIndex>0;
-		}
+		public boolean isPlanet     () { return planetIndex>0; }
+		public boolean isSolarSystem() { return planetIndex==0 && solarSystemIndex>0; }
+		public boolean isRegion     () { return planetIndex==0 && solarSystemIndex==0; }
 
-		public boolean isSolarSystem() {
-			return planetIndex==0 && solarSystemIndex>0;
-		}
-
-		public boolean isRegion() {
-			return planetIndex==0 && solarSystemIndex==0;
-		}
+		public boolean isSamePlanet     (UniverseAddress other) { return isSameSolarSystem(other) && planetIndex==other.planetIndex; }
+		public boolean isSameSolarSystem(UniverseAddress other) { return isSameRegion     (other) && solarSystemIndex==other.solarSystemIndex; }
+		public boolean isSameRegion     (UniverseAddress other) { return isSameGalaxy     (other) && voxelX==other.voxelX && voxelY==other.voxelY && voxelZ==other.voxelZ; }
+		public boolean isSameGalaxy     (UniverseAddress other) { return galaxyIndex==other.galaxyIndex; }
 
 		public Vector<String> getVerboseName(Universe universe) {
 			Vector<String> output = new Vector<>();
@@ -4212,6 +4209,12 @@ public class SaveGameData {
 				return "Galaxy "+galaxyIndex;
 			}
 
+			public String getName() {
+				if (galaxyIndex<PREDEFINED_NAMES_EN.length)
+					return PREDEFINED_NAMES_EN[galaxyIndex];
+				return Integer.toString(galaxyIndex);
+			}
+
 			public void addRegion(Region galacticRegion) {
 				regions.add(galacticRegion);
 			}
@@ -4228,7 +4231,7 @@ public class SaveGameData {
 			
 			final Galaxy galaxy;
 			public final int voxelX;
-			private final int voxelY;
+			public final int voxelY;
 			public final int voxelZ;
 			public final Vector<SolarSystem> solarSystems;
 			public String oldname;

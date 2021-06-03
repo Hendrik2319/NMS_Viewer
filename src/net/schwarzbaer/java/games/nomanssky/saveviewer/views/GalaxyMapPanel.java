@@ -21,6 +21,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Vector;
@@ -38,7 +39,9 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 
 import net.schwarzbaer.gui.Canvas;
+import net.schwarzbaer.gui.FileChooser;
 import net.schwarzbaer.gui.ProgressDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
@@ -252,15 +255,18 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		}
 		statusField.setText(str);
 	}
-	
+
 	private class ContextMenu extends JPopupMenu {
 		private static final long serialVersionUID = -5698577950332700493L;
 		
-		private Component invoker;
+		private final Component invoker;
 		private RegionData.RegionCoord clickedPos;
 
-		private JMenuItem miMarkRegions;
-		private JMenuItem miDistCircle;
+		private final JMenuItem miMarkRegions;
+		private final JMenuItem miDistCircle;
+		private final JMenuItem miWriteMapToVRML;
+
+		private final FileChooser vrmlFileChooser;
 
 		private ContextMenu(Component invoker) {
 			super("Contextmenu");
@@ -275,6 +281,17 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			
 			miDistCircle = new JMenuItem("Show Circle with Distance to Galaxy Center");
 			miDistCircle.addActionListener(e->galaxyMap.showDistCircle(clickedPos));
+			
+			vrmlFileChooser = new FileChooser("VRML-File", "wrl");
+			miWriteMapToVRML = new JMenuItem("Write Galaxy Map to VRML file");
+			miWriteMapToVRML.addActionListener(e->{
+				if (currentGalaxy==null) return;
+				vrmlFileChooser.suggestFileName(String.format("S%s_Galaxy_%s", data.index>=0?(""+(data.index+1)):"#", currentGalaxy.getName()));
+				if (vrmlFileChooser.showSaveDialog(this.invoker)!=FileChooser.APPROVE_OPTION) return;
+				File vrmlFile = vrmlFileChooser.getSelectedFile();
+				FileExport.writeGalaxyToVRML(vrmlFile, currentGalaxy, galaxyMap::getRegionColor, GalaxyMap.COLOR_BLACKHOLE_CONNECTION, mainWindow);
+				FileExport.openFileInVrmlViewer(vrmlFile);
+			});
 			
 			JCheckBoxMenuItem chkbxUsePreparedBitmap    = new JCheckBoxMenuItem("Use Prepared Bitmap", galaxyMap.usePreparedBitmap);
 			JCheckBoxMenuItem chkbxShowMarkers          = new JCheckBoxMenuItem("Show markers", galaxyMap.showMarkers);
@@ -297,6 +314,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			
 			add(miMarkRegions);
 			add(miDistCircle);
+			add(miWriteMapToVRML);
 			addSeparator();
 			add(chkbxUsePreparedBitmap);
 			add(chkbxShowMarkers);
@@ -307,6 +325,9 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			this.clickedPos = clickedPos;
 			miMarkRegions.setText(String.format("Mark Regions (%d,#,%d) in \"Known Universe\"", clickedPos.voxelX, clickedPos.voxelZ));
 			miDistCircle .setText(String.format("Show Circle with Distance to Galaxy Center for Region (%d,#,%d)", clickedPos.voxelX, clickedPos.voxelZ));
+			miWriteMapToVRML.setEnabled(currentGalaxy!=null);
+			if (currentGalaxy!=null) miWriteMapToVRML.setText(String.format("Write Map of %s to VRML File", currentGalaxy.toString()));
+			else                     miWriteMapToVRML.setText(              "Write Galaxy Map to VRML file");
 			show(invoker, screenX, screenY);
 		}
 	}
@@ -511,7 +532,8 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		private static final Color COLOR_KNOWN_REGION = Color.YELLOW;
 		private static final Color COLOR_CURRENT_POS  = Color.MAGENTA;
 		private static final Color COLOR_GALAXY_CENTER = Color.RED;
-		
+		private static final Color COLOR_BLACKHOLE_CONNECTION = Color.PINK;
+
 		private static final int MAP_WIDTH  = 4096;
 		private static final int MAP_HEIGHT = 4096;
 		private static final int MAP_CENTER_X = 2047;
@@ -573,6 +595,12 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			this.ignoreMousePos = true;
 			
 			this.distCircle = null;
+		}
+
+		public Color getRegionColor(Region region) {
+			if (region.getUniverseAddress().isSameRegion(currentPos)) return COLOR_CURRENT_POS;
+			if (region.isReachableByTeleport()) return COLOR_KNOWN_REGION_WITH_TELEPORT;
+			return COLOR_KNOWN_REGION;
 		}
 
 		public void showDistCircle( RegionData.RegionCoord coords) {
@@ -966,7 +994,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 			}
 			
 			if (showBlackHoleTargets) {
-				g2.setColor(Color.PINK);
+				g2.setColor(COLOR_BLACKHOLE_CONNECTION);
 				int[] xPoints = new int[40];
 				int[] yPoints = new int[40];
 				for (RegionData.BlackHoleConn bhc:regionData.blackHoleConnections) {
