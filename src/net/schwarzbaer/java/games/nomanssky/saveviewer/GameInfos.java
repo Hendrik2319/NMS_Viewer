@@ -286,6 +286,7 @@ public class GameInfos {
 		return -1;
 	}
 
+	@SuppressWarnings("unused")
 	public static void parseExtraInfos() {
 		EnumSet<Resources> resources = EnumSet.noneOf(Universe.Planet.Resources.class);
 		universeObjectDataArr.forEach((address, uoData)->{
@@ -297,6 +298,7 @@ public class GameInfos {
 					if (exi.info.startsWith("<ParsedPlanetaryResources>")) continue;
 					if (exi.info.startsWith("<Parsed>")) continue;
 					
+					/*
 					String shortLabel = exi.shortLabel.toLowerCase();
 					if (shortLabel.equals("portal")) {
 						String[] parts = exi.info.split(",");
@@ -311,7 +313,9 @@ public class GameInfos {
 							catch (NumberFormatException e) {}
 						}
 					}
+					*/
 					
+					/*
 					resources.clear();
 					for (String str:exi.info.split(",")) {
 						Resources res = Universe.Planet.Resources.getViaLabel(str.trim());
@@ -321,7 +325,8 @@ public class GameInfos {
 					if (!resources.isEmpty()) {
 						exi.info = "<ParsedPlanetaryResources> "+exi.info;
 						planet.resources.addAll(resources);
-					}				}
+					}
+					*/				}
 			}
 			
 			if (uoData instanceof UOD_SolarSystem) {
@@ -330,6 +335,8 @@ public class GameInfos {
 				for (ExtraInfo exi:system.extraInfos) {
 					String shortLabel = exi.shortLabel.toLowerCase();
 					if (shortLabel.startsWith("<parsed>")) continue;
+					
+					/*
 					if (shortLabel.equals("1 planet")) {
 						system.numberOfPlanets = 1;
 						exi.shortLabel = "<Parsed> "+exi.shortLabel;
@@ -340,6 +347,7 @@ public class GameInfos {
 							exi.shortLabel = "<Parsed> "+exi.shortLabel;
 						} catch (NumberFormatException e) {}
 					}
+					*/
 				}
 			}
 		});

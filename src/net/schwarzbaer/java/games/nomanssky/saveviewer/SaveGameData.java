@@ -4525,6 +4525,8 @@ public class SaveGameData {
 				Toxic      ("Toxic"        ,"Giftig"    , Resources.NH3),
 				Irradiated ("Irradiated"   ,"Verstrahlt", Resources.U  ),
 				Airless    ("Airless"      ,"Trostlos, ohne Atmosph‰re"),
+				Volcanic   ("Volcanic"     ,"Vulkanisch"),
+				Marshy     ("Marshy"       ,"Sumpfig"),
 				Exotic     ("Exotic"       ,"Exotisch"),
 				Exotic_Mega("Exotic (Mega)","Exotisch, mit Riesenpflanzen"),
 				
@@ -4588,11 +4590,13 @@ public class SaveGameData {
 				Ag     ("Ag"     , GameInfos.substanceIDs, "^ASTEROID1"),
 				Au     ("Au"     , GameInfos.substanceIDs, "^ASTEROID2"),
 				Co     ("Co"     , GameInfos.substanceIDs, "^CAVE1"),
-				Fe_    ("Fe#"    , GameInfos.substanceIDs, "^LAND2"),
-				Fe__   ("Fe##"   , GameInfos.substanceIDs, "^LAND3"),
+				Fe_    ("Fe+"    , GameInfos.substanceIDs, "^LAND2"),
+				Fe__   ("Fe++"   , GameInfos.substanceIDs, "^LAND3"),
 				Na     ("Na"     , GameInfos.substanceIDs, "^CATALYST1"),
 				NaCl   ("NaCl"   , GameInfos.substanceIDs, "^WATER1"),
-				Sr_Rost("Sr_Rost", GameInfos.substanceIDs, "^SPACEGUNK3"),
+				B      ("B"      , GameInfos.substanceIDs, "^LAVA1"),
+				Fa     ("Fa"     , GameInfos.substanceIDs, "^PLANT_POOP"),
+				Sr_Rost("Sr"     , GameInfos.substanceIDs, "^SPACEGUNK3"),
 				Eiweiﬂperle("Eiweiﬂperle", GameInfos.productIDs, "^ALBUMENPEARL"),
 				;
 				public final String label;

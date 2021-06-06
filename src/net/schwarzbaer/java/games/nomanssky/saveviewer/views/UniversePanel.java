@@ -119,7 +119,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		;
 	}
 	private enum PlanetTreeIcons {
-		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless, BiomeExotic, BiomeExoticMega,
+		BiomeUndef, BiomeLush, BiomeScorched, BiomeBarren, BiomeIrradiated, BiomeToxic, BiomeFrozen, BiomeAirless, BiomeVolcanic, BiomeMarshy, BiomeExotic, BiomeExoticMega,
 		BiomeAnomMetalFlowers, BiomeAnomShells, BiomeAnomBones, BiomeAnomMushrooms, BiomeAnomScreenCrystals, BiomeAnomFragmColumns, BiomeAnomBubbles, BiomeAnomLimeStars, BiomeAnomHexagons, BiomeAnomBeams, BiomeAnomContour,
 		SentinelAggressive,
 		;
@@ -315,6 +315,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				case Frozen     : return PlanetTreeIcons.BiomeFrozen;
 				case Irradiated : return PlanetTreeIcons.BiomeIrradiated;
 				case Airless    : return PlanetTreeIcons.BiomeAirless;
+				case Volcanic   : return PlanetTreeIcons.BiomeVolcanic;
+				case Marshy     : return PlanetTreeIcons.BiomeMarshy;
 				case Exotic     : return PlanetTreeIcons.BiomeExotic;
 				case Exotic_Mega: return PlanetTreeIcons.BiomeExoticMega;
 				case AnomMetalFlowers  : return PlanetTreeIcons.BiomeAnomMetalFlowers  ;
@@ -2140,7 +2142,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				Resources[][] resArrays = new Resources[][] {
 					new Resources[] { Resources.Cu_, Resources.Cd_, Resources.Em_, Resources.In_, },
 					new Resources[] { Resources.Cu, Resources.Cd, Resources.Em, Resources.In, },
-					new Resources[] { Resources.Pf, Resources.Py, Resources.P, Resources.U, Resources.CO2, Resources.NH3 },
+					new Resources[] { Resources.P, Resources.Py, Resources.U, Resources.NH3, Resources.CO2, Resources.Pf },
 					null
 				};
 				resArrays[3] = getRemaining(Resources.values(), resArrays);

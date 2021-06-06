@@ -4682,10 +4682,9 @@ planets=5
 
 [Pln10010081000000]
 name=Izanami
-resources=Em,NaCl
+biome=Volcanic
+resources=Em,NaCl,B
 portal=-70.2200,88.4800
-short=
-info=Biom: Vulkanisch, --> Res: Basalt
 
 [Pln20010081000000]
 
@@ -4694,6 +4693,14 @@ info=Biom: Vulkanisch, --> Res: Basalt
 [Pln40010081000000]
 
 [Pln50010081000000]
+
+[Sys003E0081000000]
+atlasinterface=false
+blackhole=false
+
+[Sys00790081000000]
+atlasinterface=false
+blackhole=true
 
 [Reg00000000000000]
 
@@ -4812,6 +4819,16 @@ with water
 resources=Cu,Py,NaCl
 
 [Sys01E600FFFF8001]
+atlasinterface=false
+blackhole=false
+
+[Reg00000081000001]
+
+[Sys00DC0081000001]
+atlasinterface=false
+blackhole=false
+
+[Sys010C0081000001]
 atlasinterface=false
 blackhole=false
 
@@ -5044,6 +5061,7 @@ info=sieht aber aus wie "Exotic Mega"
 
 [Pln408A00FE007004]
 name=Nipor H26
+biome=Volcanic
 big geography
 resources=Cu,Py,Ag
 short=Feuriger Planet
@@ -7885,9 +7903,8 @@ resources=Em,Au,NaCl
 
 [Pln217E00039852B3]
 name=Fufall V
-resources=Em,Fe__
-short=
-info=Vulkanischer Planet: Basalt
+biome=Volcanic
+resources=Em,Fe__,B
 
 [Pln317E00039852B3]
 name=Gayptimiv Primus
@@ -8099,9 +8116,8 @@ info=3 Sonnen
 
 [Pln41D300049852B3]
 name=Oishi 72/T9
-resources=Cu,NaCl
-short=
-info=Biom: Sumpf,  Rohstoff: Faecium
+biome=Marshy
+resources=Cu,NaCl,Fa
 
 [Sys01DC00049852B3]
 atlasinterface=false
@@ -8452,6 +8468,7 @@ info=Treff 4
 
 [Pln100100049852B4]
 name=Uerquel Wachi
+biome=Volcanic
 with water
 resources=Cu,Py,Fe__
 portal=-21.0100,-14.8500
