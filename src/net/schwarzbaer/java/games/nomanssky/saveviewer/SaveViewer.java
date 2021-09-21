@@ -558,7 +558,8 @@ public class SaveViewer implements ActionListener {
 	private String getSavegameFolder() {
 		Properties prop = System.getProperties();
 		String fs = prop.get("file.separator").toString();
-		return getGameFolderStr()+fs+config.getSavegameSubFolder(mainWindow)+fs;
+		String normalFolder = getGameFolderStr()+fs+config.getSavegameSubFolder(mainWindow)+fs;
+		return normalFolder + "strbackup"+fs; // while format modifications are not understand completely
 	}
 
 	private static File getGameFolder() {
