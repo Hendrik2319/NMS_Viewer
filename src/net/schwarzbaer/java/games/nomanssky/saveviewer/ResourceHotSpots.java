@@ -732,25 +732,25 @@ public class ResourceHotSpots implements ActionListener {
 						out.println("[ReferencePoint]");
 						if (referencePoint.location.latitude_y !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , referencePoint.location.getLatitudeStr ());
 						if (referencePoint.location.longitude_x!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", referencePoint.location.getLongitudeStr());
-						if (referencePoint.name              !=null) out.printf(Locale.ENGLISH, "name=%s%n"     , referencePoint.name);
-						if (referencePoint.isBase                  ) out.printf(Locale.ENGLISH, "isBase%n");
+						if (referencePoint.name                !=null) out.printf(Locale.ENGLISH, "name=%s%n"     , referencePoint.name);
+						if (referencePoint.isBase                    ) out.printf(Locale.ENGLISH, "isBase%n");
 						out.println();
 					});
 					region.circles.forEach(circle->{
 						out.println("[Circle]");
 						if (circle.center.latitude_y !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , circle.center.getLatitudeStr ());
 						if (circle.center.longitude_x!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", circle.center.getLongitudeStr());
-						if (circle.radius          !=null) out.printf(Locale.ENGLISH, "radius=%1.2f%n", circle.radius);
+						if (circle.radius            !=null) out.printf(Locale.ENGLISH, "radius=%1.2f%n", circle.radius);
 						out.println();
 					});
 					region.hotSpots.forEach(hotSpot->{
 						out.println("[HotSpot]");
 						if (hotSpot.location.latitude_y !=null) out.printf(Locale.ENGLISH, "latitude=%s%n" , hotSpot.location.getLatitudeStr ());
 						if (hotSpot.location.longitude_x!=null) out.printf(Locale.ENGLISH, "longitude=%s%n", hotSpot.location.getLongitudeStr());
-						if (hotSpot.type              !=null) out.printf(Locale.ENGLISH, "type=%s%n"     , hotSpot.type);
-						if (hotSpot.substance         !=null) out.printf(Locale.ENGLISH, "substance=%s%n", hotSpot.substance);
-						if (hotSpot.hotSpotClass      !=null) out.printf(Locale.ENGLISH, "class=%s%n"    , hotSpot.hotSpotClass);
-						if (hotSpot.rate              !=null) out.printf(Locale.ENGLISH, "rate=%d%n"     , hotSpot.rate);
+						if (hotSpot.type                !=null) out.printf(Locale.ENGLISH, "type=%s%n"     , hotSpot.type);
+						if (hotSpot.substance           !=null) out.printf(Locale.ENGLISH, "substance=%s%n", hotSpot.substance);
+						if (hotSpot.hotSpotClass        !=null) out.printf(Locale.ENGLISH, "class=%s%n"    , hotSpot.hotSpotClass);
+						if (hotSpot.rate                !=null) out.printf(Locale.ENGLISH, "rate=%d%n"     , hotSpot.rate);
 						out.println();
 					});
 				});
@@ -796,19 +796,19 @@ public class ResourceHotSpots implements ActionListener {
 			return "(" + toString(latitude_y) + "," + toString(longitude_x) + ")";
 		}
 
-		private String toString(Float value) {
+		private String toString(Double value) {
 			if (value==null) return null;
 			return String.format(Locale.ENGLISH, "%s%1.2f", value<0?"":"+", value);
 		}
-		private Float parse(String str) {
+		private Double parse(String str) {
 			if (str!=null) {
 				str = str.trim();
 				if (str.startsWith("+")) str=str.substring(1);
 				str = str.replace(',', '.');
-				try { return Float.parseFloat(str); }
+				try { return Double.parseDouble(str); }
 				catch (NumberFormatException e) {}
 			}
-			return Float.NaN;
+			return Double.NaN;
 		}
 	}
 
@@ -1534,12 +1534,13 @@ public class ResourceHotSpots implements ActionListener {
 		
 		private void drawHighlighted(Graphics2D g2, Planet.Circle item) {
 			Point p = viewState.convertPos_AngleToScreen(item.center);
-			Integer radius  = viewState.convertLength_LengthToScreen(item.radius);
-			if (p!=null && radius!=null) {
+			Double radius_u = toDouble(item.radius);
+			Integer radius_px  = viewState.convertLength_LengthToScreen(radius_u);
+			if (p!=null && radius_px!=null) {
 				g2.setColor(COLOR_CIRCLE_HIGHLIGHTED);
 				Stroke currentStroke = g2.getStroke();
 				g2.setStroke(STROKE_DASHED_LINE);
-				g2.drawOval(p.x-radius, p.y-radius, radius*2-1, radius*2-1);
+				g2.drawOval(p.x-radius_px, p.y-radius_px, radius_px*2-1, radius_px*2-1);
 				g2.setStroke(currentStroke);
 				g2.drawLine(p.x-3,p.y, p.x+3, p.y);
 				g2.drawLine(p.x,p.y-3, p.x,p.y+3);
@@ -1548,7 +1549,7 @@ public class ResourceHotSpots implements ActionListener {
 
 		private void draw(Graphics2D g2, Planet.Circle item, boolean drawOuterCircle) {
 			Point p = viewState.convertPos_AngleToScreen(item.center);
-			Float radius_u = item.radius;
+			Double radius_u = toDouble(item.radius);
 			if (radius_u!=null && !drawOuterCircle) radius_u -= 10;
 			Integer radius_px  = viewState.convertLength_LengthToScreen(radius_u);
 			if (p!=null && radius_px!=null) {
@@ -1557,12 +1558,17 @@ public class ResourceHotSpots implements ActionListener {
 			}
 		}
 
+		private Double toDouble(Float value) {
+			if (value==null) return null;
+			return value.doubleValue();
+		}
+
 		private void draw(Graphics2D g2, Planet.ReferencePoint item, boolean asHighlighted) {
 			Point p = viewState.convertPos_AngleToScreen(item.location);
 			if (p!=null) {
 				drawIcon(g2, item, p.x, p.y);
 				if (asHighlighted && item.isBase) {
-					int radius = viewState.convertLength_LengthToScreen(300f);
+					int radius = viewState.convertLength_LengthToScreen(300.0);
 					g2.setColor(COLOR_BASE_RANGE);
 					Stroke currentStroke = g2.getStroke();
 					g2.setStroke(STROKE_DASHED_LINE);
@@ -1577,7 +1583,7 @@ public class ResourceHotSpots implements ActionListener {
 			if (p!=null) {
 				drawIcon(g2, item, p.x, p.y);
 				if (asHighlighted) {
-					int radius = viewState.convertLength_LengthToScreen(600f);
+					int radius = viewState.convertLength_LengthToScreen(600.0);
 					g2.setColor(COLOR_HOTSPOT_TWIN_RANGE);
 					Stroke currentStroke = g2.getStroke();
 					g2.setStroke(STROKE_DASHED_LINE);
