@@ -404,9 +404,8 @@ public class TreeView {
 			return children[childIndex];
 		}
 	
-		@SuppressWarnings("rawtypes")
 		@Override
-		public Enumeration children() {
+		public Enumeration<TreeNode> children() {
 			if (children == null) createChildren();
 			return new Enumeration<TreeNode>() {
 				int index = 0;
