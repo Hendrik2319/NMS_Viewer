@@ -572,7 +572,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 				while ( (line=in.readLine())!=null ) {
 					if (line.startsWith("LastSessionFile=")) {
 						String str = line.substring("LastSessionFile=".length());
-						currentSessionFile = new File(str);
+						File sessionFile = new File(str);
+						if (sessionFile.isFile())
+							currentSessionFile = sessionFile;
 					}
 					if (line.startsWith("WindowWidth=")) {
 						String str = line.substring("WindowWidth=".length());
@@ -660,7 +662,9 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		public void writeToFile(File file) {
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
 				
-				if (currentSessionFile!=null) out.printf("LastSessionFile=%s%n", currentSessionFile.getAbsolutePath());
+				if (currentSessionFile!=null) {
+					out.printf("LastSessionFile=%s%n", currentSessionFile.getAbsolutePath());
+				}
 				if (windowSize!=null) {
 					out.printf("WindowWidth=%d%n", windowSize.width);
 					out.printf("WindowHeight=%d%n", windowSize.height);
