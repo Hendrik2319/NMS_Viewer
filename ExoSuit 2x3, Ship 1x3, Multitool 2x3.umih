@@ -1,0 +1,937 @@
+[FinalSequence]
+ModuleID=^U_SHIPSHIELDX
+ModuleID=^U_ENERGYX
+ModuleID=^U_SHIELDBOOSTX
+ModuleID=^U_SHIPSHIELDX
+ModuleID=^U_LASERX
+ModuleID=^U_LASERX
+ModuleID=^U_SHIELDBOOSTX
+ModuleID=^U_SHOTGUNX
+ModuleID=^U_ENERGYX
+ModuleID=^U_SHIELDBOOSTX
+ModuleID=^U_HYPERX
+ModuleID=^U_HYPERX
+ModuleID=^U_HYPERX
+ModuleID=^U_SHIPSHIELDX
+ModuleID=^U_ENERGYX
+ModuleID=^U_SHOTGUNX
+ModuleID=^U_SHOTGUNX
+ModuleID=^U_LASERX
+
+[UpgradeModule]
+ModuleID=^U_LASERX
+Amount=3
+InstallPos=0,1,2
+valueDef.uniqueID=086B3C519926AB76
+valueDef.label=Überhitzungsausfallzeit
+valueDef.format=PercentMinus
+valueDef.uniqueID=2E143395D775804A
+valueDef.label=Treibstoffeffizienz
+valueDef.format=PercentPlus
+valueDef.uniqueID=489914FA05D8BF5A
+valueDef.label=Geschwindigkeit
+valueDef.format=PercentPlus
+valueDef.uniqueID=7D29FA611D401F8B
+valueDef.label=Hitzeverteilung
+valueDef.format=PercentPlus
+
+[InstalledUpgrade]
+index=0
+upgrade.label1=Nachgebaute Überladene
+upgrade.label2=Strahlungskammer
+value.uniqueID=2E143395D775804A
+value.value=4.0000000e+00
+value.uniqueID=7D29FA611D401F8B
+value.value=1.6000000e+01
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=Untersagte Überladene
+upgrade.label2=Reflektorgläser
+value.uniqueID=7D29FA611D401F8B
+value.value=1.9000000e+01
+
+[InstalledUpgrade]
+index=2
+upgrade.label1=Unzulässige Schwingende
+upgrade.label2=Objektivoptik
+value.uniqueID=086B3C519926AB76
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=Schwarz Gehandelte Fein Abgestimmte
+upgrade.label2=Diodenbatterie
+value.uniqueID=489914FA05D8BF5A
+value.value=7.0000000e+00
+
+[InstalledUpgrade]
+index=4
+upgrade.label1=Geschmuggelte Überladene
+upgrade.label2=Ausgabekoppler
+value.uniqueID=7D29FA611D401F8B
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=5
+upgrade.label1=Illegale Überladene
+upgrade.label2=Kühlungssysteme
+value.uniqueID=086B3C519926AB76
+value.value=2.4000000e+01
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=Verdächtige Fein Abgestimmte
+upgrade.label2=Kühlungssysteme
+value.uniqueID=489914FA05D8BF5A
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Modifizierte Überladene
+upgrade.label2=Ausgabekoppler
+value.uniqueID=086B3C519926AB76
+value.value=8.0000000e+00
+
+[InstalledUpgrade]
+index=8
+upgrade.label1=Raubkopierte Fortgeschrittene
+upgrade.label2=Strahlungskammer
+value.uniqueID=489914FA05D8BF5A
+value.value=7.0000000e+00
+
+[InstalledUpgrade]
+index=9
+upgrade.label1=Gefälschte Flüssige
+upgrade.label2=Strahlungskammer
+value.uniqueID=7D29FA611D401F8B
+value.value=1.3000000e+01
+
+[InstalledUpgrade]
+index=10
+upgrade.label1=Schwarz Gehandelte Überladene
+upgrade.label2=Reflektorgläser
+value.uniqueID=086B3C519926AB76
+value.value=8.0000000e+00
+value.uniqueID=2E143395D775804A
+value.value=4.0000000e+00
+value.uniqueID=489914FA05D8BF5A
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=11
+upgrade.label1=Riskante Flüssige
+upgrade.label2=Objektivoptik
+value.uniqueID=7D29FA611D401F8B
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=12
+upgrade.label1=Geschmuggelte Überladene
+upgrade.label2=Photonenspiegel
+value.uniqueID=086B3C519926AB76
+value.value=2.0000000e+01
+value.uniqueID=2E143395D775804A
+value.value=2.0000000e+00
+value.uniqueID=489914FA05D8BF5A
+value.value=1.4000000e+01
+
+[InstalledUpgrade]
+index=13
+upgrade.label1=Verdächtige Flüssige
+upgrade.label2=Lichtfilter
+value.uniqueID=2E143395D775804A
+value.value=2.0000000e+00
+
+[InstalledUpgrade]
+index=14
+upgrade.label1=Riskante Fein Abgestimmte
+upgrade.label2=Diodenbatterie
+value.uniqueID=086B3C519926AB76
+value.value=1.6000000e+01
+
+[InstalledUpgrade]
+index=15
+upgrade.label1=Raubkopierte Flüssige
+upgrade.label2=Diodenbatterie
+value.uniqueID=086B3C519926AB76
+value.value=1.7000000e+01
+
+[InstalledUpgrade]
+index=16
+upgrade.label1=Verbotene Fortgeschrittene
+upgrade.label2=Diodenbatterie
+value.uniqueID=086B3C519926AB76
+value.value=6.0000000e+00
+value.uniqueID=489914FA05D8BF5A
+value.value=1.1000000e+01
+
+[InstalledUpgrade]
+index=17
+upgrade.label1=Abweichende Flüssige
+upgrade.label2=Diodenbatterie
+value.uniqueID=2E143395D775804A
+value.value=2.0000000e+01
+
+[UpgradeModule]
+ModuleID=^U_SHOTGUNX
+Amount=3
+InstallPos=3,4,5
+valueDef.uniqueID=199F786F24A3F0E1
+valueDef.label=Nachladezeit
+valueDef.format=PercentMinus
+valueDef.uniqueID=4B433C515EFE05FA
+valueDef.label=Schaden
+valueDef.format=PercentPlus
+valueDef.uniqueID=439E36516A6ACFA3
+valueDef.label=Schuß pro Feuerstoß
+valueDef.format=FloatPlus
+valueDef.uniqueID=291113807464FAE2
+valueDef.label=Feuerstoß-Abklingzeit
+valueDef.format=PercentMinus
+valueDef.uniqueID=11515419CADF6842
+valueDef.label=Feuerrate
+valueDef.format=PercentPlus
+valueDef.uniqueID=70BA7796E2E04E7B
+valueDef.label=Magazingröße
+valueDef.format=FloatPlus
+
+[InstalledUpgrade]
+index=0
+upgrade.label1=Nachgebaute Wiederhergestellte
+upgrade.label2=Mündung
+value.uniqueID=11515419CADF6842
+value.value=6.0000000e+00
+value.uniqueID=70BA7796E2E04E7B
+value.value=8.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=Untersagte Wiederhergestellte
+upgrade.label2=Trägersysteme
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=2
+upgrade.label1=Unzulässige Spezialisierte
+upgrade.label2=Abzüge
+value.uniqueID=4B433C515EFE05FA
+value.value=3.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=Schwarz Gehandelte Elektrisierte
+upgrade.label2=Einbauten
+value.uniqueID=199F786F24A3F0E1
+value.value=7.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=4
+upgrade.label1=Geschmuggelte Wiederhergestellte
+upgrade.label2=Kompressionseinheit
+value.uniqueID=11515419CADF6842
+value.value=2.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=5
+upgrade.label1=Illegale Wiederhergestellte
+upgrade.label2=Lichtmaschine
+value.uniqueID=11515419CADF6842
+value.value=2.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=3.0000000e+00
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=Verdächtige Elektrisierte
+upgrade.label2=Lichtmaschine
+value.uniqueID=199F786F24A3F0E1
+value.value=2.2000000e+01
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Modifizierte Wiederhergestellte
+upgrade.label2=Kompressionseinheit
+value.uniqueID=4B433C515EFE05FA
+value.value=2.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=2.2000000e+01
+
+[InstalledUpgrade]
+index=8
+upgrade.label1=Raubkopierte Cadmiumhaltige
+upgrade.label2=Mündung
+value.uniqueID=199F786F24A3F0E1
+value.value=1.1000000e+01
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=9
+upgrade.label1=Gefälschte Großvolumige
+upgrade.label2=Mündung
+value.uniqueID=11515419CADF6842
+value.value=1.1000000e+01
+value.uniqueID=4B433C515EFE05FA
+value.value=3.0000000e+00
+
+[InstalledUpgrade]
+index=10
+upgrade.label1=Schwarz Gehandelte Wiederhergestellte
+upgrade.label2=Trägersysteme
+value.uniqueID=70BA7796E2E04E7B
+value.value=8.0000000e+00
+value.uniqueID=199F786F24A3F0E1
+value.value=8.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=8.0000000e+00
+
+[InstalledUpgrade]
+index=11
+upgrade.label1=Riskante Großvolumige
+upgrade.label2=Abzüge
+value.uniqueID=4B433C515EFE05FA
+value.value=3.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=12
+upgrade.label1=Geschmuggelte Wiederhergestellte
+upgrade.label2=Verkabelung
+value.uniqueID=199F786F24A3F0E1
+value.value=1.4000000e+01
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+value.uniqueID=439E36516A6ACFA3
+value.value=1.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=6.0000000e+00
+
+[InstalledUpgrade]
+index=13
+upgrade.label1=Verdächtige Großvolumige
+upgrade.label2=Hitzepumpe
+value.uniqueID=11515419CADF6842
+value.value=2.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=14
+upgrade.label1=Riskante Elektrisierte
+upgrade.label2=Einbauten
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+value.uniqueID=291113807464FAE2
+value.value=7.0000000e+00
+
+[InstalledUpgrade]
+index=15
+upgrade.label1=Raubkopierte Großvolumige
+upgrade.label2=Einbauten
+value.uniqueID=70BA7796E2E04E7B
+value.value=8.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=16
+upgrade.label1=Verbotene Cadmiumhaltige
+upgrade.label2=Einbauten
+value.uniqueID=70BA7796E2E04E7B
+value.value=8.0000000e+00
+value.uniqueID=4B433C515EFE05FA
+value.value=1.0000000e+00
+value.uniqueID=439E36516A6ACFA3
+value.value=1.0000000e+00
+
+[InstalledUpgrade]
+index=17
+upgrade.label1=Abweichende Großvolumige
+upgrade.label2=Einbauten
+value.uniqueID=199F786F24A3F0E1
+value.value=-2.4000000e+01
+value.uniqueID=4B433C515EFE05FA
+value.value=2.0000000e+00
+
+[UpgradeModule]
+ModuleID=^U_ENERGYX
+Amount=3
+InstallPos=6,7,8
+valueDef.uniqueID=479620B59AA9AE52
+valueDef.label=Lebenerhaltungstanks
+valueDef.format=PercentPlus
+valueDef.uniqueID=3E030B529E559290
+valueDef.label=Solarmodul-Energie
+valueDef.format=PercentPlus
+
+[InstalledUpgrade]
+index=0
+upgrade.label1=Nachgebaute Kohlenstoffhaltige
+upgrade.label2=Stabilisatoren
+value.uniqueID=479620B59AA9AE52
+value.value=5.0000000e+00
+value.uniqueID=3E030B529E559290
+value.value=2.0000000e+00
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=Untersagte Kohlenstoffhaltige
+upgrade.label2=Tanks
+value.uniqueID=479620B59AA9AE52
+value.value=7.2000000e+01
+
+[InstalledUpgrade]
+index=2
+upgrade.label1=Unzulässige Ammoniumhaltige
+upgrade.label2=Wiederverwerter
+value.uniqueID=3E030B529E559290
+value.value=1.7000000e+01
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=Schwarz Gehandelte Gashaltige
+upgrade.label2=Siebe
+value.uniqueID=479620B59AA9AE52
+value.value=2.6000000e+01
+
+[InstalledUpgrade]
+index=4
+upgrade.label1=Geschmuggelte Kohlenstoffhaltige
+upgrade.label2=Verarbeitungsanlagen
+value.uniqueID=479620B59AA9AE52
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=5
+upgrade.label1=Illegale Kohlenstoffhaltige
+upgrade.label2=Abflüsse
+value.uniqueID=479620B59AA9AE52
+value.value=5.0000000e+00
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=Verdächtige Gashaltige
+upgrade.label2=Abflüsse
+value.uniqueID=3E030B529E559290
+value.value=2.8000000e+01
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Modifizierte Kohlenstoffhaltige
+upgrade.label2=Verarbeitungsanlagen
+value.uniqueID=479620B59AA9AE52
+value.value=9.0000000e+00
+
+[InstalledUpgrade]
+index=8
+upgrade.label1=Raubkopierte Sauerstoffhaltige
+upgrade.label2=Stabilisatoren
+value.uniqueID=479620B59AA9AE52
+value.value=7.6000000e+01
+
+[InstalledUpgrade]
+index=9
+upgrade.label1=Gefälschte Stickstoffhaltige
+upgrade.label2=Stabilisatoren
+value.uniqueID=3E030B529E559290
+value.value=5.8000000e+01
+
+[InstalledUpgrade]
+index=10
+upgrade.label1=Schwarz Gehandelte Kohlenstoffhaltige
+upgrade.label2=Tanks
+value.uniqueID=479620B59AA9AE52
+value.value=9.0000000e+00
+value.uniqueID=3E030B529E559290
+value.value=4.0000000e+00
+
+[InstalledUpgrade]
+index=11
+upgrade.label1=Riskante Stickstoffhaltige
+upgrade.label2=Wiederverwerter
+value.uniqueID=479620B59AA9AE52
+value.value=1.5000000e+01
+
+[InstalledUpgrade]
+index=12
+upgrade.label1=Geschmuggelte Kohlenstoffhaltige
+upgrade.label2=Reiniger
+value.uniqueID=479620B59AA9AE52
+value.value=5.0000000e+00
+value.uniqueID=3E030B529E559290
+value.value=1.3000000e+01
+
+[InstalledUpgrade]
+index=13
+upgrade.label1=Verdächtige Stickstoffhaltige
+upgrade.label2=Pumpe
+value.uniqueID=479620B59AA9AE52
+value.value=1.1000000e+01
+
+[InstalledUpgrade]
+index=14
+upgrade.label1=Riskante Gashaltige
+upgrade.label2=Siebe
+value.uniqueID=3E030B529E559290
+value.value=7.1000000e+01
+
+[InstalledUpgrade]
+index=15
+upgrade.label1=Raubkopierte Stickstoffhaltige
+upgrade.label2=Siebe
+value.uniqueID=479620B59AA9AE52
+value.value=5.0000000e+00
+
+[InstalledUpgrade]
+index=16
+upgrade.label1=Verbotene Sauerstoffhaltige
+upgrade.label2=Siebe
+value.uniqueID=479620B59AA9AE52
+value.value=4.1000000e+01
+
+[InstalledUpgrade]
+index=17
+upgrade.label1=Abweichende Stickstoffhaltige
+upgrade.label2=Siebe
+value.uniqueID=3E030B529E559290
+value.value=2.9000000e+01
+
+[UpgradeModule]
+ModuleID=^U_SHIELDBOOSTX
+Amount=3
+InstallPos=9,10,11
+valueDef.uniqueID=6E816584BA24EDB2
+valueDef.label=Kerngesundheit
+valueDef.format=PercentPlus
+valueDef.uniqueID=5FEF7B1BC431D4B6
+valueDef.label=Schildstärke
+valueDef.format=PercentPlus
+
+[InstalledUpgrade]
+index=0
+upgrade.label1=Nachgebaute Übertragende
+upgrade.label2=Bollwerke
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=Untersagte Übertragende
+upgrade.label2=Batterie
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=2.6000000e+01
+
+[InstalledUpgrade]
+index=2
+upgrade.label1=Unzulässige Akustische
+upgrade.label2=Panzerung
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=Schwarz Gehandelte Blitzende
+upgrade.label2=Stoßdämpfer
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.5000000e+01
+
+[InstalledUpgrade]
+index=4
+upgrade.label1=Geschmuggelte Übertragende
+upgrade.label2=Resonatoren
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.1000000e+01
+
+[InstalledUpgrade]
+index=5
+upgrade.label1=Illegale Übertragende
+upgrade.label2=Polsterung
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=Verdächtige Blitzende
+upgrade.label2=Polsterung
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Modifizierte Übertragende
+upgrade.label2=Resonatoren
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.1000000e+01
+
+[InstalledUpgrade]
+index=8
+upgrade.label1=Raubkopierte Uranhaltige
+upgrade.label2=Bollwerke
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=2.6000000e+01
+
+[InstalledUpgrade]
+index=9
+upgrade.label1=Gefälschte Bionische
+upgrade.label2=Bollwerke
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+
+[InstalledUpgrade]
+index=10
+upgrade.label1=Schwarz Gehandelte Übertragende
+upgrade.label2=Batterie
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=11
+upgrade.label1=Riskante Bionische
+upgrade.label2=Panzerung
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.2000000e+01
+
+[InstalledUpgrade]
+index=12
+upgrade.label1=Geschmuggelte Übertragende
+upgrade.label2=Transplantate
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=13
+upgrade.label1=Verdächtige Bionische
+upgrade.label2=Polarisatoren
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.1000000e+01
+
+[InstalledUpgrade]
+index=14
+upgrade.label1=Riskante Blitzende
+upgrade.label2=Stoßdämpfer
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+
+[InstalledUpgrade]
+index=15
+upgrade.label1=Raubkopierte Bionische
+upgrade.label2=Stoßdämpfer
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=16
+upgrade.label1=Verbotene Uranhaltige
+upgrade.label2=Stoßdämpfer
+value.uniqueID=5FEF7B1BC431D4B6
+value.value=1.8000000e+01
+
+[InstalledUpgrade]
+index=17
+upgrade.label1=Abweichende Bionische
+upgrade.label2=Stoßdämpfer
+value.uniqueID=6E816584BA24EDB2
+value.value=3.3000000e+01
+
+[UpgradeModule]
+ModuleID=^U_HYPERX
+Amount=3
+InstallPos=12,13,14
+valueDef.uniqueID=555342366616F7F0
+valueDef.label=Warpzellen-Effizienz
+valueDef.format=PercentPlus
+valueDef.uniqueID=16862308B8B3E842
+valueDef.label=Hyperantrieb-Reichweite
+valueDef.format=Lightyears
+
+[InstalledUpgrade]
+index=0
+upgrade.label1=Nachgebaute Verbesserte
+upgrade.label2=Rahmenwiderstandsbegrenzer
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+value.uniqueID=16862308B8B3E842
+value.value=5.0000000e+01
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=Untersagte Verbesserte
+upgrade.label2=Relativitätsschilde
+value.uniqueID=16862308B8B3E842
+value.value=2.1100000e+02
+
+[InstalledUpgrade]
+index=2
+upgrade.label1=Unzulässige Stabilisierte
+upgrade.label2=Relatitätsdestabilisierer
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=Schwarz Gehandelte Aufgeheizte
+upgrade.label2=Entfernungspolarisatoren
+value.uniqueID=16862308B8B3E842
+value.value=1.0100000e+02
+
+[InstalledUpgrade]
+index=4
+upgrade.label1=Geschmuggelte Verbesserte
+upgrade.label2=Superluminare
+value.uniqueID=16862308B8B3E842
+value.value=6.2000000e+01
+
+[InstalledUpgrade]
+index=5
+upgrade.label1=Illegale Verbesserte
+upgrade.label2=Vakuumantriebe
+value.uniqueID=16862308B8B3E842
+value.value=5.1000000e+01
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=Verdächtige Aufgeheizte
+upgrade.label2=Vakuumantriebe
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Modifizierte Verbesserte
+upgrade.label2=Superluminare
+value.uniqueID=16862308B8B3E842
+value.value=6.0000000e+01
+
+[InstalledUpgrade]
+index=8
+upgrade.label1=Raubkopierte Polierte
+upgrade.label2=Rahmenwiderstandsbegrenzer
+value.uniqueID=16862308B8B3E842
+value.value=2.2000000e+02
+
+[InstalledUpgrade]
+index=9
+upgrade.label1=Gefälschte Neu Verkabelte
+upgrade.label2=Rahmenwiderstandsbegrenzer
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+
+[InstalledUpgrade]
+index=10
+upgrade.label1=Schwarz Gehandelte Verbesserte
+upgrade.label2=Relativitätsschilde
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+value.uniqueID=16862308B8B3E842
+value.value=6.0000000e+01
+
+[InstalledUpgrade]
+index=11
+upgrade.label1=Riskante Neu Verkabelte
+upgrade.label2=Relativitätsdestabilisierer
+value.uniqueID=16862308B8B3E842
+value.value=7.6000000e+01
+
+[InstalledUpgrade]
+index=12
+upgrade.label1=Geschmuggelte Verbesserte
+upgrade.label2=Druckumkehrer
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+value.uniqueID=16862308B8B3E842
+value.value=5.0000000e+01
+
+[InstalledUpgrade]
+index=13
+upgrade.label1=Verdächtige Neu Verkabelte
+upgrade.label2=Kausalitätsisolatoren
+value.uniqueID=16862308B8B3E842
+value.value=6.6000000e+01
+
+[InstalledUpgrade]
+index=14
+upgrade.label1=Riskante Aufgeheizte
+upgrade.label2=Entfernungspolarisatoren
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+
+[InstalledUpgrade]
+index=15
+upgrade.label1=Raubkopierte Neu Verkabelte
+upgrade.label2=Entfernungspolarisatoren
+value.uniqueID=16862308B8B3E842
+value.value=5.0000000e+01
+
+[InstalledUpgrade]
+index=16
+upgrade.label1=Verbotene Polierte
+upgrade.label2=Entfernungspolarisatoren
+value.uniqueID=16862308B8B3E842
+value.value=1.3700000e+02
+
+[InstalledUpgrade]
+index=17
+upgrade.label1=Abweichende Neu Verkabelte
+upgrade.label2=Entfernungspolarisatoren
+value.uniqueID=555342366616F7F0
+value.value=1.0000000e+02
+
+[UpgradeModule]
+ModuleID=^U_SHIPSHIELDX
+Amount=3
+InstallPos=15,16,17
+valueDef.uniqueID=2287F913E3971C93
+valueDef.label=Schildstärke
+valueDef.format=PercentPlus
+
+[InstalledUpgrade]
+index=0
+upgrade.label1=Nachgebaute Übertragende
+upgrade.label2=Bollwerke
+value.uniqueID=2287F913E3971C93
+value.value=2.6000000e+01
+
+[InstalledUpgrade]
+index=1
+upgrade.label1=Untersagte Übertragende
+upgrade.label2=Batterie
+value.uniqueID=2287F913E3971C93
+value.value=1.5000000e+01
+
+[InstalledUpgrade]
+index=2
+upgrade.label1=Unzulässige Akustische
+upgrade.label2=Panzerung
+value.uniqueID=2287F913E3971C93
+value.value=8.0000000e+00
+
+[InstalledUpgrade]
+index=3
+upgrade.label1=Schwarz Gehandelte Blitzende
+upgrade.label2=Stoßdämpfer
+value.uniqueID=2287F913E3971C93
+value.value=2.8000000e+01
+
+[InstalledUpgrade]
+index=4
+upgrade.label1=Geschmuggelte Übertragende
+upgrade.label2=Resonatoren
+value.uniqueID=2287F913E3971C93
+value.value=2.2000000e+01
+
+[InstalledUpgrade]
+index=5
+upgrade.label1=Illegale Übertragende
+upgrade.label2=Polsterung
+value.uniqueID=2287F913E3971C93
+value.value=2.3000000e+01
+
+[InstalledUpgrade]
+index=6
+upgrade.label1=Verdächtige Blitzende
+upgrade.label2=Polsterung
+value.uniqueID=2287F913E3971C93
+value.value=1.0000000e+01
+
+[InstalledUpgrade]
+index=7
+upgrade.label1=Modifizierte Übertragende
+upgrade.label2=Resonatoren
+value.uniqueID=2287F913E3971C93
+value.value=2.2000000e+01
+
+[InstalledUpgrade]
+index=8
+upgrade.label1=Raubkopierte Uranhaltige
+upgrade.label2=Bollwerke
+value.uniqueID=2287F913E3971C93
+value.value=1.8000000e+01
+
+[InstalledUpgrade]
+index=9
+upgrade.label1=Gefälschte Bionische
+upgrade.label2=Bollwerke
+value.uniqueID=2287F913E3971C93
+value.value=9.0000000e+00
+
+[InstalledUpgrade]
+index=10
+upgrade.label1=Schwarz Gehandelte Übertragende
+upgrade.label2=Batterie
+value.uniqueID=2287F913E3971C93
+value.value=1.1000000e+01
+
+[InstalledUpgrade]
+index=11
+upgrade.label1=Riskante Bionische
+upgrade.label2=Panzerung
+value.uniqueID=2287F913E3971C93
+value.value=1.7000000e+01
+
+[InstalledUpgrade]
+index=12
+upgrade.label1=Geschmuggelte Übertragende
+upgrade.label2=Transplantate
+value.uniqueID=2287F913E3971C93
+value.value=1.3000000e+01
+
+[InstalledUpgrade]
+index=13
+upgrade.label1=Verdächtige Bionische
+upgrade.label2=Polarisatoren
+value.uniqueID=2287F913E3971C93
+value.value=3.1000000e+01
+
+[InstalledUpgrade]
+index=14
+upgrade.label1=Riskante Blitzende
+upgrade.label2=Stoßdämpfer
+value.uniqueID=2287F913E3971C93
+value.value=8.0000000e+00
+
+[InstalledUpgrade]
+index=15
+upgrade.label1=Raubkopierte Bionische
+upgrade.label2=Stoßdämpfer
+value.uniqueID=2287F913E3971C93
+value.value=2.3000000e+01
+
+[InstalledUpgrade]
+index=16
+upgrade.label1=Verbotene Uranhaltige
+upgrade.label2=Stoßdämpfer
+value.uniqueID=2287F913E3971C93
+value.value=1.7000000e+01
+
+[InstalledUpgrade]
+index=17
+upgrade.label1=Abweichende Bionische
+upgrade.label2=Stoßdämpfer
+value.uniqueID=2287F913E3971C93
+value.value=1.2000000e+01
+
