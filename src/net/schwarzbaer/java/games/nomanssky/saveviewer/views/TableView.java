@@ -459,8 +459,8 @@ public class TableView {
 				if (value!=null && columnID.setValue!=null) 
 					columnID.setValue.setValue(value, rowIndex, newValue);
 			}
-			public void fireTableColumnUpdate(ColumnID<DataType> columnID) {
-				super.fireTableColumnUpdate(getColumn(columnID));
+			@Override public void fireTableColumnUpdate(ColumnID<DataType> columnID) {
+				super.fireTableColumnUpdate(columnID);
 			}
 			@Override public void fireTableRowUpdate(int rowIndex) {
 				super.fireTableRowUpdate(rowIndex);
