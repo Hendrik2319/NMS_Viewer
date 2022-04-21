@@ -1310,7 +1310,7 @@ public class SimplePanels {
 				new CompanionColumnID("Planet/System"  ,      String.class, 20,-1,360,360, c->c.universeAddress==null ? null : c.universeAddress.getVerboseNameInOneLine(data.universe, 2)),
 				new CompanionColumnID("Origin Biome"   ,      String.class, 20,-1, 75, 75, c->c.originBiome),
 				new CompanionColumnID("Animal Role"    ,      String.class, 20,-1, 75, 75, c->c.animalRole),
-				new CompanionColumnID("Größe"          ,      String.class, 20,-1, 45, 45, c->c.height_m==null ? "<null>" : String.format(Locale.ENGLISH, "%1.2fm", c.height_m)),
+				new CompanionColumnID("Grï¿½ï¿½e"          ,      String.class, 20,-1, 45, 45, c->c.height_m==null ? "<null>" : String.format(Locale.ENGLISH, "%1.2fm", c.height_m)),
 				new CompanionColumnID("Hoffnung"       ,      String.class, 20,-1, 60, 60, c->c.hope    ==null ? "<null>" : String.format(Locale.ENGLISH, "%1.1f%%", c.hope*100)),
 				new CompanionColumnID("Character 1"    ,      String.class, 20,-1,130,130, c->c.character==null ? "<null>" : SaveGameData.Companions.Companion.toCharacterStr(c.character.x, 0)),
 				new CompanionColumnID("Character 2"    ,      String.class, 20,-1,105,105, c->c.character==null ? "<null>" : SaveGameData.Companions.Companion.toCharacterStr(c.character.y, 1)),
@@ -2189,8 +2189,8 @@ public class SimplePanels {
 					this.objects = objects;
 				}
 		
-				public void fireTableColumnUpdate(BaseObjectsColumnID columnID) {
-					super.fireTableColumnUpdate(getColumn(columnID));
+				@Override public void fireTableColumnUpdate(BaseObjectsColumnID columnID) {
+					super.fireTableColumnUpdate(columnID);
 				}
 
 				@Override public void fireTableRowUpdate(int rowM) {
