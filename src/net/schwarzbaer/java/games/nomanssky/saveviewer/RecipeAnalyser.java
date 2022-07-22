@@ -136,6 +136,8 @@ class RecipeAnalyser implements ActionListener {
 				if (line.startsWith("OpenDataFile=")) {
 					String valueStr = line.substring("OpenDataFile=".length());
 					dataFile = new File( valueStr );
+					if (!dataFile.isFile())
+						dataFile = null;
 				}
 				if (line.equals("SaveInStockIngredients")) {
 					saveInStockIngredients = true;
@@ -411,9 +413,12 @@ class RecipeAnalyser implements ActionListener {
 			break;
 		case OpenDataFile:
 			if (fileChooser.showOpenDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
-				dataFile = fileChooser.getSelectedFile();
-				readDataFromFile(dataFile);
-				writeConfig();
+				File file = fileChooser.getSelectedFile();
+				if (file!=null) {
+					dataFile = file;
+					readDataFromFile(dataFile);
+					writeConfig();
+				}
 			}
 			break;
 		case SaveDataFile:
@@ -425,9 +430,12 @@ class RecipeAnalyser implements ActionListener {
 			//break;
 		case SaveDataFileAs:
 			if (fileChooser.showSaveDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
-				dataFile = fileChooser.getSelectedFile();
-				saveDataToFile(dataFile);
-				writeConfig();
+				File file = fileChooser.getSelectedFile();
+				if (file!=null) {
+					dataFile = file;
+					saveDataToFile(dataFile);
+					writeConfig();
+				}
 			}
 			break;
 			
