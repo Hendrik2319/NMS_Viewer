@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Comparator;
@@ -208,15 +207,11 @@ public class Gui {
 		}
 		
 		public void setText_Stream(Consumer<PrintStream> print) {
-			try {
-				ByteArrayOutputStream strOut = new ByteArrayOutputStream();
-				PrintStream printOut = new PrintStream(strOut,true,StandardCharsets.UTF_8.toString());
-				print.accept(printOut);
-				printOut.flush();
-				setText(strOut.toString(StandardCharsets.UTF_8.toString()));
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			}
+			ByteArrayOutputStream strOut = new ByteArrayOutputStream();
+			PrintStream printOut = new PrintStream(strOut,true,StandardCharsets.UTF_8);
+			print.accept(printOut);
+			printOut.flush();
+			setText(strOut.toString(StandardCharsets.UTF_8));
 		}
 		
 		public void setText_Writer(Consumer<PrintWriter> print) {
