@@ -55,8 +55,10 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -563,8 +565,9 @@ class RecipeAnalyser implements ActionListener {
 		if (dataModel == null)
 			str += " - <No Data>";
 		else {
-			if (dataFile==null) str += "  -  <unsaved>";
-			else str += "  -  "+dataFile.getName();
+			str += "  -  " + (dataFile==null ? "" : dataFile.getName());
+			if (dataFile==null || dataModel.hasUnsavedChanges)
+				str += " <unsaved>";
 			switch (dataModel.type) {
 			case NutrientProcessor: str += "  [NutrientProcessor Recipes]"; break;
 			case Refiner          : str += "  [Refiner Recipes]"; break;
@@ -575,7 +578,7 @@ class RecipeAnalyser implements ActionListener {
 
 	private void setDataModelType(DataModel.Type type) {
 		if (dataModel == null) {
-			dataModel = DataModel.create(type,null);
+			dataModel = DataModel.create(type);
 			dataModel.setGui(this);
 			dataModel.setStockListener(this::ingredientsStockHasChanged);
 			if (saveInStockIngredients)
@@ -601,10 +604,10 @@ class RecipeAnalyser implements ActionListener {
 			switch (ac) {
 			case CopyNutrientProcessorIngredientsFromClipBoard:
 			case CopyNutrientProcessorRecipesFromClipBoard:
-				return dataModel==null || dataModel.type==DataModel.Type.NutrientProcessor;
+				return dataModel==null || (dataModel.type==DataModel.Type.NutrientProcessor && !dataModel.wasEdited);
 			case CopyRefinerIngredientsFromClipBoard:
 			case CopyRefinerRecipesFromClipBoard:
-				return dataModel==null || dataModel.type==DataModel.Type.Refiner;
+				return dataModel==null || (dataModel.type==DataModel.Type.Refiner && !dataModel.wasEdited);
 				
 			case OpenDataFile:
 				return true;
@@ -678,6 +681,7 @@ class RecipeAnalyser implements ActionListener {
 			dataModel.writeDataCfgToZIP(zipout, out, "RecipeListConfig");
 			writeTabTableToZIP(zipout, out, "ingredients", dataModel.rawIngredientsData);
 			writeTabTableToZIP(zipout, out, "recipes"    , dataModel.rawRecipesData);
+			dataModel.hasUnsavedChanges = false;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -781,8 +785,8 @@ class RecipeAnalyser implements ActionListener {
 	
 	private static class RefinerDataModel extends DataModel<String> {
 		
-		RefinerDataModel(int[] tempWrongRecipes) {
-			super(Type.Refiner, tempWrongRecipes);
+		RefinerDataModel(boolean wasEdited, int[] tempWrongRecipes) {
+			super(Type.Refiner, wasEdited, tempWrongRecipes);
 		}
 
 		@Override protected String parseID(String str) {
@@ -813,13 +817,13 @@ class RecipeAnalyser implements ActionListener {
 			if (rowData.length>0) type  = rowData[0];
 			if (rowData.length>2) ID    = rowData[2];
 			if (rowData.length>3) genID = rowData[3];
-			if (rowData.length>4) name  = rowData[4];
+			if (rowData.length>4) name  = rowData[4]; // -> Ingredient.getNameRawIndex()
 			if (rowData.length>5) price = rowData[5];
 			
 			if (ID.isEmpty() && type.isEmpty() && name.isEmpty() && price.isEmpty() && genID.isEmpty())
 				return null;
 			
-			return new Ingredient(ID,type,name,price,genID);
+			return new Ingredient(row, ID,type,name,price,genID);
 		}
 		
 		@Override protected Ingredient castIngredient(Object obj) {
@@ -829,27 +833,45 @@ class RecipeAnalyser implements ActionListener {
 		
 		private class Ingredient extends DataModel<String>.Ingredient {
 
-			private String id;
-			private String type;
+			private final int rawRowIndex;
+			private final String id;
+			private final String type;
 			private String name;
-			private Float price;
-			private GeneralizedID genID;
+			private final Float price;
+			private final GeneralizedID genID;
 
-			public Ingredient(String id, String type, String name, String priceStr, String genID) {
+			public Ingredient(int rawRowIndex, String id, String type, String name, String priceStr, String genID) {
+				this.rawRowIndex = rawRowIndex;
 				this.id = id;
 				this.type = type;
 				this.name = name==null || name.isEmpty() ? null : name;
-				try { this.price = Float.parseFloat(priceStr.replace(",","")); }
-				catch (NumberFormatException e) { this.price = null; }
-				this.genID = GameInfos.getGeneralizedID(genID);
-				if (this.genID==null)
-					this.genID = new GeneralizedID(genID);
+				
+				Float price_;
+				try { price_ = Float.parseFloat(priceStr.replace(",","")); }
+				catch (NumberFormatException e) { price_ = null; }
+				this.price = price_;
+				
+				GeneralizedID genID_ = GameInfos.getGeneralizedID(genID);
+				if (genID_==null)
+					genID_ = new GeneralizedID(genID);
+				this.genID = genID_;
 			}
+
+			@Override int getRawRowIndex() { return rawRowIndex; }
+
+			@Override void setName(String name, Lang language) { this.name = name; }
+			@Override void setDesc(String desc) { throw new UnsupportedOperationException(); }
+
+			@Override int getNameRawColumnIndex(Lang language) { return 4; }
+			@Override int getDescRawColumnIndex() { return -1; }
+
+			@Override boolean isNameEditable(Lang language) { return language==Lang.De; }
+			@Override boolean isDescEditable() { return false; }
 
 			@Override String getID   () { return id; }
 			@Override String getName () { return name; }
 			@Override String getType () { return type; }
-			@Override String getName (Lang language) { return name; }
+			@Override String getName (Lang language) { return language==Lang.De ? name : null; }
 			@Override String getDesc () { return null; }
 			@Override Float  getPrice() { return price; }
 			@Override GeneralizedID getGeneralizedID() { return genID; }
@@ -870,8 +892,8 @@ class RecipeAnalyser implements ActionListener {
 	
 	private static class NutrientProcessorDataModel extends DataModel<Integer> {
 		
-		NutrientProcessorDataModel(int[] tempWrongRecipes) {
-			super(Type.NutrientProcessor, tempWrongRecipes);
+		NutrientProcessorDataModel(boolean wasEdited, int[] tempWrongRecipes) {
+			super(Type.NutrientProcessor, wasEdited, tempWrongRecipes);
 		}
 
 		@Override protected Integer parseID(String str) {
@@ -912,7 +934,7 @@ class RecipeAnalyser implements ActionListener {
 			if (type.isEmpty() && nameDE.isEmpty() && nameEN.isEmpty() && desc.isEmpty())
 				return null;
 			
-			return new Ingredient(row+1,type,nameDE,nameEN,desc);
+			return new Ingredient(row, row+1,type,nameDE,nameEN,desc);
 		}
 		
 		@Override protected Ingredient castIngredient(Object obj) {
@@ -925,23 +947,55 @@ class RecipeAnalyser implements ActionListener {
 		}
 		private class Ingredient extends DataModel<Integer>.Ingredient {
 		
-			private int ingredientIndex;
+			private final int rawRowIndex;
+			private final int ingredientIndex;
 			@SuppressWarnings("unused")
-			private IngredientType type;
-			private String typeStr;
+			private final IngredientType type;
+			private final String typeStr;
 			private String nameDE;
 			private String nameEN;
 			private String desc;
 		
-			public Ingredient(int ingredientIndex, String type, String nameDE, String nameEN, String desc) {
+			public Ingredient(int rawRowIndex, int ingredientIndex, String type, String nameDE, String nameEN, String desc) {
+				this.rawRowIndex = rawRowIndex;
 				this.ingredientIndex = ingredientIndex;
 				this.typeStr = type;
-				try { this.type = IngredientType.valueOf(type); }
-				catch (Exception e) { this.type = null; }
+				
+				IngredientType type_;
+				try { type_ = IngredientType.valueOf(type); }
+				catch (Exception e) { type_ = null; }
+				this.type = type_; 
+				
 				this.nameDE = nameDE;
 				this.nameEN = nameEN;
 				this.desc = desc;
 			}
+
+			@Override int getRawRowIndex() { return rawRowIndex; }
+
+			@Override void setName(String name, Lang language) {
+				switch (language) {
+				case De: nameDE = name; break;
+				case En: nameEN = name; break;
+				}
+			}
+			@Override void setDesc(String desc) {
+				this.desc = desc;
+			}
+
+			@Override int getNameRawColumnIndex(Lang language) {
+				switch (language) {
+				case De: return 1;
+				case En: return 2;
+				}
+				return -1;
+			}
+			@Override int getDescRawColumnIndex() {
+				return 3;
+			}
+
+			@Override boolean isNameEditable(Lang language) { return true; }
+			@Override boolean isDescEditable() { return true; }
 		
 			@Override Integer getID   () { return ingredientIndex; }
 			@Override String  getType () { return typeStr; }
@@ -993,6 +1047,7 @@ class RecipeAnalyser implements ActionListener {
 
 		private IngredientsTableModel     ingredientsTableModel = null;
 		private RecipesTableModel         recipesTableModel = null;
+		private RawdataModel              rawdataModel = null;
 		
 		private Vector<String[]> rawIngredientsData = null;
 		private Vector<String[]> rawRecipesData = null;
@@ -1004,13 +1059,17 @@ class RecipeAnalyser implements ActionListener {
 		
 		enum Type { NutrientProcessor, Refiner }
 		private Type type;
+		private boolean wasEdited;
+		private boolean hasUnsavedChanges;
 
 		private ServiceFunctions serviceFunctions;
 		private int[] tempWrongRecipes;
 
 		
-		DataModel(Type type, int[] tempWrongRecipes) {
+		DataModel(Type type, boolean wasEdited, int[] tempWrongRecipes) {
 			this.type = type;
+			this.wasEdited = wasEdited;
+			this.hasUnsavedChanges = false;
 			this.tempWrongRecipes = tempWrongRecipes;
 			this.serviceFunctions = new ServiceFunctions();
 		}
@@ -1024,32 +1083,37 @@ class RecipeAnalyser implements ActionListener {
 			rawRecipesTable     = gui.rawRecipesTable    ;
 		}
 
-		public static DataModel<?> create(Type type, int[] tempWrongRecipes) {
+		public static DataModel<?> create(Type type) {
+			return create(type, false, null);
+		}
+		public static DataModel<?> create(Type type, boolean wasEdited, int[] tempWrongRecipes) {
 			if (type != null)
 				switch (type) {
-				case NutrientProcessor: return new NutrientProcessorDataModel(tempWrongRecipes);
-				case Refiner          : return new RefinerDataModel(tempWrongRecipes);
+				case NutrientProcessor: return new NutrientProcessorDataModel(wasEdited, tempWrongRecipes);
+				case Refiner          : return new           RefinerDataModel(wasEdited, tempWrongRecipes);
 				}
-			
-			return new NutrientProcessorDataModel(tempWrongRecipes); // no config
+			return new NutrientProcessorDataModel(wasEdited, tempWrongRecipes); // no config
 		}
 
 		public static DataModel<?> readDataCfgFromZIP(ZipFile zipin, String entryName) throws IOException {
 			ZipEntry entry = zipin.getEntry(entryName);
 			
+			boolean wasEdited = false;
 			Type type = null;
 			int[] wrongRecipes = null;
 			
 			if (entry != null) {
 				BufferedReader in = new BufferedReader( new InputStreamReader(zipin.getInputStream(entry), StandardCharsets.UTF_8));
-				String line;
+				String line, valueStr;
 				while ( (line=in.readLine())!=null ) {
-					if (line.startsWith("type=")) {
-						try { type = Type.valueOf( line.substring("type=".length()) ); }
+					if ( line.equals("wasEdited") ) {
+						wasEdited = true;
+					}
+					if ( (valueStr=getValueStr(line,"type="))!=null ) {
+						try { type = Type.valueOf( valueStr ); }
 						catch (Exception e) {}
 					}
-					if (line.startsWith("wrongRecipes=")) {
-						String valueStr = line.substring("wrongRecipes=".length());
+					if ( (valueStr=getValueStr(line,"wrongRecipes="))!=null ) {
 						String[] parts = valueStr.split(",");
 						wrongRecipes = new int[parts.length];
 						for (int i=0; i<wrongRecipes.length; i++) {
@@ -1061,12 +1125,21 @@ class RecipeAnalyser implements ActionListener {
 				}
 			}
 			
-			return create(type,wrongRecipes);
+			return create(type, wasEdited, wrongRecipes);
 		}
+		
+		private static String getValueStr(String line, String prefix) {
+			if (line.startsWith(prefix))
+				return line.substring(prefix.length());
+			return null;
+		}
+		
 		public void writeDataCfgToZIP(ZipOutputStream zipout, PrintWriter out, String entryName) throws IOException {
 			zipout.putNextEntry(new ZipEntry(entryName));
 			
 			out.printf("type=%s%n",type);
+			if (wasEdited)
+				out.printf("wasEdited%n");
 			
 			StringBuilder wrongRecipes = new StringBuilder();
 			for (int i=0; i<recipes.size(); i++) {
@@ -1212,7 +1285,8 @@ class RecipeAnalyser implements ActionListener {
 		private void parseIngredientsTable() {
 			if (rawIngredientsData==null) return;
 			
-			rawIngredientsTable.setModel(new RawdataModel(rawIngredientsData));
+			rawdataModel = new RawdataModel(rawIngredientsData);
+			rawIngredientsTable.setModel(rawdataModel);
 			
 			try {
 				Vector<Ingredient> ingredients = parseIngredients();
@@ -1894,6 +1968,14 @@ class RecipeAnalyser implements ActionListener {
 				return String.format("Ingredient [%s] <%s> \"%s\" %s%s%s", getID(), getType(), name==null?"":name, isInputValue?"I":"-", isOutputValue?"O":"-", isInStock()?"S":"-", isProducible()?"P":"-");
 			}
 			
+			abstract int getRawRowIndex();
+			abstract void setName(String name, Lang language);
+			abstract void setDesc(String desc);
+			abstract int getNameRawColumnIndex(Lang language);
+			abstract int getDescRawColumnIndex();
+			abstract boolean isNameEditable(Lang language);
+			abstract boolean isDescEditable();
+			
 			abstract IDType getID();
 			abstract String getType();
 			abstract String getName();
@@ -2352,9 +2434,11 @@ class RecipeAnalyser implements ActionListener {
 		
 			@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, IngredientsTableColumnID columnID) {
 				Ingredient ingredient = getIngredientAtRow(rowIndex);
-				if (ingredient==null || ingredient.getName()==null) return;
+				if (ingredient==null) return;
+				if (ingredient.getName()==null) return;
 				
 				Boolean isInStock = null;
+				int rawRowIndex = ingredient.getRawRowIndex();
 				switch (columnID) {
 				case InStock:
 					if (aValue instanceof Boolean) isInStock = (Boolean) aValue;
@@ -2366,15 +2450,43 @@ class RecipeAnalyser implements ActionListener {
 						fireTableUpdate(); 
 					}
 					break;
+				case NameDE     : setValue(aValue, rowIndex, columnIndex, rawRowIndex, ingredient.getNameRawColumnIndex(Lang.De), str->ingredient.setName(str, Lang.De)); break;
+				case NameEN     : setValue(aValue, rowIndex, columnIndex, rawRowIndex, ingredient.getNameRawColumnIndex(Lang.En), str->ingredient.setName(str, Lang.En)); break;
+				case Description: setValue(aValue, rowIndex, columnIndex, rawRowIndex, ingredient.getDescRawColumnIndex(       ), str->ingredient.setDesc(str         )); break;
 				default: break;
 				}
 			}
-		
+
+			private void setValue(Object aValue, int rowIndex, int columnIndex, int rawRowIndex, int rawColumnIndex, Consumer<String> setValue) {
+				if (aValue instanceof String) {
+					String str = (String) aValue;
+					
+					boolean success = rawdataModel.setCell(str, rawRowIndex, rawColumnIndex);
+					if (success) {
+						setValue.accept(str);
+						wasEdited = true;
+						hasUnsavedChanges = true; 
+						gui.updateGuiAccess();
+						gui.updateWindowTitle();
+					}
+					
+					SwingUtilities.invokeLater(()->{
+						fireTableCellUpdate(rowIndex, columnIndex);
+					});
+				}
+			}
+
 			@Override protected boolean isCellEditable(int rowIndex, int columnIndex, IngredientsTableColumnID columnID) {
 				Ingredient ingredient = getIngredientAtRow(rowIndex);
-				boolean isInput = ingredient!=null && ingredient.getName()!=null;
-				if (columnID==IngredientsTableColumnID.InStock) return isInput;
-				return false;
+				if (ingredient == null) return false;
+				if (ingredient.getName() == null) return false;
+				switch (columnID) {
+				case InStock: return true;
+				case NameDE     : return ingredient.isNameEditable(Lang.De);
+				case NameEN     : return ingredient.isNameEditable(Lang.En);
+				case Description: return ingredient.isDescEditable();
+				default: return false;
+				}
 			}
 		}
 
@@ -2597,19 +2709,41 @@ class RecipeAnalyser implements ActionListener {
 	}
 
 	private static class RawdataModel implements TableModel {
-	
-		private Vector<String[]> data;
-		private int colCount;
+		
+		private final Vector<TableModelListener> tableModelListeners;
+		private final Vector<String[]> data;
+		private final int colCount;
 
-		public RawdataModel(Vector<String[]> data) {
+		RawdataModel(Vector<String[]> data) {
 			this.data = data;
-			colCount = 0;
+			int colCount_ = 0;
 			for (String[] row:data)
-				colCount = Math.max(colCount, row.length);
+				colCount_ = Math.max(colCount_, row.length);
+			colCount = colCount_;
+			tableModelListeners = new Vector<>();
 		}
 		
-		@Override public void    addTableModelListener(TableModelListener l) {}
-		@Override public void removeTableModelListener(TableModelListener l) {}
+		boolean setCell(String value, int rowIndex, int columnIndex) {
+			if (rowIndex<0 || data.size()<=rowIndex) return false;
+			String[] row = data.get(rowIndex);
+			
+			if (columnIndex<0 || row.length<=columnIndex) return false;
+			row[columnIndex] = value;
+			
+			fireCellUpdate(rowIndex, columnIndex);
+			return true;
+		}
+
+		@Override public void    addTableModelListener(TableModelListener l) { tableModelListeners.   add(l); }
+		@Override public void removeTableModelListener(TableModelListener l) { tableModelListeners.remove(l); }
+		
+		private void fireCellUpdate(int row, int column) {
+			fireTableModelEvent(new TableModelEvent(this,row,row,column,TableModelEvent.UPDATE));
+		}
+		private void fireTableModelEvent(TableModelEvent e) {
+			for (TableModelListener tml : tableModelListeners)
+				tml.tableChanged(e);
+		}
 
 		@Override public int getRowCount() { return data.size(); }
 		@Override public int getColumnCount() { return colCount+1; }
