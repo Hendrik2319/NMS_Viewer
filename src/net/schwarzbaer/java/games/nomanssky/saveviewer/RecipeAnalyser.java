@@ -112,6 +112,7 @@ class RecipeAnalyser implements ActionListener {
 	
 	private FileChooser               fileChooser = null;
 	private StatusFields              statusFields = null;
+	private ResultDialogs             resultDialogs = null;
 	
 	private TableView.SimplifiedTable<DataModel.IngredientsTableColumnID> ingredientsTable = null;
 	private TableView.SimplifiedTable<DataModel.RecipesTableColumnID>     recipesTable     = null;
@@ -216,6 +217,8 @@ class RecipeAnalyser implements ActionListener {
 	private RecipeAnalyser createGUI(boolean standalone) {
 		fileChooser = new FileChooser("RecipeAnalyser Data File", "recipes");
 		
+		resultDialogs = new ResultDialogs();
+		
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
 		
@@ -231,7 +234,7 @@ class RecipeAnalyser implements ActionListener {
 		JPopupMenu contextMenu;
 		contextMenu = ingredientsTable.getContextMenu();
 		contextMenu.addSeparator();
-		contextMenu.add(Gui.createMenuItem("Scroll To ...", this, disabler, ActionCommand.ScrollTo));
+		contextMenu.add(Gui.createMenuItem("Scroll to ...", this, disabler, ActionCommand.ScrollTo));
 		contextMenu.addSeparator();
 		contextMenu.add(Gui.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		contextMenu.add(miFindRecipeChain  = Gui.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain ));
@@ -340,6 +343,7 @@ class RecipeAnalyser implements ActionListener {
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(menuData);
 		menuBar.add(menuAnalyse);
+		menuBar.add(resultDialogs.createMenu("Result Windows"));
 		
 		mainwindow = new StandardMainWindow("Recipe Analyser",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
 		mainwindow.startGUI(contentPane,menuBar);
@@ -717,6 +721,62 @@ class RecipeAnalyser implements ActionListener {
 			rawTabTable.add(parts);
 		}
 		return rawTabTable;
+	}
+	
+	private class ResultDialogs {
+		
+		private JMenu menu = null;
+		private final Vector<TextAreaDialog> openDialogs = new Vector<>();
+		private boolean ignoreCloseEvents = false;
+
+		JMenu createMenu(String title) {
+			menu = new JMenu(title);
+			fillMenu();
+			return menu;
+		}
+
+		private void fillMenu() {
+			if (menu==null) return;
+			menu.removeAll();
+			menu.add(Gui.createMenuItem("Close All", e->closeAllDialogs(), !openDialogs.isEmpty()));
+			if (!openDialogs.isEmpty()) {
+				menu.addSeparator();
+				for (TextAreaDialog dlg : openDialogs)
+					menu.add(Gui.createMenuItem(dlg.getTitle(), e->dlg.requestFocus()));
+			}
+		}
+
+		private void closeAllDialogs() {
+			ignoreCloseEvents = true;
+			for (TextAreaDialog dlg : openDialogs)
+				dlg.closeDialog();
+			ignoreCloseEvents = false;
+			openDialogs.clear();
+			fillMenu();
+		}
+
+		private void dialogClosed(TextAreaDialog dlg) {
+			if (ignoreCloseEvents) return;
+			openDialogs.remove(dlg);
+			fillMenu();
+		}
+
+		private void showDialog(String title, Consumer<TextAreaDialog> setText) {
+			TextAreaDialog resultDialog = new TextAreaDialog(mainwindow, title, this::dialogClosed);
+			setText.accept(resultDialog);
+			resultDialog.showDialog();
+			openDialogs.add(resultDialog);
+			openDialogs.sort(Comparator.nullsLast(Comparator.comparing(TextAreaDialog::getTitle)));
+			fillMenu();
+		}
+
+		void showStream(String title, Consumer<PrintStream> print) {
+			showDialog(title, dlg->dlg.setText_Stream(print));
+		}
+
+		void showWriter(String title, Consumer<PrintWriter> print) {
+			showDialog(title, dlg->dlg.setText_Writer(print));
+		}
 	}
 	
 	private static class RefinerDataModel extends DataModel<String> {
@@ -1323,7 +1383,8 @@ class RecipeAnalyser implements ActionListener {
 							pd.setIndeterminate(true);
 						});
 						
-						showinResultDialog_Stream("Found Recipes with "+ingredient.getName(), out->{
+						String title = "Found Recipes with "+ingredient.getName()+(producableOnly ? " [producable only]" : "");
+						showinResultDialog_Stream(title, out->{
 							for (IDType id:sortedIDs)
 								for (SpecificRecipe recipe:allRecipes.get(id))
 									out.println(recipe.toString());
@@ -1528,16 +1589,12 @@ class RecipeAnalyser implements ActionListener {
 			}
 
 			private void showinResultDialog_Stream(String title, Consumer<PrintStream> print) {
-				TextAreaDialog resultDialog = new TextAreaDialog(gui.mainwindow, title);
-				resultDialog.setText_Stream(print);
-				resultDialog.showDialog();
+				gui.resultDialogs.showStream(title, print);
 			}
 
 			@SuppressWarnings("unused")
 			private void showinResultDialog_Writer(String title, Consumer<PrintWriter> print) {
-				TextAreaDialog resultDialog = new TextAreaDialog(gui.mainwindow, title);
-				resultDialog.setText_Writer(print);
-				resultDialog.showDialog();
+				gui.resultDialogs.showWriter(title, print);
 			}
 
 			public void SetSelectedIngredientsInStock(boolean isInStock) {

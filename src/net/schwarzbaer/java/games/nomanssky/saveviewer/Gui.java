@@ -20,6 +20,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -190,10 +191,16 @@ public class Gui {
 
 	public static class TextAreaDialog extends StandardDialog {
 		private static final long serialVersionUID = -2869012153535397866L;
-		private JTextArea outputTextArea;
+		
+		private final JTextArea outputTextArea;
+		private final Consumer<TextAreaDialog> closeListener;
 	
 		public TextAreaDialog(Window parent, String title) {
-			super(parent, title, ModalityType.MODELESS);
+			this(parent, title, null);
+		}
+		public TextAreaDialog(Window parent, String title, Consumer<TextAreaDialog> closeListener) {
+			super(parent, title, ModalityType.MODELESS, closeListener==null);
+			this.closeListener = closeListener;
 			setPreferredSize(new Dimension(600,900));
 			
 			outputTextArea = new JTextArea();
@@ -206,6 +213,11 @@ public class Gui {
 			this.createGUI(contentPane);
 		}
 		
+		@Override public void windowClosed(WindowEvent e) {
+			if (closeListener!=null)
+				closeListener.accept(this);
+		}
+
 		public void setText_Stream(Consumer<PrintStream> print) {
 			ByteArrayOutputStream strOut = new ByteArrayOutputStream();
 			PrintStream printOut = new PrintStream(strOut,true,StandardCharsets.UTF_8);
