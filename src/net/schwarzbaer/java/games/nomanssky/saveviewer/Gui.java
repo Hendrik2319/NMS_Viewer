@@ -33,6 +33,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -199,6 +200,9 @@ public class Gui {
 			this(parent, title, null);
 		}
 		public TextAreaDialog(Window parent, String title, Consumer<TextAreaDialog> closeListener) {
+			this(parent, title, closeListener, null, null);
+		}
+		private <Output> TextAreaDialog(Window parent, String title, Consumer<TextAreaDialog> closeListener, Vector<Consumer<Output>> variants, BiConsumer<TextAreaDialog,Consumer<Output>> setText) {
 			super(parent, title, ModalityType.MODELESS, closeListener==null);
 			this.closeListener = closeListener;
 			setPreferredSize(new Dimension(600,900));
@@ -210,7 +214,34 @@ public class Gui {
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 			contentPane.add(new JScrollPane(outputTextArea), BorderLayout.CENTER);
 			
+			if (variants!=null && !variants.isEmpty()) {
+				JPanel variantPanel = new JPanel(new GridBagLayout());
+				GridBagConstraints c = new GridBagConstraints();
+				c.fill = GridBagConstraints.BOTH;
+				
+				c.weightx = 0;
+				ButtonGroup bg = new ButtonGroup();
+				for (int i=0; i<variants.size(); i++) {
+					Consumer<Output> variant = variants.get(i);
+					String title_ = String.format("Variant %d", i+1);
+					variantPanel.add(createToggleButton(title_, bg, i==0, true, e->setText.accept(this, variant)),c);
+				}
+				
+				c.weightx = 1;
+				variantPanel.add(new JLabel(),c);
+				
+				contentPane.add(variantPanel, BorderLayout.NORTH);
+				
+				setText.accept(this, variants.firstElement());
+			}
+			
 			this.createGUI(contentPane);
+		}
+		public static TextAreaDialog createForWriterVariants(Window parent, String title, Consumer<TextAreaDialog> closeListener, Vector<Consumer<PrintWriter>> variants) {
+			return new TextAreaDialog(parent, title, closeListener, variants, TextAreaDialog::setText_Writer);
+		}
+		public static TextAreaDialog createForStreamVariants(Window parent, String title, Consumer<TextAreaDialog> closeListener, Vector<Consumer<PrintStream>> variants) {
+			return new TextAreaDialog(parent, title, closeListener, variants, TextAreaDialog::setText_Stream);
 		}
 		
 		@Override public void windowClosed(WindowEvent e) {

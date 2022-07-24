@@ -23,6 +23,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -205,7 +206,7 @@ class RecipeAnalyser implements ActionListener {
 		
 		ClearMarkersInIngredientsTable,
 		HighlightProducibleInIngredientsTable,
-		FindRecipeChain, FindRecipeChain2,
+		FindRecipeChain,
 		CopyRefinerRecipesFromClipBoard,
 		CopyRefinerIngredientsFromClipBoard,
 		CopyNutrientProcessorRecipesFromClipBoard,
@@ -230,7 +231,7 @@ class RecipeAnalyser implements ActionListener {
 		//namesTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new Boolean[] {true, false})));
 		//ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(new JComboBox<>(new String[] {"In Stock","---"})));
 		
-		JMenuItem miFindRecipeChain, miFindRecipeChain2, miFindRecipesWith, miFindCombinableIngredients;
+		JMenuItem miFindRecipeChain, miFindRecipesWith, miFindCombinableIngredients;
 		JCheckBoxMenuItem miHighlightProducible;
 		
 		JPopupMenu contextMenu;
@@ -240,7 +241,6 @@ class RecipeAnalyser implements ActionListener {
 		contextMenu.addSeparator();
 		contextMenu.add(Gui.createMenuItem("Find all (#) and (#,#) recipes for selected ingredients", this, disabler, ActionCommand.FindBasicRecipes));
 		contextMenu.add(miFindRecipeChain  = Gui.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain ));
-		contextMenu.add(miFindRecipeChain2 = Gui.createMenuItem("Find recipe chain (2) for ####", this, disabler, ActionCommand.FindRecipeChain2));
 		contextMenu.add(miFindRecipesWith  = Gui.createMenuItem("Find recipes with #### as input", this, disabler, ActionCommand.FindRecipesWith));
 		contextMenu.addSeparator();
 		contextMenu.add(miFindCombinableIngredients = Gui.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients));
@@ -268,10 +268,8 @@ class RecipeAnalyser implements ActionListener {
 			miHighlightProducible.setSelected(dataModel.ingredientsTableModel.highlightProducible);
 			
 			boolean isProducible = hasName && ingredient.isOutputValue && ingredient.isProducible();
-			miFindRecipeChain .setText(String.format("Find recipe chain for %s", name));
-			miFindRecipeChain2.setText(String.format("Find recipe chain (2) for %s", name));
-			miFindRecipeChain .setEnabled(isProducible);
-			miFindRecipeChain2.setEnabled(isProducible);
+			miFindRecipeChain.setText(String.format("Find recipe chain for %s", name));
+			miFindRecipeChain.setEnabled(isProducible);
 			updateGuiAccess();
 		});
 		
@@ -483,10 +481,6 @@ class RecipeAnalyser implements ActionListener {
 			if (dataModel!=null) dataModel.serviceFunctions.FindRecipeChains();
 			break;
 			
-		case FindRecipeChain2:
-			if (dataModel!=null) dataModel.serviceFunctions.FindRecipeChains2();
-			break;
-			
 		case FindGrowingCycles:
 			if (dataModel!=null) dataModel.serviceFunctions.FindGrowingCycles();
 			break;
@@ -639,7 +633,6 @@ class RecipeAnalyser implements ActionListener {
 				return dataModel!=null && dataModel.recipesTableModel!=null && dataModel.recipesTableModel.clickedRecipe!=null;
 				
 			case FindRecipeChain:
-			case FindRecipeChain2:
 			case FindCombinableIngredients:
 			case FindRecipesWith:
 				return null;
@@ -765,21 +758,35 @@ class RecipeAnalyser implements ActionListener {
 			fillMenu();
 		}
 
-		private void showDialog(String title, Consumer<TextAreaDialog> setText) {
+		void showStream(String title, Consumer<PrintStream> print) {
 			TextAreaDialog resultDialog = new TextAreaDialog(mainwindow, title, this::dialogClosed);
-			setText.accept(resultDialog);
+			resultDialog.setText_Stream(print);
+			showDialog(resultDialog);
+		}
+
+		@SuppressWarnings("unused")
+		void showWriter(String title, Consumer<PrintWriter> print) {
+			TextAreaDialog resultDialog = new TextAreaDialog(mainwindow, title, this::dialogClosed);
+			resultDialog.setText_Writer(print);
+			showDialog(resultDialog);
+		}
+
+		void showStreams(String title, Vector<Consumer<PrintStream>> prints) {
+			TextAreaDialog resultDialog = TextAreaDialog.createForStreamVariants(mainwindow, title, this::dialogClosed, prints);
+			showDialog(resultDialog);
+		}
+
+		@SuppressWarnings("unused")
+		void showWriters(String title, Vector<Consumer<PrintWriter>> prints) {
+			TextAreaDialog resultDialog = TextAreaDialog.createForWriterVariants(mainwindow, title, this::dialogClosed, prints);
+			showDialog(resultDialog);
+		}
+
+		private void showDialog(TextAreaDialog resultDialog) {
 			resultDialog.showDialog();
 			openDialogs.add(resultDialog);
 			openDialogs.sort(Comparator.nullsLast(Comparator.comparing(TextAreaDialog::getTitle)));
 			fillMenu();
-		}
-
-		void showStream(String title, Consumer<PrintStream> print) {
-			showDialog(title, dlg->dlg.setText_Stream(print));
-		}
-
-		void showWriter(String title, Consumer<PrintWriter> print) {
-			showDialog(title, dlg->dlg.setText_Writer(print));
 		}
 	}
 	
@@ -1406,7 +1413,7 @@ class RecipeAnalyser implements ActionListener {
 					IDType input3 = dlg.input3==null ? null : dlg.input3.getID();
 					InputValueCombination inputs = createCombi(input1,input2,input3);
 					
-					showinResultDialog_Stream("Found Recipes", out->{
+					gui.resultDialogs.showStream("Found Recipes", out->{
 						forEachRecipe(recipe->{
 							if (recipe.hasInput(inputs) && (output==null || recipe.outputValue.id==output)) {
 								Vector<SpecificRecipe> specificRecipes = recipe.getSpecificRecipes(inputs);
@@ -1458,7 +1465,7 @@ class RecipeAnalyser implements ActionListener {
 						});
 						
 						String title = "Found Recipes with "+ingredient.getName()+(producableOnly ? " [producable only]" : "");
-						showinResultDialog_Stream(title, out->{
+						gui.resultDialogs.showStream(title, out->{
 							for (IDType id:sortedIDs)
 								for (SpecificRecipe recipe:allRecipes.get(id))
 									out.println(recipe.toString());
@@ -1539,7 +1546,7 @@ class RecipeAnalyser implements ActionListener {
 							pd.setIndeterminate(true);
 						});
 						
-						showinResultDialog_Stream("Found Growing Cycles", out->{
+						gui.resultDialogs.showStream("Found Growing Cycles", out->{
 							for (GrowingCycle gc:growingCycles) {
 								out.printf("( %s , %s )%n", getIngredientName(gc.id1), getIngredientName(gc.id2));
 								for (SpecificRecipe r:gc.recipesID1fromID2)
@@ -1609,34 +1616,23 @@ class RecipeAnalyser implements ActionListener {
 				return null;
 			}
 
-			public void FindRecipeChains2() {
-				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipes!=null) {
-					HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe = getAllProducibleRecipes();
-					Ingredient ingredient = ingredientsTableModel.clickedIngredient;
-					RecipeChainFinder2 recipeChainFinder = new RecipeChainFinder2(ingredient,allProdRecipe);
-					recipeChainFinder.search();
-					showinResultDialog_Stream("Found Recipe Chains (2) for "+ingredient.getName(), recipeChainFinder::printTree);
-				}
-			}
-
 			public void FindRecipeChains() {
 				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipes!=null) {
-					HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe = getAllProducibleRecipes();
-					
-					//Gui.log_ln("All Producible Recipes:");
-					//for (IDType output:allProdRecipe.keySet())
-					//	for (InputValueCombination combi:allProdRecipe.get(output))
-					//		Gui.log_ln("%s <-- %s", getIngredientName(output), combi.toString());
-					
-					//Gui.log_ln("All Producible Recipes for  %s:",getIngredientName(ingredientsTableModel.clickedIngredient.getID()));
-					//for (InputValueCombination combi:allProdRecipe.get(ingredientsTableModel.clickedIngredient.getID()))
-					//	Gui.log_ln("%s <-- %s", getIngredientName(ingredientsTableModel.clickedIngredient.getID()), combi.toString());
-					
 					Ingredient ingredient = ingredientsTableModel.clickedIngredient;
-					RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredient,allProdRecipe);
-					recipeChainFinder.search();
-					//recipeChainFinder.printTree(System.out);
-					showinResultDialog_Stream("Found Recipe Chains (1) for "+ingredient.getName(), recipeChainFinder::printTree);
+					
+					Vector<Consumer<PrintStream>> variants = new Vector<>(Arrays.asList(
+						out->{
+							RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredient,getAllProducibleRecipes());
+							recipeChainFinder.search();
+							recipeChainFinder.printTree(out);
+						},
+						out->{
+							RecipeChainFinder2 recipeChainFinder = new RecipeChainFinder2(ingredient,getAllProducibleRecipes());
+							recipeChainFinder.search();
+							recipeChainFinder.printTree(out);
+						}
+					));
+					gui.resultDialogs.showStreams("Found Recipe Chains for "+ingredient.getName(), variants);
 				}
 			}
 
@@ -1660,15 +1656,6 @@ class RecipeAnalyser implements ActionListener {
 					}
 				});
 				return allProdRecipe;
-			}
-
-			private void showinResultDialog_Stream(String title, Consumer<PrintStream> print) {
-				gui.resultDialogs.showStream(title, print);
-			}
-
-			@SuppressWarnings("unused")
-			private void showinResultDialog_Writer(String title, Consumer<PrintWriter> print) {
-				gui.resultDialogs.showWriter(title, print);
 			}
 
 			public void SetSelectedIngredientsInStock(boolean isInStock) {
