@@ -7,7 +7,10 @@ class AppSettings extends Settings.DefaultAppSettings<AppSettings.ValueGroup, Ap
 	private final static AppSettings instance = new AppSettings();
 	
 	public enum ValueKey {
-		Language
+		Language,
+		OpenDataFile,
+		IngredientsInStock_NutrientProcessor,
+		IngredientsInStock_Refiner
 	}
 
 	enum ValueGroup implements Settings.GroupKeys<ValueKey> {

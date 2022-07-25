@@ -13,7 +13,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,7 +24,6 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -77,7 +75,6 @@ import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
@@ -121,87 +118,70 @@ public class RecipeAnalyser implements ActionListener {
 
 	public static void start(boolean standalone) {
 		new RecipeAnalyser()
-			.readConfig()
-			.writeConfig()
 			.createGUI(standalone)
 			.openLastDataFile();
 	}
 
-	private Disabler<ActionCommand>   disabler = null;
-	private StandardMainWindow        mainwindow = null;
+	private StandardMainWindow        mainwindow;
+	private Disabler<ActionCommand>   disabler;
 	
-	private FileChooser               fileChooser = null;
-	private StatusFields              statusFields = null;
-	private ResultDialogs             resultDialogs = null;
+	private FileChooser               fileChooser;
+	private StatusFields              statusFields;
+	private ResultDialogs             resultDialogs;
 	
-	private TableView.SimplifiedTable<DataModel.IngredientsTableColumnID> ingredientsTable = null;
-	private TableView.SimplifiedTable<DataModel.RecipesTableColumnID>     recipesTable     = null;
+	private TableView.SimplifiedTable<DataModel.IngredientsTableColumnID> ingredientsTable;
+	private TableView.SimplifiedTable<DataModel.RecipesTableColumnID>     recipesTable;
 	
-	private JTable                    rawIngredientsTable = null;
-	private JTable                    rawRecipesTable = null;
+	private JTable                    rawIngredientsTable;
+	private JTable                    rawRecipesTable;
 	
-	private JCheckBoxMenuItem miHighlightProducibleInIngredientsTable = null;
+	private JCheckBoxMenuItem miHighlightProducibleInIngredientsTable;
 	
-	private File         dataFile  = null;
-	private DataModel<?> dataModel = null;
-	private Lang         selectedLang = AppSettings.getInstance().getEnum(AppSettings.ValueKey.Language, Lang.En, Lang.class);
-
-	private boolean saveInStockIngredients = false;
-	private EnumMap<DataModel.Type,String> ingredientsInStock = new EnumMap<>(DataModel.Type.class);
-
-	private JCheckBoxMenuItem miSaveInStockIngredients;
-
-	private RecipeAnalyser readConfig() {
-		try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(FileExport.FILE_CFG_RECIPE_ANALYSER), StandardCharsets.UTF_8))) {
-			String line;
-			while ( (line=in.readLine())!=null ) {
-				if (line.startsWith("OpenDataFile=")) {
-					String valueStr = line.substring("OpenDataFile=".length());
-					dataFile = new File( valueStr );
-					if (!dataFile.isFile())
-						dataFile = null;
-				}
-				if (line.equals("SaveInStockIngredients")) {
-					saveInStockIngredients = true;
-				}
-				if (line.startsWith("IngredientsInStock.")) {
-					String valueStr = line.substring("IngredientsInStock.".length());
-					int pos = valueStr.indexOf('=');
-					String typeStr;
-					if (pos<0) {
-						typeStr = valueStr;
-						valueStr = "";
-					} else {
-						typeStr = valueStr.substring(0,pos);
-						valueStr = valueStr.substring(pos+1);
-						try { ingredientsInStock.put(DataModel.Type.valueOf(typeStr),valueStr); }
-						catch (Exception e) {}
-					}
-				}
-			}
-		} catch (FileNotFoundException e) {
-			// Is Ok :)
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return this;
+	private File         dataFile;
+	private DataModel<?> dataModel;
+	private Lang         selectedLang;
+	
+	RecipeAnalyser() {
+		AppSettings settings = AppSettings.getInstance();
+		
+		mainwindow = null;
+		disabler = null;
+		
+		fileChooser = null;
+		statusFields = null;
+		resultDialogs = null;
+		
+		ingredientsTable = null;
+		recipesTable     = null;
+		
+		rawIngredientsTable = null;
+		rawRecipesTable = null;
+		
+		miHighlightProducibleInIngredientsTable = null;
+		
+		dataFile = settings.getFile(AppSettings.ValueKey.OpenDataFile, null);
+		
+		dataModel = null;
+		selectedLang = AppSettings.getInstance().getEnum(AppSettings.ValueKey.Language, Lang.En, Lang.class);
 	}
 
-	private RecipeAnalyser writeConfig() {
-		try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_CFG_RECIPE_ANALYSER), StandardCharsets.UTF_8))) {
-			if (dataFile!=null)
-				out.printf("OpenDataFile=%s%n", dataFile.getAbsolutePath());
-			if (saveInStockIngredients) {
-				out.printf("SaveInStockIngredients%n");
-				for (DataModel.Type type:DataModel.Type.values()) {
-					String str = ingredientsInStock.get(type);
-					if (str!=null) out.printf("IngredientsInStock.%s=%s%n", type, str);
-				}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-		return this;
+	private String readIngredientsInStockFromAppSettings(DataModel.Type type) {
+		if (type == null) throw new IllegalArgumentException();
+		
+		AppSettings.ValueKey key = type.valuekeyForIngredientsInStock;
+		if (key == null) throw new IllegalStateException();
+		
+		return AppSettings.getInstance().getString(key, null);
+	}
+
+	private void writeIngredientsInStockToAppSettings(DataModel.Type type, String str) {
+		if (type == null) throw new IllegalArgumentException();
+		
+		AppSettings.ValueKey key = type.valuekeyForIngredientsInStock;
+		if (key == null) throw new IllegalStateException();
+		
+		if (str != null) AppSettings.getInstance().putString(key, str);
+		else             AppSettings.getInstance().remove(key);
 	}
 	
 	private RecipeAnalyser openLastDataFile() {
@@ -229,7 +209,6 @@ public class RecipeAnalyser implements ActionListener {
 		CopyRefinerIngredientsFromClipBoard,
 		CopyNutrientProcessorRecipesFromClipBoard,
 		CopyNutrientProcessorIngredientsFromClipBoard,
-		SaveInStockIngredients,
 		SetInStock, UnsetInStock,
 		MarkRecipeAsWrong, FindRecipesWith, ScrollTo,
 		;
@@ -349,11 +328,7 @@ public class RecipeAnalyser implements ActionListener {
 		menuData.add(Gui.createMenuItem("Write data to new file ...", this, disabler, ActionCommand.SaveDataFileAs));
 		
 		miHighlightProducibleInIngredientsTable = Gui.createCheckBoxMenuItem("Highlight producible in ingredients table", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
-		miSaveInStockIngredients = Gui.createCheckBoxMenuItem("Save InStock ingredients", this, disabler, ActionCommand.SaveInStockIngredients);
-		miSaveInStockIngredients.setSelected(saveInStockIngredients);
 		JMenu menuAnalyse = menuBar.add(new JMenu("Analyse"));
-		menuAnalyse.add(miSaveInStockIngredients);
-		menuAnalyse.addSeparator();
 		menuAnalyse.add(Gui.createMenuItem("Clear markers in ingredients table", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
 		menuAnalyse.add(miHighlightProducibleInIngredientsTable);
 		menuAnalyse.addSeparator();
@@ -453,7 +428,7 @@ public class RecipeAnalyser implements ActionListener {
 				if (file!=null) {
 					dataFile = file;
 					readDataFromFile(dataFile);
-					writeConfig();
+					AppSettings.getInstance().putFile(AppSettings.ValueKey.OpenDataFile, dataFile);
 				}
 			}
 			break;
@@ -461,7 +436,7 @@ public class RecipeAnalyser implements ActionListener {
 		case SaveDataFile:
 			if (dataFile!=null && dataFile.isFile()) {
 				saveDataToFile(dataFile);
-				writeConfig();
+				AppSettings.getInstance().putFile(AppSettings.ValueKey.OpenDataFile, dataFile);
 				break;
 			}
 			//break;
@@ -472,7 +447,7 @@ public class RecipeAnalyser implements ActionListener {
 				if (file!=null) {
 					dataFile = file;
 					saveDataToFile(dataFile);
-					writeConfig();
+					AppSettings.getInstance().putFile(AppSettings.ValueKey.OpenDataFile, dataFile);
 				}
 			}
 			break;
@@ -543,13 +518,6 @@ public class RecipeAnalyser implements ActionListener {
 			
 		case SetInStock  : setInStock(true ); break;
 		case UnsetInStock: setInStock(false); break;
-		case SaveInStockIngredients:
-			saveInStockIngredients = !saveInStockIngredients;
-			miSaveInStockIngredients.setSelected(saveInStockIngredients);
-			if (saveInStockIngredients)
-				ingredientsInStock.put( dataModel.type, dataModel.getInStockIngredients() );
-			writeConfig();
-			break;
 			
 		case ScrollTo:
 			if (dataModel!=null && dataModel.ingredientsTableModel!=null) {
@@ -579,10 +547,7 @@ public class RecipeAnalyser implements ActionListener {
 	private void setInStock(boolean isInStock) {
 		if (dataModel!=null) {
 			dataModel.serviceFunctions.setSelectedIngredientsInStock(isInStock);
-			if (saveInStockIngredients) {
-				ingredientsInStock.put( dataModel.type, dataModel.getInStockIngredients() );
-				writeConfig();
-			}
+			writeIngredientsInStockToAppSettings(dataModel.type, dataModel.getInStockIngredients());
 		}
 	}
 
@@ -607,23 +572,14 @@ public class RecipeAnalyser implements ActionListener {
 			resultDialogs.closeAllDialogs();
 			dataModel = DataModel.create(type);
 			dataModel.setGui(this);
-			dataModel.setStockListener(this::ingredientsStockHasChanged);
-			if (saveInStockIngredients)
-				dataModel.setInStockIngredients(ingredientsInStock.get(dataModel.type));
-			else
-				ingredientsInStock.clear();
+			dataModel.setStockListener(str -> writeIngredientsInStockToAppSettings(dataModel.type, str));
+			dataModel.setInStockIngredients( readIngredientsInStockFromAppSettings(dataModel.type) );
 		} else {
 			if (dataModel.type != type)
 				throw new IllegalStateException(String.format("Can't set type of RecipeListConfig to \"%s\". It is currently set to \"%s\".", type, dataModel.type));
 		}
 		updateGuiAccess();
 		updateWindowTitle();
-	}
-
-	private void ingredientsStockHasChanged(String str) {
-		ingredientsInStock.put(dataModel.type,str);
-		if (saveInStockIngredients)
-			writeConfig();
 	}
 
 	private void updateGuiAccess() {
@@ -655,7 +611,6 @@ public class RecipeAnalyser implements ActionListener {
 				
 			case ClearMarkersInIngredientsTable:
 			case HighlightProducibleInIngredientsTable:
-			case SaveInStockIngredients:
 				return dataModel!=null && dataModel.ingredientsTableModel!=null;
 				
 			case SetInStock:
@@ -682,11 +637,8 @@ public class RecipeAnalyser implements ActionListener {
 			resultDialogs.closeAllDialogs();
 			dataModel = DataModel.readDataCfgFromZIP(zipin, "RecipeListConfig");
 			dataModel.setGui(this);
-			dataModel.setStockListener(this::ingredientsStockHasChanged);
-			if (saveInStockIngredients)
-				dataModel.setInStockIngredients(ingredientsInStock.get(dataModel.type));
-			else
-				ingredientsInStock.clear();
+			dataModel.setStockListener(str -> writeIngredientsInStockToAppSettings(dataModel.type, str));
+			dataModel.setInStockIngredients( readIngredientsInStockFromAppSettings(dataModel.type) );
 			dataModel.rawIngredientsData = readTabTableFromZIP(zipin, "ingredients");
 			dataModel.rawRecipesData     = readTabTableFromZIP(zipin, "recipes");
 			dataModel.parseIngredientsTable();
@@ -1190,7 +1142,16 @@ public class RecipeAnalyser implements ActionListener {
 		private HashSet<IDType> inStock = new HashSet<>();
 		private StockListener stockListener = null;
 		
-		enum Type { NutrientProcessor, Refiner }
+		enum Type {
+			NutrientProcessor(AppSettings.ValueKey.IngredientsInStock_NutrientProcessor),
+			Refiner          (AppSettings.ValueKey.IngredientsInStock_Refiner          ),
+			;
+			final AppSettings.ValueKey valuekeyForIngredientsInStock;
+			Type(AppSettings.ValueKey valuekeyForIngredientsInStock) {
+				this.valuekeyForIngredientsInStock = valuekeyForIngredientsInStock;
+			}
+		}
+		
 		private Type type;
 		private boolean wasEdited;
 		private boolean hasUnsavedChanges;
