@@ -71,7 +71,6 @@ public class FileExport {
 	static final String FILE_KNOWN_STEAM_ID       = "NMS_Viewer.KnownSteamIDs.txt";
 	static final String FILE_KNOWN_STEAM_ID_HTML  = "NMS_Viewer.KnownSteamIDs.html";
 	static final String FILE_CFG_PRODUCTION_OPTIMISER = "NMS_Viewer.ProductionOptimiser.cfg";
-	static final String FILE_CFG_RECIPE_ANALYSER      = "NMS_Viewer.RecipeAnalyser.cfg";
 	static final String FILE_CFG_RESOURCE_HOTSPOTS    = "NMS_Viewer.ResourceHotSpots.cfg";
 	static final String FILE_DATA_RESOURCE_HOTSPOTS   = "NMS_Viewer.ResourceHotSpots.data";
 	static final String FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
