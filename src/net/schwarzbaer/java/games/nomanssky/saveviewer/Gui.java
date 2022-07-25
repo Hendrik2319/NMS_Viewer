@@ -196,7 +196,7 @@ public class Gui {
 	public static class TextAreaDialog extends StandardDialog {
 		private static final long serialVersionUID = -2869012153535397866L;
 		
-		private final JTextArea outputTextArea;
+		protected final JTextArea outputTextArea;
 		private final Consumer<TextAreaDialog> closeListener;
 	
 		public TextAreaDialog(Window parent, String title) {
@@ -205,7 +205,13 @@ public class Gui {
 		public TextAreaDialog(Window parent, String title, Consumer<TextAreaDialog> closeListener) {
 			this(parent, title, closeListener, null, null);
 		}
-		private <Output> TextAreaDialog(Window parent, String title, Consumer<TextAreaDialog> closeListener, Vector<Consumer<Output>> variants, BiConsumer<TextAreaDialog,Consumer<Output>> setText) {
+		
+		protected <Output> TextAreaDialog(
+				Window parent, String title,
+				Consumer<TextAreaDialog> closeListener,
+				Vector<Consumer<Output>> variants,
+				BiConsumer<TextAreaDialog,Consumer<Output>> setText
+		) {
 			super(parent, title, ModalityType.MODELESS, closeListener==null);
 			this.closeListener = closeListener;
 			setPreferredSize(new Dimension(600,900));
@@ -222,12 +228,13 @@ public class Gui {
 				GridBagConstraints c = new GridBagConstraints();
 				c.fill = GridBagConstraints.BOTH;
 				
+				int selectedVariant = 0;
 				c.weightx = 0;
 				ButtonGroup bg = new ButtonGroup();
 				for (int i=0; i<variants.size(); i++) {
 					Consumer<Output> variant = variants.get(i);
 					String title_ = String.format("Variant %d", i+1);
-					variantPanel.add(createToggleButton(title_, bg, i==0, true, e->setText.accept(this, variant)),c);
+					variantPanel.add(createToggleButton(title_, bg, i==selectedVariant, true, e->setText.accept(this, variant)),c);
 				}
 				
 				c.weightx = 1;
@@ -235,16 +242,50 @@ public class Gui {
 				
 				contentPane.add(variantPanel, BorderLayout.NORTH);
 				
-				setText.accept(this, variants.firstElement());
+				setText.accept(this, variants.get(selectedVariant));
 			}
 			
 			this.createGUI(contentPane);
 		}
-		public static TextAreaDialog createForWriterVariants(Window parent, String title, Consumer<TextAreaDialog> closeListener, Vector<Consumer<PrintWriter>> variants) {
-			return new TextAreaDialog(parent, title, closeListener, variants, TextAreaDialog::setText_Writer);
+		
+		interface Constructor<Output, DialogType extends TextAreaDialog> {
+			DialogType create(
+					Window parent, String title,
+					Consumer<TextAreaDialog> closeListener,
+					Vector<Consumer<Output>> variants,
+					BiConsumer<TextAreaDialog,Consumer<Output>> setText
+			);
 		}
-		public static TextAreaDialog createForStreamVariants(Window parent, String title, Consumer<TextAreaDialog> closeListener, Vector<Consumer<PrintStream>> variants) {
-			return new TextAreaDialog(parent, title, closeListener, variants, TextAreaDialog::setText_Stream);
+
+		public static <DialogType extends TextAreaDialog> DialogType createForWriterVariants(
+				Constructor<PrintWriter, DialogType> constructor,
+				Window parent, String title,
+				Consumer<TextAreaDialog> closeListener,
+				Vector<Consumer<PrintWriter>> variants
+		) {
+			return constructor.create(parent, title, closeListener, variants, TextAreaDialog::setText_Writer);
+		}
+		public static <DialogType extends TextAreaDialog> DialogType createForStreamVariants(
+				Constructor<PrintStream, DialogType> constructor,
+				Window parent, String title,
+				Consumer<TextAreaDialog> closeListener,
+				Vector<Consumer<PrintStream>> variants
+		) {
+			return constructor.create(parent, title, closeListener, variants, TextAreaDialog::setText_Stream);
+		}
+		public static TextAreaDialog createForWriterVariants(
+				Window parent, String title,
+				Consumer<TextAreaDialog> closeListener,
+				Vector<Consumer<PrintWriter>> variants
+		) {
+			return createForWriterVariants(TextAreaDialog::new, parent, title, closeListener, variants);
+		}
+		public static TextAreaDialog createForStreamVariants(
+				Window parent, String title,
+				Consumer<TextAreaDialog> closeListener,
+				Vector<Consumer<PrintStream>> variants
+		) {
+			return createForStreamVariants(TextAreaDialog::new, parent, title, closeListener, variants);
 		}
 		
 		@Override public void windowClosed(WindowEvent e) {

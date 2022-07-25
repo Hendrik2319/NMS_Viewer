@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -214,7 +215,7 @@ class RecipeAnalyser implements ActionListener {
 		FindRecipes__unfinished,
 		FindBasicRecipes,
 		FindConflictingRecipes,
-		FindCombinableIngredients,
+		MarkCombinableIngredients,
 		FindGrowingCycles,
 		
 		ClearMarkersInIngredientsTable,
@@ -231,9 +232,11 @@ class RecipeAnalyser implements ActionListener {
 	}
 
 	private RecipeAnalyser createGUI(boolean standalone) {
+		mainwindow = new StandardMainWindow("Recipe Analyser",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
+		
 		fileChooser = new FileChooser("RecipeAnalyser Data File", "recipes");
 		
-		resultDialogs = new ResultDialogs();
+		resultDialogs = new ResultDialogs(mainwindow);
 		
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
@@ -256,7 +259,7 @@ class RecipeAnalyser implements ActionListener {
 		contextMenu.add(miFindRecipeChain  = Gui.createMenuItem("Find recipe chain for ####"    , this, disabler, ActionCommand.FindRecipeChain ));
 		contextMenu.add(miFindRecipesWith  = Gui.createMenuItem("Find recipes with #### as input", this, disabler, ActionCommand.FindRecipesWith));
 		contextMenu.addSeparator();
-		contextMenu.add(miFindCombinableIngredients = Gui.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.FindCombinableIngredients));
+		contextMenu.add(miFindCombinableIngredients = Gui.createMenuItem("Mark all ingredients, that are combinable (#,#) with ####", this, disabler, ActionCommand.MarkCombinableIngredients));
 		contextMenu.add(Gui.createMenuItem("Clear markers", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
 		contextMenu.addSeparator();
 		contextMenu.add(Gui.createMenuItem("Set InStock for selected ingredients", this, disabler, ActionCommand.SetInStock));
@@ -368,7 +371,6 @@ class RecipeAnalyser implements ActionListener {
 			}));
 		}
 		
-		mainwindow = new StandardMainWindow("Recipe Analyser",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
 		mainwindow.startGUI(contentPane,menuBar);
 		
 		AppSettings.getInstance().registerExtraWindow(mainwindow,
@@ -440,6 +442,7 @@ class RecipeAnalyser implements ActionListener {
 			rawIngredientsTable.setModel(new DefaultTableModel());
 			
 			statusFields.clear();
+			resultDialogs.closeAllDialogs();
 			
 			updateGuiAccess();
 			updateWindowTitle();
@@ -477,7 +480,7 @@ class RecipeAnalyser implements ActionListener {
 			
 		case FindConflictingRecipes:
 			if (dataModel!=null) {
-				String msgStr = dataModel.serviceFunctions.FindConflictingRecipes();
+				String msgStr = dataModel.serviceFunctions.findConflictingRecipes();
 				if (msgStr!=null) {
 					if (!msgStr.isEmpty())
 						JOptionPane.showMessageDialog(mainwindow, msgStr, "Results", JOptionPane.WARNING_MESSAGE);
@@ -489,7 +492,7 @@ class RecipeAnalyser implements ActionListener {
 			
 		case FindBasicRecipes:
 			if (dataModel!=null) {
-				String msgStr = dataModel.serviceFunctions.FindBasicRecipes();
+				String msgStr = dataModel.serviceFunctions.findBasicRecipes();
 				if (msgStr!=null) {
 					if (!msgStr.isEmpty())
 						JOptionPane.showMessageDialog(mainwindow, msgStr, "Results", JOptionPane.WARNING_MESSAGE);
@@ -500,23 +503,23 @@ class RecipeAnalyser implements ActionListener {
 			break;
 			
 		case FindRecipes__unfinished:
-			if (dataModel!=null) dataModel.serviceFunctions.FindRecipes__unfinished();
+			if (dataModel!=null) dataModel.serviceFunctions.findRecipes__unfinished();
 			break;
 			
 		case FindRecipesWith:
-			if (dataModel!=null) dataModel.serviceFunctions.FindRecipesWith();
+			if (dataModel!=null) dataModel.serviceFunctions.findRecipesWith();
 			break;
 			
 		case FindRecipeChain:
-			if (dataModel!=null) dataModel.serviceFunctions.FindRecipeChains();
+			if (dataModel!=null) dataModel.serviceFunctions.findRecipeChains();
 			break;
 			
 		case FindGrowingCycles:
-			if (dataModel!=null) dataModel.serviceFunctions.FindGrowingCycles();
+			if (dataModel!=null) dataModel.serviceFunctions.findGrowingCycles();
 			break;
 			
-		case FindCombinableIngredients:
-			if (dataModel!=null) dataModel.serviceFunctions.FindCombinableIngredients();
+		case MarkCombinableIngredients:
+			if (dataModel!=null) dataModel.serviceFunctions.markCombinableIngredients();
 			break;
 			
 		case ClearMarkersInIngredientsTable:
@@ -556,7 +559,7 @@ class RecipeAnalyser implements ActionListener {
 				String name = JOptionPane.showInputDialog(mainwindow, msg, title, JOptionPane.QUESTION_MESSAGE);
 				if (name==null) return;
 				
-				int rowM = dataModel.ingredientsTableModel.searchForIngredient(name);
+				int rowM = dataModel.ingredientsTableModel.findIngredientRowIndexByName(name);
 				if (rowM<0) {
 					msg = String.format("Can't find an ingredient with name \"%s\".", name);
 					JOptionPane.showMessageDialog(mainwindow, msg, "Ingredient not found", JOptionPane.INFORMATION_MESSAGE);
@@ -576,7 +579,7 @@ class RecipeAnalyser implements ActionListener {
 
 	private void setInStock(boolean isInStock) {
 		if (dataModel!=null) {
-			dataModel.serviceFunctions.SetSelectedIngredientsInStock(isInStock);
+			dataModel.serviceFunctions.setSelectedIngredientsInStock(isInStock);
 			if (saveInStockIngredients) {
 				ingredientsInStock.put( dataModel.type, dataModel.getInStockIngredients() );
 				writeConfig();
@@ -602,6 +605,7 @@ class RecipeAnalyser implements ActionListener {
 
 	private void setDataModelType(DataModel.Type type) {
 		if (dataModel == null) {
+			resultDialogs.closeAllDialogs();
 			dataModel = DataModel.create(type);
 			dataModel.setGui(this);
 			dataModel.setStockListener(this::ingredientsStockHasChanged);
@@ -663,7 +667,7 @@ class RecipeAnalyser implements ActionListener {
 				return dataModel!=null && dataModel.recipesTableModel!=null && dataModel.recipesTableModel.clickedRecipe!=null;
 				
 			case FindRecipeChain:
-			case FindCombinableIngredients:
+			case MarkCombinableIngredients:
 			case FindRecipesWith:
 				return null;
 				
@@ -676,6 +680,7 @@ class RecipeAnalyser implements ActionListener {
 
 	private void readDataFromFile(File file) {
 		try (ZipFile zipin = new ZipFile(file)) {
+			resultDialogs.closeAllDialogs();
 			dataModel = DataModel.readDataCfgFromZIP(zipin, "RecipeListConfig");
 			dataModel.setGui(this);
 			dataModel.setStockListener(this::ingredientsStockHasChanged);
@@ -750,11 +755,20 @@ class RecipeAnalyser implements ActionListener {
 		return rawTabTable;
 	}
 	
-	private class ResultDialogs {
+	@SuppressWarnings("unused")
+	private static class ResultDialogs {
 		
-		private JMenu menu = null;
-		private final Vector<TextAreaDialog> openDialogs = new Vector<>();
-		private boolean ignoreCloseEvents = false;
+		private final Window mainwindow;
+		private final Vector<TextAreaDialog> openDialogs;
+		private JMenu menu;
+		private boolean ignoreCloseEvents;
+		
+		ResultDialogs(Window mainwindow) {
+			this.mainwindow = mainwindow;
+			menu = null;
+			openDialogs = new Vector<>();
+			ignoreCloseEvents = false;
+		}
 
 		JMenu createMenu(String title) {
 			menu = new JMenu(title);
@@ -773,7 +787,7 @@ class RecipeAnalyser implements ActionListener {
 			}
 		}
 
-		private void closeAllDialogs() {
+		void closeAllDialogs() {
 			ignoreCloseEvents = true;
 			for (TextAreaDialog dlg : openDialogs)
 				dlg.closeDialog();
@@ -794,7 +808,6 @@ class RecipeAnalyser implements ActionListener {
 			showDialog(resultDialog);
 		}
 
-		@SuppressWarnings("unused")
 		void showWriter(String title, Consumer<PrintWriter> print) {
 			TextAreaDialog resultDialog = new TextAreaDialog(mainwindow, title, this::dialogClosed);
 			resultDialog.setText_Writer(print);
@@ -806,9 +819,30 @@ class RecipeAnalyser implements ActionListener {
 			showDialog(resultDialog);
 		}
 
-		@SuppressWarnings("unused")
 		void showWriters(String title, Vector<Consumer<PrintWriter>> prints) {
 			TextAreaDialog resultDialog = TextAreaDialog.createForWriterVariants(mainwindow, title, this::dialogClosed, prints);
+			showDialog(resultDialog);
+		}
+
+		<IDType extends Comparable<IDType>> void showStream(DataModel<IDType> dataModel, String title, Consumer<PrintStream> print) {
+			TextAreaDialog resultDialog = new ResultDialog<>(dataModel, mainwindow, title, this::dialogClosed);
+			resultDialog.setText_Stream(print);
+			showDialog(resultDialog);
+		}
+
+		<IDType extends Comparable<IDType>> void showWriter(DataModel<IDType> dataModel, String title, Consumer<PrintWriter> print) {
+			TextAreaDialog resultDialog = new ResultDialog<>(dataModel, mainwindow, title, this::dialogClosed);
+			resultDialog.setText_Writer(print);
+			showDialog(resultDialog);
+		}
+
+		<IDType extends Comparable<IDType>> void showStreams(DataModel<IDType> dataModel, String title, Vector<Consumer<PrintStream>> prints) {
+			TextAreaDialog resultDialog = ResultDialog.createResultDialogForStreamVariants(dataModel, mainwindow, title, this::dialogClosed, prints);
+			showDialog(resultDialog);
+		}
+
+		<IDType extends Comparable<IDType>> void showWriters(DataModel<IDType> dataModel, String title, Vector<Consumer<PrintWriter>> prints) {
+			TextAreaDialog resultDialog = ResultDialog.createResultDialogForWriterVariants(dataModel, mainwindow, title, this::dialogClosed, prints);
 			showDialog(resultDialog);
 		}
 
@@ -817,6 +851,83 @@ class RecipeAnalyser implements ActionListener {
 			openDialogs.add(resultDialog);
 			openDialogs.sort(Comparator.nullsLast(Comparator.comparing(TextAreaDialog::getTitle)));
 			fillMenu();
+		}
+		
+		@SuppressWarnings("unused")
+		private static class ResultDialog<IDType extends Comparable<IDType>> extends Gui.TextAreaDialog {
+			private static final long serialVersionUID = 5466523258727339825L;
+			public static <IDType extends Comparable<IDType>> ResultDialog<IDType> createResultDialogForWriterVariants(
+					DataModel<IDType> dataModel,
+					Window parent, String title,
+					Consumer<TextAreaDialog> closeListener,
+					Vector<Consumer<PrintWriter>> variants
+			) {
+				Constructor<PrintWriter, ResultDialog<IDType>> constructor =
+					(parent1, title1, closeListener1, variants1, setText) ->
+						new ResultDialog<IDType>(dataModel, parent1, title1, closeListener1, variants1, setText);
+				return createForWriterVariants(constructor, parent, title, closeListener, variants);
+			}
+
+			public static <IDType extends Comparable<IDType>> ResultDialog<IDType> createResultDialogForStreamVariants(
+					DataModel<IDType> dataModel,
+					Window parent, String title,
+					Consumer<TextAreaDialog> closeListener,
+					Vector<Consumer<PrintStream>> variants
+			) {
+				Constructor<PrintStream, ResultDialog<IDType>> constructor =
+					(parent1, title1, closeListener1, variants1, setText) -> 
+						new ResultDialog<IDType>(dataModel, parent1, title1, closeListener1, variants1, setText);
+				return createForStreamVariants(constructor, parent, title, closeListener, variants);
+			}
+
+			private DataModel<IDType>.Ingredient selectedIngredient;
+
+			private ResultDialog(DataModel<IDType> dataModel, Window parent, String title, Consumer<TextAreaDialog> closeListener) {
+				this(dataModel, parent, title, closeListener, null, null);
+			}
+
+			private <Output> ResultDialog(
+					DataModel<IDType> dataModel,
+					Window parent, String title,
+					Consumer<TextAreaDialog> closeListener,
+					Vector<Consumer<Output>> variants,
+					BiConsumer<TextAreaDialog, Consumer<Output>> setText
+			) {
+				super(parent, title, closeListener, variants, setText);
+				if (dataModel==null) throw new IllegalArgumentException();
+				
+				selectedIngredient = null;
+				
+				JMenuItem miFindRecipeChain, miFindRecipesWith;
+				JPopupMenu contextMenu = new JPopupMenu();
+				contextMenu.add(miFindRecipeChain = Gui.createMenuItem("Find recipe chain for ####"     , e->{
+					SwingUtilities.invokeLater(()->{
+						if (selectedIngredient!=null)
+							dataModel.serviceFunctions.findRecipeChains(selectedIngredient);
+					});
+				}));
+				contextMenu.add(miFindRecipesWith = Gui.createMenuItem("Find recipes with #### as input", e->{
+					SwingUtilities.invokeLater(()->{
+						if (selectedIngredient!=null)
+							dataModel.serviceFunctions.findRecipesWith(selectedIngredient);
+					});
+				}));
+				
+				Gui.ContextMenuInvoker menuInvoker = new Gui.ContextMenuInvoker(outputTextArea, contextMenu);
+				menuInvoker.addContextMenuInvokeListener((x, y) -> {
+					String text = outputTextArea.getSelectedText();
+					selectedIngredient = dataModel.findIngredientByName(text);
+					
+					miFindRecipeChain.setEnabled(selectedIngredient!=null);
+					miFindRecipesWith.setEnabled(selectedIngredient!=null);
+					miFindRecipeChain.setText(selectedIngredient==null
+							? "Find recipe chain"
+							: String.format("Find recipe chain for \"%s\"", selectedIngredient.getName()));
+					miFindRecipesWith.setText(selectedIngredient==null
+							? "Find recipes with specified input"
+							: String.format("Find recipes with \"%s\" as input", selectedIngredient.getName()));
+				});
+			}
 		}
 	}
 	
@@ -1287,20 +1398,25 @@ class RecipeAnalyser implements ActionListener {
 			gui.statusFields.setFieldProducible(producible.size());
 		}
 
-		private Ingredient getIngredient(IDType id) {
+		Ingredient getIngredient(IDType id) {
 			if (id==null) return null;
 			if (ingredientsTableModel==null) return null;
 			return ingredientsTableModel.getIngredient(id);
 		}
 		
-		private String getIngredientName(RecipeIngredient recipeIngredient) {
+		String getIngredientName(RecipeIngredient recipeIngredient) {
 			if (recipeIngredient==null) return null;
 			return getIngredientName(recipeIngredient.id);
 		}
-		private String getIngredientName(IDType id) {
+		String getIngredientName(IDType id) {
 			if (id==null) return "";
 			if (ingredientsTableModel==null) return "<"+id+">";
 			return ingredientsTableModel.getIngredientName(id);
+		}
+		Ingredient findIngredientByName(String name) {
+			if (name==null) return null;
+			if (ingredientsTableModel==null) return null;
+			return ingredientsTableModel.findIngredientByName(name);
 		}
 
 		public void parseIngredientsTable(Vector<String[]> rawTabTable) {
@@ -1422,7 +1538,7 @@ class RecipeAnalyser implements ActionListener {
 		
 		private class ServiceFunctions {
 
-			public void FindRecipes__unfinished() {
+			public void findRecipes__unfinished() {
 				RecipeDialog dlg = new RecipeDialog(gui.mainwindow, "Define Ingredient Scheme");
 				dlg.showDialog();
 				if (dlg.hasResult()) {
@@ -1444,56 +1560,60 @@ class RecipeAnalyser implements ActionListener {
 				}
 			}
 			
-			public void FindRecipesWith() {
-				if (recipes!=null && ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null) {
-					DataModel<IDType>.Ingredient ingredient = ingredientsTableModel.clickedIngredient;
+			public void findRecipesWith() {
+				if (ingredientsTableModel!=null)
+					findRecipesWith(ingredientsTableModel.clickedIngredient);
+			}
+
+			private void findRecipesWith(Ingredient ingredient) {
+				if (ingredient==null) return;
+				if (recipes==null) return;
+				
+				final boolean producableOnly;
+				if (ingredient.isProducible()) {
+					String msg = "Show producable recipes only?";
+					String title = "Producable recipes only?";
+					int result = JOptionPane.showConfirmDialog(gui.mainwindow, msg, title, JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+					producableOnly = result == JOptionPane.YES_OPTION;
+				} else
+					producableOnly = false;
+				
+				Gui.runWithProgressDialog(gui.mainwindow, "Find Recipes", pd->{
+					IDType inputID = ingredient.getID();
 					
-					final boolean producableOnly;
-					if (ingredient.isProducible()) {
-						String msg = "Show producable recipes only?";
-						String title = "Producable recipes only?";
-						int result = JOptionPane.showConfirmDialog(gui.mainwindow, msg, title, JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-						producableOnly = result == JOptionPane.YES_OPTION;
-					} else
-						producableOnly = false;
-					
-					Gui.runWithProgressDialog(gui.mainwindow, "Find Recipes", pd->{
-						IDType inputID = ingredient.getID();
-						
-						Gui.runInEventThreadAndWait(()->{
-							pd.setTaskTitle("Find Recipes");
-							pd.setValue(0, recipes.size());
-						});
-						
-						HashMap<IDType,Vector<SpecificRecipe>> allRecipes = new HashMap<>();
-						forEachRecipe(recipe->{
-							Vector<SpecificRecipe> newRecipes = recipe.getSpecificRecipes( inputID, producableOnly );
-							if (!newRecipes.isEmpty()) {
-								Vector<SpecificRecipe> knownRecipes = allRecipes.get(recipe.outputValue.id);
-								if (knownRecipes==null) allRecipes.put(recipe.outputValue.id,knownRecipes=new Vector<>());
-								knownRecipes.addAll( newRecipes );
-							}
-							Gui.runInEventThreadAndWait(()->pd.setValue(recipe.index+1));
-						});
-						Vector<IDType> sortedIDs = new Vector<>(allRecipes.keySet());
-						sortedIDs.sort(null);
-						
-						Gui.runInEventThreadAndWait(()->{
-							pd.setTaskTitle("Output");
-							pd.setIndeterminate(true);
-						});
-						
-						String title = "Found Recipes with "+ingredient.getName()+(producableOnly ? " [producable only]" : "");
-						gui.resultDialogs.showStream(title, out->{
-							for (IDType id:sortedIDs)
-								for (SpecificRecipe recipe:allRecipes.get(id))
-									out.println(recipe.toString());
-						});
+					Gui.runInEventThreadAndWait(()->{
+						pd.setTaskTitle("Find Recipes");
+						pd.setValue(0, recipes.size());
 					});
-				}
+					
+					HashMap<IDType,Vector<SpecificRecipe>> allRecipes = new HashMap<>();
+					forEachRecipe(recipe->{
+						Vector<SpecificRecipe> newRecipes = recipe.getSpecificRecipes( inputID, producableOnly );
+						if (!newRecipes.isEmpty()) {
+							Vector<SpecificRecipe> knownRecipes = allRecipes.get(recipe.outputValue.id);
+							if (knownRecipes==null) allRecipes.put(recipe.outputValue.id,knownRecipes=new Vector<>());
+							knownRecipes.addAll( newRecipes );
+						}
+						Gui.runInEventThreadAndWait(()->pd.setValue(recipe.index+1));
+					});
+					Vector<IDType> sortedIDs = new Vector<>(allRecipes.keySet());
+					sortedIDs.sort(null);
+					
+					Gui.runInEventThreadAndWait(()->{
+						pd.setTaskTitle("Output");
+						pd.setIndeterminate(true);
+					});
+					
+					String title = "Found Recipes with "+ingredient.getName()+(producableOnly ? " [producable only]" : "");
+					gui.resultDialogs.showStream(DataModel.this, title, out->{
+						for (IDType id:sortedIDs)
+							for (SpecificRecipe recipe:allRecipes.get(id))
+								out.println(recipe.toString());
+					});
+				});
 			}
 			
-			public void FindCombinableIngredients() {
+			public void markCombinableIngredients() {
 				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null) {
 					HashSet<InputValueCombination> allCombis = getSetOfAllCombis();
 					ingredientsTableModel.highlighted.clear();
@@ -1506,7 +1626,7 @@ class RecipeAnalyser implements ActionListener {
 				}
 			}
 
-			public void FindGrowingCycles() {
+			public void findGrowingCycles() {
 				if (recipes!=null) {
 					Gui.runWithProgressDialog(gui.mainwindow, "Search for Growing Cycles", pd->{
 						Gui.runInEventThreadAndWait(()->{
@@ -1595,7 +1715,7 @@ class RecipeAnalyser implements ActionListener {
 				
 			}
 
-			public String FindConflictingRecipes() {
+			public String findConflictingRecipes() {
 				if (recipes!=null) {
 					StringBuilder messages = new StringBuilder();
 					HashMap<InputValueCombination,Recipe> allCombis = new HashMap<>();
@@ -1619,7 +1739,7 @@ class RecipeAnalyser implements ActionListener {
 				return null;
 			}
 
-			public String FindBasicRecipes() {
+			public String findBasicRecipes() {
 				if (ingredientsTableModel!=null) {
 					StringBuilder messages = new StringBuilder();
 					Vector<IDType> selectedIngredients = ingredientsTableModel.getSelected();
@@ -1635,24 +1755,34 @@ class RecipeAnalyser implements ActionListener {
 				return null;
 			}
 
-			public void FindRecipeChains() {
-				if (ingredientsTableModel!=null && ingredientsTableModel.clickedIngredient!=null && recipes!=null) {
-					Ingredient ingredient = ingredientsTableModel.clickedIngredient;
-					
-					Vector<Consumer<PrintStream>> variants = new Vector<>(Arrays.asList(
-						out->{
-							RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredient,getAllProducibleRecipes());
-							recipeChainFinder.search();
-							recipeChainFinder.printTree(out);
-						},
-						out->{
-							RecipeChainFinder2 recipeChainFinder = new RecipeChainFinder2(ingredient,getAllProducibleRecipes());
-							recipeChainFinder.search();
-							recipeChainFinder.printTree(out);
-						}
-					));
-					gui.resultDialogs.showStreams("Found Recipe Chains for "+ingredient.getName(), variants);
-				}
+			public void findRecipeChains() {
+				if (ingredientsTableModel!=null)
+					findRecipeChains(ingredientsTableModel.clickedIngredient);
+			}
+
+			private void findRecipeChains(Ingredient ingredient) {
+				if (ingredient==null) return;
+				if (recipes==null) return;
+				
+				Vector<Consumer<PrintStream>> variants = new Vector<>(Arrays.asList(
+					out->{
+						RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredient,getAllProducibleRecipes());
+						recipeChainFinder.search();
+						recipeChainFinder.printTree(out);
+					},
+					out->{
+						RecipeChainFinder2 recipeChainFinder = new RecipeChainFinder2(ingredient,getAllProducibleRecipes());
+						recipeChainFinder.search();
+						recipeChainFinder.printTree(out);
+					}
+				));
+				Gui.runWithProgressDialog(gui.mainwindow, "Find Recipe Chains", pd->{
+					Gui.runInEventThreadAndWait(()->{
+						pd.setTaskTitle("Find Recipe Chains");
+						pd.setIndeterminate(true);
+					});
+					gui.resultDialogs.showStreams(DataModel.this, "Found Recipe Chains for "+ingredient.getName(), variants);
+				});
 			}
 
 			private HashSet<InputValueCombination> getSetOfAllCombis() {
@@ -1677,7 +1807,7 @@ class RecipeAnalyser implements ActionListener {
 				return allProdRecipe;
 			}
 
-			public void SetSelectedIngredientsInStock(boolean isInStock) {
+			public void setSelectedIngredientsInStock(boolean isInStock) {
 				if (ingredientsTableModel!=null) {
 					ingredientsTableModel.forEachSelected(ingredient -> setInStock(isInStock, ingredient.getID()));
 					updateProducibility();
@@ -2358,15 +2488,6 @@ class RecipeAnalyser implements ActionListener {
 						ingredientsMap.put(ingredient.getID(), ingredient);
 			}
 		
-			public int searchForIngredient(String name) {
-				for (int i=0; i<ingredients.size(); i++) {
-					Ingredient ingredient = ingredients.get(i);
-					if (ingredient!=null && ingredient.nameEquals(name, true))
-						return i;
-				}
-				return -1;
-			}
-
 			public void setClickedIngredient(int rowM) {
 				Ingredient ingredient = getIngredientAtRow(rowM);
 				clickedIngredient = ingredient==null || ingredient.getName()==null ? null : ingredient;
@@ -2408,6 +2529,24 @@ class RecipeAnalyser implements ActionListener {
 				return ingredients.size();
 			}
 		
+			public int findIngredientRowIndexByName(String name) {
+				for (int i=0; i<ingredients.size(); i++) {
+					Ingredient ingredient = ingredients.get(i);
+					if (ingredient!=null && ingredient.nameEquals(name, true))
+						return i;
+				}
+				return -1;
+			}
+			
+			public Ingredient findIngredientByName(String name) {
+				for (int i=0; i<ingredients.size(); i++) {
+					Ingredient ingredient = ingredients.get(i);
+					if (ingredient!=null && ingredient.nameEquals(name, true))
+						return ingredient;
+				}
+				return null;
+			}
+
 			public Ingredient getIngredient(IDType id) {
 				return ingredientsMap.get(id);
 			}
