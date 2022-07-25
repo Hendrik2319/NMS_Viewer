@@ -1442,8 +1442,11 @@ public class Gui {
 	}
 
 	public static JCheckBoxMenuItem createCheckBoxMenuItem(String title, boolean selected, Consumer<Boolean> setValue) {
+		return createCheckBoxMenuItem(title, null, selected, setValue);
+	}
+	public static JCheckBoxMenuItem createCheckBoxMenuItem(String title, ButtonGroup bg, boolean selected, Consumer<Boolean> setValue) {
 		JCheckBoxMenuItem comp = new JCheckBoxMenuItem(title, selected);
-		setComp(comp, null, setValue==null ? null : e->setValue.accept(comp.isSelected()), null, null, true, null);
+		setComp(comp, bg, setValue==null ? null : e->setValue.accept(comp.isSelected()), null, null, true, null);
 		return comp;
 	}
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l) {

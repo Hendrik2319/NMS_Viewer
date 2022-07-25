@@ -39,6 +39,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
@@ -95,6 +96,17 @@ class RecipeAnalyser implements ActionListener {
 	private static final Color BGCOLOR_RECIPE_IS_WRONG  = new Color(0xF0F0F0);
 	private static final Color TXTCOLOR_RECIPE_IS_WRONG = Color.GRAY;
 	
+	private enum Lang {
+		En,De;
+		@Override public String toString() {
+			switch (this) {
+			case De: return "German";
+			case En: return "English";
+			}
+			return "????";
+		}
+	}
+	
 	public static void main(String[] args) {
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
@@ -127,6 +139,7 @@ class RecipeAnalyser implements ActionListener {
 	
 	private File         dataFile  = null;
 	private DataModel<?> dataModel = null;
+	private Lang         selectedLang = AppSettings.getInstance().getEnum(AppSettings.ValueKey.RecipeAnalyserLang, Lang.En, Lang.class);
 
 	private boolean saveInStockIngredients = false;
 	private EnumMap<DataModel.Type,String> ingredientsInStock = new EnumMap<>(DataModel.Type.class);
@@ -314,7 +327,9 @@ class RecipeAnalyser implements ActionListener {
 		contentPane.add(tableTabs,BorderLayout.CENTER);
 		contentPane.add(statusFields = new StatusFields(),BorderLayout.SOUTH);
 		
-		JMenu menuData = new JMenu("Data");
+		JMenuBar menuBar = new JMenuBar();
+		
+		JMenu menuData = menuBar.add(new JMenu("Data"));
 		menuData.add(Gui.createMenuItem("Get Refiner recipe from clipboard", this, disabler, ActionCommand.CopyRefinerRecipesFromClipBoard));
 		menuData.add(Gui.createMenuItem("Get Refiner ingredients from clipboard", this, disabler, ActionCommand.CopyRefinerIngredientsFromClipBoard));
 		menuData.addSeparator();
@@ -329,7 +344,7 @@ class RecipeAnalyser implements ActionListener {
 		miHighlightProducibleInIngredientsTable = Gui.createCheckBoxMenuItem("Highlight producible in ingredients table", this, disabler, ActionCommand.HighlightProducibleInIngredientsTable);
 		miSaveInStockIngredients = Gui.createCheckBoxMenuItem("Save InStock ingredients", this, disabler, ActionCommand.SaveInStockIngredients);
 		miSaveInStockIngredients.setSelected(saveInStockIngredients);
-		JMenu menuAnalyse = new JMenu("Analyse");
+		JMenu menuAnalyse = menuBar.add(new JMenu("Analyse"));
 		menuAnalyse.add(miSaveInStockIngredients);
 		menuAnalyse.addSeparator();
 		menuAnalyse.add(Gui.createMenuItem("Clear markers in ingredients table", this, disabler, ActionCommand.ClearMarkersInIngredientsTable));
@@ -340,13 +355,28 @@ class RecipeAnalyser implements ActionListener {
 		menuAnalyse.add(Gui.createMenuItem("Find recipes cycles where amount of at least one ingredient is growing", this, disabler, ActionCommand.FindGrowingCycles));
 		menuAnalyse.add(Gui.createMenuItem("[Find recipes with specific ingredients or output]", this, disabler, ActionCommand.FindRecipes__unfinished));
 		
-		JMenuBar menuBar = new JMenuBar();
-		menuBar.add(menuData);
-		menuBar.add(menuAnalyse);
 		menuBar.add(resultDialogs.createMenu("Result Windows"));
+		
+		JMenu menuLanguage = menuBar.add(new JMenu("Language"));
+		ButtonGroup bg = new ButtonGroup();
+		for (Lang lang : Lang.values()) {
+			menuLanguage.add(Gui.createCheckBoxMenuItem(lang.toString(), bg, selectedLang==lang, (Boolean b)->{
+				selectedLang = lang;
+				System.out.printf("selectedLang = %s%n", selectedLang);
+				AppSettings.getInstance().putEnum(AppSettings.ValueKey.RecipeAnalyserLang, selectedLang);
+				if (dataModel!=null) dataModel.updateAfterLanguageChange();
+			}));
+		}
 		
 		mainwindow = new StandardMainWindow("Recipe Analyser",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
 		mainwindow.startGUI(contentPane,menuBar);
+		
+		AppSettings.getInstance().registerExtraWindow(mainwindow,
+			AppSettings.ValueKey.RecipeAnalyserWindowX,
+			AppSettings.ValueKey.RecipeAnalyserWindowY,
+			AppSettings.ValueKey.RecipeAnalyserWindowWidth,
+			AppSettings.ValueKey.RecipeAnalyserWindowHeight
+		);
 		
 		updateGuiAccess();
 		updateWindowTitle();
@@ -618,7 +648,7 @@ class RecipeAnalyser implements ActionListener {
 				return dataModel!=null && dataModel.recipes!=null;
 				
 			case FindBasicRecipes:
-				return dataModel!=null && dataModel.recipes!=null && dataModel.ingredientsTable.getSelectedRowCount()>0;
+				return dataModel!=null && dataModel.recipes!=null && ingredientsTable.getSelectedRowCount()>0;
 				
 			case ClearMarkersInIngredientsTable:
 			case HighlightProducibleInIngredientsTable:
@@ -627,7 +657,7 @@ class RecipeAnalyser implements ActionListener {
 				
 			case SetInStock:
 			case UnsetInStock:
-				return dataModel!=null && dataModel.ingredientsTableModel!=null && dataModel.ingredientsTable.getSelectedRowCount()>0;
+				return dataModel!=null && dataModel.ingredientsTableModel!=null && ingredientsTable.getSelectedRowCount()>0;
 				
 			case MarkRecipeAsWrong:
 				return dataModel!=null && dataModel.recipesTableModel!=null && dataModel.recipesTableModel.clickedRecipe!=null;
@@ -876,7 +906,6 @@ class RecipeAnalyser implements ActionListener {
 			@Override boolean isDescEditable() { return false; }
 
 			@Override String getID   () { return id; }
-			@Override String getName () { return name; }
 			@Override String getType () { return type; }
 			@Override String getName (Lang language) { return language==Lang.De ? name : null; }
 			@Override String getDesc () { return null; }
@@ -986,6 +1015,7 @@ class RecipeAnalyser implements ActionListener {
 				case En: nameEN = name; break;
 				}
 			}
+			
 			@Override void setDesc(String desc) {
 				this.desc = desc;
 			}
@@ -1008,12 +1038,6 @@ class RecipeAnalyser implements ActionListener {
 			@Override String  getType () { return typeStr; }
 			@Override String  getDesc () { return desc; }
 			@Override Float   getPrice() { return null; }
-
-			@Override public String getName() {
-				if (!nameDE.isEmpty()) return nameDE;
-				if (!nameEN.isEmpty()) return nameEN;
-				return null;
-			}
 
 			@Override String getName(Lang language) {
 				switch (language) {
@@ -1044,13 +1068,6 @@ class RecipeAnalyser implements ActionListener {
 	private static abstract class DataModel<IDType extends Comparable<IDType>> {
 		
 		private RecipeAnalyser gui = null;
-		private StatusFields              statusFields = null;
-		
-		private TableView.SimplifiedTable<IngredientsTableColumnID> ingredientsTable = null;
-		private TableView.SimplifiedTable<RecipesTableColumnID>      recipesTable    = null;
-		
-		private JTable                    rawIngredientsTable = null;
-		private JTable                    rawRecipesTable = null;
 
 		private IngredientsTableModel     ingredientsTableModel = null;
 		private RecipesTableModel         recipesTableModel = null;
@@ -1081,13 +1098,15 @@ class RecipeAnalyser implements ActionListener {
 			this.serviceFunctions = new ServiceFunctions();
 		}
 
+		public void updateAfterLanguageChange() {
+			recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Input1);
+			recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Input2);
+			recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Input3);
+			recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Output);
+		}
+
 		public void setGui(RecipeAnalyser gui) {
 			this.gui = gui;
-			statusFields        = gui.statusFields       ;
-			ingredientsTable    = gui.ingredientsTable   ;
-			recipesTable        = gui.recipesTable       ;
-			rawIngredientsTable = gui.rawIngredientsTable;
-			rawRecipesTable     = gui.rawRecipesTable    ;
 		}
 
 		public static DataModel<?> create(Type type) {
@@ -1166,8 +1185,8 @@ class RecipeAnalyser implements ActionListener {
 			recipesTableModel.clickedRecipe.isWrong = !recipesTableModel.clickedRecipe.isWrong;
 			checkInputOutput();
 			updateProducibility();
-			recipesTable.repaint();
-			ingredientsTable.repaint();
+			gui.recipesTable.repaint();
+			gui.ingredientsTable.repaint();
 		}
 
 		public String getInStockIngredients() {
@@ -1228,7 +1247,7 @@ class RecipeAnalyser implements ActionListener {
 		private void updateProducibility() {
 			producible.clear();
 			producible.addAll(inStock);
-			statusFields.setFieldInStock(producible.size());
+			gui.statusFields.setFieldInStock(producible.size());
 			if (recipes!=null && !producible.isEmpty()) {
 				boolean foundNew = true;
 				while (foundNew) {
@@ -1265,7 +1284,7 @@ class RecipeAnalyser implements ActionListener {
 					});
 				}
 			}
-			statusFields.setFieldProducible(producible.size());
+			gui.statusFields.setFieldProducible(producible.size());
 		}
 
 		private Ingredient getIngredient(IDType id) {
@@ -1293,16 +1312,16 @@ class RecipeAnalyser implements ActionListener {
 			if (rawIngredientsData==null) return;
 			
 			rawdataModel = new RawdataModel(rawIngredientsData);
-			rawIngredientsTable.setModel(rawdataModel);
+			gui.rawIngredientsTable.setModel(rawdataModel);
 			
 			try {
 				Vector<Ingredient> ingredients = parseIngredients();
 				ingredientsTableModel = new IngredientsTableModel(ingredients);
-				ingredientsTable.setCellRendererForAllColumns(new IngredientsTableRenderer(), true);
+				gui.ingredientsTable.setCellRendererForAllColumns(new IngredientsTableRenderer(), true);
 				JCheckBox rendererCheckBox = new JCheckBox();
 				rendererCheckBox.setHorizontalAlignment(JCheckBox.CENTER);
-				ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(rendererCheckBox));
-				ingredientsTable.setModel(ingredientsTableModel);
+				gui.ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(rendererCheckBox));
+				gui.ingredientsTable.setModel(ingredientsTableModel);
 				if (recipesTableModel!=null) recipesTableModel.fireTableUpdate();
 				checkInputOutput();
 				updateProducibility();
@@ -1319,13 +1338,13 @@ class RecipeAnalyser implements ActionListener {
 		private void parseRecipesTable() {
 			if (rawRecipesData==null) return;
 			
-			rawRecipesTable.setModel(new RawdataModel(rawRecipesData));
+			gui.rawRecipesTable.setModel(new RawdataModel(rawRecipesData));
 			
 			try {
 				recipes = parseRecipes();
 				recipesTableModel = new RecipesTableModel();
-				recipesTable.setCellRendererForAllColumns(new RecipesTableRenderer(), true);
-				recipesTable.setModel(recipesTableModel);
+				gui.recipesTable.setCellRendererForAllColumns(new RecipesTableRenderer(), true);
+				gui.recipesTable.setModel(recipesTableModel);
 				checkInputOutput();
 				updateProducibility();
 			} catch (ParseException e) {
@@ -1936,8 +1955,6 @@ class RecipeAnalyser implements ActionListener {
 		
 		}
 		
-		protected enum Lang{ En, De }
-		
 		private abstract class Ingredient {
 			protected boolean isInputValue  = false;
 			protected boolean isOutputValue = false;
@@ -1965,11 +1982,22 @@ class RecipeAnalyser implements ActionListener {
 			
 			abstract IDType getID();
 			abstract String getType();
-			abstract String getName();
 			abstract String getName(Lang language);
 			abstract String getDesc();
 			abstract Float  getPrice();
 			abstract GeneralizedID getGeneralizedID();
+			
+			String getName() {
+				String name = getName(gui.selectedLang);
+				if (name!=null) return name;
+				
+				for (Lang lang : Lang.values()) {
+					name = getName(lang);
+					if (name!=null) return "["+name+"]";
+				}
+				
+				return null;
+			}
 			
 			boolean nameEquals(String name, boolean ignoreCase) {
 				if (name==null) return false;
@@ -2285,6 +2313,10 @@ class RecipeAnalyser implements ActionListener {
 				if (ingredient==null) return null;
 				return ingredient.amount;
 			}
+
+			@Override public void fireTableColumnUpdate(RecipesTableColumnID columnID) {
+				super.fireTableColumnUpdate(columnID);
+			}
 		
 		}
 
@@ -2347,7 +2379,7 @@ class RecipeAnalyser implements ActionListener {
 			}
 
 			public void forEachSelected(Consumer<Ingredient> consumer) {
-				int[] selectedRows = ingredientsTable.getSelectedRows();
+				int[] selectedRows = gui.ingredientsTable.getSelectedRows();
 				for (int i=0; i<selectedRows.length; i++) {
 					Ingredient ingredient = ingredients.get(selectedRows[i]);
 					if (ingredient!=null && ingredient.getName()!=null)
