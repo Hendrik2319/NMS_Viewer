@@ -98,34 +98,6 @@ public class SaveViewer implements ActionListener {
 	private Color DEFAULT_BUTTON_FOREGROUND_COLOR;
 	
 	public static void main(String[] args) {
-		if (args.length>0)
-			switch (args[0].toLowerCase()) {
-			case "upgrademoduleinstallhelper": UpgradeModuleInstallHelper.main(new String[]{}); return;
-			case "productionoptimiser"       : ProductionOptimiser       .main(new String[]{}); return;
-			case "recipeanalyser"            : RecipeAnalyser            .main(new String[]{}); return;
-			case "resourcehotspots"          : ResourceHotSpots          .main(new String[]{}); return;
-			}
-		else {
-			Gui.log_ln("No Mans Sky - SaveViewer");
-			Gui.log_ln("   by Hendrik Scholtz");
-			Gui.log_ln("");
-			Gui.log_ln("usage:");
-			Gui.log_ln("   java -jar <jar-file> [Tool/Function]");
-			Gui.log_ln("");
-			Gui.log_ln("[Tool]");
-			Gui.log_ln("      UpgradeModuleInstallHelper   starts UpgradeModule Install Helper");
-			Gui.log_ln("      ProductionOptimiser          starts Production Optimiser");
-			Gui.log_ln("      RecipeAnalyser               starts Recipe Analyser");
-			Gui.log_ln("      ResourceHotSpots             starts Resource HotSpots tool");
-			Gui.log_ln("");
-			writeSaveViewerFunctionsInUsage();
-			Gui.log_ln("");
-			Gui.log_ln("");
-		}
-		start(args);
-	}
-	public static void start(String[] args) {
-		
 		config = Config.readFromFile();
 		deObfuscator = DeObfuscator.readFromFile();
 		steamIDs = new KnownSteamIDs();
@@ -234,7 +206,7 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 
-	private static void writeSaveViewerFunctionsInUsage() {
+	public static void writeSaveViewerFunctionsInUsage() {
 		Gui.log_ln("[Function]");
 		Gui.log_ln("      -writeKnownSteamIDsToHTML     writes known SteamIDs to HTML file \"%s\"", FileExport.FILE_KNOWN_STEAM_ID_HTML);
 		Gui.log_ln("      -loadGame <G> -base2vrml <B>  load save game G and writes base B to VRML file");

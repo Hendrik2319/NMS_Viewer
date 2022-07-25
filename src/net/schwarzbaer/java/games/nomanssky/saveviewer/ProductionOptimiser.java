@@ -60,7 +60,7 @@ import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ToolbarIcons;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
-class ProductionOptimiser implements ActionListener {
+public class ProductionOptimiser implements ActionListener {
 	
 	private static final Color COLOR_INFINITE_PRODUCT = Color.RED;
 	private static final Color COLOR_INFINITE_INPUT = new Color(0xe0e0e0);

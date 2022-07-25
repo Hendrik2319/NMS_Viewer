@@ -91,7 +91,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggesti
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.system.UniqueIdPool;
 
-final class UpgradeModuleInstallHelper implements ActionListener {
+public final class UpgradeModuleInstallHelper implements ActionListener {
 
 	private static final boolean DEBUG_EVENTS = false;
 	
