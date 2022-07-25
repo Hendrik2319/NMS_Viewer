@@ -59,6 +59,7 @@ import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardMainWindow;
+import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FactoryForExtras;

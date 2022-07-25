@@ -1,12 +1,13 @@
-package net.schwarzbaer.java.games.nomanssky.saveviewer;
+package net.schwarzbaer.java.games.nomanssky.recipeanalyser;
 
 import net.schwarzbaer.system.Settings;
 
-public final class AppSettings extends Settings.DefaultAppSettings<AppSettings.ValueGroup, AppSettings.ValueKey> {
+class AppSettings extends Settings.DefaultAppSettings<AppSettings.ValueGroup, AppSettings.ValueKey> {
 	
 	private final static AppSettings instance = new AppSettings();
 	
 	public enum ValueKey {
+		Language
 	}
 
 	enum ValueGroup implements Settings.GroupKeys<ValueKey> {

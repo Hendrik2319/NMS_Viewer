@@ -60,21 +60,21 @@ public class FileExport {
 	
 	static final String EXTRA_IMAGES_PATH = "extra/resource_icons";
 	
-	static final String FILE_CFG                  = "NMS_Viewer.cfg";
-	static final String FILE_COLORS               = "NMS_Viewer.Colors.txt";
-	static final String FILE_KNOWN_STAT_ID        = "NMS_Viewer.KnownStatID.txt";
-	static final String FILE_PRODUCT_ID           = "NMS_Viewer.ProdIDs.txt";
-	static final String FILE_TECH_ID              = "NMS_Viewer.TechIDs.txt";
-	static final String FILE_SUBSTANCE_ID         = "NMS_Viewer.SubstanceIDs.txt";
-	static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
-	static final String FILE_KNOWN_EDITABLE_MODS  = "NMS_Viewer.KnownEditableMods.txt";;
-	static final String FILE_KNOWN_STEAM_ID       = "NMS_Viewer.KnownSteamIDs.txt";
-	static final String FILE_KNOWN_STEAM_ID_HTML  = "NMS_Viewer.KnownSteamIDs.html";
-	static final String FILE_CFG_PRODUCTION_OPTIMISER = "NMS_Viewer.ProductionOptimiser.cfg";
-	static final String FILE_CFG_RECIPE_ANALYSER      = "NMS_Viewer.RecipeAnalyser.cfg";
-	static final String FILE_CFG_RESOURCE_HOTSPOTS    = "NMS_Viewer.ResourceHotSpots.cfg";
-	static final String FILE_DATA_RESOURCE_HOTSPOTS   = "NMS_Viewer.ResourceHotSpots.data";
-	static final String FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
+	public static final String FILE_CFG                  = "NMS_Viewer.cfg";
+	public static final String FILE_COLORS               = "NMS_Viewer.Colors.txt";
+	public static final String FILE_KNOWN_STAT_ID        = "NMS_Viewer.KnownStatID.txt";
+	public static final String FILE_PRODUCT_ID           = "NMS_Viewer.ProdIDs.txt";
+	public static final String FILE_TECH_ID              = "NMS_Viewer.TechIDs.txt";
+	public static final String FILE_SUBSTANCE_ID         = "NMS_Viewer.SubstanceIDs.txt";
+	public static final String FILE_UNIVERSE_OBJECT_DATA = "NMS_Viewer.UniverseObjects.txt";
+	public static final String FILE_KNOWN_EDITABLE_MODS  = "NMS_Viewer.KnownEditableMods.txt";;
+	public static final String FILE_KNOWN_STEAM_ID       = "NMS_Viewer.KnownSteamIDs.txt";
+	public static final String FILE_KNOWN_STEAM_ID_HTML  = "NMS_Viewer.KnownSteamIDs.html";
+	public static final String FILE_CFG_PRODUCTION_OPTIMISER = "NMS_Viewer.ProductionOptimiser.cfg";
+	public static final String FILE_CFG_RECIPE_ANALYSER      = "NMS_Viewer.RecipeAnalyser.cfg";
+	public static final String FILE_CFG_RESOURCE_HOTSPOTS    = "NMS_Viewer.ResourceHotSpots.cfg";
+	public static final String FILE_DATA_RESOURCE_HOTSPOTS   = "NMS_Viewer.ResourceHotSpots.data";
+	public static final String FILE_CFG_UPGRADE_MODULE_INSTALL_HELPER = "NMS_Viewer.UpgradeModuleInstallHelper.cfg";
 	
 	private static final Color COLOR_WINDOW = new Color(0.3f, 0.5f, 1.0f);
 	

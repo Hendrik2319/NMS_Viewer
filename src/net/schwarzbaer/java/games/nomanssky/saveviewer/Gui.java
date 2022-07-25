@@ -88,7 +88,7 @@ public class Gui {
 	public enum ToolbarIcons { EmptyDoc, Open, Save, SaveAs, Reload, Close, ComputePortalGlyphs, Cut, Copy, Paste, Delete, ColorEdit }
 	public static CachedIcons<ToolbarIcons> toolbarIS;
 	
-	static void loadToolbarIcons() {
+	public static void loadToolbarIcons() {
 		toolbarIS = IconSource.createCachedIcons(16,16, FileExport.RES_IMAGES_TOOLBAR_PNG, ToolbarIcons.values());
 	}
 
@@ -248,7 +248,7 @@ public class Gui {
 			this.createGUI(contentPane);
 		}
 		
-		interface Constructor<Output, DialogType extends TextAreaDialog> {
+		protected interface Constructor<Output, DialogType extends TextAreaDialog> {
 			DialogType create(
 					Window parent, String title,
 					Consumer<TextAreaDialog> closeListener,

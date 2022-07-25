@@ -1,4 +1,4 @@
-package net.schwarzbaer.java.games.nomanssky.saveviewer;
+package net.schwarzbaer.java.games.nomanssky.recipeanalyser;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -77,11 +77,15 @@ import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaDialog;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
-class RecipeAnalyser implements ActionListener {
+public class RecipeAnalyser implements ActionListener {
 
 	private static final Color COLOR_INGREDIENT_MARKER = new Color(0,213,255);
 	private static final Color COLOR_INGREDIENT_PRODUCIBLE = new Color(0,255,102);
@@ -115,7 +119,7 @@ class RecipeAnalyser implements ActionListener {
 		start(true);
 	}
 
-	static void start(boolean standalone) {
+	public static void start(boolean standalone) {
 		new RecipeAnalyser()
 			.readConfig()
 			.writeConfig()
@@ -140,7 +144,7 @@ class RecipeAnalyser implements ActionListener {
 	
 	private File         dataFile  = null;
 	private DataModel<?> dataModel = null;
-	private Lang         selectedLang = AppSettings.getInstance().getEnum(AppSettings.ValueKey.RecipeAnalyserLang, Lang.En, Lang.class);
+	private Lang         selectedLang = AppSettings.getInstance().getEnum(AppSettings.ValueKey.Language, Lang.En, Lang.class);
 
 	private boolean saveInStockIngredients = false;
 	private EnumMap<DataModel.Type,String> ingredientsInStock = new EnumMap<>(DataModel.Type.class);
@@ -366,19 +370,14 @@ class RecipeAnalyser implements ActionListener {
 			menuLanguage.add(Gui.createCheckBoxMenuItem(lang.toString(), bg, selectedLang==lang, (Boolean b)->{
 				selectedLang = lang;
 				System.out.printf("selectedLang = %s%n", selectedLang);
-				AppSettings.getInstance().putEnum(AppSettings.ValueKey.RecipeAnalyserLang, selectedLang);
+				AppSettings.getInstance().putEnum(AppSettings.ValueKey.Language, selectedLang);
 				if (dataModel!=null) dataModel.updateAfterLanguageChange();
 			}));
 		}
 		
 		mainwindow.startGUI(contentPane,menuBar);
 		
-		AppSettings.getInstance().registerExtraWindow(mainwindow,
-			AppSettings.ValueKey.RecipeAnalyserWindowX,
-			AppSettings.ValueKey.RecipeAnalyserWindowY,
-			AppSettings.ValueKey.RecipeAnalyserWindowWidth,
-			AppSettings.ValueKey.RecipeAnalyserWindowHeight
-		);
+		AppSettings.getInstance().registerAppWindow(mainwindow);
 		
 		updateGuiAccess();
 		updateWindowTitle();
@@ -853,7 +852,6 @@ class RecipeAnalyser implements ActionListener {
 			fillMenu();
 		}
 		
-		@SuppressWarnings("unused")
 		private static class ResultDialog<IDType extends Comparable<IDType>> extends Gui.TextAreaDialog {
 			private static final long serialVersionUID = 5466523258727339825L;
 			public static <IDType extends Comparable<IDType>> ResultDialog<IDType> createResultDialogForWriterVariants(
