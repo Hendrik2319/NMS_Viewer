@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Comparator;
@@ -59,12 +60,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
+import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.IconSource.CachedIcons;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
@@ -1297,6 +1300,18 @@ public class Gui {
 		public void printf(String format, Object... args) {
 			textArea.append(String.format(format, args));
 		}
+	}
+
+	public static void runInEventThreadAndWait(Runnable doRun) {
+		if (SwingUtilities.isEventDispatchThread())
+			doRun.run();
+		else
+			try { SwingUtilities.invokeAndWait(doRun); }
+			catch (InvocationTargetException | InterruptedException e) { e.printStackTrace(); }
+	}
+
+	public static void runWithProgressDialog(Window parent, String title, Consumer<ProgressDialog> useProgressDialog) {
+		ProgressDialog.runWithProgressDialog(parent, title, 400, useProgressDialog);
 	}
 
 	public  static void append_ln   ( JTextArea   txt, String text                     ) { txt.append(String.format( "%s%n", text                        )); }

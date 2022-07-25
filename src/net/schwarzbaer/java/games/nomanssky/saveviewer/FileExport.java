@@ -278,7 +278,7 @@ public class FileExport {
 	}
 
 	private static long startTask(ProgressDialog pd, String indent, String taskTitle, int max) {
-		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
+		if (pd!=null) Gui.runInEventThreadAndWait(()->{
 			pd.setTaskTitle(taskTitle);
 			if (max>=0) pd.setValue(0, max);
 			else pd.setIndeterminate(true);
@@ -340,7 +340,7 @@ public class FileExport {
 			if (dontAsk)
 				file = VRMLoutput.createBaseVrmlFile(suggestedFileName);
 			else {
-				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
+				if (pd!=null) Gui.runInEventThreadAndWait(()->{
 					pd.setIndeterminate(true);
 					pd.setTaskTitle("Ask for filename");
 				});
@@ -348,7 +348,7 @@ public class FileExport {
 			}
 			if (file==null) return;
 			
-			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{
 				pd.setIndeterminate(true);
 				pd.setTaskTitle("Determine max. dimensions");
 			});
@@ -412,7 +412,7 @@ public class FileExport {
 						VRMLoutput.writeModel(vrml, obj, isMAINROOMwithRoof[i], objectIDNumbers);
 					}
 					int value = i+1;
-					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
+					if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setValue(value); });
 				}
 				endTask(startTime);
 				
@@ -472,14 +472,14 @@ public class FileExport {
 			Double pRad = planetRadius;
 			if (pRad!=null && pRad<=0) pRad=null;
 			
-			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{
 				pd.setIndeterminate(true);
 				pd.setTaskTitle("Ask for filename");
 			});
 			File file = VRMLoutput.selectVrmlFile2Write(parent,suggestedFileName);
 			if (file==null) return;
 			
-			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{
 				pd.setIndeterminate(true);
 				pd.setTaskTitle("Determine max. dimensions");
 			});
@@ -551,7 +551,7 @@ public class FileExport {
 				startTime = startTask(pd, "   ", "Write objects", objects.length);
 				for (int i=0; i<objects.length; i++) {
 					int value = i;
-					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
+					if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setValue(value); });
 					BuildingObject obj = objects[i];
 					if (obj.position==null) continue;
 					if (obj.position.pos==null) continue;
@@ -564,7 +564,7 @@ public class FileExport {
 					vrml.printf(               " string \"%s\"", obj.getNameOrObjectID().replace('\"','_'));
 					vrml.printf(Locale.ENGLISH," } # Pos r:%f\r\n", p.pos.length());
 				}
-				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(objects.length); });
+				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setValue(objects.length); });
 				endTask(startTime);
 				
 			} catch (FileNotFoundException e) {
@@ -657,7 +657,7 @@ public class FileExport {
 						LineGeometry.DirectWriteGroupingNode grid = y==0 && xz==0 ? zeroAxes : isGrid2.test(y) && isGrid2.test(xz) ? grid2 : grid1;
 						grid.add(lineXPYP, lineXNYP, lineZPYP, lineZNYP, lineXPYN, lineXNYN, lineZPYN, lineZNYN);
 					}
-					SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(finalY); });
+					Gui.runInEventThreadAndWait(()->{ pd.setValue(finalY); });
 				}
 				endTask(startTime);
 				
@@ -675,7 +675,7 @@ public class FileExport {
 						LineGeometry.DirectWriteGroupingNode grid = x==0 && z==0 ? zeroAxes : isGrid2.test(x) && isGrid2.test(z) ? grid2 : grid1;
 						grid.add(lineXPZP, lineXNZP, lineXPZN, lineXNZN);
 					}
-					SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(finalX); });
+					Gui.runInEventThreadAndWait(()->{ pd.setValue(finalX); });
 				}
 				endTask(startTime);
 				
@@ -786,7 +786,7 @@ public class FileExport {
 		if (parent==null)
 			task.accept(null);
 		else
-			SaveViewer.runWithProgressDialog(parent, "Write "+label+" to VRML", task);
+			Gui.runWithProgressDialog(parent, "Write "+label+" to VRML", task);
 	}
 
 	private static class FreighterRoomCombine {
@@ -3311,7 +3311,7 @@ public class FileExport {
 
 			private static LineGeometry.GroupingNode create_MINIPORTAL() {
 				double width = 2.5; // "small width" of hexagon
-				double radius = width/2/Math.cos(Math.PI/6); // r*cos(30°) = width/2
+				double radius = width/2/Math.cos(Math.PI/6); // r*cos(30ï¿½) = width/2
 				double radius2 = 0.6;
 
 				double plugPDist = 1.61102; // Y|Z
@@ -4032,7 +4032,7 @@ public class FileExport {
 					double offsetX1    = height/2-height1/2;
 					double borderZ     = width/400.0*12;
 					
-					double plugDistXY = 0.2274; // sqrt(y²+x²)
+					double plugDistXY = 0.2274; // sqrt(yï¿½+xï¿½)
 					double plugHeight = 0.226-0.01; // X
 					double plugPosY = Math.sqrt(plugDistXY*plugDistXY - plugHeight*plugHeight); // Y
 					
@@ -4945,7 +4945,7 @@ public class FileExport {
 					addModels("CORRIDORT",      "^CORRIDORT");
 					addModels("CORRIDORC",      "^CORRIDORC");
 					
-					addModels("DOOR2",          "^DOOR2");  // Holo-Tür
+					addModels("DOOR2",          "^DOOR2");  // Holo-Tï¿½r
 					addModels("BUILDDOOR",      "^BUILDDOOR");
 					addModels("BUILDRAMP",      "^BUILDRAMP");
 					
@@ -6588,7 +6588,7 @@ public class FileExport {
 				if (pointsStr.length()>0) pointsStr.append(", ");
 				pointsStr.append(String.format(Locale.ENGLISH,"%1."+precision+"f %1."+precision+"f %1."+precision+"f", p.x, p.y, p.z));
 				int value = i+1;
-				if (verbose && pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); });
+				if (verbose && pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setValue(value); });
 			}
 			if (verbose) endTask(startTime);
 			
@@ -6599,7 +6599,7 @@ public class FileExport {
 				if (indexesStr.length()>0) indexesStr.append(" -1");
 				for (int i:seg.indexes) indexesStr.append(" "+i);
 				int value = s+1;
-				if (verbose && pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(value); }); 
+				if (verbose && pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setValue(value); }); 
 			}
 			if (verbose) endTask(startTime);
 			

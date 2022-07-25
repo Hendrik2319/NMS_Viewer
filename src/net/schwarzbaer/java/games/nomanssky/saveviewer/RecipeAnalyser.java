@@ -1457,10 +1457,10 @@ class RecipeAnalyser implements ActionListener {
 					} else
 						producableOnly = false;
 					
-					SaveViewer.runWithProgressDialog(gui.mainwindow, "Find Recipes", pd->{
+					Gui.runWithProgressDialog(gui.mainwindow, "Find Recipes", pd->{
 						IDType inputID = ingredient.getID();
 						
-						SaveViewer.runInEventThreadAndWait(()->{
+						Gui.runInEventThreadAndWait(()->{
 							pd.setTaskTitle("Find Recipes");
 							pd.setValue(0, recipes.size());
 						});
@@ -1473,12 +1473,12 @@ class RecipeAnalyser implements ActionListener {
 								if (knownRecipes==null) allRecipes.put(recipe.outputValue.id,knownRecipes=new Vector<>());
 								knownRecipes.addAll( newRecipes );
 							}
-							SaveViewer.runInEventThreadAndWait(()->pd.setValue(recipe.index+1));
+							Gui.runInEventThreadAndWait(()->pd.setValue(recipe.index+1));
 						});
 						Vector<IDType> sortedIDs = new Vector<>(allRecipes.keySet());
 						sortedIDs.sort(null);
 						
-						SaveViewer.runInEventThreadAndWait(()->{
+						Gui.runInEventThreadAndWait(()->{
 							pd.setTaskTitle("Output");
 							pd.setIndeterminate(true);
 						});
@@ -1508,8 +1508,8 @@ class RecipeAnalyser implements ActionListener {
 
 			public void FindGrowingCycles() {
 				if (recipes!=null) {
-					SaveViewer.runWithProgressDialog(gui.mainwindow, "Search for Growing Cycles", pd->{
-						SaveViewer.runInEventThreadAndWait(()->{
+					Gui.runWithProgressDialog(gui.mainwindow, "Search for Growing Cycles", pd->{
+						Gui.runInEventThreadAndWait(()->{
 							pd.setTaskTitle("Search for Growing Cycles");
 							pd.setIndeterminate(true);
 						});
@@ -1560,7 +1560,7 @@ class RecipeAnalyser implements ActionListener {
 							}
 						});
 						
-						SaveViewer.runInEventThreadAndWait(()->{
+						Gui.runInEventThreadAndWait(()->{
 							pd.setTaskTitle("Generate Output");
 							pd.setIndeterminate(true);
 						});

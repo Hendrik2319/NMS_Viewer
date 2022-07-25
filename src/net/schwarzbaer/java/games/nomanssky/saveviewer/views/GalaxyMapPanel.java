@@ -42,13 +42,13 @@ import net.schwarzbaer.gui.Canvas;
 import net.schwarzbaer.gui.FileChooser;
 import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Point3D;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Galaxy;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 
 class GalaxyMapPanel extends SaveGameViewTabPanel {
@@ -206,7 +206,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		Worker worker = galaxyMap.showGlyphOverlay(numberOfKnownGlyphs);
 		if (worker==null) return;
 		
-		SaveViewer.runWithProgressDialog(mainWindow,"Create Glyph Overlay", pd->{
+		Gui.runWithProgressDialog(mainWindow,"Create Glyph Overlay", pd->{
 			worker.setProgressDialog(pd);
 			worker.run();
 		});
@@ -234,12 +234,12 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		Worker() { stopNow = false; pd = null; }
 		void setProgressDialog(ProgressDialog pd) { this.pd = pd; }
 		
-		protected void setProgress(int value         ) { if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value    )); }
-		protected void setProgress(int value, int max) { if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value,max)); }
-		protected void setTaskTitle(String title)      { if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle(title)); }
+		protected void setProgress(int value         ) { if (pd!=null) Gui.runInEventThreadAndWait(()->pd.setValue(value    )); }
+		protected void setProgress(int value, int max) { if (pd!=null) Gui.runInEventThreadAndWait(()->pd.setValue(value,max)); }
+		protected void setTaskTitle(String title)      { if (pd!=null) Gui.runInEventThreadAndWait(()->pd.setTaskTitle(title)); }
 		
-		@Override public void cancelTask() { stopNow = true; if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.closeDialog()); }
-		@Override public void run() { compute(); if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.closeDialog()); }
+		@Override public void cancelTask() { stopNow = true; if (pd!=null) Gui.runInEventThreadAndWait(()->pd.closeDialog()); }
+		@Override public void run() { compute(); if (pd!=null) Gui.runInEventThreadAndWait(()->pd.closeDialog()); }
 		protected abstract void compute();
 	}
 

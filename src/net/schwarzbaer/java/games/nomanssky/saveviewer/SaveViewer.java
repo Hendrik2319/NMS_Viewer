@@ -6,7 +6,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -30,7 +28,6 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -48,7 +45,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
-import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -497,13 +493,13 @@ public class SaveViewer implements ActionListener {
 		} break;
 			
 		case RefreshExtraImages:
-			runWithProgressDialog(mainWindow,"Refresh Extra Images", pd->{
+			Gui.runWithProgressDialog(mainWindow,"Refresh Extra Images", pd->{
 				Images.getInstance().extraImages.reload(pd);
 			});
 			break;
 			
 		case FindNewExtraImages:
-			runWithProgressDialog(mainWindow,"Find New Extra Images", pd->{
+			Gui.runWithProgressDialog(mainWindow,"Find New Extra Images", pd->{
 				Images.getInstance().extraImages.findNewImages(pd);
 			});
 			break;
@@ -610,7 +606,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
-		runWithProgressDialog(mainWindow,"Open SaveGame", pd->{
+		Gui.runWithProgressDialog(mainWindow,"Open SaveGame", pd->{
 			openSaveGame(saveGameFile,saveGameIndex,pd);
 		});
 	}
@@ -640,7 +636,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private SaveGameData openSaveGame(File saveGameFile, int saveGameIndex, ProgressDialog pd) {
-		if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
+		if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, true);
 		
 		HashMap<String, HashSet<String>> deObfuscatorUsage = null;
@@ -648,7 +644,7 @@ public class SaveViewer implements ActionListener {
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
 		else {
-			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
 			deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data);
 			isPreNEXT = false;
 		}
@@ -663,10 +659,10 @@ public class SaveViewer implements ActionListener {
 			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT);
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			
-			if (pd!=null) SaveViewer.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
 			saveGameData.parse(false,mainWindow);
 			
-			SaveViewer.runInEventThreadAndWait(()->{
+			Gui.runInEventThreadAndWait(()->{
 				if (mainWindow!=null) {
 					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(3);
 					SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,!isPreNEXT);
@@ -677,7 +673,7 @@ public class SaveViewer implements ActionListener {
 			});
 		}
 		
-		SaveViewer.runInEventThreadAndWait(()->{
+		Gui.runInEventThreadAndWait(()->{
 			if (mainWindow!=null) {
 				contentPane.disabler.setEnable(ActionCommand.Close    , contentPane.selectedSaveGameView!=null);
 				contentPane.disabler.setEnable(ActionCommand.Reload   , contentPane.selectedSaveGameView!=null);
@@ -690,8 +686,8 @@ public class SaveViewer implements ActionListener {
 		return saveGameData;
 	}
 	private void reloadSaveGameView(SaveGameView view) {
-		runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
-			if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
+		Gui.runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
 			Gui.log_ln("");
 			JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(view.file, true);
 			
@@ -700,22 +696,22 @@ public class SaveViewer implements ActionListener {
 			if (SaveGameData.hasValue(new_json_data, "Version")) // <--- UnObfuscated String "Version"
 				isPreNEXT = true;
 			else {
-				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
+				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
 				deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data);
 				isPreNEXT = false;
 			}
 			
 			if (new_json_data!=null) {
 				
-				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
+				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
 				GameInfos.removeUsages(view.data);
 				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index,isPreNEXT);
 				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 				
-				if (pd!=null) runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
+				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
 				saveGameData.parse(false,mainWindow);
 				
-				runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(4);
 					view.replaceData(saveGameData,!isPreNEXT);
 					contentPane.updateIDPanels();
@@ -740,8 +736,8 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
-		runWithProgressDialog(mainWindow,"Close SaveGame", pd->{
-			runInEventThreadAndWait(()->{
+		Gui.runWithProgressDialog(mainWindow,"Close SaveGame", pd->{
+			Gui.runInEventThreadAndWait(()->{
 				loadedSaveGames.remove(view);
 				GameInfos.removeUsages(view.data);
 				contentPane.removeSaveGameView(view);
@@ -760,18 +756,6 @@ public class SaveViewer implements ActionListener {
 		else
 			mainWindow.setTitle("(New) No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
-	}
-
-	public static void runInEventThreadAndWait(Runnable doRun) {
-		if (SwingUtilities.isEventDispatchThread())
-			doRun.run();
-		else
-			try { SwingUtilities.invokeAndWait(doRun); }
-			catch (InvocationTargetException | InterruptedException e) { e.printStackTrace(); }
-	}
-
-	public static void runWithProgressDialog(Window parent, String title, Consumer<ProgressDialog> useProgressDialog) {
-		ProgressDialog.runWithProgressDialog(parent, title, 400, useProgressDialog);
 	}
 	
 	public static class FrequentlyTask implements Runnable {

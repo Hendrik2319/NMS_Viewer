@@ -428,7 +428,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 			
 		case SaveSession:
 			if (config.currentSessionFile!=null) {
-				SaveViewer.runWithProgressDialog(mainwindow, "Save Session", pd->{
+				Gui.runWithProgressDialog(mainwindow, "Save Session", pd->{
 					currentSession.saveFile(config.currentSessionFile);
 				});
 				break;
@@ -437,11 +437,11 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 		case SaveSessionAs:
 			if (fileChooser.showSaveDialog(mainwindow)==FileChooser.APPROVE_OPTION) {
 				File file = fileChooser.getSelectedFile();
-				SaveViewer.runWithProgressDialog(mainwindow, "Save Session", pd->{
+				Gui.runWithProgressDialog(mainwindow, "Save Session", pd->{
 					currentSession.saveFile(file);
 					config.currentSessionFile = file;
 					writeConfig();
-					SaveViewer.runInEventThreadAndWait(()->{
+					Gui.runInEventThreadAndWait(()->{
 						updateWindowTitle();
 						updateGUIaccess();
 					});
@@ -486,7 +486,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 
 	private void openSession(File file) {
 		if (file==null) return;
-		SaveViewer.runWithProgressDialog(mainwindow, "Open Session", pd->{
+		Gui.runWithProgressDialog(mainwindow, "Open Session", pd->{
 			Session newSession = Session.openFile(file, knownUpgradeModuleIDs::get, config.knownModules::get);
 			if (newSession!=null) {
 				currentSession = newSession;
@@ -494,7 +494,7 @@ final class UpgradeModuleInstallHelper implements ActionListener {
 					config.currentSessionFile = file;
 					writeConfig();
 				}
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					updateDataInGui();
 					updateWindowTitle();
 					updateGUIaccess();

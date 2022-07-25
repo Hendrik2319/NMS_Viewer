@@ -275,7 +275,7 @@ class ProductionOptimiser implements ActionListener {
 			break;
 			
 		case FindMostValuableProduction: {
-			SaveViewer.runWithProgressDialog(mainwindow, "title", pd->{
+			Gui.runWithProgressDialog(mainwindow, "title", pd->{
 				Vector<Result> results = new MostValuableProduction(pd).find();
 				if (results!=null) {
 					resultList.setModel(new DefaultComboBoxModel<Result>(results));
@@ -586,7 +586,7 @@ class ProductionOptimiser implements ActionListener {
 		}
 
 		public Vector<ProductionOptimiser.Result> find() {
-			SaveViewer.runInEventThreadAndWait(()->{
+			Gui.runInEventThreadAndWait(()->{
 				pd.displayProgressString(ProgressDialog.ProgressDisplay.Number);
 				
 				pd.setTaskTitle("Checking Requirements");
@@ -595,7 +595,7 @@ class ProductionOptimiser implements ActionListener {
 			
 			if (!checkRequirements()) return null;
 			
-			SaveViewer.runInEventThreadAndWait(()->{
+			Gui.runInEventThreadAndWait(()->{
 				pd.setTaskTitle("Running Loop");
 				pd.setIndeterminate(true);
 			});
@@ -720,14 +720,14 @@ class ProductionOptimiser implements ActionListener {
 				}
 				Gui.log_ln("Number Of Cases: %d", numberOfCases);
 				int numberOfCases2 = (int)numberOfCases;
-				SaveViewer.runInEventThreadAndWait(()->{ pd.setValue(0, numberOfCases2); });
+				Gui.runInEventThreadAndWait(()->{ pd.setValue(0, numberOfCases2); });
 				
 				neededBaseInputs.clear();
 				loop(0,0);
 			}
 
 			private void loop(int loopLevel, int caseIndex) {
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setValue(caseIndex);
 				});
 				

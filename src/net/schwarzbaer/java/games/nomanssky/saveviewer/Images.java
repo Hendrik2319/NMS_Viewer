@@ -444,7 +444,7 @@ public class Images {
 	
 		private void updateImageListListeners(ProgressDialog pd) {
 			if (pd!=null) {
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Update GUI");
 					pd.setValue(0, listeners.size());
 				});
@@ -453,7 +453,7 @@ public class Images {
 				listeners.get(i).imageListChanged();
 				if (pd!=null) {
 					int value = i+1;
-					SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+					Gui.runInEventThreadAndWait(()->pd.setValue(value));
 				}
 			}
 		}
@@ -475,7 +475,7 @@ public class Images {
 	
 		private void readImages(ProgressDialog pd, boolean readAll) {
 			if (pd!=null) {
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Get Image List");
 					pd.setIndeterminate(true);
 				});
@@ -505,7 +505,7 @@ public class Images {
 				readNewImages(pd, folder, foundImages);
 			
 			if (pd!=null)
-				SaveViewer.runInEventThreadAndWait(()->pd.setTaskTitle("Sort Image List"));
+				Gui.runInEventThreadAndWait(()->pd.setTaskTitle("Sort Image List"));
 			Arrays.sort(names,Comparator.comparing(String::toLowerCase));
 			
 			Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
@@ -513,7 +513,7 @@ public class Images {
 		
 		private void readNewImages(ProgressDialog pd, File folder, String[] foundImages) {
 			if (pd!=null)
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Find & Read New Images");
 					pd.setValue(0, foundImages.length);
 				});
@@ -530,7 +530,7 @@ public class Images {
 					}
 					
 					int value = i+1;
-					if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+					if (pd!=null) Gui.runInEventThreadAndWait(()->pd.setValue(value));
 				}
 			}
 			Gui.log_ln("   %d image(s) added", newNamesList.size()-names.length);
@@ -542,7 +542,7 @@ public class Images {
 			names = foundImages;
 			
 			if (pd!=null)
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Read Images");
 					pd.setValue(0, names.length);
 				});
@@ -557,7 +557,7 @@ public class Images {
 					imageMap.put(fileName, image);
 				
 				int value = i+1;
-				if (pd!=null) SaveViewer.runInEventThreadAndWait(()->pd.setValue(value));
+				if (pd!=null) Gui.runInEventThreadAndWait(()->pd.setValue(value));
 				else {
 					int n= i*6/names.length;
 					if (listChunkIndex != n) {
@@ -959,7 +959,7 @@ public class Images {
 
 		public void resetImages(ProgressDialog pd) {
 			if (pd!=null) {
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Remove images from grid");
 					pd.setIndeterminate(true);
 				});
@@ -968,12 +968,12 @@ public class Images {
 			removeAll();
 			
 			if (pd!=null) {
-				SaveViewer.runInEventThreadAndWait(()->{
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Create new image grid");
 					pd.setValue(0, Images.getInstance().extraImages.names.length);
 				});
 			}
-			createImageItems(selectedImageID, this, pd==null ? null : i->SaveViewer.runInEventThreadAndWait(()->pd.setValue(i)));
+			createImageItems(selectedImageID, this, pd==null ? null : i->Gui.runInEventThreadAndWait(()->pd.setValue(i)));
 			if (markUsedImages)
 				markUsedImages(markUsedImages);
 			
@@ -982,8 +982,8 @@ public class Images {
 
 		public void hideUsedImages(boolean hideUsedImages, Window window) {
 			this.hideUsedImages = hideUsedImages;
-			SaveViewer.runWithProgressDialog(window, (hideUsedImages ? "Hide" : "Unhide")+" Used Images", pd -> {
-				SaveViewer.runInEventThreadAndWait(()->{
+			Gui.runWithProgressDialog(window, (hideUsedImages ? "Hide" : "Unhide")+" Used Images", pd -> {
+				Gui.runInEventThreadAndWait(()->{
 					pd.setTaskTitle("Update Images to Hide");
 					pd.setIndeterminate(true);
 				});
@@ -1154,7 +1154,7 @@ public class Images {
 		}
 		
 		private void sortByName() {
-			SaveViewer.runWithProgressDialog(this, "Sort By Name", pd -> {
+			Gui.runWithProgressDialog(this, "Sort By Name", pd -> {
 				imageGridPanel.setOrder(null);
 				imageGridPanel.resetImages(pd);
 			});
@@ -1162,8 +1162,8 @@ public class Images {
 		
 		private void sortBySimilarityTo(String imageName) {
 			if (imageName==null) return;
-			SaveViewer.runWithProgressDialog(this, "Sort By Similarity", pd -> {
-				SaveViewer.runInEventThreadAndWait(()->{
+			Gui.runWithProgressDialog(this, "Sort By Similarity", pd -> {
+				Gui.runInEventThreadAndWait(()->{
 					if (!rdbtnSortSimilarity.isSelected())
 						rdbtnSortSimilarity.setSelected(true);
 					
@@ -1262,7 +1262,7 @@ public class Images {
 					imageGridPanel.setSelectedGridIndex(-1);
 				}
 				
-				SaveViewer.runWithProgressDialog(this, "Reset Images in Window", imageGridPanel::resetImages);
+				Gui.runWithProgressDialog(this, "Reset Images in Window", imageGridPanel::resetImages);
 				GameInfos.saveAllIDsToFiles();
 			} else
 				JOptionPane.showMessageDialog(this, "Can't delete \""+clickedName+"\".", "Error", JOptionPane.ERROR_MESSAGE);
