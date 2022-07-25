@@ -18,7 +18,7 @@ public class NMS_Starter {
 			case "resourcehotspots"          : ResourceHotSpots          .main(new String[]{}); return;
 			}
 		else {
-			Gui.log_ln("No Mans Sky - SaveViewer");
+			Gui.log_ln("No Mans Sky - Tools");
 			Gui.log_ln("   by Hendrik Scholtz");
 			Gui.log_ln("");
 			Gui.log_ln("usage:");
@@ -30,6 +30,7 @@ public class NMS_Starter {
 			Gui.log_ln("      RecipeAnalyser               starts Recipe Analyser");
 			Gui.log_ln("      ResourceHotSpots             starts Resource HotSpots tool");
 			Gui.log_ln("");
+			Gui.log_ln("or without parameter starts SaveViewer");
 			SaveViewer.writeSaveViewerFunctionsInUsage();
 			Gui.log_ln("");
 			Gui.log_ln("");
