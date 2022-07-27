@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -20,6 +21,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -28,6 +30,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -96,6 +99,13 @@ public class SaveViewer implements ActionListener {
 	private ComparePanel compareTab;
 	private Vector<SaveGameView> loadedSaveGames;
 	private Color DEFAULT_BUTTON_FOREGROUND_COLOR;
+	private final EnumMap<Tool,ToolWindow> openTools;
+	
+	private enum Tool {
+		RecipeAnalyser,
+		ProductionOptimiser,
+		UpgradeModuleInstallHelper
+	}
 	
 	public static void main(String[] args) {
 		config = Config.readFromFile();
@@ -294,6 +304,7 @@ public class SaveViewer implements ActionListener {
 	public SaveViewer() {
 		loadedSaveGames = new Vector<SaveGameView>();
 		mainWindow = null;
+		openTools = new EnumMap<>(Tool.class);
 	}
 
 	private void createGUI() {
@@ -318,7 +329,8 @@ public class SaveViewer implements ActionListener {
 		ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 		//FrequentlyTask frequentlyUpdater = new FrequentlyTask(5000,true,this::checkSavegameExistence);
 		//mainWindow = new StandardMainWindow("",e->frequentlyUpdater.stop(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
-		mainWindow = new StandardMainWindow("",e->executor.shutdown(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
+		//mainWindow = new StandardMainWindow("", e->executor.shutdown(), StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
+		mainWindow = new StandardMainWindow("", e->checkClosing(()->executor.shutdown()));
 		
 		compareTab = null;
 		contentPane = new ContentPane();
@@ -331,6 +343,34 @@ public class SaveViewer implements ActionListener {
 		
 		executor.scheduleAtFixedRate(this::checkSavegameExistence, 0, 5, TimeUnit.SECONDS);
 		//frequentlyUpdater.start();
+	}
+
+	private void checkClosing(Runnable lastActionBeforeClose) {
+		for (Tool tool : Tool.values()) {
+			ToolWindow toolWindow = openTools.get(tool);
+			if (toolWindow==null)
+				continue;
+			
+			Window window = toolWindow.getWindow();
+			if (window!=null && !window.isDisplayable())
+				continue;
+			
+			if (!toolWindow.isClosingAllowed())
+				return;
+		}
+		
+		for (Tool tool : Tool.values()) {
+			ToolWindow toolWindow = openTools.get(tool);
+			if (toolWindow != null) {
+				Window window = toolWindow.getWindow();
+				if (window != null)
+					window.dispose();
+			}
+		}
+		
+		if (lastActionBeforeClose!=null) lastActionBeforeClose.run();
+		mainWindow.dispose();
+		System.exit(0);
 	}
 
 	private enum ActionCommand {
@@ -486,13 +526,15 @@ public class SaveViewer implements ActionListener {
 			break;
 			
 		case OpenRecipeAnalyser:
-			RecipeAnalyser.start(false);
+			startTool(Tool.RecipeAnalyser, ()->RecipeAnalyser.start(false));
 			break;
+			
 		case OpenProductionOptimiser:
-			ProductionOptimiser.start(false);
+			startTool(Tool.ProductionOptimiser, ()->ProductionOptimiser.start(false));
 			break;
+			
 		case OpenUpgradeModuleInstallHelper:
-			UpgradeModuleInstallHelper.start(false);
+			startTool(Tool.UpgradeModuleInstallHelper, ()->UpgradeModuleInstallHelper.start(false));
 			break;
 			
 		case WriteKnownSteamIDsToHTML:
@@ -513,6 +555,37 @@ public class SaveViewer implements ActionListener {
 		case ClearUnknownValues: SaveGameData.globalUnknownValues.clear(); break;
 		case ShowUnknownValues : SaveGameData.globalUnknownValues.show(System.err); break;
 		}
+	}
+
+	private void startTool(Tool tool, Supplier<ToolWindow> startTool) {
+		
+		ToolWindow toolWindow = openTools.get(tool);
+		if (toolWindow == null) {
+			createTool(tool, startTool);
+			return;
+		}
+		
+		Window window = toolWindow.getWindow();
+		if (window == null) {
+			createTool(tool, startTool);
+			return;
+		}
+		
+		if (!window.isDisplayable()) {
+			createTool(tool, startTool);
+			return;
+		}
+		
+		if (window.isVisible())
+			window.requestFocus();
+		else
+			window.setVisible(true);
+	}
+
+	private void createTool(Tool tool, Supplier<ToolWindow> startTool) {
+		ToolWindow toolWindow = startTool.get();
+		if (toolWindow!=null)
+			openTools.put(tool, toolWindow);
 	}
 
 	private Universe getCurrentUniverse() {
@@ -729,6 +802,11 @@ public class SaveViewer implements ActionListener {
 		else
 			mainWindow.setTitle("(New) No Man's Sky - Viewer - "+contentPane.selectedSaveGameView.file.getPath());
 //		if (DEBUG) System.out.println("Set window title to \""+mainWindow.getTitle()+"\"");
+	}
+	
+	public interface ToolWindow {
+		Window getWindow();
+		boolean isClosingAllowed();
 	}
 	
 	public static class FrequentlyTask implements Runnable {

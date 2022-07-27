@@ -88,10 +88,11 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.system.UniqueIdPool;
 
-public final class UpgradeModuleInstallHelper implements ActionListener {
+public final class UpgradeModuleInstallHelper implements ActionListener, ToolWindow {
 
 	private static final boolean DEBUG_EVENTS = false;
 	
@@ -110,8 +111,8 @@ public final class UpgradeModuleInstallHelper implements ActionListener {
 		start(true);
 	}
 
-	static void start(boolean standalone) {
-		new UpgradeModuleInstallHelper()
+	static ToolWindow start(boolean standalone) {
+		return new UpgradeModuleInstallHelper()
 			.readConfig()
 			.writeConfig()
 			.createGUI(standalone)
@@ -181,6 +182,15 @@ public final class UpgradeModuleInstallHelper implements ActionListener {
 	private UpgradeModuleInstallHelper openLastDataFile() {
 		openSession(config.currentSessionFile);
 		return this;
+	}
+
+	@Override public Window getWindow() {
+		return mainwindow;
+	}
+
+	@Override public boolean isClosingAllowed() {
+		// TODO: check 'ClosingAllowed' -> unsaved changes, ...
+		return true;
 	}
 
 	enum ActionCommand {

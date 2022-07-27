@@ -57,13 +57,13 @@ import javax.swing.table.TableModel;
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.FileChooser;
 import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextAreaDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
-public class RecipeAnalyser implements ActionListener {
+public class RecipeAnalyser implements ActionListener, ToolWindow {
 
 	static final Color COLOR_INGREDIENT_MARKER = new Color(0,213,255);
 	static final Color COLOR_INGREDIENT_PRODUCIBLE = new Color(0,255,102);
@@ -97,9 +97,8 @@ public class RecipeAnalyser implements ActionListener {
 		start(true);
 	}
 
-	public static void start(boolean standalone) {
-		new RecipeAnalyser(standalone)
-			.initialize();
+	public static ToolWindow start(boolean standalone) {
+		return new RecipeAnalyser(standalone).initialize();
 	}
 
 	final StandardMainWindow      mainwindow;
@@ -125,7 +124,7 @@ public class RecipeAnalyser implements ActionListener {
 		dataFile = null;
 		dataModel = null;
 		
-		mainwindow = new StandardMainWindow("Recipe Analyser",standalone?DefaultCloseOperation.EXIT_ON_CLOSE:DefaultCloseOperation.HIDE_ON_CLOSE);
+		mainwindow = new StandardMainWindow("Recipe Analyser", e->checkClosing(standalone));
 		
 		disabler = new Disabler<ActionCommand>();
 		disabler.setCareFor(ActionCommand.values());
@@ -266,6 +265,27 @@ public class RecipeAnalyser implements ActionListener {
 		
 		updateGuiAccess();
 		updateWindowTitle();
+	}
+	
+	@Override public Window getWindow() {
+		return mainwindow;
+	}
+
+	private void checkClosing(boolean standalone) {
+		if (isClosingAllowed()) {
+			mainwindow.dispose();
+			if (standalone)
+				System.exit(0);
+		}
+	}
+
+	@Override public boolean isClosingAllowed() {
+		if (dataModel!=null && (dataFile==null || dataModel.hasUnsavedChanges)) {
+			String[] msg = new String[] { "You have unsaved changes.","Do you really want to close this window?" };
+			String title = "Are you sure?";
+			return JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(mainwindow, msg, title, JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+		}
+		return true;
 	}
 
 	private String readIngredientsInStockFromAppSettings(DataModel.Type type) {
@@ -536,7 +556,7 @@ public class RecipeAnalyser implements ActionListener {
 			dataModel.setInStockIngredients( readIngredientsInStockFromAppSettings(dataModel.type) );
 		} else {
 			if (dataModel.type != type)
-				throw new IllegalStateException(String.format("Can't set type of RecipeListConfig to \"%s\". It is currently set to \"%s\".", type, dataModel.type));
+				throw new IllegalStateException(String.format("Can't change type of DataModel to \"%s\". It is currently set to \"%s\".", type, dataModel.type));
 		}
 		updateGuiAccess();
 		updateWindowTitle();

@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -58,9 +59,10 @@ import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ToolbarIcons;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 
-public class ProductionOptimiser implements ActionListener {
+public class ProductionOptimiser implements ActionListener, ToolWindow {
 	
 	private static final Color COLOR_INFINITE_PRODUCT = Color.RED;
 	private static final Color COLOR_INFINITE_INPUT = new Color(0xe0e0e0);
@@ -73,8 +75,8 @@ public class ProductionOptimiser implements ActionListener {
 		start(true);
 	}
 	
-	static void start(boolean standalone) {
-		new ProductionOptimiser()
+	static ToolWindow start(boolean standalone) {
+		return new ProductionOptimiser()
 			.readConfig()
 			.writeConfig()
 			.createGUI(standalone)
@@ -195,6 +197,15 @@ public class ProductionOptimiser implements ActionListener {
 			Gui.log_ln("Consumed Base Inputs: %s", selectedResult.consumedBaseInputs);
 			Gui.log_ln("Stored Products: %s", selectedResult.storedProducts);
 		}
+	}
+
+	@Override public Window getWindow() {
+		return mainwindow;
+	}
+
+	@Override public boolean isClosingAllowed() {
+		// TODO: check 'ClosingAllowed' -> unsaved changes, ...
+		return true;
 	}
 
 	private <ColumnID extends SimplifiedColumnIDInterface> int getSumofColWidths(ColumnID[] values) {
