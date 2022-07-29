@@ -1,8 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.recipeanalyser;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,10 +12,8 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -33,17 +29,10 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTable;
 import javax.swing.ListCellRenderer;
-import javax.swing.SwingUtilities;
-import javax.swing.table.DefaultTableCellRenderer;
 
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
-import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.Lang;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.ParseException;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.RawdataModel;
@@ -55,8 +44,8 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 	
 	private static class NutrientProcessorDataModel extends DataModel<Integer> {
 		
-		NutrientProcessorDataModel(boolean wasEdited, int[] tempWrongRecipes) {
-			super(Type.NutrientProcessor, wasEdited, tempWrongRecipes);
+		NutrientProcessorDataModel(RecipeAnalyser gui, boolean wasEdited, int[] tempWrongRecipes) {
+			super(gui, Type.NutrientProcessor, wasEdited, tempWrongRecipes);
 		}
 	
 		@Override protected Integer parseID(String str) {
@@ -194,8 +183,8 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 
 	private static class RefinerDataModel extends DataModel<String> {
 		
-		RefinerDataModel(boolean wasEdited, int[] tempWrongRecipes) {
-			super(Type.Refiner, wasEdited, tempWrongRecipes);
+		RefinerDataModel(RecipeAnalyser gui, boolean wasEdited, int[] tempWrongRecipes) {
+			super(gui, Type.Refiner, wasEdited, tempWrongRecipes);
 		}
 	
 		@Override protected String parseID(String str) {
@@ -308,11 +297,11 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		}
 	}
 
-	private RecipeAnalyser gui = null;
+	private final RecipeAnalyser gui;
 
-	IngredientsTableModel     ingredientsTableModel = null;
-	RecipesTableModel         recipesTableModel = null;
-	private RawdataModel              rawdataModel = null;
+	IngredientsTableModel<IDType> ingredientsTableModel = null;
+	RecipesTableModel<IDType>     recipesTableModel = null;
+	RawdataModel                  rawdataModel = null;
 	
 	Vector<String[]> rawIngredientsData = null;
 	Vector<String[]> rawRecipesData = null;
@@ -322,7 +311,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 	private HashSet<IDType> inStock = new HashSet<>();
 	private DataModel.StockListener stockListener = null;
 	
-	DataModel.Type type;
+	final DataModel.Type type;
 	boolean wasEdited;
 	boolean hasUnsavedChanges;
 
@@ -330,7 +319,8 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 	private int[] tempWrongRecipes;
 
 	
-	DataModel(DataModel.Type type, boolean wasEdited, int[] tempWrongRecipes) {
+	DataModel(RecipeAnalyser gui, DataModel.Type type, boolean wasEdited, int[] tempWrongRecipes) {
+		this.gui = gui;
 		this.type = type;
 		this.wasEdited = wasEdited;
 		this.hasUnsavedChanges = false;
@@ -338,30 +328,26 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		this.serviceFunctions = new ServiceFunctions();
 	}
 
-	public void updateAfterLanguageChange() {
-		recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Input1);
-		recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Input2);
-		recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Input3);
-		recipesTableModel.fireTableColumnUpdate(RecipesTableColumnID.Output);
+	void updateAfterLanguageChange() {
+		recipesTableModel.fireTableColumnUpdate(RecipesTableModel.ColumnID.Input1);
+		recipesTableModel.fireTableColumnUpdate(RecipesTableModel.ColumnID.Input2);
+		recipesTableModel.fireTableColumnUpdate(RecipesTableModel.ColumnID.Input3);
+		recipesTableModel.fireTableColumnUpdate(RecipesTableModel.ColumnID.Output);
 	}
 
-	public void setGui(RecipeAnalyser gui) {
-		this.gui = gui;
+	static DataModel<?> create(RecipeAnalyser gui, DataModel.Type type) {
+		return create(gui, type, false, null);
 	}
-
-	public static DataModel<?> create(DataModel.Type type) {
-		return create(type, false, null);
-	}
-	public static DataModel<?> create(DataModel.Type type, boolean wasEdited, int[] tempWrongRecipes) {
+	static DataModel<?> create(RecipeAnalyser gui, DataModel.Type type, boolean wasEdited, int[] tempWrongRecipes) {
 		if (type != null)
 			switch (type) {
-			case NutrientProcessor: return new NutrientProcessorDataModel(wasEdited, tempWrongRecipes);
-			case Refiner          : return new           RefinerDataModel(wasEdited, tempWrongRecipes);
+			case NutrientProcessor: return new NutrientProcessorDataModel(gui, wasEdited, tempWrongRecipes);
+			case Refiner          : return new           RefinerDataModel(gui, wasEdited, tempWrongRecipes);
 			}
-		return new NutrientProcessorDataModel(wasEdited, tempWrongRecipes); // no config
+		return new NutrientProcessorDataModel(gui, wasEdited, tempWrongRecipes); // no config
 	}
 
-	public static DataModel<?> readDataCfgFromZIP(ZipFile zipin, String entryName) throws IOException {
+	static DataModel<?> readDataCfgFromZIP(RecipeAnalyser gui, ZipFile zipin, String entryName) throws IOException {
 		ZipEntry entry = zipin.getEntry(entryName);
 		
 		boolean wasEdited = false;
@@ -391,7 +377,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 			}
 		}
 		
-		return create(type, wasEdited, wrongRecipes);
+		return create(gui, type, wasEdited, wrongRecipes);
 	}
 	
 	private static String getValueStr(String line, String prefix) {
@@ -400,7 +386,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		return null;
 	}
 	
-	public void writeDataCfgToZIP(ZipOutputStream zipout, PrintWriter out, String entryName) throws IOException {
+	void writeDataCfgToZIP(ZipOutputStream zipout, PrintWriter out, String entryName) throws IOException {
 		zipout.putNextEntry(new ZipEntry(entryName));
 		
 		out.printf("type=%s%n",type);
@@ -419,7 +405,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		zipout.closeEntry();
 	}
 
-	public void toggleClickedRecipeIsWrong() {
+	void toggleClickedRecipeIsWrong() {
 		if (recipesTableModel==null) return;
 		if (recipesTableModel.clickedRecipe==null) return;
 		recipesTableModel.clickedRecipe.isWrong = !recipesTableModel.clickedRecipe.isWrong;
@@ -429,12 +415,12 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		gui.ingredientsTable.repaint();
 	}
 
-	public String getInStockIngredients() {
+	String getInStockIngredients() {
 		Iterable<String> iterable = () -> inStock.stream().sorted().map(id->id.toString()).iterator();
 		return String.join(",", iterable);
 	}
 
-	public void setInStockIngredients(String str) {
+	void setInStockIngredients(String str) {
 		inStock.clear();
 		if (str==null) return;
 		String[] parts = str.split(",");
@@ -446,14 +432,14 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 	
 	protected abstract IDType parseID(String str);
 
-	public void forEachRecipe(Consumer<Recipe> consumer) {
+	void forEachRecipe(Consumer<Recipe> consumer) {
 		for (Recipe recipe:recipes) {
 			if (!recipe.isWrong)
 				consumer.accept(recipe);
 		}
 	}
 
-	public boolean forEachRecipe(BiFunction<Boolean,Boolean,Boolean> merge, boolean initialResult, Predicate<Recipe> consumer) {
+	boolean forEachRecipe(BiFunction<Boolean,Boolean,Boolean> merge, boolean initialResult, Predicate<Recipe> consumer) {
 		boolean result = initialResult;
 		for (Recipe recipe:recipes) {
 			if (!recipe.isWrong)
@@ -462,29 +448,29 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		return result;
 	}
 	
-	public interface StockListener {
+	interface StockListener {
 		void stockHasChanged(String inStockIngredients);
 	}
 	
-	public void setStockListener(DataModel.StockListener stockListener) {
+	void setStockListener(DataModel.StockListener stockListener) {
 		this.stockListener = stockListener;
 	}
 	
-	private void setInStock(boolean isInStock, IDType id) {
+	void setInStock(boolean isInStock, IDType id) {
 		if (isInStock) inStock.add(id);
 		else inStock.remove(id);
 		stockListener.stockHasChanged(getInStockIngredients());
 	}
 
-	private boolean isInStock(IDType id) {
+	boolean isInStock(IDType id) {
 		return inStock.contains(id);
 	}
 
-	private boolean isProducible(IDType id) {
+	boolean isProducible(IDType id) {
 		return producible.contains(id);
 	}
 
-	private void updateProducibility() {
+	void updateProducibility() {
 		producible.clear();
 		producible.addAll(inStock);
 		gui.statusFields.setFieldInStock(producible.size());
@@ -548,7 +534,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		return ingredientsTableModel.findIngredientByName(name);
 	}
 
-	public void parseIngredientsTable(Vector<String[]> rawTabTable) {
+	void parseIngredientsTable(Vector<String[]> rawTabTable) {
 		rawIngredientsData = rawTabTable;
 		parseIngredientsTable();
 	}
@@ -561,8 +547,8 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		
 		try {
 			Vector<Ingredient> ingredients = parseIngredients();
-			ingredientsTableModel = new IngredientsTableModel(ingredients);
-			gui.ingredientsTable.setCellRendererForAllColumns(new IngredientsTableRenderer(), true);
+			ingredientsTableModel = new IngredientsTableModel<>(gui,this,ingredients);
+			gui.ingredientsTable.setCellRendererForAllColumns(ingredientsTableModel.createTableCellRenderer(), true);
 			JCheckBox rendererCheckBox = new JCheckBox();
 			rendererCheckBox.setHorizontalAlignment(JCheckBox.CENTER);
 			gui.ingredientsTable.setDefaultEditor(Boolean.class, new DefaultCellEditor(rendererCheckBox));
@@ -575,7 +561,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		}
 	}
 
-	public void parseRecipesTable(Vector<String[]> rawTabTable) {
+	void parseRecipesTable(Vector<String[]> rawTabTable) {
 		rawRecipesData = rawTabTable;
 		parseRecipesTable();
 	}
@@ -587,8 +573,8 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		
 		try {
 			recipes = parseRecipes();
-			recipesTableModel = new RecipesTableModel();
-			gui.recipesTable.setCellRendererForAllColumns(new RecipesTableRenderer(), true);
+			recipesTableModel = new RecipesTableModel<>(this);
+			gui.recipesTable.setCellRendererForAllColumns(recipesTableModel.createTableCellRenderer(), true);
 			gui.recipesTable.setModel(recipesTableModel);
 			checkInputOutput();
 			updateProducibility();
@@ -894,15 +880,15 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 			if (recipes==null) return;
 			
 			Vector<Consumer<PrintStream>> variants = new Vector<>(Arrays.asList(
-				out->{
-					RecipeChainFinder recipeChainFinder = new RecipeChainFinder(ingredient,getAllProducibleRecipes());
+				out -> {
+					RecipeChainFinder<IDType> recipeChainFinder = new RecipeChainFinder<>(DataModel.this,ingredient,getAllProducibleRecipes());
 					recipeChainFinder.search();
 					recipeChainFinder.printTree(out);
 				},
-				out->{
-					RecipeChainFinder2 recipeChainFinder = new RecipeChainFinder2(ingredient,getAllProducibleRecipes());
-					recipeChainFinder.search();
-					recipeChainFinder.printTree(out);
+				out -> {
+					new RecipeChainFinder2<>(DataModel.this,ingredient,getAllProducibleRecipes())
+						.search()
+						.printTree(out);
 				}
 			));
 			Gui.runWithProgressDialog(gui.mainwindow, "Find Recipe Chains", pd->{
@@ -1023,197 +1009,6 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 	
 	}
 
-	private class RecipeChainFinder2 {
-		
-		private DataModel<IDType>.Ingredient finalOutput;
-		private HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe;
-		private HashMap<IDType, HashSet<InputValueCombination>> neededRecipes;
-		private HashMap<IDType, Integer> ingredientOrder;
-
-		public RecipeChainFinder2(Ingredient finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe) {
-			this.finalOutput = finalOutput;
-			this.allProdRecipe = allProdRecipe;
-			this.neededRecipes = new HashMap<>();
-			this.ingredientOrder = new HashMap<>();
-		}
-		
-		public void search() {
-			neededRecipes.clear();
-			ingredientOrder.clear();
-			addAllRecipesFor(finalOutput);
-			setOrder(finalOutput,0);
-		}
-		
-		private void setOrder(Ingredient ingredient, int newOrderIndex) {
-			if (ingredient==null) return;
-			IDType id = ingredient.getID();
-			Integer oldOrderIndex = ingredientOrder.get(id);
-			if (oldOrderIndex==null || oldOrderIndex>newOrderIndex) {
-				ingredientOrder.put(id,newOrderIndex);
-				HashSet<InputValueCombination> recipes = neededRecipes.get(id);
-				if (recipes!=null)
-					for (InputValueCombination r:recipes)
-						r.forEach(ingID->setOrder(getIngredient(ingID),newOrderIndex+1));
-			}
-		}
-
-		private void addAllRecipesFor(Ingredient ingredient) {
-			if (ingredient==null) return;
-			IDType id = ingredient.getID();
-			if (neededRecipes.containsKey(id)) return;
-			if (isInStock(id)) return;
-			
-			HashSet<InputValueCombination> recipes = allProdRecipe.get(id);
-			if (recipes!=null) {
-				neededRecipes.put(id, recipes);
-				for (InputValueCombination r:recipes)
-					r.forEach(ingID->addAllRecipesFor(getIngredient(ingID)));
-			}
-		}
-
-		public void printTree(PrintStream out) {
-			out.printf("Possible Recipe Chains for \"%s\"%n", getIngredientName(finalOutput.getID()));
-			
-			Vector<IDType> sortedIDs = new Vector<>(neededRecipes.keySet());
-			sortedIDs.sort(Comparator.<IDType,Integer>comparing(ingredientOrder::get,Comparator.nullsLast(Comparator.naturalOrder())));
-			
-			String indent;
-			HashSet<InputValueCombination> recipes;
-			for (IDType id:sortedIDs) {
-				
-				Integer orderIndex = ingredientOrder.get(id);
-				recipes = neededRecipes.get(id);
-				
-				out.printf("    [%s] %s", orderIndex, getIngredientName(id));
-				if (recipes.size()==1) { indent = " "; }
-				else { out.println(); indent = "          "; }
-				
-				Vector<InputValueCombination> sortedRecipes = new Vector<>(recipes);
-				sortedRecipes.sort(null);
-				for (InputValueCombination r:sortedRecipes)
-					out.printf("%s<-- %s%n", indent, r.toString());
-			}
-			out.printf("<end>%n");
-		}
-	}
-
-	private class RecipeChainFinder {
-		
-		private Ingredient finalOutput;
-		private HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe;
-		private RecipeOutput baseRecipeOutput;
-	
-		public RecipeChainFinder(Ingredient finalOutput, HashMap<IDType, HashSet<InputValueCombination>> allProdRecipe) {
-			this.finalOutput = finalOutput;
-			this.allProdRecipe = allProdRecipe;
-		}
-
-		public void search() {
-			baseRecipeOutput = new RecipeOutput(null,this.finalOutput);
-		}
-		
-		public void printTree(PrintStream out) {
-			out.printf("Possible Recipe Chains for \"%s\"%n", getIngredientName(finalOutput.getID()));
-			baseRecipeOutput.printTree(out,"      ","      ");
-			out.printf("<end>%n");
-		}
-	
-		private class RecipeOutput {
-	
-			private final AllowedRecipe parentRecipe;
-			private final Ingredient output;
-			private final IDType outputID;
-			private final Vector<AllowedRecipe> allowedRecipes;
-			private final boolean isBaseInput;
-	
-			public RecipeOutput(AllowedRecipe parentRecipe, Ingredient output) {
-				this.parentRecipe = parentRecipe;
-				this.output = output;
-				this.outputID = output.getID();
-				this.allowedRecipes = new Vector<>();
-				HashSet<InputValueCombination> allowed = allProdRecipe.get( outputID );
-				this.isBaseInput = isInStock(outputID);
-				if (!isBaseInput && !allowed.isEmpty()) {
-					for (InputValueCombination recipe:allowed) {
-						if (!recipeContainsParent(recipe)) {
-							AllowedRecipe allowedRecipe = new AllowedRecipe(this,recipe);
-							if (allowedRecipe.isExecutable)
-								allowedRecipes.add(allowedRecipe);
-						}
-					}
-				}
-			}
-	
-			public RecipeOutput(AllowedRecipe parentRecipe, IDType unknownID) {
-				this.parentRecipe = parentRecipe;
-				this.output = null;
-				this.outputID = unknownID;
-				this.allowedRecipes = null;
-				this.isBaseInput = false;
-			}
-
-			public void printTree(PrintStream out, String firstIndent, String nextIndent) {
-				if (output == null) {
-					out.printf("%s%s%s is unknown", firstIndent, getIngredientName(outputID));
-					return;
-				}
-				out.printf("%s%s%s", firstIndent, getIngredientName(outputID), isBaseInput?"  [BaseInput]":"");
-				if (allowedRecipes.size() == 1) {
-					allowedRecipes.get(0).printTree(out, " ", nextIndent);
-				} else {
-					out.println();
-					for (AllowedRecipe recipe:allowedRecipes )
-						recipe.printTree(out, nextIndent+"      ", nextIndent+"      ");
-				}
-			}
-	
-			private boolean recipeContainsParent(InputValueCombination recipe) {
-				if (recipe.contains(output.getID())) return true;
-				if (parentRecipe==null) return false;
-				return parentRecipe.parentRecipeOutput.recipeContainsParent(recipe);
-			}
-			
-		}
-		
-		private class AllowedRecipe {
-	
-			private final RecipeOutput parentRecipeOutput;
-			private final InputValueCombination recipe;
-			private final Vector<RecipeOutput> inputs;
-			private boolean isExecutable;
-	
-			public AllowedRecipe(RecipeOutput parentRecipeOutput, InputValueCombination recipe) {
-				this.parentRecipeOutput = parentRecipeOutput;
-				this.recipe = recipe;
-				this.isExecutable = true;
-				this.inputs = new Vector<>();// new RecipeOutput[this.recipe.values.size()];
-				this.recipe.forEach(val->{
-					RecipeOutput recipeOutput;
-					Ingredient input = getIngredient(val);
-					if (input==null) {
-						inputs.add(new RecipeOutput(this,val));
-					} else {
-						inputs.add(recipeOutput = new RecipeOutput(this,input));
-						if (recipeOutput.allowedRecipes.isEmpty() && !recipeOutput.isBaseInput)
-							isExecutable = false;
-					}
-				});
-			}
-	
-			public void printTree(PrintStream out, String firstIndent, String nextIndent) {
-				if (inputs.size() == 1) {
-					out.printf("%s<--", firstIndent);
-					inputs.firstElement().printTree(out, " ", nextIndent);
-				} else {
-					out.printf("%s<-- %s%n", firstIndent, recipe.toString());
-					for (RecipeOutput input:inputs)
-						input.printTree(out, nextIndent+"      ", nextIndent+"      ");
-				}
-			}
-		}
-	
-	}
-	
 	abstract class Ingredient {
 		protected boolean isInputValue  = false;
 		protected boolean isOutputValue = false;
@@ -1313,7 +1108,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 	
 		public boolean isWrong;
 		private int index;
-		private RecipeIngredient outputValue;
+		RecipeIngredient outputValue;
 		private Vector<RecipeIngredient> inputValues1;
 		private Vector<RecipeIngredient> inputValues2;
 		private Vector<RecipeIngredient> inputValues3;
@@ -1488,432 +1283,6 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		}
 	}
 
-	enum RecipesTableColumnID implements SimplifiedColumnIDInterface {
-		Index    ("#"       , Integer.class, 20,-1, 30, 50),
-		OutputAm ("O"       , Integer.class, 20,-1, 30, 50),
-		Output   ("Output"  ,  String.class, 20,-1,150,150),
-		Input1Am ("I1"      , Integer.class, 20,-1, 30, 50),
-		Input1   ("Input 1" ,  String.class, 20,-1,150,150),
-		Input2Am ("I2"      , Integer.class, 20,-1, 30, 50),
-		Input2   ("Input 2" ,  String.class, 20,-1,150,150),
-		Input3Am ("I3"      , Integer.class, 20,-1, 30, 50),
-		Input3   ("Input 3" ,  String.class, 20,-1,150,150),
-		;
-		
-		private SimplifiedColumnConfig columnConfig;
-		
-		RecipesTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
-		}
-		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
-	}
-
-	class RecipesTableModel extends SimplifiedTableModel<DataModel.RecipesTableColumnID> {
-	
-		private Vector<RecipeRow> recipesRows;
-		public RecipeRow clickedRecipeRow = null;
-		public Recipe clickedRecipe = null;
-	
-		protected RecipesTableModel() {
-			super(RecipesTableColumnID.values());
-			this.recipesRows = new Vector<>();
-			for (int r=0; r<recipes.size(); r++) {
-				Recipe recipe = recipes.get(r);
-				int maxInputs = recipe.getMaxNumberOfInputs();
-				for (int i=0; i<maxInputs; i++)
-					recipesRows.add(new RecipeRow(r,i,recipe));
-			}
-		}
-	
-		public void setClickedRecipe(int rowIndex) {
-			
-			if (rowIndex<0 || rowIndex>=recipesRows.size()) clickedRecipeRow = null;
-			else clickedRecipeRow = recipesRows.get(rowIndex);
-			
-			if (clickedRecipeRow == null) clickedRecipe = null;
-			else clickedRecipe = clickedRecipeRow.recipe;
-		}
-
-		private class RecipeRow {
-			private int index;
-			private int row;
-			private Recipe recipe;
-			public RecipeRow(int index, int row, Recipe recipe) {
-				this.index = index;
-				this.row = row;
-				this.recipe = recipe;
-			}
-		}
-	
-		@Override public DataModel.RecipesTableColumnID getColumnID(int columnIndex) {
-			return super.getColumnID(columnIndex);
-		}
-	
-		@Override public int getRowCount() { return recipesRows.size(); }
-	
-		@Override
-		public Object getValueAt(int rowIndex, int columnIndex, DataModel.RecipesTableColumnID columnID) {
-			RecipeRow recipeRow = recipesRows.get(rowIndex);
-			switch (columnID) {
-			case Index   : if (recipeRow.row==0) return recipeRow.index; break;
-			case Output  : if (recipeRow.row==0) return getIngredientName(recipeRow.recipe.outputValue); break;
-			case OutputAm: if (recipeRow.row==0) return getAmount(recipeRow.recipe.outputValue); break;
-			case Input1  : return getIngredientName(recipeRow.recipe.getInputValue(0, recipeRow.row));
-			case Input2  : return getIngredientName(recipeRow.recipe.getInputValue(1, recipeRow.row));
-			case Input3  : return getIngredientName(recipeRow.recipe.getInputValue(2, recipeRow.row));
-			case Input1Am: return getAmount(recipeRow.recipe.getInputValue(0, recipeRow.row));
-			case Input2Am: return getAmount(recipeRow.recipe.getInputValue(1, recipeRow.row));
-			case Input3Am: return getAmount(recipeRow.recipe.getInputValue(2, recipeRow.row));
-			}
-			return null;
-		}
-
-		private Integer getAmount(RecipeIngredient ingredient) {
-			if (ingredient==null) return null;
-			return ingredient.amount;
-		}
-
-		@Override public void fireTableColumnUpdate(DataModel.RecipesTableColumnID columnID) {
-			super.fireTableColumnUpdate(columnID);
-		}
-	
-	}
-
-	enum IngredientsTableColumnID implements SimplifiedColumnIDInterface {
-		Index      ("#"          ,  String.class, 20,-1, 40, 40),
-		Type       ("Type"       ,  String.class, 20,-1,100,100),
-		InStock    ("In Stock"   , Boolean.class, 20,-1, 60, 60),
-		Producible ("Producible" ,  String.class, 20,-1, 60, 60),
-		GenID      ("ID"         ,  String.class, 20,-1,120,120),
-		NameDE     ("Name (DE)"  ,  String.class, 20,-1,150,150),
-		NameEN     ("Name (EN)"  ,  String.class, 20,-1,150,150),
-		Price      ("Price"      ,  String.class, 20,-1,150,150),
-		Description("Description",  String.class, 20,-1,450,450),
-		;
-		
-		private SimplifiedColumnConfig columnConfig;
-		
-		IngredientsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
-			columnConfig = new SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
-		}
-		@Override public SimplifiedColumnConfig getColumnConfig() { return columnConfig; }
-	}
-
-	class IngredientsTableModel extends SimplifiedTableModel<DataModel.IngredientsTableColumnID> {
-	
-		private Vector<Ingredient> ingredients;
-		private HashMap<IDType,Ingredient> ingredientsMap;
-		
-		Ingredient clickedIngredient = null;
-		HashSet<IDType> highlighted = new HashSet<>();
-		boolean highlightProducible = false;
-	
-		protected IngredientsTableModel(Vector<Ingredient> ingredients) {
-			super(IngredientsTableColumnID.values());
-			this.ingredients = ingredients;
-			this.ingredientsMap = new HashMap<>();
-			for (Ingredient ingredient:this.ingredients)
-				if (ingredient!=null)
-					ingredientsMap.put(ingredient.getID(), ingredient);
-		}
-	
-		public void setClickedIngredient(int rowM) {
-			Ingredient ingredient = getIngredientAtRow(rowM);
-			clickedIngredient = ingredient==null || ingredient.getName()==null ? null : ingredient;
-		}
-
-		public void forEach(Consumer<Ingredient> consumer) {
-			for (Ingredient ingredient:ingredients)
-				if (ingredient!=null && ingredient.getName()!=null)
-					consumer.accept(ingredient);
-		}
-
-		public void forEachSelected(Consumer<Ingredient> consumer) {
-			int[] selectedRows = gui.ingredientsTable.getSelectedRows();
-			for (int i=0; i<selectedRows.length; i++) {
-				Ingredient ingredient = ingredients.get(selectedRows[i]);
-				if (ingredient!=null && ingredient.getName()!=null)
-					consumer.accept(ingredient);
-			}
-		}
-
-		public void forEachProducible(Consumer<Ingredient> consumer) {
-			forEach(ingredient->{
-				if (isProducible(ingredient.getID()))
-					consumer.accept(ingredient);
-			});
-		}
-	
-		public Vector<IDType> getSelected() {
-			Vector<IDType> selected = new Vector<>();
-			forEachSelected(ingredient->selected.add(ingredient.getID()));
-			return selected;
-		}
-	
-		@Override public DataModel.IngredientsTableColumnID getColumnID(int columnIndex) {
-			return super.getColumnID(columnIndex);
-		}
-	
-		@Override public int getRowCount() {
-			return ingredients.size();
-		}
-	
-		public int findIngredientRowIndexByName(String name) {
-			for (int i=0; i<ingredients.size(); i++) {
-				Ingredient ingredient = ingredients.get(i);
-				if (ingredient!=null && ingredient.nameEquals(name, true))
-					return i;
-			}
-			return -1;
-		}
-		
-		public Ingredient findIngredientByName(String name) {
-			for (int i=0; i<ingredients.size(); i++) {
-				Ingredient ingredient = ingredients.get(i);
-				if (ingredient!=null && ingredient.nameEquals(name, true))
-					return ingredient;
-			}
-			return null;
-		}
-
-		public Ingredient getIngredient(IDType id) {
-			return ingredientsMap.get(id);
-		}
-	
-		public String getIngredientName(IDType id) {
-			Ingredient ingredient = getIngredient(id);
-			
-			if (ingredient!=null) {
-				String str = ingredient.getName();
-				if (str!=null) return str;
-			}
-			
-			return String.format("<%s>", id);
-		}
-	
-		public Ingredient getIngredientAtRow(int rowIndex) {
-			if (0<=rowIndex && rowIndex<ingredients.size())
-				return ingredients.get(rowIndex);
-			return null;
-		}
-	
-		@Override public Object getValueAt(int rowIndex, int columnIndex, DataModel.IngredientsTableColumnID columnID) {
-			Ingredient ingredient = getIngredientAtRow(rowIndex);
-			boolean isInput = ingredient!=null && ingredient.getName()!=null;
-			switch (columnID) {
-			case Index      : return !isInput ? null : ingredient.getID();
-			case InStock    : return !isInput ? null : isInStock(ingredient.getID()); // ? "In Stock" : "---";
-			case Producible : return !isInput ? null : isInStock(ingredient.getID()) ? "in stock" : isProducible(ingredient.getID()) ? "producible" : "----";
-			case Type       : return ingredient==null ? null : ingredient.getType();
-			case NameDE     : return ingredient==null ? null : ingredient.getName(Lang.De);
-			case NameEN     : return ingredient==null ? null : ingredient.getName(Lang.En);
-			case Description: return ingredient==null ? null : ingredient.getDesc();
-			case Price      : return ingredient==null || ingredient.getPrice()==null ? null : String.format(Locale.ENGLISH, "%,1.1f", ingredient.getPrice());
-			case GenID      : {
-				if (ingredient==null) return null; 
-				GeneralizedID id = ingredient.getGeneralizedID();
-				if (id==null) return null;
-				return id.id;
-			}
-			}
-			return null;
-		}
-	
-		@Override protected void setValueAt(Object aValue, int rowIndex, int columnIndex, DataModel.IngredientsTableColumnID columnID) {
-			Ingredient ingredient = getIngredientAtRow(rowIndex);
-			if (ingredient==null) return;
-			if (ingredient.getName()==null) return;
-			
-			Boolean isInStock = null;
-			int rawRowIndex = ingredient.getRawRowIndex();
-			switch (columnID) {
-			case InStock:
-				if (aValue instanceof Boolean) isInStock = (Boolean) aValue;
-				if (aValue instanceof String ) isInStock = "In Stock".equals((String) aValue);
-				if (isInStock!=null) {
-					IDType id = ingredient.getID();
-					setInStock(isInStock, id);
-					updateProducibility();
-					fireTableUpdate(); 
-				}
-				break;
-			case NameDE     : setValue(aValue, rowIndex, columnIndex, rawRowIndex, ingredient.getNameRawColumnIndex(Lang.De), str->ingredient.setName(str, Lang.De)); break;
-			case NameEN     : setValue(aValue, rowIndex, columnIndex, rawRowIndex, ingredient.getNameRawColumnIndex(Lang.En), str->ingredient.setName(str, Lang.En)); break;
-			case Description: setValue(aValue, rowIndex, columnIndex, rawRowIndex, ingredient.getDescRawColumnIndex(       ), str->ingredient.setDesc(str         )); break;
-			default: break;
-			}
-		}
-
-		private void setValue(Object aValue, int rowIndex, int columnIndex, int rawRowIndex, int rawColumnIndex, Consumer<String> setValue) {
-			if (aValue instanceof String) {
-				String str = (String) aValue;
-				
-				boolean success = rawdataModel.setCell(str, rawRowIndex, rawColumnIndex);
-				if (success) {
-					setValue.accept(str);
-					wasEdited = true;
-					hasUnsavedChanges = true; 
-					gui.updateGuiAccess();
-					gui.updateWindowTitle();
-				}
-				
-				SwingUtilities.invokeLater(()->{
-					fireTableCellUpdate(rowIndex, columnIndex);
-				});
-			}
-		}
-
-		@Override protected boolean isCellEditable(int rowIndex, int columnIndex, DataModel.IngredientsTableColumnID columnID) {
-			Ingredient ingredient = getIngredientAtRow(rowIndex);
-			if (ingredient == null) return false;
-			if (ingredient.getName() == null) return false;
-			switch (columnID) {
-			case InStock: return true;
-			case NameDE     : return ingredient.isNameEditable(Lang.De);
-			case NameEN     : return ingredient.isNameEditable(Lang.En);
-			case Description: return ingredient.isDescEditable();
-			default: return false;
-			}
-		}
-	}
-
-	private class RecipesTableRenderer extends DefaultTableCellRenderer {
-		private static final long serialVersionUID = -8561629608671929683L;
-	
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-			if (recipesTableModel!=null && row<recipesTableModel.recipesRows.size()) {
-				
-				DataModel.RecipesTableColumnID columnID = recipesTableModel.getColumnID(column);
-				RecipesTableModel.RecipeRow recipeRow = recipesTableModel.recipesRows.get(row);
-				
-				switch (columnID) {
-				case Index:
-					setHorizontalAlignment(CENTER); break;
-				case Output:
-				case Input1:
-				case Input2:
-				case Input3:
-					setHorizontalAlignment(LEFT); break;
-				case OutputAm:
-				case Input1Am:
-				case Input2Am:
-				case Input3Am:
-					setHorizontalAlignment(RIGHT); break;
-				}
-				
-				boolean isProducible = recipeRow.recipe.isProducible();
-				
-				Color bgColor, fgColor = table.getForeground();
-				
-				if (recipeRow.recipe.isWrong) {
-					bgColor = RecipeAnalyser.BGCOLOR_RECIPE_IS_WRONG;
-					fgColor = RecipeAnalyser.TXTCOLOR_RECIPE_IS_WRONG;
-					
-				} else {
-					if ((recipeRow.index&1)==0) bgColor = isProducible ? RecipeAnalyser.BGCOLOR_RECIPE_EVEN_PRODUCIBLE : RecipeAnalyser.BGCOLOR_RECIPE_EVEN;
-					else                        bgColor = isProducible ? RecipeAnalyser.BGCOLOR_RECIPE_ODD_PRODUCIBLE : RecipeAnalyser.BGCOLOR_RECIPE_ODD;
-					
-					switch (columnID) {
-					case Input1Am:
-					case Input1:
-						if (isProducible(recipeRow,0)) bgColor = darker(bgColor,0.1);
-						break;
-						
-					case Input2Am:
-					case Input2:
-						if (isProducible(recipeRow,1)) bgColor = darker(bgColor,0.1);
-						break;
-						
-					case Input3Am:
-					case Input3:
-						if (isProducible(recipeRow,2)) bgColor = darker(bgColor,0.1);
-						break;
-						
-					default: break;
-					}
-				}
-				
-				if (!isSelected) {
-					setBackground(bgColor);
-					setForeground(fgColor);
-				}
-			}
-			return component;
-		}
-
-		private Color darker(Color color, double d) {
-			return new Color(
-					(int)Math.floor(color.getRed  ()*(1-d)),
-					(int)Math.floor(color.getGreen()*(1-d)),
-					(int)Math.floor(color.getBlue ()*(1-d))
-			);
-		}
-
-		private boolean isProducible(RecipesTableModel.RecipeRow recipeRow, int i) {
-			RecipeIngredient recipeIngredient = recipeRow.recipe.getInputValue(i, recipeRow.row);
-			if (recipeIngredient==null) return false;
-			return DataModel.this.isProducible(recipeIngredient.id) || DataModel.this.isInStock(recipeIngredient.id);
-		}
-		
-		
-	}
-
-	private class IngredientsTableRenderer extends DefaultTableCellRenderer {
-		private static final long serialVersionUID = -5822408016974497527L;
-		
-		CheckBoxRendererComponent checkBox;
-		IngredientsTableRenderer() {
-			checkBox = new CheckBoxRendererComponent();
-		}
-		
-		@Override
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-			Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-			
-			if (ingredientsTableModel!=null) {
-				if (Boolean.class.isAssignableFrom(ingredientsTableModel.getColumnID(column).columnConfig.columnClass)) {
-					component = checkBox;
-					checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-					checkBox.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
-					checkBox.setSelected(value instanceof Boolean ? (Boolean) value : false);
-					checkBox.setHorizontalAlignment(CENTER);
-				}
-				
-				switch (ingredientsTableModel.getColumnID(column)) {
-				case Index:
-				case Type:
-				case InStock:
-				case Producible:
-					setHorizontalAlignment(CENTER); break;
-				case GenID:
-				case NameDE:
-				case NameEN:
-				case Description:
-					setHorizontalAlignment(LEFT); break;
-				case Price:
-					setHorizontalAlignment(RIGHT); break;
-				}
-				
-				Ingredient ingredient = ingredientsTableModel.getIngredientAtRow(row);
-				if (!isSelected) {
-					Color background = table.getBackground();
-					if (ingredient != null && ingredient.getName() != null) {
-						if (ingredientsTableModel.highlighted.contains(ingredient.getID())) background = RecipeAnalyser.COLOR_INGREDIENT_MARKER;
-						else if (ingredientsTableModel.highlightProducible && isProducible(ingredient.getID())) background = RecipeAnalyser.COLOR_INGREDIENT_PRODUCIBLE;
-						else if (ingredient.isOutputValue) background = RecipeAnalyser.COLOR_INGREDIENT_OUTPUT;
-						else if (ingredient.isInputValue ) background = RecipeAnalyser.COLOR_INGREDIENT_INPUT;
-					}
-					component.setBackground(background);
-				}
-			}
-			
-			return component;
-		}
-	
-	}
-	
 	private class RecipeDialog extends StandardDialog {
 		private static final long serialVersionUID = 5554539104807205300L;
 		
