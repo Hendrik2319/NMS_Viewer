@@ -16,6 +16,7 @@ public class NMS_Starter {
 			case "productionoptimiser"       : ProductionOptimiser       .main(new String[]{}); return;
 			case "recipeanalyser"            : RecipeAnalyser            .main(new String[]{}); return;
 			case "resourcehotspots"          : ResourceHotSpots          .main(new String[]{}); return;
+			case "coordinates"               : Gui.CoordinatesDialog.showStandAlone(); return;
 			}
 		else {
 			Gui.log_ln("No Mans Sky - Tools");
@@ -29,6 +30,7 @@ public class NMS_Starter {
 			Gui.log_ln("      ProductionOptimiser          starts Production Optimiser");
 			Gui.log_ln("      RecipeAnalyser               starts Recipe Analyser");
 			Gui.log_ln("      ResourceHotSpots             starts Resource HotSpots tool");
+			Gui.log_ln("      Coordinates                  starts Coordinates Dialog");
 			Gui.log_ln("");
 			Gui.log_ln("or without parameter starts SaveViewer");
 			SaveViewer.writeSaveViewerFunctionsInUsage();

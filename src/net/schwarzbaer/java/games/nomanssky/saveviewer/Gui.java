@@ -62,13 +62,14 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 
 import net.schwarzbaer.gui.Disabler;
 import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.IconSource.CachedIcons;
+import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.gui.StandardDialog;
 import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
@@ -447,6 +448,14 @@ public class Gui {
 			abstract void setAddress(UniverseAddress ua);
 		}
 		
+		public static void showStandAlone() {
+			try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
+			catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
+			
+			new CoordinatesDialog(null, null, false, "Compute Coordinates").showDialog();
+			System.exit(0);
+		}
+		
 //		public CoordinatesDialog(Window parent) {
 //			this(parent,null,false,"Compute Coordinates");
 //		}
@@ -460,30 +469,40 @@ public class Gui {
 //		}
 		
 		public CoordinatesDialog(Window parent, Universe universe, boolean usedAsInputDialog, String title) {
-			super(parent,title,ModalityType.APPLICATION_MODAL);
+			super( parent, title, ModalityType.APPLICATION_MODAL );
 			this.usedAsInputDialog = usedAsInputDialog;
 			this.shownUA = null;
 			this.resultUA = null;
 			this.universe = universe;
 			
+			InputAsPortalGlyphCode glyphCodeInput;
 			inputPanels = new AbstractInputPanel[4];
 			GridBagLayout layout = new GridBagLayout();
 			JPanel inputPanels = new JPanel(layout);
 			addInputPanel(inputPanels, layout, this.inputPanels[0] = new InputAsCoords(this));
 			addInputPanel(inputPanels, layout, this.inputPanels[1] = new InputAsSigBoostCode(this));
-			addInputPanel(inputPanels, layout, this.inputPanels[2] = new InputAsPortalGlyphCode(this));
+			addInputPanel(inputPanels, layout, this.inputPanels[2] = glyphCodeInput = new InputAsPortalGlyphCode(this));
 			addInputPanel(inputPanels, layout, this.inputPanels[3] = new InputAsAddress(this));
 			
-			JPanel glyphPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,3,3));
+			JPanel glyphPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,1,1));
 			//glyphPanel.setBorder(BorderFactory.createEtchedBorder());
 			glyphPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Known Portal Glyphs"));
 			Dimension glyphImageSize = new Dimension(50,50);
 			for (int i=0; i<16; ++i) {
 				BufferedImage image = UniversePanel.PortalGlyphsIS.getCachedImage(i);
 				ImageIcon icon = image==null ? null : new ImageIcon( image );
-				JLabel label = new JLabel(icon);
-				label.setPreferredSize(glyphImageSize);
-				glyphPanel.add(label);
+				String hex = String.format("%X", i);
+				JButton button = createButton(null, e->{
+					String str = glyphCodeInput.portalGlyphCode.getText();
+					str += hex;
+					glyphCodeInput.portalGlyphCode.setText(str);
+				});
+				button.setIcon(icon);
+				button.setMargin(new Insets(2,2,2,2));
+				glyphPanel.add(button);
+				//JLabel label = new JLabel(icon);
+				//label.setPreferredSize(glyphImageSize);
+				//glyphPanel.add(label);
 			}
 			
 			JPanel glyphOutputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,3,3));
