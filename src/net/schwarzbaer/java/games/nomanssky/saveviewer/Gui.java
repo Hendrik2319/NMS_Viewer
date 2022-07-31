@@ -413,7 +413,7 @@ public class Gui {
 	public static class CoordinatesDialog extends StandardDialog {
 		private static final long serialVersionUID = -2899608237998750242L;
 		
-		private JLabel[] glyphLabels;
+		private JLabel[] glyphOutputLabels;
 		private JTextArea outputField;
 		
 		private boolean usedAsInputDialog;
@@ -474,14 +474,25 @@ public class Gui {
 			addInputPanel(inputPanels, layout, this.inputPanels[2] = new InputAsPortalGlyphCode(this));
 			addInputPanel(inputPanels, layout, this.inputPanels[3] = new InputAsAddress(this));
 			
-			JPanel portalGlyphPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,3,3));
-			portalGlyphPanel.setBorder(BorderFactory.createEtchedBorder());
-			glyphLabels = new JLabel[12];
-			Dimension preferredSize = new Dimension(50,50);
-			for (int i=0; i<glyphLabels.length; ++i) {
-				glyphLabels[i] = new JLabel();
-				glyphLabels[i].setPreferredSize(preferredSize);
-				portalGlyphPanel.add(glyphLabels[i]);
+			JPanel glyphPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,3,3));
+			//glyphPanel.setBorder(BorderFactory.createEtchedBorder());
+			glyphPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Known Portal Glyphs"));
+			Dimension glyphImageSize = new Dimension(50,50);
+			for (int i=0; i<16; ++i) {
+				BufferedImage image = UniversePanel.PortalGlyphsIS.getCachedImage(i);
+				ImageIcon icon = image==null ? null : new ImageIcon( image );
+				JLabel label = new JLabel(icon);
+				label.setPreferredSize(glyphImageSize);
+				glyphPanel.add(label);
+			}
+			
+			JPanel glyphOutputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,3,3));
+			glyphOutputPanel.setBorder(BorderFactory.createEtchedBorder());
+			glyphOutputLabels = new JLabel[12];
+			for (int i=0; i<glyphOutputLabels.length; ++i) {
+				glyphOutputLabels[i] = new JLabel();
+				glyphOutputLabels[i].setPreferredSize(glyphImageSize);
+				glyphOutputPanel.add(glyphOutputLabels[i]);
 			}
 			
 			outputField = new JTextArea();
@@ -499,18 +510,17 @@ public class Gui {
 			contentPane.setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 			contentPane.add(inputPanels,BorderLayout.WEST);
 			contentPane.add(outputScrollPane,BorderLayout.CENTER);
-			contentPane.add(portalGlyphPanel,BorderLayout.SOUTH);
-
-			JPanel dialogPanel = new JPanel(new BorderLayout(3,3));
-			dialogPanel.add(contentPane,BorderLayout.CENTER);
-			if (this.usedAsInputDialog) {
-				JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT,3,3));
-				buttonPanel.add(Gui.createButton("Ok", e->{resultUA = shownUA; closeDialog();}));
-				buttonPanel.add(Gui.createButton("Cancel", e->closeDialog()));
-				dialogPanel.add(buttonPanel,BorderLayout.SOUTH);
-			}
+			contentPane.add(glyphOutputPanel,BorderLayout.SOUTH);
+			contentPane.add(glyphPanel,BorderLayout.NORTH);
 			
-			super.createGUI( dialogPanel );
+			if (this.usedAsInputDialog) {
+				super.createGUI( contentPane,
+					Gui.createButton("Ok", e->{resultUA = shownUA; closeDialog();}),
+					Gui.createButton("Cancel", e->closeDialog())
+				);
+			} else
+				super.createGUI( contentPane );
+			
 			super.setSizeAsMinSize();
 //			super.setResizable(false);
 		}
@@ -553,7 +563,7 @@ public class Gui {
 				portalGlyphCode = portalGlyphCode>>4;
 				BufferedImage image = UniversePanel.PortalGlyphsIS.getCachedImage(nr);
 				ImageIcon icon = image==null?null:new ImageIcon( image );
-				glyphLabels[i].setIcon(icon);
+				glyphOutputLabels[i].setIcon(icon);
 			}
 			
 			outputField.setText(ua.getCoordinates());
