@@ -768,7 +768,7 @@ public class SaveViewer implements ActionListener {
 	private JSON_Object<NVExtra, VExtra> loadAndParseSaveGameFile(File saveGameFile, boolean withConsoleLog) {
 		if (withConsoleLog) Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
 		
-		JSON_Data.Value<NVExtra,VExtra> result = new JSON_Parser<>(saveGameFile,new FactoryForExtras()).parse();
+		JSON_Data.Value<NVExtra,VExtra> result = JSON_Parser.parse(saveGameFile,StandardCharsets.UTF_8,new FactoryForExtras(),null);
 		JSON_Object<NVExtra,VExtra> new_json_data = JSON_Data.getObjectValue(result);
 		
 		if (new_json_data==null)
@@ -1314,7 +1314,7 @@ public class SaveViewer implements ActionListener {
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
 		
-		JSON_Data.Value<NVExtra,VExtra> result = new JSON_Parser<>(sourcefile,new FactoryForExtras()).parse();
+		JSON_Data.Value<NVExtra,VExtra> result = JSON_Parser.parse(sourcefile,StandardCharsets.UTF_8,new FactoryForExtras(),null);
 		JSON_Object<NVExtra,VExtra> json_Object = JSON_Data.getObjectValue(result);
 		if (json_Object==null) return;
 		
