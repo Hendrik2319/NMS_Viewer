@@ -5375,6 +5375,7 @@ aggrSentinels
 with water
 gravitino balls
 resources=In_,CO2,NaCl
+portal=24.3700,-65.1600
 short=dunkel-rot
 info=
 
