@@ -1,6 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
-import net.schwarzbaer.system.Settings;
+import net.schwarzbaer.java.lib.system.Settings;
 
 public final class AppSettings extends Settings.DefaultAppSettings<AppSettings.ValueGroup, AppSettings.ValueKey> {
 	

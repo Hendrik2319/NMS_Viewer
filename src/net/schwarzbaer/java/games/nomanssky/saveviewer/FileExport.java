@@ -31,7 +31,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
@@ -42,6 +41,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Gal
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Region;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
+import net.schwarzbaer.java.lib.gui.ProgressDialog;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ArrayValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.BoolValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.FloatValue;

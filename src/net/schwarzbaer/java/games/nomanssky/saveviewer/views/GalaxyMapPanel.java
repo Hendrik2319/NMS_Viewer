@@ -38,9 +38,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 
-import net.schwarzbaer.gui.Canvas;
-import net.schwarzbaer.gui.FileChooser;
-import net.schwarzbaer.gui.ProgressDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
@@ -50,6 +47,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.Reg
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe.SolarSystem;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
+import net.schwarzbaer.java.lib.gui.Canvas;
+import net.schwarzbaer.java.lib.gui.FileChooser;
+import net.schwarzbaer.java.lib.gui.ProgressDialog;
 
 class GalaxyMapPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = 9055290876621464068L;

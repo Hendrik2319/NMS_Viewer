@@ -37,8 +37,6 @@ import javax.swing.JTextArea;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.schwarzbaer.gui.Canvas;
-import net.schwarzbaer.gui.ValueListOutput;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.EditIdDialog;
@@ -55,6 +53,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.M
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Vehicle;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
+import net.schwarzbaer.java.lib.gui.Canvas;
+import net.schwarzbaer.java.lib.gui.ValueListOutput;
 
 final class InventoriesPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = -6965281963499623839L;

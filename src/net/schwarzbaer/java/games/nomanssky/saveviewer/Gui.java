@@ -66,22 +66,22 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.IconSource.CachedIcons;
-import net.schwarzbaer.gui.ProgressDialog;
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.Tables;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
-import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamIDs.NameChange;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.ProgressDialog;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.Tables;
+import net.schwarzbaer.java.lib.gui.TristateCheckBox;
+import net.schwarzbaer.java.lib.gui.IconSource.CachedIcons;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.UniversePanel;
 
 public class Gui {

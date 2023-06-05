@@ -57,9 +57,6 @@ import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.table.TableCellEditor;
 
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.Tables;
-import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.CachedAlphaImages;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ExtraImageList.ImageListListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
@@ -78,6 +75,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.DebugTableContextMenu;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.Tables;
+import net.schwarzbaer.java.lib.gui.Tables.ComboboxCellEditor;
 
 public class GameInfos {
 	
@@ -1418,7 +1418,7 @@ public class GameInfos {
 			BaseComponent_FertigTeil  ("Basis-Komponente (Fertigteil)"),
 			BaseDecoration            ("Basis-Dekoration"),
 			BaseDecorationAband       ("Basis-Dekoration (Aufgeg.Fracht.)"),
-			BaseExternal              ("Basis-Außenanlage"),
+			BaseExternal              ("Basis-Auï¿½enanlage"),
 			BaseComponentFreighter    ("Basis-Komponente (Frachter)"),
 			BaseDecorationFreighter   ("Basis-Dekoration (Frachter)"),
 			BaseComponentUnderWater   ("Basis-Komponente (Unterwasser)"),
@@ -1433,12 +1433,12 @@ public class GameInfos {
 			Ammunition                ("Munition"),
 			Plant                     ("Pflanze"),
 			PlantProduct              ("Frucht"),
-			RaceGift                  ("Völker-Geschenk"),
+			RaceGift                  ("Vï¿½lker-Geschenk"),
 			Special                   ("Speziell"),
-			Bait                      ("Köder"),
+			Bait                      ("Kï¿½der"),
 			Ingredient                ("Zutat"),
 			Treasure                  ("Schatz"),
-			PlanetTrophy              ("Planeten-Trophäe"),
+			PlanetTrophy              ("Planeten-Trophï¿½e"),
 			Damage                    ("Schaden"),
 			;
 			

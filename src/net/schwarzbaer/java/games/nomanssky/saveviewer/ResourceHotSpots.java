@@ -58,15 +58,15 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
-import net.schwarzbaer.gui.ZoomableCanvas;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddress;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow;
+import net.schwarzbaer.java.lib.gui.ZoomableCanvas;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow.DefaultCloseOperation;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
 
 public class ResourceHotSpots implements ActionListener {
 

@@ -58,10 +58,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.ProgressDialog;
-import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.ShowImagesDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Duration;
@@ -73,10 +69,14 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.ProgressDialog;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
+import net.schwarzbaer.java.lib.system.ClipboardTools;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
-import net.schwarzbaer.system.ClipboardTools;
 
 public class SaveViewer implements ActionListener {
 

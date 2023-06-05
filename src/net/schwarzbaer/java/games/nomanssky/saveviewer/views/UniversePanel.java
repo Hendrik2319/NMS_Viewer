@@ -62,14 +62,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import net.schwarzbaer.gui.Canvas;
-import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.IconSource.CachedIcons;
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.Tables;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.TristateCheckBox;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -105,6 +97,14 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseAddr
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.UniverseObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
+import net.schwarzbaer.java.lib.gui.Canvas;
+import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.Tables;
+import net.schwarzbaer.java.lib.gui.TristateCheckBox;
+import net.schwarzbaer.java.lib.gui.IconSource.CachedIcons;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
 
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;

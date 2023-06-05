@@ -8,13 +8,13 @@ import javax.swing.JComboBox;
 import javax.swing.JScrollPane;
 import javax.swing.table.DefaultTableModel;
 
-import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Stats.StatValue;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
+import net.schwarzbaer.java.lib.gui.Tables;
 
 class StatsPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = -1541256209397699528L;

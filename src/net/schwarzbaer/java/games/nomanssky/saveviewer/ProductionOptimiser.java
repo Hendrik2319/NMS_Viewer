@@ -48,19 +48,19 @@ import javax.swing.event.ListDataListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.FileChooser;
-import net.schwarzbaer.gui.ProgressDialog;
-import net.schwarzbaer.gui.ProgressDialog.CancelListener;
-import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
-import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.ToolbarIcons;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.FileChooser;
+import net.schwarzbaer.java.lib.gui.ProgressDialog;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow;
+import net.schwarzbaer.java.lib.gui.ProgressDialog.CancelListener;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow.DefaultCloseOperation;
+import net.schwarzbaer.java.lib.gui.Tables.CheckBoxRendererComponent;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
 
 public class ProductionOptimiser implements ActionListener, ToolWindow {
 	

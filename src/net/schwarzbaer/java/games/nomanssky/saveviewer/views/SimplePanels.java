@@ -46,12 +46,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.table.DefaultTableCellRenderer;
 
-import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.IconSource.CachedIcons;
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.FileExport;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -79,6 +73,12 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGa
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.VerySimpleTable;
+import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.IconSource.CachedIcons;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
 
 public class SimplePanels {
 

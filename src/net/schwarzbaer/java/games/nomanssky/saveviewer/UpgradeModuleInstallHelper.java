@@ -74,23 +74,23 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.FileChooser;
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.StandardMainWindow;
-import net.schwarzbaer.gui.StandardMainWindow.DefaultCloseOperation;
-import net.schwarzbaer.gui.Tables;
-import net.schwarzbaer.gui.Tables.CellwiseCellEditor;
-import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
-import net.schwarzbaer.gui.Tables.ComboboxCellEditor;
-import net.schwarzbaer.gui.Tables.NonStringRenderer;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui.TextFieldWithSuggestions;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
-import net.schwarzbaer.system.UniqueIdPool;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.FileChooser;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow;
+import net.schwarzbaer.java.lib.gui.Tables;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow.DefaultCloseOperation;
+import net.schwarzbaer.java.lib.gui.Tables.CellwiseCellEditor;
+import net.schwarzbaer.java.lib.gui.Tables.CheckBoxRendererComponent;
+import net.schwarzbaer.java.lib.gui.Tables.ComboboxCellEditor;
+import net.schwarzbaer.java.lib.gui.Tables.NonStringRenderer;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.system.UniqueIdPool;
 
 public final class UpgradeModuleInstallHelper implements ActionListener, ToolWindow {
 

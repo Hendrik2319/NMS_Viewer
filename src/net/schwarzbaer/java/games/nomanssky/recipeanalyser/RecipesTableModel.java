@@ -8,9 +8,9 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
 
 class RecipesTableModel<IDType extends Comparable<IDType>> extends SimplifiedTableModel<RecipesTableModel.ColumnID> {
 

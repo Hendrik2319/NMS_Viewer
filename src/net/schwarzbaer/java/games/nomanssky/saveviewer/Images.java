@@ -63,15 +63,15 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListSelectionModel;
 
-import net.schwarzbaer.gui.Canvas;
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.IconSource;
-import net.schwarzbaer.gui.ProgressDialog;
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.image.ImageSimilarity;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.IDMap;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.lib.gui.Canvas;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.ProgressDialog;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.image.ImageSimilarity;
 
 public class Images {
 	
@@ -864,7 +864,7 @@ public class Images {
 		}
 	}
 	
-	public static class ImageGridPanel extends net.schwarzbaer.gui.ImageGridPanel implements Iterable<net.schwarzbaer.gui.ImageGridPanel.ImageData> {
+	public static class ImageGridPanel extends net.schwarzbaer.java.lib.gui.ImageGridPanel implements Iterable<net.schwarzbaer.java.lib.gui.ImageGridPanel.ImageData> {
 		private static final long serialVersionUID = -5485402060151977360L;
 		private boolean markUsedImages;
 		private int[] sortedIndexes;

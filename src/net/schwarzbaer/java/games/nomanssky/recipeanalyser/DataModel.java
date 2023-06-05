@@ -31,13 +31,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
 
-import net.schwarzbaer.gui.StandardDialog;
-import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.Lang;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.ParseException;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.RawdataModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.Tables;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 
 abstract class DataModel<IDType extends Comparable<IDType>> {

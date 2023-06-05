@@ -5,13 +5,13 @@ import java.util.Locale;
 
 import javax.swing.JScrollPane;
 
-import net.schwarzbaer.gui.Tables;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownWords.KnownWord;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGameViewTabPanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
+import net.schwarzbaer.java.lib.gui.Tables;
 
 class KnownWordsPanel extends SaveGameViewTabPanel {
 	private static final long serialVersionUID = 7096092479075372171L;

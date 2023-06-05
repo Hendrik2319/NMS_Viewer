@@ -13,12 +13,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
-import net.schwarzbaer.gui.Tables.CheckBoxRendererComponent;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.recipeanalyser.RecipeAnalyser.Lang;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
+import net.schwarzbaer.java.lib.gui.Tables.CheckBoxRendererComponent;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
 
 class IngredientsTableModel<IDType extends Comparable<IDType>> extends SimplifiedTableModel<IngredientsTableModel.ColumnID> {
 

@@ -1,6 +1,6 @@
 package net.schwarzbaer.java.games.nomanssky.recipeanalyser;
 
-import net.schwarzbaer.system.Settings;
+import net.schwarzbaer.java.lib.system.Settings;
 
 class AppSettings extends Settings.DefaultAppSettings<AppSettings.ValueGroup, AppSettings.ValueKey> {
 	

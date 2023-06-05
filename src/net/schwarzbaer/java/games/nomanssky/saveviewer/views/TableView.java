@@ -31,11 +31,6 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-import net.schwarzbaer.gui.Tables;
-import net.schwarzbaer.gui.Tables.LabelRendererComponent;
-import net.schwarzbaer.gui.Tables.SimplifiedColumnConfig;
-import net.schwarzbaer.gui.Tables.SimplifiedRowSorter.RowSorterListener;
-import net.schwarzbaer.gui.Tables.SimplifiedTableModel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images;
@@ -43,6 +38,11 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.NamedColor;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Images.UpgradeCategory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.BuildingObject;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.TimeStamp;
+import net.schwarzbaer.java.lib.gui.Tables;
+import net.schwarzbaer.java.lib.gui.Tables.LabelRendererComponent;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
+import net.schwarzbaer.java.lib.gui.Tables.SimplifiedRowSorter.RowSorterListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
 public class TableView {

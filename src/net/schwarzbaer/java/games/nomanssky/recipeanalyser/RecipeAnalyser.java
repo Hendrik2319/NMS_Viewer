@@ -49,13 +49,13 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
-import net.schwarzbaer.gui.Disabler;
-import net.schwarzbaer.gui.FileChooser;
-import net.schwarzbaer.gui.StandardMainWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer.ToolWindow;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView;
+import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.FileChooser;
+import net.schwarzbaer.java.lib.gui.StandardMainWindow;
 
 public class RecipeAnalyser implements ActionListener, ToolWindow {
 
