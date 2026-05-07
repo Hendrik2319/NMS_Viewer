@@ -197,7 +197,7 @@ public class ResourceHotSpots implements ActionListener {
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.BOTH;
 		
-		disabler = new Disabler<ActionCommand>();
+		disabler = new Disabler<>();
 		disabler.setCareFor(ActionCommand.values());
 		
 		if (windowConfig == null)
@@ -240,9 +240,9 @@ public class ResourceHotSpots implements ActionListener {
 		hotSpotsView = new HotSpotsView(currentLocationField);
 		hotSpotsView.setPreferredSize(new Dimension(400,600));
 		
-		hotSpotTypeSelect      = new JComboBox<Planet.HotSpot.Type >(SaveViewer.addNull(Planet.HotSpot.Type .values()));
-		hotSpotClassSelect     = new JComboBox<Planet.HotSpot.Class>(SaveViewer.addNull(Planet.HotSpot.Class.values()));
-		hotSpotSubstanceSelect = new JComboBox<String>();
+		hotSpotTypeSelect      = new JComboBox<>(SaveViewer.addNull(Planet.HotSpot.Type .values()));
+		hotSpotClassSelect     = new JComboBox<>(SaveViewer.addNull(Planet.HotSpot.Class.values()));
+		hotSpotSubstanceSelect = new JComboBox<>();
 		Gui.setComp(hotSpotTypeSelect     , disabler, ActionCommand.SelectHotSpotType     , true, hotSpotsView::setSelectCriteria);
 		Gui.setComp(hotSpotClassSelect    , disabler, ActionCommand.SelectHotSpotClass    , true, hotSpotsView::setSelectCriteria);
 		Gui.setComp(hotSpotSubstanceSelect, disabler, ActionCommand.SelectHotSpotSubstance, true, hotSpotsView::setSelectCriteria);
@@ -274,7 +274,7 @@ public class ResourceHotSpots implements ActionListener {
 		windowConfig.centerPanel.setLeftComponent(windowConfig.tablePanel);
 		windowConfig.centerPanel.setRightComponent(hotSpotsViewPanel);
 		
-		planetComboBox = new JComboBox<Planet>(planets);
+		planetComboBox = new JComboBox<>(planets);
 		regionComboBox = new JComboBox<>();
 		Gui.setComp(planetComboBox,this,disabler,ActionCommand.SelectPlanet, true);
 		Gui.setComp(regionComboBox,this,disabler,ActionCommand.SelectRegion, true);
@@ -432,7 +432,7 @@ public class ResourceHotSpots implements ActionListener {
 		case AddRegion:
 			if (currentPlanet!=null) {
 				currentPlanet.regions.add( currentRegion = new Planet.Region("<New Region>") );
-				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>(currentPlanet.regions));
+				regionComboBox.setModel(new DefaultComboBoxModel<>(currentPlanet.regions));
 				regionComboBox.setSelectedItem(currentRegion);
 			}
 			updateGuiAccess();
@@ -446,10 +446,10 @@ public class ResourceHotSpots implements ActionListener {
 			currentPlanet = (Planet)planetComboBox.getSelectedItem();
 			//Gui.log_ln("ResourceHotSpots.currentPlanet: %s", currentPlanet);
 			if (currentPlanet==null) {
-				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>());
+				regionComboBox.setModel(new DefaultComboBoxModel<>());
 				regionComboBox.setSelectedItem(null);
 			} else {
-				regionComboBox.setModel(new DefaultComboBoxModel<Planet.Region>(currentPlanet.regions));
+				regionComboBox.setModel(new DefaultComboBoxModel<>(currentPlanet.regions));
 				regionComboBox.setSelectedItem(currentPlanet.regions.isEmpty()?null:currentPlanet.regions.firstElement());
 			}
 			updatePlanetRadiusField();
@@ -1187,8 +1187,8 @@ public class ResourceHotSpots implements ActionListener {
 			case Longitude: break;
 			case Substance: break;
 			case Rate: break;
-			case Class: column.setCellEditor(new DefaultCellEditor(new JComboBox<Planet.HotSpot.Class>(Planet.HotSpot.Class.values()))); break;
-			case Type : column.setCellEditor(new DefaultCellEditor(new JComboBox<Planet.HotSpot.Type >(Planet.HotSpot.Type .values()))); break;
+			case Class: column.setCellEditor(new DefaultCellEditor(new JComboBox<>(Planet.HotSpot.Class.values()))); break;
+			case Type : column.setCellEditor(new DefaultCellEditor(new JComboBox<>(Planet.HotSpot.Type .values()))); break;
 			}
 		}
 

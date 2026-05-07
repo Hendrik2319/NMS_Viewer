@@ -90,7 +90,7 @@ import net.schwarzbaer.java.lib.gui.Tables.ComboboxCellEditor;
 import net.schwarzbaer.java.lib.gui.Tables.NonStringRenderer;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
-import net.schwarzbaer.java.lib.system.UniqueIdPool;
+import net.schwarzbaer.java.lib.system.UniqueLongID;
 
 public final class UpgradeModuleInstallHelper implements ActionListener, ToolWindow {
 
@@ -206,7 +206,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 		fileChooser = new FileChooser("Session", "umih");
 		fileChooser.setMultiSelectionEnabled(false);
 		
-		disabler = new Disabler<ActionCommand>();
+		disabler = new Disabler<>();
 		disabler.setCareFor(ActionCommand.values());
 		
 		tablePanel = new TablePanel();
@@ -793,7 +793,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 					return null;
 				}
 			}
-			final static UniqueIdPool uniqueIDs = new UniqueIdPool();
+			final static UniqueLongID uniqueIDs = new UniqueLongID();
 			
 			final KnownModule module;
 			final long uniqueID;
@@ -1478,7 +1478,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 //						new ComboboxCellEditor<GeneralizedID>(SaveViewer.addNull(sortedID(knownModules.keySet())));
 				
 				NonStringRenderer<GeneralizedID> renderer =
-						new NonStringRenderer<GeneralizedID>(obj->{
+						new NonStringRenderer<>(obj->{
 							if (obj instanceof GeneralizedID)
 								return getLabelOrID((GeneralizedID) obj);
 							return "<none>";

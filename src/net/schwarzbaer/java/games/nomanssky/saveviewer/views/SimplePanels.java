@@ -243,22 +243,22 @@ public class SimplePanels {
 		protected VerySimpleTable<DataType> table;
 	
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, DataType[] tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
+			this(data, tableName, new VerySimpleTable<>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter, Vector<DataType> tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
+			this(data, tableName, new VerySimpleTable<>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter, tableData, tableColumns));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, DataType[] tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new VerySimpleTable<DataType>(tableName, tableData, tableColumns));
+			this(data, tableName, new VerySimpleTable<>(tableName, tableData, tableColumns));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, Vector<DataType> tableData, VerySimpleTable.ColumnID<DataType>[] tableColumns) {
-			this(data, tableName, new VerySimpleTable<DataType>(tableName, tableData, tableColumns));
+			this(data, tableName, new VerySimpleTable<>(tableName, tableData, tableColumns));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, boolean disableAutoResize, boolean installDebugContextMenu, boolean useRowSorter) {
-			this(data, tableName, new VerySimpleTable<DataType>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter));
+			this(data, tableName, new VerySimpleTable<>(tableName, disableAutoResize, installDebugContextMenu, useRowSorter));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName) {
-			this(data, tableName, new VerySimpleTable<DataType>(tableName));
+			this(data, tableName, new VerySimpleTable<>(tableName));
 		}
 		public VerySimpleTableTabPanel(SaveGameData data, String tableName, VerySimpleTable<DataType> table) {
 			super(data);
@@ -370,7 +370,7 @@ public class SimplePanels {
 			selected = null;
 			selectedRow = -1;
 			
-			VerySimpleTable<SaveGameData.Frigate> table = new VerySimpleTable<SaveGameData.Frigate>("FrigatesTable",true,SaveViewer.DEBUG,true, data.frigates, new ColumnID[] {
+			VerySimpleTable<SaveGameData.Frigate> table = new VerySimpleTable<>("FrigatesTable",true,SaveViewer.DEBUG,true, data.frigates, new ColumnID[] {
 				new ColumnID("#"               ,   Integer.class, 35, -1,  35,  35, (fr,row)->row+1),
 				new ColumnID("Name"            ,    String.class, 35, -1, 180, 180, (fr,row)->fr.name==null || fr.name.isEmpty() ? "<Frigate "+(row+1)+">" : fr.name),
 				new ColumnID("Ship Type"       ,    String.class, 35, -1,  80,  80, fr->fr.shipType),
@@ -584,8 +584,8 @@ public class SimplePanels {
 			super(data);
 			textArea = new JTextArea();
 			
-			VerySimpleTable<FrigateMissionTask> missionTasksTable = new VerySimpleTable<FrigateMissionTask>("FrigateMissionTasksTable",true,SaveViewer.DEBUG,true);
-			VerySimpleTable<FrigateMission>     missionsTable     = new VerySimpleTable<FrigateMission>("FrigateMissionsTable",true,SaveViewer.DEBUG,true,data.frigateMissions,new MissionColumnID[] {
+			VerySimpleTable<FrigateMissionTask> missionTasksTable = new VerySimpleTable<>("FrigateMissionTasksTable",true,SaveViewer.DEBUG,true);
+			VerySimpleTable<FrigateMission>     missionsTable     = new VerySimpleTable<>("FrigateMissionsTable",true,SaveViewer.DEBUG,true,data.frigateMissions,new MissionColumnID[] {
 				new MissionColumnID("Name"           ,    String.class, 35, -1, 105, 105, (frm,row)->frm.name!=null && frm.name.isEmpty() ? "<Frigate Mission "+(row+1)+">" : frm.name),
 				new MissionColumnID("Type"           ,    String.class, 35, -1,  60,  60, frm->frm.missionType),
 				new MissionColumnID("Distance"       ,    String.class, 35, -1,  60,  60, frm->frm.distance),
@@ -1037,11 +1037,11 @@ public class SimplePanels {
 					new InteractionColumnID("Position"        ,  String.class, 150,-1,250,250, i->i.position       ==null ? "" : i.position.toString(" %1.2f ")),
 				};
 				
-				intTable = new VerySimpleTable<SaveGameData.ExperimentalData.StoredInteraction.Interaction>(
+				intTable = new VerySimpleTable<>(
 					"Table[StoredInteraction.Interactions]",true,SaveViewer.DEBUG,true
 				);
 				
-				storedIntTable = new VerySimpleTable<SaveGameData.ExperimentalData.StoredInteraction>(
+				storedIntTable = new VerySimpleTable<>(
 					"Table[StoredInteractions]",true,SaveViewer.DEBUG,true,
 					data.experimentalData.storedInteractions,
 					new StoredInteractionColumnID[] {
@@ -2111,7 +2111,7 @@ public class SimplePanels {
 			}
 
 			private Vector<BuildingObject> getNearObjects() {
-				Vector<BuildingObject> nearObj = new Vector<BuildingObject>();
+				Vector<BuildingObject> nearObj = new Vector<>();
 				
 				if (playerbase.galacticAddress==null) return nearObj;
 				long pbAddress =  playerbase.galacticAddress.getAddress();

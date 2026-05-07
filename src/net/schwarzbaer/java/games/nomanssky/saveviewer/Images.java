@@ -431,7 +431,7 @@ public class Images {
 		
 		ExtraImageList() {
 			names = null;
-			imageMap = new HashMap<String,BufferedImage>();
+			imageMap = new HashMap<>();
 			listeners = new Vector<>();
 		}
 		
@@ -642,7 +642,7 @@ public class Images {
 				return false;
 			}
 			
-			Vector<String> vector = new Vector<String>(Arrays.asList(names));
+			Vector<String> vector = new Vector<>(Arrays.asList(names));
 			vector.remove(index);
 			names = vector.toArray(new String[0]);
 			
@@ -730,7 +730,7 @@ public class Images {
 	
 	public static class UpgradeCategoryImages {
 		private static final String IMAGES_UPGRADECAT_PNG = "/images/Upgradecat.png";
-		private static final IconSource<UpgradeCategory> UpgradeCategoryImageIS = new IconSource<UpgradeCategory>(64,64);
+		private static final IconSource<UpgradeCategory> UpgradeCategoryImageIS = new IconSource<>(64,64);
 		private static final HashMap<ImageKey,Image> images = new HashMap<>();
 		private static final HashMap<ImageKey,Icon> icons = new HashMap<>();
 
@@ -935,7 +935,7 @@ public class Images {
 		
 		@Override
 		public Iterator<ImageData> iterator() {
-			return new Iterator<ImageData>() {
+			return new Iterator<>() {
 				private int index = 0;
 				@Override public boolean hasNext() {
 					while (index < getLength() && imagesToHide.contains(Images.getInstance().extraImages.names[getIndex(index)])) index++;
@@ -994,8 +994,8 @@ public class Images {
 
 		public void markUsedImages(boolean markUsedImages) {
 			this.markUsedImages = markUsedImages;
-			HashSet<String> usedImages = new HashSet<String>();
-			HashSet<String> usedImagesObsolete = new HashSet<String>();
+			HashSet<String> usedImages = new HashSet<>();
+			HashSet<String> usedImagesObsolete = new HashSet<>();
 			if (markUsedImages) {
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.techIDs     );
 				addImageNames(usedImages, usedImagesObsolete, GameInfos.productIDs  );
@@ -1511,7 +1511,7 @@ public class Images {
 			disabler.setCareFor(Action.values());
 			
 			selected = null;
-			colorList = new TableView.VerySimpleTable<NamedColor>("ColorListDialog.NamedColorTable", true, true, true);
+			colorList = new TableView.VerySimpleTable<>("ColorListDialog.NamedColorTable", true, true, true);
 			colorList.setDefaultRenderer(NamedColor.class, new TableView.NamedColorRenderer(false));
 			colorList.getSelectionModel().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			int colorListPrefWidth = NamedColorColumnID.getSumOfPrefWidths(colorListColumns);
@@ -1537,7 +1537,7 @@ public class Images {
 			JScrollPane similarityViewScrollPane = new JScrollPane(similarityView);
 			
 //			JTextArea usageView = new JTextArea();
-			usageView = new TableView.VerySimpleTable<ColorUsingID>("ColorListDialog.ColorUsingIDTable", true, true, true);
+			usageView = new TableView.VerySimpleTable<>("ColorListDialog.ColorUsingIDTable", true, true, true);
 			usageView.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			int usageViewPrefWidth = ColorUsingIDColumnID.getSumOfPrefWidths(usageViewColumns);
 			JScrollPane usageViewScrollPane = new JScrollPane(usageView);

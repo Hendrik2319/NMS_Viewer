@@ -230,7 +230,7 @@ public class SaveGameView extends JPanel {
 
 		public SaveGameViewGroupingPanel(SaveGameData data) {
 			super(data);
-			panels = new Vector<SaveGameViewTabPanel>();
+			panels = new Vector<>();
 		}
 		
 		public void addPanel(String title, SaveGameViewTabPanel panel) {

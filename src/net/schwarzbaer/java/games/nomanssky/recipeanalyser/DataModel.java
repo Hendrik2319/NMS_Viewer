@@ -912,7 +912,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 
 		private HashMap<IDType, HashSet<InputValueCombination>> getAllProducibleRecipes() {
 			HashMap<IDType,HashSet<InputValueCombination>> allProdRecipe = new HashMap<>();
-			ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<InputValueCombination>()));
+			ingredientsTableModel.forEachProducible(n->allProdRecipe.put(n.getID(), new HashSet<>()));
 			forEachRecipe(recipe->{
 				if (isProducible(recipe.outputValue.id)) {
 					HashSet<InputValueCombination> allowedCombis = recipe.getCombinations(DataModel.this::isProducible);
@@ -1120,7 +1120,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 			inputValues1 = new Vector<>();
 			inputValues2 = new Vector<>();
 			inputValues3 = new Vector<>();
-			inputValues = new Vector<Vector<RecipeIngredient>>();
+			inputValues  = new Vector<>();
 			inputValues.add(inputValues1);
 			inputValues.add(inputValues2);
 			inputValues.add(inputValues3);
@@ -1300,7 +1300,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 			super(parent, title);
 			hasResult = false;
 			
-			comboBoxRenderer = new Tables.NonStringRenderer<Ingredient>(obj->{
+			comboBoxRenderer = new Tables.NonStringRenderer<>(obj->{
 				Ingredient ingredient = castIngredient(obj);
 				if (ingredient==null) return "<undefined>";
 				String name = ingredient.getName();
@@ -1341,7 +1341,7 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 		}
 
 		private JComboBox<DataModel<IDType>.Ingredient> createComboBox(Consumer<Ingredient> selectListener) {
-			JComboBox<Ingredient> comp = new JComboBox<Ingredient>(ingredients);
+			JComboBox<Ingredient> comp = new JComboBox<>(ingredients);
 			comp.setRenderer(comboBoxRenderer);
 			comp.setSelectedItem(null);
 			comp.setPreferredSize(new Dimension(150,20));

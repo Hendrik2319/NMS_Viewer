@@ -76,7 +76,7 @@ public class TreeView {
 			case Object: {
 				ObjectValue<NVExtra,VExtra> object1 = data ==null ? null : data .castToObjectValue();
 				ObjectValue<NVExtra,VExtra> object2 = data2==null ? null : data2.castToObjectValue();
-				Vector<CompareTreeNode> childrenVec = new Vector<CompareTreeNode>();
+				Vector<CompareTreeNode> childrenVec = new Vector<>();
 				
 				if (object2==null) {
 					for (NamedValue<NVExtra,VExtra> namedvalue : object1.value)
@@ -117,7 +117,7 @@ public class TreeView {
 			case Array: {
 				ArrayValue<NVExtra,VExtra> array1 = data ==null ? null : data .castToArrayValue();
 				ArrayValue<NVExtra,VExtra> array2 = data2==null ? null : data2.castToArrayValue();
-				Vector<CompareTreeNode> childrenVec = new Vector<CompareTreeNode>();
+				Vector<CompareTreeNode> childrenVec = new Vector<>();
 				
 				if (array2==null) {
 					for (Value<NVExtra,VExtra> value1 : array1.value)
@@ -407,7 +407,7 @@ public class TreeView {
 		@Override
 		public Enumeration<TreeNode> children() {
 			if (children == null) createChildren();
-			return new Enumeration<TreeNode>() {
+			return new Enumeration<>() {
 				int index = 0;
 				@Override public boolean hasMoreElements() { return children.length>index; }
 				@Override public TreeNode nextElement() { return children[index++]; }

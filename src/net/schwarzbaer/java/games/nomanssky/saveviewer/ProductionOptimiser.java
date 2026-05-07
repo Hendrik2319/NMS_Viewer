@@ -114,7 +114,7 @@ public class ProductionOptimiser implements ActionListener, ToolWindow {
 	private ProductionOptimiser createGUI(boolean standalone) {
 		fileChooser = new FileChooser("ProductionOptimiser Data File", "producttree");
 		
-		disabler = new Disabler<ActionCommand>();
+		disabler = new Disabler<>();
 		disabler.setCareFor(ActionCommand.values());
 		
 		inputList = new InputList();
@@ -132,12 +132,12 @@ public class ProductionOptimiser implements ActionListener, ToolWindow {
 		productsTableModel = new ProductsTableModel();
 		productsTable = new TableView.SimplifiedTable<>("ProductsTable", productsTableModel, true, true, false);
 		productsTable.setCellRendererForAllColumns(productsTableModel.createCellRenderer(), true);
-		productsTable.setDefaultEditor(Input.class, new DefaultCellEditor(new JComboBox<Input>(inputList)));
+		productsTable.setDefaultEditor(Input.class, new DefaultCellEditor(new JComboBox<>(inputList)));
 		JScrollPane productsTableScrollPane = new JScrollPane(productsTable);
 		productsTableScrollPane.setBorder(createCompoundBorder("Products"));
 		productsTableScrollPane.setPreferredSize(new Dimension(getSumofColWidths(ProductsTableColumnID.values())+50,300));
 		
-		resultList = new JComboBox<Result>();
+		resultList = new JComboBox<>();
 		resultList.addActionListener(e->showResult((Result)resultList.getSelectedItem()));
 		resultList.setEnabled(false);
 		
@@ -289,7 +289,7 @@ public class ProductionOptimiser implements ActionListener, ToolWindow {
 			Gui.runWithProgressDialog(mainwindow, "title", pd->{
 				Vector<Result> results = new MostValuableProduction(pd).find();
 				if (results!=null) {
-					resultList.setModel(new DefaultComboBoxModel<Result>(results));
+					resultList.setModel(new DefaultComboBoxModel<>(results));
 					resultList.setSelectedItem(null);
 					resultList.setEnabled(true);
 					Gui.log_ln("Most Valuable Productions:");

@@ -42,7 +42,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 	
 	static {
 	// prepare IconSource
-		IconSource<RawDataTreeIcons> source = new IconSource<RawDataTreeIcons>(16,16);
+		IconSource<RawDataTreeIcons> source = new IconSource<>(16,16);
 		source.readIconsFromResource("/images/RawTreeIcons.png");
 		rawDataTreeIS = source.cacheIcons(RawDataTreeIcons.values());
 	}

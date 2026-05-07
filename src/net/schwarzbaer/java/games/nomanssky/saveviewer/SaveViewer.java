@@ -163,7 +163,7 @@ public class SaveViewer implements ActionListener {
 	}
 
 	static void loadTabHeaderIcons() {
-		tabheaderIS = new IconSource<TabHeaderIcons>(10,10);
+		tabheaderIS = new IconSource<>(10,10);
 		tabheaderIS.readIconsFromResource(FileExport.RES_IMAGES_TAB_HEADER_PNG);
 	}
 
@@ -302,7 +302,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	public SaveViewer() {
-		loadedSaveGames = new Vector<SaveGameView>();
+		loadedSaveGames = new Vector<>();
 		mainWindow = null;
 		openTools = new EnumMap<>(Tool.class);
 	}
@@ -326,6 +326,7 @@ public class SaveViewer implements ActionListener {
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JSON-File (*.json)","json"));;
 		jsonFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JavaScript-File (*.js)","js"));;
 		
+		@SuppressWarnings("resource")
 		ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 		//FrequentlyTask frequentlyUpdater = new FrequentlyTask(5000,true,this::checkSavegameExistence);
 		//mainWindow = new StandardMainWindow("",e->frequentlyUpdater.stop(),StandardMainWindow.DefaultCloseOperation.EXIT_ON_CLOSE);
@@ -1104,7 +1105,7 @@ public class SaveViewer implements ActionListener {
 			super( new BorderLayout(3,3) );
 			setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 			
-			disabler = new Disabler<ActionCommand>();
+			disabler = new Disabler<>();
 			disabler.setCareFor(ActionCommand.values());
 			
 			JToolBar toolBar = new JToolBar("Standard");
@@ -1264,8 +1265,8 @@ public class SaveViewer implements ActionListener {
 			JScrollPane treeScrollPane = new JScrollPane(tree);
 			treeScrollPane.setPreferredSize(new Dimension(600, 500));
 			
-			selector1 = new JComboBox<SaveGameView>(loadedSaveGames);
-			selector2 = new JComboBox<SaveGameView>(loadedSaveGames);
+			selector1 = new JComboBox<>(loadedSaveGames);
+			selector2 = new JComboBox<>(loadedSaveGames);
 			JPanel selectorPanel = new JPanel(new GridLayout(1,2,3,3));
 			selectorPanel.add(selector1);
 			selectorPanel.add(selector2);

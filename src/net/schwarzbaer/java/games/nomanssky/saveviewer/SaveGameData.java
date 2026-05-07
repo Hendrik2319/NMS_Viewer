@@ -961,7 +961,7 @@ public class SaveGameData {
 			if (arrayValue==null) return null;
 			Vector<Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 			
-			Vector<TeleportEndpoints> teleportEndpoints = new Vector<TeleportEndpoints>();
+			Vector<TeleportEndpoints> teleportEndpoints = new Vector<>();
 			for (int i=0; i<arrayValue.size(); ++i) {
 				Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
@@ -1051,7 +1051,7 @@ public class SaveGameData {
 			if (arrayValue==null) return null;
 			Vector<Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 			
-			Vector<BuildingObject> vector = new Vector<BuildingObject>();
+			Vector<BuildingObject> vector = new Vector<>();
 			for (int i=0; i<arrayValue.size(); i++) {
 				Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
@@ -1137,7 +1137,7 @@ public class SaveGameData {
 			if (arrayValue==null) return null;
 			Vector<Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 			
-			Vector<UnboundBuildingObject> vector = new Vector<UnboundBuildingObject>();
+			Vector<UnboundBuildingObject> vector = new Vector<>();
 			for (int i=0; i<arrayValue.size(); i++) {
 				Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
@@ -2733,7 +2733,7 @@ public class SaveGameData {
 			if (arrayValue==null) return null;
 			Vector<Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 			
-			Vector<Frigate> frigates = new Vector<Frigate>();
+			Vector<Frigate> frigates = new Vector<>();
 			for (int i=0; i<arrayValue.size(); ++i) {
 				Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
@@ -2934,7 +2934,7 @@ public class SaveGameData {
 		public void set(String steamID, String steamName) {
 			HashSet<String> names = data.get(steamID);
 			if (names==null)
-				data.put(steamID, names = new HashSet<String>());
+				data.put(steamID, names = new HashSet<>());
 			names.add(steamName);
 		}
 		public void forEachSorted(BiConsumer<String,String> action) {
@@ -3007,7 +3007,7 @@ public class SaveGameData {
 			long start = System.currentTimeMillis();
 			Gui.log_ln("Write KnownSteamIDs to file \""+FileExport.FILE_KNOWN_STEAM_ID+"\"...");
 			try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(FileExport.FILE_KNOWN_STEAM_ID),StandardCharsets.UTF_8))) {
-				Vector<String> ids = new Vector<String>(data.keySet());
+				Vector<String> ids = new Vector<>(data.keySet());
 				ids.sort(null);
 				for (String steamID:ids) {
 					Vector<String> names = new Vector<>(data.get(steamID));

@@ -68,10 +68,6 @@ class StatsPanel extends SaveGameViewTabPanel {
 		
 		private Tables.SimplifiedColumnConfig columnConfig;
 		
-		StatsTableColumnID() {
-			columnConfig = new Tables.SimplifiedColumnConfig();
-			columnConfig.name = toString();
-		}
 		StatsTableColumnID(String name, Class<?> columnClass, int minWidth, int maxWidth, int prefWidth, int currentWidth) {
 			columnConfig = new Tables.SimplifiedColumnConfig(name, columnClass, minWidth, maxWidth, prefWidth, currentWidth);
 		}

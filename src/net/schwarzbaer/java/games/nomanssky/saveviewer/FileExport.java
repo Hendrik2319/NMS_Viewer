@@ -2356,7 +2356,7 @@ public class FileExport {
 					if (anchorXup!=null && anchorYat!=null) anchorZ = anchorXup.crossProd(anchorYat).normalize();
 				}
 				Index3D origin = new Index3D(0,0,0);
-				blocks = new HashMap<Index3D,Neighbor>();
+				blocks = new HashMap<>();
 				blocks.put(origin, new Neighbor(origin, Orientation.PosY, firstObj));
 			}
 			
@@ -2404,7 +2404,7 @@ public class FileExport {
 				if (anchorYat==null) return;
 				if (anchorZ  ==null) return;
 				
-				for (BuildingObject obj:new Vector<BuildingObject>(freeObj)) {
+				for (BuildingObject obj:new Vector<>(freeObj)) {
 					Neighbor neighbor = getNeighborRelation(obj.position,obj);
 					if (neighbor==null) continue;
 					blocks.put(neighbor.i,neighbor);
@@ -6623,7 +6623,7 @@ public class FileExport {
 			private final Vector<StoredIndexedLineSet> indexedLineSets;
 
 			MultipleIndexedLineSets() {
-				indexedLineSets = new Vector<StoredIndexedLineSet>();
+				indexedLineSets = new Vector<>();
 			}
 
 			@Override public void write(PrintWriter vrml, String vrmlIndent, int precision) {

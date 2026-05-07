@@ -115,7 +115,7 @@ class GalaxyMapPanel extends SaveGameViewTabPanel {
 		cmbbxGalaxies.setSelectedIndex(preselectedGalaxy);
 		cmbbxGalaxies.addActionListener(e->galaxyMap.setGalaxy(currentRegionData = new RegionData(currentGalaxy = (Galaxy)cmbbxGalaxies.getSelectedItem())));
 		
-		zoomField = new JComboBox<ZoomStep>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
+		zoomField = new JComboBox<>(ZoomStep.create(new double[]{0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.25,1.5,1.75,2.0,2.5,3.0,3.5,4.0,5.0,6.0,7.0,8.0,10.0}));
 		zoomField.addActionListener( e->{
 			ZoomStep zoomStep = (ZoomStep)zoomField.getSelectedItem();
 			if (zoomStep!=null) { galaxyMap.setZoom(zoomStep.value); showStatus(-1,-1); }

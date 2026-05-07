@@ -120,7 +120,7 @@ public class RecipeAnalyser implements ActionListener, ToolWindow {
 		
 		mainwindow = new StandardMainWindow("Recipe Analyser", e->checkClosing(standalone));
 		
-		disabler = new Disabler<ActionCommand>();
+		disabler = new Disabler<>();
 		disabler.setCareFor(ActionCommand.values());
 		
 		fileChooser = new FileChooser("RecipeAnalyser Data File", "recipes");

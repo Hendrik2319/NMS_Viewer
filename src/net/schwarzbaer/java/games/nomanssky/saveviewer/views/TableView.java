@@ -354,10 +354,10 @@ public class TableView {
 			this(name, true, true, true, data, columns);
 		}
 		public void setData(DataType[] data, ColumnID<DataType>[] columns) {
-			setModel(tableModel = new VerySimpleTableModel<DataType>(data, columns));
+			setModel(tableModel = new VerySimpleTableModel<>(data, columns));
 		}
 		public void setData(Vector<DataType> data, ColumnID<DataType>[] columns) {
-			setModel(tableModel = new VerySimpleTableModel<DataType>(data, columns));
+			setModel(tableModel = new VerySimpleTableModel<>(data, columns));
 		}
 		public VerySimpleTableModel<DataType> getModel_VerySimpleTableModel() {
 			return tableModel;

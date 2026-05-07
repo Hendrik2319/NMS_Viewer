@@ -123,7 +123,7 @@ class ResultDialogs {
 		) {
 			Constructor<PrintWriter, ResultDialogs.ResultDialog<IDType>> constructor =
 				(parent1, title1, closeListener1, variants1, setText) ->
-					new ResultDialogs.ResultDialog<IDType>(dataModel, parent1, title1, closeListener1, variants1, setText);
+					new ResultDialogs.ResultDialog<>(dataModel, parent1, title1, closeListener1, variants1, setText);
 			return createForWriterVariants(constructor, parent, title, closeListener, variants);
 		}
 
@@ -135,7 +135,7 @@ class ResultDialogs {
 		) {
 			Constructor<PrintStream, ResultDialogs.ResultDialog<IDType>> constructor =
 				(parent1, title1, closeListener1, variants1, setText) -> 
-					new ResultDialogs.ResultDialog<IDType>(dataModel, parent1, title1, closeListener1, variants1, setText);
+					new ResultDialogs.ResultDialog<>(dataModel, parent1, title1, closeListener1, variants1, setText);
 			return createForStreamVariants(constructor, parent, title, closeListener, variants);
 		}
 

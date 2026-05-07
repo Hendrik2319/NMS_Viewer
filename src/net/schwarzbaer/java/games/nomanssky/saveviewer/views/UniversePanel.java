@@ -366,7 +366,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			}
 		}
 		
-		IconSource<UniverseTreeIcons> UncachedUniverseTreeIcons = new IconSource<UniverseTreeIcons>(30,TreeIconHeight);
+		IconSource<UniverseTreeIcons> UncachedUniverseTreeIcons = new IconSource<>(30,TreeIconHeight);
 		UncachedUniverseTreeIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
 		UniverseTreeIconsIS = UncachedUniverseTreeIcons.cacheIcons(UniverseTreeIcons.values());
 		
@@ -377,14 +377,14 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 		SolarSystemIcons = new SolarSystemIcons();
 		SolarSystemIcons.createValues();
 		
-		IconSource<PlanetTreeIcons> UncachedPlanetIcons = new IconSource<PlanetTreeIcons>(0,TreeIconHeight,20,TreeIconHeight);
+		IconSource<PlanetTreeIcons> UncachedPlanetIcons = new IconSource<>(0,TreeIconHeight,20,TreeIconHeight);
 		UncachedPlanetIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
 		PlanetIcons = new PlanetIcons(UncachedPlanetIcons.cacheIcons(PlanetTreeIcons.values()));
 		PlanetIcons.createValues();
 		
 		int offsetX = 0;
 		int offsetY = TreeIconHeight*2;
-		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<AdditionalTreeIcons>(offsetX,offsetY,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
+		IconSource<AdditionalTreeIcons> UncachedAdditionalIcons = new IconSource<>(offsetX,offsetY,TreeIconHeight, id->id.iconWidth, AdditionalTreeIcons.values());
 		UncachedAdditionalIcons.readIconsFromResource("/images/UniverseTreeIcons.png");
 		AdditionalIcons = UncachedAdditionalIcons.cacheIcons(AdditionalTreeIcons.values());
 		
@@ -786,7 +786,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			super(data,UniversePanel.this,true);
 			this.node = null;
 			
-			cmbbxRace = new Gui.IconComboBox<Race>(Race.values()) {
+			cmbbxRace = new Gui.IconComboBox<>(Race.values()) {
 				private static final long serialVersionUID = 5328964374227212373L;
 				
 				@Override public Race cast(Object obj) {
@@ -801,7 +801,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					return value.fullName;
 				}
 			};
-			cmbbxStarClass = new Gui.IconComboBox<StarClass>(StarClass.values()) {
+			cmbbxStarClass = new Gui.IconComboBox<>(StarClass.values()) {
 				private static final long serialVersionUID = 5328964374227212373L;
 				
 				@Override public StarClass cast(Object obj) {
@@ -840,8 +840,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				@Override void     updateLevelLabelsGameInfos()       { GameInfos.updateEconomyLevelLabels(); }
 			};
 			
-			cmbbxSystemState = new JComboBox<SystemState>( SystemState.values());
-			cmbbxSystemState.setRenderer(new Tables.NonStringRenderer<SystemState>(value->value==null?"":((SystemState)value).getLabel()));
+			cmbbxSystemState = new JComboBox<>( SystemState.values());
+			cmbbxSystemState.setRenderer(new Tables.NonStringRenderer<>(value->value==null?"":((SystemState)value).getLabel()));
 			
 			cmbbxRace       .addActionListener(e->{ if (isSettingContent) return; node.value.race        = (Race       )cmbbxRace       .getSelectedItem(); updateTreeNode(node, false); });
 			cmbbxStarClass  .addActionListener(e->{ if (isSettingContent) return; node.value.starClass   = (StarClass  )cmbbxStarClass  .getSelectedItem(); updateTreeNode(node, false); });
@@ -872,8 +872,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				updateTreeNode(node, false);
 			});
 			
-			cmbbxBlackHoleTargetRegion      = new JComboBox<Region>();
-			cmbbxBlackHoleTargetSolarSystem = new JComboBox<SolarSystem>();
+			cmbbxBlackHoleTargetRegion      = new JComboBox<>();
+			cmbbxBlackHoleTargetSolarSystem = new JComboBox<>();
 			if (data.general.currentUniverseAddress!=null) {
 				final Galaxy galaxy = data.universe.findGalaxy(data.general.currentUniverseAddress);
 				if (galaxy!=null) {
@@ -893,7 +893,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				updateTreeNode(node, false);
 				galaxyMapPanel.updateBlackHoleConnections();
 			});
-			cmbbxBlackHoleTargetSolarSystem.setRenderer(new Tables.NonStringRenderer<SolarSystem>((Object obj)->{
+			cmbbxBlackHoleTargetSolarSystem.setRenderer(new Tables.NonStringRenderer<>((Object obj)->{
 				if (!(obj instanceof SolarSystem)) return "";
 				SolarSystem system = (SolarSystem)obj;
 				return system.toString(true, false, false, true);
@@ -1052,7 +1052,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				for (int i=0; i<=maxLevel-minLevel; i++)
 					values[i] = minLevel+i;
 				
-				cmbbxLevel = new Gui.IconComboBox<Integer>(values) {
+				cmbbxLevel = new Gui.IconComboBox<>(values) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public Integer cast(Object obj) {
@@ -1085,7 +1085,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 					updateLevelLabels();
 				});
 				
-				cmbbxLevelLabels = new JComboBox<String>();
+				cmbbxLevelLabels = new JComboBox<>();
 				cmbbxLevelLabels.addActionListener(e->{
 					if (isSettingContent) return;
 					
@@ -1182,7 +1182,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			
 			add(portalGlyphs,BorderLayout.NORTH);
 			
-			cmbbxBiome = new Gui.IconComboBox<Biome>(Biome.values()) {
+			cmbbxBiome = new Gui.IconComboBox<>(Biome.values()) {
 				private static final long serialVersionUID = 5328964374227212373L;
 				
 				@Override public Biome cast(Object obj) {
@@ -1199,8 +1199,8 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			};
 			cmbbxBiome.addActionListener(e->{ if (isSettingContent) return; node.value.biome = cmbbxBiome.getSelected(); updateTreeNode(node, false);  });
 			
-			cmbbxBuriedTreasure = new JComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()));
-			cmbbxBuriedTreasure.setRenderer(new Tables.NonStringRenderer<BuriedTreasure>(value->value==null?"":((BuriedTreasure)value).name_EN));
+			cmbbxBuriedTreasure = new JComboBox<>( SaveViewer.addNull(BuriedTreasure.values()));
+			cmbbxBuriedTreasure.setRenderer(new Tables.NonStringRenderer<>(value->value==null?"":((BuriedTreasure)value).name_EN));
 			cmbbxBuriedTreasure.addActionListener(e->{ if (isSettingContent) return; node.value.buriedTreasure = (BuriedTreasure)cmbbxBuriedTreasure.getSelectedItem(); updateTreeNode(node, false);  });
 			
 			chkbxExtreme      = Gui.createCheckbox("is Extreme"               , false, isSelected->{ if (isSettingContent) return; node.value.hasExtremeBiome         = isSelected; updateTreeNode(node, true ); });
@@ -1421,7 +1421,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			add(createMenuItem("Set measured distance to center of galaxy ",UniverseTreeActionCommand.SetDistance));
 			
 			addSeparator();
-			miSetRace = new Gui.ListMenu<Universe.SolarSystem.Race>("Set Dominant Race",Universe.SolarSystem.Race.values(),null,
+			miSetRace = new Gui.ListMenu<>("Set Dominant Race",Universe.SolarSystem.Race.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.Race>() {
 					@Override public void setResult(Race value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -1443,7 +1443,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetRace.setShowSelectedValue(true);
 			add(miSetRace);
 			
-			miSetStarClass = new Gui.ListMenu<Universe.SolarSystem.StarClass>("Set Star Class",Universe.SolarSystem.StarClass.values(),null,
+			miSetStarClass = new Gui.ListMenu<>("Set Star Class",Universe.SolarSystem.StarClass.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Universe.SolarSystem.StarClass>() {
 					@Override public void setResult(StarClass value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -1465,7 +1465,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetStarClass.setShowSelectedValue(true);
 			add(miSetStarClass);
 			
-			miSetConflictLevel = new Gui.ListMenu<Integer>("Set Conflict Level",new Integer[]{1,2,3},null,
+			miSetConflictLevel = new Gui.ListMenu<>("Set Conflict Level",new Integer[]{1,2,3},null,
 				new Gui.ListMenuItems.ExternFunction<Integer>() {
 					@Override public void setResult(Integer value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -1487,7 +1487,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetConflictLevel.setShowSelectedValue(true);
 			add(miSetConflictLevel);
 			
-			miSetEconomyLevel = new Gui.ListMenu<Integer>("Set Economy Level",new Integer[]{1,2,3},null,
+			miSetEconomyLevel = new Gui.ListMenu<>("Set Economy Level",new Integer[]{1,2,3},null,
 				new Gui.ListMenuItems.ExternFunction<Integer>() {
 					@Override public void setResult(Integer value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -1509,7 +1509,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			miSetEconomyLevel.setShowSelectedValue(true);
 			add(miSetEconomyLevel);
 			
-			miSetSystemState = new Gui.ListMenu<SystemState>("Set Dominant Race",SystemState.values(),null,
+			miSetSystemState = new Gui.ListMenu<>("Set Dominant Race",SystemState.values(),null,
 				new Gui.ListMenuItems.ExternFunction<SystemState>() {
 					@Override public void setResult(SystemState value) {
 						if (clickedNode instanceof SolarSystemNode) {
@@ -1566,7 +1566,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			add(createMenuItem("Open Resource HotSpots",UniverseTreeActionCommand.OpenResourceHotSpots));
 			
 			addSeparator();
-			miSetBiome = new Gui.ListMenu<Biome>("Set Biome",Biome.values(),null,
+			miSetBiome = new Gui.ListMenu<>("Set Biome",Biome.values(),null,
 				new Gui.ListMenuItems.ExternFunction<Biome>() {
 					@Override public void setResult(Biome value) {
 						if (clickedNode instanceof PlanetNode) {
@@ -2575,7 +2575,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			@Override
 			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) {
 				
-				cmbbxRace = new Gui.IconComboBox<Race>( SaveViewer.addNull(Race.values())) {
+				cmbbxRace = new Gui.IconComboBox<>( SaveViewer.addNull(Race.values())) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public Race cast(Object obj) {
@@ -2592,7 +2592,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxRace.addActionListener(e->updateMarkers());
 				
-				cmbbxStarClass = new Gui.IconComboBox<StarClass>( SaveViewer.addNull(StarClass.values())) {
+				cmbbxStarClass = new Gui.IconComboBox<>( SaveViewer.addNull(StarClass.values())) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public StarClass cast(Object obj) {
@@ -2609,11 +2609,11 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxStarClass.addActionListener(e->updateMarkers());
 				
-				cmbbxSystemState = new JComboBox<SystemState>( SaveViewer.addNull(SystemState.values()) );
-				cmbbxSystemState.setRenderer(new Tables.NonStringRenderer<SystemState>(value->value==null?"<all values>":((SystemState)value).getLabel()));
+				cmbbxSystemState = new JComboBox<>( SaveViewer.addNull(SystemState.values()) );
+				cmbbxSystemState.setRenderer(new Tables.NonStringRenderer<>(value->value==null?"<all values>":((SystemState)value).getLabel()));
 				cmbbxSystemState.addActionListener(e->updateMarkers());
 				
-				cmbbxConflictLevel = new Gui.IconComboBox<Integer>( new Integer[] {null,1,2,3} ) {
+				cmbbxConflictLevel = new Gui.IconComboBox<>( new Integer[] {null,1,2,3} ) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public Integer cast(Object obj) {
@@ -2631,7 +2631,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxConflictLevel.addActionListener(e->updateMarkers());
 				
-				cmbbxEconomyLevel = new Gui.IconComboBox<Integer>( new Integer[] {null,1,2,3} ) {
+				cmbbxEconomyLevel = new Gui.IconComboBox<>( new Integer[] {null,1,2,3} ) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public Integer cast(Object obj) {
@@ -2761,7 +2761,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 			@Override
 			protected void setContent(JPanel left, JPanel right, GridBagConstraints c) {
 				
-				cmbbxBiome = new Gui.IconComboBox<Biome>( SaveViewer.addNull(Biome.values()) ) {
+				cmbbxBiome = new Gui.IconComboBox<>( SaveViewer.addNull(Biome.values()) ) {
 					private static final long serialVersionUID = 5328964374227212373L;
 					
 					@Override public Biome cast(Object obj) {
@@ -2778,7 +2778,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 				};
 				cmbbxBiome.addActionListener(e->updateMarkers());
 				
-				cmbbxBuriedTreasure = new JComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()));
+				cmbbxBuriedTreasure = new JComboBox<>( SaveViewer.addNull(BuriedTreasure.values()));
 //				cmbbxBuriedTreasure = new Gui.IconComboBox<BuriedTreasure>( SaveViewer.addNull(BuriedTreasure.values()), 170,20, new Gui.IconComboBox.ExternalFunctionality<BuriedTreasure>() {
 //					@Override public BuriedTreasure cast(Object obj) {
 //						if (!(obj instanceof BuriedTreasure)) return null;

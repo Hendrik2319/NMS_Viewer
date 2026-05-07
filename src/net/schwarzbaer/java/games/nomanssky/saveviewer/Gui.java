@@ -327,7 +327,7 @@ public class Gui {
 			this.options = options;
 			hasResult = false;
 			
-			listBox = new JList<T>(options);
+			listBox = new JList<>(options);
 			listBox.setSelectedValue(initialValue, true);;
 			
 			JScrollPane scrollPane = new JScrollPane(listBox);
@@ -376,7 +376,7 @@ public class Gui {
 			this.options = options;
 			hasResult = false;
 			
-			comboBox = new JComboBox<T>(options);
+			comboBox = new JComboBox<>(options);
 			comboBox.setSelectedItem(initialValue);
 			
 			JPanel inputPanel = new JPanel(new BorderLayout(3,3));
@@ -872,7 +872,7 @@ public class Gui {
 		private static final long serialVersionUID = -7848156677924768189L;
 
 		public NamedColorListMenu(String title, NamedColor[] values, NamedColor initialValue, ExternFunction externFunctionality) {
-			super(title,new ListMenuItems<Images.NamedColor>(values, initialValue, externFunctionality));
+			super(title,new ListMenuItems<>(values, initialValue, externFunctionality));
 		}
 		
 		public static abstract class ExternFunction extends ListMenuItems.ExternFunction<NamedColor> {
@@ -956,7 +956,7 @@ public class Gui {
 		private String title;
 		
 		public ListMenu(String title, ValueType[] values, ValueType initialValue, ListMenuItems.ExternFunction<ValueType> externFunctionality) {
-			this(title, new ListMenuItems<ValueType>(values, initialValue, externFunctionality));
+			this(title, new ListMenuItems<>(values, initialValue, externFunctionality));
 		}
 		public ListMenu(String title, ListMenuItems<ValueType> listMenuItems) {
 			super(title);
@@ -1034,7 +1034,7 @@ public class Gui {
 			if (parentListMenu!=null)
 				for (ValueType value:values) {
 					
-					JCheckBoxMenuItem menuItem = new ValueMenuItem<ValueType>(value,externFunctionality.isEqual(selectedValue,value));
+					JCheckBoxMenuItem menuItem = new ValueMenuItem<>(value,externFunctionality.isEqual(selectedValue,value));
 					externFunctionality.configureMenuItem(menuItem,value);
 					menuItem.addActionListener(e->{
 						selectedValue = value;
@@ -1454,7 +1454,7 @@ public class Gui {
 	}
 	public static <V> JComboBox<V> createComboBox(Vector<V> values, Function<Object,String> getLabel) {
 		JComboBox<V> comp = new JComboBox<>(values);
-		comp.setRenderer(new Tables.NonStringRenderer<V>(getLabel));
+		comp.setRenderer(new Tables.NonStringRenderer<>(getLabel));
 		return comp;
 	}
 	
@@ -1621,16 +1621,16 @@ public class Gui {
 	}
 	
 	public static <AC extends Enum<AC>> GenericValueTextField<Double> createTextField_Double(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Double> isOK, Consumer<Double> setValue) {
-		return new GenericValueTextField<Double>(txt, disabler, actionCommand, Double::parseDouble, isOK, setValue);
+		return new GenericValueTextField<>(txt, disabler, actionCommand, Double::parseDouble, isOK, setValue);
 	}
 	public static <AC extends Enum<AC>> GenericValueTextField<Integer> createTextField_Integer(String txt, Disabler<AC> disabler, AC actionCommand, Predicate<Integer> isOK, Consumer<Integer> setValue) {
-		return new GenericValueTextField<Integer>(txt, disabler, actionCommand, Integer::parseInt, isOK, setValue);
+		return new GenericValueTextField<>(txt, disabler, actionCommand, Integer::parseInt, isOK, setValue);
 	}
 	public static <AC extends Enum<AC>> GenericValueTextField<Double> createTextField_Double(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Predicate<Double> isOK, Consumer<Double> setValue) {
-		return new GenericValueTextField<Double>(txt, columns, disabler, actionCommand, Double::parseDouble, isOK, setValue);
+		return new GenericValueTextField<>(txt, columns, disabler, actionCommand, Double::parseDouble, isOK, setValue);
 	}
 	public static <AC extends Enum<AC>> GenericValueTextField<Integer> createTextField_Integer(String txt, int columns, Disabler<AC> disabler, AC actionCommand, Predicate<Integer> isOK, Consumer<Integer> setValue) {
-		return new GenericValueTextField<Integer>(txt, columns, disabler, actionCommand, Integer::parseInt, isOK, setValue);
+		return new GenericValueTextField<>(txt, columns, disabler, actionCommand, Integer::parseInt, isOK, setValue);
 	}
 
 	private static <AC extends Enum<AC>> JTextField setTextField(JTextField comp, Disabler<AC> disabler, AC actionCommand, Function<String,String> setInput) {

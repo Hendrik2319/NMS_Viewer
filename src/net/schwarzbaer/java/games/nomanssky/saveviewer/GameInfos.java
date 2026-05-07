@@ -974,13 +974,13 @@ public class GameInfos {
 			}
 		
 			public Vector<GeneralizedID> getSortedValues() {
-				Vector<GeneralizedID> vector = new Vector<GeneralizedID>(map.values());
+				Vector<GeneralizedID> vector = new Vector<>(map.values());
 				vector.sort(Comparator.comparing(id->id.id));
 				return vector;
 			}
 		
 			public Iterable<String> getSortedKeys() {
-				Vector<String> vector = new Vector<String>(map.keySet());
+				Vector<String> vector = new Vector<>(map.keySet());
 				vector.sort(null);
 				return () -> vector.iterator(); 
 			}
@@ -1487,7 +1487,7 @@ public class GameInfos {
 			super(other);
 			this.id = other.id;
 			this.isObsolete = other.isObsolete;
-			this.usage = new HashMap<SaveGameData,Usage>(other.usage);
+			this.usage = new HashMap<>(other.usage);
 			this.cachedImage = other.cachedImage;
 		}
 		
@@ -1642,7 +1642,7 @@ public class GameInfos {
 			prepareTable();
 			
 			GeneralizedID.Type[] types = SaveViewer.addNull(GeneralizedID.Type.values());
-			Gui.ListMenuItems.ExternFunction<GeneralizedID.Type> setType = new Gui.ListMenuItems.ExternFunction<GeneralizedID.Type>() {
+			Gui.ListMenuItems.ExternFunction<GeneralizedID.Type> setType = new Gui.ListMenuItems.ExternFunction<>() {
 				@Override public void setResult(GeneralizedID.Type value) {
 					updateAfterContextMenuAction(setType(value),null);
 				}
@@ -1650,13 +1650,13 @@ public class GameInfos {
 					menuItem.setText(value==null?"<none>":value.toString());
 				}
 			};
-			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Std     = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType);
-			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Image   = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType);
-			Gui.ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.Type>("Type", types, null, setType);
-			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Group   = new Gui.ListMenu<GeneralizedID.Type>("Type of selected", types, null, setType);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Std     = new Gui.ListMenu<>("Type", types, null, setType);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Image   = new Gui.ListMenu<>("Type", types, null, setType);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_ImageBG = new Gui.ListMenu<>("Type", types, null, setType);
+			Gui.ListMenu<GeneralizedID.Type> typeListMenu_Group   = new Gui.ListMenu<>("Type of selected", types, null, setType);
 			
 			GeneralizedID.UpgradeClass[] upgradeClasses = SaveViewer.addNull(GeneralizedID.UpgradeClass.values());
-			Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass> setUpgradeCat = new Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass>() {
+			Gui.ListMenuItems.ExternFunction<GeneralizedID.UpgradeClass> setUpgradeCat = new Gui.ListMenuItems.ExternFunction<>() {
 				@Override public void setResult(GeneralizedID.UpgradeClass value) {
 					updateAfterContextMenuAction(setUpgradeClass(value),null);
 				}
@@ -1664,10 +1664,10 @@ public class GameInfos {
 					menuItem.setText(value==null?"<none>":value.toString());
 				}
 			};
-			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Std     = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
-			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Image   = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
-			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_ImageBG = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
-			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Group   = new Gui.ListMenu<GeneralizedID.UpgradeClass>("Upgrade Class of selected", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Std     = new Gui.ListMenu<>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Image   = new Gui.ListMenu<>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_ImageBG = new Gui.ListMenu<>("Upgrade Class", upgradeClasses, null, setUpgradeCat);
+			Gui.ListMenu<GeneralizedID.UpgradeClass> upgrclsListMenu_Group   = new Gui.ListMenu<>("Upgrade Class of selected", upgradeClasses, null, setUpgradeCat);
 			
 			NamedColor[] colors = SaveViewer.addNull(Images.getInstance().colors.getArray());
 			Gui.NamedColorListMenu.ExternFunction setImageBG = new Gui.NamedColorListMenu.ExternFunction() {
@@ -1972,15 +1972,15 @@ public class GameInfos {
 		
 		private void prepareTable() {
 			ComboboxCellEditor<GeneralizedID.UpgradeClass> upgradeClassCellEditor =
-					new ComboboxCellEditor<GeneralizedID.UpgradeClass>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values()));
+					new ComboboxCellEditor<>(SaveViewer.addNull(GeneralizedID.UpgradeClass.values()));
 			table.setCellEditor  (GeneralizedIDColumnID.UpgrCls, upgradeClassCellEditor);
 			
 			ComboboxCellEditor<GeneralizedID.Type> typeCellEditor =
-					new ComboboxCellEditor<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
+					new ComboboxCellEditor<>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			table.setCellEditor  (GeneralizedIDColumnID.Type, typeCellEditor);
 			
 			ComboboxCellEditor<String> imageCellEditor =
-					new ComboboxCellEditor<String>(SaveViewer.addNull(Images.getInstance().extraImages.names));
+					new ComboboxCellEditor<>(SaveViewer.addNull(Images.getInstance().extraImages.names));
 			Images.getInstance().extraImages.addImageListListener(new ImageListListener() {
 				@Override public void imageListChanged() {
 					imageCellEditor.setValues(SaveViewer.addNull(Images.getInstance().extraImages.names));
@@ -1990,7 +1990,7 @@ public class GameInfos {
 			table.setCellEditor(GeneralizedIDColumnID.Image, imageCellEditor);
 			
 			ComboboxCellEditor<NamedColor> colorCellEditor =
-					new ComboboxCellEditor<NamedColor>(SaveViewer.addNull(Images.getInstance().colors.getArray()));
+					new ComboboxCellEditor<>(SaveViewer.addNull(Images.getInstance().colors.getArray()));
 			Images.getInstance().colors.addColorListListender(new Images.Colors.ColorListListender() {
 				@Override public void colorAdded   (NamedColor color)           { resetValues(); }
 				@Override public void colorChanged (NamedColor color)           { resetValues(); }
@@ -2384,14 +2384,14 @@ public class GameInfos {
 				}
 			);
 			
-			cmbbxType = new JComboBox<GeneralizedID.Type>(SaveViewer.addNull(GeneralizedID.Type.values()));
+			cmbbxType = new JComboBox<>(SaveViewer.addNull(GeneralizedID.Type.values()));
 			cmbbxType.setSelectedItem(id.type);
 			cmbbxType.addActionListener(e->{
 				id.type = (GeneralizedID.Type)cmbbxType.getSelectedItem();
 				idDataChanged();
 			});
 			
-			cmbbxBgImage = new JComboBox<String>(SaveViewer.addNull(Images.getInstance().extraImages.names));
+			cmbbxBgImage = new JComboBox<>(SaveViewer.addNull(Images.getInstance().extraImages.names));
 			cmbbxBgImage.setSelectedItem(id.getImageFileName());
 			cmbbxBgImage.addActionListener(e->{ id.setImageFileName((String)cmbbxBgImage.getSelectedItem()); idDataChanged(); });
 			
