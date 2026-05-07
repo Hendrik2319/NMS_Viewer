@@ -170,7 +170,7 @@ public class RecipeAnalyser implements ActionListener, ToolWindow {
 			
 			miHighlightProducible.setSelected(dataModel.ingredientsTableModel.highlightProducible);
 			
-			boolean isProducible = hasName && ingredient.isOutputValue && ingredient.isProducible();
+			boolean isProducible = hasName && ingredient!=null && ingredient.isOutputValue && ingredient.isProducible();
 			miFindRecipeChain.setText(String.format("Find recipe chain for %s", name));
 			miFindRecipeChain.setEnabled(isProducible);
 			updateGuiAccess();

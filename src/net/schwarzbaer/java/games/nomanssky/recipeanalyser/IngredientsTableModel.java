@@ -147,11 +147,10 @@ class IngredientsTableModel<IDType extends Comparable<IDType>> extends Simplifie
 
 	@Override public Object getValueAt(int rowIndex, int columnIndex, ColumnID columnID) {
 		DataModel<IDType>.Ingredient ingredient = getIngredientAtRow(rowIndex);
-		boolean isInput = ingredient!=null && ingredient.getName()!=null;
 		switch (columnID) {
-		case Index      : return !isInput ? null : ingredient.getID();
-		case InStock    : return !isInput ? null : dataModel.isInStock(ingredient.getID()); // ? "In Stock" : "---";
-		case Producible : return !isInput ? null : dataModel.isInStock(ingredient.getID()) ? "in stock" : dataModel.isProducible(ingredient.getID()) ? "producible" : "----";
+		case Index      : return ingredient==null || ingredient.getName()==null ? null : ingredient.getID();
+		case InStock    : return ingredient==null || ingredient.getName()==null ? null : dataModel.isInStock(ingredient.getID()); // ? "In Stock" : "---";
+		case Producible : return ingredient==null || ingredient.getName()==null ? null : dataModel.isInStock(ingredient.getID()) ? "in stock" : dataModel.isProducible(ingredient.getID()) ? "producible" : "----";
 		case Type       : return ingredient==null ? null : ingredient.getType();
 		case NameDE     : return ingredient==null ? null : ingredient.getName(Lang.De);
 		case NameEN     : return ingredient==null ? null : ingredient.getName(Lang.En);

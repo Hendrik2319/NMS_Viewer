@@ -23,6 +23,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -37,7 +38,6 @@ import javax.swing.JTextArea;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.EditIdDialog;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
@@ -620,7 +620,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					drawSlotSimple(g2, x,y, baseClip, standardFont, slotId, null, null, isSelected);
 				}
 				private static void drawSlotSimple(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, GeneralizedID slotId, Long amount, Long maxAmount, boolean isSelected) {
-					Debug.Assert(slotId!=null);
+					Objects.requireNonNull(slotId);
 					drawSlot(g2, x,y, baseClip, standardFont, isSelected, slotId, null, amount, maxAmount, null, "???", false, true, "", null );
 				}
 				
@@ -649,7 +649,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					int strOffsetX = innerOffsetX+4;
 					int strOffsetY = innerOffsetY+12;
 					
-					BufferedImage image = slotId==null?null:slotId.getCachedImage(imageSize,imageSize);
+					BufferedImage image = slotId==null ? null : slotId.getCachedImage(imageSize,imageSize);
 					
 					if (!isEmpty) {
 						Paint background;
@@ -708,6 +708,8 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					//		markerWidth = 2+g2.getFontMetrics().stringWidth(marker);
 					//	}
 					//}
+					
+					Objects.requireNonNull( slotId );
 					
 					if (slotId.hasLabel()) {
 						g2.setPaint(type==SlotType.Technology ? COLOR__SLOT_TITLE_TECH : COLOR__SLOT_TITLE);
@@ -875,6 +877,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					
 					if ((hoveredSlot==null)!=(newP==null)) { hoveredSlot = newP; return true; }
 					if ((hoveredSlot==null)&&(newP==null)) { return false; }
+					Objects.requireNonNull( newP );
 					if (hoveredSlot.x==newP.x && hoveredSlot.y==newP.y) { return false; }
 					hoveredSlot.setLocation(newP);
 					return true;

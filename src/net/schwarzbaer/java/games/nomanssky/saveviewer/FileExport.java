@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.function.Consumer;
@@ -2420,6 +2421,8 @@ public class FileExport {
 					if (max==null) max=new Index3D(index); else max.max(index);
 				}
 				
+				Objects.requireNonNull(min); // -> blocks.isempty()
+				Objects.requireNonNull(max); // -> blocks.isempty()
 				minCorner.set(min);
 				size.iX = max.iX-min.iX+1;
 				size.iY = max.iY-min.iY+1;
@@ -2792,6 +2795,7 @@ public class FileExport {
 					case NegZ: pline = new PolyLine(i.add(ind101), i.add(ind000)); break;
 					}
 					
+					Objects.requireNonNull(pline);
 					int seg = 4;
 					for (int wi=1; wi<seg; ++wi) {
 						double w = wi*Math.PI/2/seg;
@@ -2895,6 +2899,7 @@ public class FileExport {
 					case NegZ: pline = new PolyLine(i.add(ind110), i.add(ind101)); break;
 					}
 					
+					Objects.requireNonNull(pline);
 					int seg = 4;
 					for (int wi=1; wi<seg; ++wi) {
 						double w = wi*Math.PI/2/seg;

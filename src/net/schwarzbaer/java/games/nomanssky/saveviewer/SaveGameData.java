@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
@@ -4114,9 +4115,9 @@ public class SaveGameData {
 				case AvailableData: map = discoveredItems_Avail; break;
 				case StoreData    : map = discoveredItems_Store; break;
 				}
-				Integer value = map.get(itemLabel);
-				if (value==null) map.put(itemLabel, 1);
-				else             map.put(itemLabel, value+1);
+				Objects.requireNonNull(map);
+				int value = map.getOrDefault(map, 0);
+				map.put(itemLabel, value+1);
 			}
 			
 			public boolean isNotUploaded() {

@@ -37,6 +37,7 @@ import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -637,7 +638,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 							knownValue = null;
 						}
 					}
-					if (line.startsWith("value.label=") && knownModule!=null) {
+					if (line.startsWith("value.label=") && knownValue!=null) {
 						String str = line.substring("value.label=".length());
 						knownValue.label = str;
 					}
@@ -745,8 +746,8 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 		}
 
 		public void next() {
-			Debug.Assert(currentSession!=null);
-			Debug.Assert(currentSession.sequences!=null);
+			Objects.requireNonNull(currentSession);
+			Objects.requireNonNull(currentSession.sequences);
 			Debug.Assert(currentSequence < currentSession.sequences.length);
 			++currentModule;
 			if (currentModule>=currentSession.sequences[currentSequence].length) {
@@ -1010,6 +1011,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 					case "[InstalledUpgrade]": currentChapter = SessionFileChapter.InstalledUpgrade; break;
 					}
 					
+					Objects.requireNonNull(currentChapter);
 					switch (currentChapter) {
 					case FinalSequence:
 						if (line.equals("[FinalSequence]")) {
@@ -1118,6 +1120,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 						
 						// uniqueID  -->  usedValueDefinition
 						if (line.startsWith("value.uniqueID=") && installedUpgrade!=null) {
+							Objects.requireNonNull(block);
 							String str = line.substring("value.uniqueID=".length());
 							try {
 								long uniqueID = Long.parseLong(str,16);
@@ -1132,6 +1135,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 						}
 						// value + usedValueDefinition  -->  InstalledUpgrade.values
 						if (line.startsWith("value.value=") && usedValueDefinition!=null) {
+							Objects.requireNonNull(installedUpgrade);
 							String str = line.substring("value.value=".length());
 							Float value;
 							try { value = Float.parseFloat(str); }
@@ -1549,8 +1553,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 								JOptionPane.showMessageDialog(table, "You can't select a module twice. (-> Row "+(row+1)+")", "Module already selected", JOptionPane.ERROR_MESSAGE);
 							else {
 								orderedIDs.add(id);
-								KnownModule module = knownModules.get(id);
-								Debug.Assert(module!=null);
+								KnownModule module = Objects.requireNonNull( knownModules.get(id) );
 								Debug.Assert(id==module.moduleID);
 								session.blocks.put(id, new Session.SessionBlock(module));
 								fireTableRowAdded(orderedIDs.size()-1);
@@ -1584,8 +1587,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 								}
 							}
 						} else if (aValue==null) {
-							GeneralizedID id = orderedIDs.get(rowIndex);
-							Debug.Assert(id!=null);
+							GeneralizedID id = Objects.requireNonNull( orderedIDs.get(rowIndex) );
 							orderedIDs.remove(rowIndex);
 							session.blocks.remove(id);
 							fireTableRowRemoved(rowIndex);
@@ -1596,10 +1598,8 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 						break;
 						
 					case Amount: {
-						GeneralizedID id = orderedIDs.get(rowIndex);
-						Debug.Assert(id!=null);
-						Session.SessionBlock block = session.blocks.get(id);
-						Debug.Assert(block!=null);
+						GeneralizedID id = Objects.requireNonNull( orderedIDs.get(rowIndex) );
+						Session.SessionBlock block = Objects.requireNonNull( session.blocks.get(id) );
 						block.amount = aValue==null ? 0 : ((Integer)aValue).intValue();
 						session.updateNumberOfModules();
 						updateButtonAccess();
@@ -1738,8 +1738,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 				Vector<GeneralizedID> sortedIDs = sortedID(session.blocks.keySet());
 				Gui.append_ln(sequencesOutput, "Modules:");
 				for (int i=0; i<sortedIDs.size(); ++i) {
-					GeneralizedID id = sortedIDs.get(i);
-					Debug.Assert(id!=null);
+					GeneralizedID id = Objects.requireNonNull( sortedIDs.get(i) );
 					int amount = session.blocks.get(id).amount;
 					Gui.append_ln(sequencesOutput, "   %2d  :  %s  (%dx)", i+1, id.toString(), amount);
 				}
@@ -1941,10 +1940,9 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 			
 			if (currentSession==null) return;
 			
-			for (GeneralizedID id:sortedID(currentSession.blocks.keySet())) {
-				Debug.Assert(id!=null);
-				Session.SessionBlock block = currentSession.blocks.get(id);
-				Debug.Assert(block!=null);
+			for (GeneralizedID id : sortedID(currentSession.blocks.keySet())) {
+				Objects.requireNonNull(id);
+				Session.SessionBlock block = Objects.requireNonNull( currentSession.blocks.get(id) );
 				
 				InstalledModulesTableModel tableModel = new InstalledModulesTableModel(
 					block,currentSession.finalSequence,currentSession.nModules,
@@ -2036,20 +2034,18 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 			}
 		
 			public void setBlock(GeneralizedID id, int rowIndex, int columnIndex) {
-				this.id = id;
+				this.id = Objects.requireNonNull(id);
 				this.rowIndex = rowIndex;
 				this.columnIndex = columnIndex;
-				Debug.Assert(id!=null);
-				block = currentSession==null ? null : currentSession.blocks.get(id);
-				tableModel = tables.get(id);
-				Debug.Assert(tableModel!=null);
+				block = currentSession==null ? null : currentSession.blocks.get(this.id);
+				tableModel = Objects.requireNonNull( tables.get(this.id) );
 				vd = tableModel.getVD(columnIndex);
 				
 				miAddColumnToMinMax.setEnabled(vd!=null);
-				miAddValue   .setText(String.format("Add New Value Definition to %s", id.getName()));
-				miEditValue  .setText(String.format("Edit [%s] of %s", vd==null?"??":vd.label, id.getName()));
+				miAddValue   .setText(String.format("Add New Value Definition to %s", this.id.getName()));
+				miEditValue  .setText(String.format("Edit [%s] of %s", vd==null?"??":vd.label, this.id.getName()));
 				miEditValue  .setEnabled(vd!=null);
-				miRemoveValue.setText(String.format("Remove [%s] of %s", vd==null?"??":vd.label, id.getName()));
+				miRemoveValue.setText(String.format("Remove [%s] of %s", vd==null?"??":vd.label, this.id.getName()));
 				miRemoveValue.setEnabled(vd!=null);
 			}
 	
@@ -2120,7 +2116,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 			}
 
 			private void addToMinMax(Vector<InstalledUpgrade> modules, KnownModule.ValueDefinition vd) {
-				Debug.Assert(vd!=null);
+				Objects.requireNonNull(vd);
 				modules.forEach(upgrade->{
 					if (upgrade!=null) {
 						Float value = upgrade.values.get(vd);
@@ -2232,7 +2228,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 		}
 
 		public void add(float f, Color color) {
-			Debug.Assert(color!=null);
+			Objects.requireNonNull(color);
 			Debug.Assert(!Float.isNaN(f));
 			range.add(new ColorPos(f,color));
 			range.sort(Comparator.<ColorPos>comparingDouble(cp->cp.f));
@@ -2806,6 +2802,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 				block.installedModules.set(rowIndex,upgrade);
 			}
 			
+			Objects.requireNonNull(upgrade);
 			switch (columnIndex) {
 			case COLUMN_INDEX : Debug.Assert(false); break;
 			
@@ -2839,7 +2836,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 				if (valueIndex<block.module.values.size()) {
 					KnownModule.ValueDefinition vd = getVD(columnIndex);
 					if (rowIndex<nModules) {
-						Debug.Assert(upgrade!=null);
+						Objects.requireNonNull(upgrade);
 						Float value = null;
 						switch (vd.format) {
 						case Activated: value = CELLEDITORVALUE_ACTIVATED.equals(aValue) ? 1.0f : null; break;
@@ -3013,7 +3010,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 							if (rowIndex<nModules) {
 								if (0<=valueIndex && valueIndex<block.module.values.size()) {
 									KnownModule.ValueDefinition vd = getVD(columnIndex);
-									Debug.Assert(vd!=null);
+									Objects.requireNonNull(vd);
 									Float min = isValueColoringMinMax ? vd.min : (Float)0.0f; // else 0..max
 									Float max = vd.max;
 									if (min!=null && max!=null) {
@@ -3121,7 +3118,7 @@ public final class UpgradeModuleInstallHelper implements ActionListener, ToolWin
 			this.modules.clear();
 			for (int i=0; i<modules.size(); i++) {
 				GeneralizedID module = modules.get(i);
-				Debug.Assert(module!=null);
+				Objects.requireNonNull(module);
 				this.modules.put(module,i);
 			}
 			this.sequences = sequences;

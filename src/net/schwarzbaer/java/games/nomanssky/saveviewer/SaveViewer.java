@@ -711,7 +711,7 @@ public class SaveViewer implements ActionListener {
 			
 			Gui.runInEventThreadAndWait(()->{
 				if (mainWindow!=null) {
-					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(3);
+					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
 					SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,!isPreNEXT);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
@@ -759,7 +759,7 @@ public class SaveViewer implements ActionListener {
 				saveGameData.parse(false,mainWindow);
 				
 				Gui.runInEventThreadAndWait(()->{
-					if (pd!=null) pd.setTaskTitle("Update GUI"); pd.setValue(4);
+					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
 					view.replaceData(saveGameData,!isPreNEXT);
 					contentPane.updateIDPanels();
 				});

@@ -632,9 +632,11 @@ abstract class DataModel<IDType extends Comparable<IDType>> {
 			RecipeIngredient inputValue2 = parseRecipeIngredient(row, rowData, 2);
 			RecipeIngredient inputValue3 = parseRecipeIngredient(row, rowData, 3);
 			if (outputValue!=null) recipes.add(recipe = new Recipe(recipes.size(),outputValue));
-			if (inputValue1!=null) recipe.addInputValue(0,inputValue1);
-			if (inputValue2!=null) recipe.addInputValue(1,inputValue2);
-			if (inputValue3!=null) recipe.addInputValue(2,inputValue3);
+			if (recipe!=null) {
+				if (inputValue1!=null) recipe.addInputValue(0,inputValue1);
+				if (inputValue2!=null) recipe.addInputValue(1,inputValue2);
+				if (inputValue3!=null) recipe.addInputValue(2,inputValue3);
+			}
 		}
 		
 		if (tempWrongRecipes!=null)

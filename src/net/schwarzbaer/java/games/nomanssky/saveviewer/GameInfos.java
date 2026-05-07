@@ -33,6 +33,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -644,6 +645,7 @@ public class GameInfos {
 			}
 			
 			if (system!=null) {
+				Objects.requireNonNull(uod_system);
 				if (uod_system.race!=null) {
 					system.race = uod_system.race;
 					if (withOutput) Gui.log_ln("   Race of %s was defined: %s", objName, system.race);
@@ -699,6 +701,7 @@ public class GameInfos {
 			}
 			
 			if (planet!=null) {
+				Objects.requireNonNull(uod_planet);
 				if (uod_planet.biome!=null) {
 					planet.biome = uod_planet.biome;
 					if (withOutput) Gui.log_ln("   Biome of %s was defined: %s",objName,planet.biome);
@@ -743,8 +746,9 @@ public class GameInfos {
 			}
 			
 			if (uniObj!=null) {
+				Objects.requireNonNull(uod_uniObj);
 				uniObj.extraInfos.clear();
-				for (ExtraInfo ei:uod_uniObj.extraInfos) {
+				for (ExtraInfo ei : uod_uniObj.extraInfos) {
 					uniObj.extraInfos.add(ei);
 					if (withOutput) Gui.log_ln("   Info of %s was defined: ( \"%s\", \"%s\" )",objName,ei.shortLabel,ei.info);
 				}

@@ -778,7 +778,7 @@ public class Gui {
 				}
 				
 				long[] values = null;
-				if (!sigBoostCodeError) {
+				if (!sigBoostCodeError && strings!=null) {
 					values = new long[strings.length];
 					for (int i=0; i<strings.length; ++i)
 						try { values[i] =Long.parseLong( strings[i], 16 ); }
@@ -791,6 +791,9 @@ public class Gui {
 					parent.showError("Wrong Input");
 					return null;
 				}
+				
+				if (values==null)
+					return null;
 				
 				int voxelX = (int) (values[0]-2047);
 				int voxelY = (int) (values[1]-127);

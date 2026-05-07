@@ -74,7 +74,7 @@ public class TreeView {
 		void createChildren() {
 			switch (data.type) {
 			case Object: {
-				ObjectValue<NVExtra,VExtra> object1 = data ==null ? null : data .castToObjectValue();
+				ObjectValue<NVExtra,VExtra> object1 = data.castToObjectValue();
 				ObjectValue<NVExtra,VExtra> object2 = data2==null ? null : data2.castToObjectValue();
 				Vector<CompareTreeNode> childrenVec = new Vector<>();
 				
@@ -115,7 +115,7 @@ public class TreeView {
 				children = childrenVec.toArray(new CompareTreeNode[0]);
 			} break;
 			case Array: {
-				ArrayValue<NVExtra,VExtra> array1 = data ==null ? null : data .castToArrayValue();
+				ArrayValue<NVExtra,VExtra> array1 = data.castToArrayValue();
 				ArrayValue<NVExtra,VExtra> array2 = data2==null ? null : data2.castToArrayValue();
 				Vector<CompareTreeNode> childrenVec = new Vector<>();
 				

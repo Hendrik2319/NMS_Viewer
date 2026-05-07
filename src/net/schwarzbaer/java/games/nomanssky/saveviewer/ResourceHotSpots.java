@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.function.BiConsumer;
 
@@ -587,6 +588,7 @@ public class ResourceHotSpots implements ActionListener {
 					break;
 					
 				case "[Region]":
+					Objects.requireNonNull(planet);
 					currentBlock=DataBlock.Region;
 					referencePoint = null; circle = null; hotSpot = null;
 					planet.regions.add( region = new Planet.Region("<New Region>") );
@@ -614,6 +616,7 @@ public class ResourceHotSpots implements ActionListener {
 				
 				switch (currentBlock) {
 				case Planet:
+					Objects.requireNonNull(planet);
 					if (line.startsWith("UniverseAddress=")) {
 						String valueStr = line.substring("UniverseAddress=".length());
 						planet.universeAddress = UniverseAddress.parseAddressStr(valueStr);
@@ -632,6 +635,7 @@ public class ResourceHotSpots implements ActionListener {
 					break;
 					
 				case Region:
+					Objects.requireNonNull(region);
 					if (line.startsWith("name=")) {
 						String valueStr = line.substring("name=".length());
 						region.name = valueStr;
@@ -639,6 +643,7 @@ public class ResourceHotSpots implements ActionListener {
 					break;
 					
 				case ReferencePoint:
+					Objects.requireNonNull(referencePoint);
 					if (line.startsWith("latitude=")) {
 						String valueStr = line.substring("latitude=".length());
 						referencePoint.location.setLatitudeStr(valueStr);
@@ -657,6 +662,7 @@ public class ResourceHotSpots implements ActionListener {
 					break;
 				
 				case Circle:
+					Objects.requireNonNull(circle);
 					if (line.startsWith("latitude=")) {
 						String valueStr = line.substring("latitude=".length());
 						circle.center.setLatitudeStr(valueStr);
@@ -673,6 +679,7 @@ public class ResourceHotSpots implements ActionListener {
 					break;
 				
 				case HotSpot:
+					Objects.requireNonNull(hotSpot);
 					if (line.startsWith("latitude=")) {
 						String valueStr = line.substring("latitude=".length());
 						hotSpot.location.setLatitudeStr(valueStr);

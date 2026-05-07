@@ -28,6 +28,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.function.Consumer;
@@ -62,7 +63,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.Debug;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos.GeneralizedID;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.Gui;
@@ -99,12 +99,12 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.lib.gui.Canvas;
 import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.IconSource.CachedIcons;
 import net.schwarzbaer.java.lib.gui.StandardDialog;
 import net.schwarzbaer.java.lib.gui.Tables;
-import net.schwarzbaer.java.lib.gui.TristateCheckBox;
-import net.schwarzbaer.java.lib.gui.IconSource.CachedIcons;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
+import net.schwarzbaer.java.lib.gui.TristateCheckBox;
 
 public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements ActionListener {
 	private static final long serialVersionUID = -4594889224613582352L;
@@ -1224,7 +1224,7 @@ public class UniversePanel extends SaveGameView.SaveGameViewTabPanel implements 
 							Resources starClassRes = node.value.solarSystem.starClass.defaultResource;
 							if (node.value.hasExtremeBiome)
 								starClassRes = node.value.solarSystem.starClass.defaultExtremeResource;
-							Debug.Assert(starClassRes!=null);
+							Objects.requireNonNull(starClassRes);
 							resources.add(starClassRes);
 						}
 					}
