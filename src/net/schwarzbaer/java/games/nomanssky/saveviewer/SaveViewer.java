@@ -3,6 +3,7 @@ package net.schwarzbaer.java.games.nomanssky.saveviewer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
@@ -70,13 +71,14 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.HexViewPanel;
 import net.schwarzbaer.java.lib.gui.IconSource;
 import net.schwarzbaer.java.lib.gui.ProgressDialog;
 import net.schwarzbaer.java.lib.gui.StandardMainWindow;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
-import net.schwarzbaer.java.lib.system.ClipboardTools;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
+import net.schwarzbaer.java.lib.system.ClipboardTools;
 
 public class SaveViewer implements ActionListener {
 
@@ -601,8 +603,7 @@ public class SaveViewer implements ActionListener {
 	private String getSavegameFolder() {
 		Properties prop = System.getProperties();
 		String fs = prop.get("file.separator").toString();
-		String normalFolder = getGameFolderStr()+fs+config.getSavegameSubFolder(mainWindow)+fs;
-		return normalFolder + "strbackup"+fs; // while format modifications are not understand completely
+		return getGameFolderStr()+fs+config.getSavegameSubFolder(mainWindow)+fs;
 	}
 
 	private static File getGameFolder() {
@@ -732,6 +733,7 @@ public class SaveViewer implements ActionListener {
 		
 		return saveGameData;
 	}
+	
 	private void reloadSaveGameView(SaveGameView view) {
 		Gui.runWithProgressDialog(mainWindow,"Reload SaveGame", pd->{
 			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 5); });
@@ -766,20 +768,61 @@ public class SaveViewer implements ActionListener {
 			}
 		});
 	}
+	
 	private JSON_Object<NVExtra, VExtra> loadAndParseSaveGameFile(File saveGameFile, boolean withConsoleLog) {
 		if (withConsoleLog) Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
 		
-		JSON_Data.Value<NVExtra,VExtra> result = JSON_Parser.parse(saveGameFile,StandardCharsets.UTF_8,new FactoryForExtras(),null);
+		byte[] decodeBytes = SaveGameCompression.decodeFile(saveGameFile);
+		if (decodeBytes==null)
+		{
+			if (withConsoleLog) Gui.log_ln(" can't read file");
+			return null;
+		}
+		
+		String fileContent = new String(decodeBytes, StandardCharsets.UTF_8);
+		JSON_Data.Value<NVExtra,VExtra> result = JSON_Parser.parse(fileContent,new FactoryForExtras(),null);
 		JSON_Object<NVExtra,VExtra> new_json_data = JSON_Data.getObjectValue(result);
 		
 		if (new_json_data==null)
+		{
+			if (decodeBytes!=null)
+				showBytes("Decoded Content of %s".formatted(saveGameFile.getName()), decodeBytes);
 			throw new IllegalStateException("Parsed JSON tree is not an JSON object.");
+		}
 		
 		JSON_Data.traverseAllValues(new_json_data, false, (path,nv)->nv.extra.setHost(nv), (path,v)->v.extra.setHost(v));
 		
 		if (withConsoleLog) Gui.log_ln(" done");
 		
 		return new_json_data;
+	}
+
+	void showBytes(String title, byte[] bytes)
+	{
+		showBytes(mainWindow, title, bytes, ModalityType.APPLICATION_MODAL);
+	}
+	static void showBytes(Window window, String title, byte[] bytes)
+	{
+		showBytes(window, title, bytes, ModalityType.APPLICATION_MODAL);
+	}
+	static void showBytes(Window window, String title, byte[] bytes, ModalityType modalityType)
+	{
+		HexViewPanel.showAsDialog(
+				window, title,
+				new HexViewPanel(HexViewPanel.PREFFERED_PAGESIZE, true), bytes,
+				dlg -> {
+					AppSettings.getInstance().registerExtraWindow(
+							dlg,
+							AppSettings.ValueKey.ParseErrorHexView_WindowX,
+							AppSettings.ValueKey.ParseErrorHexView_WindowY,
+							AppSettings.ValueKey.ParseErrorHexView_WindowWidth,
+							AppSettings.ValueKey.ParseErrorHexView_WindowHeight,
+							HexViewPanel.PREFFERED_WIDTH,
+							HexViewPanel.PREFFERED_HEIGHT
+					);
+				},
+				modalityType
+		);
 	}
 
 	private void closeSaveGameView(SaveGameView view) {
@@ -913,7 +956,6 @@ public class SaveViewer implements ActionListener {
 				}
 			}
 			return savegameBackupFolder;
-			//return new File("d:/Games/_game_data/__saves/No Man's Sky - AppData_Roaming_HelloGames_NMS_st_76561198016584395/savegame_PreNEXT");
 		}
 
 		static Config readFromFile() {
@@ -1311,7 +1353,6 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	public static void test() {
-//		String filepath = "c:/Users/Hendrik 2/AppData/Roaming/HelloGames/NMS/st_76561198016584395/save.hg";
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
 		

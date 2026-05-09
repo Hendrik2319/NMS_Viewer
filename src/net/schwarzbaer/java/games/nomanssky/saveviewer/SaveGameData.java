@@ -451,6 +451,7 @@ public class SaveGameData {
 			this.gps = position.gps==null?null:new PolarCoordinates(position.gps);
 		}
 		private static Position parse(JSON_Object<NVExtra,VExtra> obj, String valueName_Pos, String valueName_At, String valueName_Up) {
+			Objects.requireNonNull(obj);
 			Position position = new Position();
 			position.pos = Coordinates.parse(obj, valueName_Pos);
 			position.at  = Coordinates.parse(obj, valueName_At );
