@@ -1468,6 +1468,9 @@ public class Gui {
 	public static JButton createButton(String title, ActionListener l) {
 		return createButton(title, l, null, null, true);
 	}
+	public static JButton createButton(String title, ToolbarIcons icon, ActionListener l) {
+		return createButton(title, l, null, null, true, icon);
+	}
 	public static <AC extends Enum<AC>> JButton createButton(String title, ActionListener l, AC actionCommand) {
 		return createButton(title, l, null, actionCommand, true);
 	}

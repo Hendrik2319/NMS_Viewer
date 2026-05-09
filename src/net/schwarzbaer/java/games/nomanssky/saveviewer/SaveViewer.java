@@ -25,19 +25,20 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -253,23 +254,15 @@ public class SaveViewer implements ActionListener {
 		if (writeKnownSteamIDsToHTML)
 			FileExport.writeKnownSteamIDsToHTML();
 		
-		if (loadSavegame<0)
-			return;
-		
-		ActionCommand actionCommand = null;
-		for (ActionCommand ac:ActionCommand.values()) {
-			if (ac.index==loadSavegame-1)
-				actionCommand = ac;
-		}
-		if (actionCommand==null)
+		if (loadSavegame<1)
 			return;
 		
 		SaveViewer saveViewer = new SaveViewer();
-		File saveGameFile = new File(saveViewer.getSavegameFolder()+actionCommand.filename);
+		File saveGameFile = new File(saveViewer.getSavegameFolder()+SaveGameButtons.getFilename(loadSavegame-1));
 		if (!saveGameFile.isFile())
 			return;
 		
-		SaveGameData data = saveViewer.openSaveGame(saveGameFile, actionCommand.index, null);
+		SaveGameData data = saveViewer.openSaveGame(saveGameFile, loadSavegame-1, null);
 		if (data==null)
 			return;
 		
@@ -384,43 +377,15 @@ public class SaveViewer implements ActionListener {
 		RefreshExtraImages, FindNewExtraImages, ShowExtraImages,
 		OpenRecipeAnalyser, OpenProductionOptimiser, OpenUpgradeModuleInstallHelper,
 		WriteKnownSteamIDsToHTML, SetPathToVRMLviewer,
-		  save_hg( 0,  "save.hg","save.hg"),
-		 save2_hg( 1, "save2.hg","..2"    ),
-		 save3_hg( 2, "save3.hg","..3"    ),
-		 save4_hg( 3, "save4.hg","..4"    ),
-		 save5_hg( 4, "save5.hg","..5"    ),
-		 save6_hg( 5, "save6.hg","..6"    ),
-		 save7_hg( 6, "save7.hg","..7"    ),
-		 save8_hg( 7, "save8.hg","..8"    ),
-		 save9_hg( 8, "save9.hg","..9"    ),
-		save10_hg( 9,"save10.hg","..10"   ),
 		EditItemBackgroundColors,
 		ClearOptionalValues, ShowOptionalValues,
 		ClearUnknownValues, ShowUnknownValues,
-		;
-		
-		public static final ActionCommand[] save_commands = {save_hg,save2_hg,save3_hg,save4_hg,save5_hg,save6_hg,save7_hg,save8_hg,save9_hg,save10_hg};
-		private String filename;
-		private String label;
-		private int index;
-		
-		private ActionCommand() { this(-1,null,null); }
-		private ActionCommand(int index, String filename, String label) {
-			this.index = index;
-			this.filename = filename;
-			this.label = label;
-		}
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		ActionCommand actionCommand = ActionCommand.valueOf(e.getActionCommand());
 		switch (actionCommand) {
-		case save_hg: case save2_hg: case save3_hg: case save4_hg: case save5_hg:
-		case save6_hg: case save7_hg: case save8_hg: case save9_hg: case save10_hg:
-			openSaveGame(new File(getSavegameFolder()+actionCommand.filename),actionCommand.index);
-			break;
-			
 		case SwitchToGameFolder: {
 			inputFileChooser.setCurrentDirectory(getGameFolder());
 			String message = String.format("Current folder changed to \"%s\"", inputFileChooser.getCurrentDirectory().getPath());
@@ -624,33 +589,27 @@ public class SaveViewer implements ActionListener {
 	
 	private void checkSavegameExistence() {
 		if (isSavegameFolderKnown())
-			for (ActionCommand ac:ActionCommand.save_commands) {
-				File savefile = new File(getSavegameFolder()+ac.filename);
+			contentPane.saveGameButtons.forEach((filename, comp) -> {
+				File savefile = new File(getSavegameFolder()+filename);
 				String lastModified = SaveGameData.TimeStamp.getTimeStr(savefile.lastModified());
-				Vector<JComponent> comps = contentPane.disabler.get(ac);
-				if (comps!=null) {
-					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile);
-					for (JComponent comp:comps) {
-						if (data==null) {
-							comp.setToolTipText(savefile.isFile() ? "Can't parse SaveGame" : "SaveGame not exists");
-						} else if (data.isPreNEXT) {
-							comp.setToolTipText("PreNext SaveGame (will not be parsed)");
-							comp.setForeground(COLOR_PreNext_SaveGame);
-						} else if (data.version!=null && data.version>100000) {
-							comp.setToolTipText(String.format("Expedition ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-							comp.setForeground(COLOR_Expedition_SaveGame);
-						} else if (data.version!=null && data.version>5000) {
-							comp.setToolTipText(String.format("Creative ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-							comp.setForeground(COLOR_Creative_SaveGame);
-						} else {
-							comp.setToolTipText(String.format("Normal ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-							comp.setForeground(DEFAULT_BUTTON_FOREGROUND_COLOR);
-						}
-					}
+				SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile);
+				if (data==null) {
+					comp.setToolTipText(savefile.isFile() ? "Can't parse SaveGame" : "SaveGame not exists");
+				} else if (data.isPreNEXT) {
+					comp.setToolTipText("PreNext SaveGame (will not be parsed)");
+					comp.setForeground(COLOR_PreNext_SaveGame);
+				} else if (data.version!=null && data.version>100000) {
+					comp.setToolTipText(String.format("Expedition ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
+					comp.setForeground(COLOR_Expedition_SaveGame);
+				} else if (data.version!=null && data.version>5000) {
+					comp.setToolTipText(String.format("Creative ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
+					comp.setForeground(COLOR_Creative_SaveGame);
+				} else {
+					comp.setToolTipText(String.format("Normal ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
+					comp.setForeground(DEFAULT_BUTTON_FOREGROUND_COLOR);
 				}
-				
-				contentPane.disabler.setEnable(ac, savefile.isFile());
-			}
+				comp.setEnabled(savefile.isFile());
+			});
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
@@ -1131,6 +1090,44 @@ public class SaveViewer implements ActionListener {
 			return button;
 		}
 	}
+	
+	private class SaveGameButtons
+	{
+		private static int SAVE_GAME_COUNT = 15;
+		private final List<JButton> buttons = new Vector<>(); 
+		
+		void addButtons(JToolBar toolBar)
+		{
+			buttons.clear();
+			for (int i=0; i<SAVE_GAME_COUNT; i++)
+			{
+				toolBar.add(createButton(i*2+0));
+				toolBar.add(createButton(i*2+1));
+				toolBar.addSeparator();
+			}
+		}
+		
+		private JButton createButton(int index)
+		{
+			JButton button = Gui.createButton("%d".formatted(index+1), Gui.ToolbarIcons.Open, e -> {
+				String filepath = getSavegameFolder() + getFilename(index);
+				openSaveGame(new File(filepath),index);
+			});
+			buttons.add(button);
+			return button;
+		}
+		
+		static String getFilename(int index)
+		{
+			return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
+		}
+		
+		void forEach(BiConsumer<String,JButton> action)
+		{
+			for (int index=0; index<buttons.size(); index++)
+				action.accept(getFilename(index), buttons.get(index));
+		}
+	}
 
 	private class ContentPane extends JPanel {
 		private static final long serialVersionUID = -2737846401785644788L;
@@ -1142,10 +1139,14 @@ public class SaveViewer implements ActionListener {
 		private final GameInfos.GeneralizedIDPanel techIDsPanel;
 		private final GameInfos.GeneralizedIDPanel productIDsPanel;
 		private final GameInfos.GeneralizedIDPanel substanceIDsPanel;
+
+		private final SaveGameButtons saveGameButtons;
 		
 		ContentPane() {
 			super( new BorderLayout(3,3) );
 			setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
+			
+			saveGameButtons = new SaveGameButtons();
 			
 			disabler = new Disabler<>();
 			disabler.setCareFor(ActionCommand.values());
@@ -1214,21 +1215,7 @@ public class SaveViewer implements ActionListener {
 		}
 
 		private void addButtons(JToolBar toolBar) {
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save_hg));
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save2_hg));
-			toolBar.addSeparator();
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save3_hg));
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save4_hg));
-			toolBar.addSeparator();
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save5_hg));
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save6_hg));
-			toolBar.addSeparator();
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save7_hg));
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save8_hg));
-			toolBar.addSeparator();
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save9_hg));
-			toolBar.add(createButton(Gui.ToolbarIcons.Open, ActionCommand.save10_hg));
-			toolBar.addSeparator();
+			saveGameButtons.addButtons(toolBar);
 			toolBar.add(createButton("Compute Coordinates" , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates"  , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			
@@ -1275,10 +1262,6 @@ public class SaveViewer implements ActionListener {
 				button.addActionListener(e->popupMenu.show(button,0,button.getHeight()));
 			button.setEnabled(enabled);
 			return button;
-		}
-
-		private JButton createButton(Gui.ToolbarIcons iconKey, ActionCommand actionCommand) {
-			return createButton(actionCommand.label, iconKey, actionCommand, true);
 		}
 
 		private JButton createButton(String title, Gui.ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
