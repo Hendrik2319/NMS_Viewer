@@ -708,12 +708,12 @@ public class SaveViewer implements ActionListener {
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			
 			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
-			saveGameData.parse(false,mainWindow);
+			boolean parsedWithoutException = saveGameData.parse_guarded(false,mainWindow);
 			
 			Gui.runInEventThreadAndWait(()->{
 				if (mainWindow!=null) {
 					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(3); }
-					SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,!isPreNEXT);
+					SaveGameView saveGameView = new SaveGameView(mainWindow,saveGameFile,saveGameData,!isPreNEXT,!parsedWithoutException);
 					loadedSaveGames.add(saveGameView);
 					contentPane.addSaveGameView(saveGameView);
 					updateWindowTitle();
@@ -758,11 +758,11 @@ public class SaveViewer implements ActionListener {
 				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 				
 				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
-				saveGameData.parse(false,mainWindow);
+				boolean parsedWithoutException = saveGameData.parse_guarded(false,mainWindow);
 				
 				Gui.runInEventThreadAndWait(()->{
 					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
-					view.replaceData(saveGameData,!isPreNEXT);
+					view.replaceData(saveGameData,!isPreNEXT,!parsedWithoutException);
 					contentPane.updateIDPanels();
 				});
 			}

@@ -106,12 +106,16 @@ public class SaveGameData {
 		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
-	public SaveGameData parse(boolean forPreview, Window window) {
+	public boolean parse_guarded(boolean forPreview, Window window) {
+		try { parse(forPreview, window); return true; }
+		catch (Exception e) { e.printStackTrace(); return false; }
+	}
+	public void parse(boolean forPreview, Window window) {
 		version = getIntegerValue(json_data, "Version");
-		if (isPreNEXT) return this;
+		if (isPreNEXT) return;
 		
 		general.parse();
-		if (forPreview) return this;
+		if (forPreview) return;
 		
 		visitedSystems = VisitedSystems.parse(this);
 		parseStats();
@@ -149,8 +153,6 @@ public class SaveGameData {
 		GameInfos.readUniverseObjectDataFromDataPool(universe,false);
 		GameInfos.saveAllIDsToFiles();
 		SaveViewer.steamIDs.writeToFile();
-		
-		return this;
 	}
 	
 	static final UnknownValues globalUnknownValues = new UnknownValues();
@@ -3631,39 +3633,46 @@ public class SaveGameData {
 		
 		public void parse() {
 			
-			currentUniverseAddress = parseUniverseAddressStructure(data.json_data,"PlayerStateData","UniverseAddress");
+			String PlayerStateData = "PlayerStateData";
+			if (!hasValue(data.json_data, PlayerStateData))
+				return;
+			
+			currentUniverseAddress = parseUniverseAddressStructure(data.json_data,PlayerStateData,"UniverseAddress");
 			if (currentUniverseAddress!=null) {
 				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 			}
-			if (hasValue(data.json_data, "PlayerStateData","[CurrentBaseGalaxy]"))
-				currentBaseGalaxy = getIntegerValue( data.json_data, "PlayerStateData","[CurrentBaseGalaxy]");
+			if (hasValue(data.json_data, PlayerStateData,"[CurrentBaseGalaxy]"))
+				currentBaseGalaxy = getIntegerValue( data.json_data, PlayerStateData,"[CurrentBaseGalaxy]");
 			
-			if (hasValue(data.json_data, "PlayerStateData","AnomalyUniverseAddress"))
-				anomalyUA = parseUniverseAddressStructure(data.json_data,"PlayerStateData","AnomalyUniverseAddress");
-			graveUA       = parseUniverseAddressStructure(data.json_data,"PlayerStateData","GraveUniverseAddress");
-			if (    hasValue(data.json_data, "PlayerStateData","AnomalyPosition") &&
-					hasValue(data.json_data, "PlayerStateData","AnomalyMatrixLookAt") && 
-					hasValue(data.json_data, "PlayerStateData","AnomalyMatrixUp"))
-				anomalyPos = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp"); 
-			gravePos       = Position.parse(getObjectValue(data.json_data, "PlayerStateData"), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			if (hasValue(data.json_data, PlayerStateData,"AnomalyUniverseAddress"))
+				anomalyUA = parseUniverseAddressStructure(data.json_data,PlayerStateData,"AnomalyUniverseAddress");
+			graveUA       = parseUniverseAddressStructure(data.json_data,PlayerStateData,"GraveUniverseAddress");
+			if (    hasValue(data.json_data, PlayerStateData,"AnomalyPosition") &&
+					hasValue(data.json_data, PlayerStateData,"AnomalyMatrixLookAt") && 
+					hasValue(data.json_data, PlayerStateData,"AnomalyMatrixUp"))
+				anomalyPos = Position.parse(getObjectValue(data.json_data, PlayerStateData), "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp");
+			if (    hasValue(data.json_data, PlayerStateData,"GravePosition") &&
+					hasValue(data.json_data, PlayerStateData,"GraveMatrixLookAt") && 
+					hasValue(data.json_data, PlayerStateData,"GraveMatrixUp"))
+				gravePos   = Position.parse(getObjectValue(data.json_data, PlayerStateData), "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
 			
-			units           = getIntegerValue( data.json_data, "PlayerStateData","Units"           );
-			nanites         = getIntegerValue( data.json_data, "PlayerStateData","Nanites"         );
-			quicksilver     = getIntegerValue( data.json_data, "PlayerStateData","[Quicksilver]"   );
+			units           = getIntegerValue( data.json_data, PlayerStateData,"Units"           );
+			nanites         = getIntegerValue( data.json_data, PlayerStateData,"Nanites"         );
+			quicksilver     = getIntegerValue( data.json_data, PlayerStateData,"[Quicksilver]"   );
 			
-			playerHealth    = getIntegerValue( data.json_data, "PlayerStateData","Health"          );
-			playerShield    = getIntegerValue( data.json_data, "PlayerStateData","Shield"          );
-			energy          = getIntegerValue( data.json_data, "PlayerStateData","Energy"          );
-			shipHealth      = getIntegerValue( data.json_data, "PlayerStateData","ShipHealth"      );
-			shipShield      = getIntegerValue( data.json_data, "PlayerStateData","ShipShield"      );
+			playerHealth    = getIntegerValue( data.json_data, PlayerStateData,"Health"          );
+			playerShield    = getIntegerValue( data.json_data, PlayerStateData,"Shield"          );
+			energy          = getIntegerValue( data.json_data, PlayerStateData,"Energy"          );
+			shipHealth      = getIntegerValue( data.json_data, PlayerStateData,"ShipHealth"      );
+			shipShield      = getIntegerValue( data.json_data, PlayerStateData,"ShipShield"      );
 			
-			timeAlive       = getIntegerValue( data.json_data, "PlayerStateData","TimeAlive"       );
-			totalPlayTime   = getIntegerValue( data.json_data, "PlayerStateData","TotalPlayTime"   );
-			hazardTimeAlive = getIntegerValue( data.json_data, "PlayerStateData","HazardTimeAlive" );
+			timeAlive       = getIntegerValue( data.json_data, PlayerStateData,"TimeAlive"       );
+			totalPlayTime   = getIntegerValue( data.json_data, PlayerStateData,"TotalPlayTime"   );
+			hazardTimeAlive = getIntegerValue( data.json_data, PlayerStateData,"HazardTimeAlive" );
 			
-			knownGlyphsMask = getIntegerValue( data.json_data, "PlayerStateData","KnownPortalRunes");
+			knownGlyphsMask = getIntegerValue( data.json_data, PlayerStateData,"KnownPortalRunes");
 		}
 		
 //		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }
@@ -5210,7 +5219,7 @@ public class SaveGameData {
 		try {
 			return JSON_Data.getSubNode(data, path);
 		} catch (TraverseException e) {
-			Gui.log_error_ln("PathIsNotSolvableException: %s", e.getMessage());
+			Gui.log_error_ln("%s in SaveGameData.getSubNode(JSON_Object<NVExtra, VExtra>, Object...): %s", e.getClass().getSimpleName(), e.getMessage());
 			return null;
 		}
 	}
@@ -5219,7 +5228,7 @@ public class SaveGameData {
 		try {
 			return JSON_Data.getSubNode(data, path);
 		} catch (TraverseException e) {
-			Gui.log_error_ln("PathIsNotSolvableException: %s", e.getMessage());
+			Gui.log_error_ln("%s in SaveGameData.getSubNode(JSON_Array<NVExtra, VExtra>, Object...): %s", e.getClass().getSimpleName(), e.getMessage());
 			return null;
 		}
 	}

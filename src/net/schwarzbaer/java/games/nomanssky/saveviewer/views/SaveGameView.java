@@ -29,16 +29,14 @@ public class SaveGameView extends JPanel {
 
 	private static final long serialVersionUID = -1641171938196309864L;
 	
-	public final File file;
-	public SaveGameData data;
-	private JTabbedPane tabbedPane;
-
-	private Window mainWindow;
-
+	private final Window mainWindow;
+	private final JTabbedPane tabbedPane;
+	public  final File file;
+	public  SaveGameData data;
 	private boolean isNEXT;
+	private boolean exceptionWhileParsing;
 
-
-	public SaveGameView(Window mainWindow, File file, SaveGameData data, boolean newFormat) {
+	public SaveGameView(Window mainWindow, File file, SaveGameData data, boolean newFormat, boolean exceptionWhileParsing) {
 		super(new BorderLayout(3, 3));
 		setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		
@@ -46,6 +44,7 @@ public class SaveGameView extends JPanel {
 		this.file = file;
 		this.data = data;
 		this.isNEXT = newFormat;
+		this.exceptionWhileParsing = exceptionWhileParsing;
 		
 		tabbedPane = new JTabbedPane();
 		//tabbedPane.setPreferredSize(new Dimension(620, 500));
@@ -67,7 +66,7 @@ public class SaveGameView extends JPanel {
 
 
 	private void addAllTabs() {
-		if (isNEXT) {
+		if (isNEXT && !exceptionWhileParsing) {
 			SaveGameViewTabGroupingPanel rawDataPanel = new SaveGameViewTabGroupingPanel(data);
 			rawDataPanel.addPanel("DeObfuscator Usage", new SimplePanels.DeObfuscatorUsagePanel(data));
 			
@@ -117,9 +116,10 @@ public class SaveGameView extends JPanel {
 	}
 	
 	
-	public void replaceData(SaveGameData data, boolean isNEXT) {
+	public void replaceData(SaveGameData data, boolean isNEXT, boolean exceptionWhileParsing) {
 		this.data = data;
 		this.isNEXT = isNEXT;
+		this.exceptionWhileParsing = exceptionWhileParsing;
 		tabbedPane.removeAll();
 		addAllTabs();
 	}
