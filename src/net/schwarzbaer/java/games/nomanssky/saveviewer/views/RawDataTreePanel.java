@@ -116,8 +116,10 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		contextMenu_tree.add(miShowLegendOfTreeColors_tree = Gui.createMenuItem("###", this, RawDataTreeActionCommand.ShowLegendOfTreeColors, null));
 		
 		contextMenu_node = new JPopupMenu("Contextmenu");
-		contextMenu_node.add(Gui.createMenuItem("Show Path", this, RawDataTreeActionCommand.ShowPath, null));
-		contextMenu_node.add(Gui.createMenuItem("Copy Path", this, RawDataTreeActionCommand.CopyPath, Gui.ToolbarIcons.Copy));
+		contextMenu_node.add(Gui.createMenuItem("Show Path"                   , this, RawDataTreeActionCommand.ShowPath          , null));
+		contextMenu_node.add(Gui.createMenuItem("Show Path (Obfuscated Names)", this, RawDataTreeActionCommand.ShowPathObfuscated, null));
+		contextMenu_node.add(Gui.createMenuItem("Copy Path"                   , this, RawDataTreeActionCommand.CopyPath          , Gui.ToolbarIcons.Copy));
+		contextMenu_node.add(Gui.createMenuItem("Copy Path (Obfuscated Names)", this, RawDataTreeActionCommand.CopyPathObfuscated, Gui.ToolbarIcons.Copy));
 		contextMenu_node.add(Gui.createMenuItem("Copy Value Name", this, RawDataTreeActionCommand.CopyValueName, Gui.ToolbarIcons.Copy));		
 		contextMenu_node.add(Gui.createMenuItem("Copy Value", this, RawDataTreeActionCommand.CopyValue, Gui.ToolbarIcons.Copy));
 		contextMenu_node.addSeparator();
@@ -165,7 +167,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		miShowLegendOfTreeColors_node.setText(text_miShowLegendOfTreeColors);
 	}
 
-	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName, HideShowProcessedNodes, ShowLegendOfTreeColors }
+	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName, HideShowProcessedNodes, ShowLegendOfTreeColors, CopyPathObfuscated, ShowPathObfuscated }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -177,9 +179,16 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		case CopyPath:
 			SaveViewer.copyToClipBoard(pathToShortString(contextMenuTarget));
 			break;
+		case CopyPathObfuscated:
+			SaveViewer.copyToClipBoard(pathToShortString(contextMenuTarget, true));
+			break;
 		case ShowPath:
 			Gui.log_ln("Path: "+contextMenuTarget);
 			Gui.log_ln("    = "+pathToShortString(contextMenuTarget));
+			break;
+		case ShowPathObfuscated:
+			Gui.log_ln("Path: "+contextMenuTarget);
+			Gui.log_ln("    = "+pathToShortString(contextMenuTarget,true));
 			break;
 		case CopyValueName:
 			if (pathComp instanceof JsonTreeNode)
@@ -220,7 +229,11 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		return node.name;
 	}
 
-	private String pathToShortString(TreePath treePath) {
+	private static String pathToShortString(TreePath treePath) {
+		return pathToShortString(treePath, false);
+	}
+
+	private static String pathToShortString(TreePath treePath, boolean useOriginalNames) {
 		StringBuilder sb = new StringBuilder();
 		for (int i=0; i<treePath.getPathCount(); ++i) {
 			Object pathComponent = treePath.getPathComponent(i);
@@ -234,7 +247,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 					else
 						sb.append("["+node.parent.getIndex(node)+"]");
 				} else
-					sb.append("."+node.name);
+					sb.append("."+(useOriginalNames && node.originalName!=null ? node.originalName : node.name));
 			} else
 				sb.append("<unknown class of \""+pathComponent+"\">");
 		}
