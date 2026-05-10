@@ -112,7 +112,7 @@ public class SaveGameView extends JPanel {
 		}
 		
 //		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
-		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(file,data,isNEXT));
+		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(mainWindow,file,data,isNEXT));
 	}
 	
 	

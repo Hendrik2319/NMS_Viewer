@@ -430,7 +430,7 @@ class SaveGameDecoder
 
 		public Tester(List<File> files)
 		{
-			mainWindow = new StandardMainWindow("SaveGameCompression - Tester");
+			mainWindow = new StandardMainWindow("SaveGameDecoder - Tester");
 			
 			JPanel contentPane = new JPanel(new GridBagLayout());
 			GridBagConstraints c = new GridBagConstraints();

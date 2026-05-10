@@ -4,20 +4,30 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Vector;
 
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import javax.swing.SwingConstants;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -30,6 +40,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView.JsonTreeNode;
 import net.schwarzbaer.java.lib.gui.IconSource;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
+import net.schwarzbaer.java.lib.gui.Tables;
 import net.schwarzbaer.java.lib.gui.ValueListOutput;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value.Type;
@@ -47,20 +59,27 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		rawDataTreeIS = source.cacheIcons(RawDataTreeIcons.values());
 	}
 	
-	private DefaultTreeModel treeModel;
+	private final Window mainWindow;
+	private final DefaultTreeModel treeModel;
+	private final JTextArea infoTextArea;
 	private boolean hideProcessedNodes;
 
 	private TreePath contextMenuTarget;
-	private JPopupMenu contextMenu_tree;
-	private JPopupMenu contextMenu_node;
-	private JMenuItem miHideShowProcessedNodes_node;
-	private JMenuItem miHideShowProcessedNodes_tree;
+	private final JPopupMenu contextMenu_tree;
+	private final JPopupMenu contextMenu_node;
+	private final JMenuItem miHideShowProcessedNodes_node;
+	private final JMenuItem miHideShowProcessedNodes_tree;
+	private final JMenuItem miShowLegendOfTreeColors_tree;
+	private final JMenuItem miShowLegendOfTreeColors_node;
 	private boolean showDeObfuscation;
+	private TreeColorsLegend treeColorsLegend;
 
-	public RawDataTreePanel(File file, SaveGameData data, boolean showDeObfuscation) {
+	public RawDataTreePanel(Window mainWindow, File file, SaveGameData data, boolean showDeObfuscation) {
 		super(data);
+		this.mainWindow = mainWindow;
 		this.showDeObfuscation = showDeObfuscation;
 		hideProcessedNodes = false;
+		treeColorsLegend = null;
 		
 		Gui.log("Create tree from file \"%s\" ...",file.getPath());
 		JTree tree = new JTree(treeModel = new DefaultTreeModel(new JsonTreeNode(this.data.json_data,hideProcessedNodes)));
@@ -93,7 +112,8 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		infoTextScrollPane.setPreferredSize(new Dimension(600,300));
 		
 		contextMenu_tree = new JPopupMenu("Contextmenu");
-		contextMenu_tree.add(miHideShowProcessedNodes_tree = Gui.createMenuItem("Hide Processed Nodes", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
+		contextMenu_tree.add(miHideShowProcessedNodes_tree = Gui.createMenuItem("###", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
+		contextMenu_tree.add(miShowLegendOfTreeColors_tree = Gui.createMenuItem("###", this, RawDataTreeActionCommand.ShowLegendOfTreeColors, null));
 		
 		contextMenu_node = new JPopupMenu("Contextmenu");
 		contextMenu_node.add(Gui.createMenuItem("Show Path", this, RawDataTreeActionCommand.ShowPath, null));
@@ -101,7 +121,8 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		contextMenu_node.add(Gui.createMenuItem("Copy Value Name", this, RawDataTreeActionCommand.CopyValueName, Gui.ToolbarIcons.Copy));		
 		contextMenu_node.add(Gui.createMenuItem("Copy Value", this, RawDataTreeActionCommand.CopyValue, Gui.ToolbarIcons.Copy));
 		contextMenu_node.addSeparator();
-		contextMenu_node.add(miHideShowProcessedNodes_node = Gui.createMenuItem("Hide Processed Nodes", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
+		contextMenu_node.add(miHideShowProcessedNodes_node = Gui.createMenuItem("###", this, RawDataTreeActionCommand.HideShowProcessedNodes, null));
+		contextMenu_node.add(miShowLegendOfTreeColors_node = Gui.createMenuItem("###", this, RawDataTreeActionCommand.ShowLegendOfTreeColors, null));
 		
 		updateMenuItems();
 		
@@ -136,16 +157,15 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 	}
 
 	private void updateMenuItems() {
-		if (hideProcessedNodes) {
-			miHideShowProcessedNodes_tree.setText("Show Processed Nodes");
-			miHideShowProcessedNodes_node.setText("Show Processed Nodes");
-		} else {
-			miHideShowProcessedNodes_tree.setText("Hide Processed Nodes");
-			miHideShowProcessedNodes_node.setText("Hide Processed Nodes");
-		}
+		String text_miHideShowProcessedNodes = (hideProcessedNodes     ? "Show" : "Hide")+" Processed Nodes";
+		String text_miShowLegendOfTreeColors = (treeColorsLegend==null ? "Show" : "Hide")+" Legend of Tree Colors";
+		miHideShowProcessedNodes_tree.setText(text_miHideShowProcessedNodes);
+		miHideShowProcessedNodes_node.setText(text_miHideShowProcessedNodes);
+		miShowLegendOfTreeColors_tree.setText(text_miShowLegendOfTreeColors);
+		miShowLegendOfTreeColors_node.setText(text_miShowLegendOfTreeColors);
 	}
 
-	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName, HideShowProcessedNodes }
+	enum RawDataTreeActionCommand { ShowPath, CopyPath, CopyValue, CopyValueName, HideShowProcessedNodes, ShowLegendOfTreeColors }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -172,6 +192,19 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		case HideShowProcessedNodes:
 			hideProcessedNodes = !hideProcessedNodes;
 			treeModel.setRoot(new JsonTreeNode(this.data.json_data,hideProcessedNodes));
+			updateMenuItems();
+			break;
+		case ShowLegendOfTreeColors:
+			if (treeColorsLegend==null)
+			{
+				treeColorsLegend = new TreeColorsLegend(mainWindow, "Legend of Tree Colors");
+				treeColorsLegend.showDialog();
+			}
+			else
+			{
+				treeColorsLegend.closeDialog();
+				treeColorsLegend = null;
+			}
 			updateMenuItems();
 			break;
 		}
@@ -207,15 +240,15 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 		}
 		return sb.toString();
 	}
-
-	private static final Color COLOR_HAS_OBFUSCATED_CHILDREN = new Color(0x7F00FF);
-	private static final Color COLOR_WAS_NOT_DEOBFUSCATED    = new Color(0xFF00FF);
-	private static final Color COLOR_WAS_PROCESSED           = new Color(0x808080);
-	private static final Color COLOR_WAS_FULLY_PROCESSED     = new Color(0x00C000);
-private JTextArea infoTextArea;
 	
-	private final class CellRenderer extends DefaultTreeCellRenderer {
+	private final class CellRenderer extends DefaultTreeCellRenderer
+	{
 		private static final long serialVersionUID = 7697237514743853958L;
+
+		private static final Color COLOR_HAS_OBFUSCATED_CHILDREN = new Color(0x7F00FF);
+		private static final Color COLOR_WAS_NOT_DEOBFUSCATED    = new Color(0xFF00FF);
+		private static final Color COLOR_WAS_PROCESSED           = new Color(0x808080);
+		private static final Color COLOR_WAS_FULLY_PROCESSED     = new Color(0x00C000);
 	
 		@Override public Component getTreeCellRendererComponent(JTree tree, Object obj, boolean isSelected, boolean isExpanded, boolean isLeaf, int row, boolean hasFocus) {
 			Component component = super.getTreeCellRendererComponent(tree, obj, isSelected, isExpanded, isLeaf, row, hasFocus);
@@ -254,5 +287,57 @@ private JTextArea infoTextArea;
 			
 			return component;
 		}
+	}
+	
+	private class TreeColorsLegend extends StandardDialog
+	{
+		private static final long serialVersionUID = 8371032162496534208L;
+
+		TreeColorsLegend(Window parent, String title)
+		{
+			super(parent, title, ModalityType.MODELESS);
+			
+			JPanel contentPane = new JPanel(new GridLayout(0, 1));
+			contentPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+			addRow(contentPane, CellRenderer.COLOR_WAS_NOT_DEOBFUSCATED   , "Node is obfuscated");
+			addRow(contentPane, CellRenderer.COLOR_HAS_OBFUSCATED_CHILDREN, "Node has obfuscated children");
+			addRow(contentPane, CellRenderer.COLOR_WAS_PROCESSED          , "Node was processed");
+			addRow(contentPane, CellRenderer.COLOR_WAS_FULLY_PROCESSED    , "Node and its children were fully processed");
+			
+			KeyAdapter keyAdapter = new KeyAdapter() {
+				@Override public void keyPressed(KeyEvent e) {
+					if (e.getKeyCode()==KeyEvent.VK_ESCAPE)
+					{
+						closeDialog();
+						treeColorsLegend = null;
+						updateMenuItems();
+					}
+				}
+			};
+			contentPane.addKeyListener(keyAdapter);
+			addKeyListener(keyAdapter);
+			
+			addWindowListener(new WindowAdapter() {
+				@Override public void windowClosing(WindowEvent e)
+				{
+					treeColorsLegend = null;
+					updateMenuItems();
+				}
+			});
+			
+			createGUI(contentPane);
+		}
+
+		private static void addRow(JPanel contentPane, Color color, String label)
+		{
+			contentPane.add(
+					new JLabel(
+							label,
+							new Tables.ColorRendererComponent.ColorIcon(30,20, color),
+							SwingConstants.LEFT
+					)
+			);
+		}
+		
 	}
 }
