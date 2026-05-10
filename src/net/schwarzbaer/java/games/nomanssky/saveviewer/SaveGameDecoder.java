@@ -22,7 +22,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.FactoryForEx
 import net.schwarzbaer.java.lib.gui.StandardMainWindow;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 
-class SaveGameCompression
+class SaveGameDecoder
 {
 	static final int VERBOSE_LEVEL_Nothing = 0;
 	static final int VERBOSE_LEVEL_Files_Only = 1;

@@ -731,7 +731,7 @@ public class SaveViewer implements ActionListener {
 	private JSON_Object<NVExtra, VExtra> loadAndParseSaveGameFile(File saveGameFile, boolean withConsoleLog) {
 		if (withConsoleLog) Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
 		
-		byte[] decodeBytes = SaveGameCompression.decodeFile(saveGameFile);
+		byte[] decodeBytes = SaveGameDecoder.decodeFile(saveGameFile);
 		if (decodeBytes==null)
 		{
 			if (withConsoleLog) Gui.log_ln(" can't read file");
