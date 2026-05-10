@@ -219,6 +219,7 @@
 ^ROBOT1.symbol=Pg
 ^ROBOT1.image=Substance.neutral.rare5.Pugneum.png
 ^ROBOT1.imageBG=4E2A58
+^ROBOT2=
 ^ROCKETSUB=Tritium
 ^ROCKETSUB.type=Resource
 ^ROCKETSUB.symbol=H3
