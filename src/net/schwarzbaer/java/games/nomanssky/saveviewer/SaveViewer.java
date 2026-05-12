@@ -68,6 +68,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.KnownSteamID
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.NVExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.GlobalDeObfuscatorUsagePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
@@ -100,7 +101,7 @@ public class SaveViewer implements ActionListener {
 	private JFileChooser jsonFileChooser;
 	private ContentPane contentPane;
 	private ComparePanel compareTab;
-	private Vector<SaveGameView> loadedSaveGames;
+	private final Vector<SaveGameView> loadedSaveGames;
 	private Color DEFAULT_BUTTON_FOREGROUND_COLOR;
 	private final EnumMap<Tool,ToolWindow> openTools;
 	
@@ -1139,6 +1140,7 @@ public class SaveViewer implements ActionListener {
 		private final GameInfos.GeneralizedIDPanel techIDsPanel;
 		private final GameInfos.GeneralizedIDPanel productIDsPanel;
 		private final GameInfos.GeneralizedIDPanel substanceIDsPanel;
+		private final GlobalDeObfuscatorUsagePanel globalDeObfuscatorUsagePanel;
 
 		private final SaveGameButtons saveGameButtons;
 		
@@ -1162,6 +1164,7 @@ public class SaveViewer implements ActionListener {
 			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.techIDs     , "TechnologyIDsTable"));
 			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.productIDs  , "ProductIDsTable"));
 			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.substanceIDs, "SubstanceIDsTable"));
+			tabbedPane.addTab("Global DeObfuscator Usage", globalDeObfuscatorUsagePanel = new GlobalDeObfuscatorUsagePanel(loadedSaveGames));
 			
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
@@ -1201,6 +1204,7 @@ public class SaveViewer implements ActionListener {
 			productIDsPanel  .addUsage(saveGameView);
 			substanceIDsPanel.addUsage(saveGameView);
 			tabbedPane.setSelectedIndex(index);
+			globalDeObfuscatorUsagePanel.updateSaveGameList();
 		}
 
 		public void removeTab(JPanel panel) {
@@ -1212,6 +1216,7 @@ public class SaveViewer implements ActionListener {
 			techIDsPanel     .removeUsage(saveGameView);
 			productIDsPanel  .removeUsage(saveGameView);
 			substanceIDsPanel.removeUsage(saveGameView);
+			globalDeObfuscatorUsagePanel.updateSaveGameList();
 		}
 
 		private void addButtons(JToolBar toolBar) {

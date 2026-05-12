@@ -66,47 +66,52 @@ public class SaveGameView extends JPanel {
 
 
 	private void addAllTabs() {
-		if (isNEXT && !exceptionWhileParsing) {
+		if (isNEXT)
+		{
 			SaveGameViewTabGroupingPanel rawDataPanel = new SaveGameViewTabGroupingPanel(data);
 			rawDataPanel.addPanel("DeObfuscator Usage", new SimplePanels.DeObfuscatorUsagePanel(data));
 			
-			UniversePanel universePanel = new UniversePanel(data,mainWindow);
-			GalaxyMapPanel galaxyMapPanel = new GalaxyMapPanel(data,mainWindow);
-			galaxyMapPanel.setUniversePanel(universePanel);
-			universePanel.setGalaxyMapPanel(galaxyMapPanel);
-			
-			tabbedPane.addTab("General",new GeneralDataPanel(data));
-			tabbedPane.addTab("Known Universe",universePanel);
-			tabbedPane.addTab("Galaxy Map",galaxyMapPanel);
-			
-			if (data.inventories!=null) tabbedPane.addTab("Inventories",new InventoriesPanel(data,mainWindow));
-			if (data.companions !=null && !data.companions .isEmpty()) tabbedPane.addTab("Companions" ,new SimplePanels.CompanionsPanel (data));
-			if (data.appearances!=null && !data.appearances.isEmpty()) tabbedPane.addTab("Appearances",new SimplePanels.AppearancesPanel(data));
-			
-			if (data.frigates   !=null) tabbedPane.addTab("Frigates"   ,new SimplePanels.FrigatesPanel(data,mainWindow));
-			if (data.frigateMissions!=null) tabbedPane.addTab("Frigate Missions",new SimplePanels.FrigateMissionsPanel(data,mainWindow));
-			
-			if (data.teleportEndpoints    !=null) tabbedPane.addTab("Teleport Endpoints" , new SimplePanels.TeleportEndpointsPanel(data,universePanel));
-			if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases"       , new SimplePanels.PersistentPlayerBasesPanel(data,mainWindow,universePanel));
-			if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects", new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow,universePanel));
-			
-			if (data.stats      !=null) tabbedPane.addTab("Status Values",new StatsPanel(data));
-			if (data.knownWords !=null) tabbedPane.addTab("KnownWords"   ,new KnownWordsPanel(data,data.knownWords ));
-			if (data.knownWords2!=null) tabbedPane.addTab("KnownWords II",new KnownWordsPanel(data,data.knownWords2));
-			
-			rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data,universePanel));
-			rawDataPanel.addPanel("DiscoveryData (Stored)"   , new SimplePanels.DiscoveredDataStoredPanel   (data,universePanel));
-			
-//			SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
-//			blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
-//			blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
-//			tabbedPane.addTab("Blueprints",blueprintsPanel);
-			
-			tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data,mainWindow));
-			
-			SimplePanels.ExperimentalData.addPanels(rawDataPanel,data,mainWindow,universePanel);
-			if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data,universePanel));
-			rawDataPanel.addPanel("Atlas Stations",new SimplePanels.AtlasStationAdressDataPanel(data,universePanel));
+			if (!exceptionWhileParsing)
+			{
+				
+				UniversePanel universePanel = new UniversePanel(data,mainWindow);
+				GalaxyMapPanel galaxyMapPanel = new GalaxyMapPanel(data,mainWindow);
+				galaxyMapPanel.setUniversePanel(universePanel);
+				universePanel.setGalaxyMapPanel(galaxyMapPanel);
+				
+				tabbedPane.addTab("General",new GeneralDataPanel(data));
+				tabbedPane.addTab("Known Universe",universePanel);
+				tabbedPane.addTab("Galaxy Map",galaxyMapPanel);
+				
+				if (data.inventories!=null) tabbedPane.addTab("Inventories",new InventoriesPanel(data,mainWindow));
+				if (data.companions !=null && !data.companions .isEmpty()) tabbedPane.addTab("Companions" ,new SimplePanels.CompanionsPanel (data));
+				if (data.appearances!=null && !data.appearances.isEmpty()) tabbedPane.addTab("Appearances",new SimplePanels.AppearancesPanel(data));
+				
+				if (data.frigates   !=null) tabbedPane.addTab("Frigates"   ,new SimplePanels.FrigatesPanel(data,mainWindow));
+				if (data.frigateMissions!=null) tabbedPane.addTab("Frigate Missions",new SimplePanels.FrigateMissionsPanel(data,mainWindow));
+				
+				if (data.teleportEndpoints    !=null) tabbedPane.addTab("Teleport Endpoints" , new SimplePanels.TeleportEndpointsPanel(data,universePanel));
+				if (data.persistentPlayerBases!=null) tabbedPane.addTab("Player Bases"       , new SimplePanels.PersistentPlayerBasesPanel(data,mainWindow,universePanel));
+				if (data.baseBuildingObjects  !=null) tabbedPane.addTab("BaseBuildingObjects", new SimplePanels.BaseBuildingObjectsPanel(data,mainWindow,universePanel));
+				
+				if (data.stats      !=null) tabbedPane.addTab("Status Values",new StatsPanel(data));
+				if (data.knownWords !=null) tabbedPane.addTab("KnownWords"   ,new KnownWordsPanel(data,data.knownWords ));
+				if (data.knownWords2!=null) tabbedPane.addTab("KnownWords II",new KnownWordsPanel(data,data.knownWords2));
+				
+				rawDataPanel.addPanel("DiscoveryData (Available)", new SimplePanels.DiscoveredDataAvailablePanel(data,universePanel));
+				rawDataPanel.addPanel("DiscoveryData (Stored)"   , new SimplePanels.DiscoveredDataStoredPanel   (data,universePanel));
+				
+//				SaveGameViewPanelGroupingPanel blueprintsPanel = new SaveGameViewPanelGroupingPanel(data);
+//				blueprintsPanel.addPanel("Known Product Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownProductBlueprints,"KnownProductBlueprintsTable"));
+//				blueprintsPanel.addPanel("Known Tech"+" Blueprints",new SimplePanels.BlueprintsPanel(data,BlueprintType.KnownTechBlueprints   ,"KnownTechBlueprintsTable"   ));
+//				tabbedPane.addTab("Blueprints",blueprintsPanel);
+				
+				tabbedPane.addTab("Blueprints",new SimplePanels.AllBlueprintsPanel(data,mainWindow));
+				
+				SimplePanels.ExperimentalData.addPanels(rawDataPanel,data,mainWindow,universePanel);
+				if (data.visitedSystems!=null) rawDataPanel.addPanel("Visited Systems"    ,new SimplePanels.VisitedSystemsPanel(data,universePanel));
+				rawDataPanel.addPanel("Atlas Stations",new SimplePanels.AtlasStationAdressDataPanel(data,universePanel));
+			}
 			
 			tabbedPane.addTab("Raw Data",rawDataPanel);
 		}
