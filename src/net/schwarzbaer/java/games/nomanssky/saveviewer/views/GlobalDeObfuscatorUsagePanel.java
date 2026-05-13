@@ -143,12 +143,16 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 		void setOriginalName(String originalName)
 		{
 			this.originalName = originalName;
-			Set<String> paths = new HashSet<>();
+			Set<String> allPaths = new HashSet<>();
 			if (this.originalName!=null)
 				for (SaveGameView view : loadedSaveGames)
-					paths.addAll(view.data.deObfuscatorUsage.get(this.originalName));
+				{
+					HashSet<String> paths = view.data.deObfuscatorUsage.get(this.originalName);
+					if (paths!=null)
+						allPaths.addAll(paths);
+				}
 			
-			List<String> sorted = new ArrayList<>(paths);
+			List<String> sorted = new ArrayList<>(allPaths);
 			sorted.sort(null);
 			setData(sorted);
 		}

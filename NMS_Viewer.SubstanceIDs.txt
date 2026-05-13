@@ -279,6 +279,7 @@
 ^TECHFRAG.type=Special
 ^TECHFRAG.image=NmsMisc_Nanite_Cluster.png
 ^TECHFRAG.imageBG=1C364D
+^TIMEDUST=
 ^TOXIC1=Ammoniak
 ^TOXIC1.type=Resource
 ^TOXIC1.symbol=NH3
@@ -300,6 +301,7 @@
 ^WATERPLANT.symbol=Cy
 ^WATERPLANT.image=SUBSTANCE.WATER.PLANT.png
 ^WATERPLANT.imageBG=1E8A42
+^WORMDUST=
 ^YELLOW2=Kupfer
 ^YELLOW2.type=Resource
 ^YELLOW2.symbol=Cu
