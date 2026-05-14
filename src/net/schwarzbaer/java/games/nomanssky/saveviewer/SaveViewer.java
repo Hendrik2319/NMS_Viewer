@@ -47,6 +47,8 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -112,7 +114,6 @@ public class SaveViewer implements ActionListener {
 	private ContentPane contentPane;
 	private ComparePanel compareTab;
 	private final Vector<SaveGameView> loadedSaveGames;
-	private Color DEFAULT_BUTTON_FOREGROUND_COLOR;
 	private final EnumMap<Tool,ToolWindow> openTools;
 	
 	private enum Tool {
@@ -269,7 +270,7 @@ public class SaveViewer implements ActionListener {
 			return;
 		
 		SaveViewer saveViewer = new SaveViewer();
-		File saveGameFile = new File(saveViewer.getSavegameFolder()+SaveGameButtons.getFilename(loadSavegame-1));
+		File saveGameFile = new File(saveViewer.getSavegameFolder()+SaveGameListPanel.getFilename(loadSavegame-1));
 		if (!saveGameFile.isFile())
 			return;
 		
@@ -314,8 +315,6 @@ public class SaveViewer implements ActionListener {
 	}
 
 	private void createGUI() {
-		DEFAULT_BUTTON_FOREGROUND_COLOR = new JButton().getForeground();
-		
 		inputFileChooser = new JFileChooser("./");
 		inputFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		inputFileChooser.setMultiSelectionEnabled(false);
@@ -342,7 +341,7 @@ public class SaveViewer implements ActionListener {
 		compareTab = null;
 		contentPane = new ContentPane();
 		
-		mainWindow.startGUI(contentPane);
+		mainWindow.startGUI(contentPane, contentPane.menuBar);
 		mainWindow.setIconImagesFromResource("/logo/", "applogo_16.png", "applogo_24.png", "applogo_32.png", "applogo_48.png", "applogo_64.png", "applogo_96.png", "applogo_128.png", "applogo_256.png", "applogo_320.png");
 		
 		
@@ -599,29 +598,7 @@ public class SaveViewer implements ActionListener {
 	}
 	
 	private void checkSavegameExistence() {
-		if (isSavegameFolderKnown())
-			contentPane.saveGameButtons.forEach((filename, index, comp) -> {
-				File savefile = new File(getSavegameFolder()+filename);
-				String lastModified = SaveGameData.TimeStamp.getTimeStr(savefile.lastModified());
-				SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
-				contentPane.saveGameListPanel.setRowData(savefile,data);
-				if (data==null) {
-					comp.setToolTipText(savefile.isFile() ? "Can't parse SaveGame" : "SaveGame not exists");
-				} else if (data.isPreNEXT) {
-					comp.setToolTipText("PreNext SaveGame (will not be parsed)");
-					comp.setForeground(COLOR_PreNext_SaveGame);
-				} else if (data.version!=null && data.version>100000) {
-					comp.setToolTipText(String.format("Expedition ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-					comp.setForeground(COLOR_Expedition_SaveGame);
-				} else if (data.version!=null && data.version>5000) {
-					comp.setToolTipText(String.format("Creative ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-					comp.setForeground(COLOR_Creative_SaveGame);
-				} else {
-					comp.setToolTipText(String.format("Normal ( %s h, %s )", Duration.toString(data.general.totalPlayTime), lastModified));
-					comp.setForeground(DEFAULT_BUTTON_FOREGROUND_COLOR);
-				}
-				comp.setEnabled(savefile.isFile());
-			});
+		contentPane.saveGameListPanel.updatePreviewData();
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
@@ -1101,54 +1078,13 @@ public class SaveViewer implements ActionListener {
 			return button;
 		}
 	}
-	
-	private class SaveGameButtons
-	{
-		private static int SAVE_GAME_COUNT = 15;
-		private final List<JButton> buttons = new Vector<>(); 
-		
-		void addButtons(JToolBar toolBar)
-		{
-			buttons.clear();
-			for (int i=0; i<SAVE_GAME_COUNT; i++)
-			{
-				toolBar.add(createButton(i*2+0));
-				toolBar.add(createButton(i*2+1));
-				toolBar.addSeparator();
-			}
-		}
-		
-		private JButton createButton(int index)
-		{
-			JButton button = Gui.createButton("%d".formatted(index+1), Gui.ToolbarIcons.Open, e -> {
-				String filepath = getSavegameFolder() + getFilename(index);
-				openSaveGame(new File(filepath),index);
-			});
-			buttons.add(button);
-			return button;
-		}
-		
-		static String getFilename(int index)
-		{
-			return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
-		}
-		
-		void forEach(ForEachAction action)
-		{
-			for (int index=0; index<buttons.size(); index++)
-				action.doSomething(getFilename(index), index, buttons.get(index));
-		}
-		interface ForEachAction
-		{
-			void doSomething(String filename, int index, JButton button);
-		}
-	}
 
 	private class ContentPane extends JPanel {
 		private static final long serialVersionUID = -2737846401785644788L;
 		
 		private final Disabler<ActionCommand> disabler;
 		private final JTabbedPane tabbedPane;
+		private final JMenuBar menuBar;
 		private SaveGameView selectedSaveGameView;
 
 		private final SaveGameListPanel saveGameListPanel;
@@ -1156,22 +1092,16 @@ public class SaveViewer implements ActionListener {
 		private final GameInfos.GeneralizedIDPanel productIDsPanel;
 		private final GameInfos.GeneralizedIDPanel substanceIDsPanel;
 		private final GlobalDeObfuscatorUsagePanel globalDeObfuscatorUsagePanel;
-
-		private final SaveGameButtons saveGameButtons;
 		
 		ContentPane() {
 			super( new BorderLayout(3,3) );
 			setBorder(BorderFactory.createEmptyBorder(3,3,3,3));
 			
-			saveGameButtons = new SaveGameButtons();
-			
 			disabler = new Disabler<>();
 			disabler.setCareFor(ActionCommand.values());
 			
-			JToolBar toolBar = new JToolBar("Standard");
-			addButtons(toolBar);
-			toolBar.setFloatable(false);
-			toolBar.setRollover(true);
+			menuBar = new JMenuBar();
+			addButtons(menuBar);
 			
 			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
@@ -1193,7 +1123,6 @@ public class SaveViewer implements ActionListener {
 				}
 			});
 			
-			add(toolBar,BorderLayout.PAGE_START);
 			add(tabbedPane,BorderLayout.CENTER);
 			
 		}
@@ -1235,12 +1164,15 @@ public class SaveViewer implements ActionListener {
 			globalDeObfuscatorUsagePanel.updateSaveGameList();
 		}
 
-		private void addButtons(JToolBar toolBar) {
-			saveGameButtons.addButtons(toolBar);
+		private void addButtons(JMenuBar toolBar) {
 			toolBar.add(createButton("Compute Coordinates" , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.ComputeCoordinates,true));
 //			toolBar.add(createButton("Select Coordinates"  , Gui.ToolbarIcons.ComputePortalGlyphs, ActionCommand.SelectCoordinates,true));
 			
-			JPopupMenu toolsMenu = new JPopupMenu("Tools");
+			JToolBar.Separator separator = new JToolBar.Separator(new Dimension(10,20));
+			separator.setOrientation(SwingConstants.VERTICAL);
+			toolBar.add(separator);
+			
+			JMenu toolsMenu = toolBar.add(new JMenu("Tools"));
 			toolsMenu.add(createMenuItem("Refresh Extra Images" , Gui.ToolbarIcons.Reload, ActionCommand.RefreshExtraImages,true));
 			toolsMenu.add(createMenuItem("Find New Extra Images", Gui.ToolbarIcons.Reload, ActionCommand.FindNewExtraImages,true));
 			toolsMenu.add(createMenuItem("Show Extra Images"    , Gui.ToolbarIcons.Open,   ActionCommand.ShowExtraImages   ,true));
@@ -1251,7 +1183,7 @@ public class SaveViewer implements ActionListener {
 			toolsMenu.add(createMenuItem("Production Optimiser", Gui.ToolbarIcons.Open, ActionCommand.OpenProductionOptimiser,true));
 			toolsMenu.add(createMenuItem("UpgradeModule InstallHelper", Gui.ToolbarIcons.Open, ActionCommand.OpenUpgradeModuleInstallHelper,true));
 			
-			JPopupMenu extraMenu = new JPopupMenu("Extra");
+			JMenu extraMenu = toolBar.add(new JMenu("Extra"));
 			extraMenu.add(createMenuItem("Set path to VRML viewer", Gui.ToolbarIcons.Open, ActionCommand.SetPathToVRMLviewer,true));
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Write KnownSteamIDs to HTML", Gui.ToolbarIcons.Save, ActionCommand.WriteKnownSteamIDsToHTML,true));
@@ -1271,18 +1203,6 @@ public class SaveViewer implements ActionListener {
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Clear Unknown Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearUnknownValues,true));
 			extraMenu.add(createMenuItem("Show Unknown Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowUnknownValues ,true));
-
-			toolBar.addSeparator();
-			toolBar.add(createButton("Tools", toolsMenu, true));
-			toolBar.add(createButton("Extra", extraMenu, true));
-		}
-
-		private JButton createButton(String title, JPopupMenu popupMenu, boolean enabled) {
-			JButton button = new JButton(title);
-			if (popupMenu!=null)
-				button.addActionListener(e->popupMenu.show(button,0,button.getHeight()));
-			button.setEnabled(enabled);
-			return button;
 		}
 
 		private JButton createButton(String title, Gui.ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {
@@ -1359,40 +1279,86 @@ public class SaveViewer implements ActionListener {
 	private class SaveGameListPanel extends JScrollPane
 	{
 		private static final long serialVersionUID = 1235968974727584021L;
+		private static int SAVE_GAME_COUNT = 15;
 		
 		private final SimplifiedTable<SaveGameListModel.ColumnID> table;
 		private final SaveGameListModel tableModel;
+		private int clickedRowIndex;
+		private SaveGameListModel.Row clickedRow;
 		
 		SaveGameListPanel()
 		{
+			clickedRowIndex = -1;
+			clickedRow = null;
+			
 			tableModel = new SaveGameListModel(loadedSaveGames);
 			table = new SimplifiedTable<>("SaveGameList",tableModel,true,SaveViewer.DEBUG,true);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
+			
+			Tables.GeneralizedTableCellRenderer2<SaveGameListModel.Row, SaveGameListModel.ColumnID, SaveGameListModel> tcr
+				= new Tables.GeneralizedTableCellRenderer2<>(SaveGameListModel.class);
+			tcr.setTextColorizer((value, rowM, columnM, columnID, row) -> {
+				return row==null || row.type==null ? null : switch(row.type) {
+					case PreNEXT    -> COLOR_PreNext_SaveGame;
+					case Expedition -> COLOR_Expedition_SaveGame;
+					case Creative   -> COLOR_Creative_SaveGame;
+					case Normal     -> null;
+				};
+			});
+			tableModel.setAllDefaultRenderers(clazz -> tcr);
+			
+			JPopupMenu contextMenu = table.getContextMenu();
+			contextMenu.addSeparator();
+			JMenuItem miLoad = contextMenu.add(Gui.createMenuItem("###", e->openSaveGame(clickedRow), Gui.ToolbarIcons.Open));
+			
+			table.addContextMenuInvokeListener((rowV,colV)->{
+				clickedRowIndex = rowV<0 ? -1 : table.convertRowIndexToModel(rowV);
+				clickedRow = tableModel.getRow(clickedRowIndex);
+				miLoad.setEnabled(clickedRow!=null && clickedRow.file.isFile());
+				miLoad.setText("▶ Load %s (double click)".formatted( clickedRow!=null ? clickedRow.file.getName() : "File" ));
+			});
+			
 			table.addMouseListener(new MouseAdapter() {
 				@Override public void mouseClicked(MouseEvent e) {
 					if (e.getClickCount()>1 && e.getButton()==MouseEvent.BUTTON1)
 					{
 						int rowV = table.getSelectedRow();
-						int rowM = table.convertRowIndexToModel(rowV);
-						SaveGameListModel.Row row = tableModel.getRow(rowM);
-						if (row.previewData!=null && row.previewData.index>=0)
-						{
-							openSaveGame(row.file,row.previewData.index);
-							tableModel.updateLoadedState(row);
-						}
+						int rowM = rowV<0 ? -1 : table.convertRowIndexToModel(rowV);
+						openSaveGame(tableModel.getRow(rowM));
 					}
 				}
+
 			});
-			Tables.GeneralizedTableCellRenderer2<SaveGameListModel.Row, SaveGameListModel.ColumnID, SaveGameListModel> tcr
-				= new Tables.GeneralizedTableCellRenderer2<>(SaveGameListModel.class);
-			tableModel.setAllDefaultRenderers(clazz -> tcr);
 			
 			setViewportView(table);
 		}
-
-		void setRowData(File savefile, SaveGameData data)
+		
+		void updatePreviewData()
 		{
-			tableModel.setRowData(savefile, data);
+			if (isSavegameFolderKnown())
+			{
+				String savegameFolder = getSavegameFolder();
+				for (int index=0; index<SAVE_GAME_COUNT*2; index++)
+				{
+					File savefile = new File(savegameFolder+getFilename(index));
+					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
+					tableModel.setRowData(savefile, data);
+				}
+			}
+		}
+		
+		static String getFilename(int index)
+		{
+			return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
+		}
+
+		private void openSaveGame(SaveGameListModel.Row row)
+		{
+			if (row!=null && row.file.isFile() && row.previewData!=null && row.previewData.index>=0)
+			{
+				SaveViewer.this.openSaveGame(row.file,row.previewData.index);
+				tableModel.updateLoadedState(row);
+			}
 		}
 		
 		private static class SaveGameListModel extends Tables.SimpleGetValueTableModel2<SaveGameListModel, SaveGameListModel.Row, SaveGameListModel.ColumnID>
@@ -1436,18 +1402,42 @@ public class SaveViewer implements ActionListener {
 				}
 			}
 			
+			enum Type { PreNEXT, Expedition, Creative, Normal }
+			
 			private static class Row
 			{
 				final String absolutePath;
 				final File file;
 				SaveGameData previewData;
 				boolean isLoaded = false;
+				Type type = null;
 
 				Row(File file, SaveGameData previewData)
 				{
 					this.file = Objects.requireNonNull(file);
 					this.previewData = previewData;
 					absolutePath = file.getAbsolutePath();
+					updateType();
+				}
+
+				void setData(SaveGameData previewData)
+				{
+					this.previewData = previewData;
+					updateType();
+				}
+
+				private void updateType()
+				{
+					if (previewData==null)
+						type = null;
+					else if (previewData.isPreNEXT)
+						type = Type.PreNEXT;
+					else if (previewData.version!=null && previewData.version>100000)
+						type = Type.Expedition;
+					else if (previewData.version!=null && previewData.version>5000)
+						type = Type.Creative;
+					else
+						type = Type.Normal;
 				}
 			}
 
@@ -1468,14 +1458,6 @@ public class SaveViewer implements ActionListener {
 				return this;
 			}
 
-			private boolean isLoaded(String absolutePath)
-			{
-				for (SaveGameView view : loadedSaveGames)
-					if (view.file.getAbsolutePath().equals(absolutePath))
-						return true;
-				return false;
-			}
-
 			void setRowData(File savefile, SaveGameData data)
 			{
 				String absolutePath = savefile.getAbsolutePath();
@@ -1490,7 +1472,7 @@ public class SaveViewer implements ActionListener {
 				
 				if (index>=0 && row!=null)
 				{
-					row.previewData = data;
+					row.setData(data);
 					updateLoadedState(row);
 					fireTableRowUpdate(index);
 				}
@@ -1506,6 +1488,14 @@ public class SaveViewer implements ActionListener {
 			private void updateLoadedState(Row row)
 			{
 				row.isLoaded = isLoaded(row.absolutePath);
+			}
+
+			private boolean isLoaded(String absolutePath)
+			{
+				for (SaveGameView view : loadedSaveGames)
+					if (view.file.getAbsolutePath().equals(absolutePath))
+						return true;
+				return false;
 			}
 		}
 	}
