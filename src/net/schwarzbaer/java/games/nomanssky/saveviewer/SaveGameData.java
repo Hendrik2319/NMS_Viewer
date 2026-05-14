@@ -55,9 +55,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Helper;
 
 public class SaveGameData
 {
-	private static final String PLAYER_STATE_DATA = "PlayerStateData";
-	// ProductMaxStorageMultiplier
-	// SubstanceMaxStorageMultiplier
+	static final String PLAYER_STATE_DATA = "PlayerStateData";
 	
 	public final String filename;
 	public final int index;
@@ -1900,8 +1898,8 @@ public class SaveGameData
 				extraInfosOutputs = new Vector<>();
 				
 				Long preWidth, preHeight;
-				substanceMaxStorageMultiplier = getIntegerValue(inventoryData, "SubstanceMaxStorageMultiplier");
-				productMaxStorageMultiplier   = getIntegerValue(inventoryData, "ProductMaxStorageMultiplier");
+				substanceMaxStorageMultiplier = getIntegerValue_optional(inventoryData, "SubstanceMaxStorageMultiplier");
+				productMaxStorageMultiplier   = getIntegerValue_optional(inventoryData, "ProductMaxStorageMultiplier"  );
 				isCool         = getBoolValue   (inventoryData, "IsCool");
 				name           = getStringValue_optional(inventoryData, "Name");
 				version        = getIntegerValue(inventoryData, "Version");
@@ -3625,7 +3623,7 @@ public class SaveGameData
 	
 	public final static class General {
 		
-		private SaveGameData data;
+		private final SaveGameData data;
 		public UniverseAddress currentUniverseAddress = null;
 		public Long currentBaseGalaxy = null;
 		public UniverseAddress anomalyUA = null;
@@ -3644,6 +3642,7 @@ public class SaveGameData
 		public Long totalPlayTime   = null;
 		public Long hazardTimeAlive = null;
 		public Long knownGlyphsMask = null;
+		public String saveGameLabel = null;
 		
 		public General(SaveGameData data) {
 			this.data = data;
@@ -3697,6 +3696,8 @@ public class SaveGameData
 				totalPlayTime = getIntegerValue( data.json_data, "<h0", field);
 			else
 				totalPlayTime = null;
+			
+			saveGameLabel = getStringValue_optional(data.json_data, "<h0","Pk4");
 		}
 		
 //		public Long getUnits          () { return data.getIntegerValue( data.json_data, "PlayerStateData","Units"           ); }

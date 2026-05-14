@@ -10,6 +10,8 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,13 +28,16 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
@@ -50,6 +55,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -57,6 +64,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 
@@ -71,12 +79,14 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.VExtra;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.GlobalDeObfuscatorUsagePanel;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.gui.Disabler;
 import net.schwarzbaer.java.lib.gui.HexViewPanel;
 import net.schwarzbaer.java.lib.gui.IconSource;
 import net.schwarzbaer.java.lib.gui.ProgressDialog;
 import net.schwarzbaer.java.lib.gui.StandardMainWindow;
+import net.schwarzbaer.java.lib.gui.Tables;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
@@ -590,10 +600,11 @@ public class SaveViewer implements ActionListener {
 	
 	private void checkSavegameExistence() {
 		if (isSavegameFolderKnown())
-			contentPane.saveGameButtons.forEach((filename, comp) -> {
+			contentPane.saveGameButtons.forEach((filename, index, comp) -> {
 				File savefile = new File(getSavegameFolder()+filename);
 				String lastModified = SaveGameData.TimeStamp.getTimeStr(savefile.lastModified());
-				SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile);
+				SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
+				contentPane.saveGameListPanel.setRowData(savefile,data);
 				if (data==null) {
 					comp.setToolTipText(savefile.isFile() ? "Can't parse SaveGame" : "SaveGame not exists");
 				} else if (data.isPreNEXT) {
@@ -619,7 +630,7 @@ public class SaveViewer implements ActionListener {
 		});
 	}
 
-	private SaveGameData openSaveGameForPreview(File saveGameFile) {
+	private SaveGameData openSaveGameForPreview(File saveGameFile, int saveGameIndex) {
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, false);
 		
 		HashMap<String, HashSet<String>> deObfuscatorUsage = null;
@@ -631,11 +642,10 @@ public class SaveViewer implements ActionListener {
 			isPreNEXT = false;
 		}
 		SaveGameData saveGameData;
-		if (new_json_data==null) {
+		if (new_json_data==null)
 			saveGameData = null;
-			
-		} else {
-			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),-1,isPreNEXT);
+		else {
+			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT);
 			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
 			saveGameData.parse(true,null);
 		}
@@ -1123,10 +1133,14 @@ public class SaveViewer implements ActionListener {
 			return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
 		}
 		
-		void forEach(BiConsumer<String,JButton> action)
+		void forEach(ForEachAction action)
 		{
 			for (int index=0; index<buttons.size(); index++)
-				action.accept(getFilename(index), buttons.get(index));
+				action.doSomething(getFilename(index), index, buttons.get(index));
+		}
+		interface ForEachAction
+		{
+			void doSomething(String filename, int index, JButton button);
 		}
 	}
 
@@ -1137,6 +1151,7 @@ public class SaveViewer implements ActionListener {
 		private final JTabbedPane tabbedPane;
 		private SaveGameView selectedSaveGameView;
 
+		private final SaveGameListPanel saveGameListPanel;
 		private final GameInfos.GeneralizedIDPanel techIDsPanel;
 		private final GameInfos.GeneralizedIDPanel productIDsPanel;
 		private final GameInfos.GeneralizedIDPanel substanceIDsPanel;
@@ -1161,6 +1176,7 @@ public class SaveViewer implements ActionListener {
 			selectedSaveGameView = null;
 			tabbedPane = new JTabbedPane();
 			tabbedPane.setPreferredSize(new Dimension(1600, 800));
+			tabbedPane.addTab("SaveGames"     , saveGameListPanel = new SaveGameListPanel());
 			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.techIDs     , "TechnologyIDsTable"));
 			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.productIDs  , "ProductIDsTable"));
 			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.substanceIDs, "SubstanceIDsTable"));
@@ -1338,6 +1354,160 @@ public class SaveViewer implements ActionListener {
 			Gui.log_ln(" done");
 		}
 	
+	}
+	
+	private class SaveGameListPanel extends JScrollPane
+	{
+		private static final long serialVersionUID = 1235968974727584021L;
+		
+		private final SimplifiedTable<SaveGameListModel.ColumnID> table;
+		private final SaveGameListModel tableModel;
+		
+		SaveGameListPanel()
+		{
+			tableModel = new SaveGameListModel(loadedSaveGames);
+			table = new SimplifiedTable<>("SaveGameList",tableModel,true,SaveViewer.DEBUG,true);
+			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
+			table.addMouseListener(new MouseAdapter() {
+				@Override public void mouseClicked(MouseEvent e) {
+					if (e.getClickCount()>1 && e.getButton()==MouseEvent.BUTTON1)
+					{
+						int rowV = table.getSelectedRow();
+						int rowM = table.convertRowIndexToModel(rowV);
+						SaveGameListModel.Row row = tableModel.getRow(rowM);
+						if (row.previewData!=null && row.previewData.index>=0)
+						{
+							openSaveGame(row.file,row.previewData.index);
+							tableModel.updateLoadedState(row);
+						}
+					}
+				}
+			});
+			Tables.GeneralizedTableCellRenderer2<SaveGameListModel.Row, SaveGameListModel.ColumnID, SaveGameListModel> tcr
+				= new Tables.GeneralizedTableCellRenderer2<>(SaveGameListModel.class);
+			tableModel.setAllDefaultRenderers(clazz -> tcr);
+			
+			setViewportView(table);
+		}
+
+		void setRowData(File savefile, SaveGameData data)
+		{
+			tableModel.setRowData(savefile, data);
+		}
+		
+		private static class SaveGameListModel extends Tables.SimpleGetValueTableModel2<SaveGameListModel, SaveGameListModel.Row, SaveGameListModel.ColumnID>
+		{
+			private static final Tables.GetValueConverter<Row,SaveGameListModel,Row,TableModel> GET = new Tables.GetValueConverter<>(Row.class, SaveGameListModel.class);
+			
+			enum ColumnID implements Tables.SimpleGetValueTableModel2.ColumnIDTypeInt2b<SaveGameListModel, Row>, SwingConstants
+			{
+				// [20, 60, 40, 55, 50, 260, 50, 150, 90, 70, 80, 60, 65, 60, 80, 80]
+				index         (config("#"              , Integer.class,  20, CENTER).setValFunc(GET.get(row -> row.previewData, d->d.index)).setToString(i->""+(i+1))),
+				name          (config("Name"           , String .class,  60,   null).setValFunc(GET.get(row -> row.file, File::getName))),
+				isFile        (config("Exists"         , Boolean.class,  40,   null).setValFunc(GET.get(row -> row.file, File::isFile))),
+				isParsable    (config("Parsable"       , Boolean.class,  55,   null).setValFunc(GET.get(row -> row.previewData!=null))),
+				isLoaded      (config("Loaded"         , Boolean.class,  50,   null).setValFunc(GET.get(row -> row.isLoaded))),
+				date          (config("Last Modified"  , Long   .class, 260,   null).setValFunc(GET.get(row -> row.file, f->f.isFile()?f.lastModified():null)).setToString(SaveGameData.TimeStamp::getTimeStr)),
+				version       (config("Version"        , Long   .class,  50,   null).setValFunc(GET.get(row -> row.previewData, d->d.version))),
+				label         (config("Label"          , String .class, 150,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.saveGameLabel))),
+				totalPlayTime (config("Total Play Time", Long   .class,  90,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.totalPlayTime)).setToString(Duration::toString)),
+				timeAlive     (config("Time Alive"     , Long   .class,  70,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.timeAlive    )).setToString(Duration::toString)),
+				units         (config("Units"          , Long   .class,  80,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.units        )).setToString(ColumnID::toStringWithGrouping)),
+				nanites       (config("Nanites"        , Long   .class,  60,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.nanites      )).setToString(ColumnID::toStringWithGrouping)),
+				quicksilver   (config("Quicksilver"    , Long   .class,  65,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.quicksilver  )).setToString(ColumnID::toStringWithGrouping)),
+				debug1        (config("§.<PSD>"        , Boolean.class,  60,   null).setValFunc(GET.get(row -> row.previewData, d->d.json_data, json->SaveGameData.hasValue(json,       SaveGameData.PLAYER_STATE_DATA)))),
+				debug2        (config("§.vLc.<PSD>"    , Boolean.class,  80,   null).setValFunc(GET.get(row -> row.previewData, d->d.json_data, json->SaveGameData.hasValue(json, "vLc",SaveGameData.PLAYER_STATE_DATA)))),
+				debug3        (config("§.2YS.<PSD>"    , Boolean.class,  80,   null).setValFunc(GET.get(row -> row.previewData, d->d.json_data, json->SaveGameData.hasValue(json, "2YS",SaveGameData.PLAYER_STATE_DATA)))),
+				;
+				private final Tables.SimplifiedColumnConfig2<SaveGameListModel, Row, ?> cfg;
+				<V> ColumnID(Tables.SimplifiedColumnConfig2<SaveGameListModel, Row, ?> cfg) { this.cfg = cfg; }
+				@Override public Tables.SimplifiedColumnConfig2<SaveGameListModel, Row, ?> getColumnConfig() { return cfg; }
+				@Override public   Function<                   Row, ?> getGetValue () { return cfg.getValue; }
+				@Override public BiFunction<SaveGameListModel, Row, ?> getGetValueM() { return cfg.getValueM; }
+				
+				private static <T> Tables.SimplifiedColumnConfig2<SaveGameListModel, Row, T> config(String name, Class<T> columnClass, int prefWidth, Integer horizontalAlignment)
+				{
+					return new Tables.SimplifiedColumnConfig2<>(name, columnClass, 20, -1, prefWidth, prefWidth, horizontalAlignment);
+				}
+				
+				static String toStringWithGrouping(Long value)
+				{
+					return value==null ? null : String.format(Locale.ENGLISH, "%,d", value);
+				}
+			}
+			
+			private static class Row
+			{
+				final String absolutePath;
+				final File file;
+				SaveGameData previewData;
+				boolean isLoaded = false;
+
+				Row(File file, SaveGameData previewData)
+				{
+					this.file = Objects.requireNonNull(file);
+					this.previewData = previewData;
+					absolutePath = file.getAbsolutePath();
+				}
+			}
+
+			private final List<Row> rows;
+			private final Vector<SaveGameView> loadedSaveGames;
+
+			SaveGameListModel(Vector<SaveGameView> loadedSaveGames)
+			{
+				super(ColumnID.values());
+				this.loadedSaveGames = loadedSaveGames;
+				rows = new Vector<>();
+				setData(rows);
+			}
+
+			@Override
+			protected SaveGameListModel getThis()
+			{
+				return this;
+			}
+
+			private boolean isLoaded(String absolutePath)
+			{
+				for (SaveGameView view : loadedSaveGames)
+					if (view.file.getAbsolutePath().equals(absolutePath))
+						return true;
+				return false;
+			}
+
+			void setRowData(File savefile, SaveGameData data)
+			{
+				String absolutePath = savefile.getAbsolutePath();
+				int index = -1;
+				Row row = null;
+				for (int i=0; i<rows.size() && index<0; i++)
+				{
+					row = rows.get(i);
+					if (absolutePath.equals(row.absolutePath))
+						index = i;
+				}
+				
+				if (index>=0 && row!=null)
+				{
+					row.previewData = data;
+					updateLoadedState(row);
+					fireTableRowUpdate(index);
+				}
+				else
+				{
+					row = new Row(savefile, data);
+					index = rows.size();
+					rows.add(row);
+					fireTableRowAdded(index);
+				}
+			}
+
+			private void updateLoadedState(Row row)
+			{
+				row.isLoaded = isLoaded(row.absolutePath);
+			}
+		}
 	}
 	
 	public static void test() {

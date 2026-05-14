@@ -24,6 +24,7 @@
 ^BLUE2.symbol=In
 ^BLUE2.image=Substance.Indium.NEXT.png
 ^BLUE2.imageBG=01387D
+^BUI_SCRAP=
 ^CATALYST1=Natrium
 ^CATALYST1.type=Resource
 ^CATALYST1.symbol=Na
@@ -69,6 +70,7 @@
 ^EX_GREEN.symbol=Em
 ^EX_GREEN.image=SUBSTANCE.EXGREEN.2.png
 ^EX_GREEN.imageBG=36611C
+^EX_PURPLE=
 ^EX_RED=Aktiviertes Cadmium
 ^EX_RED.type=Resource
 ^EX_RED.symbol=Cd
@@ -104,6 +106,7 @@
 ^GAS3.symbol=N
 ^GAS3.image=Substance.Nitrogen.NEXT.png
 ^GAS3.imageBG=DE921F
+^GASGIANT1=
 ^GREEN2=Emeril
 ^GREEN2.type=Resource
 ^GREEN2.symbol=Em
@@ -199,6 +202,7 @@
 ^PLANT_WATER.symbol=Ke
 ^PLANT_WATER.image=Substance.neutral.rare9.Kelpbeutel.png
 ^PLANT_WATER.imageBG=005C83
+^PURPLE2=
 ^QUICKSILVER=QUECKSILBER
 ^QUICKSILVER.type=Special
 ^QUICKSILVER.symbol=-
@@ -225,6 +229,7 @@
 ^ROCKETSUB.symbol=H3
 ^ROCKETSUB.image=SUBSTANCE.ROCKETSUB.png
 ^ROCKETSUB.imageBG=DEDCD1
+^RUINSUB=
 ^SAND1=Silikatpulver
 ^SAND1.type=Resource
 ^SAND1.symbol=Si
@@ -265,6 +270,7 @@
 ^SPECIAL_POOP.symbol=X
 ^SPECIAL_POOP.image=PRODUCT.HEXCORE.png
 ^SPECIAL_POOP.imageBG=DEDCD1
+^SQUIDFRAG=
 ^STELLAR2=Chromatisches Metall
 ^STELLAR2.type=Resource
 ^STELLAR2.symbol=Ch
@@ -301,6 +307,7 @@
 ^WATERPLANT.symbol=Cy
 ^WATERPLANT.image=SUBSTANCE.WATER.PLANT.png
 ^WATERPLANT.imageBG=1E8A42
+^WATERWORLD1=
 ^WORMDUST=
 ^YELLOW2=Kupfer
 ^YELLOW2.type=Resource
