@@ -93,6 +93,7 @@ import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Parser;
 import net.schwarzbaer.java.lib.system.ClipboardTools;
+import net.schwarzbaer.java.lib.system.DateTimeFormatter;
 
 public class SaveViewer implements ActionListener {
 
@@ -270,7 +271,7 @@ public class SaveViewer implements ActionListener {
 			return;
 		
 		SaveViewer saveViewer = new SaveViewer();
-		File saveGameFile = new File(saveViewer.getSavegameFolder()+SaveGameListPanel.getFilename(loadSavegame-1));
+		File saveGameFile = new File(saveViewer.getSavegameFolder()+getFilename(loadSavegame-1));
 		if (!saveGameFile.isFile())
 			return;
 		
@@ -344,10 +345,9 @@ public class SaveViewer implements ActionListener {
 		mainWindow.startGUI(contentPane, contentPane.menuBar);
 		mainWindow.setIconImagesFromResource("/logo/", "applogo_16.png", "applogo_24.png", "applogo_32.png", "applogo_48.png", "applogo_64.png", "applogo_96.png", "applogo_128.png", "applogo_256.png", "applogo_320.png");
 		
-		
 		updateWindowTitle();
 		
-		executor.scheduleAtFixedRate(this::checkSavegameExistence, 0, 5, TimeUnit.SECONDS);
+		executor.scheduleAtFixedRate(this::checkSavegameExistence, 0, 15, TimeUnit.SECONDS);
 		//frequentlyUpdater.start();
 	}
 
@@ -597,8 +597,20 @@ public class SaveViewer implements ActionListener {
 		return home+fs+"AppData"+fs+"Roaming"+fs+"HelloGames"+fs+"NMS";
 	}
 	
-	private void checkSavegameExistence() {
-		contentPane.saveGameListPanel.updatePreviewData();
+	long lastSavegameExistenceCheck = System.currentTimeMillis();
+	private void checkSavegameExistence()
+	{
+		long start = System.currentTimeMillis();
+		long break_ms = start-lastSavegameExistenceCheck;
+		//System.out.printf("SavegameExistenceCheck.Pause: %s%n", DateTimeFormatter.getDurationStr_ms(break_ms));
+		if (break_ms < 1000)
+			System.err.printf("WARNING: Break between 2 SavegameExistenceChecks is alarmingly short. (%s) -> Raise check interval or speed up check.%n", DateTimeFormatter.getDurationStr_ms(break_ms));
+		
+		SaveGameData[] saveGames = contentPane.saveGameListPanel.updatePreviewData();
+		contentPane.globalDeObfuscatorUsagePanel.updateData(saveGames);
+		
+		lastSavegameExistenceCheck = System.currentTimeMillis();
+		//System.out.printf("SavegameExistenceCheck.Check: %s%n", DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start));
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
@@ -1110,7 +1122,7 @@ public class SaveViewer implements ActionListener {
 			tabbedPane.addTab("Technology IDs", techIDsPanel      = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.techIDs     , "TechnologyIDsTable"));
 			tabbedPane.addTab("Product IDs"   , productIDsPanel   = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.productIDs  , "ProductIDsTable"));
 			tabbedPane.addTab("Substance IDs" , substanceIDsPanel = new GameInfos.GeneralizedIDPanel(mainWindow, GameInfos.substanceIDs, "SubstanceIDsTable"));
-			tabbedPane.addTab("Global DeObfuscator Usage", globalDeObfuscatorUsagePanel = new GlobalDeObfuscatorUsagePanel(loadedSaveGames));
+			tabbedPane.addTab("Global DeObfuscator Usage", globalDeObfuscatorUsagePanel = new GlobalDeObfuscatorUsagePanel());
 			
 			tabbedPane.addChangeListener(new ChangeListener() {
 				@Override
@@ -1149,7 +1161,6 @@ public class SaveViewer implements ActionListener {
 			productIDsPanel  .addUsage(saveGameView);
 			substanceIDsPanel.addUsage(saveGameView);
 			tabbedPane.setSelectedIndex(index);
-			globalDeObfuscatorUsagePanel.updateSaveGameList();
 		}
 
 		public void removeTab(JPanel panel) {
@@ -1161,7 +1172,6 @@ public class SaveViewer implements ActionListener {
 			techIDsPanel     .removeUsage(saveGameView);
 			productIDsPanel  .removeUsage(saveGameView);
 			substanceIDsPanel.removeUsage(saveGameView);
-			globalDeObfuscatorUsagePanel.updateSaveGameList();
 		}
 
 		private void addButtons(JMenuBar toolBar) {
@@ -1276,10 +1286,15 @@ public class SaveViewer implements ActionListener {
 	
 	}
 	
-	private class SaveGameListPanel extends JScrollPane
+	public static String getFilename(int index)
+	{
+		return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
+	}
+
+	public class SaveGameListPanel extends JScrollPane
 	{
 		private static final long serialVersionUID = 1235968974727584021L;
-		private static int SAVE_GAME_COUNT = 15;
+		public  static int SAVE_GAME_COUNT = 15;
 		
 		private final SimplifiedTable<SaveGameListModel.ColumnID> table;
 		private final SaveGameListModel tableModel;
@@ -1332,26 +1347,25 @@ public class SaveViewer implements ActionListener {
 			
 			setViewportView(table);
 		}
-		
-		void updatePreviewData()
+
+		SaveGameData[] updatePreviewData()
 		{
+			SaveGameData[] arr = new SaveGameData[SAVE_GAME_COUNT*2];
 			if (isSavegameFolderKnown())
 			{
 				String savegameFolder = getSavegameFolder();
-				for (int index=0; index<SAVE_GAME_COUNT*2; index++)
+				for (int index=0; index<arr.length; index++)
 				{
 					File savefile = new File(savegameFolder+getFilename(index));
-					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
-					tableModel.setRowData(savefile, data);
+					arr[index] = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
+					tableModel.setRowData(savefile, arr[index]);
 				}
 			}
+			else
+				Arrays.fill(arr, null);
+			return arr;
 		}
 		
-		static String getFilename(int index)
-		{
-			return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
-		}
-
 		private void openSaveGame(SaveGameListModel.Row row)
 		{
 			if (row!=null && row.file.isFile() && row.previewData!=null && row.previewData.index>=0)

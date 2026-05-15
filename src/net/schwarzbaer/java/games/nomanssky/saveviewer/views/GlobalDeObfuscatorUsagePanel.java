@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.swing.BorderFactory;
@@ -15,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.lib.gui.Tables;
@@ -27,17 +29,19 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 	private final UsageTableModel        usageTableModel;
 	private final SimplifiedTable<ReplacementsTableModel.ColumnID> replacementsTable;
 	private final SimplifiedTable<UsageTableModel       .ColumnID> usageTable;
+	private SaveGameData[] saveGames;
 
-	public GlobalDeObfuscatorUsagePanel(Vector<SaveGameView> loadedSaveGames)
+	public GlobalDeObfuscatorUsagePanel()
 	{
 		super(new BorderLayout(3, 3));
 		setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+		saveGames = null;
 		
-		replacementsTableModel = new ReplacementsTableModel(loadedSaveGames);
+		replacementsTableModel = new ReplacementsTableModel();
 		replacementsTable = new SimplifiedTable<>("ReplacementsTable",replacementsTableModel,true,SaveViewer.DEBUG,true);
 		replacementsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
 		
-		usageTableModel = new UsageTableModel(loadedSaveGames);
+		usageTableModel = new UsageTableModel();
 		usageTable = new SimplifiedTable<>("UsageTable",usageTableModel,true,SaveViewer.DEBUG,true);
 		
 		replacementsTable.getSelectionModel().addListSelectionListener(e->{
@@ -53,10 +57,26 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 		add(new JScrollPane(usageTable), BorderLayout.CENTER);
 	}
 
-	public void updateSaveGameList()
+	public synchronized void updateData(SaveGameData[] saveGames)
 	{
+		this.saveGames = saveGames;
 		replacementsTableModel.updateData();
-		usageTableModel.updateColumns();
+		usageTableModel.fireTableUpdate();
+	}
+	
+	private synchronized SaveGameData getSaveGame(int saveGameIndex)
+	{
+		if (saveGames==null || saveGameIndex<0 || saveGameIndex>=saveGames.length)
+			return null;
+		return saveGames[saveGameIndex];
+	}
+
+	private synchronized void forEachSaveGame(Consumer<SaveGameData> action)
+	{
+		if (saveGames!=null)
+			for (SaveGameData data : saveGames)
+				if (data!=null)
+					action.accept(data);
 	}
 	
 	private static class ColumnID<TableModelType> implements Tables.SimpleGetValueTableModel2.ColumnIDTypeInt2<TableModelType, String>
@@ -87,27 +107,65 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 			}
 		}
 		
-		private final Vector<SaveGameView> loadedSaveGames;
-
-		ReplacementsTableModel(Vector<SaveGameView> loadedSaveGames)
+		Vector<String> rows;
+		
+		ReplacementsTableModel()
 		{
 			super(new ColumnID[] {
 					new ColumnID("Original"   , String.class,  60, originalName -> originalName, null),
 					new ColumnID("Replacement", String.class, 180, SaveViewer.deObfuscator::getReplacement, null)
 			});
-			this.loadedSaveGames = loadedSaveGames;
-			updateData();
+			rows = new Vector<>();
+			setData(rows);
 		}
 
 		void updateData()
 		{
 			Set<String> originalNames = new HashSet<>();
-			for (SaveGameView view : loadedSaveGames)
-				originalNames.addAll(view.data.deObfuscatorUsage.keySet());
+			forEachSaveGame(data -> originalNames.addAll(data.deObfuscatorUsage.keySet()));
 			
 			List<String> sorted = new ArrayList<>(originalNames);
 			sorted.sort(null);
-			setData(sorted);
+			
+			insertNewValues(sorted);
+		}
+
+		private void insertNewValues(List<String> newValues)
+		{
+			int newIndex = 0;
+			boolean getNextNewValue = true;
+			String newValue = null;
+			
+			for (int oldIndex=0; oldIndex<rows.size() && newIndex<newValues.size(); oldIndex++)
+			{
+				if (getNextNewValue)
+					newValue = newValues.get(newIndex);
+				getNextNewValue = false;
+				
+				String oldValue = rows.get(oldIndex);
+				int cmp = oldValue.compareTo(newValue);
+				
+				if (cmp > 0)
+				{
+					rows.insertElementAt(newValue, oldIndex);
+					fireTableRowAdded(oldIndex);
+				}
+				
+				if (cmp >= 0)
+				{
+					newIndex++;
+					getNextNewValue = true;
+				}
+			}
+			
+			if (newIndex<newValues.size())
+			{
+				int firstRowIndex = rows.size();
+				for (int i=newIndex; i<newValues.size(); i++) rows.add(newValues.get(i));
+				int lastRowIndex  = rows.size()-1;
+				
+				fireTableRowsAdded(firstRowIndex,lastRowIndex);
+			}
 		}
 
 		@Override protected ReplacementsTableModel getThis() { return this; }
@@ -121,21 +179,27 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 			{
 				super("Path", String.class, 500, path -> path, null);
 			}
-			ColumnID(SaveGameView saveGameView)
+			ColumnID(int index)
 			{
-				super(saveGameView.file.getName(), Boolean.class, 62, null, (model,path) -> model.isPathUsedBy(saveGameView,path));
+				super(SaveViewer.getFilename(index), Boolean.class, 62, null, (model,path) -> model.isPathUsedBy(index,path));
 			}
 		}
 		
-		private static final ColumnID DEFAULT_COLUMN__PATH = new ColumnID();
-		private final Vector<SaveGameView> loadedSaveGames;
 		private String originalName;
 
-		UsageTableModel(Vector<SaveGameView> loadedSaveGames)
+		UsageTableModel()
 		{
-			super(new ColumnID[] { DEFAULT_COLUMN__PATH });
-			this.loadedSaveGames = loadedSaveGames;
+			super(createColumns());
 			setOriginalName(null);
+		}
+
+		private static ColumnID[] createColumns()
+		{
+			ColumnID[] columnIDs = new ColumnID[SaveViewer.SaveGameListPanel.SAVE_GAME_COUNT*2+1];
+			columnIDs[0] = new ColumnID();
+			for (int index=0; index<SaveViewer.SaveGameListPanel.SAVE_GAME_COUNT*2; index++)
+				columnIDs[index+1] = new ColumnID(index);
+			return columnIDs;
 		}
 
 		@Override protected UsageTableModel getThis() { return this; }
@@ -145,31 +209,21 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 			this.originalName = originalName;
 			Set<String> allPaths = new HashSet<>();
 			if (this.originalName!=null)
-				for (SaveGameView view : loadedSaveGames)
-				{
-					HashSet<String> paths = view.data.deObfuscatorUsage.get(this.originalName);
+				forEachSaveGame(data -> {
+					HashSet<String> paths = data.deObfuscatorUsage.get(this.originalName);
 					if (paths!=null)
 						allPaths.addAll(paths);
-				}
+				});
 			
 			List<String> sorted = new ArrayList<>(allPaths);
 			sorted.sort(null);
 			setData(sorted);
 		}
 
-		void updateColumns()
+		private boolean isPathUsedBy(int saveGameIndex, String path)
 		{
-			List<ColumnID> columns = new ArrayList<>();
-			columns.add(DEFAULT_COLUMN__PATH);
-			loadedSaveGames.forEach(view -> columns.add(new ColumnID(view)));
-			this.columns = columns.toArray(ColumnID[]::new);
-			fireTableStructureUpdate();
-			setColumnWidths(table);
-		}
-
-		private boolean isPathUsedBy(SaveGameView view, String path)
-		{
-			HashSet<String> paths = originalName==null ? null : view.data.deObfuscatorUsage.get(originalName);
+			SaveGameData data = getSaveGame(saveGameIndex);
+			HashSet<String> paths = originalName==null || data==null ? null : data.deObfuscatorUsage.get(originalName);
 			return paths!=null && paths.contains(path);
 		}
 	}
