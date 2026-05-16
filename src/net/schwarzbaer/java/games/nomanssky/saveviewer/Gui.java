@@ -1374,6 +1374,46 @@ public class Gui {
 			textArea.append(String.format(format, args));
 		}
 	}
+	
+	public static void showMemoryUsage()
+	{
+		showMemoryUsage(System.out, false);
+	}
+	public static void showMemoryUsage(boolean inOneLine)
+	{
+		showMemoryUsage(System.out, inOneLine);
+	}
+	public static void showMemoryUsage(PrintStream printStream, boolean inOneLine)
+	{
+		Runtime runtime = Runtime.getRuntime();
+		if (runtime==null) return;
+		
+		long maxMemory   = runtime.maxMemory();
+		long totalMemory = runtime.totalMemory();
+		long freeMemory  = runtime.freeMemory();
+		long usedMemory  = totalMemory-freeMemory;
+		
+		String format = inOneLine
+				? "Memory Usage:  max:%s  total:%s  used:%s  free:%s%n"
+				: "Memory Usage:%n   max:%s%n   total:%s%n   used:%s%n   free:%s%n";
+		
+		printStream.printf(format,
+				toSizeString(  maxMemory),
+				toSizeString(totalMemory),
+				toSizeString( usedMemory),
+				toSizeString( freeMemory)
+		);
+	}
+
+	private static String toSizeString(long size)
+	{
+		double sizeD = size;
+		if (sizeD < 1100) return String.format(Locale.ENGLISH, "%d B"    , size ); sizeD /= 1024;
+		if (sizeD < 1100) return String.format(Locale.ENGLISH, "%1.1f kB", sizeD); sizeD /= 1024;
+		if (sizeD < 1100) return String.format(Locale.ENGLISH, "%1.1f MB", sizeD); sizeD /= 1024;
+		if (sizeD < 1100) return String.format(Locale.ENGLISH, "%1.1f GB", sizeD); sizeD /= 1024;
+		                  return String.format(Locale.ENGLISH, "%1.1f TB", sizeD);
+	}
 
 	public static void runInEventThreadAndWait(Runnable doRun) {
 		if (SwingUtilities.isEventDispatchThread())

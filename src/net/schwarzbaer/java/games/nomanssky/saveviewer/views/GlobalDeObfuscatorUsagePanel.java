@@ -16,7 +16,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
-import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.lib.gui.Tables;
@@ -29,13 +28,13 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 	private final UsageTableModel        usageTableModel;
 	private final SimplifiedTable<ReplacementsTableModel.ColumnID> replacementsTable;
 	private final SimplifiedTable<UsageTableModel       .ColumnID> usageTable;
-	private SaveGameData[] saveGames;
+	private SaveViewer.UsageMap[] usageMaps;
 
 	public GlobalDeObfuscatorUsagePanel()
 	{
 		super(new BorderLayout(3, 3));
 		setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		saveGames = null;
+		usageMaps = null;
 		
 		replacementsTableModel = new ReplacementsTableModel();
 		replacementsTable = new SimplifiedTable<>("ReplacementsTable",replacementsTableModel,true,SaveViewer.DEBUG,true);
@@ -57,26 +56,26 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 		add(new JScrollPane(usageTable), BorderLayout.CENTER);
 	}
 
-	public synchronized void updateData(SaveGameData[] saveGames)
+	public synchronized void updateData(SaveViewer.UsageMap[] usageMaps)
 	{
-		this.saveGames = saveGames;
+		this.usageMaps = usageMaps;
 		replacementsTableModel.updateData();
 		usageTableModel.fireTableUpdate();
 	}
 	
-	private synchronized SaveGameData getSaveGame(int saveGameIndex)
+	private synchronized SaveViewer.UsageMap getUsageMap(int saveGameIndex)
 	{
-		if (saveGames==null || saveGameIndex<0 || saveGameIndex>=saveGames.length)
+		if (usageMaps==null || saveGameIndex<0 || saveGameIndex>=usageMaps.length)
 			return null;
-		return saveGames[saveGameIndex];
+		return usageMaps[saveGameIndex];
 	}
 
-	private synchronized void forEachSaveGame(Consumer<SaveGameData> action)
+	private synchronized void forEachSaveGame(Consumer<SaveViewer.UsageMap> action)
 	{
-		if (saveGames!=null)
-			for (SaveGameData data : saveGames)
-				if (data!=null)
-					action.accept(data);
+		if (usageMaps!=null)
+			for (SaveViewer.UsageMap map : usageMaps)
+				if (map!=null)
+					action.accept(map);
 	}
 	
 	private static class ColumnID<TableModelType> implements Tables.SimpleGetValueTableModel2.ColumnIDTypeInt2<TableModelType, String>
@@ -122,7 +121,7 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 		void updateData()
 		{
 			Set<String> originalNames = new HashSet<>();
-			forEachSaveGame(data -> originalNames.addAll(data.deObfuscatorUsage.keySet()));
+			forEachSaveGame(map -> originalNames.addAll(map.keySet()));
 			
 			List<String> sorted = new ArrayList<>(originalNames);
 			sorted.sort(null);
@@ -209,8 +208,8 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 			this.originalName = originalName;
 			Set<String> allPaths = new HashSet<>();
 			if (this.originalName!=null)
-				forEachSaveGame(data -> {
-					HashSet<String> paths = data.deObfuscatorUsage.get(this.originalName);
+				forEachSaveGame(map -> {
+					HashSet<String> paths = map.get(this.originalName);
 					if (paths!=null)
 						allPaths.addAll(paths);
 				});
@@ -222,8 +221,8 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 
 		private boolean isPathUsedBy(int saveGameIndex, String path)
 		{
-			SaveGameData data = getSaveGame(saveGameIndex);
-			HashSet<String> paths = originalName==null || data==null ? null : data.deObfuscatorUsage.get(originalName);
+			SaveViewer.UsageMap map = getUsageMap(saveGameIndex);
+			HashSet<String> paths = originalName==null || map==null ? null : map.get(originalName);
 			return paths!=null && paths.contains(path);
 		}
 	}

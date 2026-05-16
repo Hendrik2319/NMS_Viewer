@@ -12,6 +12,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
@@ -21,6 +22,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -60,7 +62,7 @@ public class SaveGameData
 	public final String filename;
 	public final int index;
 	public final JSON_Object<NVExtra,VExtra> json_data;
-	public HashMap<String,HashSet<String>> deObfuscatorUsage = null;
+	public SaveViewer.UsageMap deObfuscatorUsage = null;
 	public final boolean isPreNEXT;
 	private final Vector<JSON_Object<NVExtra, VExtra>> arrPlayerStateData;
 	private JSON_Object<NVExtra, VExtra> firstPlayerStateData = null;
@@ -108,7 +110,7 @@ public class SaveGameData
 		this.arrPlayerStateData = new Vector<>();
 	}
 
-	public void setDeObfuscatorUsage(HashMap<String, HashSet<String>> deObfuscatorUsage) {
+	public void setDeObfuscatorUsage(SaveViewer.UsageMap deObfuscatorUsage) {
 		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
@@ -1992,12 +1994,12 @@ public class SaveGameData
 					Long   indexX = getIntegerValue(indexObj, "Index","X");
 					Long   indexY = getIntegerValue(indexObj, "Index","Y");
 					String type   = getStringValue (indexObj, "Type","InventorySpecialSlotType");
-					if (indexX==null || indexX<0 || indexX>=width ) { wrongIndices.add(value); continue; }
-					if (indexY==null || indexY<0 || indexY>=height) { wrongIndices.add(value); continue; }
+					if (indexX==null || indexX<0 || indexX>=width ) continue;
+					if (indexY==null || indexY<0 || indexY>=height) continue;
 					Slot slot = slots[indexX.intValue()][indexY.intValue()];
-					if (slot==null) { wrongIndices.add(value); continue; }
-					if (slot.specialSlotType != null) { ++redundantIndices; continue; }
-					slot.specialSlotType = type;
+					if (slot==null) continue;
+					if (type != null)
+						slot.specialSlotTypes.add(type);
 				}
 				if (!wrongIndices.isEmpty())
 					Gui.log_error_ln(inventorySourcePath+": Found "+wrongIndices.size()+" wrong index(es) in \"SpecialSlots\".");
@@ -2030,7 +2032,7 @@ public class SaveGameData
 				
 				public boolean isValid;
 				public final boolean isEmpty;
-				public String specialSlotType;
+				public final List<String> specialSlotTypes;
 				
 				public final Long indexX;
 				public final Long indexY;
@@ -2046,7 +2048,7 @@ public class SaveGameData
 				public Slot(Long indexX, Long indexY) {
 					this.isValid = true;
 					this.isEmpty = true;
-					this.specialSlotType = null;
+					this.specialSlotTypes = new ArrayList<>();
 					
 					this.indexX = indexX;
 					this.indexY = indexY;
@@ -2063,7 +2065,7 @@ public class SaveGameData
 				public Slot(JSON_Object<NVExtra, VExtra> slotObj, SaveGameData source, boolean isBackgroundInv) {
 					isValid = false;
 					isEmpty = false;
-					specialSlotType = null;
+					specialSlotTypes = new ArrayList<>();
 					
 					typeStr      = getStringValue (slotObj, "Type","InventoryType");
 					idStr        = getStringValue (slotObj, "Id");

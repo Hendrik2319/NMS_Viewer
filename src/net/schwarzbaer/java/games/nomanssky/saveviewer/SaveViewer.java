@@ -100,7 +100,10 @@ public class SaveViewer implements ActionListener {
 	private static final Color COLOR_Creative_SaveGame = Color.BLUE;
 	private static final Color COLOR_Expedition_SaveGame = new Color(0x008000);
 	private static final Color COLOR_PreNext_SaveGame = Color.RED;
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG              = true;
+	public static final boolean DEBUG_MEMORY       = false;
+	public static final boolean DEBUG_MEMORY_L2    = false;
+	public static final boolean DEBUG_CHECK_TIMING = false;
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
@@ -347,6 +350,7 @@ public class SaveViewer implements ActionListener {
 		
 		updateWindowTitle();
 		
+		if (DEBUG_MEMORY) Gui.showMemoryUsage(true);
 		executor.scheduleAtFixedRate(this::checkSavegameExistence, 0, 15, TimeUnit.SECONDS);
 		//frequentlyUpdater.start();
 	}
@@ -602,15 +606,20 @@ public class SaveViewer implements ActionListener {
 	{
 		long start = System.currentTimeMillis();
 		long break_ms = start-lastSavegameExistenceCheck;
-		//System.out.printf("SavegameExistenceCheck.Pause: %s%n", DateTimeFormatter.getDurationStr_ms(break_ms));
+		if (DEBUG_CHECK_TIMING) System.out.printf("SavegameExistenceCheck.Pause: %s%n", DateTimeFormatter.getDurationStr_ms(break_ms));
 		if (break_ms < 1000)
 			System.err.printf("WARNING: Break between 2 SavegameExistenceChecks is alarmingly short. (%s) -> Raise check interval or speed up check.%n", DateTimeFormatter.getDurationStr_ms(break_ms));
 		
-		SaveGameData[] saveGames = contentPane.saveGameListPanel.updatePreviewData();
-		contentPane.globalDeObfuscatorUsagePanel.updateData(saveGames);
+		if (DEBUG_MEMORY_L2) { System.out.print("[before]"); Gui.showMemoryUsage(true); }
+		
+		UsageMap[] usageMaps = contentPane.saveGameListPanel.updatePreviewData();
+		contentPane.globalDeObfuscatorUsagePanel.updateData(usageMaps);
+		
+		System.gc();
+		if (DEBUG_MEMORY) { if (DEBUG_MEMORY_L2) System.out.print("[after ]"); Gui.showMemoryUsage(true); }
 		
 		lastSavegameExistenceCheck = System.currentTimeMillis();
-		//System.out.printf("SavegameExistenceCheck.Check: %s%n", DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start));
+		if (DEBUG_CHECK_TIMING) System.out.printf("SavegameExistenceCheck.Check: %s%n", DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start));
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
@@ -622,7 +631,7 @@ public class SaveViewer implements ActionListener {
 	private SaveGameData openSaveGameForPreview(File saveGameFile, int saveGameIndex) {
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, false);
 		
-		HashMap<String, HashSet<String>> deObfuscatorUsage = null;
+		UsageMap deObfuscatorUsage = null;
 		boolean isPreNEXT;
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
@@ -646,7 +655,7 @@ public class SaveViewer implements ActionListener {
 		if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, true);
 		
-		HashMap<String, HashSet<String>> deObfuscatorUsage = null;
+		UsageMap deObfuscatorUsage = null;
 		boolean isPreNEXT;
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
@@ -699,7 +708,7 @@ public class SaveViewer implements ActionListener {
 			Gui.log_ln("");
 			JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(view.file, true);
 			
-			HashMap<String, HashSet<String>> deObfuscatorUsage = null;
+			UsageMap deObfuscatorUsage = null;
 			boolean isPreNEXT;
 			if (SaveGameData.hasValue(new_json_data, "Version")) // <--- UnObfuscated String "Version"
 				isPreNEXT = true;
@@ -975,6 +984,10 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
+	public static class UsageMap extends HashMap<String,HashSet<String>> {
+		private static final long serialVersionUID = -2972516542468230904L;
+	}
+	
 	public static class DeObfuscator {
 		
 		private HashMap<String, String> replacements;
@@ -987,12 +1000,12 @@ public class SaveViewer implements ActionListener {
 			return replacements.get(originalStr);
 		}
 
-		public HashMap<String, HashSet<String>> deObfuscate(JSON_Object<NVExtra,VExtra> data) {
+		public UsageMap deObfuscate(JSON_Object<NVExtra,VExtra> data) {
 			return deObfuscate(data, true);
 		}
-		public HashMap<String, HashSet<String>> deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose) {
+		public UsageMap deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose) {
 			
-			HashMap<String, HashSet<String>> usage = new HashMap<>();
+			UsageMap usage = new UsageMap();
 			Result res = new Result();
 			
 			JSON_Data.traverseNamedValues(data, false, (path,nv)->{
@@ -1371,17 +1384,18 @@ public class SaveViewer implements ActionListener {
 			setViewportView(table);
 		}
 
-		SaveGameData[] updatePreviewData()
+		UsageMap[] updatePreviewData()
 		{
-			SaveGameData[] arr = new SaveGameData[SAVE_GAME_COUNT*2];
+			UsageMap[] arr = new UsageMap[SAVE_GAME_COUNT*2];
 			if (isSavegameFolderKnown())
 			{
 				String savegameFolder = getSavegameFolder();
 				for (int index=0; index<arr.length; index++)
 				{
 					File savefile = new File(savegameFolder+getFilename(index));
-					arr[index] = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
-					tableModel.setRowData(savefile, arr[index]);
+					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
+					tableModel.setRowData(savefile, data);
+					arr[index] = data==null ? null : data.deObfuscatorUsage;
 				}
 			}
 			else
@@ -1401,6 +1415,8 @@ public class SaveViewer implements ActionListener {
 			{
 				SaveViewer.this.openSaveGame(row.file,row.previewData.index);
 				tableModel.updateLoadedState(row);
+				System.gc();
+				if (DEBUG_MEMORY) Gui.showMemoryUsage(System.err, true);
 			}
 		}
 		

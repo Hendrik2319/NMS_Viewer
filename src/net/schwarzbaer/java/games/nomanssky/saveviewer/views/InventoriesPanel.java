@@ -23,6 +23,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
 import java.util.function.Consumer;
@@ -359,8 +360,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 						out.add(1, null, "%s", slot.id.type);
 					out.add(1, "Amount", "%d/%d", slot.amount, slot.maxAmount);
 					out.add(1, "Damage", slot.damageFactor);
-					if (slot.specialSlotType!=null)
-						out.add(1, "Special", "%s", slot.specialSlotType);
+					if (!slot.specialSlotTypes.isEmpty())
+						for (int i=0; i<slot.specialSlotTypes.size(); i++)
+							out.add(1, i==0 ? "Special" : null, "%s", slot.specialSlotTypes.get(i));
 					if (inventory.source!=null && inventory.source.knownBlueprints!=null) {
 						Vector<KnownBlueprints.BlueprintList> lists = new Vector<>();
 						for (KnownBlueprints.BlueprintList listID:KnownBlueprints.BlueprintList.values())
@@ -531,13 +533,13 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 							String typeStr = slot.typeStr;
 							boolean isEmpty = slot.isEmpty;
 							boolean isValid = slot.isValid;
-							String specialSlotType = slot.specialSlotType;
+							List<String> specialSlotTypes = slot.specialSlotTypes;
 							Double damageFactor = slot.damageFactor;
 							
 							int x1=x+indexX*SLOT_RASTER_X+SLOT_BORDER;
 							int y1=y+indexY*SLOT_RASTER_Y+SLOT_BORDER;
 							
-							drawSlot(g2, x1,y1, baseClip, standardFont, slotId, slotIdStr, amount, maxAmount, type, typeStr, isEmpty, isValid, specialSlotType, damageFactor );
+							drawSlot(g2, x1,y1, baseClip, standardFont, slotId, slotIdStr, amount, maxAmount, type, typeStr, isEmpty, isValid, specialSlotTypes, damageFactor );
 						}
 					
 					//g2.setClip(baseClip);
@@ -621,16 +623,16 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 				}
 				private static void drawSlotSimple(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, GeneralizedID slotId, Long amount, Long maxAmount, boolean isSelected) {
 					Objects.requireNonNull(slotId);
-					drawSlot(g2, x,y, baseClip, standardFont, isSelected, slotId, null, amount, maxAmount, null, "???", false, true, "", null );
+					drawSlot(g2, x,y, baseClip, standardFont, isSelected, slotId, null, amount, maxAmount, null, "???", false, true, List.of(), null );
 				}
 				
 				private static void drawSlot(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont,
-						GeneralizedID slotId, String slotIdStr, Long amount, Long maxAmount, SlotType type, String typeStr, boolean isEmpty, boolean isValid, String specialSlotType, Double damageFactor ) {
+						GeneralizedID slotId, String slotIdStr, Long amount, Long maxAmount, SlotType type, String typeStr, boolean isEmpty, boolean isValid, List<String> specialSlotTypes, Double damageFactor ) {
 					drawSlot(g2, x,y, baseClip, standardFont, false,
-							slotId, slotIdStr, amount, maxAmount, type, typeStr, isEmpty, isValid, specialSlotType, damageFactor );
+							slotId, slotIdStr, amount, maxAmount, type, typeStr, isEmpty, isValid, specialSlotTypes, damageFactor );
 				}
 				private static void drawSlot(Graphics2D g2, int x, int y, Rectangle baseClip, Font standardFont, boolean isSelected,
-						GeneralizedID slotId, String slotIdStr, Long amount, Long maxAmount, SlotType type, String typeStr, boolean isEmpty, boolean isValid, String specialSlotType, Double damageFactor ) {
+						GeneralizedID slotId, String slotIdStr, Long amount, Long maxAmount, SlotType type, String typeStr, boolean isEmpty, boolean isValid, List<String> specialSlotTypes, Double damageFactor ) {
 					
 					if (isSelected) {
 						g2.setStroke(STROKE__THICK_BORDER);
@@ -648,6 +650,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					int imageSize = innerWidth-2*imageBorder;
 					int strOffsetX = innerOffsetX+4;
 					int strOffsetY = innerOffsetY+12;
+					int strOffsetYInc = 13;
 					
 					BufferedImage image = slotId==null ? null : slotId.getCachedImage(imageSize,imageSize);
 					
@@ -668,29 +671,29 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 					g2.setClip(baseClip.createIntersection(new Rectangle(x+innerOffsetX, y+innerOffsetY, innerWidth, innerHeight)));
 					
 					if (isEmpty) {
-						if (specialSlotType!=null) {
+						if (specialSlotTypes!=null && !specialSlotTypes.isEmpty()) {
 							g2.setPaint(COLOR__SLOT_TITLE);
-							g2.drawString(specialSlotType, x+strOffsetX, y+strOffsetY);
+							for (int i=0; i<specialSlotTypes.size(); i++)
+								g2.drawString(specialSlotTypes.get(i), x+strOffsetX, y+strOffsetY+ i*strOffsetYInc);
 						}
 						g2.setClip(baseClip);
 						return; 
 					}
 					
 					if (image == null) {
-						int incrementY = 13;
 						g2.setPaint(getSlotTextColor(type));
 						
-						g2.drawString(type==null?typeStr:type.toString(), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+						g2.drawString(type==null?typeStr:type.toString(), x+strOffsetX, y+strOffsetY); strOffsetY+=strOffsetYInc;
 						
 						if (slotId!=null && slotId.hasLabel()) {
 							g2.setPaint(COLOR__SLOT_TEXT_NOIMAGE_LABEL);
-							g2.drawString(slotId.label, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+							g2.drawString(slotId.label, x+strOffsetX, y+strOffsetY); strOffsetY+=strOffsetYInc;
 							g2.setPaint(getSlotTextColor(type));
 						}
 						
-						g2.drawString(slotId==null?slotIdStr:slotId.id, x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+						g2.drawString(slotId==null?slotIdStr:slotId.id, x+strOffsetX, y+strOffsetY); strOffsetY+=strOffsetYInc;
 					
-						g2.drawString(String.format("%s/%s", amount, maxAmount), x+strOffsetX, y+strOffsetY); strOffsetY+=incrementY;
+						g2.drawString(String.format("%s/%s", amount, maxAmount), x+strOffsetX, y+strOffsetY); strOffsetY+=strOffsetYInc;
 						
 						g2.setClip(baseClip);
 						return; 
