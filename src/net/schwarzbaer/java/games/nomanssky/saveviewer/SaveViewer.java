@@ -1300,15 +1300,19 @@ public class SaveViewer implements ActionListener {
 		private final SaveGameListModel tableModel;
 		private int clickedRowIndex;
 		private SaveGameListModel.Row clickedRow;
+		private int[] selectedRowIndexes;
+		private SaveGameListModel.Row[] selectedRows;
 		
 		SaveGameListPanel()
 		{
 			clickedRowIndex = -1;
 			clickedRow = null;
+			selectedRowIndexes = null;
+			selectedRows = null;
 			
 			tableModel = new SaveGameListModel(loadedSaveGames);
 			table = new SimplifiedTable<>("SaveGameList",tableModel,true,SaveViewer.DEBUG,true);
-			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION, true);
+			table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION, true);
 			
 			Tables.GeneralizedTableCellRenderer2<SaveGameListModel.Row, SaveGameListModel.ColumnID, SaveGameListModel> tcr
 				= new Tables.GeneralizedTableCellRenderer2<>(SaveGameListModel.class);
@@ -1324,13 +1328,32 @@ public class SaveViewer implements ActionListener {
 			
 			JPopupMenu contextMenu = table.getContextMenu();
 			contextMenu.addSeparator();
-			JMenuItem miLoad = contextMenu.add(Gui.createMenuItem("###", e->openSaveGame(clickedRow), Gui.ToolbarIcons.Open));
+			JMenuItem miLoad         = contextMenu.add(Gui.createMenuItem("###", e->openSaveGame ( clickedRow ), Gui.ToolbarIcons.Open));
+			JMenuItem miLoadSelected = contextMenu.add(Gui.createMenuItem("###", e->openSaveGames(selectedRows), Gui.ToolbarIcons.Open));
 			
 			table.addContextMenuInvokeListener((rowV,colV)->{
 				clickedRowIndex = rowV<0 ? -1 : table.convertRowIndexToModel(rowV);
 				clickedRow = tableModel.getRow(clickedRowIndex);
-				miLoad.setEnabled(clickedRow!=null && clickedRow.file.isFile());
-				miLoad.setText("▶ Load %s (double click)".formatted( clickedRow!=null ? clickedRow.file.getName() : "File" ));
+				
+				selectedRowIndexes = Arrays
+					.stream(table.getSelectedRows())
+					.filter(i->i>=0)
+					.map(table::convertRowIndexToModel)
+					.toArray();
+				selectedRows = Arrays
+					.stream(selectedRowIndexes)
+					.mapToObj(rowM -> tableModel.getRow(rowM))
+					.filter(row -> row!=null)
+					.toArray(SaveGameListModel.Row[]::new);
+				
+				miLoad        .setEnabled(clickedRow!=null && clickedRow.file.isFile());
+				miLoadSelected.setEnabled(selectedRows!=null && selectedRows.length>0);
+				miLoad        .setText("▶ Load %s (double-click)".formatted( clickedRow!=null ? clickedRow.file.getName() : "File" ));
+				miLoadSelected.setText("Load %s".formatted(
+						selectedRows==null || selectedRows.length<=0
+							? "selected save games"
+							: "%d selected save game%s".formatted(selectedRows.length, selectedRows.length==1 ? "" : "s")
+				));
 			});
 			
 			table.addMouseListener(new MouseAdapter() {
@@ -1366,6 +1389,12 @@ public class SaveViewer implements ActionListener {
 			return arr;
 		}
 		
+		private void openSaveGames(SaveGameListModel.Row[] rows)
+		{
+			for (SaveGameListModel.Row row : rows)
+				openSaveGame(row);
+		}
+
 		private void openSaveGame(SaveGameListModel.Row row)
 		{
 			if (row!=null && row.file.isFile() && row.previewData!=null && row.previewData.index>=0)

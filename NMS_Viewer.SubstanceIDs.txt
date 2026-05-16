@@ -106,6 +106,7 @@
 ^GAS3.symbol=N
 ^GAS3.image=Substance.Nitrogen.NEXT.png
 ^GAS3.imageBG=DE921F
+^GAS4=
 ^GASGIANT1=
 ^GREEN2=Emeril
 ^GREEN2.type=Resource
