@@ -15,7 +15,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.BorderFactory;
@@ -146,7 +146,7 @@ public class RawDataTreePanel extends SaveGameView.SaveGameViewTabPanel implemen
 			
 			String originalStr = treeNode.originalName!=null ? treeNode.originalName : treeNode.name;
 			if (originalStr!=null) {
-				HashSet<String> paths = data.deObfuscatorUsage.get(originalStr);
+				List<String> paths = data.deObfuscatorUsage.getPaths(originalStr);
 				if (paths!=null && !paths.isEmpty()) {
 					Vector<String> sorted = SimplePanels.getSorted(paths);
 					out.add(0, "Usage","Original Name \"%s\" used in", originalStr);

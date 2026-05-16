@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiFunction;
@@ -289,7 +290,7 @@ public class SimplePanels {
 				if (selectedRowV<0) return;
 				
 				String originalStr = tableModel.getValue(table.convertRowIndexToModel(selectedRowV));
-				HashSet<String> pathSet = this.data.deObfuscatorUsage.get(originalStr);
+				List<String> pathSet = this.data.deObfuscatorUsage.getPaths(originalStr);
 				if (pathSet!=null) {
 					Vector<String> paths = getSorted(pathSet); 
 					for (String str:paths)
@@ -324,7 +325,7 @@ public class SimplePanels {
 
 			public LocalTableModel() {
 				super(ColumnID.values());
-				values = new Vector<>(data.deObfuscatorUsage.keySet());
+				values = new Vector<>(data.deObfuscatorUsage.getOriginalNames());
 			}
 
 			@Override

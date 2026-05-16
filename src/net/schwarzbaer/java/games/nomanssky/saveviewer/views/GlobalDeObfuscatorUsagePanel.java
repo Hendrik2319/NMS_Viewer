@@ -121,7 +121,7 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 		void updateData()
 		{
 			Set<String> originalNames = new HashSet<>();
-			forEachSaveGame(map -> originalNames.addAll(map.keySet()));
+			forEachSaveGame(map -> originalNames.addAll(map.getOriginalNames()));
 			
 			List<String> sorted = new ArrayList<>(originalNames);
 			sorted.sort(null);
@@ -209,7 +209,7 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 			Set<String> allPaths = new HashSet<>();
 			if (this.originalName!=null)
 				forEachSaveGame(map -> {
-					HashSet<String> paths = map.get(this.originalName);
+					List<String> paths = map.getPaths(this.originalName);
 					if (paths!=null)
 						allPaths.addAll(paths);
 				});
@@ -222,7 +222,7 @@ public class GlobalDeObfuscatorUsagePanel extends JPanel
 		private boolean isPathUsedBy(int saveGameIndex, String path)
 		{
 			SaveViewer.UsageMap map = getUsageMap(saveGameIndex);
-			HashSet<String> paths = originalName==null || map==null ? null : map.get(originalName);
+			List<String> paths = originalName==null || map==null ? null : map.getPaths(originalName);
 			return paths!=null && paths.contains(path);
 		}
 	}

@@ -23,12 +23,14 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -36,6 +38,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -101,9 +104,9 @@ public class SaveViewer implements ActionListener {
 	private static final Color COLOR_Expedition_SaveGame = new Color(0x008000);
 	private static final Color COLOR_PreNext_SaveGame = Color.RED;
 	public static final boolean DEBUG              = true;
-	public static final boolean DEBUG_MEMORY       = false;
-	public static final boolean DEBUG_MEMORY_L2    = false;
-	public static final boolean DEBUG_CHECK_TIMING = false;
+	public static final boolean DEBUG_MEMORY       = true;
+	public static final boolean DEBUG_MEMORY_L2    = true;
+	public static final boolean DEBUG_CHECK_TIMING = true;
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
@@ -613,13 +616,22 @@ public class SaveViewer implements ActionListener {
 		if (DEBUG_MEMORY_L2) { System.out.print("[before]"); Gui.showMemoryUsage(true); }
 		
 		UsageMap[] usageMaps = contentPane.saveGameListPanel.updatePreviewData();
+		long t1 = System.currentTimeMillis();
 		contentPane.globalDeObfuscatorUsagePanel.updateData(usageMaps);
-		
+		long t2 = System.currentTimeMillis();
 		System.gc();
+		
 		if (DEBUG_MEMORY) { if (DEBUG_MEMORY_L2) System.out.print("[after ]"); Gui.showMemoryUsage(true); }
 		
 		lastSavegameExistenceCheck = System.currentTimeMillis();
-		if (DEBUG_CHECK_TIMING) System.out.printf("SavegameExistenceCheck.Check: %s%n", DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start));
+		if (DEBUG_CHECK_TIMING)
+			System.out.printf(
+					"SavegameExistenceCheck.Check: %s (t1:%s, t2:%s, gc:%s)%n",
+					DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start),
+					DateTimeFormatter.getDurationStr_ms(t1-start),
+					DateTimeFormatter.getDurationStr_ms(t2-t1),
+					DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-t2)
+			);
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
@@ -984,8 +996,30 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
-	public static class UsageMap extends HashMap<String,HashSet<String>> {
-		private static final long serialVersionUID = -2972516542468230904L;
+	public static class UsageMap
+	{
+		private final Map<String,Set<DeObfuscator.MyTreeWalker.PathNode>> map = new HashMap<>();
+		private final Set<String> originalNames = new HashSet<>();
+		
+		private void addPath(String originalStr, DeObfuscator.MyTreeWalker.PathNode pathNode)
+		{
+			originalNames.add(originalStr);
+			map.computeIfAbsent(originalStr, str->new HashSet<>()).add(pathNode);
+		}
+
+		public Collection<? extends String> getOriginalNames()
+		{
+			return originalNames;
+		}
+
+		public List<String> getPaths(String originalName)
+		{
+			Set<DeObfuscator.MyTreeWalker.PathNode> nodeSet = map.get(originalName);
+			return nodeSet==null ? null : nodeSet
+				.stream()
+				.map(node->node.getPath())
+				.toList();
+		}
 	}
 	
 	public static class DeObfuscator {
@@ -1022,11 +1056,9 @@ public class SaveViewer implements ActionListener {
 					res.unkown.add(nv.name);
 			});
 			
-			JSON_Data.traverseNamedValues(data, false, (path,nv)->{
+			MyTreeWalker.traverseNamedValues(data, (path,nv)->{
 				String originalStr = nv.extra.wasDeObfuscated ? nv.extra.originalStr : nv.name;
-				HashSet<String> u = usage.get(originalStr);
-				if (u==null) usage.put(originalStr, u = new HashSet<>());
-				u.add(path);
+				usage.addPath(originalStr, path);
 			});
 			
 			if (verbose) {
@@ -1037,6 +1069,75 @@ public class SaveViewer implements ActionListener {
 			}
 			
 			return usage;
+		}
+		
+		public static class MyTreeWalker extends JSON_Data.AbstractTreeWalker<MyTreeWalker.PathNode,NVExtra,VExtra>
+		{
+			private final PathNode root;
+
+			private MyTreeWalker(
+					BiConsumer<PathNode, JSON_Data.NamedValue<NVExtra, VExtra>> consumerNV,
+					BiConsumer<PathNode, JSON_Data.     Value<NVExtra, VExtra>> consumerV )
+			{
+				super(consumerNV, consumerV);
+				root = new PathNode();
+			}
+			
+			public static PathNode traverseNamedValues(JSON_Object<NVExtra,VExtra> data, BiConsumer<PathNode,JSON_Data.NamedValue<NVExtra,VExtra>> consumer)
+			{
+				MyTreeWalker treeWalker = new MyTreeWalker(consumer, null);
+				treeWalker.traverse(data);
+				return treeWalker.root;
+			}
+
+			@Override protected PathNode getRootPathValue() { return root; }
+			@Override protected PathNode getNextPathForElementOfObject(PathNode node, String name) { return node.getNextPathForElementOfObject(name); }
+			@Override protected PathNode getNextPathForElementOfArray (PathNode node, int    i   ) { return node.getNextPathForElementOfArray (    ); }
+
+			public static class PathNode
+			{
+				private final PathNode parent;
+				private final Map<String,PathNode> objectValues;
+				private PathNode arrayValues;
+				
+				private final String name;
+				private final boolean isArrayElement;
+
+				private PathNode() // root
+				{
+					this(null,false,null);
+				}
+				
+				private PathNode(PathNode parent, boolean isArrayElement, String name)
+				{
+					if (parent==null && (isArrayElement || name!=null)) throw new IllegalArgumentException("Wrong root parameters"); 
+					if (parent!=null &&  isArrayElement && name!=null ) throw new IllegalArgumentException("Wrong array parameters"); 
+					if (parent!=null && !isArrayElement && name==null ) throw new IllegalArgumentException("Wrong object parameters"); 
+					
+					this.parent = parent;
+					this.name = name;
+					this.isArrayElement = isArrayElement;
+					
+					objectValues = new HashMap<>();
+					arrayValues = null;
+				}
+				
+				public String getPath()
+				{
+					return parent==null ? "" : (parent.getPath() + (isArrayElement ? "[]" : name));
+				}
+				
+				private PathNode getNextPathForElementOfObject(String name)
+				{
+					return objectValues.computeIfAbsent(name, n->new PathNode(this,false,n));
+				}
+				
+				private PathNode getNextPathForElementOfArray()
+				{
+					if (arrayValues==null) arrayValues = new PathNode(this,true,null);
+					return arrayValues;
+				}
+			}
 		}
 
 		private static class Result {
