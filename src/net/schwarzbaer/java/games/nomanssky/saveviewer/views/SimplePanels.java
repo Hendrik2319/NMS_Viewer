@@ -1300,7 +1300,7 @@ public class SimplePanels {
 			super(data);
 			
 			// [20, 110, 120, 400, 120, 110, 360, 75, 75, 46, 56, 132, 104, 123, 60, 60, 60, 120, 120, 120, 120, 115, 115, 115, 115, 125, 125, 120]
-			CompanionColumnID[] blueprintColumns = new CompanionColumnID[] {
+			CompanionColumnID[] columns = new CompanionColumnID[] {
 				new CompanionColumnID("#"              ,     Integer.class, 20,-1, 20, 20, (c,i)->i+1),
 				new CompanionColumnID("Name"           ,      String.class, 20,-1,110,110, c->c.name),
 				new CompanionColumnID("Type"           ,      String.class, 20,-1,120,120, c->c.type),
@@ -1336,8 +1336,8 @@ public class SimplePanels {
 			c.fill = GridBagConstraints.BOTH;
 			c.weightx = 1; c.weighty = 1; c.gridwidth = 1; c.gridheight = 1; c.gridx = 0; c.gridy = 0;
 			if (data.companions!=null) {
-				companionsTable = addTable(tablePanel, c, "Companions", data.companions.companions, blueprintColumns);
-				eggsTable       = addTable(tablePanel, c, "Eggs"      , data.companions.eggs      , blueprintColumns);
+				companionsTable = addTable(tablePanel, c, "Companions", data.companions.companions, columns);
+				eggsTable       = addTable(tablePanel, c, "Eggs"      , data.companions.eggs      , columns);
 				if (data.companions.equipment!=null) {
 					equipmentPanel = new SaveGameViewTabGroupingPanel(
 							data, data.companions.equipment,

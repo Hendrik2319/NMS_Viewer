@@ -1409,7 +1409,7 @@ public class SaveGameData
 
 	public static class Freighter implements AddressdableObject {
 		
-		public enum FreighterClass { CapitalFreighter, Freighter }
+		public enum FreighterClass { CapitalFreighter, Freighter, PirateFreighter }
 		
 		public String name = null;
 		public FreighterClass freighterClass = null; 
@@ -1437,9 +1437,9 @@ public class SaveGameData
 			
 			if (freighter.crewResourceBlock!=null && freighter.crewResourceBlock.filename!=null) {
 				switch (freighter.crewResourceBlock.filename) {
-				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Korvax; break;
-				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Vykeen; break;
-				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Universe.SolarSystem.Race.Gek; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCKORVAX.SCENE.MBIN"        : freighter.crewRace = Universe.SolarSystem.Race.Korvax; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCVYKEEN.SCENE.MBIN"        : freighter.crewRace = Universe.SolarSystem.Race.Vykeen; break;
+				case "MODELS/COMMON/PLAYER/PLAYERCHARACTER/NPCGEK.SCENE.MBIN"           : freighter.crewRace = Universe.SolarSystem.Race.Gek; break;
 				case "MODELS\\/COMMON\\/PLAYER\\/PLAYERCHARACTER\\/NPCKORVAX.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Korvax; break;
 				case "MODELS\\/COMMON\\/PLAYER\\/PLAYERCHARACTER\\/NPCVYKEEN.SCENE.MBIN": freighter.crewRace = Universe.SolarSystem.Race.Vykeen; break;
 				case "MODELS\\/COMMON\\/PLAYER\\/PLAYERCHARACTER\\/NPCGEK.SCENE.MBIN"   : freighter.crewRace = Universe.SolarSystem.Race.Gek; break;
@@ -1448,8 +1448,9 @@ public class SaveGameData
 			}
 			if (freighter.freighterResourceBlock!=null && freighter.freighterResourceBlock.filename!=null) {
 				switch (freighter.freighterResourceBlock.filename) {
-				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/CAPITALFREIGHTER_PROC.SCENE.MBIN": freighter.freighterClass = FreighterClass.CapitalFreighter; break;
-				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/FREIGHTER_PROC.SCENE.MBIN"       : freighter.freighterClass = FreighterClass.Freighter; break;
+				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/PIRATEFREIGHTER.SCENE.MBIN"              : freighter.freighterClass = FreighterClass.PirateFreighter; break;
+				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/CAPITALFREIGHTER_PROC.SCENE.MBIN"        : freighter.freighterClass = FreighterClass.CapitalFreighter; break;
+				case "MODELS/COMMON/SPACECRAFT/INDUSTRIAL/FREIGHTER_PROC.SCENE.MBIN"               : freighter.freighterClass = FreighterClass.Freighter; break;
 				case "MODELS\\/COMMON\\/SPACECRAFT\\/INDUSTRIAL\\/CAPITALFREIGHTER_PROC.SCENE.MBIN": freighter.freighterClass = FreighterClass.CapitalFreighter; break;
 				case "MODELS\\/COMMON\\/SPACECRAFT\\/INDUSTRIAL\\/FREIGHTER_PROC.SCENE.MBIN"       : freighter.freighterClass = FreighterClass.Freighter; break;
 				case "": break;
@@ -1521,38 +1522,51 @@ public class SaveGameData
 		public boolean usesOldColors;
 		
 		private SpaceShip(SaveGameData data, JSON_Object<NVExtra, VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary) {
-			super(data, vehicleData, i, dataSourcePath, isPrimary,"SpaceShip", null, SpaceShip::getVehicleClass, SpaceShip::getExtraInfosOutput);
+			super(data, vehicleData, i, dataSourcePath, isPrimary,"SpaceShip", null, SpaceShipClass::get, SpaceShip::getExtraInfosOutput);
 		}
 		
-		private static String getVehicleClass(String resourcefilename) {
-			switch (resourcefilename) {
+		private enum SpaceShipClass implements Vehicle.VehicleClass
+		{
+			Transporter ( "Transporter", "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN"      , "MODELS\\/COMMON\\/SPACECRAFT\\/DROPSHIPS\\/DROPSHIP_PROC.SCENE.MBIN"        ),
+			Fighter     ( "Fighter"    , "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"        , "MODELS\\/COMMON\\/SPACECRAFT\\/FIGHTERS\\/FIGHTER_PROC.SCENE.MBIN"          ),
+			Shuttle     ( "Shuttle"    , "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"         , "MODELS\\/COMMON\\/SPACECRAFT\\/SHUTTLE\\/SHUTTLE_PROC.SCENE.MBIN"           ),
+			Explorer    ( "Explorer"   , "MODELS/COMMON/SPACECRAFT/SCIENTIFIC/SCIENTIFIC_PROC.SCENE.MBIN"   , "MODELS\\/COMMON\\/SPACECRAFT\\/SCIENTIFIC\\/SCIENTIFIC_PROC.SCENE.MBIN"     ),
+			Exotic      ( "Exotic"     , "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"         , "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/S-CLASS_PROC.SCENE.MBIN"           ),
+			LivingShip  ( "LivingShip" , "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOSHIP_PROC.SCENE.MBIN", "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/BIOPARTS\\/BIOSHIP_PROC.SCENE.MBIN"),
+			SAILSHIP           ( "{SAILSHIP}"          , "MODELS/COMMON/SPACECRAFT/SAILSHIP/SAILSHIP_PROC.SCENE.MBIN"        ),
+			SENTINELSHIP       ( "{SENTINELSHIP}"      , "MODELS/COMMON/SPACECRAFT/SENTINELSHIP/SENTINELSHIP_PROC.SCENE.MBIN"),
+			WRACER             ( "{WRACER}"            , "MODELS/COMMON/SPACECRAFT/FIGHTERS/WRACER.SCENE.MBIN"               ),
+			SPOOKSHIP          ( "{SPOOKSHIP}"         , "MODELS/COMMON/SPACECRAFT/FIGHTERS/SPOOKSHIP.SCENE.MBIN"            ),
+			FIGHTERCLASSICGOLD ( "{FIGHTERCLASSICGOLD}", "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTERCLASSICGOLD.SCENE.MBIN"   ),
+			VRSPEEDER          ( "{VRSPEEDER}"         , "MODELS/COMMON/SPACECRAFT/FIGHTERS/VRSPEEDER.SCENE.MBIN"            ),
+			BIOFIGHTER         ( "{BIOFIGHTER}"        , "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOFIGHTER.SCENE.MBIN"   ),
+			BIGGS              ( "{BIGGS}"             , "MODELS/COMMON/SPACECRAFT/BIGGS/BIGGS.SCENE.MBIN"                   ),
+			;
+			private final String label;
+			private final Set<String> resourceFilenames;
 			
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/DROPSHIPS\\/DROPSHIP_PROC.SCENE.MBIN"        : return "Transporter";
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/FIGHTERS\\/FIGHTER_PROC.SCENE.MBIN"          : return "Fighter";
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/SHUTTLE\\/SHUTTLE_PROC.SCENE.MBIN"           : return "Shuttle";
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/SCIENTIFIC\\/SCIENTIFIC_PROC.SCENE.MBIN"     : return "Explorer";
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/S-CLASS_PROC.SCENE.MBIN"           : return "Exotic";
-			case "MODELS\\/COMMON\\/SPACECRAFT\\/S-CLASS\\/BIOPARTS\\/BIOSHIP_PROC.SCENE.MBIN": return "LivingShip";
-			
-			case "MODELS/COMMON/SPACECRAFT/DROPSHIPS/DROPSHIP_PROC.SCENE.MBIN"      : return "Transporter";
-			case "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTER_PROC.SCENE.MBIN"        : return "Fighter";
-			case "MODELS/COMMON/SPACECRAFT/SHUTTLE/SHUTTLE_PROC.SCENE.MBIN"         : return "Shuttle";
-			case "MODELS/COMMON/SPACECRAFT/SCIENTIFIC/SCIENTIFIC_PROC.SCENE.MBIN"   : return "Explorer";
-			case "MODELS/COMMON/SPACECRAFT/S-CLASS/S-CLASS_PROC.SCENE.MBIN"         : return "Exotic";
-			case "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOSHIP_PROC.SCENE.MBIN": return "LivingShip";
-			
-			default:
-				Gui.log_warn_ln("Unknown SpaceShip.VehicleClass: \"%s\"", resourcefilename);
+			SpaceShipClass(String label, String... resourceFilenames)
+			{
+				this.label = label;
+				this.resourceFilenames = new HashSet<>(Arrays.asList(resourceFilenames));
 			}
-			return null;
+
+			@Override public String getName() { return label; }
+			
+			private static SpaceShipClass get(String resourcefilename)
+			{
+				for (SpaceShipClass value : values())
+					if (value.resourceFilenames.contains(resourcefilename))
+						return value;
+				Gui.log_warn_ln("Unknown SpaceShip.SpaceShipClass: \"%s\"", resourcefilename);
+				return null;
+			}
 		}
 		
 		private static void getExtraInfosOutput(Vehicle thisVehicle, TextAreaOutput out) {
-			if (thisVehicle instanceof SpaceShip) {
-				SpaceShip spaceShip = (SpaceShip) thisVehicle;
+			if (thisVehicle instanceof SpaceShip spaceShip)
 				if (spaceShip.usesOldColors)
 					out.printf("   Model uses old colors%n");
-			}
 		}
 	}
 
@@ -1590,9 +1604,14 @@ public class SaveGameData
 		public final Coordinates direction;
 		public final String name;
 		public final boolean isPrimary;
-		public final String vehicleClass;
+		public final VehicleClass vehicleClass;
 		
-		protected Vehicle(SaveGameData data, JSON_Object<NVExtra,VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary, String typeLabel, String predefinedName, Function<String,String> getVehicleClass, BiConsumer<Vehicle,TextAreaOutput> extraInfosOutput) {
+		interface VehicleClass
+		{
+			String getName();
+		}
+		
+		protected Vehicle(SaveGameData data, JSON_Object<NVExtra,VExtra> vehicleData, int i, String dataSourcePath, boolean isPrimary, String typeLabel, String predefinedName, Function<String,VehicleClass> getVehicleClass, BiConsumer<Vehicle,TextAreaOutput> extraInfosOutput) {
 			
 			resourceBlock = ResourceBlock.parse(vehicleData,"Resource");
 			if (resourceBlock!=null && resourceBlock.filename!=null && !resourceBlock.filename.isEmpty() && getVehicleClass!=null)
@@ -1632,7 +1651,7 @@ public class SaveGameData
 				if (name!=null && !name.isEmpty()) inventory.label += " \""+name+"\"";
 				String iClass = inventory.inventoryClass;
 				Integer validSlots = inventory.validSlots;
-				inventory.label += String.format("<%s%s-%s>", vehicleClass==null?"":vehicleClass+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
+				inventory.label += String.format("<%s%s-%s>", vehicleClass==null?"":vehicleClass.getName()+" ", iClass==null?"?":iClass, validSlots==null?"??":validSlots);
 				if (this.isPrimary) inventory.label += "   [Primary]";
 			}
 			
@@ -1646,7 +1665,7 @@ public class SaveGameData
 					if (inventory.validSlots!=null && inventory.inventoryClass!=null)
 						out.printf("   Type: %s-%d%n", inventory.inventoryClass, inventory.validSlots);
 					if (vehicleClass!=null)
-						out.printf("   Class: %s%n", vehicleClass);
+						out.printf("   Class: %s%n", vehicleClass.getName());
 					if (resourceBlock!=null && resourceBlock.seed!=null && (resourceBlock.seed.isValid==null || resourceBlock.seed.isValid.booleanValue()))
 						out.printf("   Model Seed: %s%n", resourceBlock.seed.getSeedStr());
 					if (location!=null) {
@@ -2162,37 +2181,21 @@ public class SaveGameData
 					(equipment==null || equipment.isEmpty());
 		}
 
-		private Boolean[] parseBoolArray(String label, JSON_Array<NVExtra, VExtra> arr) {
-			if (arr==null) return null;
-			
-			if (arr.size()!=6) {
-				Gui.log_error_ln("Companion Array \"%s\" has unexpected number of values: %d (!=6)", label, arr.size());
-				return null;
-			}
-			
-			Boolean[] result = new Boolean[arr.size()];
-			for (int i=0; i<arr.size(); i++)
-				result[i] = getBool(arr.get(i));
-			
-			return result;
+		private Boolean[] parseBoolArray(String label, JSON_Array<NVExtra, VExtra> arr)
+		{
+			return arr==null ? null : arr
+				.stream()
+				.map(SaveGameData::getBool)
+				.toArray(Boolean[]::new);
 		}
 
-		private static Companion[] parseCompanionArray(String label, JSON_Array<NVExtra, VExtra> arr) {
-			if (arr==null) return null;
-			
-			if (arr.size()!=6) {
-				Gui.log_error_ln("Companion Array \"%s\" has unexpected number of values: %d (!=6)", label, arr.size());
-				return null;
-			}
-			
-			Companion[] result = new Companion[arr.size()];
-			Arrays.fill(result, null);
-			for (int i=0; i<arr.size(); i++) {
-				JSON_Object<NVExtra, VExtra> object = getObject(arr.get(i));
-				if (object==null) continue;
-				result[i] = new Companion(object);
-			}
-			return result;
+		private static Companion[] parseCompanionArray(String label, JSON_Array<NVExtra, VExtra> arr)
+		{
+			return arr==null ? null : arr
+				.stream()
+				.map(SaveGameData::getObject)
+				.map(o -> o==null ? null : new Companion(o))
+				.toArray(Companion[]::new);
 		}
 
 		public static class Companion {
