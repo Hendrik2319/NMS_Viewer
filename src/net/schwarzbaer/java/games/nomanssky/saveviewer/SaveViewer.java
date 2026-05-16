@@ -996,6 +996,9 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
+//	public static class UsageMap extends HashMap<String,HashSet<String>> {
+//		private static final long serialVersionUID = -2972516542468230904L;
+//	}
 	public static class UsageMap
 	{
 		private final Map<String,Set<DeObfuscator.MyTreeWalker.PathNode>> map = new HashMap<>();
@@ -1056,8 +1059,10 @@ public class SaveViewer implements ActionListener {
 					res.unkown.add(nv.name);
 			});
 			
+			//JSON_Data.traverseNamedValues(data, false, (path,nv)->{
 			MyTreeWalker.traverseNamedValues(data, (path,nv)->{
 				String originalStr = nv.extra.wasDeObfuscated ? nv.extra.originalStr : nv.name;
+				//usage.computeIfAbsent(originalStr, s->new HashSet<>()).add(path);
 				usage.addPath(originalStr, path);
 			});
 			
