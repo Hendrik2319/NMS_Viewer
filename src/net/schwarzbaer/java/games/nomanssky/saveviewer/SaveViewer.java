@@ -101,9 +101,9 @@ public class SaveViewer implements ActionListener {
 	private static final Color COLOR_Expedition_SaveGame = new Color(0x008000);
 	private static final Color COLOR_PreNext_SaveGame = Color.RED;
 	public static final boolean DEBUG              = true;
-	public static final boolean DEBUG_MEMORY       = false;
-	public static final boolean DEBUG_MEMORY_L2    = false;
-	public static final boolean DEBUG_CHECK_TIMING = false;
+	public static final boolean DEBUG_MEMORY       = true;
+	public static final boolean DEBUG_MEMORY_L2    = true;
+	public static final boolean DEBUG_CHECK_TIMING = true;
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
@@ -613,13 +613,22 @@ public class SaveViewer implements ActionListener {
 		if (DEBUG_MEMORY_L2) { System.out.print("[before]"); Gui.showMemoryUsage(true); }
 		
 		UsageMap[] usageMaps = contentPane.saveGameListPanel.updatePreviewData();
+		long t1 = System.currentTimeMillis();
 		contentPane.globalDeObfuscatorUsagePanel.updateData(usageMaps);
-		
+		long t2 = System.currentTimeMillis();
 		System.gc();
+		
 		if (DEBUG_MEMORY) { if (DEBUG_MEMORY_L2) System.out.print("[after ]"); Gui.showMemoryUsage(true); }
 		
 		lastSavegameExistenceCheck = System.currentTimeMillis();
-		if (DEBUG_CHECK_TIMING) System.out.printf("SavegameExistenceCheck.Check: %s%n", DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start));
+		if (DEBUG_CHECK_TIMING)
+			System.out.printf(
+					"SavegameExistenceCheck.Check: %s (t1:%s, t2:%s, gc:%s)%n",
+					DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-start),
+					DateTimeFormatter.getDurationStr_ms(t1-start),
+					DateTimeFormatter.getDurationStr_ms(t2-t1),
+					DateTimeFormatter.getDurationStr_ms(lastSavegameExistenceCheck-t2)
+			);
 	}
 
 	private void openSaveGame(File saveGameFile, int saveGameIndex) {
@@ -1024,9 +1033,7 @@ public class SaveViewer implements ActionListener {
 			
 			JSON_Data.traverseNamedValues(data, false, (path,nv)->{
 				String originalStr = nv.extra.wasDeObfuscated ? nv.extra.originalStr : nv.name;
-				HashSet<String> u = usage.get(originalStr);
-				if (u==null) usage.put(originalStr, u = new HashSet<>());
-				u.add(path);
+				usage.computeIfAbsent(originalStr, s->new HashSet<>()).add(path);
 			});
 			
 			if (verbose) {
