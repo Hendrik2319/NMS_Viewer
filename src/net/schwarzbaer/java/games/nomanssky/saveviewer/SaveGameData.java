@@ -1,6 +1,5 @@
 package net.schwarzbaer.java.games.nomanssky.saveviewer;
 
-import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -106,11 +105,11 @@ public class SaveGameData
 		this.arrPlayerStateData = new Vector<>();
 	}
 	
-	public boolean parse_guarded(boolean forPreview, Window window) {
-		try { parse(forPreview, window); return true; }
+	public boolean parse_guarded(boolean forPreview) {
+		try { parse(forPreview); return true; }
 		catch (Exception e) { e.printStackTrace(); return false; }
 	}
-	public void parse(boolean forPreview, Window window) {
+	public void parse(boolean forPreview) {
 		version = getIntegerValue(json_data, "Version");
 		if (isPreNEXT) return;
 		
@@ -160,6 +159,13 @@ public class SaveGameData
 		SaveViewer.steamIDs.writeToFile();
 	}
 	
+	public void clearJsonData()
+	{
+		json_data.clear();
+		arrPlayerStateData.clear();
+		firstPlayerStateData = null;
+	}
+
 	static final UnknownValues globalUnknownValues = new UnknownValues();
 	
 	static class UnknownValues extends HashSet<String> {

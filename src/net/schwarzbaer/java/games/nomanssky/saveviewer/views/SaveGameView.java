@@ -24,6 +24,7 @@ import javax.swing.event.ChangeListener;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.GameInfos;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Universe;
+import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveViewer;
 
 public class SaveGameView extends JPanel {
 
@@ -117,7 +118,8 @@ public class SaveGameView extends JPanel {
 		}
 		
 //		tabbedPane.addTab("### SortTestPanel ###",new SortTestPanel(data));
-		tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(mainWindow,file,data,isNEXT));
+		if (!SaveViewer.DEBUG_CLEAR_JSON_AFTER_LOAD)
+			tabbedPane.addTab("Raw Data Tree",new RawDataTreePanel(mainWindow,file,data,isNEXT));
 	}
 	
 	

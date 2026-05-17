@@ -104,9 +104,10 @@ public class SaveViewer implements ActionListener {
 	private static final Color COLOR_Expedition_SaveGame = new Color(0x008000);
 	private static final Color COLOR_PreNext_SaveGame = Color.RED;
 	public  static final boolean DEBUG              = true;
-	public  static final boolean DEBUG_MEMORY       = true;
-	public  static final boolean DEBUG_MEMORY_L2    = true;
-	public  static final boolean DEBUG_CHECK_TIMING = true;
+	public  static final boolean DEBUG_MEMORY       = false;
+	public  static final boolean DEBUG_MEMORY_L2    = false;
+	public  static final boolean DEBUG_CHECK_TIMING = false;
+	public  static final boolean DEBUG_CLEAR_JSON_AFTER_LOAD = false; // reduced memory usage by 2GB (when 30 savegames are loaded)
 	private static final FieldNameUsage.Type DEFAULT_FIELDNAMEUSAGE_TYPE = FieldNameUsage.Type.FullPath;
 	
 	private StandardMainWindow mainWindow;
@@ -659,7 +660,7 @@ public class SaveViewer implements ActionListener {
 			saveGameData = null;
 		else {
 			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT,fieldNameUsage);
-			saveGameData.parse(true,null);
+			saveGameData.parse(true);
 		}
 		
 		return saveGameData;
@@ -690,7 +691,8 @@ public class SaveViewer implements ActionListener {
 			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT,fieldNameUsage);
 			
 			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
-			boolean parsedWithoutException = saveGameData.parse_guarded(false,mainWindow);
+			boolean parsedWithoutException = saveGameData.parse_guarded(false);
+			if (DEBUG_CLEAR_JSON_AFTER_LOAD) saveGameData.clearJsonData();
 			
 			Gui.runInEventThreadAndWait(()->{
 				if (mainWindow!=null) {
@@ -740,7 +742,8 @@ public class SaveViewer implements ActionListener {
 				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index,isPreNEXT,fieldNameUsage);
 				
 				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
-				boolean parsedWithoutException = saveGameData.parse_guarded(false,mainWindow);
+				boolean parsedWithoutException = saveGameData.parse_guarded(false);
+				if (DEBUG_CLEAR_JSON_AFTER_LOAD) saveGameData.clearJsonData();
 				
 				Gui.runInEventThreadAndWait(()->{
 					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
