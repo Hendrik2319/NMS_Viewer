@@ -45,14 +45,9 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Appearances.
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.Inventories.Inventory;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.SaveGameData.MultiTools.MultiTool;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.IntegerValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Array;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.JSON_Object;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.NamedValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.ObjectValue;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.StringValue;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Data.TraverseException;
-import net.schwarzbaer.java.lib.jsonparser.JSON_Data.Value;
 import net.schwarzbaer.java.lib.jsonparser.JSON_Helper;
 
 public class SaveGameData
@@ -62,7 +57,7 @@ public class SaveGameData
 	public final String filename;
 	public final int index;
 	public final JSON_Object<NVExtra,VExtra> json_data;
-	public SaveViewer.UsageMap deObfuscatorUsage = null;
+	public final SaveViewer.FieldNameUsage<?> fieldNameUsage;
 	public final boolean isPreNEXT;
 	private final Vector<JSON_Object<NVExtra, VExtra>> arrPlayerStateData;
 	private JSON_Object<NVExtra, VExtra> firstPlayerStateData = null;
@@ -97,21 +92,18 @@ public class SaveGameData
 	public Companions companions = null;
 	public Appearances appearances = null;
 	
-	public SaveGameData(JSON_Object<NVExtra,VExtra> json_data, String filename, int index, boolean isPreNEXT) {
-		
+	public SaveGameData(JSON_Object<NVExtra,VExtra> json_data, String filename, int index, boolean isPreNEXT, SaveViewer.FieldNameUsage<?> fieldNameUsage)
+	{
 		this.filename = filename;
 		this.index = index;
 		this.json_data = json_data;
 		this.isPreNEXT = isPreNEXT;
+		this.fieldNameUsage = fieldNameUsage;
 		
 		this.general = new General(this);
 		this.universe = new Universe();
 		this.experimentalData = new ExperimentalData(this);
 		this.arrPlayerStateData = new Vector<>();
-	}
-
-	public void setDeObfuscatorUsage(SaveViewer.UsageMap deObfuscatorUsage) {
-		this.deObfuscatorUsage = deObfuscatorUsage;
 	}
 	
 	public boolean parse_guarded(boolean forPreview, Window window) {
@@ -276,11 +268,11 @@ public class SaveGameData
 		return parseHexFormatedNumber(obj.getValue(valueName));
 	}
 
-	private static Long parseHexFormatedNumber(Value<NVExtra,VExtra> value) {
+	private static Long parseHexFormatedNumber(JSON_Data.Value<NVExtra,VExtra> value) {
 		if (value==null) return null;
 		switch(value.type) {
 		case String:
-			StringValue<NVExtra, VExtra> stringValue = value.castToStringValue();
+			JSON_Data.StringValue<NVExtra, VExtra> stringValue = value.castToStringValue();
 			if (stringValue!=null) {
 				String addressStr = stringValue.value;
 				if (addressStr!=null) {
@@ -296,7 +288,7 @@ public class SaveGameData
 			break;
 			
 		case Integer:
-			IntegerValue<NVExtra, VExtra> integerValue = value.castToIntegerValue();
+			JSON_Data.IntegerValue<NVExtra, VExtra> integerValue = value.castToIntegerValue();
 			if (integerValue!=null) {
 				value.extra.wasProcessed=true;
 				return integerValue.value;
@@ -310,12 +302,12 @@ public class SaveGameData
 	}
 
 	private static UniverseAddress parseUniverseAddressField(JSON_Object<NVExtra,VExtra> obj, String valueName) {
-		Value<NVExtra,VExtra> addressValue = obj.getValue(valueName);
+		JSON_Data.Value<NVExtra,VExtra> addressValue = obj.getValue(valueName);
 		if (addressValue==null) return null;
 		
 		switch(addressValue.type) {
 		case String:
-			StringValue<NVExtra, VExtra> stringValue = addressValue.castToStringValue();
+			JSON_Data.StringValue<NVExtra, VExtra> stringValue = addressValue.castToStringValue();
 			if (stringValue!=null) {
 				String addressStr = stringValue.value;
 				if (isPlanetAddressOK(addressStr)) {
@@ -326,7 +318,7 @@ public class SaveGameData
 			break;
 			
 		case Integer:
-			IntegerValue<NVExtra, VExtra> integerValue = addressValue.castToIntegerValue();
+			JSON_Data.IntegerValue<NVExtra, VExtra> integerValue = addressValue.castToIntegerValue();
 			if (integerValue!=null) {
 				integerValue.extra.wasProcessed=true;
 				return new UniverseAddress( integerValue.value );
@@ -418,20 +410,20 @@ public class SaveGameData
 		return parseArray(SaveGameData::getString, sourceLabel, data, path);
 	}
 	
-	private static <ValueType> Vector<ValueType> parseArray(Function<Value<NVExtra,VExtra>,ValueType> parseValue, String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
+	private static <ValueType> Vector<ValueType> parseArray(Function<JSON_Data.Value<NVExtra,VExtra>,ValueType> parseValue, String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return parseArray((value,i)->parseValue.apply(value), sourceLabel, data, path);
 	}
-	private static <ValueType> Vector<ValueType> parseArray(BiFunction<Value<NVExtra,VExtra>,Integer,ValueType> parseValue, String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
+	private static <ValueType> Vector<ValueType> parseArray(BiFunction<JSON_Data.Value<NVExtra,VExtra>,Integer,ValueType> parseValue, String sourceLabel, JSON_Object<NVExtra,VExtra> data, Object... path) {
 		return parseArray(parseValue, sourceLabel, false, data, path);
 	}
-	private static <ValueType> Vector<ValueType> parseArray(BiFunction<Value<NVExtra,VExtra>,Integer,ValueType> parseValue, String sourceLabel, boolean isOptional, JSON_Object<NVExtra,VExtra> data, Object... path) {
+	private static <ValueType> Vector<ValueType> parseArray(BiFunction<JSON_Data.Value<NVExtra,VExtra>,Integer,ValueType> parseValue, String sourceLabel, boolean isOptional, JSON_Object<NVExtra,VExtra> data, Object... path) {
 		JSON_Array<NVExtra,VExtra> arrayValue = isOptional ? getArrayValue_optional(data,path) : getArrayValue(data,path);
 		if (arrayValue==null) return null;
-		Vector<Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
+		Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 		
 		Vector<ValueType> dataItems = new Vector<>();
 		for (int i=0; i<arrayValue.size(); ++i) {
-			Value<NVExtra,VExtra> value = arrayValue.get(i);
+			JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 			
 			ValueType dataItem = parseValue.apply(value,i);
 			if (dataItem==null)
@@ -560,7 +552,7 @@ public class SaveGameData
 			
 			Coordinates coords = new Coordinates();
 			for (int i=0; i<arrayValue.size(); ++i) {
-				Value<NVExtra,VExtra> value = arrayValue.get(i);
+				JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 				Double d = getFloat(value);
 				if (d!=null) coords.set(i,d);
 			}
@@ -976,11 +968,11 @@ public class SaveGameData
 		private static Vector<TeleportEndpoints> parse(SaveGameData data) {
 			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "TeleportEndpoints");
 			if (arrayValue==null) return null;
-			Vector<Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
+			Vector<JSON_Data.Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 			
 			Vector<TeleportEndpoints> teleportEndpoints = new Vector<>();
 			for (int i=0; i<arrayValue.size(); ++i) {
-				Value<NVExtra,VExtra> value = arrayValue.get(i);
+				JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 				if (objectValue==null) {
 					notParsableObjects.add(value);
@@ -1022,12 +1014,12 @@ public class SaveGameData
 		private static Vector<PersistentPlayerBase> parseBases(SaveGameData data) {
 				JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "PersistentPlayerBases");
 				if (arrayValue==null) return null;
-				Vector<Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
+				Vector<JSON_Data.Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 				
 		//		persistentPlayerBases = new PersistentPlayerBases();
 				Vector<PersistentPlayerBase> persistentPlayerBases = new Vector<>();
 				for (int baseIndex=0; baseIndex<arrayValue.size(); ++baseIndex) {
-					Value<NVExtra,VExtra> value = arrayValue.get(baseIndex);
+					JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(baseIndex);
 					JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 					if (objectValue==null) {
 						notParsableObjects.add(value);
@@ -1066,11 +1058,11 @@ public class SaveGameData
 
 		private static BuildingObject[] parseBaseObjects(SaveGameData source, JSON_Array<NVExtra,VExtra> arrayValue, String baseType, int baseIndex) {
 			if (arrayValue==null) return null;
-			Vector<Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
+			Vector<JSON_Data.Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 			
 			Vector<BuildingObject> vector = new Vector<>();
 			for (int i=0; i<arrayValue.size(); i++) {
-				Value<NVExtra,VExtra> value = arrayValue.get(i);
+				JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 				if (objectValue==null) {
 					notParsableObjects.add(value);
@@ -1152,11 +1144,11 @@ public class SaveGameData
 		private static UnboundBuildingObject[] parse(SaveGameData data) {
 			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "BaseBuildingObjects");
 			if (arrayValue==null) return null;
-			Vector<Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
+			Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 			
 			Vector<UnboundBuildingObject> vector = new Vector<>();
 			for (int i=0; i<arrayValue.size(); i++) {
-				Value<NVExtra,VExtra> value = arrayValue.get(i);
+				JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 				if (objectValue==null) {
 					notParsableObjects.add(value);
@@ -1753,7 +1745,7 @@ public class SaveGameData
 			
 			Vector<MultiTool> multiTools = new Vector<>();
 			for (int i=0; i<arr.size(); i++) {
-				Value<NVExtra,VExtra> value = arr.get(i);
+				JSON_Data.Value<NVExtra,VExtra> value = arr.get(i);
 				JSON_Object<NVExtra,VExtra> obj = getObject(value);
 				if (obj==null) continue;
 				multiTools.add(MultiTool.parse(data,obj,"Alternative "+(i+1),"AlternativeWeapons["+i+"]"));
@@ -1959,10 +1951,10 @@ public class SaveGameData
 				}
 				
 				int redundantIndices = 0;
-				Vector<Value<NVExtra,VExtra>> wrongIndices = new Vector<>();
-				Vector<Value<NVExtra,VExtra>> wrongSlots = new Vector<>();
+				Vector<JSON_Data.Value<NVExtra,VExtra>> wrongIndices = new Vector<>();
+				Vector<JSON_Data.Value<NVExtra,VExtra>> wrongSlots = new Vector<>();
 				
-				for (Value<NVExtra,VExtra> value:arrSlots) {
+				for (JSON_Data.Value<NVExtra,VExtra> value:arrSlots) {
 					JSON_Object<NVExtra,VExtra> slotObj = getObject(value);
 					if (slotObj==null) { wrongSlots.add(value); continue; }
 					
@@ -1986,7 +1978,7 @@ public class SaveGameData
 				
 				redundantIndices = 0;
 				wrongIndices.clear();
-				for (Value<NVExtra,VExtra> value:arrValidSlotIndices) {
+				for (JSON_Data.Value<NVExtra,VExtra> value:arrValidSlotIndices) {
 					JSON_Object<NVExtra,VExtra> indexObj = getObject(value);
 					if (indexObj==null) continue;
 					Long indexX = getIntegerValue(indexObj, "X");
@@ -2007,7 +1999,7 @@ public class SaveGameData
 				
 				redundantIndices = 0;
 				wrongIndices.clear();
-				for (Value<NVExtra,VExtra> value:arrSpecialSlots) {
+				for (JSON_Data.Value<NVExtra,VExtra> value:arrSpecialSlots) {
 					JSON_Object<NVExtra,VExtra> indexObj = getObject(value);
 					if (indexObj==null) continue;
 					Long   indexX = getIntegerValue(indexObj, "Index","X");
@@ -2751,11 +2743,11 @@ public class SaveGameData
 		private static Vector<Frigate> parse(SaveGameData data) {
 			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "[Frigates]");
 			if (arrayValue==null) return null;
-			Vector<Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
+			Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 			
 			Vector<Frigate> frigates = new Vector<>();
 			for (int i=0; i<arrayValue.size(); ++i) {
-				Value<NVExtra,VExtra> value = arrayValue.get(i);
+				JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 				JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 				if (objectValue==null) {
 					notParsableObjects.add(value);
@@ -2794,7 +2786,7 @@ public class SaveGameData
 				JSON_Array<NVExtra,VExtra> modArr = getArrayValue(objectValue,"[Modifications]");
 				if (modArr!=null) {
 					fr.modifications = new Vector<>();
-					for (Value<NVExtra,VExtra> modVal:modArr) {
+					for (JSON_Data.Value<NVExtra,VExtra> modVal:modArr) {
 						String modStr = getString(modVal);
 						if (modStr==null) { notParsableObjects.add(modVal); continue; }
 						if (modStr.equals("^")) continue;
@@ -2819,12 +2811,12 @@ public class SaveGameData
 	private void parseFrigateMissions() {
 		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(firstPlayerStateData, "[RunningFrigateMissions]");
 		if (arrayValue==null) return;
-		Vector<Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
+		Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 		
 		JSON_Array<NVExtra,VExtra> array;
 		frigateMissions = new Vector<>();
 		for (int i=0; i<arrayValue.size(); ++i) {
-			Value<NVExtra,VExtra> value = arrayValue.get(i);
+			JSON_Data.Value<NVExtra,VExtra> value = arrayValue.get(i);
 			JSON_Object<NVExtra,VExtra> objectValue = getObject(value);
 			if (objectValue==null) {
 				notParsableObjects.add(value);
@@ -2842,13 +2834,13 @@ public class SaveGameData
 			frm.missionType      = getStringValue (objectValue, "[MissionType]", "[MissionType]");
 			frm.distance         = getStringValue (objectValue, "[MissionDistance]", "[MissionDistance]");
 			
-			array = getArrayValue(objectValue,"[??? sbg MissionValues1]"); frm.missionValues1 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Integer));
-			array = getArrayValue(objectValue,"[??? lD@ MissionValues2]"); frm.missionValues2 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Integer));
+			array = getArrayValue(objectValue,"[??? sbg MissionValues1]"); frm.missionValues1 = (String)(array==null?"<NotFound>":array.toString(JSON_Data.Value.Type.Integer));
+			array = getArrayValue(objectValue,"[??? lD@ MissionValues2]"); frm.missionValues2 = (String)(array==null?"<NotFound>":array.toString(JSON_Data.Value.Type.Integer));
 			
-			array = getArrayValue(objectValue,"[??? o@4 Position1]"); frm.position1 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Float,"%1.3f"));
-			array = getArrayValue(objectValue,"[??? 4j2 Position2]"); frm.position2 = (String)(array==null?"<NotFound>":array.toString(Value.Type.Float,"%1.3f"));
+			array = getArrayValue(objectValue,"[??? o@4 Position1]"); frm.position1 = (String)(array==null?"<NotFound>":array.toString(JSON_Data.Value.Type.Float,"%1.3f"));
+			array = getArrayValue(objectValue,"[??? 4j2 Position2]"); frm.position2 = (String)(array==null?"<NotFound>":array.toString(JSON_Data.Value.Type.Float,"%1.3f"));
 			
-			array = getArrayValue(objectValue,"[??? hea Some IDs]"); frm.someIDs = (String)(array==null?"<NotFound>":array.toString(Value.Type.String));
+			array = getArrayValue(objectValue,"[??? hea Some IDs]"); frm.someIDs = (String)(array==null?"<NotFound>":array.toString(JSON_Data.Value.Type.String));
 			frm.progress         = getFloatValue(objectValue, "[??? b>d Progress in %]");
 			
 			frm.ID1_3oW          = getStringValue (objectValue, "[??? 3oW An ID]");
@@ -2865,7 +2857,7 @@ public class SaveGameData
 			if (missionTasks!=null) {
 				frm.missionTasks.clear();
 				for (int m=0; m<missionTasks.size(); ++m) {
-					Value<NVExtra,VExtra> mtValue = missionTasks.get(m);
+					JSON_Data.Value<NVExtra,VExtra> mtValue = missionTasks.get(m);
 					JSON_Object<NVExtra,VExtra> mtObject = getObject(mtValue);
 					if (mtObject==null) {
 						notParsableObjects.add(mtValue);
@@ -3077,10 +3069,10 @@ public class SaveGameData
 		
 		enum SourceArray { AvailableData, StoreData }
 		
-		public Vector<StoreData> storeData;
-		public Vector<AvailableData> availableData;
-		Vector<Value<NVExtra,VExtra>> notParsedStoreData;
-		Vector<Value<NVExtra,VExtra>> notParsedAvailableData;
+		public final Vector<StoreData> storeData;
+		public final Vector<AvailableData> availableData;
+		private final Vector<JSON_Data.Value<NVExtra,VExtra>> notParsedStoreData;
+		private final Vector<JSON_Data.Value<NVExtra,VExtra>> notParsedAvailableData;
 		public int storedDiscoveredItemOnPlanets;
 		public int storedDiscoveredItemInSolarSystms;
 		public int availDiscoveredItemOnPlanets;
@@ -3114,7 +3106,7 @@ public class SaveGameData
 			notParsedAvailableData.clear();
 			
 			if (arrAvailable!=null) {
-				for (Value<NVExtra,VExtra> objValue:arrAvailable) {
+				for (JSON_Data.Value<NVExtra,VExtra> objValue:arrAvailable) {
 					JSON_Object<NVExtra,VExtra> object = getObject(objValue);
 					if (object==null) { notParsedAvailableData.add(objValue); continue; }
 					
@@ -3141,7 +3133,7 @@ public class SaveGameData
 			notParsedStoreData.clear();
 			
 			if (arrStore!=null) {
-				for (Value<NVExtra,VExtra> objValue:arrStore) {
+				for (JSON_Data.Value<NVExtra,VExtra> objValue:arrStore) {
 					JSON_Object<NVExtra,VExtra> object = getObject(objValue);
 					if (object==null) { notParsedStoreData.add(objValue); continue; }
 					
@@ -4809,7 +4801,7 @@ public class SaveGameData
 	public static final class KnownWords {
 
 		public Vector<KnownWord> wordList;
-		Vector<Value<NVExtra,VExtra>> notParsedKnownWords;
+		Vector<JSON_Data.Value<NVExtra,VExtra>> notParsedKnownWords;
 		public int[] wordCounts;
 
 		public KnownWords() {
@@ -4819,7 +4811,7 @@ public class SaveGameData
 		}
 	
 		public KnownWords parse(JSON_Array<NVExtra,VExtra> knownWordsArray, String wordLabel, String racesLabel) {
-			for (Value<NVExtra,VExtra> knownWordValue : knownWordsArray) {
+			for (JSON_Data.Value<NVExtra,VExtra> knownWordValue : knownWordsArray) {
 				JSON_Object<NVExtra,VExtra> knownWordObj = getObject(knownWordValue);
 				if (knownWordObj==null) { notParsedKnownWords.add(knownWordValue); continue; }
 				
@@ -4885,7 +4877,7 @@ public class SaveGameData
 		public Vector<StatValue> globalStats;
 		public Vector<PlanetStats> planetStats;
 		public Vector<OtherStats> otherStats;
-		Vector<Value<NVExtra, VExtra>> notParsedStats;
+		Vector<JSON_Data.Value<NVExtra, VExtra>> notParsedStats;
 		private final SaveGameData data;
 
 		public Stats(SaveGameData data) {
@@ -4897,7 +4889,7 @@ public class SaveGameData
 		}
 
 		public void parse(JSON_Array<NVExtra,VExtra> statList) {
-			for (Value<NVExtra,VExtra> groupValue : statList) {
+			for (JSON_Data.Value<NVExtra,VExtra> groupValue : statList) {
 				JSON_Object<NVExtra,VExtra> group = getObject(groupValue);
 				if (group==null) { notParsedStats.add(groupValue); continue; }
 				
@@ -4918,13 +4910,13 @@ public class SaveGameData
 					break;
 					
 				case "^PLANET_STATS": {
-					Value<NVExtra,VExtra> addressValue = group.getValue("Address");
+					JSON_Data.Value<NVExtra,VExtra> addressValue = group.getValue("Address");
 					if (addressValue==null) { notParsedStats.add(groupValue); continue; }
 					
 					long addressLong = -1;
 					switch(addressValue.type) {
 					case String:
-						StringValue<NVExtra, VExtra> stringValue = addressValue.castToStringValue();
+						JSON_Data.StringValue<NVExtra, VExtra> stringValue = addressValue.castToStringValue();
 						if (stringValue==null) { notParsedStats.add(groupValue); continue; }
 						String addressStr = stringValue.value;
 						if (!isPlanetAddressOK(addressStr)) { notParsedStats.add(groupValue); continue; }
@@ -4932,7 +4924,7 @@ public class SaveGameData
 						addressLong = Long.parseLong(addressStr.substring(2), 16);
 						break;
 					case Integer:
-						IntegerValue<NVExtra, VExtra> integerValue = addressValue.castToIntegerValue();
+						JSON_Data.IntegerValue<NVExtra, VExtra> integerValue = addressValue.castToIntegerValue();
 						if (integerValue==null) { notParsedStats.add(groupValue); continue; }
 						integerValue.extra.wasProcessed=true;
 						addressLong = integerValue.value;
@@ -4954,7 +4946,7 @@ public class SaveGameData
 				} break;
 					
 				default: { 
-					Value<NVExtra,VExtra> addressValue = group.getValue("Address");
+					JSON_Data.Value<NVExtra,VExtra> addressValue = group.getValue("Address");
 					if (addressValue==null) { notParsedStats.add(groupValue); continue; }
 					
 					Long addressLong = parseHexFormatedNumber(addressValue);
@@ -4972,7 +4964,7 @@ public class SaveGameData
 
 		private static void fillInto(JSON_Array<NVExtra,VExtra> stats, Vector<StatValue> statsVector) {
 //			StatValue.KnownID[] knownIDs = StatValue.KnownID.values();
-			for (Value<NVExtra,VExtra> value : stats) {
+			for (JSON_Data.Value<NVExtra,VExtra> value : stats) {
 				JSON_Object<NVExtra,VExtra> statObject = getObject(value);
 				if (statObject==null) continue;
 				
@@ -5245,7 +5237,7 @@ public class SaveGameData
 		return JSON_Data.hasSubNode(data, path);
 	}
 
-	private static Value<NVExtra, VExtra> getSubNode(JSON_Object<NVExtra, VExtra> data, Object... path) {
+	private static JSON_Data.Value<NVExtra, VExtra> getSubNode(JSON_Object<NVExtra, VExtra> data, Object... path) {
 		try {
 			return JSON_Data.getSubNode(data, path);
 		} catch (TraverseException e) {
@@ -5254,7 +5246,7 @@ public class SaveGameData
 		}
 	}
 
-	private static Value<NVExtra, VExtra> getSubNode(JSON_Array<NVExtra, VExtra> data, Object... path) {
+	private static JSON_Data.Value<NVExtra, VExtra> getSubNode(JSON_Array<NVExtra, VExtra> data, Object... path) {
 		try {
 			return JSON_Data.getSubNode(data, path);
 		} catch (TraverseException e) {
@@ -5264,12 +5256,12 @@ public class SaveGameData
 	}
 
 	@SuppressWarnings("unused")
-	private static JSON_Array <NVExtra,VExtra> getArray  (Value<NVExtra,VExtra> val) { return JSON_Data.getArrayValue  (val); }
-	private static JSON_Object<NVExtra,VExtra> getObject (Value<NVExtra,VExtra> val) { return JSON_Data.getObjectValue (val); }
-	private static String                      getString (Value<NVExtra,VExtra> val) { return JSON_Data.getStringValue (val); }
-	private static Boolean                     getBool   (Value<NVExtra,VExtra> val) { return JSON_Data.getBoolValue   (val); }
-	private static Long                        getInteger(Value<NVExtra,VExtra> val) { return JSON_Data.getIntegerValue(val); }
-	private static Double                      getFloat  (Value<NVExtra,VExtra> val) { return JSON_Data.getFloatValue  (val); }
+	private static JSON_Array <NVExtra,VExtra> getArray  (JSON_Data.Value<NVExtra,VExtra> val) { return JSON_Data.getArrayValue  (val); }
+	private static JSON_Object<NVExtra,VExtra> getObject (JSON_Data.Value<NVExtra,VExtra> val) { return JSON_Data.getObjectValue (val); }
+	private static String                      getString (JSON_Data.Value<NVExtra,VExtra> val) { return JSON_Data.getStringValue (val); }
+	private static Boolean                     getBool   (JSON_Data.Value<NVExtra,VExtra> val) { return JSON_Data.getBoolValue   (val); }
+	private static Long                        getInteger(JSON_Data.Value<NVExtra,VExtra> val) { return JSON_Data.getIntegerValue(val); }
+	private static Double                      getFloat  (JSON_Data.Value<NVExtra,VExtra> val) { return JSON_Data.getFloatValue  (val); }
 
 	private static Boolean                     getBoolValue   (JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getBoolValue   (getSubNode(obj, path)); }
 	private static Long                        getIntegerValue(JSON_Object<NVExtra,VExtra> obj, Object... path) { return JSON_Data.getIntegerValue(getSubNode(obj, path)); }
@@ -5306,31 +5298,31 @@ public class SaveGameData
 	private static JSON_Object<NVExtra,VExtra> getObjectValue_optional (JSON_Object<NVExtra,VExtra> data, Object... path) { try { return JSON_Data.getObjectValue (JSON_Data.getSubNode(data, path)); } catch (TraverseException e) { return null; } }
 	
 	
-	public static ObjectValue<NVExtra, VExtra> createObjectValue(JSON_Object<NVExtra, VExtra> data) {
-		VExtra extra = new VExtra(Value.Type.Object);
-		ObjectValue<NVExtra, VExtra> host = new ObjectValue<>(data,extra);
+	public static JSON_Data.ObjectValue<NVExtra, VExtra> createObjectValue(JSON_Object<NVExtra, VExtra> data) {
+		VExtra extra = new VExtra(JSON_Data.Value.Type.Object);
+		JSON_Data.ObjectValue<NVExtra, VExtra> host = new JSON_Data.ObjectValue<>(data,extra);
 		extra.setHost(host);
 		return host;
 	}
 	
 	public static class FactoryForExtras implements JSON_Data.FactoryForExtras<NVExtra,VExtra> {
-		@Override public NVExtra createNamedValueExtra(Value.Type type) { return new NVExtra(type); }
-		@Override public VExtra createValueExtra(Value.Type type) { return new VExtra(type); }
+		@Override public NVExtra createNamedValueExtra(JSON_Data.Value.Type type) { return new NVExtra(type); }
+		@Override public  VExtra createValueExtra     (JSON_Data.Value.Type type) { return new  VExtra(type); }
 	}
 
 	public static class NVExtra implements JSON_Data.NamedValueExtra {
-		public final Value.Type type;
-		public NamedValue<NVExtra, VExtra> host;
+		public final JSON_Data.Value.Type type;
+		public JSON_Data.NamedValue<NVExtra, VExtra> host;
 		public boolean wasDeObfuscated;
 		public String originalStr;
 	
-		public NVExtra(Value.Type type) {
+		public NVExtra(JSON_Data.Value.Type type) {
 			this.type = type;
 			this.host = null; 
 			wasDeObfuscated = false;
 			originalStr = null;
 		}
-		void setHost(NamedValue<NVExtra, VExtra> host) {
+		void setHost(JSON_Data.NamedValue<NVExtra, VExtra> host) {
 			this.host = host;
 			if (this.host==null) new IllegalArgumentException("Host must not be <null>");
 			if (this.host.value.type!=type) new IllegalArgumentException("Host has wrong type: "+this.host.value.type+"!="+type);
@@ -5339,20 +5331,20 @@ public class SaveGameData
 
 	public static class VExtra implements JSON_Data.ValueExtra {
 		
-		public final Value.Type type;
-		public Value<NVExtra, VExtra> host;
+		public final JSON_Data.Value.Type type;
+		public JSON_Data.Value<NVExtra, VExtra> host;
 		public boolean wasProcessed;
 		public Boolean hasUnprocessedChildren;
 		public Boolean hasObfuscatedChildren;
 		
-		public VExtra(Value.Type type) {
+		public VExtra(JSON_Data.Value.Type type) {
 			this.type = type;
 			this.host = null; 
 			wasProcessed = false;
 			hasUnprocessedChildren = type!=null && type.isSimple ? false : null;
 			hasObfuscatedChildren  = type!=null && type.isSimple ? false : null;
 		}
-		void setHost(Value<NVExtra, VExtra> host) {
+		void setHost(JSON_Data.Value<NVExtra, VExtra> host) {
 			this.host = host;
 			if (this.host==null) new IllegalArgumentException("Host must not be <null>");
 			if (this.host.type!=type) new IllegalArgumentException("Host has wrong type: "+this.host.type+"!="+type);
@@ -5365,14 +5357,14 @@ public class SaveGameData
 		public boolean hasUnprocessedChildren() {
 			// ArrayValue   @Override public boolean hasUnprocessedChildren() { return JSON_Data.hasUnprocessedChildren(this,this.value, v-> v      ); }
 			// ObjectValue  @Override public boolean hasUnprocessedChildren() { return JSON_Data.hasUnprocessedChildren(this,this.value,nv->nv.value); }
-			if (type==Value.Type.Array ) {
+			if (type==JSON_Data.Value.Type.Array ) {
 				if (host==null)
 					throw new IllegalStateException();
 				if (host.castToArrayValue()==null)
 					throw new IllegalStateException();
 				return hasUnprocessedChildren(host,host.castToArrayValue ().value, v-> v      );
 			}
-			if (type==Value.Type.Object) {
+			if (type==JSON_Data.Value.Type.Object) {
 				if (host==null)
 					throw new IllegalStateException();
 				if (host.castToObjectValue()==null)
@@ -5384,8 +5376,8 @@ public class SaveGameData
 		public boolean hasObfuscatedChildren() {
 			// ArrayValue   @Override public boolean hasObfuscatedChildren () { return JSON_Data.hasObfuscatedChildren (this,this.value, v-> v      , v->true              ); }
 			// ObjectValue  @Override public boolean hasObfuscatedChildren () { return JSON_Data.hasObfuscatedChildren (this,this.value,nv->nv.value,nv->nv.wasDeObfuscated); }
-			if (type==Value.Type.Array ) return hasObfuscatedChildren(host,host.castToArrayValue ().value, v-> v      , v->true                    );
-			if (type==Value.Type.Object) return hasObfuscatedChildren(host,host.castToObjectValue().value,nv->nv.value,nv->nv.extra.wasDeObfuscated);
+			if (type==JSON_Data.Value.Type.Array ) return hasObfuscatedChildren(host,host.castToArrayValue ().value, v-> v      , v->true                    );
+			if (type==JSON_Data.Value.Type.Object) return hasObfuscatedChildren(host,host.castToObjectValue().value,nv->nv.value,nv->nv.extra.wasDeObfuscated);
 			return false;
 		}
 		

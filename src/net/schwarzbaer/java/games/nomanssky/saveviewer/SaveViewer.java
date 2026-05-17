@@ -103,10 +103,12 @@ public class SaveViewer implements ActionListener {
 	private static final Color COLOR_Creative_SaveGame = Color.BLUE;
 	private static final Color COLOR_Expedition_SaveGame = new Color(0x008000);
 	private static final Color COLOR_PreNext_SaveGame = Color.RED;
-	public static final boolean DEBUG              = true;
-	public static final boolean DEBUG_MEMORY       = true;
-	public static final boolean DEBUG_MEMORY_L2    = true;
-	public static final boolean DEBUG_CHECK_TIMING = true;
+	public  static final boolean DEBUG              = true;
+	public  static final boolean DEBUG_MEMORY       = true;
+	public  static final boolean DEBUG_MEMORY_L2    = true;
+	public  static final boolean DEBUG_CHECK_TIMING = true;
+	private static final FieldNameUsage.Type DEFAULT_FIELDNAMEUSAGE_TYPE = FieldNameUsage.Type.FullPath;
+	
 	private StandardMainWindow mainWindow;
 
 	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
@@ -615,7 +617,7 @@ public class SaveViewer implements ActionListener {
 		
 		if (DEBUG_MEMORY_L2) { System.out.print("[before]"); Gui.showMemoryUsage(true); }
 		
-		UsageMap[] usageMaps = contentPane.saveGameListPanel.updatePreviewData();
+		FieldNameUsage<?>[] usageMaps = contentPane.saveGameListPanel.updatePreviewData();
 		long t1 = System.currentTimeMillis();
 		contentPane.globalDeObfuscatorUsagePanel.updateData(usageMaps);
 		long t2 = System.currentTimeMillis();
@@ -643,20 +645,20 @@ public class SaveViewer implements ActionListener {
 	private SaveGameData openSaveGameForPreview(File saveGameFile, int saveGameIndex) {
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, false);
 		
-		UsageMap deObfuscatorUsage = null;
+		FieldNameUsage<?> fieldNameUsage = null;
 		boolean isPreNEXT;
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
 		else {
-			deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data,false);
+			deObfuscator.deObfuscate(new_json_data,false);
+			fieldNameUsage = FieldNameUsage.scanUsage(DEFAULT_FIELDNAMEUSAGE_TYPE,new_json_data);
 			isPreNEXT = false;
 		}
 		SaveGameData saveGameData;
 		if (new_json_data==null)
 			saveGameData = null;
 		else {
-			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT);
-			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
+			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT,fieldNameUsage);
 			saveGameData.parse(true,null);
 		}
 		
@@ -667,13 +669,14 @@ public class SaveViewer implements ActionListener {
 		if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse file"); pd.setValue(0, 4); });
 		JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(saveGameFile, true);
 		
-		UsageMap deObfuscatorUsage = null;
+		FieldNameUsage<?> fieldNameUsage = null;
 		boolean isPreNEXT;
 		if (SaveGameData.hasValue(new_json_data, "Version"))
 			isPreNEXT = true;
 		else {
 			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
-			deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data);
+			deObfuscator.deObfuscate(new_json_data);
+			fieldNameUsage = FieldNameUsage.scanUsage(DEFAULT_FIELDNAMEUSAGE_TYPE,new_json_data);
 			isPreNEXT = false;
 		}
 		
@@ -684,8 +687,7 @@ public class SaveViewer implements ActionListener {
 				JOptionPane.showMessageDialog(mainWindow, "Can't parse selected file. It is not a valid JSON formated No Man's Sky savegame.", "Parse Error", JOptionPane.ERROR_MESSAGE);
 			
 		} else {
-			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT);
-			saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
+			saveGameData = new SaveGameData(new_json_data,saveGameFile.getName(),saveGameIndex,isPreNEXT,fieldNameUsage);
 			
 			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
 			boolean parsedWithoutException = saveGameData.parse_guarded(false,mainWindow);
@@ -720,13 +722,14 @@ public class SaveViewer implements ActionListener {
 			Gui.log_ln("");
 			JSON_Object<NVExtra, VExtra> new_json_data = loadAndParseSaveGameFile(view.file, true);
 			
-			UsageMap deObfuscatorUsage = null;
+			FieldNameUsage<?> fieldNameUsage = null;
 			boolean isPreNEXT;
 			if (SaveGameData.hasValue(new_json_data, "Version")) // <--- UnObfuscated String "Version"
 				isPreNEXT = true;
 			else {
 				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("DeObfuscate value names"); pd.setValue(1); });
-				deObfuscatorUsage = deObfuscator.deObfuscate(new_json_data);
+				deObfuscator.deObfuscate(new_json_data);
+				fieldNameUsage = FieldNameUsage.scanUsage(DEFAULT_FIELDNAMEUSAGE_TYPE,new_json_data);
 				isPreNEXT = false;
 			}
 			
@@ -734,8 +737,7 @@ public class SaveViewer implements ActionListener {
 				
 				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
 				GameInfos.removeUsages(view.data);
-				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index,isPreNEXT);
-				saveGameData.setDeObfuscatorUsage(deObfuscatorUsage);
+				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index,isPreNEXT,fieldNameUsage);
 				
 				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
 				boolean parsedWithoutException = saveGameData.parse_guarded(false,mainWindow);
@@ -996,32 +998,161 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
-//	public static class UsageMap extends HashMap<String,HashSet<String>> {
-//		private static final long serialVersionUID = -2972516542468230904L;
-//	}
-	public static class UsageMap
+	public interface FieldNameUsage<PathType>
 	{
-		private final Map<String,Set<DeObfuscator.MyTreeWalker.PathNode>> map = new HashMap<>();
-		private final Set<String> originalNames = new HashSet<>();
+		enum Type { FullPath, TreeBased }
 		
-		private void addPath(String originalStr, DeObfuscator.MyTreeWalker.PathNode pathNode)
+		static FieldNameUsage<?> scanUsage(Type type, JSON_Object<NVExtra, VExtra> data)
 		{
-			originalNames.add(originalStr);
-			map.computeIfAbsent(originalStr, str->new HashSet<>()).add(pathNode);
+			if (type!=null)
+				switch (type)
+				{
+				case FullPath:
+					{
+						FieldNameUsage.FullPathUsageMap usage = new FieldNameUsage.FullPathUsageMap();
+						JSON_Data.traverseNamedValues(data, false, usage::addPath);
+						return usage;
+					}
+					
+				case TreeBased:
+					{
+						FieldNameUsage.TreeBasedUsageMap usage = new FieldNameUsage.TreeBasedUsageMap();
+						FieldNameUsage.TreeBasedUsageMap.TreeWalker.traverseNamedValues(data, usage::addPath);
+						return usage;
+					}
+				}
+			return null;
+		}
+		
+		void addPath(String originalStr, PathType path);
+		Set<String> getOriginalNames();
+		Collection<String> getPaths(String originalName);
+		
+		default void addPath(PathType path, JSON_Data.NamedValue<NVExtra, VExtra> nv)
+		{
+			String originalStr = nv.extra.wasDeObfuscated ? nv.extra.originalStr : nv.name;
+			addPath(originalStr, path);
 		}
 
-		public Collection<? extends String> getOriginalNames()
+		public static class FullPathUsageMap implements FieldNameUsage<String>
 		{
-			return originalNames;
-		}
+			private final Map<String,Set<String>> map = new HashMap<>();
 
-		public List<String> getPaths(String originalName)
+			@Override
+			public void addPath(String originalStr, String path)
+			{
+				map.computeIfAbsent(originalStr, s->new HashSet<>()).add(path);
+			}
+
+			@Override
+			public Set<String> getOriginalNames()
+			{
+				return map.keySet();
+			}
+
+			@Override
+			public Set<String> getPaths(String originalName)
+			{
+				return map.get(originalName);
+			}
+		}
+		
+		public static class TreeBasedUsageMap implements FieldNameUsage<TreeBasedUsageMap.TreeWalker.PathNode>
 		{
-			Set<DeObfuscator.MyTreeWalker.PathNode> nodeSet = map.get(originalName);
-			return nodeSet==null ? null : nodeSet
-				.stream()
-				.map(node->node.getPath())
-				.toList();
+			private final Map<String,Set<TreeWalker.PathNode>> map = new HashMap<>();
+			private final Set<String> originalNames = new HashSet<>();
+			
+			@Override
+			public void addPath(String originalStr, TreeWalker.PathNode pathNode)
+			{
+				originalNames.add(originalStr);
+				map.computeIfAbsent(originalStr, str->new HashSet<>()).add(pathNode);
+			}
+
+			@Override
+			public Set<String> getOriginalNames()
+			{
+				return originalNames;
+			}
+
+			@Override
+			public List<String> getPaths(String originalName)
+			{
+				Set<TreeWalker.PathNode> nodeSet = map.get(originalName);
+				return nodeSet==null ? null : nodeSet
+					.stream()
+					.map(node->node.getPath())
+					.toList();
+			}
+
+			public static class TreeWalker extends JSON_Data.AbstractTreeWalker<TreeWalker.PathNode,NVExtra,VExtra>
+			{
+				private final PathNode root;
+			
+				private TreeWalker(
+						BiConsumer<PathNode, JSON_Data.NamedValue<NVExtra, VExtra>> consumerNV,
+						BiConsumer<PathNode, JSON_Data.     Value<NVExtra, VExtra>> consumerV )
+				{
+					super(consumerNV, consumerV);
+					root = new PathNode();
+				}
+				
+				public static PathNode traverseNamedValues(JSON_Object<NVExtra,VExtra> data, BiConsumer<PathNode,JSON_Data.NamedValue<NVExtra,VExtra>> consumer)
+				{
+					TreeWalker treeWalker = new TreeWalker(consumer, null);
+					treeWalker.traverse(data);
+					return treeWalker.root;
+				}
+			
+				@Override protected PathNode getRootPathValue() { return root; }
+				@Override protected PathNode getNextPathForElementOfObject(PathNode node, String name) { return node.getNextPathForElementOfObject(name); }
+				@Override protected PathNode getNextPathForElementOfArray (PathNode node, int    i   ) { return node.getNextPathForElementOfArray (    ); }
+			
+				public static class PathNode
+				{
+					private final PathNode parent;
+					private final Map<String,PathNode> objectValues;
+					private PathNode arrayValues;
+					
+					private final String name;
+					private final boolean isArrayElement;
+			
+					private PathNode() // root
+					{
+						this(null,false,null);
+					}
+					
+					private PathNode(PathNode parent, boolean isArrayElement, String name)
+					{
+						if (parent==null && (isArrayElement || name!=null)) throw new IllegalArgumentException("Wrong root parameters"); 
+						if (parent!=null &&  isArrayElement && name!=null ) throw new IllegalArgumentException("Wrong array parameters"); 
+						if (parent!=null && !isArrayElement && name==null ) throw new IllegalArgumentException("Wrong object parameters"); 
+						
+						this.parent = parent;
+						this.name = name;
+						this.isArrayElement = isArrayElement;
+						
+						objectValues = new HashMap<>();
+						arrayValues = null;
+					}
+					
+					public String getPath()
+					{
+						return parent==null ? "" : (parent.getPath() + (isArrayElement ? "[]" : name));
+					}
+					
+					private PathNode getNextPathForElementOfObject(String name)
+					{
+						return objectValues.computeIfAbsent(name, n->new PathNode(this,false,n));
+					}
+					
+					private PathNode getNextPathForElementOfArray()
+					{
+						if (arrayValues==null) arrayValues = new PathNode(this,true,null);
+						return arrayValues;
+					}
+				}
+			}
 		}
 	}
 	
@@ -1037,12 +1168,11 @@ public class SaveViewer implements ActionListener {
 			return replacements.get(originalStr);
 		}
 
-		public UsageMap deObfuscate(JSON_Object<NVExtra,VExtra> data) {
-			return deObfuscate(data, true);
+		public void deObfuscate(JSON_Object<NVExtra,VExtra> data) {
+			deObfuscate(data, true);
 		}
-		public UsageMap deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose) {
-			
-			UsageMap usage = new UsageMap();
+		public void deObfuscate(JSON_Object<NVExtra,VExtra> data, boolean verbose)
+		{
 			Result res = new Result();
 			
 			JSON_Data.traverseNamedValues(data, false, (path,nv)->{
@@ -1059,92 +1189,14 @@ public class SaveViewer implements ActionListener {
 					res.unkown.add(nv.name);
 			});
 			
-			//JSON_Data.traverseNamedValues(data, false, (path,nv)->{
-			MyTreeWalker.traverseNamedValues(data, (path,nv)->{
-				String originalStr = nv.extra.wasDeObfuscated ? nv.extra.originalStr : nv.name;
-				//usage.computeIfAbsent(originalStr, s->new HashSet<>()).add(path);
-				usage.addPath(originalStr, path);
-			});
-			
 			if (verbose) {
 				Gui.log_ln("DeObfuscation done");
 				Gui.log_ln("   %d of %d replacements done",res.known,res.all);
 				Gui.log_ln("   %d unknown names",res.unkown.size());
 				Gui.log_ln("   %d known names",replacements.size());
 			}
-			
-			return usage;
 		}
 		
-		public static class MyTreeWalker extends JSON_Data.AbstractTreeWalker<MyTreeWalker.PathNode,NVExtra,VExtra>
-		{
-			private final PathNode root;
-
-			private MyTreeWalker(
-					BiConsumer<PathNode, JSON_Data.NamedValue<NVExtra, VExtra>> consumerNV,
-					BiConsumer<PathNode, JSON_Data.     Value<NVExtra, VExtra>> consumerV )
-			{
-				super(consumerNV, consumerV);
-				root = new PathNode();
-			}
-			
-			public static PathNode traverseNamedValues(JSON_Object<NVExtra,VExtra> data, BiConsumer<PathNode,JSON_Data.NamedValue<NVExtra,VExtra>> consumer)
-			{
-				MyTreeWalker treeWalker = new MyTreeWalker(consumer, null);
-				treeWalker.traverse(data);
-				return treeWalker.root;
-			}
-
-			@Override protected PathNode getRootPathValue() { return root; }
-			@Override protected PathNode getNextPathForElementOfObject(PathNode node, String name) { return node.getNextPathForElementOfObject(name); }
-			@Override protected PathNode getNextPathForElementOfArray (PathNode node, int    i   ) { return node.getNextPathForElementOfArray (    ); }
-
-			public static class PathNode
-			{
-				private final PathNode parent;
-				private final Map<String,PathNode> objectValues;
-				private PathNode arrayValues;
-				
-				private final String name;
-				private final boolean isArrayElement;
-
-				private PathNode() // root
-				{
-					this(null,false,null);
-				}
-				
-				private PathNode(PathNode parent, boolean isArrayElement, String name)
-				{
-					if (parent==null && (isArrayElement || name!=null)) throw new IllegalArgumentException("Wrong root parameters"); 
-					if (parent!=null &&  isArrayElement && name!=null ) throw new IllegalArgumentException("Wrong array parameters"); 
-					if (parent!=null && !isArrayElement && name==null ) throw new IllegalArgumentException("Wrong object parameters"); 
-					
-					this.parent = parent;
-					this.name = name;
-					this.isArrayElement = isArrayElement;
-					
-					objectValues = new HashMap<>();
-					arrayValues = null;
-				}
-				
-				public String getPath()
-				{
-					return parent==null ? "" : (parent.getPath() + (isArrayElement ? "[]" : name));
-				}
-				
-				private PathNode getNextPathForElementOfObject(String name)
-				{
-					return objectValues.computeIfAbsent(name, n->new PathNode(this,false,n));
-				}
-				
-				private PathNode getNextPathForElementOfArray()
-				{
-					if (arrayValues==null) arrayValues = new PathNode(this,true,null);
-					return arrayValues;
-				}
-			}
-		}
-
 		private static class Result {
 			int known;
 			int all;
@@ -1490,9 +1542,9 @@ public class SaveViewer implements ActionListener {
 			setViewportView(table);
 		}
 
-		UsageMap[] updatePreviewData()
+		FieldNameUsage<?>[] updatePreviewData()
 		{
-			UsageMap[] arr = new UsageMap[SAVE_GAME_COUNT*2];
+			FieldNameUsage<?>[] arr = new FieldNameUsage[SAVE_GAME_COUNT*2];
 			if (isSavegameFolderKnown())
 			{
 				String savegameFolder = getSavegameFolder();
@@ -1501,7 +1553,7 @@ public class SaveViewer implements ActionListener {
 					File savefile = new File(savegameFolder+getFilename(index));
 					SaveGameData data = !savefile.isFile() ? null : openSaveGameForPreview(savefile, index);
 					tableModel.setRowData(savefile, data);
-					arr[index] = data==null ? null : data.deObfuscatorUsage;
+					arr[index] = data==null ? null : data.fieldNameUsage;
 				}
 			}
 			else

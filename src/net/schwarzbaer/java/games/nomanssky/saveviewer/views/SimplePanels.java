@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.function.BiFunction;
@@ -75,8 +74,8 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SaveGameView.SaveGa
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.VerySimpleTable;
 import net.schwarzbaer.java.lib.gui.IconSource;
-import net.schwarzbaer.java.lib.gui.StandardDialog;
 import net.schwarzbaer.java.lib.gui.IconSource.CachedIcons;
+import net.schwarzbaer.java.lib.gui.StandardDialog;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnConfig;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedColumnIDInterface;
 import net.schwarzbaer.java.lib.gui.Tables.SimplifiedTableModel;
@@ -290,7 +289,7 @@ public class SimplePanels {
 				if (selectedRowV<0) return;
 				
 				String originalStr = tableModel.getValue(table.convertRowIndexToModel(selectedRowV));
-				List<String> pathSet = this.data.deObfuscatorUsage.getPaths(originalStr);
+				Collection<String> pathSet = this.data.fieldNameUsage.getPaths(originalStr);
 				if (pathSet!=null) {
 					Vector<String> paths = getSorted(pathSet); 
 					for (String str:paths)
@@ -325,7 +324,7 @@ public class SimplePanels {
 
 			public LocalTableModel() {
 				super(ColumnID.values());
-				values = new Vector<>(data.deObfuscatorUsage.getOriginalNames());
+				values = new Vector<>(data.fieldNameUsage.getOriginalNames());
 			}
 
 			@Override
