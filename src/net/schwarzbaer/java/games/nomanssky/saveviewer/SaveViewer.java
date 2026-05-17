@@ -1457,11 +1457,6 @@ public class SaveViewer implements ActionListener {
 	
 	}
 	
-	public static String getFilename(int index)
-	{
-		return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
-	}
-
 	public class SaveGameListPanel extends JScrollPane
 	{
 		private static final long serialVersionUID = 1235968974727584021L;
@@ -1569,9 +1564,9 @@ public class SaveViewer implements ActionListener {
 
 		private void openSaveGame(SaveGameListModel.Row row)
 		{
-			if (row!=null && row.file.isFile() && row.previewData!=null && row.previewData.index>=0)
+			if (row!=null && row.file.isFile() && row.index!=null && row.index>=0)
 			{
-				SaveViewer.this.openSaveGame(row.file,row.previewData.index);
+				SaveViewer.this.openSaveGame(row.file,row.index);
 				tableModel.updateLoadedState(row);
 				System.gc();
 				if (DEBUG_MEMORY) Gui.showMemoryUsage(System.err, true);
@@ -1585,22 +1580,22 @@ public class SaveViewer implements ActionListener {
 			enum ColumnID implements Tables.SimpleGetValueTableModel2.ColumnIDTypeInt2b<SaveGameListModel, Row>, SwingConstants
 			{
 				// [20, 60, 40, 55, 50, 260, 50, 150, 90, 70, 80, 60, 65, 60, 80, 80]
-				index         (config("#"              , Integer.class,  20, CENTER).setValFunc(GET.get(row -> row.previewData, d->d.index)).setToString(i->""+(i+1))),
+				index         (config("#"              , Integer.class,  20, CENTER).setValFunc(GET.get(row -> row.index        )).setToString(i->""+(i+1))),
 				name          (config("Name"           , String .class,  60,   null).setValFunc(GET.get(row -> row.file, File::getName))),
-				isFile        (config("Exists"         , Boolean.class,  40,   null).setValFunc(GET.get(row -> row.file, File::isFile))),
-				isParsable    (config("Parsable"       , Boolean.class,  55,   null).setValFunc(GET.get(row -> row.previewData!=null))),
-				isLoaded      (config("Loaded"         , Boolean.class,  50,   null).setValFunc(GET.get(row -> row.isLoaded))),
+				isFile        (config("Exists"         , Boolean.class,  40,   null).setValFunc(GET.get(row -> row.file, File::isFile ))),
+				isParsable    (config("Parsable"       , Boolean.class,  55,   null).setValFunc(GET.get(row -> row.wasParsed    ))),
+				isLoaded      (config("Loaded"         , Boolean.class,  50,   null).setValFunc(GET.get(row -> row.isLoaded     ))),
 				date          (config("Last Modified"  , Long   .class, 260,   null).setValFunc(GET.get(row -> row.file, f->f.isFile()?f.lastModified():null)).setToString(SaveGameData.TimeStamp::getTimeStr)),
-				version       (config("Version"        , Long   .class,  50,   null).setValFunc(GET.get(row -> row.previewData, d->d.version))),
-				label         (config("Label"          , String .class, 150,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.saveGameLabel))),
-				totalPlayTime (config("Total Play Time", Long   .class,  90,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.totalPlayTime)).setToString(Duration::toString)),
-				timeAlive     (config("Time Alive"     , Long   .class,  70,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.timeAlive    )).setToString(Duration::toString)),
-				units         (config("Units"          , Long   .class,  80,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.units        )).setToString(ColumnID::toStringWithGrouping)),
-				nanites       (config("Nanites"        , Long   .class,  60,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.nanites      )).setToString(ColumnID::toStringWithGrouping)),
-				quicksilver   (config("Quicksilver"    , Long   .class,  65,   null).setValFunc(GET.get(row -> row.previewData, d->d.general, g->g.quicksilver  )).setToString(ColumnID::toStringWithGrouping)),
-				debug1        (config("§.<PSD>"        , Boolean.class,  60,   null).setValFunc(GET.get(row -> row.previewData, d->d.json_data, json->SaveGameData.hasValue(json,       SaveGameData.PLAYER_STATE_DATA)))),
-				debug2        (config("§.vLc.<PSD>"    , Boolean.class,  80,   null).setValFunc(GET.get(row -> row.previewData, d->d.json_data, json->SaveGameData.hasValue(json, "vLc",SaveGameData.PLAYER_STATE_DATA)))),
-				debug3        (config("§.2YS.<PSD>"    , Boolean.class,  80,   null).setValFunc(GET.get(row -> row.previewData, d->d.json_data, json->SaveGameData.hasValue(json, "2YS",SaveGameData.PLAYER_STATE_DATA)))),
+				version       (config("Version"        , Long   .class,  50,   null).setValFunc(GET.get(row -> row.version      ))),
+				label         (config("Label"          , String .class, 150,   null).setValFunc(GET.get(row -> row.saveGameLabel))),
+				totalPlayTime (config("Total Play Time", Long   .class,  90,   null).setValFunc(GET.get(row -> row.totalPlayTime)).setToString(Duration::toString)),
+				timeAlive     (config("Time Alive"     , Long   .class,  70,   null).setValFunc(GET.get(row -> row.timeAlive    )).setToString(Duration::toString)),
+				units         (config("Units"          , Long   .class,  80,   null).setValFunc(GET.get(row -> row.units        )).setToString(ColumnID::toStringWithGrouping)),
+				nanites       (config("Nanites"        , Long   .class,  60,   null).setValFunc(GET.get(row -> row.nanites      )).setToString(ColumnID::toStringWithGrouping)),
+				quicksilver   (config("Quicksilver"    , Long   .class,  65,   null).setValFunc(GET.get(row -> row.quicksilver  )).setToString(ColumnID::toStringWithGrouping)),
+				debug1        (config("§.<PSD>"        , Boolean.class,  60,   null).setValFunc(GET.get(row -> row.hasPSDinRoot ))),
+				debug2        (config("§.vLc.<PSD>"    , Boolean.class,  80,   null).setValFunc(GET.get(row -> row.hasPSDin_vLc ))),
+				debug3        (config("§.2YS.<PSD>"    , Boolean.class,  80,   null).setValFunc(GET.get(row -> row.hasPSDin_2YS ))),
 				;
 				private final Tables.SimplifiedColumnConfig2<SaveGameListModel, Row, ?> cfg;
 				<V> ColumnID(Tables.SimplifiedColumnConfig2<SaveGameListModel, Row, ?> cfg) { this.cfg = cfg; }
@@ -1625,36 +1620,68 @@ public class SaveViewer implements ActionListener {
 			{
 				final String absolutePath;
 				final File file;
-				SaveGameData previewData;
 				boolean isLoaded = false;
 				Type type = null;
+				
+				boolean wasParsed;
+				Integer index;
+				Long version;
+				String saveGameLabel;
+				Long totalPlayTime;
+				Long timeAlive;
+				Long units;
+				Long nanites;
+				Long quicksilver;
+				boolean hasPSDinRoot;
+				boolean hasPSDin_vLc;
+				boolean hasPSDin_2YS;
 
 				Row(File file, SaveGameData previewData)
 				{
 					this.file = Objects.requireNonNull(file);
-					this.previewData = previewData;
 					absolutePath = file.getAbsolutePath();
-					updateType();
+					setData(previewData);
 				}
 
 				void setData(SaveGameData previewData)
 				{
-					this.previewData = previewData;
-					updateType();
+					wasParsed     = previewData!=null;
+					index         = previewData==null ? null : previewData.index;
+					version       = previewData==null ? null : previewData.version;
+					saveGameLabel = previewData==null ? null : previewData.general.saveGameLabel;
+					totalPlayTime = previewData==null ? null : previewData.general.totalPlayTime;
+					timeAlive     = previewData==null ? null : previewData.general.timeAlive    ;
+					units         = previewData==null ? null : previewData.general.units        ;
+					nanites       = previewData==null ? null : previewData.general.nanites      ;
+					quicksilver   = previewData==null ? null : previewData.general.quicksilver  ;
+					
+					hasPSDinRoot = hasJsonValue(previewData,       SaveGameData.PLAYER_STATE_DATA);
+					hasPSDin_vLc = hasJsonValue(previewData, "vLc",SaveGameData.PLAYER_STATE_DATA);
+					hasPSDin_2YS = hasJsonValue(previewData, "2YS",SaveGameData.PLAYER_STATE_DATA);
+					
+					type = getType(previewData);
+				}
+				
+				private static boolean hasJsonValue(SaveGameData previewData, Object... path)
+				{
+					return previewData==null || previewData.json_data==null ? false : SaveGameData.hasValue(previewData.json_data, path);
 				}
 
-				private void updateType()
+				private static Type getType(SaveGameData previewData)
 				{
 					if (previewData==null)
-						type = null;
-					else if (previewData.isPreNEXT)
-						type = Type.PreNEXT;
-					else if (previewData.version!=null && previewData.version>100000)
-						type = Type.Expedition;
-					else if (previewData.version!=null && previewData.version>5000)
-						type = Type.Creative;
-					else
-						type = Type.Normal;
+						return null;
+					
+					if (previewData.isPreNEXT)
+						return Type.PreNEXT;
+					
+					if (previewData.version!=null && previewData.version>100000)
+						return Type.Expedition;
+					
+					if (previewData.version!=null && previewData.version>5000)
+						return Type.Creative;
+					
+					return Type.Normal;
 				}
 			}
 
@@ -1696,6 +1723,7 @@ public class SaveViewer implements ActionListener {
 				else
 				{
 					row = new Row(savefile, data);
+					updateLoadedState(row);
 					index = rows.size();
 					rows.add(row);
 					fireTableRowAdded(index);
@@ -1717,6 +1745,11 @@ public class SaveViewer implements ActionListener {
 		}
 	}
 	
+	public static String getFilename(int index)
+	{
+		return index==0 ? "save.hg" : "save%d.hg".formatted(index+1);
+	}
+
 	public static void test() {
 		String filepath = "save.hg";
 		File sourcefile = new File(filepath);
