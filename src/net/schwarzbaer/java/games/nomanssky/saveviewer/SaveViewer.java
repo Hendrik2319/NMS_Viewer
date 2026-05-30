@@ -692,7 +692,7 @@ public class SaveViewer implements ActionListener {
 			
 			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(2); });
 			boolean parsedWithoutException = saveGameData.parse_guarded(false);
-			if (DEBUG_CLEAR_JSON_AFTER_LOAD) saveGameData.clearJsonData();
+			if (DEBUG_CLEAR_JSON_AFTER_LOAD || getClearJsonAfterLoad()) saveGameData.clearJsonData();
 			
 			Gui.runInEventThreadAndWait(()->{
 				if (mainWindow!=null) {
@@ -743,7 +743,7 @@ public class SaveViewer implements ActionListener {
 				
 				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
 				boolean parsedWithoutException = saveGameData.parse_guarded(false);
-				if (DEBUG_CLEAR_JSON_AFTER_LOAD) saveGameData.clearJsonData();
+				if (DEBUG_CLEAR_JSON_AFTER_LOAD || getClearJsonAfterLoad()) saveGameData.clearJsonData();
 				
 				Gui.runInEventThreadAndWait(()->{
 					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
@@ -754,6 +754,15 @@ public class SaveViewer implements ActionListener {
 		});
 	}
 	
+	private static void setClearJsonAfterLoad(boolean b)
+	{
+		AppSettings.getInstance().putBool(AppSettings.ValueKey.ClearJsonAfterLoad, b);
+	}
+	private static boolean getClearJsonAfterLoad()
+	{
+		return AppSettings.getInstance().getBool(AppSettings.ValueKey.ClearJsonAfterLoad, false);
+	}
+
 	private JSON_Object<NVExtra, VExtra> loadAndParseSaveGameFile(File saveGameFile, boolean withConsoleLog) {
 		if (withConsoleLog) Gui.log("Parse file \"%s\" ...",saveGameFile.getPath());
 		
@@ -1387,6 +1396,16 @@ public class SaveViewer implements ActionListener {
 			extraMenu.addSeparator();
 			extraMenu.add(createMenuItem("Clear Unknown Values", Gui.ToolbarIcons.Delete, ActionCommand.ClearUnknownValues,true));
 			extraMenu.add(createMenuItem("Show Unknown Values" , Gui.ToolbarIcons.Save  , ActionCommand.ShowUnknownValues ,true));
+			extraMenu.addSeparator();
+			extraMenu.add(Gui.createCheckBoxMenuItem(
+					"Clear JSON data after Load",
+					null,
+					getClearJsonAfterLoad(),
+					Gui.ToolbarIcons.Delete,
+					(Boolean selected) -> {
+						if (selected!=null) setClearJsonAfterLoad(selected);
+					}
+			));
 		}
 
 		private JButton createButton(String title, Gui.ToolbarIcons iconKey, ActionCommand actionCommand, boolean enabled) {

@@ -1573,12 +1573,14 @@ public class Gui {
 	}
 
 	public static JCheckBoxMenuItem createCheckBoxMenuItem(String title, boolean selected, Consumer<Boolean> setValue) {
-		return createCheckBoxMenuItem(title, null, selected, setValue);
+		return createCheckBoxMenuItem(title, null, selected, null, setValue);
 	}
 	public static JCheckBoxMenuItem createCheckBoxMenuItem(String title, ButtonGroup bg, boolean selected, Consumer<Boolean> setValue) {
+		return createCheckBoxMenuItem(title, bg, selected, null, setValue);
+	}
+	public static JCheckBoxMenuItem createCheckBoxMenuItem(String title, ButtonGroup bg, boolean selected, ToolbarIcons icon, Consumer<Boolean> setValue) {
 		JCheckBoxMenuItem comp = new JCheckBoxMenuItem(title, selected);
-		setComp(comp, bg, setValue==null ? null : e->setValue.accept(comp.isSelected()), null, null, true, null);
-		return comp;
+		return setComp(comp, bg, setValue==null ? null : e->setValue.accept(comp.isSelected()), null, null, true, icon!=null ? toolbarIS.getCachedIcon(icon) : null);
 	}
 	public static <AC extends Enum<AC>> JCheckBoxMenuItem createCheckBoxMenuItem(String title, ActionListener l) {
 		return createCheckBoxMenuItem(title, l, null, null, true, true);

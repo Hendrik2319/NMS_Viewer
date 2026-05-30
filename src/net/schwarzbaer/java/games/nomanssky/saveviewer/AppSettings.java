@@ -10,7 +10,8 @@ public final class AppSettings extends Settings.DefaultAppSettings<AppSettings.V
 		ParseErrorHexView_WindowX,
 		ParseErrorHexView_WindowY,
 		ParseErrorHexView_WindowWidth,
-		ParseErrorHexView_WindowHeight
+		ParseErrorHexView_WindowHeight,
+		ClearJsonAfterLoad
 	}
 
 	enum ValueGroup implements Settings.GroupKeys<ValueKey> {
