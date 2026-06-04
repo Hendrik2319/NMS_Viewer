@@ -282,6 +282,7 @@
 ^SUNGOLD.symbol=?
 ^SUNGOLD.image=SUB.SUNGOLD.png
 ^SUNGOLD.imageBG=E59001
+^SWARMDUST=
 ^TECHFRAG=Nanit-Haufen
 ^TECHFRAG.type=Special
 ^TECHFRAG.image=NmsMisc_Nanite_Cluster.png

@@ -62,6 +62,7 @@ import javax.swing.JToolBar;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -112,7 +113,7 @@ public class SaveViewer implements ActionListener {
 	
 	private StandardMainWindow mainWindow;
 
-	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive }
+	enum TabHeaderIcons { Close, Close_Inactive, Reload, Reload_Inactive, Left, Left_Inactive, Right, Right_Inactive }
 	static IconSource<TabHeaderIcons> tabheaderIS;
 	public static Config config;
 	public static DeObfuscator deObfuscator;
@@ -148,6 +149,11 @@ public class SaveViewer implements ActionListener {
 			return;
 		}
 		
+		SwingUtilities.invokeLater(()->startGUI());
+	}
+	
+	private static void startGUI()
+	{
 //		selectLookAndFeel();
 		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
 		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {}
@@ -735,23 +741,36 @@ public class SaveViewer implements ActionListener {
 				isPreNEXT = false;
 			}
 			
-			if (new_json_data!=null) {
-				
-				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
-				GameInfos.removeUsages(view.data);
-				SaveGameData saveGameData = new SaveGameData(new_json_data,view.data.filename,view.data.index,isPreNEXT,fieldNameUsage);
-				
-				if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
-				boolean parsedWithoutException = saveGameData.parse_guarded(false);
-				if (DEBUG_CLEAR_JSON_AFTER_LOAD || getClearJsonAfterLoad()) saveGameData.clearJsonData();
-				
-				Gui.runInEventThreadAndWait(()->{
-					if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
-					view.replaceData(saveGameData,!isPreNEXT,!parsedWithoutException);
-					contentPane.updateIDPanels();
-				});
-			}
+			parseJsonUpdateGui(pd, view, new_json_data, fieldNameUsage, isPreNEXT, view.data.psdIndex);
 		});
+	}
+	
+	private void switchPlayerStateData(SaveGameView view, int psdIndex)
+	{
+		Gui.runWithProgressDialog(mainWindow,"Switch PlayerStateData", pd->{
+			Gui.runInEventThreadAndWait(()->{ pd.setValue(0, 5); });
+			parseJsonUpdateGui(pd, view, view.data.json_data, view.data.fieldNameUsage, view.data.isPreNEXT, psdIndex);
+		});
+	}
+
+	private void parseJsonUpdateGui(ProgressDialog pd, SaveGameView view, JSON_Object<NVExtra, VExtra> json_data, FieldNameUsage<?> fieldNameUsage, boolean isPreNEXT, int psdIndex)
+	{
+		if (json_data!=null)
+		{
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Prepare for new JSON data"); pd.setValue(2); });
+			GameInfos.removeUsages(view.data);
+			SaveGameData saveGameData = new SaveGameData(json_data,view.data.filename,view.data.index,isPreNEXT,fieldNameUsage);
+			
+			if (pd!=null) Gui.runInEventThreadAndWait(()->{ pd.setTaskTitle("Parse JSON data"); pd.setValue(3); });
+			boolean parsedWithoutException = saveGameData.parse_guarded(false, psdIndex);
+			if (DEBUG_CLEAR_JSON_AFTER_LOAD || getClearJsonAfterLoad()) saveGameData.clearJsonData();
+			
+			Gui.runInEventThreadAndWait(()->{
+				if (pd!=null) { pd.setTaskTitle("Update GUI"); pd.setValue(4); }
+				view.replaceData(saveGameData,!isPreNEXT,!parsedWithoutException);
+				contentPane.updateIDPanels();
+			});
+		}
 	}
 	
 	private static void setClearJsonAfterLoad(boolean b)
@@ -1252,6 +1271,8 @@ public class SaveViewer implements ActionListener {
 
 	class TabHeader extends JPanel {
 		private static final long serialVersionUID = 2135969080088517737L;
+		private final JButton btnLeft;
+		private final JButton btnRight;
 
 		public TabHeader(SaveGameView saveGameView) {
 			super();
@@ -1260,6 +1281,29 @@ public class SaveViewer implements ActionListener {
 			add(new JLabel(saveGameView.toString()+" "));
 			add(createButton(TabHeaderIcons.Reload, TabHeaderIcons.Reload_Inactive, e->reloadSaveGameView(saveGameView)));
 			add(createButton(TabHeaderIcons.Close , TabHeaderIcons.Close_Inactive , e-> closeSaveGameView(saveGameView)));
+			add(btnLeft  = createButton(TabHeaderIcons.Left , TabHeaderIcons.Left_Inactive , e->switchPSD(saveGameView, -1)));
+			add(btnRight = createButton(TabHeaderIcons.Right, TabHeaderIcons.Right_Inactive, e->switchPSD(saveGameView, +1)));
+			updateLeftRight(saveGameView);
+		}
+
+		private void reloadSaveGameView(SaveGameView saveGameView)
+		{
+			SaveViewer.this.reloadSaveGameView(saveGameView);
+			updateLeftRight(saveGameView);
+		}
+
+		private void switchPSD(SaveGameView saveGameView, int inc)
+		{
+			int psdIndex = saveGameView.data.psdIndex;
+			switchPlayerStateData(saveGameView, psdIndex+inc);
+			updateLeftRight(saveGameView);
+		}
+
+		private void updateLeftRight(SaveGameView saveGameView)
+		{
+			int psdIndex = saveGameView.data.psdIndex;
+			btnLeft .setEnabled(psdIndex > 0);
+			btnRight.setEnabled(psdIndex < saveGameView.data.arrPlayerStateData.size()-1);
 		}
 
 		private JButton createButton(TabHeaderIcons activeIcon, TabHeaderIcons inactiveIcon, ActionListener l) {

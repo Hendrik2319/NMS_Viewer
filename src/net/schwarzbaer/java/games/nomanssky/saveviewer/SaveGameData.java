@@ -58,7 +58,7 @@ public class SaveGameData
 	public final JSON_Object<NVExtra,VExtra> json_data;
 	public final SaveViewer.FieldNameUsage<?> fieldNameUsage;
 	public final boolean isPreNEXT;
-	private final Vector<JSON_Object<NVExtra, VExtra>> arrPlayerStateData;
+	public final Vector<JSON_Object<NVExtra, VExtra>> arrPlayerStateData;
 	private JSON_Object<NVExtra, VExtra> firstPlayerStateData = null;
 	
 	public Long version;
@@ -90,6 +90,7 @@ public class SaveGameData
 	public Vector<MultiTool> altMultiTools = null;
 	public Companions companions = null;
 	public Appearances appearances = null;
+	public int psdIndex = -1;
 	
 	public SaveGameData(JSON_Object<NVExtra,VExtra> json_data, String filename, int index, boolean isPreNEXT, SaveViewer.FieldNameUsage<?> fieldNameUsage)
 	{
@@ -106,17 +107,25 @@ public class SaveGameData
 	}
 	
 	public boolean parse_guarded(boolean forPreview) {
-		try { parse(forPreview); return true; }
-		catch (Exception e) { e.printStackTrace(); return false; }
+		return parse_guarded(forPreview, 0);
 	}
 	public void parse(boolean forPreview) {
+		parse(forPreview, 0);
+	}
+	
+	public boolean parse_guarded(boolean forPreview, int psdIndex) {
+		try { parse(forPreview, psdIndex); return true; }
+		catch (Exception e) { e.printStackTrace(); return false; }
+	}
+	public void parse(boolean forPreview, int psdIndex) {
 		version = getIntegerValue(json_data, "Version");
 		if (isPreNEXT) return;
 		
 		if (hasValue(json_data,       PLAYER_STATE_DATA)) arrPlayerStateData.add(getObjectValue(json_data,       PLAYER_STATE_DATA));
 		if (hasValue(json_data, "vLc",PLAYER_STATE_DATA)) arrPlayerStateData.add(getObjectValue(json_data, "vLc",PLAYER_STATE_DATA));
 		if (hasValue(json_data, "2YS",PLAYER_STATE_DATA)) arrPlayerStateData.add(getObjectValue(json_data, "2YS",PLAYER_STATE_DATA));
-		firstPlayerStateData = arrPlayerStateData.isEmpty() ? null : arrPlayerStateData.firstElement();
+		this.psdIndex = Math.min(Math.max(0, psdIndex), arrPlayerStateData.size()-1);
+		firstPlayerStateData = arrPlayerStateData.isEmpty() ? null : arrPlayerStateData.get(psdIndex);
 		
 		general.parse();
 		if (forPreview) return;

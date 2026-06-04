@@ -23,6 +23,7 @@ VuQ GameKnowledgeData
 fDu DiscoveryManagerData
 yRy Waypoints
 ETO DiscoveryData-v1
+g33 ShipStorage
 
 OsQ Store
 ?fB Record
