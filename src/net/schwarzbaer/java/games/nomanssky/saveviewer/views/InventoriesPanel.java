@@ -73,8 +73,9 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		addTab("MultiTools", new InventoryListPanel(mainwindow).addInv(data.mainMultiTool).addInv(data.altMultiTools));
 		addTab("Freighter" , new InventoryListPanel(mainwindow).addInv(data.freighter.inventory,data.freighter.inventoryTech));
 		addTab(data.inventories.ship_old);
-		if (data.spaceShips.vehicles!=null) addTab("SpaceShips", new InventoryListPanel(mainwindow).addInv(data.spaceShips.vehicles));
-		if (data.exocrafts .vehicles!=null) addTab("Exocrafts" , new InventoryListPanel(mainwindow).addInv(data.exocrafts .vehicles));
+		if (data.spaceShips      .vehicles!=null) addTab("SpaceShips"       , new InventoryListPanel(mainwindow).addInv(data.spaceShips      .vehicles));
+		if (data.storedSpaceShips.vehicles!=null) addTab("Stored SpaceShips", new InventoryListPanel(mainwindow).addInv(data.storedSpaceShips.vehicles));
+		if (data.exocrafts       .vehicles!=null) addTab("Exocrafts"        , new InventoryListPanel(mainwindow).addInv(data.exocrafts       .vehicles));
 		addTab("Containers", new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
 		addTab("Other"     , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.baseSalvageCapsule,data.inventories.freighterSalvageCapsule));
 

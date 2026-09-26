@@ -32,6 +32,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,6 +85,7 @@ public class SaveGameData
 	
 	public Freighter  freighter  = null;
 	public VehicleGroup.SpaceShips spaceShips = null;
+	public VehicleGroup.StoredSpaceShips storedSpaceShips = null;
 	public VehicleGroup.Exocrafts  exocrafts  = null;
 	
 	public Vector<UniverseAddress> AtlasStationAdressData = null;
@@ -164,10 +166,11 @@ public class SaveGameData
 		VisitedAtlasStationsData  = parseUniverseAddressStructureArray("VisitedAtlasStationsData" , playerStateData, "VisitedAtlasStationsData");
 		
 		teleportEndpoints = TeleportEndpoints.parse(this);
-		freighter  = Freighter .parse(this);
-		spaceShips = new VehicleGroup.SpaceShips(this);
-		exocrafts  = new VehicleGroup.Exocrafts(this);
-		frigates   = Frigate   .parse(this);
+		freighter        = Freighter.parse(this);
+		spaceShips       = new VehicleGroup.SpaceShips(this);
+		storedSpaceShips = new VehicleGroup.StoredSpaceShips(this);
+		exocrafts        = new VehicleGroup.Exocrafts(this);
+		frigates         = Frigate.parse(this);
 		parseFrigateMissions();
 		
 		experimentalData.parse();
@@ -1707,19 +1710,27 @@ public class SaveGameData
 		}
 	}
 
-	public static class VehicleGroup<VehicleType extends Vehicle> {
-		
+	public static class VehicleGroup<VehicleType extends Vehicle>
+	{
 		public final Long primary;
 		public final VehicleType[] vehicles;
 
-		private VehicleGroup(SaveGameData data, JSON_Array<NVExtra,VExtra> json_Array, String arraySourcePath, Long primary, Constructor<VehicleType> constructor, Function<Integer,VehicleType[]> createArray) {
+		private VehicleGroup(
+				SaveGameData data,
+				List<JSON_Data.Value<NVExtra,VExtra>> json_Array,
+				IntFunction<String> getSourcePath,
+				Long primary,
+				Constructor<VehicleType> constructor,
+				Function<Integer,VehicleType[]> createArray
+		) {
 			this.primary = primary;
 			
 			if (json_Array!=null) {
 				vehicles = createArray.apply(json_Array.size());
 				for (int i=0; i<json_Array.size(); ++i) {
 					JSON_Object<NVExtra, VExtra> object = getObject(json_Array.get(i));
-					vehicles[i] = object==null ? null : constructor.construct(data, object, i, arraySourcePath+"["+i+"]", i==this.primary);
+					String dataSourcePath = getSourcePath.apply(i); // arraySourcePath+"["+i+"]"
+					vehicles[i] = object==null ? null : constructor.construct(data, object, i, dataSourcePath, this.primary!=null && i==this.primary);
 				}
 			} else
 				vehicles = null;
@@ -1733,7 +1744,7 @@ public class SaveGameData
 			public Exocrafts(SaveGameData data) {
 				super(
 					data,
-					getArrayValue  (data.playerStateData, "VehicleOwnership"), "VehicleOwnership",
+					getArrayValue  (data.playerStateData, "VehicleOwnership"), i -> "VehicleOwnership[%d]".formatted(i),
 					getIntegerValue(data.playerStateData, "PrimaryVehicle"),
 					Exocraft::new, Exocraft[]::new
 				);
@@ -1744,7 +1755,7 @@ public class SaveGameData
 			public SpaceShips(SaveGameData data) {
 				super(
 					data,
-					getArrayValue  (data.playerStateData, "ShipOwnership"), "ShipOwnership",
+					getArrayValue  (data.playerStateData, "ShipOwnership"), i -> "ShipOwnership[%d]".formatted(i),
 					getIntegerValue(data.playerStateData, "PrimaryShip"),
 					SpaceShip::new, SpaceShip[]::new
 				);
@@ -1755,6 +1766,27 @@ public class SaveGameData
 						Boolean b = getBool(array.get(i));
 						if (b!=null && i<vehicles.length) vehicles[i].usesOldColors = b;
 					}
+			}
+		}
+
+		public static class StoredSpaceShips extends VehicleGroup<SpaceShip> {
+			public StoredSpaceShips(SaveGameData data) {
+				super(
+					data,
+					hasValue(data.playerStateData, "ShipStorage") ? getSubValues( getArrayValue(data.playerStateData, "ShipStorage"), "b6M" ) : null,
+					i -> "ShipStorage[%d].b6M".formatted(i),
+					null,
+					SpaceShip::new, SpaceShip[]::new
+				);
+			}
+			private static List<JSON_Data.Value<NVExtra,VExtra>> getSubValues(JSON_Array<NVExtra,VExtra> arr, Object... path)
+			{
+				return arr==null ? null : arr
+						.stream()
+						.map(val -> getSubNode( JSON_Data.getObjectValue(val), path ))
+						.filter(val -> val!=null)
+						.toList()
+						;
 			}
 		}
 	}
