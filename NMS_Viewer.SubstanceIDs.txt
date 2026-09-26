@@ -4,6 +4,7 @@
 ^AF_METAL.symbol=Un
 ^AF_METAL.image=Tainted_metal.png
 ^AF_METAL.imageBG=DEDCD1
+^ASTBELT1=
 ^ASTEROID1=Silber
 ^ASTEROID1.type=Resource
 ^ASTEROID1.symbol=Ag
@@ -118,6 +119,7 @@
 ^HOT1.symbol=P
 ^HOT1.image=Substance.Phosphorus.png
 ^HOT1.imageBG=DB2400
+^HULK1=
 ^LAND1=Ferritstaub
 ^LAND1.type=Resource
 ^LAND1.symbol=Fe
