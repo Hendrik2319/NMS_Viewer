@@ -53,13 +53,17 @@ public class SaveGameData
 {
 	static final String PLAYER_STATE_DATA = "PlayerStateData";
 	
+	public enum PSDSource { Primary, Secondary }
+	private record RawPSD(PSDSource source, JSON_Object<NVExtra, VExtra> obj) {}
+	
 	public final String filename;
 	public final int index;
 	public final JSON_Object<NVExtra,VExtra> json_data;
 	public final SaveViewer.FieldNameUsage<?> fieldNameUsage;
 	public final boolean isPreNEXT;
-	public final Vector<JSON_Object<NVExtra, VExtra>> arrPlayerStateData;
-	private JSON_Object<NVExtra, VExtra> firstPlayerStateData = null;
+	public final Vector<RawPSD> arrPlayerStateData;
+	private JSON_Object<NVExtra, VExtra> playerStateData = null;
+	public PSDSource playerStateDataSource = null;
 	
 	public Long version;
 	public final General general;
@@ -121,11 +125,21 @@ public class SaveGameData
 		version = getIntegerValue(json_data, "Version");
 		if (isPreNEXT) return;
 		
-		if (hasValue(json_data,       PLAYER_STATE_DATA)) arrPlayerStateData.add(getObjectValue(json_data,       PLAYER_STATE_DATA));
-		if (hasValue(json_data, "vLc",PLAYER_STATE_DATA)) arrPlayerStateData.add(getObjectValue(json_data, "vLc",PLAYER_STATE_DATA));
-		if (hasValue(json_data, "2YS",PLAYER_STATE_DATA)) arrPlayerStateData.add(getObjectValue(json_data, "2YS",PLAYER_STATE_DATA));
+		if (hasValue(json_data,       PLAYER_STATE_DATA)) arrPlayerStateData.add(new RawPSD(null               , getObjectValue(json_data,       PLAYER_STATE_DATA)));
+		if (hasValue(json_data, "vLc",PLAYER_STATE_DATA)) arrPlayerStateData.add(new RawPSD(PSDSource.Primary  , getObjectValue(json_data, "vLc",PLAYER_STATE_DATA)));
+		if (hasValue(json_data, "2YS",PLAYER_STATE_DATA)) arrPlayerStateData.add(new RawPSD(PSDSource.Secondary, getObjectValue(json_data, "2YS",PLAYER_STATE_DATA)));
 		this.psdIndex = Math.min(Math.max(0, psdIndex), arrPlayerStateData.size()-1);
-		firstPlayerStateData = arrPlayerStateData.isEmpty() ? null : arrPlayerStateData.get(psdIndex);
+		if (arrPlayerStateData.isEmpty())
+		{
+			playerStateData = null;
+			playerStateDataSource = null;
+		}
+		else
+		{
+			RawPSD rawPSD = arrPlayerStateData.get(psdIndex);
+			playerStateData       = rawPSD.obj   ;
+			playerStateDataSource = rawPSD.source;
+		}
 		
 		general.parse();
 		if (forPreview) return;
@@ -145,9 +159,9 @@ public class SaveGameData
 		baseBuildingObjects   = UnboundBuildingObject.parse(this);
 		persistentPlayerBases = PersistentPlayerBase.parseBases(this);
 		
-		AtlasStationAdressData    = parseUniverseAddressStructureArray("AtlasStationAdressData"   , firstPlayerStateData, "AtlasStationAdressData");
-		NewAtlasStationAdressData = parseUniverseAddressStructureArray("NewAtlasStationAdressData", firstPlayerStateData, "NewAtlasStationAdressData");
-		VisitedAtlasStationsData  = parseUniverseAddressStructureArray("VisitedAtlasStationsData" , firstPlayerStateData, "VisitedAtlasStationsData");
+		AtlasStationAdressData    = parseUniverseAddressStructureArray("AtlasStationAdressData"   , playerStateData, "AtlasStationAdressData");
+		NewAtlasStationAdressData = parseUniverseAddressStructureArray("NewAtlasStationAdressData", playerStateData, "NewAtlasStationAdressData");
+		VisitedAtlasStationsData  = parseUniverseAddressStructureArray("VisitedAtlasStationsData" , playerStateData, "VisitedAtlasStationsData");
 		
 		teleportEndpoints = TeleportEndpoints.parse(this);
 		freighter  = Freighter .parse(this);
@@ -172,7 +186,7 @@ public class SaveGameData
 	{
 		json_data.clear();
 		arrPlayerStateData.clear();
-		firstPlayerStateData = null;
+		playerStateData = null;
 	}
 
 	static final UnknownValues globalUnknownValues = new UnknownValues();
@@ -981,7 +995,7 @@ public class SaveGameData
 		@Override public UniverseAddress getUniverseAddress() { return universeAddress; }
 
 		private static Vector<TeleportEndpoints> parse(SaveGameData data) {
-			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "TeleportEndpoints");
+			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.playerStateData, "TeleportEndpoints");
 			if (arrayValue==null) return null;
 			Vector<JSON_Data.Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 			
@@ -1027,7 +1041,7 @@ public class SaveGameData
 	public static class PersistentPlayerBase implements AddressdableObject {
 
 		private static Vector<PersistentPlayerBase> parseBases(SaveGameData data) {
-				JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "PersistentPlayerBases");
+				JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.playerStateData, "PersistentPlayerBases");
 				if (arrayValue==null) return null;
 				Vector<JSON_Data.Value<NVExtra, VExtra>> notParsableObjects = new Vector<>();
 				
@@ -1157,7 +1171,7 @@ public class SaveGameData
 		@Override public UniverseAddress getUniverseAddress() { return galacticAddress; }
 
 		private static UnboundBuildingObject[] parse(SaveGameData data) {
-			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "BaseBuildingObjects");
+			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.playerStateData, "BaseBuildingObjects");
 			if (arrayValue==null) return null;
 			Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 			
@@ -1376,11 +1390,11 @@ public class SaveGameData
 		
 		private static KnownBlueprints parse(SaveGameData data) {
 			KnownBlueprints knownBlueprints = new KnownBlueprints();
-			knownBlueprints.technologies   = parseBlueprintArray(data, BlueprintList.Technologies, "KnownTech"                 , data.firstPlayerStateData, "KnownTech"    );
-			knownBlueprints.products       = parseBlueprintArray(data, BlueprintList.Products    , "KnownProducts"             , data.firstPlayerStateData, "KnownProducts");
-			knownBlueprints.quicksilvers   = parseBlueprintArray(data, BlueprintList.Quicksilvers, "[KnownQuicksilverSpecials]", data.firstPlayerStateData, "[KnownQuicksilverSpecials]");
-			if (hasValue(data.firstPlayerStateData, "[KnownRecipes]"))
-				knownBlueprints.recipes = parseStringArray("[KnownRecipes]", data.firstPlayerStateData, "[KnownRecipes]");
+			knownBlueprints.technologies   = parseBlueprintArray(data, BlueprintList.Technologies, "KnownTech"                 , data.playerStateData, "KnownTech"    );
+			knownBlueprints.products       = parseBlueprintArray(data, BlueprintList.Products    , "KnownProducts"             , data.playerStateData, "KnownProducts");
+			knownBlueprints.quicksilvers   = parseBlueprintArray(data, BlueprintList.Quicksilvers, "[KnownQuicksilverSpecials]", data.playerStateData, "[KnownQuicksilverSpecials]");
+			if (hasValue(data.playerStateData, "[KnownRecipes]"))
+				knownBlueprints.recipes = parseStringArray("[KnownRecipes]", data.playerStateData, "[KnownRecipes]");
 			return knownBlueprints;
 		}
 		
@@ -1435,12 +1449,12 @@ public class SaveGameData
 		private static Freighter parse(SaveGameData data) {
 			Freighter freighter = new Freighter();
 			
-			freighter.name = getStringValue(data.firstPlayerStateData, "PlayerFreighterName");
-			freighter.ua   = parseUniverseAddressStructure(data.firstPlayerStateData, "FreighterUniverseAddress");
-			freighter.pos  = Position.parse(data.firstPlayerStateData, "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
+			freighter.name = getStringValue(data.playerStateData, "PlayerFreighterName");
+			freighter.ua   = parseUniverseAddressStructure(data.playerStateData, "FreighterUniverseAddress");
+			freighter.pos  = Position.parse(data.playerStateData, "FreighterPosition", "FreighterMatrixLookAt", "FreighterMatrixUp");
 			
-			freighter.crewResourceBlock      = ResourceBlock.parse(data.firstPlayerStateData, "CurrentFreighterNPC");
-			freighter.freighterResourceBlock = ResourceBlock.parse(data.firstPlayerStateData, "CurrentFreighter");
+			freighter.crewResourceBlock      = ResourceBlock.parse(data.playerStateData, "CurrentFreighterNPC");
+			freighter.freighterResourceBlock = ResourceBlock.parse(data.playerStateData, "CurrentFreighter");
 			
 			if (freighter.crewResourceBlock!=null && freighter.crewResourceBlock.filename!=null) {
 				switch (freighter.crewResourceBlock.filename) {
@@ -1465,7 +1479,7 @@ public class SaveGameData
 				}
 			}
 			
-			freighter.homeseed = SeedValue.parse( getArrayValue(data.firstPlayerStateData, "[CurrentFreighter HomeSeed]") );
+			freighter.homeseed = SeedValue.parse( getArrayValue(data.playerStateData, "[CurrentFreighter HomeSeed]") );
 			if (freighter.homeseed!=null) {
 				
 			}
@@ -1481,14 +1495,14 @@ public class SaveGameData
 			
 			freighter.inventory     = Inventories.parse(
 				data,
-				getObjectValue(data.firstPlayerStateData, "FreighterInventory"),
-				getObjectValue(data.firstPlayerStateData, "FreighterLayout"),
+				getObjectValue(data.playerStateData, "FreighterInventory"),
+				getObjectValue(data.playerStateData, "FreighterLayout"),
 				inventoryLabel,
 				"FreighterInventory"
 			);
 			freighter.inventoryTech = Inventories.parse(
 				data,
-				getObjectValue(data.firstPlayerStateData, "FreighterInventory_TechOnly"),
+				getObjectValue(data.playerStateData, "FreighterInventory_TechOnly"),
 				"Freighter (Tech)",
 				"FreighterInventory_TechOnly"
 			);
@@ -1546,8 +1560,10 @@ public class SaveGameData
 			SPOOKSHIP          ( "{SPOOKSHIP}"         , "MODELS/COMMON/SPACECRAFT/FIGHTERS/SPOOKSHIP.SCENE.MBIN"            ),
 			FIGHTERCLASSICGOLD ( "{FIGHTERCLASSICGOLD}", "MODELS/COMMON/SPACECRAFT/FIGHTERS/FIGHTERCLASSICGOLD.SCENE.MBIN"   ),
 			VRSPEEDER          ( "{VRSPEEDER}"         , "MODELS/COMMON/SPACECRAFT/FIGHTERS/VRSPEEDER.SCENE.MBIN"            ),
+			RASAMAMAGOLD       ( "{RASAMAMAGOLD}"      , "MODELS/COMMON/SPACECRAFT/FIGHTERS/RASAMAMAGOLD.SCENE.MBIN"         ),
+			VINTAGEINTERCEPTOR ( "{VINTAGEINTERCEPTOR}", "MODELS/COMMON/SPACECRAFT/FIGHTERS/VINTAGEINTERCEPTOR.SCENE.MBIN"   ),
 			BIOFIGHTER         ( "{BIOFIGHTER}"        , "MODELS/COMMON/SPACECRAFT/S-CLASS/BIOPARTS/BIOFIGHTER.SCENE.MBIN"   ),
-			BIGGS              ( "{BIGGS}"             , "MODELS/COMMON/SPACECRAFT/BIGGS/BIGGS.SCENE.MBIN"                   ),
+			BIGGS              ( "Corvette"            , "MODELS/COMMON/SPACECRAFT/BIGGS/BIGGS.SCENE.MBIN"                   ),
 			;
 			private final String label;
 			private final Set<String> resourceFilenames;
@@ -1717,8 +1733,8 @@ public class SaveGameData
 			public Exocrafts(SaveGameData data) {
 				super(
 					data,
-					getArrayValue  (data.firstPlayerStateData, "VehicleOwnership"), "VehicleOwnership",
-					getIntegerValue(data.firstPlayerStateData, "PrimaryVehicle"),
+					getArrayValue  (data.playerStateData, "VehicleOwnership"), "VehicleOwnership",
+					getIntegerValue(data.playerStateData, "PrimaryVehicle"),
 					Exocraft::new, Exocraft[]::new
 				);
 			}
@@ -1728,12 +1744,12 @@ public class SaveGameData
 			public SpaceShips(SaveGameData data) {
 				super(
 					data,
-					getArrayValue  (data.firstPlayerStateData, "ShipOwnership"), "ShipOwnership",
-					getIntegerValue(data.firstPlayerStateData, "PrimaryShip"),
+					getArrayValue  (data.playerStateData, "ShipOwnership"), "ShipOwnership",
+					getIntegerValue(data.playerStateData, "PrimaryShip"),
 					SpaceShip::new, SpaceShip[]::new
 				);
 				
-				JSON_Array<NVExtra,VExtra> array = getArrayValue_optional(data.firstPlayerStateData, "[ShipUsesOldColors]");
+				JSON_Array<NVExtra,VExtra> array = getArrayValue_optional(data.playerStateData, "[ShipUsesOldColors]");
 				if (array!=null && vehicles!=null)
 					for (int i=0; i<array.size(); i++) {
 						Boolean b = getBool(array.get(i));
@@ -1748,14 +1764,14 @@ public class SaveGameData
 		private static Inventory parseMain(SaveGameData data) {
 			return Inventories.parse(
 					data,
-					getObjectValue(data.firstPlayerStateData, "WeaponInventory"),
-					getObjectValue(data.firstPlayerStateData, "WeaponLayout"),
+					getObjectValue(data.playerStateData, "WeaponInventory"),
+					getObjectValue(data.playerStateData, "WeaponLayout"),
 					"Main MultiTool", "WeaponInventory"
 				);
 		}
 		
 		private static Vector<MultiTool> parseAlternatives(SaveGameData data) {
-			JSON_Array<NVExtra,VExtra> arr = getArrayValue_optional(data.firstPlayerStateData, "[AlternativeWeapons]");
+			JSON_Array<NVExtra,VExtra> arr = getArrayValue_optional(data.playerStateData, "[AlternativeWeapons]");
 			if (arr==null) return null; 
 			
 			Vector<MultiTool> multiTools = new Vector<>();
@@ -1824,37 +1840,37 @@ public class SaveGameData
 
 		private static Inventories parseInventories(SaveGameData data) {
 			Inventories inventories = new Inventories();
-			inventories.player.standard    = Inventories.parse(data, getObjectValue(data.firstPlayerStateData, "Inventory"         ), "Player"          , "Inventory"         );
-			inventories.player.tech        = Inventories.parse(data, getObjectValue(data.firstPlayerStateData, "Inventory_TechOnly"), "Player (Tech)"   , "Inventory_TechOnly");
-			inventories.player.cargo       = Inventories.parse(data, getObjectValue(data.firstPlayerStateData, "Inventory_Cargo"   ), "Player (Cargo)"  , "Inventory_Cargo"   );
-			inventories.grave              = Inventories.parse(data, getObjectValue(data.firstPlayerStateData, "GraveInventory"    ), "Grave"           , "GraveInventory"    );
-			inventories.ship_old           = Inventories.parse(data, getObjectValue(data.firstPlayerStateData, "ShipInventory"     ), getObjectValue(data.firstPlayerStateData, "ShipLayout"), "Ship (old)", "ShipInventory");
+			inventories.player.standard    = Inventories.parse(data, getObjectValue(data.playerStateData, "Inventory"         ), "Player"          , "Inventory"         );
+			inventories.player.tech        = Inventories.parse(data, getObjectValue(data.playerStateData, "Inventory_TechOnly"), "Player (Tech)"   , "Inventory_TechOnly");
+			inventories.player.cargo       = Inventories.parse(data, getObjectValue(data.playerStateData, "Inventory_Cargo"   ), "Player (Cargo)"  , "Inventory_Cargo"   );
+			inventories.grave              = Inventories.parse(data, getObjectValue(data.playerStateData, "GraveInventory"    ), "Grave"           , "GraveInventory"    );
+			inventories.ship_old           = Inventories.parse(data, getObjectValue(data.playerStateData, "ShipInventory"     ), getObjectValue(data.playerStateData, "ShipLayout"), "Ship (old)", "ShipInventory");
 			
 			inventories.chests = new Inventory[10];
 			for (int i=0; i<inventories.chests.length; ++i)
 				inventories.chests[i] = Inventories.parse(
 					data,
-					getObjectValue(data.firstPlayerStateData, "Chest"+(i+1)+"Inventory"),
-					getObjectValue(data.firstPlayerStateData, "Chest"+(i+1)+"Layout"),
+					getObjectValue(data.playerStateData, "Chest"+(i+1)+"Inventory"),
+					getObjectValue(data.playerStateData, "Chest"+(i+1)+"Layout"),
 					"Container "+i, "Chest"+(i+1)+"Inventory"
 				);
 			inventories.baseSalvageCapsule = Inventories.parse(
 				data,
-				getObjectValue(data.firstPlayerStateData, "ChestMagicInventory" ),
-				getObjectValue(data.firstPlayerStateData, "ChestMagicLayout" ),
+				getObjectValue(data.playerStateData, "ChestMagicInventory" ),
+				getObjectValue(data.playerStateData, "ChestMagicLayout" ),
 				"Base Salvage Capsule", "ChestMagicInventory"
 			);
 			inventories.freighterSalvageCapsule = Inventories.parse(
 				data,
-				getObjectValue(data.firstPlayerStateData, "ChestMagic2Inventory"),
-				getObjectValue(data.firstPlayerStateData, "ChestMagic2Layout"),
+				getObjectValue(data.playerStateData, "ChestMagic2Inventory"),
+				getObjectValue(data.playerStateData, "ChestMagic2Layout"),
 				"Freighter Salvage Capsule", "ChestMagic2Inventory"
 			);
-			if (hasValue(data.firstPlayerStateData, "IngredientStorageInventory"))
+			if (hasValue(data.playerStateData, "IngredientStorageInventory"))
 				inventories.ingredientStorage = Inventories.parse(
 					data,
-					getObjectValue(data.firstPlayerStateData, "IngredientStorageInventory"),
-					getObjectValue(data.firstPlayerStateData, "IngredientStorageLayout"),
+					getObjectValue(data.playerStateData, "IngredientStorageInventory"),
+					getObjectValue(data.playerStateData, "IngredientStorageLayout"),
 					"Ingredient Storage", "IngredientStorageInventory"
 				);
 			
@@ -2172,13 +2188,13 @@ public class SaveGameData
 		public final Vector<BlockCArray> equipment;
 		
 		public Companions(SaveGameData data) {
-			JSON_Array<NVExtra,VExtra> arrCompanions             = getArrayValue_optional(data.firstPlayerStateData, "[Companions]");
-			JSON_Array<NVExtra,VExtra> arrCompanionEggs          = getArrayValue_optional(data.firstPlayerStateData, "[CompanionEggs]");
-			JSON_Array<NVExtra,VExtra> arrUnlockedCompanionSlots = getArrayValue_optional(data.firstPlayerStateData, "[UnlockedCompanionSlots]");
+			JSON_Array<NVExtra,VExtra> arrCompanions             = getArrayValue_optional(data.playerStateData, "[Companions]");
+			JSON_Array<NVExtra,VExtra> arrCompanionEggs          = getArrayValue_optional(data.playerStateData, "[CompanionEggs]");
+			JSON_Array<NVExtra,VExtra> arrUnlockedCompanionSlots = getArrayValue_optional(data.playerStateData, "[UnlockedCompanionSlots]");
 			companions = parseCompanionArray("Companions", arrCompanions);
 			eggs       = parseCompanionArray("CompanionEggs",arrCompanionEggs);
 			isUnlocked = parseBoolArray("UnlockedCompanionSlots",arrUnlockedCompanionSlots);
-			equipment  = parseObjectArray(Appearances.BlockCArray::new, "PlayerStateData.[??? j30]", true, data.firstPlayerStateData, "[??? j30]");
+			equipment  = parseObjectArray(Appearances.BlockCArray::new, "PlayerStateData.[??? j30]", true, data.playerStateData, "[??? j30]");
 		}
 		
 		public boolean isEmpty() {
@@ -2290,8 +2306,8 @@ public class SaveGameData
 		public final Vector<BlockContainer> currentSets;
 		
 		Appearances(SaveGameData data) {
-			playerPresets = parseObjectArray(Appearances.Block::new, "PlayerStateData.[??? cf5]", true, data.firstPlayerStateData,"[??? cf5]");
-			currentSets   = parseObjectArray(Appearances.BlockContainer::new, "PlayerStateData.[??? l:j]", data.firstPlayerStateData,"[??? l:j]");
+			playerPresets = parseObjectArray(Appearances.Block::new, "PlayerStateData.[??? cf5]", true, data.playerStateData,"[??? cf5]");
+			currentSets   = parseObjectArray(Appearances.BlockContainer::new, "PlayerStateData.[??? l:j]", data.playerStateData,"[??? l:j]");
 			
 			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_cf5", playerPresets);
 			if (DEBUG_LOG_VALUES) logArray("ExperimentalData", "array_lj" , currentSets  );
@@ -2756,7 +2772,7 @@ public class SaveGameData
 		}
 
 		private static Vector<Frigate> parse(SaveGameData data) {
-			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.firstPlayerStateData, "[Frigates]");
+			JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(data.playerStateData, "[Frigates]");
 			if (arrayValue==null) return null;
 			Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 			
@@ -2824,7 +2840,7 @@ public class SaveGameData
 	}
 
 	private void parseFrigateMissions() {
-		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(firstPlayerStateData, "[RunningFrigateMissions]");
+		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(playerStateData, "[RunningFrigateMissions]");
 		if (arrayValue==null) return;
 		Vector<JSON_Data.Value<NVExtra,VExtra>> notParsableObjects = new Vector<>();
 		
@@ -3205,7 +3221,7 @@ public class SaveGameData
 			dd.DT = getStringValue(ddObj,"DT");
 			
 			// DD.VP
-			JSON_Array<NVExtra,VExtra> vpArr = getArrayValue(ddObj,"VP");
+			JSON_Array<NVExtra,VExtra> vpArr = hasValue(ddObj,"VP") ? getArrayValue(ddObj,"VP") : null;
 			if (vpArr!=null) {
 				dd.VP = new Long[vpArr.size()];
 				for (int i=0; i<vpArr.size(); ++i)
@@ -3257,30 +3273,32 @@ public class SaveGameData
 		private void processDD(SaveGameData data, DDblock ddBlock, SourceArray sourceArray,
 				Consumer<Universe.ObjectWithSource> setSource, Consumer<Universe.ObjectWithSource> setParentsSource,
 				Runnable incDiscoveredItemOnPlanets, Runnable incDiscoveredItemInSolarSystms,
-				Consumer<Universe.DiscoverableObject> processDiscoverableObject) {
-			
-			if (ddBlock.UA!=null) {
-				
+				Consumer<Universe.DiscoverableObject> processDiscoverableObject)
+		{
+			if (ddBlock.UA!=null)
+			{
 				Universe.ObjectWithSource obj = data.universe.getOrCreate( ddBlock.UA, setSource, setParentsSource );
 				if (obj.type==Universe.Type.Planet     ) incDiscoveredItemOnPlanets.run();
 				if (obj.type==Universe.Type.SolarSystem) incDiscoveredItemInSolarSystms.run();
 				
-				if (ddBlock.DT!=null) {
-					
-					switch (ddBlock.DT) {
+				if (ddBlock.DT!=null)
+				{
+					switch (ddBlock.DT)
+					{
 					case "SolarSystem":
 					case "Planet": 
-						if (processDiscoverableObject!=null && objTypeEqualsDT(obj.type,ddBlock.DT) && obj instanceof Universe.DiscoverableObject)
-							processDiscoverableObject.accept((Universe.DiscoverableObject) obj);
+						if (processDiscoverableObject!=null && objTypeEqualsDT(obj.type,ddBlock.DT) && obj instanceof Universe.DiscoverableObject discovObj)
+							processDiscoverableObject.accept(discovObj);
 						obj.addDiscoveredItem(ddBlock.DT, sourceArray);
 						break;
 					case "Animal":
 					case "Mineral":
 					case "Sector":
 					case "Flora":
+					case "Interactable": // don't add DiscoveredItem // Why?
+					case "SpaceStation":
+					case "SpacePoi":
 						obj.addDiscoveredItem(ddBlock.DT, sourceArray);
-						break;
-					case "Interactable": // don't add DiscoveredItem
 						break;
 					default:
 						Gui.log_error_ln("Found unknown discovery type in %s: %s", sourceArray, ddBlock.DT);
@@ -3394,9 +3412,9 @@ public class SaveGameData
 			data_EQt = new DATA_EQt(); data_EQt.parse(data);
 			data_m4I = new DATA_m4I(); data_m4I.parse(data);
 			
-			maintenanceInteractions = parseObjectArray((o,i)->new MaintenanceInteraction(o,i, data, "MaintInt"     , "PlayerStateData.MaintenanceInteractions"), "PlayerStateData.MaintenanceInteractions", data.firstPlayerStateData, "MaintenanceInteractions");
-			array_VhC               = parseObjectArray((o,i)->new MaintenanceInteraction(o,i, data, "MaintInt(VhC)", "PlayerStateData.[??? VhC]"              ), "PlayerStateData.[??? VhC]"              , data.firstPlayerStateData, "[??? VhC]");
-			array_wyZ               = parseObjectArray((o,i)->new Data_wyZ(o,i,data), "PlayerStateData.[??? wyZ]", data.firstPlayerStateData, "[??? wyZ]");
+			maintenanceInteractions = parseObjectArray((o,i)->new MaintenanceInteraction(o,i, data, "MaintInt"     , "PlayerStateData.MaintenanceInteractions"), "PlayerStateData.MaintenanceInteractions", data.playerStateData, "MaintenanceInteractions");
+			array_VhC               = parseObjectArray((o,i)->new MaintenanceInteraction(o,i, data, "MaintInt(VhC)", "PlayerStateData.[??? VhC]"              ), "PlayerStateData.[??? VhC]"              , data.playerStateData, "[??? VhC]");
+			array_wyZ               = parseObjectArray((o,i)->new Data_wyZ(o,i,data), "PlayerStateData.[??? wyZ]", data.playerStateData, "[??? wyZ]");
 			
 			//globalOptionalValues.scanStructure(data.json_data,"PlayerStateData","MaintenanceInteractions");
 			//globalOptionalValues.scanStructure(data.json_data,"PlayerStateData","[??? VhC]");
@@ -3464,8 +3482,8 @@ public class SaveGameData
 			}
 			
 			void parse(SaveGameData data) {
-				if (!hasValue(data.firstPlayerStateData,path)) return; 
-				this.data = parseObjectArray(createNew, parseValues, Arrays.toString(path), data.firstPlayerStateData,path);
+				if (!hasValue(data.playerStateData,path)) return; 
+				this.data = parseObjectArray(createNew, parseValues, Arrays.toString(path), data.playerStateData,path);
 			}
 
 			public String getTabTitel() {
@@ -3529,7 +3547,7 @@ public class SaveGameData
 		public static class StoredInteraction {
 			
 			private static Vector<StoredInteraction> parse(SaveGameData data) {
-				return parseObjectArray(StoredInteraction::new, "PlayerStateData.StoredInteractions", data.firstPlayerStateData, "StoredInteractions");
+				return parseObjectArray(StoredInteraction::new, "PlayerStateData.StoredInteractions", data.playerStateData, "StoredInteractions");
 			}
 
 			public final int index;
@@ -3592,7 +3610,7 @@ public class SaveGameData
 							participant.BuildingLocation = Coordinates.parse(objectValue2, "BuildingLocation");
 						participant.ParticipantType  = getStringValue (objectValue2, "ParticipantType", "ParticipantType");
 					}, "MissionProgress.Participants", objectValue,"Participants");
-				}, "MissionProgress", data.firstPlayerStateData, "MissionProgress");
+				}, "MissionProgress", data.playerStateData, "MissionProgress");
 			}
 			
 		}
@@ -3627,7 +3645,7 @@ public class SaveGameData
 					marker.MissionID        = getStringValue (objectValue, "MissionID");
 					marker.MissionSeed      = getIntegerValue(objectValue, "MissionSeed");
 					marker.ParticipantType  = getStringValue (objectValue, "ParticipantType", "ParticipantType");
-				}, "MarkerStack", data.firstPlayerStateData, "MarkerStack");
+				}, "MarkerStack", data.playerStateData, "MarkerStack");
 			}
 		}
 
@@ -3662,44 +3680,44 @@ public class SaveGameData
 		
 		public void parse()
 		{
-			if (data.firstPlayerStateData==null)
+			if (data.playerStateData==null)
 				return;
 			
-			currentUniverseAddress = parseUniverseAddressStructure(data.firstPlayerStateData,"UniverseAddress");
+			currentUniverseAddress = parseUniverseAddressStructure(data.playerStateData,"UniverseAddress");
 			if (currentUniverseAddress!=null) {
 				if(currentUniverseAddress.isPlanet     ()) data.universe.getOrCreatePlanet     (currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 				if(currentUniverseAddress.isSolarSystem()) data.universe.getOrCreateSolarSystem(currentUniverseAddress,obj->obj.isCurrPos=true,obj->obj.containsCurrPos=true);
 			}
-			if (hasValue(data.firstPlayerStateData, "[CurrentBaseGalaxy]"))
-				currentBaseGalaxy = getIntegerValue( data.firstPlayerStateData, "[CurrentBaseGalaxy]");
+			if (hasValue(data.playerStateData, "[CurrentBaseGalaxy]"))
+				currentBaseGalaxy = getIntegerValue( data.playerStateData, "[CurrentBaseGalaxy]");
 			
-			if (hasValue(data.firstPlayerStateData, "AnomalyUniverseAddress"))
-				anomalyUA = parseUniverseAddressStructure(data.firstPlayerStateData,"AnomalyUniverseAddress");
-			graveUA       = parseUniverseAddressStructure(data.firstPlayerStateData,"GraveUniverseAddress");
-			if (    hasValue(data.firstPlayerStateData, "AnomalyPosition") &&
-					hasValue(data.firstPlayerStateData, "AnomalyMatrixLookAt") && 
-					hasValue(data.firstPlayerStateData, "AnomalyMatrixUp"))
-				anomalyPos = Position.parse(data.firstPlayerStateData, "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp");
-			if (    hasValue(data.firstPlayerStateData, "GravePosition") &&
-					hasValue(data.firstPlayerStateData, "GraveMatrixLookAt") && 
-					hasValue(data.firstPlayerStateData, "GraveMatrixUp"))
-				gravePos   = Position.parse(data.firstPlayerStateData, "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
+			if (hasValue(data.playerStateData, "AnomalyUniverseAddress"))
+				anomalyUA = parseUniverseAddressStructure(data.playerStateData,"AnomalyUniverseAddress");
+			graveUA       = parseUniverseAddressStructure(data.playerStateData,"GraveUniverseAddress");
+			if (    hasValue(data.playerStateData, "AnomalyPosition") &&
+					hasValue(data.playerStateData, "AnomalyMatrixLookAt") && 
+					hasValue(data.playerStateData, "AnomalyMatrixUp"))
+				anomalyPos = Position.parse(data.playerStateData, "AnomalyPosition", "AnomalyMatrixLookAt", "AnomalyMatrixUp");
+			if (    hasValue(data.playerStateData, "GravePosition") &&
+					hasValue(data.playerStateData, "GraveMatrixLookAt") && 
+					hasValue(data.playerStateData, "GraveMatrixUp"))
+				gravePos   = Position.parse(data.playerStateData, "GravePosition", "GraveMatrixLookAt", "GraveMatrixUp");
 			
 			
-			units           = getIntegerValue( data.firstPlayerStateData, "Units"           );
-			nanites         = getIntegerValue( data.firstPlayerStateData, "Nanites"         );
-			quicksilver     = getIntegerValue( data.firstPlayerStateData, "[Quicksilver]"   );
+			units           = getIntegerValue( data.playerStateData, "Units"           );
+			nanites         = getIntegerValue( data.playerStateData, "Nanites"         );
+			quicksilver     = getIntegerValue( data.playerStateData, "[Quicksilver]"   );
 			
-			playerHealth    = getIntegerValue( data.firstPlayerStateData, "Health"          );
-			playerShield    = getIntegerValue( data.firstPlayerStateData, "Shield"          );
-			energy          = getIntegerValue( data.firstPlayerStateData, "Energy"          );
-			shipHealth      = getIntegerValue( data.firstPlayerStateData, "ShipHealth"      );
-			shipShield      = getIntegerValue( data.firstPlayerStateData, "ShipShield"      );
+			playerHealth    = getIntegerValue( data.playerStateData, "Health"          );
+			playerShield    = getIntegerValue( data.playerStateData, "Shield"          );
+			energy          = getIntegerValue( data.playerStateData, "Energy"          );
+			shipHealth      = getIntegerValue( data.playerStateData, "ShipHealth"      );
+			shipShield      = getIntegerValue( data.playerStateData, "ShipShield"      );
 			
-			timeAlive       = getIntegerValue( data.firstPlayerStateData, "TimeAlive"       );
-			hazardTimeAlive = getIntegerValue( data.firstPlayerStateData, "HazardTimeAlive" );
+			timeAlive       = getIntegerValue( data.playerStateData, "TimeAlive"       );
+			hazardTimeAlive = getIntegerValue( data.playerStateData, "HazardTimeAlive" );
 			
-			knownGlyphsMask = getIntegerValue( data.firstPlayerStateData, "KnownPortalRunes");
+			knownGlyphsMask = getIntegerValue( data.playerStateData, "KnownPortalRunes");
 			
 			String field = "TotalPlayTime";
 			if (hasValue(data.json_data, PLAYER_STATE_DATA, field))
@@ -3763,7 +3781,7 @@ public class SaveGameData
 				data.universe.getOrCreate(sys.ua,obj->obj.foundInVisitedSystems=true);
 				
 				return sys;
-			}, "VisitedSystems", data.firstPlayerStateData, "VisitedSystems");
+			}, "VisitedSystems", data.playerStateData, "VisitedSystems");
 		}
 	}
 	
@@ -4163,7 +4181,7 @@ public class SaveGameData
 				case StoreData    : map = discoveredItems_Store; break;
 				}
 				Objects.requireNonNull(map);
-				int value = map.getOrDefault(map, 0);
+				int value = map.getOrDefault(itemLabel, 0);
 				map.put(itemLabel, value+1);
 			}
 			
@@ -4800,8 +4818,8 @@ public class SaveGameData
 	}
 
 	private KnownWords parseKnownWords(String arrLabel, String wordLabel, String racesLabel) {
-		if (!hasValue(firstPlayerStateData,arrLabel)) return null;
-		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(firstPlayerStateData,arrLabel);
+		if (!hasValue(playerStateData,arrLabel)) return null;
+		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(playerStateData,arrLabel);
 		KnownWords array;
 		if (arrayValue==null)
 			array = null;
@@ -4879,7 +4897,7 @@ public class SaveGameData
 	}
 	
 	private void parseStats() {
-		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(firstPlayerStateData,"Stats");
+		JSON_Array<NVExtra,VExtra> arrayValue = getArrayValue(playerStateData,"Stats");
 		if (arrayValue==null) { stats = null; return; }
 		stats = new Stats(this);
 		stats.parse(arrayValue);

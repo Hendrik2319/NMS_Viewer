@@ -54,6 +54,8 @@ class GeneralDataPanel extends SaveGameViewTabPanel {
 			for (JTextArea t:textAreas) t.setText("");
 			
 			currentTextArea = 0;
+			if (data.playerStateDataSource!=null)
+				appendLine("[%s Storage]".formatted(data.playerStateDataSource));
 			appendValueO("Current Units      ", data.general.units );
 			appendValue ("Current Nanites    ", 10, data.general.nanites );
 			appendValue ("Current Quicksilver", 10, data.general.quicksilver );
