@@ -11337,6 +11337,12 @@ blackhole=false
 
 [Pln11BD000843F557]
 
+[Reg0000000045E583]
+
+[Sys0038000045E583]
+atlasinterface=false
+blackhole=false
+
 [Reg0000008D40158A]
 
 [Sys0133008D40158A]
@@ -14087,6 +14093,17 @@ blackhole=false
 [Sys01F100000007FF]
 atlasinterface=false
 blackhole=false
+
+[Reg0000010045E583]
+name=Aferoom-Untiefe
+
+[Sys0038010045E583]
+name=Ikonawac
+atlasinterface=false
+blackhole=false
+
+[Pln4038010045E583]
+name=Itfalop Sigma
 
 [Reg000006006A5E0D]
 name=Mawurdoyl-Nebel

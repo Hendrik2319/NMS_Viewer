@@ -1,4 +1,5 @@
 [IDs]
+^=
 ^AF_METAL=Unreines Metall
 ^AF_METAL.type=Special
 ^AF_METAL.symbol=Un
@@ -238,6 +239,7 @@
 ^SAND1.symbol=Si
 ^SAND1.image=SUBSTANCE.SAND.1.png
 ^SAND1.imageBG=8A7F72
+^SLIMEPOST1=
 ^SOULFRAG=Fragmentierte Qualia
 ^SOULFRAG.type=Special
 ^SOULFRAG.symbol=?
