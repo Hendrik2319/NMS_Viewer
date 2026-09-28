@@ -76,7 +76,7 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		if (data.spaceShips      .vehicles!=null) addTab("SpaceShips"       , new InventoryListPanel(mainwindow).addInv(data.spaceShips      .vehicles));
 		if (data.storedSpaceShips.vehicles!=null) addTab("Stored SpaceShips", new InventoryListPanel(mainwindow).addInv(data.storedSpaceShips.vehicles));
 		if (data.exocrafts       .vehicles!=null) addTab("Exocrafts"        , new InventoryListPanel(mainwindow).addInv(data.exocrafts       .vehicles));
-		addTab("Containers", new InventoryListPanel(mainwindow,0,2).addInv(data.inventories.chests));
+		addTab("Containers", new InventoryListPanel(mainwindow,0,determineColCount(data.inventories.chests)).addInv(data.inventories.chests));
 		addTab("Other"     , new InventoryListPanel(mainwindow).addInv(data.inventories.ingredientStorage,data.inventories.baseSalvageCapsule,data.inventories.freighterSalvageCapsule));
 
 		tabbedPane.addChangeListener(new ChangeListener() {
@@ -88,6 +88,13 @@ final class InventoriesPanel extends SaveGameViewTabPanel {
 		add(tabbedPane,BorderLayout.CENTER);
 	}
 
+	private int determineColCount(Inventory[] chests)
+	{
+		for (Inventory chest : chests)
+			if (chest.width>7)
+				return 1;
+		return 2;
+	}
 
 	private void addTab(String title, InventoryListPanel listPanel) {
 		tabbedPane.addTab(title, listPanel);
