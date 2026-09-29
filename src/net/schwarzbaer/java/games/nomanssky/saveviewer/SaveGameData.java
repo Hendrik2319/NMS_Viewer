@@ -2630,6 +2630,8 @@ public class SaveGameData
 			INVULN_TER_2  ("Fortgeschrittene Wartungsdrohnen","Schadensreduzierung"),
 			INVULN_TER_3  ("Holografische Komponenten"       ,"Schadensreduzierung"),
 			
+			LIVING_EXP_PRI("Echolot"                     ,"Erkundung: +15"),
+			PIRATE_PRI    ("Spezialist für Überfälle"    ,"Kampf: +15")
 			;
 			
 			private String label;

@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -88,6 +89,7 @@ import net.schwarzbaer.java.games.nomanssky.saveviewer.views.SimplePanels;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TableView.SimplifiedTable;
 import net.schwarzbaer.java.games.nomanssky.saveviewer.views.TreeView;
 import net.schwarzbaer.java.lib.gui.Disabler;
+import net.schwarzbaer.java.lib.gui.FileChooser;
 import net.schwarzbaer.java.lib.gui.HexViewPanel;
 import net.schwarzbaer.java.lib.gui.IconSource;
 import net.schwarzbaer.java.lib.gui.ProgressDialog;
@@ -1534,6 +1536,7 @@ public class SaveViewer implements ActionListener {
 		private SaveGameListModel.Row clickedRow;
 		private int[] selectedRowIndexes;
 		private SaveGameListModel.Row[] selectedRows;
+		private final FileChooser jsonFileChooser;
 		
 		SaveGameListPanel()
 		{
@@ -1541,6 +1544,7 @@ public class SaveViewer implements ActionListener {
 			clickedRow = null;
 			selectedRowIndexes = null;
 			selectedRows = null;
+			jsonFileChooser = new FileChooser("JSON-File", "json");
 			
 			tableModel = new SaveGameListModel(loadedSaveGames);
 			table = new SimplifiedTable<>("SaveGameList",tableModel,true,SaveViewer.DEBUG,true);
@@ -1562,6 +1566,7 @@ public class SaveViewer implements ActionListener {
 			contextMenu.addSeparator();
 			JMenuItem miLoad         = contextMenu.add(Gui.createMenuItem("###", e->openSaveGame ( clickedRow ), Gui.ToolbarIcons.Open));
 			JMenuItem miLoadSelected = contextMenu.add(Gui.createMenuItem("###", e->openSaveGames(selectedRows), Gui.ToolbarIcons.Open));
+			JMenuItem miSaveRawJSON  = contextMenu.add(Gui.createMenuItem("###", e->writeRawJson ( clickedRow ), Gui.ToolbarIcons.Save));
 			
 			table.addContextMenuInvokeListener((rowV,colV)->{
 				clickedRowIndex = rowV<0 ? -1 : table.convertRowIndexToModel(rowV);
@@ -1579,8 +1584,10 @@ public class SaveViewer implements ActionListener {
 					.toArray(SaveGameListModel.Row[]::new);
 				
 				miLoad        .setEnabled(clickedRow!=null && clickedRow.file.isFile());
+				miSaveRawJSON .setEnabled(clickedRow!=null && clickedRow.file.isFile());
 				miLoadSelected.setEnabled(selectedRows!=null && selectedRows.length>0);
 				miLoad        .setText("▶ Load %s (double-click)".formatted( clickedRow!=null ? clickedRow.file.getName() : "File" ));
+				miSaveRawJSON .setText("Save decoded content of %s".formatted( clickedRow!=null ? clickedRow.file.getName() : "File" ));
 				miLoadSelected.setText("Load %s".formatted(
 						selectedRows==null || selectedRows.length<=0
 							? "selected save games"
@@ -1636,6 +1643,31 @@ public class SaveViewer implements ActionListener {
 				tableModel.updateLoadedState(row);
 				System.gc();
 				if (DEBUG_MEMORY) Gui.showMemoryUsage(System.err, true);
+			}
+		}
+
+		private void writeRawJson(SaveGameListModel.Row row)
+		{
+			if (row == null || !row.file.isFile())
+				return;
+			
+			byte[] bytes = SaveGameDecoder.decodeFile(row.file);
+			if (bytes == null || bytes.length == 0)
+				return;
+			
+			jsonFileChooser.setSelectedFile(new File(row.file.getName()+".json"));
+			if (jsonFileChooser.showSaveDialog(mainWindow) != JFileChooser.APPROVE_OPTION)
+				return;
+			
+			File file = jsonFileChooser.getSelectedFile();
+			try
+			{
+				Files.write(file.toPath(), bytes);
+			}
+			catch (IOException ex)
+			{
+				System.err.printf("IOException while writing to file \"%s\": %s%n", file.getAbsolutePath(), ex.getMessage());
+				// ex.printStackTrace();
 			}
 		}
 		
