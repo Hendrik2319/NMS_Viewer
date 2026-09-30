@@ -363,19 +363,22 @@ public class SimplePanels {
 		private JTextArea textArea;
 		private Frigate selected;
 		private int selectedRow;
+		private boolean showModIDs;
 		
 		public FrigatesPanel(SaveGameData data, Window mainWindow) {
 			super(data);
 			textArea = new JTextArea();
 			selected = null;
 			selectedRow = -1;
+			showModIDs = false;
 			
+			// [35, 180, 105 80, 165 70, 70, 70, 70, 50, 50, 50, 50, 50, 50, 50, 130, 130, 70]
 			VerySimpleTable<SaveGameData.Frigate> table = new VerySimpleTable<>("FrigatesTable",true,SaveViewer.DEBUG,true, data.frigates, new ColumnID[] {
 				new ColumnID("#"               ,   Integer.class, 35, -1,  35,  35, (fr,row)->row+1),
 				new ColumnID("Name"            ,    String.class, 35, -1, 180, 180, (fr,row)->fr.name==null || fr.name.isEmpty() ? "<Frigate "+(row+1)+">" : fr.name),
-				new ColumnID("Ship Type"       ,    String.class, 35, -1,  80,  80, fr->fr.shipType),
+				new ColumnID("Ship Type"       ,    String.class, 35, -1, 105, 105, fr->fr.shipType),
 				new ColumnID("Crew Race"       ,    String.class, 35, -1,  80,  80, fr->fr.crewRace),
-				new ColumnID("Aquired"         , TimeStamp.class, 35, -1, 120, 120, fr->fr.aquired),
+				new ColumnID("Aquired"         , TimeStamp.class, 35, -1, 165, 165, fr->fr.aquired),
 				new ColumnID("Fights"          ,      Long.class, 35, -1,  70,  70, fr->fr.successfulFights),
 				new ColumnID("Expeditions"     ,      Long.class, 35, -1,  70,  70, fr->fr.expeditions),
 				new ColumnID("Damages"         ,      Long.class, 35, -1,  70,  70, fr->fr.damages),
@@ -420,6 +423,11 @@ public class SimplePanels {
 					JOptionPane.showMessageDialog(mainWindow, "No editable modifications in current frigate.", "No Editable Modifications", JOptionPane.INFORMATION_MESSAGE);
 				}
 			}));
+			contextMenu.add(Gui.createCheckBoxMenuItem("Show ModIDs", showModIDs, (Boolean b)->{
+				showModIDs = b;
+				showValues();
+			}));
+			
 			textArea.addMouseListener(new MouseInputAdapter() {
 				@Override public void mouseClicked(MouseEvent e) {
 					if (e.getButton()==MouseEvent.BUTTON3)
@@ -476,8 +484,24 @@ public class SimplePanels {
 			appendln("Diplomacy   : %s ", selected.diplomacyValue  ==null ? "" : selected.diplomacyValue   );
 			appendln();
 			appendln("Modifications :");
-			for (Frigate.Modification mod:selected.modifications) {
-				appendln("    %s:", mod.getLabel());
+			for (Frigate.Modification mod : selected.modifications) {
+				if (showModIDs)
+				{
+					if (mod instanceof Frigate.KnownModification knownMod)
+						appendln("    %s (Known:^%s):", knownMod.getLabel(), knownMod.name());
+					
+					else if (mod instanceof Frigate.EditableModification editMod)
+					{
+						String defaultLabel = "\"%s\"".formatted(editMod.modStr);
+						if (!defaultLabel.equals(editMod.label))
+							appendln("    %s (Editable:%s):", editMod.getLabel(), editMod.modStr);
+						else
+							appendln("    %s (Editable):", editMod.getLabel());
+					}
+					else
+						appendln("    %s (???):", mod.getLabel());
+				} else
+					appendln("    %s:", mod.getLabel());
 				appendln("        %s", mod.getValue() );
 			}
 			appendln();

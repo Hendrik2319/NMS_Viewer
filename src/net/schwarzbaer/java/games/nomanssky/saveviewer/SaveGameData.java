@@ -2536,102 +2536,161 @@ public class SaveGameData
 		}
 	
 		public enum KnownModification implements Modification {
-			EXPLORE_PRI   ("Erkundungsspezialist"        ,"Erkundung: +15"),
-			EXPLORE_SEC_1 ("Anomalienscanner"            ,"Erkundung: +2"),
-			EXPLORE_SEC_2 ("Spektrum für interstellare Signale","Kampf: +4"),
-			EXPLORE_SEC_3 ("Kartografiedrohnen"          ,"Erkundung: +6"),
-			EXPLORE_SEC_4 ("Echtzeit-Archivierungsgerät" ,"Erkundung: +2"),
-			EXPLORE_SEC_5 ("Gravitations-Visualisierer"  ,"Erkundung: +4"),
-			EXPLORE_SEC_6 ("Raumzeitanomalienschild"     ,"Erkundung: +6"),
-			EXPLORE_TER_1 ("Planetendaten-Schöpfer"      ,"Erkundung: +1"),
-			EXPLORE_TER_2 ("Heimlich mitreisender Botaniker","Erkundung: +2"),
-			EXPLORE_TER_3 ("Funkteleskope"               ,"Erkundung: +3"),
-			EXPLORE_TER_4 ("Fauna-Analysegerät"          ,"Kampf: +1"),
-			EXPLORE_TER_5 ("Holographische Anzeigen"     ,"Erkundung: +2"),
-			EXPLORE_TER_6 ("Langstreckensensoren"        ,"Erkundung: +3"),
-			EXPLORE_BAD_1 ("Wandernder Kompass"          ,"Erkundung: -2"),
-			EXPLORE_BAD_3 ("Nicht kalibrierter Warpantrieb","Erkundung: -6"),
+			EXPLORE_PRI        ("Erkundungsspezialist"             ,"Erkundung: +15"),
+			EXPLORE_SEC_1      ("Anomalienscanner"                 ,"Erkundung: +2"),
+			EXPLORE_SEC_2      ("Spektrum für interstellare Signale","Kampf: +4"),
+			EXPLORE_SEC_3      ("Kartografiedrohnen"               ,"Erkundung: +6"),
+			EXPLORE_SEC_4      ("Echtzeit-Archivierungsgerät"      ,"Erkundung: +2"),
+			EXPLORE_SEC_5      ("Gravitations-Visualisierer"       ,"Erkundung: +4"),
+			EXPLORE_SEC_6      ("Raumzeitanomalienschild"          ,"Erkundung: +6"),
+			EXPLORE_TER_1      ("Planetendaten-Schöpfer"           ,"Erkundung: +1"),
+			EXPLORE_TER_2      ("Heimlich mitreisender Botaniker"  ,"Erkundung: +2"),
+			EXPLORE_TER_3      ("Funkteleskope"                    ,"Erkundung: +3"),
+			EXPLORE_TER_4      ("Fauna-Analysegerät"               ,"Kampf: +1"),
+			EXPLORE_TER_5      ("Holographische Anzeigen"          ,"Erkundung: +2"),
+			EXPLORE_TER_6      ("Langstreckensensoren"             ,"Erkundung: +3"),
+			EXPLORE_BAD_1      ("Wandernder Kompass"               ,"Erkundung: -2"),
+		// ^EXPLORE_BAD_2      (""^EXPLORE_BAD_2""                 ,"???"),
+			EXPLORE_BAD_3      ("Nicht kalibrierter Warpantrieb"   ,"Erkundung: -6"),
+		// ^EXPLORE_BAD_4
+		// ^EXPLORE_BAD_5      (""^EXPLORE_BAD_5""                 ,"???"),
 			
-			MINING_PRI    ("Industriespezialist"          ,"Industrie: +15"),
-			MINING_SEC_1  ("Laserbohranordnung"           ,"Industrie: +2"),
-			MINING_SEC_2  ("Traktorstrahl"                ,"Kampf: +4"),
-			MINING_SEC_3  ("Ultraschallschweißer"         ,"Industrie: +6"),
-			MINING_SEC_4  ("Erzverarbeitungseinheit"      ,"Industrie: +2"),
-			MINING_SEC_5  ("Terraforming-Strahlen"        ,"Industrie: +4"),
-			MINING_SEC_6  ("Asteroidenpulverisierer"      ,"Industrie: +6"),
-			MINING_TER_1  ("Mineralienextraktoren"        ,"Industrie: +1"),
-			MINING_TER_2  ("Ausfahrbare Bohrer"           ,"Industrie: +2"),
-			MINING_TER_3  ("Asteroidenscanner"            ,"Industrie: +3"),
-			MINING_TER_4  ("Erntedrohnen"                 ,"Kampf: +1"),
-			MINING_TER_5  ("Metalldetektor"               ,"Industrie: +2"),
-			MINING_TER_6  ("Ferngesteuerte Bergbaueinheit","Industrie: +3"),
-			MINING_BAD_2  ("Kleine Behälter"              ,"Industrie: -4"),
-			MINING_BAD_3  ("Ungeschickter Bohrarbeiter"   ,"Industrie: -6"),
-			MINING_BAD_5  ("Defekte Drohnen"              ,"Industrie: -2"),
+			MINING_PRI         ("Industriespezialist"              ,"Industrie: +15"),
+			MINING_SEC_1       ("Laserbohranordnung"               ,"Industrie: +2"),
+			MINING_SEC_2       ("Traktorstrahl"                    ,"Kampf: +4"),
+			MINING_SEC_3       ("Ultraschallschweißer"             ,"Industrie: +6"),
+			MINING_SEC_4       ("Erzverarbeitungseinheit"          ,"Industrie: +2"),
+			MINING_SEC_5       ("Terraforming-Strahlen"            ,"Industrie: +4"),
+			MINING_SEC_6       ("Asteroidenpulverisierer"          ,"Industrie: +6"),
+			MINING_TER_1       ("Mineralienextraktoren"            ,"Industrie: +1"),
+			MINING_TER_2       ("Ausfahrbare Bohrer"               ,"Industrie: +2"),
+			MINING_TER_3       ("Asteroidenscanner"                ,"Industrie: +3"),
+			MINING_TER_4       ("Erntedrohnen"                     ,"Kampf: +1"),
+			MINING_TER_5       ("Metalldetektor"                   ,"Industrie: +2"),
+			MINING_TER_6       ("Ferngesteuerte Bergbaueinheit"    ,"Industrie: +3"),
+		// ^MINING_BAD_1
+			MINING_BAD_2       ("Kleine Behälter"                  ,"Industrie: -4"),
+			MINING_BAD_3       ("Ungeschickter Bohrarbeiter"       ,"Industrie: -6"),
+		// ^MINING_BAD_4
+			MINING_BAD_5       ("Defekte Drohnen"                  ,"Industrie: -2"),
 			
-			COMBAT_PRI    ("Kampfspezialist"               ,"Kampf: +15"),
-			COMBAT_SEC_1  ("Gewaltige Kanonen"             ,"Kampf: +2"),
-			COMBAT_SEC_2  ("Ablative Panzerung"            ,"Kampf: +4"),
-			COMBAT_SEC_3  ("Tarngerät"                     ,"Kampf: +6"),
-			COMBAT_SEC_4  ("Ultraschallwaffe"              ,"Kampf: +2"),
-			COMBAT_SEC_5  ("Experimentelle Waffen"         ,"Kampf: +4"),
-			COMBAT_SEC_6  ("Gigantische Kanonen"           ,"Kampf: +6"),
-			COMBAT_TER_1  ("Versteckte Waffen"             ,"Kampf: +1"),
-			COMBAT_TER_2  ("Munitionshersteller"           ,"Kampf: +2"),
-			COMBAT_TER_3  ("Verstärkter Rumpf"             ,"Kampf: +3"),
-			COMBAT_TER_4  ("Aggressive Sonden"             ,"Kampf: +1"),
-			COMBAT_TER_5  ("Wütender Kapitän"              ,"Kampf: +2"),
-			COMBAT_TER_6  ("Nachgerüstete Geschütze"       ,"Kampf: +3"),
-			COMBAT_BAD_1  ("Feige Schützen"                ,"Kampf: -2"),
-			COMBAT_BAD_2  ("Raketenwerfer aus zweiter Hand","Kampf: -4"),
-			COMBAT_BAD_3  ("Defekte Torpedos"              ,"Kampf: -6"),
-			COMBAT_BAD_4  ("Zerbrechlicher Rumpf"          ,"Kampf: -2"),
+			COMBAT_PRI         ("Kampfspezialist"                  ,"Kampf: +15"),
+			COMBAT_SEC_1       ("Gewaltige Kanonen"                ,"Kampf: +2"),
+			COMBAT_SEC_2       ("Ablative Panzerung"               ,"Kampf: +4"),
+			COMBAT_SEC_3       ("Tarngerät"                        ,"Kampf: +6"),
+			COMBAT_SEC_4       ("Ultraschallwaffe"                 ,"Kampf: +2"),
+			COMBAT_SEC_5       ("Experimentelle Waffen"            ,"Kampf: +4"),
+			COMBAT_SEC_6       ("Gigantische Kanonen"              ,"Kampf: +6"),
+			COMBAT_TER_1       ("Versteckte Waffen"                ,"Kampf: +1"),
+			COMBAT_TER_2       ("Munitionshersteller"              ,"Kampf: +2"),
+			COMBAT_TER_3       ("Verstärkter Rumpf"                ,"Kampf: +3"),
+			COMBAT_TER_4       ("Aggressive Sonden"                ,"Kampf: +1"),
+			COMBAT_TER_5       ("Wütender Kapitän"                 ,"Kampf: +2"),
+			COMBAT_TER_6       ("Nachgerüstete Geschütze"          ,"Kampf: +3"),
+			COMBAT_BAD_1       ("Feige Schützen"                   ,"Kampf: -2"),
+			COMBAT_BAD_2       ("Raketenwerfer aus zweiter Hand"   ,"Kampf: -4"),
+			COMBAT_BAD_3       ("Defekte Torpedos"                 ,"Kampf: -6"),
+			COMBAT_BAD_4       ("Zerbrechlicher Rumpf"             ,"Kampf: -2"),
 			
-			TRADING_PRI   ("Handelspezialist"            ,"Handel: +15"),
-			TRADING_SEC_1 ("Handelsanalysecomputer"      ,"Handel: +2"),
-			TRADING_SEC_4 ("Schlafdrohnen"               ,"Handel: +2"),
-			TRADING_SEC_5 ("Propagandagerät"             ,"Handel: +4"),
-			TRADING_SEC_6 ("Teleportationsgerät"         ,"Handel: +6"),
-			TRADING_TER_1 ("Wirtschaftsscanner"          ,"Handel: +1"),
-			TRADING_TER_2 ("Ferngesteuerter Marktanalysator","Handel: +2"),
-			TRADING_TER_3 ("Roboterdiener"               ,"Handel: +3"),
-			TRADING_TER_4 ("Automatischer Übersetzer"    ,"Handel: +1"),
-			TRADING_TER_5 ("Verhandlungsmodul"           ,"Handel: +2"),
-			TRADING_TER_6 ("Gut gepflegte Crew"          ,"Handel: +3"),
-			TRADING_BAD_2 ("Kleiner Frachtraum"          ,"Handel: -4"),
-			TRADING_BAD_4 ("Dieb an Bord"                ,"Handel: -4"),
+			TRADING_PRI        ("Handelspezialist"                 ,"Handel: +15"),
+			TRADING_SEC_1      ("Handelsanalysecomputer"           ,"Handel: +2"),
+		// ^TRADING_SEC_2      (""^TRADING_SEC_2""                 ,"???"),
+		// ^TRADING_SEC_3      (""^TRADING_SEC_3""                 ,"???"),
+			TRADING_SEC_4      ("Schlafdrohnen"                    ,"Handel: +2"),
+			TRADING_SEC_5      ("Propagandagerät"                  ,"Handel: +4"),
+			TRADING_SEC_6      ("Teleportationsgerät"              ,"Handel: +6"),
+			TRADING_TER_1      ("Wirtschaftsscanner"               ,"Handel: +1"),
+			TRADING_TER_2      ("Ferngesteuerter Marktanalysator"  ,"Handel: +2"),
+			TRADING_TER_3      ("Roboterdiener"                    ,"Handel: +3"),
+			TRADING_TER_4      ("Automatischer Übersetzer"         ,"Handel: +1"),
+			TRADING_TER_5      ("Verhandlungsmodul"                ,"Handel: +2"),
+			TRADING_TER_6      ("Gut gepflegte Crew"               ,"Handel: +3"),
+		// ^TRADING_BAD_1
+			TRADING_BAD_2      ("Kleiner Frachtraum"               ,"Handel: -4"),
+		// ^TRADING_BAD_3
+			TRADING_BAD_4      ("Dieb an Bord"                     ,"Handel: -4"),
 			
-			SPEED_TER_1   ("Ortszeit-Dilator"             ,"-1% Expeditionszeit"),
-			SPEED_TER_2   ("Masseantrieb"                 ,"-1% Expeditionsdauer"),
-			SPEED_TER_3   ("Navigationsexperte"           ,"-2% Expeditionsdauer"),
-			SPEED_TER_4   ("Warp-Antrieb"                 ,"-2% Expeditionsdauer"),
-			SPEED_TER_5   ("Wurmlochgenerator"            ,"-3% Expeditionsdauer"),
-			SPEED_TER_6   ("Experimenteller Impulsantrieb","-3% Expeditionsdauer"),
-			SPEED_TER_7   ("Motivierte Crew"              ,"-2% Expeditionsdauer"),
-			SPEED_TER_8   ("Dynamischer Ballast"         ,"-2% Expeditionsdauer "),
+			SPEED_TER_1        ("Ortszeit-Dilator"                 ,"-1% Expeditionszeit"),
+			SPEED_TER_2        ("Masseantrieb"                     ,"-1% Expeditionsdauer"),
+			SPEED_TER_3        ("Navigationsexperte"               ,"-2% Expeditionsdauer"),
+			SPEED_TER_4        ("Warp-Antrieb"                     ,"-2% Expeditionsdauer"),
+			SPEED_TER_5        ("Wurmlochgenerator"                ,"-3% Expeditionsdauer"),
+			SPEED_TER_6        ("Experimenteller Impulsantrieb"    ,"-3% Expeditionsdauer"),
+			SPEED_TER_7        ("Motivierte Crew"                  ,"-2% Expeditionsdauer"),
+			SPEED_TER_8        ("Dynamischer Ballast"              ,"-2% Expeditionsdauer"),
 			
-			FUEL_PRI      ("Unterstützungsspezialist"    ,"Treibstoffkosten der Expedition: -15"),
-			FUEL_SEC_4    ("Antimateria-Cycler"          ,"Treibstoffkosten der Expedition: -3"),
-			FUEL_SEC_5    ("Fortgeschrittener Stromverteiler","Treibstoffkosten der Expedition: -6"),
-			FUEL_SEC_6    ("Tragbarer Fusionszünder"     ,"Treibstoffkosten der Expedition: -9"),
-			FUEL_TER_1    ("Sauerstoffwiederverwerter"   ,"Treibstoffkosten der Expedition: -2"),
-			FUEL_TER_2    ("Abgestimmte Antriebe"        ,"Treibstoffkosten der Expedition: -4"),
-			FUEL_TER_3    ("Robotercrew"                 ,"Treibstoffkosten der Expedition: -6"),
-			FUEL_TER_4    ("Photonensegel"               ,"Treibstoffkosten der Expedition: -2"),
-			FUEL_TER_5    ("Übertakteter Stromverteiler" ,"Treibstoffkosten der Expedition: -4"),
-			FUEL_TER_6    ("Solarmodule"                 ,"Treibstoffkosten der Expedition: -6"),
-			FUEL_TER_7    ("Effizienter Warpantrieb"     ,"Treibstoffkosten der Expedition: -4"),
-			FUEL_BAD_1    ("Durstige Crew"               ,"Kosten pro Warp: +1"),
-			FUEL_BAD_2    ("Ineffizienter Antrieb"       ,"Kosten pro Warp: +2"),
-			FUEL_BAD_3    ("Undichte Treibstoffrohre"    ,"Kosten pro Warp: +4"),
-			FUEL_BAD_5    ("Ölbrenner"                   ,"Kosten pro Warp: +1"),
+			FUEL_PRI           ("Unterstützungsspezialist"         ,"Treibstoffkosten der Expedition: -15"),
+		// ^FUEL_SEC_1         (""^FUEL_SEC_1""                    ,"???"),
+		// ^FUEL_SEC_2         (""^FUEL_SEC_2""                    ,"???"),
+		// ^FUEL_SEC_3
+			FUEL_SEC_4         ("Antimateria-Cycler"               ,"Treibstoffkosten der Expedition: -3"),
+			FUEL_SEC_5         ("Fortgeschrittener Stromverteiler" ,"Treibstoffkosten der Expedition: -6"),
+			FUEL_SEC_6         ("Tragbarer Fusionszünder"          ,"Treibstoffkosten der Expedition: -9"),
+			FUEL_TER_1         ("Sauerstoffwiederverwerter"        ,"Treibstoffkosten der Expedition: -2"),
+			FUEL_TER_2         ("Abgestimmte Antriebe"             ,"Treibstoffkosten der Expedition: -4"),
+			FUEL_TER_3         ("Robotercrew"                      ,"Treibstoffkosten der Expedition: -6"),
+			FUEL_TER_4         ("Photonensegel"                    ,"Treibstoffkosten der Expedition: -2"),
+			FUEL_TER_5         ("Übertakteter Stromverteiler"      ,"Treibstoffkosten der Expedition: -4"),
+			FUEL_TER_6         ("Solarmodule"                      ,"Treibstoffkosten der Expedition: -6"),
+			FUEL_TER_7         ("Effizienter Warpantrieb"          ,"Treibstoffkosten der Expedition: -4"),
+			FUEL_BAD_1         ("Durstige Crew"                    ,"Kosten pro Warp: +1"),
+			FUEL_BAD_2         ("Ineffizienter Antrieb"            ,"Kosten pro Warp: +2"),
+			FUEL_BAD_3         ("Undichte Treibstoffrohre"         ,"Kosten pro Warp: +4"),
+		// ^FUEL_BAD_4
+			FUEL_BAD_5         ("Ölbrenner"                        ,"Kosten pro Warp: +1"),
 			
-			INVULN_TER_1  ("Sich selbst reparierender Rumpf" ,"Schadensreduzierung"),
-			INVULN_TER_2  ("Fortgeschrittene Wartungsdrohnen","Schadensreduzierung"),
-			INVULN_TER_3  ("Holografische Komponenten"       ,"Schadensreduzierung"),
+			INVULN_TER_1       ("Sich selbst reparierender Rumpf"  ,"Schadensreduzierung"),
+			INVULN_TER_2       ("Fortgeschrittene Wartungsdrohnen" ,"Schadensreduzierung"),
+			INVULN_TER_3       ("Holografische Komponenten"        ,"Schadensreduzierung"),
 			
-			LIVING_EXP_PRI("Echolot"                     ,"Erkundung: +15"),
-			PIRATE_PRI    ("Spezialist für Überfälle"    ,"Kampf: +15")
+			PIRATE_PRI         ("Spezialist für Überfälle"         ,"Kampf: +15"),
+			
+		// ^DEEPSPACE_1        (""^DEEPSPACE_1""                   ,"???"),
+		// ^DEEPSPACE_2        (""^DEEPSPACE_2""                   ,"???"),
+		// ^DEEPSPACE_3        (""^DEEPSPACE_3""                   ,"???"),
+		// ^DEEPSPACE_4        (""^DEEPSPACE_4""                   ,"???"),
+		// ^DEEPSPACE_5        (""^DEEPSPACE_5""                   ,"???"),
+			
+		// ^GHOSTSHIP_1        (""^GHOSTSHIP_1""                   ,"???"),
+		// ^GHOSTSHIP_2        (""^GHOSTSHIP_2""                   ,"???"),
+		// ^GHOSTSHIP_3        (""^GHOSTSHIP_3""                   ,"???"),
+		// ^GHOSTSHIP_4        (""^GHOSTSHIP_4""                   ,"???"),
+		// ^GHOSTSHIP_5        (""^GHOSTSHIP_5""                   ,"???"),
+			
+		// ^NORMANDY_1         (""^NORMANDY_1""                    ,"???"),
+		// ^NORMANDY_2         (""^NORMANDY_2""                    ,"???"),
+		// ^NORMANDY_3         (""^NORMANDY_3""                    ,"???"),
+		// ^NORMANDY_4         (""^NORMANDY_4""                    ,"???"),
+		// ^NORMANDY_5         (""^NORMANDY_5""                    ,"???"),
+			
+			LIVING_EXP_PRI     ("Echolot"                          ,"Erkundung: +15"),
+		// ^LIVING_EXP_S_1
+			LIVING_EXP_S_2     ("Retrokognition"                   ,"Erkundung: +6"),
+		// ^LIVING_EXP_T_1     (""^LIVING_EXP_T_1""                ,"???"),
+			
+		// ^LIVING_FUEL_PRI    (""^LIVING_FUEL_PRI""               ,"???"),
+		// ^LIVING_FUEL_S_1
+		// ^LIVING_FUEL_S_2
+			LIVING_FUEL_S_3    ("Müheloser Antrieb"                ,"Kampf: +4"),
+		// ^LIVING_FUEL_S_4
+		// ^LIVING_FUEL_S_5    (""^LIVING_FUEL_S_5""               ,"???"),
+		// ^LIVING_FUEL_T_1    (""^LIVING_FUEL_T_1""               ,"???"),
+			
+		// ^LIVING_MIN_PRI
+		// ^LIVING_MIN_S_1
+		// ^LIVING_MIN_S_2
+			LIVING_MIN_S_3     ("Auslaugende Galle"                ,"Industrie: +4"),
+			
+			LIVING_TRA_PRI     ("Faszinierende Stimme"             ,"Handel: +15"),
+		// ^LIVING_TRA_S_1
+		// ^LIVING_TRA_S_2
+		// ^LIVING_TRA_S_3     (""^LIVING_TRA_S_3""                ,"???"),
+		// ^LIVING_TRA_S_4
+		// ^LIVING_TRA_S_5
+		// ^LIVING_TRA_S_6     (""^LIVING_TRA_S_6""                ,"???"),
+		// ^LIVING_TRA_T_1
+		// ^LIVING_TRA_T_2     (""^LIVING_TRA_T_2""                ,"???"),
+		// ^LIVING_TRA_T_3     ("Überzeugende Verse"               ,"Handel: +1"),
 			;
 			
 			private String label;
@@ -2689,7 +2748,7 @@ public class SaveGameData
 							if (mod!=null) mod.value = str.substring("value=".length());
 							
 						} else if (str.isEmpty()) {
-							if (mod!=null) Gui.log_warn_ln("   %-15s(%-30s,%s)", mod.modStr, '"'+mod.label+'"', '"'+mod.value+'"');
+							if (mod!=null) Gui.log_warn_ln("   %-20s(%-35s,%s),", mod.modStr, '"'+mod.label+'"', '"'+mod.value+'"');
 							
 						}
 					}
@@ -2724,7 +2783,7 @@ public class SaveGameData
 				Gui.log_ln("   done (in "+((System.currentTimeMillis()-start)/1000.0f)+"s)");
 			}
 			
-			private final String modStr;
+			public final String modStr;
 			public String label;
 			public String value;
 			

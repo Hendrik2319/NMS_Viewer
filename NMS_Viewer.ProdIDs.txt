@@ -1357,6 +1357,7 @@ Background=460C34
 ^B_STR_M_Y_W=
 ^B_STR_N_E=
 ^B_STR_N_N=
+^B_STR_N_NE=
 ^B_STR_N_S=
 ^B_STR_N_W=
 ^B_STR_N_Y_E=
